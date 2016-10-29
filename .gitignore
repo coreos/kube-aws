@@ -4,3 +4,5 @@
 *~
 /config/templates.go
 .idea/
+/_gopath-kube-aws
+/_gopath-vendor
