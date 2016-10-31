@@ -16,6 +16,21 @@ if [ -n "$(git diff --shortstat 2> /dev/null | tail -n1)" ]; then
     VERSION="${VERSION}+dirty"
 fi
 
+GOPATH_VENDOR="$(pwd)/_gopath-vendor"
+GOPATH_KUBE_AWS="$(pwd)/_gopath-kube-aws"
+KUBE_AWS_DIR="${GOPATH_KUBE_AWS}/src/github.com/coreos/kube-aws"
+
+rm -rf "$GOPATH_VENDOR" "$GOPATH_KUBE_AWS"
+
+mkdir -p "$GOPATH_VENDOR"
+mkdir -p "$(dirname "$KUBE_AWS_DIR")"
+
+ln -s "$(pwd)"/vendor "$GOPATH_VENDOR"/src
+ln -s "$(pwd)" "$KUBE_AWS_DIR"
+
+export GOPATH="${GOPATH_VENDOR}:${GOPATH_KUBE_AWS}"
+cd "$KUBE_AWS_DIR"
+
 echo Building kube-aws ${VERSION}
 
 go generate ./config
