@@ -253,7 +253,7 @@ func (c Cluster) Config() (*Config, error) {
 
 	// Use custom etcd cluster if etcdLoadBalancer is set. TODO some minimal URL validation.
 	if config.EtcdLoadBalancer != "" {
-		config.EtcdEndpoints = fmt.Sprintf("%q", config.EtcdLoadBalancer)
+		config.EtcdEndpoints = config.EtcdLoadBalancer
 		// Keep EtcdInitialCluster empty as sign for the template engine to skip etcd node creation
 		config.EtcdInitialCluster = ""
 	} else {
