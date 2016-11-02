@@ -146,6 +146,7 @@ type Cluster struct {
 	WorkerRootVolumeSize     int               `yaml:"workerRootVolumeSize,omitempty"`
 	WorkerSpotPrice          string            `yaml:"workerSpotPrice,omitempty"`
 	EtcdLoadBalancer         string            `yaml:"etcdLoadBalancer,omitempty"`
+	EtcdSecurityGroups       []string          `yaml:"etcdSecurityGroups,omitempty"`
 	EtcdCount                int               `yaml:"etcdCount"`
 	EtcdInstanceType         string            `yaml:"etcdInstanceType,omitempty"`
 	EtcdRootVolumeSize       int               `yaml:"etcdRootVolumeSize,omitempty"`
