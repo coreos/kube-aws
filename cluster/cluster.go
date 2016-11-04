@@ -225,7 +225,7 @@ func (c *Cluster) createStack(cfSvc cloudformationService, stackBody string) (*c
 	}
 
 	var creq *cloudformation.CreateStackInput
-	if(c.EtcdLoadBalancer == "") {
+	if c.EtcdLoadBalancer == "" {
 		creq = &cloudformation.CreateStackInput{
 			StackName:    aws.String(c.ClusterName),
 			OnFailure:    aws.String(cloudformation.OnFailureDoNothing),
@@ -335,7 +335,7 @@ func (c *Cluster) Update(stackBody string) (string, error) {
 
 	cfSvc := cloudformation.New(c.session)
 	var err error
-	if(c.EtcdLoadBalancer == "") {
+	if c.EtcdLoadBalancer == "" {
 		if stackBody, err = c.lockEtcdResources(cfSvc, stackBody); err != nil {
 			return "", err
 		}
