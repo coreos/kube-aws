@@ -804,6 +804,37 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     }
+    {{else}}
+    {{range $index, $securitygroup := .EtcdSecurityGroups}}
+    {{with $securityGroupLogicalName := printf "etcdSecurityGroup%d" $index}}
+    ,
+    "{{$securityGroupLogicalName}}FromWorker": {
+      "Properties": {
+        "FromPort": 2379,
+        "GroupId": "{{$securitygroup}}",
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 2379
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "{{$securityGroupLogicalName}}FromWorker": {
+      "Properties": {
+        "FromPort": 2379,
+        "GroupId": "{{$securitygroup}}",
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "ToPort": 2379
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    }
+    {{end}}
+    {{end}}
+    {{end}}
     {{if $.ElasticFileSystemID}}
     ,
     "SecurityGroupMountTarget": {
@@ -835,36 +866,6 @@
       },
       "Type": "AWS::EC2::SecurityGroup"
     }
-    {{else}}
-    {{range $index, $securitygroup := .EtcdSecurityGroups}}
-    {{with $securityGroupLogicalName := printf "etcdSecurityGroup%d" $index}}
-    ,
-    "{{$securityGroupLogicalName}}FromWorker": {
-      "Properties": {
-        "FromPort": 2379,
-        "GroupId": "{{$securitygroup}}",
-        "IpProtocol": "tcp",
-        "SourceSecurityGroupId": {
-          "Ref": "SecurityGroupWorker"
-        },
-        "ToPort": 2379
-      },
-      "Type": "AWS::EC2::SecurityGroupIngress"
-    },
-    "{{$securityGroupLogicalName}}FromWorker": {
-      "Properties": {
-        "FromPort": 2379,
-        "GroupId": "{{$securitygroup}}",
-        "IpProtocol": "tcp",
-        "SourceSecurityGroupId": {
-          "Ref": "SecurityGroupController"
-        },
-        "ToPort": 2379
-      },
-      "Type": "AWS::EC2::SecurityGroupIngress"
-    }
-    {{end}}
-    {{end}}
     {{end}}
     {{range $index, $subnet := .Subnets}}
     {{with $subnetLogicalName := printf "Subnet%d" $index}}
