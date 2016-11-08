@@ -382,20 +382,62 @@ func (c *Cluster) lockEtcdResources(cfSvc *cloudformation.CloudFormation, stackB
 	return buf.String(), nil
 }
 
-func (c *Cluster) Update(stackBody string) (string, error) {
+func (c *Cluster) baseUpdateStackInput() *cloudformation.UpdateStackInput {
+	return &cloudformation.UpdateStackInput{
+		Capabilities: []*string{aws.String(cloudformation.CapabilityCapabilityIam)},
+		StackName:    aws.String(c.ClusterName),
+	}
+}
 
+func (c *Cluster) updateStackWithTemplateBody(cfSvc *cloudformation.CloudFormation, stackBody string) (*cloudformation.UpdateStackOutput, error) {
+	input := c.baseUpdateStackInput()
+	input.TemplateBody = aws.String(stackBody)
+	return cfSvc.UpdateStack(input)
+}
+
+func (c *Cluster) updateStackWithTemplateURL(cfSvc *cloudformation.CloudFormation, templateURL string) (*cloudformation.UpdateStackOutput, error) {
+	input := c.baseUpdateStackInput()
+	input.TemplateBody = aws.String(templateURL)
+	return cfSvc.UpdateStack(input)
+}
+
+func (c *Cluster) updateStack(cfSvc *cloudformation.CloudFormation, s3Svc *s3.S3, stackBody string, s3URI string) (*cloudformation.UpdateStackOutput, error) {
+	if len(stackBody) >= CFN_TEMPLATE_SIZE_LIMIT {
+		if s3URI == "" {
+			return nil, fmt.Errorf("stack-template.json size(=%d) exceeds the 51200 bytes limit of cloudformation. `--s3-uri s3://<bucket>/path/to/dir` must be specified to upload it to S3 beforehand", len(stackBody))
+		}
+
+		templateURL, err := c.uploadTemplate(s3Svc, s3URI, stackBody)
+		if err != nil {
+			return nil, fmt.Errorf("Template upload failed: %v", err)
+		}
+
+		resp, err := c.updateStackWithTemplateURL(cfSvc, templateURL)
+		if err != nil {
+			return nil, err
+		}
+
+		return resp, nil
+	} else {
+		resp, err := c.updateStackWithTemplateBody(cfSvc, stackBody)
+		if err != nil {
+			return nil, err
+		}
+
+		return resp, nil
+	}
+}
+
+func (c *Cluster) Update(stackBody string, s3URI string) (string, error) {
 	cfSvc := cloudformation.New(c.session)
+	s3Svc := s3.New(c.session)
+
 	var err error
 	if stackBody, err = c.lockEtcdResources(cfSvc, stackBody); err != nil {
 		return "", err
 	}
-	input := &cloudformation.UpdateStackInput{
-		Capabilities: []*string{aws.String(cloudformation.CapabilityCapabilityIam)},
-		StackName:    aws.String(c.ClusterName),
-		TemplateBody: aws.String(stackBody),
-	}
 
-	updateOutput, err := cfSvc.UpdateStack(input)
+	updateOutput, err := c.updateStack(cfSvc, s3Svc, stackBody, s3URI)
 	if err != nil {
 		return "", fmt.Errorf("error updating cloudformation stack: %v", err)
 	}

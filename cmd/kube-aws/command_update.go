@@ -19,12 +19,14 @@ var (
 
 	updateOpts = struct {
 		awsDebug bool
+		s3URI    string
 	}{}
 )
 
 func init() {
 	cmdRoot.AddCommand(cmdUpdate)
 	cmdUpdate.Flags().BoolVar(&updateOpts.awsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
+	cmdUpdate.Flags().StringVar(&updateOpts.s3URI, "s3-uri", "", "When your template is bigger than the cloudformation limit of 51200 bytes, upload the template to the specified location in S3")
 }
 
 func runCmdUpdate(cmd *cobra.Command, args []string) error {
@@ -44,7 +46,7 @@ func runCmdUpdate(cmd *cobra.Command, args []string) error {
 
 	cluster := cluster.New(conf, updateOpts.awsDebug)
 
-	report, err := cluster.Update(string(data))
+	report, err := cluster.Update(string(data), updateOpts.s3URI)
 	if err != nil {
 		return fmt.Errorf("Error updating cluster: %v", err)
 	}
