@@ -18,11 +18,14 @@ import (
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/route53"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/coreos/kube-aws/config"
 )
 
 // VERSION set by build script
 var VERSION = "UNKNOWN"
+
+var CFN_TEMPLATE_SIZE_LIMIT = 51200
 
 type Info struct {
 	Name           string
@@ -140,7 +143,7 @@ func (c *Cluster) validateExistingVPCState(ec2Svc ec2Service) error {
 	return nil
 }
 
-func (c *Cluster) Create(stackBody string) error {
+func (c *Cluster) Create(stackBody string, s3URI string) error {
 	r53Svc := route53.New(c.session)
 	if err := c.validateDNSConfig(r53Svc); err != nil {
 		return err
@@ -164,13 +167,37 @@ func (c *Cluster) Create(stackBody string) error {
 	}
 
 	cfSvc := cloudformation.New(c.session)
-	resp, err := c.createStack(cfSvc, stackBody)
-	if err != nil {
-		return err
+	s3Svc := s3.New(c.session)
+
+	var stackId *string
+
+	if len(stackBody) >= CFN_TEMPLATE_SIZE_LIMIT {
+		if s3URI == "" {
+			return fmt.Errorf("stack-template.json size(=%d) exceeds the 51200 bytes limit of cloudformation. `--s3-uri s3://<bucket>/path/to/dir` must be specified to upload it to S3 beforehand", len(stackBody))
+		}
+
+		templateURL, err := c.uploadTemplate(s3Svc, s3URI, stackBody)
+		if err != nil {
+			return fmt.Errorf("Template upload failed: %v", err)
+		}
+
+		resp, err := c.createStackFromTemplateURL(cfSvc, templateURL)
+		if err != nil {
+			return err
+		}
+
+		stackId = resp.StackId
+	} else {
+		resp, err := c.createStackFromTemplateBody(cfSvc, stackBody)
+		if err != nil {
+			return err
+		}
+
+		stackId = resp.StackId
 	}
 
 	req := cloudformation.DescribeStacksInput{
-		StackName: resp.StackId,
+		StackName: stackId,
 	}
 
 	for {
@@ -215,8 +242,34 @@ type cloudformationService interface {
 	CreateStack(*cloudformation.CreateStackInput) (*cloudformation.CreateStackOutput, error)
 }
 
-func (c *Cluster) createStack(cfSvc cloudformationService, stackBody string) (*cloudformation.CreateStackOutput, error) {
+func (c *Cluster) uploadTemplate(s3Svc *s3.S3, s3URI string, stackBody string) (string, error) {
+	re := regexp.MustCompile("s3://(?P<bucket>[^/]+)/(?P<directory>.+[^/])/*$")
+	matches := re.FindStringSubmatch(s3URI)
 
+	bucket := matches[1]
+	directory := matches[2]
+	key := fmt.Sprintf("%s/%s.stack.json", directory, c.ClusterName)
+	contentLength := int64(len(stackBody))
+	body := strings.NewReader(stackBody)
+
+	_, err := s3Svc.PutObject(&s3.PutObjectInput{
+		Bucket:        aws.String(bucket),
+		Key:           aws.String(key),
+		Body:          body,
+		ContentLength: aws.Int64(contentLength),
+		ContentType:   aws.String("application/json"),
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	templateURL := fmt.Sprintf("https://s3.amazonaws.com/%s/%s", bucket, key)
+
+	return templateURL, nil
+}
+
+func (c *Cluster) baseCreateStackInput() *cloudformation.CreateStackInput {
 	var tags []*cloudformation.Tag
 	for k, v := range c.StackTags {
 		key := k
@@ -224,11 +277,10 @@ func (c *Cluster) createStack(cfSvc cloudformationService, stackBody string) (*c
 		tags = append(tags, &cloudformation.Tag{Key: &key, Value: &value})
 	}
 
-	creq := &cloudformation.CreateStackInput{
+	return &cloudformation.CreateStackInput{
 		StackName:    aws.String(c.ClusterName),
 		OnFailure:    aws.String(cloudformation.OnFailureDoNothing),
 		Capabilities: []*string{aws.String(cloudformation.CapabilityCapabilityIam)},
-		TemplateBody: &stackBody,
 		Tags:         tags,
 		StackPolicyBody: aws.String(`{
   "Statement" : [
@@ -248,8 +300,18 @@ func (c *Cluster) createStack(cfSvc cloudformationService, stackBody string) (*c
 }
 `),
 	}
+}
 
-	return cfSvc.CreateStack(creq)
+func (c *Cluster) createStackFromTemplateBody(cfSvc cloudformationService, stackBody string) (*cloudformation.CreateStackOutput, error) {
+	input := c.baseCreateStackInput()
+	input.TemplateBody = &stackBody
+	return cfSvc.CreateStack(input)
+}
+
+func (c *Cluster) createStackFromTemplateURL(cfSvc cloudformationService, stackTemplateURL string) (*cloudformation.CreateStackOutput, error) {
+	input := c.baseCreateStackInput()
+	input.TemplateURL = &stackTemplateURL
+	return cfSvc.CreateStack(input)
 }
 
 /*

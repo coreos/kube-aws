@@ -532,7 +532,7 @@ stackTags:
 			ExpectedTags: testCase.expectedTags,
 		}
 
-		_, err = cluster.createStack(cfSvc, "")
+		_, err = cluster.createStackFromTemplateBody(cfSvc, "")
 
 		if err != nil {
 			t.Errorf("error creating cluster: %v\nfor test case %+v", err, testCase)
