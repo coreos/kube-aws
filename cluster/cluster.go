@@ -397,7 +397,7 @@ func (c *Cluster) updateStackWithTemplateBody(cfSvc *cloudformation.CloudFormati
 
 func (c *Cluster) updateStackWithTemplateURL(cfSvc *cloudformation.CloudFormation, templateURL string) (*cloudformation.UpdateStackOutput, error) {
 	input := c.baseUpdateStackInput()
-	input.TemplateBody = aws.String(templateURL)
+	input.TemplateURL = aws.String(templateURL)
 	return cfSvc.UpdateStack(input)
 }
 
