@@ -67,7 +67,7 @@ configure() {
 
   ${KUBE_AWS_CMD} render
 
-  ${KUBE_AWS_CMD} validate
+  ${KUBE_AWS_CMD} validate --s3-uri ${KUBE_AWS_S3_URI}
 
   echo Generated configuration files in ${WORK_DIR}:
   find .
@@ -84,7 +84,7 @@ clean() {
 up() {
   cd ${WORK_DIR}
 
-  ${KUBE_AWS_CMD} up
+  ${KUBE_AWS_CMD} up --s3-uri ${KUBE_AWS_S3_URI}
 
   printf 'Waiting for the Kubernetes API to be accessible'
 
@@ -100,12 +100,20 @@ destroy() {
   aws cloudformation wait stack-delete-complete --stack-name ${KUBE_AWS_CLUSTER_NAME}
 }
 
-test-upgrade() {
-  SED_CMD="sed -e 's/workerCount: 2/workerCount: 4/' -e 's/controllerCount: 2/controllerCount: 3/'"
+update() {
+  cd ${WORK_DIR}
+  SED_CMD="sed -e 's/workerCount: 4/workerCount: 5/' -e 's/controllerCount: 2/controllerCount: 3/'"
   diff --unified cluster.yaml <(cat cluster.yaml | sh -c "${SED_CMD}")
-  sh -c "${SED_CMD} -i bak cluster.yaml"
-  ${KUBE_AWS_CMD} update
+  ${SED_CMD} -i bak cluster.yaml
+  ${KUBE_AWS_CMD} update --s3-uri ${KUBE_AWS_S3_URI}
   aws cloudformation wait stack-update-complete --stack-name ${KUBE_AWS_CLUSTER_NAME}
+
+  printf 'Waiting for the Kubernetes API to be accessible'
+  while ! kubectl get no 2>/dev/null; do
+    sleep 10
+    printf '.'
+  done
+  echo done
 }
 
 test-destruction() {
@@ -162,6 +170,7 @@ all() {
   prepare
   configure
   up
+  update
   conformance
 }
 
