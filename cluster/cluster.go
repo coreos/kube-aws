@@ -64,9 +64,34 @@ type Cluster struct {
 	session *session.Session
 }
 
-func (c *Cluster) ValidateStack(stackBody string) (string, error) {
-	validateInput := cloudformation.ValidateTemplateInput{
-		TemplateBody: &stackBody,
+func (c *Cluster) uploadTemplateIfNecessary(s3Svc *s3.S3, stackBody string, s3URI string) (*string, error) {
+	if len(stackBody) > CFN_TEMPLATE_SIZE_LIMIT {
+		if s3URI == "" {
+			return nil, fmt.Errorf("stack template's size(=%d) exceeds the 51200 bytes limit of cloudformation. `--s3-uri s3://<bucket>/path/to/dir` must be specified to upload it to S3 beforehand", len(stackBody))
+		}
+
+		templateURL, err := c.uploadTemplate(s3Svc, s3URI, stackBody)
+		if err != nil {
+			return nil, fmt.Errorf("Template upload failed: %v", err)
+		}
+
+		return &templateURL, nil
+	}
+
+	return nil, nil
+}
+
+func (c *Cluster) ValidateStack(stackBody string, s3URI string) (string, error) {
+	validateInput := cloudformation.ValidateTemplateInput{}
+
+	templateURL, uploadErr := c.uploadTemplateIfNecessary(s3.New(c.session), stackBody, s3URI)
+
+	if uploadErr != nil {
+		return "", fmt.Errorf("template upload failed: %v", uploadErr)
+	} else if templateURL != nil {
+		validateInput.TemplateURL = templateURL
+	} else {
+		validateInput.TemplateBody = aws.String(stackBody)
 	}
 
 	cfSvc := cloudformation.New(c.session)
@@ -143,6 +168,28 @@ func (c *Cluster) validateExistingVPCState(ec2Svc ec2Service) error {
 	return nil
 }
 
+func (c *Cluster) createStack(cfSvc *cloudformation.CloudFormation, s3Svc *s3.S3, stackBody string, s3URI string) (*cloudformation.CreateStackOutput, error) {
+	templateURL, uploadErr := c.uploadTemplateIfNecessary(s3Svc, stackBody, s3URI)
+
+	if uploadErr != nil {
+		return nil, fmt.Errorf("template upload failed: %v", uploadErr)
+	} else if templateURL != nil {
+		resp, err := c.createStackFromTemplateURL(cfSvc, *templateURL)
+		if err != nil {
+			return nil, fmt.Errorf("stack creation failed: %v", err)
+		}
+
+		return resp, nil
+	} else {
+		resp, err := c.createStackFromTemplateBody(cfSvc, stackBody)
+		if err != nil {
+			return nil, fmt.Errorf("stack creation failed: %v", err)
+		}
+
+		return resp, nil
+	}
+}
+
 func (c *Cluster) Create(stackBody string, s3URI string) error {
 	r53Svc := route53.New(c.session)
 	if err := c.validateDNSConfig(r53Svc); err != nil {
@@ -169,35 +216,13 @@ func (c *Cluster) Create(stackBody string, s3URI string) error {
 	cfSvc := cloudformation.New(c.session)
 	s3Svc := s3.New(c.session)
 
-	var stackId *string
-
-	if len(stackBody) >= CFN_TEMPLATE_SIZE_LIMIT {
-		if s3URI == "" {
-			return fmt.Errorf("stack-template.json size(=%d) exceeds the 51200 bytes limit of cloudformation. `--s3-uri s3://<bucket>/path/to/dir` must be specified to upload it to S3 beforehand", len(stackBody))
-		}
-
-		templateURL, err := c.uploadTemplate(s3Svc, s3URI, stackBody)
-		if err != nil {
-			return fmt.Errorf("Template upload failed: %v", err)
-		}
-
-		resp, err := c.createStackFromTemplateURL(cfSvc, templateURL)
-		if err != nil {
-			return err
-		}
-
-		stackId = resp.StackId
-	} else {
-		resp, err := c.createStackFromTemplateBody(cfSvc, stackBody)
-		if err != nil {
-			return err
-		}
-
-		stackId = resp.StackId
+	resp, err := c.createStack(cfSvc, s3Svc, stackBody, s3URI)
+	if err != nil {
+		return err
 	}
 
 	req := cloudformation.DescribeStacksInput{
-		StackName: stackId,
+		StackName: resp.StackId,
 	}
 
 	for {
@@ -402,26 +427,21 @@ func (c *Cluster) updateStackWithTemplateURL(cfSvc *cloudformation.CloudFormatio
 }
 
 func (c *Cluster) updateStack(cfSvc *cloudformation.CloudFormation, s3Svc *s3.S3, stackBody string, s3URI string) (*cloudformation.UpdateStackOutput, error) {
-	if len(stackBody) >= CFN_TEMPLATE_SIZE_LIMIT {
-		if s3URI == "" {
-			return nil, fmt.Errorf("stack-template.json size(=%d) exceeds the 51200 bytes limit of cloudformation. `--s3-uri s3://<bucket>/path/to/dir` must be specified to upload it to S3 beforehand", len(stackBody))
-		}
+	templateURL, uploadErr := c.uploadTemplateIfNecessary(s3Svc, stackBody, s3URI)
 
-		templateURL, err := c.uploadTemplate(s3Svc, s3URI, stackBody)
+	if uploadErr != nil {
+		return nil, fmt.Errorf("template upload failed: %v", uploadErr)
+	} else if templateURL != nil {
+		resp, err := c.updateStackWithTemplateURL(cfSvc, *templateURL)
 		if err != nil {
-			return nil, fmt.Errorf("Template upload failed: %v", err)
-		}
-
-		resp, err := c.updateStackWithTemplateURL(cfSvc, templateURL)
-		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("stack update failed: %v", err)
 		}
 
 		return resp, nil
 	} else {
 		resp, err := c.updateStackWithTemplateBody(cfSvc, stackBody)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("stack update failed: %v", err)
 		}
 
 		return resp, nil
