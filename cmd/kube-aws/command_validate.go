@@ -20,7 +20,7 @@ var (
 
 	validateOpts = struct {
 		awsDebug bool
-		s3URI string
+		s3URI    string
 	}{}
 )
 
