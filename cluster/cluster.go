@@ -64,7 +64,7 @@ type Cluster struct {
 	session *session.Session
 }
 
-func (c *Cluster) uploadTemplateIfNecessary(s3Svc *s3.S3, stackBody string, s3URI string) (*string, error) {
+func (c *Cluster) uploadTemplateIfNecessary(s3Svc s3ObjectPutterService, stackBody string, s3URI string) (*string, error) {
 	if len(stackBody) > CFN_TEMPLATE_SIZE_LIMIT {
 		if s3URI == "" {
 			return nil, fmt.Errorf("stack template's size(=%d) exceeds the 51200 bytes limit of cloudformation. `--s3-uri s3://<bucket>/path/to/dir` must be specified to upload it to S3 beforehand", len(stackBody))
@@ -168,7 +168,7 @@ func (c *Cluster) validateExistingVPCState(ec2Svc ec2Service) error {
 	return nil
 }
 
-func (c *Cluster) createStack(cfSvc *cloudformation.CloudFormation, s3Svc *s3.S3, stackBody string, s3URI string) (*cloudformation.CreateStackOutput, error) {
+func (c *Cluster) createStack(cfSvc *cloudformation.CloudFormation, s3Svc s3ObjectPutterService, stackBody string, s3URI string) (*cloudformation.CreateStackOutput, error) {
 	templateURL, uploadErr := c.uploadTemplateIfNecessary(s3Svc, stackBody, s3URI)
 
 	if uploadErr != nil {
@@ -263,11 +263,19 @@ func (c *Cluster) Create(stackBody string, s3URI string) error {
 	}
 }
 
-type cloudformationService interface {
+type cloudformationStackCreationService interface {
 	CreateStack(*cloudformation.CreateStackInput) (*cloudformation.CreateStackOutput, error)
 }
 
-func (c *Cluster) uploadTemplate(s3Svc *s3.S3, s3URI string, stackBody string) (string, error) {
+type cloudformationStackUpdateService interface {
+	UpdateStack(input *cloudformation.UpdateStackInput) (*cloudformation.UpdateStackOutput, error)
+}
+
+type s3ObjectPutterService interface {
+	PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput, error)
+}
+
+func (c *Cluster) uploadTemplate(s3Svc s3ObjectPutterService, s3URI string, stackBody string) (string, error) {
 	re := regexp.MustCompile("s3://(?P<bucket>[^/]+)/(?P<directory>.+[^/])/*$")
 	matches := re.FindStringSubmatch(s3URI)
 
@@ -327,13 +335,13 @@ func (c *Cluster) baseCreateStackInput() *cloudformation.CreateStackInput {
 	}
 }
 
-func (c *Cluster) createStackFromTemplateBody(cfSvc cloudformationService, stackBody string) (*cloudformation.CreateStackOutput, error) {
+func (c *Cluster) createStackFromTemplateBody(cfSvc cloudformationStackCreationService, stackBody string) (*cloudformation.CreateStackOutput, error) {
 	input := c.baseCreateStackInput()
 	input.TemplateBody = &stackBody
 	return cfSvc.CreateStack(input)
 }
 
-func (c *Cluster) createStackFromTemplateURL(cfSvc cloudformationService, stackTemplateURL string) (*cloudformation.CreateStackOutput, error) {
+func (c *Cluster) createStackFromTemplateURL(cfSvc cloudformationStackCreationService, stackTemplateURL string) (*cloudformation.CreateStackOutput, error) {
 	input := c.baseCreateStackInput()
 	input.TemplateURL = &stackTemplateURL
 	return cfSvc.CreateStack(input)
@@ -414,19 +422,19 @@ func (c *Cluster) baseUpdateStackInput() *cloudformation.UpdateStackInput {
 	}
 }
 
-func (c *Cluster) updateStackWithTemplateBody(cfSvc *cloudformation.CloudFormation, stackBody string) (*cloudformation.UpdateStackOutput, error) {
+func (c *Cluster) updateStackWithTemplateBody(cfSvc cloudformationStackUpdateService, stackBody string) (*cloudformation.UpdateStackOutput, error) {
 	input := c.baseUpdateStackInput()
 	input.TemplateBody = aws.String(stackBody)
 	return cfSvc.UpdateStack(input)
 }
 
-func (c *Cluster) updateStackWithTemplateURL(cfSvc *cloudformation.CloudFormation, templateURL string) (*cloudformation.UpdateStackOutput, error) {
+func (c *Cluster) updateStackWithTemplateURL(cfSvc cloudformationStackUpdateService, templateURL string) (*cloudformation.UpdateStackOutput, error) {
 	input := c.baseUpdateStackInput()
 	input.TemplateURL = aws.String(templateURL)
 	return cfSvc.UpdateStack(input)
 }
 
-func (c *Cluster) updateStack(cfSvc *cloudformation.CloudFormation, s3Svc *s3.S3, stackBody string, s3URI string) (*cloudformation.UpdateStackOutput, error) {
+func (c *Cluster) updateStack(cfSvc cloudformationStackUpdateService, s3Svc s3ObjectPutterService, stackBody string, s3URI string) (*cloudformation.UpdateStackOutput, error) {
 	templateURL, uploadErr := c.uploadTemplateIfNecessary(s3Svc, stackBody, s3URI)
 
 	if uploadErr != nil {
