@@ -279,9 +279,25 @@ func (c *Cluster) uploadTemplate(s3Svc s3ObjectPutterService, s3URI string, stac
 	re := regexp.MustCompile("s3://(?P<bucket>[^/]+)/(?P<directory>.+[^/])/*$")
 	matches := re.FindStringSubmatch(s3URI)
 
-	bucket := matches[1]
-	directory := matches[2]
-	key := fmt.Sprintf("%s/%s.stack.json", directory, c.ClusterName)
+	var bucket string
+	var key string
+	if len(matches) == 3 {
+		directory := matches[2]
+
+		bucket = matches[1]
+		key = fmt.Sprintf("%s/%s/stack.json", directory, c.ClusterName)
+	} else {
+		re := regexp.MustCompile("s3://(?P<bucket>[^/]+)/*$")
+		matches := re.FindStringSubmatch(s3URI)
+
+		if len(matches) == 2 {
+			bucket = matches[1]
+			key = fmt.Sprintf("%s/stack.json", c.ClusterName)
+		} else {
+			return "", fmt.Errorf("failed to parse s3 uri(=%s): The valid uri pattern for it is s3://mybucket/mydir or s3://mybucket", s3URI)
+		}
+	}
+
 	contentLength := int64(len(stackBody))
 	body := strings.NewReader(stackBody)
 

@@ -853,12 +853,12 @@ workerRootVolumeIOPS: 2000
 	}
 }
 
-func TestUploadTemplate(t *testing.T) {
+func TestUploadTemplateWithDirectory(t *testing.T) {
 	body := "{}"
 	s3URI := "s3://mybucket/mykey"
 	s3Svc := dummyS3ObjectPutterService{
 		ExpectedBucket:        "mybucket",
-		ExpectedKey:           "mykey/test-cluster-name.stack.json",
+		ExpectedKey:           "mykey/test-cluster-name/stack.json",
 		ExpectedContentLength: 2,
 		ExpectedContentType:   "application/json",
 		ExpectedBody:          body,
@@ -877,7 +877,37 @@ func TestUploadTemplate(t *testing.T) {
 		t.Errorf("error uploading template: %v", err)
 	}
 
-	expectedURL := "https://s3.amazonaws.com/mybucket/mykey/test-cluster-name.stack.json"
+	expectedURL := "https://s3.amazonaws.com/mybucket/mykey/test-cluster-name/stack.json"
+	if suppliedURL != expectedURL {
+		t.Errorf("supplied template url doesn't match expected one: expected=%s, supplied=%s", expectedURL, suppliedURL)
+	}
+}
+
+func TestUploadTemplateWithoutDirectory(t *testing.T) {
+	body := "{}"
+	s3URI := "s3://mybucket"
+	s3Svc := dummyS3ObjectPutterService{
+		ExpectedBucket:        "mybucket",
+		ExpectedKey:           "test-cluster-name/stack.json",
+		ExpectedContentLength: 2,
+		ExpectedContentType:   "application/json",
+		ExpectedBody:          body,
+	}
+
+	clusterConfig, err := config.ClusterFromBytes([]byte(defaultConfigValues(t, "")))
+	if err != nil {
+		t.Errorf("could not get valid cluster config: %v", err)
+	}
+
+	c := &Cluster{Cluster: *clusterConfig}
+
+	suppliedURL, err := c.uploadTemplate(s3Svc, s3URI, body)
+
+	if err != nil {
+		t.Errorf("error uploading template: %v", err)
+	}
+
+	expectedURL := "https://s3.amazonaws.com/mybucket/test-cluster-name/stack.json"
 	if suppliedURL != expectedURL {
 		t.Errorf("supplied template url doesn't match expected one: expected=%s, supplied=%s", expectedURL, suppliedURL)
 	}
