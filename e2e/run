@@ -110,8 +110,8 @@ destroy() {
 update() {
   cd ${WORK_DIR}
   SED_CMD="sed -e 's/workerCount: 4/workerCount: 5/' -e 's/controllerCount: 2/controllerCount: 3/'"
-  diff --unified cluster.yaml <(cat cluster.yaml | sh -c "${SED_CMD}")
-  ${SED_CMD} -i bak cluster.yaml
+  diff --unified cluster.yaml <(cat cluster.yaml | sh -c "${SED_CMD}") || true
+  sh -c '${SED_CMD} -i bak cluster.yaml' || true
   ${KUBE_AWS_CMD} update --s3-uri ${KUBE_AWS_S3_URI}
   aws cloudformation wait stack-update-complete --stack-name ${KUBE_AWS_CLUSTER_NAME}
 
