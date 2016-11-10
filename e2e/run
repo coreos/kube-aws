@@ -3,6 +3,7 @@
 KUBE_AWS_CMD=${KUBE_AWS_CMD:-$GOPATH/src/github.com/coreos/kube-aws/bin/kube-aws}
 E2E_DIR=$(cd $(dirname $0); pwd)
 WORK_DIR=${E2E_DIR}/assets/${KUBE_AWS_CLUSTER_NAME}
+SRC_DIR=$(cd $(dirname $0); cd ..; pwd)
 KUBECONFIG=${WORK_DIR}/kubeconfig
 
 export KUBECONFIG
@@ -39,6 +40,12 @@ echo Using the kube-aws command at ${KUBE_AWS_CMD}"($KUBE_AWS_VERSION)". Set KUB
 
 EXTERNAL_DNS_NAME=${KUBE_AWS_CLUSTER_NAME}.${KUBE_AWS_DOMAIN}
 echo The kubernetes API would be accessible via ${EXTERNAL_DNS_NAME}
+
+build() {
+  echo Building kube-aws
+  cd ${SRC_DIR}
+  ./build
+}
 
 prepare() {
   echo Creating or ensuring existence of the kube-aws assets directory ${WORK_DIR}
@@ -167,6 +174,7 @@ conformance_result() {
 }
 
 all() {
+  build
   prepare
   configure
   up
