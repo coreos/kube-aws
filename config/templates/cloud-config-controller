@@ -52,6 +52,8 @@ coreos:
         --mount volume=rkt,target=/usr/bin/rkt \
         --volume var-lib-rkt,kind=host,source=/var/lib/rkt \
         --mount volume=var-lib-rkt,target=/var/lib/rkt \
+        --volume var-lib-cni,kind=host,source=/var/lib/cni \
+        --mount volume=var-lib-cni,target=/var/lib/cni \
         --volume stage,kind=host,source=/tmp \
         --mount volume=stage,target=/tmp \
         --volume var-log,kind=host,source=/var/log \
