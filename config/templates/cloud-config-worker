@@ -52,6 +52,7 @@ coreos:
         --volume var-log,kind=host,source=/var/log \
         --mount volume=var-log,target=/var/log"
         ExecStartPre=/usr/bin/systemctl is-active flanneld.service
+        ExecStartPre=/usr/bin/mkdir -p /var/lib/cni
         ExecStartPre=/usr/bin/mkdir -p /var/log/containers
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
         --api-servers={{.APIServerEndpoint}} \
