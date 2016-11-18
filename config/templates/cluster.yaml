@@ -165,6 +165,10 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 # experimental:
 #   nodeDrainer:
 #     enabled: true
+#   externalEtcd:
+#     enabled: true
+#     etcdUrl: "http://my.etcd.cluster.local:2379"
+#     securityGroupIds: [ "sg-abcdefg", "sg-1234567" ]
 
 # AWS Tags for cloudformation stack resources 
 #stackTags:

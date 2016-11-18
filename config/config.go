@@ -34,6 +34,9 @@ func newDefaultCluster() *Cluster {
 		NodeDrainer{
 			Enabled: false,
 		},
+		ExternalEtcd{
+			Enabled: false,
+		},
 	}
 
 	return &Cluster{
@@ -184,11 +187,18 @@ type Subnet struct {
 }
 
 type Experimental struct {
-	NodeDrainer NodeDrainer `yaml:"nodeDrainer"`
+	NodeDrainer  NodeDrainer  `yaml:"nodeDrainer"`
+	ExternalEtcd ExternalEtcd `yaml:"externalEtcd"`
 }
 
 type NodeDrainer struct {
 	Enabled bool `yaml:"enabled"`
+}
+
+type ExternalEtcd struct {
+	Enabled          bool     `yaml:"enabled"`
+	EtcdUrl          string   `yaml:"etcdUrl"`
+	SecurityGroupIds []string `yaml:"securityGroupIds"`
 }
 
 const (
@@ -250,76 +260,81 @@ func (c Cluster) Config() (*Config, error) {
 		config.VPCRef = fmt.Sprintf("%q", config.VPCID)
 	}
 
-	config.EtcdInstances = make([]etcdInstance, config.EtcdCount)
-	var etcdEndpoints, etcdInitialCluster bytes.Buffer
-	for etcdIndex := 0; etcdIndex < config.EtcdCount; etcdIndex++ {
+	// Use custom etcd cluster if etcdLoadBalancer is set. TODO some minimal URL validation.
+	if config.Experimental.ExternalEtcd.Enabled {
+		config.EtcdEndpoints = config.Experimental.ExternalEtcd.EtcdUrl
+	} else {
+		config.EtcdInstances = make([]etcdInstance, config.EtcdCount)
+		var etcdEndpoints, etcdInitialCluster bytes.Buffer
+		for etcdIndex := 0; etcdIndex < config.EtcdCount; etcdIndex++ {
 
-		//Round-robbin etcd instances across all available subnets
-		subnetIndex := etcdIndex % len(config.Subnets)
-		subnet := config.Subnets[subnetIndex]
+			//Round-robbin etcd instances across all available subnets
+			subnetIndex := etcdIndex % len(config.Subnets)
+			subnet := config.Subnets[subnetIndex]
 
-		_, subnetCIDR, err := net.ParseCIDR(subnet.InstanceCIDR)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing subnet instance cidr %s: %v", subnet.InstanceCIDR, err)
-		}
-
-		if subnet.lastAllocatedAddr == nil {
-			ip := subnetCIDR.IP
-			//TODO:(chom) this is sloppy, but "soon-ish" etcd with be self-hosted so we'll leave this be
-			for i := 0; i < 3; i++ {
-				ip = incrementIP(ip)
+			_, subnetCIDR, err := net.ParseCIDR(subnet.InstanceCIDR)
+			if err != nil {
+				return nil, fmt.Errorf("error parsing subnet instance cidr %s: %v", subnet.InstanceCIDR, err)
 			}
-			subnet.lastAllocatedAddr = &ip
+
+			if subnet.lastAllocatedAddr == nil {
+				ip := subnetCIDR.IP
+				//TODO:(chom) this is sloppy, but "soon-ish" etcd with be self-hosted so we'll leave this be
+				for i := 0; i < 3; i++ {
+					ip = incrementIP(ip)
+				}
+				subnet.lastAllocatedAddr = &ip
+			}
+
+			nextAddr := incrementIP(*subnet.lastAllocatedAddr)
+			subnet.lastAllocatedAddr = &nextAddr
+			instance := etcdInstance{
+				IPAddress:   *subnet.lastAllocatedAddr,
+				SubnetIndex: subnetIndex,
+			}
+
+			//TODO(chom): validate we're not overflowing the address space
+			//This is complicated, must also factor in DHCP addresses
+			//for ASG components
+
+			//Punt on this- we're going to have an answer for dynamic etcd clusters at some point. Then we can either throw
+			//the instances in an ASG and use DHCP like all other instances, or simply self-host on cluster
+
+			config.EtcdInstances[etcdIndex] = instance
+
+			//TODO: ipv6 support
+			if len(instance.IPAddress) != 4 {
+				return nil, fmt.Errorf("Non ipv4 address for etcd node: %v", instance.IPAddress)
+			}
+
+			//http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-instance-addressing.html#concepts-private-addresses
+
+			var dnsSuffix string
+			if config.Region == "us-east-1" {
+				// a special DNS suffix for the original AWS region!
+				dnsSuffix = "ec2.internal"
+			} else {
+				dnsSuffix = fmt.Sprintf("%s.compute.internal", config.Region)
+			}
+
+			hostname := fmt.Sprintf("ip-%d-%d-%d-%d.%s",
+				instance.IPAddress[0],
+				instance.IPAddress[1],
+				instance.IPAddress[2],
+				instance.IPAddress[3],
+				dnsSuffix,
+			)
+
+			fmt.Fprintf(&etcdEndpoints, "https://%s:2379", hostname)
+			fmt.Fprintf(&etcdInitialCluster, "%s=https://%s:2380", hostname, hostname)
+			if etcdIndex < config.EtcdCount-1 {
+				fmt.Fprintf(&etcdEndpoints, ",")
+				fmt.Fprintf(&etcdInitialCluster, ",")
+			}
 		}
-
-		nextAddr := incrementIP(*subnet.lastAllocatedAddr)
-		subnet.lastAllocatedAddr = &nextAddr
-		instance := etcdInstance{
-			IPAddress:   *subnet.lastAllocatedAddr,
-			SubnetIndex: subnetIndex,
-		}
-
-		//TODO(chom): validate we're not overflowing the address space
-		//This is complicated, must also factor in DHCP addresses
-		//for ASG components
-
-		//Punt on this- we're going to have an answer for dynamic etcd clusters at some point. Then we can either throw
-		//the instances in an ASG and use DHCP like all other instances, or simply self-host on cluster
-
-		config.EtcdInstances[etcdIndex] = instance
-
-		//TODO: ipv6 support
-		if len(instance.IPAddress) != 4 {
-			return nil, fmt.Errorf("Non ipv4 address for etcd node: %v", instance.IPAddress)
-		}
-
-		//http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-instance-addressing.html#concepts-private-addresses
-
-		var dnsSuffix string
-		if config.Region == "us-east-1" {
-			// a special DNS suffix for the original AWS region!
-			dnsSuffix = "ec2.internal"
-		} else {
-			dnsSuffix = fmt.Sprintf("%s.compute.internal", config.Region)
-		}
-
-		hostname := fmt.Sprintf("ip-%d-%d-%d-%d.%s",
-			instance.IPAddress[0],
-			instance.IPAddress[1],
-			instance.IPAddress[2],
-			instance.IPAddress[3],
-			dnsSuffix,
-		)
-
-		fmt.Fprintf(&etcdEndpoints, "https://%s:2379", hostname)
-		fmt.Fprintf(&etcdInitialCluster, "%s=https://%s:2380", hostname, hostname)
-		if etcdIndex < config.EtcdCount-1 {
-			fmt.Fprintf(&etcdEndpoints, ",")
-			fmt.Fprintf(&etcdInitialCluster, ",")
-		}
+		config.EtcdEndpoints = etcdEndpoints.String()
+		config.EtcdInitialCluster = etcdInitialCluster.String()
 	}
-	config.EtcdEndpoints = etcdEndpoints.String()
-	config.EtcdInitialCluster = etcdInitialCluster.String()
 
 	config.IsChinaRegion = strings.HasPrefix(config.Region, "cn")
 

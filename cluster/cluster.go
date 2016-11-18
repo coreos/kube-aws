@@ -326,12 +326,12 @@ func (c *Cluster) baseCreateStackInput() *cloudformation.CreateStackInput {
 		tags = append(tags, &cloudformation.Tag{Key: &key, Value: &value})
 	}
 
-	return &cloudformation.CreateStackInput{
-		StackName:    aws.String(c.ClusterName),
-		OnFailure:    aws.String(cloudformation.OnFailureDoNothing),
-		Capabilities: []*string{aws.String(cloudformation.CapabilityCapabilityIam)},
-		Tags:         tags,
-		StackPolicyBody: aws.String(`{
+	var stackPolicyBody string
+
+	if c.Experimental.ExternalEtcd.Enabled {
+		stackPolicyBody = "{}"
+	} else {
+		stackPolicyBody = `{
   "Statement" : [
     {
       "Effect" : "Deny",
@@ -346,8 +346,14 @@ func (c *Cluster) baseCreateStackInput() *cloudformation.CreateStackInput {
        "Resource" : "*"
      }
   ]
-}
-`),
+}`
+	}
+	return &cloudformation.CreateStackInput{
+		StackName:       aws.String(c.ClusterName),
+		OnFailure:       aws.String(cloudformation.OnFailureDoNothing),
+		Capabilities:    []*string{aws.String(cloudformation.CapabilityCapabilityIam)},
+		Tags:            tags,
+		StackPolicyBody: aws.String(stackPolicyBody),
 	}
 }
 
@@ -477,8 +483,10 @@ func (c *Cluster) Update(stackBody string, s3URI string) (string, error) {
 	s3Svc := s3.New(c.session)
 
 	var err error
-	if stackBody, err = c.lockEtcdResources(cfSvc, stackBody); err != nil {
-		return "", err
+	if !c.Experimental.ExternalEtcd.Enabled {
+		if stackBody, err = c.lockEtcdResources(cfSvc, stackBody); err != nil {
+			return "", err
+		}
 	}
 
 	updateOutput, err := c.updateStack(cfSvc, s3Svc, stackBody, s3URI)

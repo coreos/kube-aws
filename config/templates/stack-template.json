@@ -1,6 +1,7 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "kube-aws Kubernetes cluster {{.ClusterName}}",
+  {{if not .Experimental.ExternalEtcd.Enabled}}
   "Mappings" : {
     "EtcdInstanceParams" : {
       "UserData" : {
@@ -8,6 +9,7 @@
       }
     }
   },
+  {{end}}
   "Resources": {
     "AutoScaleWorker": {
       "Properties": {
@@ -152,6 +154,7 @@
       },
       "Type": "AWS::IAM::InstanceProfile"
     },
+    {{if not .Experimental.ExternalEtcd.Enabled}}
     "IAMInstanceProfileEtcd": {
       "Properties": {
         "Path": "/",
@@ -163,6 +166,7 @@
       },
       "Type": "AWS::IAM::InstanceProfile"
     },
+    {{end}}
     "IAMRoleController": {
       "Properties": {
         "AssumeRolePolicyDocument": {
@@ -288,6 +292,7 @@
       },
       "Type": "AWS::IAM::Role"
     },
+    {{if not .Experimental.ExternalEtcd.Enabled}}
     "IAMRoleEtcd": {
       "Properties": {
         "AssumeRolePolicyDocument": {
@@ -382,6 +387,7 @@
       },
       "Type": "AWS::EC2::Instance"
     },
+    {{end}}
     {{end}}
     "LaunchConfigurationWorker": {
       "Properties": {
@@ -567,6 +573,7 @@
       },
       "Type": "AWS::EC2::SecurityGroup"
     },
+    {{if not .Experimental.ExternalEtcd.Enabled}}
     "SecurityGroupControllerIngressFromWorkerToEtcd": {
       "Properties": {
         "FromPort": 2379,
@@ -581,6 +588,7 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
+    {{end}}
     "SecurityGroupWorker": {
       "Properties": {
         "GroupDescription": {
@@ -690,6 +698,7 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
+    {{if not .Experimental.ExternalEtcd.Enabled}}
     "SecurityGroupEtcdIngressFromControllerToEtcd": {
       "Properties": {
         "FromPort": 2379,
@@ -718,6 +727,7 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
+    {{end}}
     "SecurityGroupWorkerIngressFromWorkerToFlannel": {
       "Properties": {
         "FromPort": 8472,
@@ -759,7 +769,9 @@
         "ToPort": 10255
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
-    },
+    }
+    {{if not .Experimental.ExternalEtcd.Enabled}}
+    ,
     "SecurityGroupEtcd": {
       "Properties": {
         "GroupDescription": {
@@ -821,6 +833,37 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     }
+    {{else}}
+    {{range $index, $securitygroup := .Experimental.ExternalEtcd.SecurityGroupIds}}
+    {{with $securityGroupLogicalName := printf "etcdSecurityGroup%d" $index}}
+    ,
+    "{{$securityGroupLogicalName}}FromWorker": {
+      "Properties": {
+        "FromPort": 2379,
+        "GroupId": "{{$securitygroup}}",
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 2379
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "{{$securityGroupLogicalName}}FromController": {
+      "Properties": {
+        "FromPort": 2379,
+        "GroupId": "{{$securitygroup}}",
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "ToPort": 2379
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    }
+    {{end}}
+    {{end}}
+    {{end}}
     {{if $.ElasticFileSystemID}}
     ,
     "SecurityGroupMountTarget": {
