@@ -155,9 +155,9 @@ coreos:
         Environment=CALICO_NETWORKING=false
         Environment=NO_DEFAULT_POOLS=true
         Environment=ETCD_SCHEME=https
-        Environment=ETCD_CA_CERT_FILE=/etc/etcd2/ssl/ca.pem
-        Environment=ETCD_CERT_FILE=/etc/etcd2/ssl/etcd-client.pem
-        Environment=ETCD_KEY_FILE=/etc/etcd2/ssl/etcd-client-key.pem
+        Environment=ETCD_CA_CERT_FILE=/etc/kubernetes/ssl/ca.pem
+        Environment=ETCD_CERT_FILE=/etc/kubernetes/ssl/etcd-client.pem
+        Environment=ETCD_KEY_FILE=/etc/kubernetes/ssl/etcd-client-key.pem
         Environment=ETCD_ENDPOINTS={{ .EtcdEndpoints }}
         ExecStart=/usr/bin/rkt run --inherit-env --stage1-from-dir=stage1-fly.aci \
         --volume=modules,kind=host,source=/lib/modules,readOnly=false \
@@ -165,7 +165,7 @@ coreos:
         --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true \
         --mount=volume=dns,target=/etc/resolv.conf \
         --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=true \
-        --mount=volume=ssl,target=/etc/etcd2/ssl \
+        --mount=volume=ssl,target=/etc/kubernetes/ssl/ \
         --trust-keys-from-https quay.io/calico/node:v0.22.0
         KillMode=mixed
         Restart=always
@@ -611,11 +611,11 @@ write_files:
               - name: ETCD_SCHEME
                 value: https
               - name: ETCD_CA_CERT_FILE
-                value: "/etc/etcd2/ssl/ca.pem"
+                value: "/etc/kubernetes/ssl/ca.pem"
               - name: ETCD_CERT_FILE
-                value: "/etc/etcd2/ssl/etcd-client.pem"
+                value: "/etc/kubernetes/ssl/etcd-client.pem"
               - name: ETCD_KEY_FILE
-                value: "/etc/etcd2/ssl/etcd-client-key.pem"
+                value: "/etc/kubernetes/ssl/etcd-client-key.pem"
               - name: ETCD_ENDPOINTS
                 value: "{{ .EtcdEndpoints }}"
               - name: K8S_API
@@ -623,7 +623,7 @@ write_files:
               - name: LEADER_ELECTION
                 value: "true"
             volumeMounts:
-            - mountPath: /etc/etcd2/ssl
+            - mountPath: /etc/kubernetes/ssl/
               name: ssl
           # Leader election container used by the policy controller.
           - name: leader-elector
