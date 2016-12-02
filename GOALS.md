@@ -12,11 +12,11 @@ Kube-aws CLI's goal is to support different experience levels of the users in te
 * CoreOS administration expertise
 * Amazone Web Services expertise
 
-to support this goal it 
-    * maintanes well-documented set of default settings
-    * but allows to configure every aspect of the cluster
-    * enables reuse of (all) custom predefined AWS resources that are precreated in AWS
-    * provides build in! documentation, that is available online as well
+to support this goal it
+* maintanes well-documented set of default settings
+* but allows to configure every aspect of the cluster
+* enables reuse of (all) custom predefined AWS resources that are precreated in AWS
+* provides build in! documentation, that is available online as well
 
 Further more kube-aws allow me to 
 * manages several clusters in convenient way
