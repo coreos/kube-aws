@@ -52,10 +52,13 @@ coreos:
         --volume stage,kind=host,source=/tmp \
         --mount volume=stage,target=/tmp \
         --volume var-log,kind=host,source=/var/log \
-        --mount volume=var-log,target=/var/log"
+        --mount volume=var-log,target=/var/log{{ if .UseCalico }} \
+        --volume cni-bin,kind=host,source=/opt/cni/bin \
+        --mount volume=cni-bin,target=/opt/cni/bin{{ end }}"
         ExecStartPre=/usr/bin/systemctl is-active flanneld.service
         ExecStartPre=/usr/bin/mkdir -p /var/lib/cni
         ExecStartPre=/usr/bin/mkdir -p /var/log/containers
+        ExecStartPre=/usr/bin/mkdir -p /opt/cni/bin
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
         --api-servers={{.APIServerEndpoint}} \
         --network-plugin-dir=/etc/kubernetes/cni/net.d \
@@ -105,45 +108,6 @@ coreos:
         ExecStart=/usr/bin/rkt fetch /usr/lib/rkt/stage1-images/stage1-coreos.aci /usr/lib/rkt/stage1-images/stage1-fly.aci  --insecure-options=image
         [Install]
         RequiredBy=rkt-api.service
-{{ end }}
-
-{{ if .UseCalico }}
-    - name: calico-node.service
-      command: start
-      runtime: true
-      content: |
-        [Unit]
-        Description=Calico per-host agent
-        Requires=network-online.target
-        After=network-online.target
-
-        [Service]
-        Slice=machine.slice
-        Environment=CALICO_DISABLE_FILE_LOGGING=true
-        Environment=HOSTNAME=$private_ipv4
-        Environment=IP=$private_ipv4
-        Environment=FELIX_FELIXHOSTNAME=$private_ipv4
-        Environment=CALICO_NETWORKING=false
-        Environment=NO_DEFAULT_POOLS=true
-        Environment=ETCD_SCHEME=https
-        Environment=ETCD_CA_CERT_FILE=/etc/etcd2/ssl/ca.pem
-        Environment=ETCD_CERT_FILE=/etc/etcd2/ssl/etcd-client.pem
-        Environment=ETCD_KEY_FILE=/etc/etcd2/ssl/etcd-client-key.pem
-        Environment=ETCD_ENDPOINTS={{ .EtcdEndpoints }}
-        ExecStart=/usr/bin/rkt run --inherit-env --stage1-from-dir=stage1-fly.aci \
-        --volume=modules,kind=host,source=/lib/modules,readOnly=false \
-        --mount=volume=modules,target=/lib/modules \
-        --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true \
-        --mount=volume=dns,target=/etc/resolv.conf \
-        --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=true \
-        --mount=volume=ssl,target=/etc/etcd2/ssl \
-        --trust-keys-from-https quay.io/calico/node:v0.22.0
-        KillMode=mixed
-        Restart=always
-        TimeoutStartSec=0
-
-        [Install]
-        WantedBy=multi-user.target
 {{ end }}
 
 {{ if .Experimental.NodeDrainer.Enabled }}
@@ -233,9 +197,6 @@ coreos:
         [Service]
         Type=oneshot
         ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl  --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null ; then break ; fi;  done"
-        {{ if .UseCalico }}
-        ExecStartPre=/usr/bin/systemctl is-active calico-node
-        {{ end }}
         ExecStart=/usr/bin/rkt run \
           --uuid-file-save=/var/run/coreos/cfn-signal.uuid \
           --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
@@ -475,27 +436,7 @@ write_files:
           name: kubelet-context
         current-context: kubelet-context
 
-{{ if .UseCalico }}
-  - path: /etc/kubernetes/cni/net.d/10-calico.conf
-    content: |
-        {
-            "name": "calico",
-            "type": "flannel",
-            "delegate": {
-                "type": "calico",
-                "etcd_endpoints": "{{ .EtcdEndpoints }}",
-                "log_level": "none",
-                "log_level_stderr": "info",
-                "hostname": "$private_ipv4",
-                "policy": {
-                    "type": "k8s",
-                    "k8s_api_root": "{{.APIServerEndpoint}}/api/v1/",
-                    "k8s_client_key": "/etc/kubernetes/ssl/worker-key.pem",
-                    "k8s_client_certificate": "/etc/kubernetes/ssl/worker.pem"
-                }
-            }
-        }
-{{ else }}
+{{ if not .UseCalico }}
   - path: /etc/kubernetes/cni/net.d/10-flannel.conf
     content: |
         {

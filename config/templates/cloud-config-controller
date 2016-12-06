@@ -83,10 +83,13 @@ coreos:
         --volume stage,kind=host,source=/tmp \
         --mount volume=stage,target=/tmp \
         --volume var-log,kind=host,source=/var/log \
-        --mount volume=var-log,target=/var/log"
+        --mount volume=var-log,target=/var/log{{ if .UseCalico }} \
+        --volume cni-bin,kind=host,source=/opt/cni/bin \
+        --mount volume=cni-bin,target=/opt/cni/bin{{ end }}"
         ExecStartPre=/usr/bin/systemctl is-active flanneld.service
         ExecStartPre=/usr/bin/mkdir -p /var/lib/cni
         ExecStartPre=/usr/bin/mkdir -p /var/log/containers
+        ExecStartPre=/usr/bin/mkdir -p /opt/cni/bin
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
         --api-servers=http://localhost:8080 \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
@@ -136,45 +139,6 @@ coreos:
         RequiredBy=rkt-api.service
 {{ end }}
 
-{{ if .UseCalico }}
-    - name: calico-node.service
-      command: start
-      runtime: true
-      content: |
-        [Unit]
-        Description=Calico per-host agent
-        Requires=network-online.target
-        After=network-online.target
-
-        [Service]
-        Slice=machine.slice
-        Environment=CALICO_DISABLE_FILE_LOGGING=true
-        Environment=HOSTNAME=$private_ipv4
-        Environment=IP=$private_ipv4
-        Environment=FELIX_FELIXHOSTNAME=$private_ipv4
-        Environment=CALICO_NETWORKING=false
-        Environment=NO_DEFAULT_POOLS=true
-        Environment=ETCD_SCHEME=https
-        Environment=ETCD_CA_CERT_FILE=/etc/etcd2/ssl/ca.pem
-        Environment=ETCD_CERT_FILE=/etc/etcd2/ssl/etcd-client.pem
-        Environment=ETCD_KEY_FILE=/etc/etcd2/ssl/etcd-client-key.pem
-        Environment=ETCD_ENDPOINTS={{ .EtcdEndpoints }}
-        ExecStart=/usr/bin/rkt run --inherit-env --stage1-from-dir=stage1-fly.aci \
-        --volume=modules,kind=host,source=/lib/modules,readOnly=false \
-        --mount=volume=modules,target=/lib/modules \
-        --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true \
-        --mount=volume=dns,target=/etc/resolv.conf \
-        --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=true \
-        --mount=volume=ssl,target=/etc/etcd2/ssl \
-        --trust-keys-from-https quay.io/calico/node:v0.22.0
-        KillMode=mixed
-        Restart=always
-        TimeoutStartSec=0
-
-        [Install]
-        WantedBy=multi-user.target
-{{ end }}
-
     - name: install-kube-system.service
       command: start
       runtime: true
@@ -192,24 +156,6 @@ coreos:
         ExecStartPre=/usr/bin/curl http://127.0.0.1:8080/version
         ExecStart=/opt/bin/install-kube-system
 
-{{ if .UseCalico }}
-    - name: install-calico-system.service
-      command: start
-      runtime: true
-      content: |
-        [Unit]
-        Wants=kubelet.service docker.service
-
-        [Service]
-        Type=simple
-        StartLimitInterval=0
-        RestartSec=10
-        Restart=on-failure
-        ExecStartPre=/usr/bin/systemctl is-active kubelet.service
-        ExecStartPre=/usr/bin/systemctl is-active docker.service
-        ExecStartPre=/usr/bin/curl http://127.0.0.1:8080/version
-        ExecStart=/opt/bin/install-calico-system
-{{ end }}
 {{ if $.ElasticFileSystemID }}
     - name: rpc-statd.service
       command: start
@@ -240,9 +186,6 @@ coreos:
         [Service]
         Type=oneshot
         ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl -s -m 20 -f  http://127.0.0.1:8080/healthz > /dev/null &&  /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10252/healthz > /dev/null && /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10251/healthz > /dev/null &&  /usr/bin/curl --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null ; then break ; fi;  done"
-        {{ if .UseCalico }}
-        ExecStartPre=/usr/bin/systemctl is-active calico-node
-        {{ end }}
         ExecStart=/usr/bin/rkt run \
           --uuid-file-save=/var/run/coreos/cfn-signal.uuid \
           --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
@@ -298,7 +241,7 @@ coreos:
           http://localhost:8080/api/v1/nodes/$(hostname)"
 {{end}}
 
-{{if .Experimental.EphemeralImageStorage.Enabled}}
+{{if .Experimental.EphemeralImageStorage.Enabled}}mount
     - name: format-ephemeral.service
       command: start
       content: |
@@ -341,6 +284,10 @@ write_files:
     owner: root:root
     content: |
       #!/bin/bash -e
+      {{ if .UseCalico }}
+      /bin/bash /opt/bin/populate-tls-calico-etcd
+      /usr/bin/docker run --rm --net=host -v /srv/kubernetes/manifests:/host/manifests {{.HyperkubeImageRepo}}:{{.K8sVer}} /hyperkube kubectl apply -f /host/manifests/calico.yaml
+      {{ end }}
       /usr/bin/curl  -H "Content-Type: application/yaml" -XPOST \
       -d"$(cat /srv/kubernetes/manifests/kube-dns-rc.yaml)" \
       "http://127.0.0.1:8080/api/v1/namespaces/kube-system/replicationcontrollers"
@@ -380,14 +327,241 @@ write_files:
       exec nsenter -m -u -i -n -p -t 1 -- /usr/bin/rkt "$@"
 
 {{ if .UseCalico }}
-  - path: /opt/bin/install-calico-system
-    permissions: 0700
+  - path: /srv/kubernetes/manifests/calico.yaml
+    content: |
+      kind: ConfigMap
+      apiVersion: v1
+      metadata:
+        name: calico-config 
+        namespace: kube-system
+      data:
+        etcd_endpoints: "{{ .EtcdEndpoints }}"
+        cni_network_config: |-
+          {
+              "name": "calico",
+              "type": "flannel",
+              "delegate": {
+                  "type": "calico",
+                  "etcd_endpoints": "__ETCD_ENDPOINTS__",
+                  "etcd_key_file": "__ETCD_KEY_FILE__",
+                  "etcd_cert_file": "__ETCD_CERT_FILE__",
+                  "etcd_ca_cert_file": "__ETCD_CA_CERT_FILE__",
+                  "log_level": "info",
+                  "policy": {
+                      "type": "k8s",
+                      "k8s_api_root": "https://__KUBERNETES_SERVICE_HOST__:__KUBERNETES_SERVICE_PORT__",
+                      "k8s_auth_token": "__SERVICEACCOUNT_TOKEN__"
+                  },
+                  "kubernetes": {
+                      "kubeconfig": "__KUBECONFIG_FILEPATH__"
+                  }
+              }
+          }
+
+        etcd_ca: "/calico-secrets/etcd-ca"
+        etcd_cert: "/calico-secrets/etcd-cert"
+        etcd_key: "/calico-secrets/etcd-key"
+
+      ---
+
+      apiVersion: v1
+      kind: Secret
+      type: Opaque
+      metadata:
+        name: calico-etcd-secrets
+        namespace: kube-system
+      data:
+        etcd-key: "$ETCDKEY"
+        etcd-cert: "$ETCDCERT"
+        etcd-ca: "$ETCDCA"
+
+      ---
+
+      kind: DaemonSet
+      apiVersion: extensions/v1beta1
+      metadata:
+        name: calico-node
+        namespace: kube-system
+        labels:
+          k8s-app: calico-node
+      spec:
+        selector:
+          matchLabels:
+            k8s-app: calico-node
+        template:
+          metadata:
+            labels:
+              k8s-app: calico-node
+            annotations:
+              scheduler.alpha.kubernetes.io/critical-pod: ''
+              scheduler.alpha.kubernetes.io/tolerations: |
+                [{"key": "dedicated", "value": "master", "effect": "NoSchedule" },
+                {"key":"CriticalAddonsOnly", "operator":"Exists"}]
+          spec:
+            hostNetwork: true
+            containers:
+              - name: calico-node
+                image: quay.io/calico/node:v0.23.0
+                env:
+                  - name: ETCD_ENDPOINTS
+                    valueFrom:
+                      configMapKeyRef:
+                        name: calico-config
+                        key: etcd_endpoints
+                  - name: CALICO_NETWORKING_BACKEND 
+                    value: "none"
+                  - name: CALICO_DISABLE_FILE_LOGGING
+                    value: "true"
+                  - name: NO_DEFAULT_POOLS
+                    value: "true"
+                  - name: ETCD_CA_CERT_FILE
+                    valueFrom:
+                      configMapKeyRef:
+                        name: calico-config
+                        key: etcd_ca
+                  - name: ETCD_KEY_FILE
+                    valueFrom:
+                      configMapKeyRef:
+                        name: calico-config
+                        key: etcd_key
+                  - name: ETCD_CERT_FILE
+                    valueFrom:
+                      configMapKeyRef:
+                        name: calico-config
+                        key: etcd_cert
+                securityContext:
+                  privileged: true
+                volumeMounts:
+                  - mountPath: /lib/modules
+                    name: lib-modules
+                    readOnly: true
+                  - mountPath: /var/run/calico
+                    name: var-run-calico
+                    readOnly: false
+                  - mountPath: /calico-secrets
+                    name: etcd-certs
+                  - mountPath: /etc/resolv.conf
+                    name: dns
+                    readOnly: true
+              - name: install-cni
+                image: calico/cni:v1.5.2
+                imagePullPolicy: Always
+                command: ["/install-cni.sh"]
+                env:
+                  - name: ETCD_ENDPOINTS
+                    valueFrom:
+                      configMapKeyRef:
+                        name: calico-config
+                        key: etcd_endpoints
+                  - name: CNI_NETWORK_CONFIG
+                    valueFrom:
+                      configMapKeyRef:
+                        name: calico-config
+                        key: cni_network_config
+                  - name: CNI_NET_DIR
+                    value: "/etc/kubernetes/cni/net.d"
+                volumeMounts:
+                  - mountPath: /host/opt/cni/bin
+                    name: cni-bin-dir
+                  - mountPath: /host/etc/cni/net.d
+                    name: cni-net-dir
+                  - mountPath: /calico-secrets
+                    name: etcd-certs
+            volumes:
+              - name: lib-modules
+                hostPath:
+                  path: /lib/modules
+              - name: var-run-calico
+                hostPath:
+                  path: /var/run/calico
+              - name: cni-bin-dir
+                hostPath:
+                  path: /opt/cni/bin
+              - name: cni-net-dir
+                hostPath:
+                  path: /etc/kubernetes/cni/net.d
+              - name: etcd-certs
+                secret:
+                  secretName: calico-etcd-secrets
+              - name: dns
+                hostPath:
+                  path: /etc/resolv.conf
+
+      ---
+
+      apiVersion: extensions/v1beta1
+      kind: ReplicaSet 
+      metadata:
+        name: calico-policy-controller
+        namespace: kube-system
+        labels:
+          k8s-app: calico-policy
+        annotations:
+          scheduler.alpha.kubernetes.io/critical-pod: ''
+          scheduler.alpha.kubernetes.io/tolerations: |
+            [{"key": "dedicated", "value": "master", "effect": "NoSchedule" },
+            {"key":"CriticalAddonsOnly", "operator":"Exists"}]
+
+      spec:
+        replicas: 1
+        template:
+          metadata:
+            name: calico-policy-controller
+            namespace: kube-system
+            labels:
+              k8s-app: calico-policy
+          spec:
+            hostNetwork: true
+            containers:
+              - name: calico-policy-controller
+                image: calico/kube-policy-controller:v0.5.0
+                env:
+                  - name: ETCD_ENDPOINTS
+                    valueFrom:
+                      configMapKeyRef:
+                        name: calico-config
+                        key: etcd_endpoints
+                  - name: ETCD_CA_CERT_FILE
+                    valueFrom:
+                      configMapKeyRef:
+                        name: calico-config
+                        key: etcd_ca
+                  - name: ETCD_KEY_FILE
+                    valueFrom:
+                      configMapKeyRef:
+                        name: calico-config
+                        key: etcd_key
+                  - name: ETCD_CERT_FILE
+                    valueFrom:
+                      configMapKeyRef:
+                        name: calico-config
+                        key: etcd_cert
+                  - name: K8S_API
+                    value: "https://kubernetes.default:443"
+                  - name: CONFIGURE_ETC_HOSTS
+                    value: "true"
+                volumeMounts:
+                  - mountPath: /calico-secrets
+                    name: etcd-certs
+            volumes:
+              - name: etcd-certs
+                secret:
+                  secretName: calico-etcd-secrets
+  
+  - path: /opt/bin/populate-tls-calico-etcd
     owner: root:root
+    permissions: 0700
     content: |
       #!/bin/bash -e
-      /usr/bin/curl -H "Content-Type: application/json" -XPOST -d @"/srv/kubernetes/manifests/calico-system.json" "http://127.0.0.1:8080/api/v1/namespaces"
 
-      /usr/bin/cp /srv/kubernetes/manifests/calico-policy-controller.yaml /etc/kubernetes/manifests
+      etcd_ca=$(cat /etc/kubernetes/ssl/ca.pem | base64 | tr -d '\n')
+      etcd_key=$(cat /etc/kubernetes/ssl/etcd-client-key.pem | base64 | tr -d '\n')
+      etcd_cert=$(cat /etc/kubernetes/ssl/etcd-client.pem | base64 | tr -d '\n')
+
+      sed -i -e "s#\$ETCDCA#$etcd_ca#g" /srv/kubernetes/manifests/calico.yaml
+      sed -i -e "s#\$ETCDCERT#$etcd_cert#g" /srv/kubernetes/manifests/calico.yaml
+      sed -i -e "s#\$ETCDKEY#$etcd_key#g" /srv/kubernetes/manifests/calico.yaml
+
 {{ end }}
 
   - path: /opt/bin/decrypt-tls-assets
@@ -592,64 +766,6 @@ write_files:
               port: 10251
             initialDelaySeconds: 15
             timeoutSeconds: 15
-
-{{ if .UseCalico }}
-  - path: /srv/kubernetes/manifests/calico-policy-controller.yaml
-    content: |
-      apiVersion: v1
-      kind: Pod
-      metadata:
-        name: calico-policy-controller
-        namespace: calico-system
-      spec:
-        hostNetwork: true
-        containers:
-          # The Calico policy controller.
-          - name: kube-policy-controller
-            image: calico/kube-policy-controller:v0.3.0
-            env:
-              - name: ETCD_SCHEME
-                value: https
-              - name: ETCD_CA_CERT_FILE
-                value: "/etc/etcd2/ssl/ca.pem"
-              - name: ETCD_CERT_FILE
-                value: "/etc/etcd2/ssl/etcd-client.pem"
-              - name: ETCD_KEY_FILE
-                value: "/etc/etcd2/ssl/etcd-client-key.pem"
-              - name: ETCD_ENDPOINTS
-                value: "{{ .EtcdEndpoints }}"
-              - name: K8S_API
-                value: "http://127.0.0.1:8080"
-              - name: LEADER_ELECTION
-                value: "true"
-            volumeMounts:
-            - mountPath: /etc/etcd2/ssl
-              name: ssl
-          # Leader election container used by the policy controller.
-          - name: leader-elector
-            image: gcr.io/google_containers/leader-elector:0.5
-            imagePullPolicy: IfNotPresent
-            args:
-              - "--election=calico-policy-election"
-              - "--election-namespace=calico-system"
-              - "--http=127.0.0.1:4040"
-        volumes:
-        - name: ssl
-          hostPath:
-            path: /etc/kubernetes/ssl
-{{ end }}
-
-{{ if .UseCalico }}
-  - path: /srv/kubernetes/manifests/calico-system.json
-    content: |
-        {
-          "apiVersion": "v1",
-          "kind": "Namespace",
-          "metadata": {
-            "name": "calico-system"
-          }
-        }
-{{ end }}
 
   - path: /srv/kubernetes/manifests/kube-dns-rc.yaml
     content: |
@@ -952,25 +1068,7 @@ write_files:
     content: {{.TLSConfig.EtcdClientKey}}
 
 
-{{ if .UseCalico }}
-  - path: /etc/kubernetes/cni/net.d/10-calico.conf
-    content: |
-        {
-            "name": "calico",
-            "type": "flannel",
-            "delegate": {
-                "type": "calico",
-                "etcd_endpoints": "{{ .EtcdEndpoints }}",
-                "log_level": "none",
-                "log_level_stderr": "info",
-                "hostname": "$private_ipv4",
-                "policy": {
-                    "type": "k8s",
-                    "k8s_api_root": "http://127.0.0.1:8080/api/v1/"
-                }
-            }
-        }
-{{ else }}
+{{ if not .UseCalico }}
   - path: /etc/kubernetes/cni/net.d/10-flannel.conf
     content: |
         {
