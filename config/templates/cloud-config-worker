@@ -145,7 +145,7 @@ coreos:
         --mount=volume=dns,target=/etc/resolv.conf \
         --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=true \
         --mount=volume=ssl,target=/etc/etcd2/ssl \
-        --trust-keys-from-https quay.io/calico/node:v0.22.0
+        --trust-keys-from-https quay.io/calico/node:v0.23.0
         KillMode=mixed
         Restart=always
         TimeoutStartSec=0
