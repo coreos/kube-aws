@@ -65,19 +65,19 @@
           "{{$subnet.AvailabilityZone}}"
           {{end}}
         ],
-        "DesiredCapacity": "{{.WorkerCount}}",
+        "DesiredCapacity": "{{.WorkerASG.MinSize}}",
         "HealthCheckGracePeriod": 600,
         "HealthCheckType": "EC2",
         "LaunchConfigurationName": {
           "Ref": "LaunchConfigurationWorker"
         },
-        "MaxSize": "{{.MaxWorkerCount}}",
+        "MaxSize": "{{.WorkerASG.MaxSize}}",
         "MetricsCollection": [
           {
             "Granularity": "1Minute"
           }
         ],
-        "MinSize": "{{.MinWorkerCount}}",
+        "MinSize": "{{.WorkerASG.MinSize}}",
         "Tags": [
           {
             "Key": "KubernetesCluster",
@@ -118,7 +118,7 @@
       {{if .Experimental.WaitSignal.Enabled}}
       "CreationPolicy" : {
         "ResourceSignal" : {
-          "Count" : "{{.WorkerCount}}",
+          "Count" : "{{.WorkerASG.MinSize}}",
           "Timeout" : "{{.WorkerCreateTimeout}}"
         }
       },
@@ -129,7 +129,7 @@
           {{if .WorkerSpotPrice}}
           "0"
           {{else}}
-          "{{.WorkerCount}}"
+          "{{.WorkerASG.RollingUpdateMinInstancesInService}}"
           {{end}},
           {{if .Experimental.WaitSignal.Enabled}}
           "WaitOnResourceSignals" : "true",

@@ -18,6 +18,7 @@ import (
 	"github.com/coreos/kube-aws/filereader/jsontemplate"
 	"github.com/coreos/kube-aws/filereader/userdatatemplate"
 	"github.com/coreos/kube-aws/netutil"
+	"github.com/coreos/kube-aws/util"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -229,24 +230,26 @@ type DeploymentSettings struct {
 
 // Part of configuration which is specific to worker nodes
 type WorkerSettings struct {
-	WorkerCount            int      `yaml:"workerCount,omitempty"`
-	WorkerCreateTimeout    string   `yaml:"workerCreateTimeout,omitempty"`
-	WorkerInstanceType     string   `yaml:"workerInstanceType,omitempty"`
-	WorkerRootVolumeType   string   `yaml:"workerRootVolumeType,omitempty"`
-	WorkerRootVolumeIOPS   int      `yaml:"workerRootVolumeIOPS,omitempty"`
-	WorkerRootVolumeSize   int      `yaml:"workerRootVolumeSize,omitempty"`
-	WorkerSpotPrice        string   `yaml:"workerSpotPrice,omitempty"`
-	WorkerSecurityGroupIds []string `yaml:"workerSecurityGroupIds,omitempty"`
+	WorkerCount            int              `yaml:"workerCount,omitempty"`
+	WorkerASG              AutoScalingGroup `yaml:"workerASG,omitempty"`
+	WorkerCreateTimeout    string           `yaml:"workerCreateTimeout,omitempty"`
+	WorkerInstanceType     string           `yaml:"workerInstanceType,omitempty"`
+	WorkerRootVolumeType   string           `yaml:"workerRootVolumeType,omitempty"`
+	WorkerRootVolumeIOPS   int              `yaml:"workerRootVolumeIOPS,omitempty"`
+	WorkerRootVolumeSize   int              `yaml:"workerRootVolumeSize,omitempty"`
+	WorkerSpotPrice        string           `yaml:"workerSpotPrice,omitempty"`
+	WorkerSecurityGroupIds []string         `yaml:"workerSecurityGroupIds,omitempty"`
 }
 
 // Part of configuration which is specific to controller nodes
 type ControllerSettings struct {
-	ControllerCount          int    `yaml:"controllerCount,omitempty"`
-	ControllerCreateTimeout  string `yaml:"controllerCreateTimeout,omitempty"`
-	ControllerInstanceType   string `yaml:"controllerInstanceType,omitempty"`
-	ControllerRootVolumeType string `yaml:"controllerRootVolumeType,omitempty"`
-	ControllerRootVolumeIOPS int    `yaml:"controllerRootVolumeIOPS,omitempty"`
-	ControllerRootVolumeSize int    `yaml:"controllerRootVolumeSize,omitempty"`
+	ControllerCount          int              `yaml:"controllerCount,omitempty"`
+	ControllerASG            AutoScalingGroup `yaml:"controllerASG,omitempty"`
+	ControllerCreateTimeout  string           `yaml:"controllerCreateTimeout,omitempty"`
+	ControllerInstanceType   string           `yaml:"controllerInstanceType,omitempty"`
+	ControllerRootVolumeType string           `yaml:"controllerRootVolumeType,omitempty"`
+	ControllerRootVolumeIOPS int              `yaml:"controllerRootVolumeIOPS,omitempty"`
+	ControllerRootVolumeSize int              `yaml:"controllerRootVolumeSize,omitempty"`
 }
 
 // Part of configuration which is specific to etcd nodes
@@ -378,14 +381,6 @@ var supportedReleaseChannels = map[string]bool{
 	"stable": true,
 }
 
-func (c WorkerSettings) MinWorkerCount() int {
-	return c.WorkerCount - 1
-}
-
-func (c WorkerSettings) MaxWorkerCount() int {
-	return c.WorkerCount + 1
-}
-
 // Required by kubelet to locate the apiserver
 func (c KubeClusterSettings) APIServerEndpoint() string {
 	return fmt.Sprintf("https://%s", c.ExternalDNSName)
@@ -399,8 +394,33 @@ func (c KubeClusterSettings) K8sNetworkPlugin() string {
 func (c Cluster) Config() (*Config, error) {
 	config := Config{Cluster: c}
 
-	config.MinControllerCount = config.ControllerCount - 1
-	config.MaxControllerCount = config.ControllerCount + 1
+	// setup controller ASG size, one is the default ControllerCount
+	if config.ControllerCount != 1 && (config.ControllerASG.MinSize != 0 || config.ControllerASG.MaxSize != 0) {
+		return nil, fmt.Errorf("`controllerASG.MinSize` and `controllerASG.MaxSize` can only be specified without `controllerCount`")
+	}
+	if config.ControllerASG.MinSize == 0 {
+		config.ControllerASG.MinSize = config.ControllerCount
+	}
+	if config.ControllerASG.MaxSize == 0 {
+		config.ControllerASG.MaxSize = util.IntMax(config.ControllerCount, config.ControllerASG.MinSize)
+	}
+	if config.ControllerASG.RollingUpdateMinInstancesInService == 0 {
+		config.ControllerASG.RollingUpdateMinInstancesInService = config.ControllerASG.MaxSize - 1
+	}
+
+	// setup worker ASG size, one is the default WorkerCount
+	if config.WorkerCount != 1 && (config.WorkerASG.MinSize != 0 || config.WorkerASG.MaxSize != 0) {
+		return nil, fmt.Errorf("`workerASG.MinSize` and `workerASG.MaxSize` can only be specified without `workerCount`")
+	}
+	if config.WorkerASG.MinSize == 0 {
+		config.WorkerASG.MinSize = config.WorkerCount
+	}
+	if config.WorkerASG.MaxSize == 0 {
+		config.WorkerASG.MaxSize = util.IntMax(config.WorkerCount, config.WorkerASG.MinSize)
+	}
+	if config.WorkerASG.RollingUpdateMinInstancesInService == 0 {
+		config.WorkerASG.RollingUpdateMinInstancesInService = config.WorkerASG.MaxSize - 1
+	}
 
 	// Check if we are running CoreOS 1151.0.0 or greater when using rkt as
 	// runtime. Proceed regardless if running alpha. TODO(pb) delete when rkt
@@ -629,9 +649,6 @@ type etcdInstance struct {
 
 type Config struct {
 	Cluster
-
-	MinControllerCount int
-	MaxControllerCount int
 
 	EtcdEndpoints      string
 	EtcdInitialCluster string

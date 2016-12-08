@@ -46,8 +46,14 @@ availabilityZone: {{.AvailabilityZone}}
 # ARN of the KMS key used to encrypt TLS assets.
 kmsKeyArn: "{{.KMSKeyARN}}"
 
-# Number of worker nodes to create
+# Number of worker nodes to create, for more control use `workerASG` and do not use this setting
 #workerCount: 1
+
+# Auto Scaling Group definition for workers. If only `workerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
+# workerASG:
+#   minSize: 1
+#   maxSize: 3
+#   rollingUpdateMinInstancesInService: 2
 
 # Instance type for worker nodes
 #workerInstanceType: m3.medium

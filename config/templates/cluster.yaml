@@ -50,8 +50,14 @@ availabilityZone: {{.AvailabilityZone}}
 # ARN of the KMS key used to encrypt TLS assets.
 kmsKeyArn: "{{.KMSKeyARN}}"
 
-# Number of controller nodes to create
+# Number of controller nodes to create, for more control use `controllerASG` and do not use this setting
 #controllerCount: 1
+
+# Auto Scaling Group definition for controllers. If only `controllerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
+# controllerASG:
+#   minSize: 1
+#   maxSize: 3
+#   rollingUpdateMinInstancesInService: 2
 
 # Maximum time to wait for controller creation
 #controlerCreateTimeout: PT15M
@@ -68,8 +74,14 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 # Number of I/O operations per second (IOPS) that the controller node disk supports. Leave blank if controllerRootVolumeType is not io1
 #controllerRootVolumeIOPS: 0
 
-# Number of worker nodes to create
+# Number of worker nodes to create, for more control use `workerASG` and do not use this setting
 #workerCount: 1
+
+# Auto Scaling Group definition for workers. If only `workerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
+# workerASG:
+#   minSize: 1
+#   maxSize: 3
+#   rollingUpdateMinInstancesInService: 2
 
 # Maximum time to wait for worker creation
 #workerCreateTimeout: PT15M
