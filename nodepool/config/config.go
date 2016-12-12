@@ -82,13 +82,13 @@ func (c ProvidedConfig) ValidateUserData(opts StackTemplateOptions) error {
 	return err
 }
 
-func (c ProvidedConfig) RenderStackTemplate(opts StackTemplateOptions) ([]byte, error) {
+func (c ProvidedConfig) RenderStackTemplate(opts StackTemplateOptions, prettyPrint bool) ([]byte, error) {
 	stackConfig, err := c.stackConfig(opts, true)
 	if err != nil {
 		return nil, err
 	}
 
-	bytes, err := jsontemplate.GetBytes(opts.StackTemplateTmplFile, stackConfig)
+	bytes, err := jsontemplate.GetBytes(opts.StackTemplateTmplFile, stackConfig, prettyPrint)
 
 	if err != nil {
 		return nil, err

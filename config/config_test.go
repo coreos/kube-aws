@@ -937,7 +937,7 @@ func TestRenderStackTemplate(t *testing.T) {
 			StackTemplateTmplFile: "templates/stack-template.json",
 		}
 
-		if _, err := cluster.RenderStackTemplate(stackTemplateOptions); err != nil {
+		if _, err := cluster.RenderStackTemplate(stackTemplateOptions, false); err != nil {
 			t.Errorf("failed to render stack template: %v", err)
 		}
 	})
@@ -1302,7 +1302,7 @@ etcdDataVolumeIOPS: 104
 				})
 
 				t.Run("RenderStackTemplate", func(t *testing.T) {
-					if _, err := providedConfig.RenderStackTemplate(stackTemplateOptions); err != nil {
+					if _, err := providedConfig.RenderStackTemplate(stackTemplateOptions, false); err != nil {
 						t.Errorf("failed to render stack template: %v", err)
 					}
 				})

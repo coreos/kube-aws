@@ -427,7 +427,7 @@ experimental:
 				})
 
 				t.Run("RenderStackTemplate", func(t *testing.T) {
-					if _, err := providedConfig.RenderStackTemplate(stackTemplateOptions); err != nil {
+					if _, err := providedConfig.RenderStackTemplate(stackTemplateOptions, false); err != nil {
 						t.Errorf("failed to render stack template: %v", err)
 					}
 				})

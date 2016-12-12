@@ -608,13 +608,13 @@ func (c Cluster) ValidateUserData(opts StackTemplateOptions) error {
 	return err
 }
 
-func (c Cluster) RenderStackTemplate(opts StackTemplateOptions) ([]byte, error) {
+func (c Cluster) RenderStackTemplate(opts StackTemplateOptions, prettyPrint bool) ([]byte, error) {
 	stackConfig, err := c.stackConfig(opts, true)
 	if err != nil {
 		return nil, err
 	}
 
-	bytes, err := jsontemplate.GetBytes(opts.StackTemplateTmplFile, stackConfig)
+	bytes, err := jsontemplate.GetBytes(opts.StackTemplateTmplFile, stackConfig, prettyPrint)
 	if err != nil {
 		return nil, err
 	}

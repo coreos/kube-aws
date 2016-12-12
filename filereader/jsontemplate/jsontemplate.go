@@ -7,7 +7,7 @@ import (
 	"github.com/coreos/kube-aws/filereader/texttemplate"
 )
 
-func GetBytes(filename string, data interface{}) ([]byte, error) {
+func GetBytes(filename string, data interface{}, prettyPrint bool) ([]byte, error) {
 	rendered, err := texttemplate.GetString(filename, data)
 	if err != nil {
 		return nil, err
@@ -25,11 +25,18 @@ func GetBytes(filename string, data interface{}) ([]byte, error) {
 		return nil, err
 	}
 
-	// minify JSON
+	// minify or pretty print JSON
 	var buff bytes.Buffer
-	if err := json.Compact(&buff, renderedBytes); err != nil {
+	err = nil
+	if prettyPrint {
+		err = json.Indent(&buff, renderedBytes, "", "  ")
+	} else {
+		err = json.Compact(&buff, renderedBytes)
+	}
+	if err != nil {
 		return nil, err
 	}
+
 	return buff.Bytes(), nil
 }
 
