@@ -10,6 +10,7 @@ import (
 	"github.com/coreos/kube-aws/coreos/userdatavalidation"
 	"github.com/coreos/kube-aws/filereader/jsontemplate"
 	"github.com/coreos/kube-aws/filereader/userdatatemplate"
+	model "github.com/coreos/kube-aws/model"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 )
@@ -29,7 +30,6 @@ type ProvidedConfig struct {
 	cfg.KubeClusterSettings `yaml:",inline"`
 	cfg.WorkerSettings      `yaml:",inline"`
 	cfg.DeploymentSettings  `yaml:",inline"`
-	Worker                  `yaml:"worker,omitempty"`
 	EtcdEndpoints           string `yaml:"etcdEndpoints,omitempty"`
 	NodePoolName            string `yaml:"nodePoolName,omitempty"`
 	providedEncryptService  cfg.EncryptService
@@ -114,10 +114,12 @@ func ClusterFromFile(filename string) (*ProvidedConfig, error) {
 func NewDefaultCluster() *ProvidedConfig {
 	defaults := cfg.NewDefaultCluster()
 
+	workerSettings := defaults.WorkerSettings
+	workerSettings.Worker = model.NewDefaultWorker()
+
 	return &ProvidedConfig{
 		DeploymentSettings: defaults.DeploymentSettings,
-		WorkerSettings:     defaults.WorkerSettings,
-		Worker:             NewDefaultWorker(),
+		WorkerSettings:     workerSettings,
 	}
 }
 
@@ -134,7 +136,7 @@ func ClusterFromBytes(data []byte) (*ProvidedConfig, error) {
 	}
 
 	//Computed defaults
-	launchSpecs := []LaunchSpecification{}
+	launchSpecs := []model.LaunchSpecification{}
 	for _, spec := range c.Worker.SpotFleet.LaunchSpecifications {
 		if spec.RootVolumeType == "" {
 			spec.RootVolumeType = c.Worker.SpotFleet.RootVolumeType

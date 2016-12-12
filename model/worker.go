@@ -1,9 +1,10 @@
-package config
+package model
 
 import "fmt"
 
 type Worker struct {
-	SpotFleet `yaml:"spotFleet,omitempty"`
+	AutoScalingGroup `yaml:"autoScalingGroup,omitempty"`
+	SpotFleet        `yaml:"spotFleet,omitempty"`
 }
 
 // UnitRootVolumeSize/IOPS are used for spot fleets instead of WorkerRootVolumeSize/IOPS,

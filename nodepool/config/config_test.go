@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/service/kms"
 	cfg "github.com/coreos/kube-aws/config"
+	model "github.com/coreos/kube-aws/model"
 	"github.com/coreos/kube-aws/test/helper"
 	"reflect"
 	"strings"
@@ -40,7 +41,7 @@ dnsServiceIP: "10.3.0.10"
 etcdEndpoints: "10.0.0.1"
 `
 	hasDefaultLaunchSpecifications := func(c *ProvidedConfig, t *testing.T) {
-		expected := []LaunchSpecification{
+		expected := []model.LaunchSpecification{
 			{
 				WeightedCapacity: 1,
 				InstanceType:     "m3.medium",
@@ -248,7 +249,7 @@ worker:
 			assertProvidedConfig: []ConfigTester{
 				hasDefaultExperimentalFeatures,
 				func(c *ProvidedConfig, t *testing.T) {
-					expected := []LaunchSpecification{
+					expected := []model.LaunchSpecification{
 						{
 							WeightedCapacity: 1,
 							InstanceType:     "m3.medium",
@@ -296,7 +297,7 @@ worker:
 			assertProvidedConfig: []ConfigTester{
 				hasDefaultExperimentalFeatures,
 				func(c *ProvidedConfig, t *testing.T) {
-					expected := []LaunchSpecification{
+					expected := []model.LaunchSpecification{
 						{
 							WeightedCapacity: 1,
 							InstanceType:     "m3.medium",

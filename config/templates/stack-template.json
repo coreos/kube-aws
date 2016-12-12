@@ -17,19 +17,18 @@
           "{{$subnet.AvailabilityZone}}"
           {{end}}
         ],
-        "DesiredCapacity": "{{.WorkerASG.MinSize}}",
         "HealthCheckGracePeriod": 600,
         "HealthCheckType": "EC2",
         "LaunchConfigurationName": {
           "Ref": "LaunchConfigurationWorker"
         },
-        "MaxSize": "{{.WorkerASG.MaxSize}}",
+        "MaxSize": "{{.MaxWorkerCount}}",
         "MetricsCollection": [
           {
             "Granularity": "1Minute"
           }
         ],
-        "MinSize": "{{.WorkerASG.MinSize}}",
+        "MinSize": "{{.MinWorkerCount}}",
         "Tags": [
           {
             "Key": "KubernetesCluster",
@@ -65,7 +64,7 @@
       {{if .Experimental.WaitSignal.Enabled}}
       "CreationPolicy" : {
         "ResourceSignal" : {
-          "Count" : "{{.WorkerASG.MinSize}}",
+          "Count" : "{{.MinWorkerCount}}",
           "Timeout" : "{{.WorkerCreateTimeout}}"
         }
       },
@@ -76,7 +75,7 @@
           {{if .WorkerSpotPrice}}
           "0"
           {{else}}
-          "{{.WorkerASG.RollingUpdateMinInstancesInService}}"
+          "{{.WorkerRollingUpdateMinInstancesInService}}"
           {{end}},
           {{if .Experimental.WaitSignal.Enabled}}
           "WaitOnResourceSignals" : "true",
@@ -99,19 +98,18 @@
           "{{$subnet.AvailabilityZone}}"
           {{end}}
         ],
-        "DesiredCapacity": "{{.ControllerASG.MinSize}}",
         "HealthCheckGracePeriod": 600,
         "HealthCheckType": "EC2",
         "LaunchConfigurationName": {
           "Ref": "LaunchConfigurationController"
         },
-        "MaxSize": "{{.ControllerASG.MaxSize}}",
+        "MaxSize": "{{.MaxControllerCount}}",
         "MetricsCollection": [
           {
             "Granularity": "1Minute"
           }
         ],
-        "MinSize": "{{.ControllerASG.MinSize}}",
+        "MinSize": "{{.MinControllerCount}}",
         "Tags": [
           {
             "Key": "KubernetesCluster",
@@ -141,14 +139,14 @@
       {{if .Experimental.WaitSignal.Enabled}}
       "CreationPolicy" : {
         "ResourceSignal" : {
-          "Count" : "{{.ControllerASG.MinSize}}",
+          "Count" : "{{.MinControllerCount}}",
           "Timeout" : "{{.ControllerCreateTimeout}}"
         }
       },
       {{end}}
       "UpdatePolicy" : {
         "AutoScalingRollingUpdate" : {
-          "MinInstancesInService" : "{{.ControllerASG.RollingUpdateMinInstancesInService}}",
+          "MinInstancesInService" : "{{.ControllerRollingUpdateMinInstancesInService}}",
           "MaxBatchSize" : "1",
           {{if .Experimental.WaitSignal.Enabled}}
           "WaitOnResourceSignals" : "true",
