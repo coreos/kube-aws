@@ -9,6 +9,3 @@
 coverage.txt
 profile.out
 /.glide
-
-# files generated during tests
-config/temp
