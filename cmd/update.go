@@ -26,7 +26,7 @@ var (
 func init() {
 	RootCmd.AddCommand(cmdUpdate)
 	cmdUpdate.Flags().BoolVar(&updateOpts.awsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
-	cmdUpdate.Flags().BoolVar(&updateOpts.prettyPrint, "prettyPrint", false, "Pretty print the resulting CloudFormation")
+	cmdUpdate.Flags().BoolVar(&updateOpts.prettyPrint, "pretty-print", false, "Pretty print the resulting CloudFormation")
 	cmdUpdate.Flags().StringVar(&updateOpts.s3URI, "s3-uri", "", "When your template is bigger than the cloudformation limit of 51200 bytes, upload the template to the specified location in S3. S3 location expressed as s3://<bucket>/path/to/dir")
 }
 
