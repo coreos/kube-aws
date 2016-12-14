@@ -379,6 +379,9 @@ var supportedReleaseChannels = map[string]bool{
 }
 
 func (c WorkerSettings) MinWorkerCount() int {
+	if c.WorkerCount == 0 {
+		return 0
+	}
 	return c.WorkerCount - 1
 }
 
