@@ -37,6 +37,13 @@ coreos:
 {{end}}
     - name: docker.service
       drop-ins:
+{{if .Experimental.EphemeralImageStorage.Enabled}}
+        - name: 10-docker-mount.conf
+          content: |
+            [Unit]
+            After=var-lib-docker.mount
+            Wants=var-lib-docker.mount
+{{end}}
         - name: 40-flannel.conf
           content: |
             [Unit]
@@ -175,6 +182,24 @@ coreos:
         [Install]
         WantedBy=kubelet.service
 {{ end }}
+    - name: kube-node-taint-and-uncordon.service
+      command: start
+      runtime: true
+      content: |
+        [Unit]
+        Description=Taint this kubernetes node with its role and then uncordon it
+        Wants=kubelet.service
+        After=kubelet.service
+        Before=cfn-signal.service
+
+        [Service]
+        Type=simple
+        StartLimitInterval=0
+        RestartSec=10
+        Restart=on-failure
+        ExecStartPre=/usr/bin/systemctl is-active kubelet.service
+        ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl -s -m 20 -f  http://127.0.0.1:8080/healthz > /dev/null &&  /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10252/healthz > /dev/null && /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10251/healthz > /dev/null &&  /usr/bin/curl --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null ; then break ; fi;  done"
+        ExecStart=/opt/bin/taint-and-uncordon
 {{if .Experimental.WaitSignal.Enabled}}
     - name: cfn-signal.service
       command: start
@@ -199,7 +224,7 @@ coreos:
               --resource AutoScaleController \
               --stack {{.ClusterName}}
 {{end}}
-{{if .Experimental.NodeLabel.Enabled }}
+{{if .Experimental.AwsNodeLabels.Enabled }}
     - name: kube-node-label.service
       enable: true
       command: start
@@ -215,18 +240,18 @@ coreos:
         ExecStop=/bin/true
         RemainAfterExit=true
         ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment INSTANCE_ID=$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id)"
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment SECURITY_GROUPS=$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/security-groups | tr '\n' ',')"
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment AUTOSCALINGGROUP=$(/usr/bin/docker run --rm --net=host \
+        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment SECURITY_GROUPS=\"$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/security-groups | tr '\n' ',')\""
+        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment AUTOSCALINGGROUP=\"$(/usr/bin/docker run --rm --net=host \
           {{.AWSCliImageRepo}}:{{.AWSCliTag}} aws \
           autoscaling describe-auto-scaling-instances \
           --instance-ids ${INSTANCE_ID} --region {{.Region}} \
-          --query 'AutoScalingInstances[].AutoScalingGroupName' --output text)"
+          --query 'AutoScalingInstances[].AutoScalingGroupName' --output text)\""
         ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment \
-          LAUNCHCONFIGURATION=$(/usr/bin/docker run --rm --net=host \
+          LAUNCHCONFIGURATION=\"$(/usr/bin/docker run --rm --net=host \
           {{.AWSCliImageRepo}}:{{.AWSCliTag}} \
           aws autoscaling describe-auto-scaling-groups \
           --auto-scaling-group-name $AUTOSCALINGGROUP --region {{.Region}} \
-          --query 'AutoScalingGroups[].LaunchConfigurationName' --output text)"
+          --query 'AutoScalingGroups[].LaunchConfigurationName' --output text)\""
         ExecStart=/bin/sh -c "/usr/bin/curl \
           --request PATCH \
           -H 'Content-Type: application/strategic-merge-patch+json' \
@@ -250,6 +275,7 @@ coreos:
       content: |
         [Unit]
         Description=Formats the ephemeral drive
+        ConditionFirstBoot=yes
         After=dev-{{.Experimental.EphemeralImageStorage.Disk}}.device
         Requires=dev-{{.Experimental.EphemeralImageStorage.Disk}}.device
         [Service]
@@ -602,6 +628,39 @@ write_files:
       done
       echo done.
 
+  - path: /opt/bin/taint-and-uncordon
+    owner: root:root
+    permissions: 0700
+    content: |
+      #!/bin/bash -e
+
+      hostname=$(hostname)
+
+      sudo rkt run \
+        --volume=kube,kind=host,source=/etc/kubernetes,readOnly=true \
+        --mount=volume=kube,target=/etc/kubernetes \
+        --uuid-file-save=/var/run/coreos/taint-and-uncordon.uuid \
+        --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
+        --net=host \
+        --trust-keys-from-https \
+        {{.HyperkubeImageRepo}}:{{.K8sVer}} --exec=/bin/bash -- \
+          -vxc \
+          'echo tainting this node; \
+           hostname="'${hostname}'"; \
+           kubectl="/kubectl --server=http://127.0.0.1:8080"; \
+           taint="$kubectl taint node $hostname"; \
+           $taint "node.alpha.kubernetes.io/role:master:NoSchedule"; \
+           echo done. ;\
+           echo uncordoning this node; \
+           $kubectl uncordon $hostname;\
+           echo done.'
+
+      echo cleaning pod resources.
+
+      sudo rkt rm --uuid-file=/var/run/coreos/taint-and-uncordon.uuid
+
+      echo done.
+
   - path: /etc/kubernetes/manifests/kube-proxy.yaml
     content: |
         apiVersion: v1
@@ -660,13 +719,21 @@ write_files:
           - --allow-privileged=true
           - --service-cluster-ip-range={{.ServiceCIDR}}
           - --secure-port=443
+          {{if .Experimental.AuditLog.Enabled}}
+          - --audit-log-maxage={{.Experimental.AuditLog.MaxAge}}
+          - --audit-log-path={{.Experimental.AuditLog.LogPath}}
+          {{ end }}
+          {{if .Experimental.Plugins.Rbac.Enabled}}
+          - --authorization-mode=RBAC
+          - --authorization-rbac-super-user=kube-admin
+          {{ end }}
           - --advertise-address=$private_ipv4
           - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota
           - --tls-cert-file=/etc/kubernetes/ssl/apiserver.pem
           - --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
           - --client-ca-file=/etc/kubernetes/ssl/ca.pem
           - --service-account-key-file=/etc/kubernetes/ssl/apiserver-key.pem
-          - --runtime-config=extensions/v1beta1/networkpolicies=true,batch/v2alpha1
+          - --runtime-config=extensions/v1beta1/networkpolicies=true,batch/v2alpha1{{if .Experimental.Plugins.Rbac.Enabled}},rbac.authorization.k8s.io/v1alpha1=true{{ end }}
           - --cloud-provider=aws
           livenessProbe:
             httpGet:
@@ -994,11 +1061,11 @@ write_files:
         apiVersion: v1
         kind: ReplicationController
         metadata:
-          name: kubernetes-dashboard-v1.4.1
+          name: kubernetes-dashboard-v1.5.0
           namespace: kube-system
           labels:
             k8s-app: kubernetes-dashboard
-            version: v1.4.1
+            version: v1.5.0
             kubernetes.io/cluster-service: "true"
         spec:
           replicas: 1
@@ -1008,7 +1075,7 @@ write_files:
             metadata:
               labels:
                 k8s-app: kubernetes-dashboard
-                version: v1.4.1
+                version: v1.5.0
                 kubernetes.io/cluster-service: "true"
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
@@ -1016,7 +1083,7 @@ write_files:
             spec:
               containers:
               - name: kubernetes-dashboard
-                image: gcr.io/google_containers/kubernetes-dashboard-amd64:v1.4.1
+                image: gcr.io/google_containers/kubernetes-dashboard-amd64:v1.5.0
                 resources:
                   limits:
                     cpu: 100m

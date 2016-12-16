@@ -35,7 +35,7 @@ func nodePoolExportedStackTemplatePath() string {
 func stackTemplateOptions() config.StackTemplateOptions {
 	return config.StackTemplateOptions{
 		TLSAssetsDir:          "credentials",
-		WorkerTmplFile:        fmt.Sprintf("%s/userdata/cloud-config-worker", nodePoolConfigDirPath(), nodePoolOpts.PoolName),
+		WorkerTmplFile:        fmt.Sprintf("%s/userdata/cloud-config-worker", nodePoolConfigDirPath()),
 		StackTemplateTmplFile: fmt.Sprintf("%s/stack-template.json", nodePoolConfigDirPath()),
 	}
 }

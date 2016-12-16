@@ -3,6 +3,11 @@
 KUBE_AWS_CMD=${KUBE_AWS_CMD:-$GOPATH/src/github.com/coreos/kube-aws/bin/kube-aws}
 E2E_DIR=$(cd $(dirname $0); pwd)
 WORK_DIR=${E2E_DIR}/assets/${KUBE_AWS_CLUSTER_NAME}
+TESTINFRA_DIR=${E2E_DIR}/testinfra
+KUBE_AWS_NODE_POOL_INDEX=${KUBE_AWS_NODE_POOL_INDEX:-1}
+KUBE_AWS_NODE_POOL_NAME=${KUBE_AWS_CLUSTER_NAME}-nodepool${KUBE_AWS_NODE_POOL_INDEX}
+NODE_POOL_ASSETS_DIR=${E2E_DIR}/assets/${KUBE_AWS_CLUSTER_NAME}/node-pools/${KUBE_AWS_NODE_POOL_NAME}
+KUBE_AWS_TEST_INFRA_STACK_NAME=${KUBE_AWS_TEST_INFRA_STACK_NAME:-${KUBE_AWS_CLUSTER_NAME}-testinfra}
 SRC_DIR=$(cd $(dirname $0); cd ..; pwd)
 KUBECONFIG=${WORK_DIR}/kubeconfig
 
@@ -72,19 +77,12 @@ configure() {
   # required to run kube-aws update
   echo 'workerCount: 2' >> cluster.yaml
   echo 'controllerCount: 2' >> cluster.yaml
-  echo -e 'experimental:\n  nodeDrainer:\n    enabled: true' >> cluster.yaml
-  if [ "${KUBE_AWS_WAIT_SIGNAL_ENABLED}" != "" ]; then
-    echo -e '  waitSignal:\n    enabled: true' >> cluster.yaml
-  fi
-  if [ "${KUBE_AWS_NODE_LABEL_ENABLED}" != "" ]; then
-    echo -e '  nodeLabel:\n    enabled: true' >> cluster.yaml
-  fi
-  if [ "${KUBE_AWS_AWS_ENV_ENABLED}" != "" ]; then
-    echo -e "  awsEnvironment:\n    enabled: true\n    environment:\n      CFNSTACK: '{\"Ref\":\"AWS::StackId\"}'" >> cluster.yaml
-  fi
+
   if [ "${KUBE_AWS_USE_CALICO}" != "" ]; then
     echo 'useCalico: true' >> cluster.yaml
   fi
+
+  customize_worker
 
   ${KUBE_AWS_CMD} render
 
@@ -92,6 +90,44 @@ configure() {
 
   echo Generated configuration files in ${WORK_DIR}:
   find .
+}
+
+customize_worker() {
+  echo Writing to $(pwd)/cluster.yaml
+
+  if [ "${KUBE_AWS_DEPLOY_TO_EXISTING_VPC}" != "" ]; then
+    echo "vpcId: $(testinfra_vpc)" >> cluster.yaml
+    echo "routeTableId: $(testinfra_public_routetable)" >> cluster.yaml
+    echo -e "workerSecurityGroupIds:\n- $(testinfra_glue_sg)" >> cluster.yaml
+  fi
+
+  #
+  # Optionally enable experimental other features
+  #
+
+  echo -e 'experimental:\n  nodeDrainer:\n    enabled: true' >> cluster.yaml
+  if [ "${KUBE_AWS_WAIT_SIGNAL_ENABLED}" != "" ]; then
+    echo -e '  waitSignal:\n    enabled: true' >> cluster.yaml
+  fi
+  if [ "${KUBE_AWS_AWS_NODE_LABELS_ENABLED}" != "" ]; then
+    echo -e '  awsNodeLabels:\n    enabled: true' >> cluster.yaml
+  fi
+  if [ "${KUBE_AWS_NODE_LABELS_ENABLED}" != "" ]; then
+    echo -e '  nodeLabels:\n    kube-aws.coreos.com/role: worker' >> cluster.yaml
+  fi
+  if [ "${KUBE_AWS_AWS_ENV_ENABLED}" != "" ]; then
+    echo -e "  awsEnvironment:\n    enabled: true\n    environment:\n      CFNSTACK: '{\"Ref\":\"AWS::StackId\"}'" >> cluster.yaml
+  fi
+  if [ "${KUBE_AWS_DEPLOY_TO_EXISTING_VPC}" != "" ]; then
+    echo -e "  loadBalancer:\n    enabled: true\n    names:\n      - $(testinfra_public_lb)\n    securityGroupIds:\n      - $(testinfra_public_lb_backend_sg)" >> cluster.yaml
+  fi
+
+
+  #
+  # Optionally enable experimental worker features
+  #
+
+  echo -e "worker:" >> cluster.yaml
 }
 
 clean() {
@@ -132,9 +168,12 @@ destroy() {
 
 update() {
   cd ${WORK_DIR}
+
+  ${KUBE_AWS_CMD} update --s3-uri ${KUBE_AWS_S3_URI} || true
+
   SED_CMD="sed -e 's/workerCount: 2/workerCount: 3/' -e 's/controllerCount: 2/controllerCount: 3/'"
   diff --unified cluster.yaml <(cat cluster.yaml | sh -c "${SED_CMD}") || true
-  sh -c '${SED_CMD} -i bak cluster.yaml' || true
+  sh -c "${SED_CMD} -i bak cluster.yaml"
   ${KUBE_AWS_CMD} update --s3-uri ${KUBE_AWS_S3_URI}
   aws cloudformation wait stack-update-complete --stack-name ${KUBE_AWS_CLUSTER_NAME}
 
@@ -210,27 +249,154 @@ ssh_worker() {
   ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ${KUBE_AWS_SSH_KEY} core@$(worker_host) "$@"
 }
 
-nodepool() {
+nodepool_init() {
   cd ${WORK_DIR}
 
-  ${KUBE_AWS_CMD} node-pools init --node-pool-name ${KUBE_AWS_POOL_NAME} \
+  ${KUBE_AWS_CMD} node-pools init --node-pool-name ${KUBE_AWS_NODE_POOL_NAME} \
       --availability-zone ${KUBE_AWS_AVAILABILITY_ZONE} \
       --key-name ${KUBE_AWS_KEY_NAME} \
       --kms-key-arn ${KUBE_AWS_KMS_KEY_ARN}
 
-  ${KUBE_AWS_CMD} node-pools render stack --node-pool-name ${KUBE_AWS_POOL_NAME}
-  ${KUBE_AWS_CMD} node-pools up --node-pool-name ${KUBE_AWS_POOL_NAME} --export
-  ${KUBE_AWS_CMD} node-pools up --node-pool-name ${KUBE_AWS_POOL_NAME} --s3-uri ${KUBE_AWS_S3_URI}
+  cd ${NODE_POOL_ASSETS_DIR}
+
+  echo -e "instanceCIDR: 10.0.${KUBE_AWS_NODE_POOL_INDEX}.0/24" >> ${NODE_POOL_ASSETS_DIR}/cluster.yaml
+
+  customize_worker
+
+  if [ "${KUBE_AWS_SPOT_FLEET_ENABLED}" != "" ]; then
+    echo -e "  spotFleet:\n    targetCapacity: 3\n" >> cluster.yaml
+  fi
+  if [ "${KUBE_AWS_CLUSTER_AUTOSCALER_ENABLED}" != "" ]; then
+    echo -e "  clusterAutoscaler:\n    minSize: 1\n    maxSize: 2" >> cluster.yaml
+  fi
+}
+
+nodepool_render() {
+  cd ${WORK_DIR}
+
+  ${KUBE_AWS_CMD} node-pools render stack --node-pool-name ${KUBE_AWS_NODE_POOL_NAME}
+}
+
+nodepool_validate() {
+  cd ${WORK_DIR}
+
+  ${KUBE_AWS_CMD} node-pools validate --node-pool-name ${KUBE_AWS_NODE_POOL_NAME} --s3-uri ${KUBE_AWS_S3_URI}
+}
+
+nodepool_up() {
+  cd ${WORK_DIR}
+
+  ${KUBE_AWS_CMD} node-pools up --node-pool-name ${KUBE_AWS_NODE_POOL_NAME} --export
+  ${KUBE_AWS_CMD} node-pools up --node-pool-name ${KUBE_AWS_NODE_POOL_NAME} --s3-uri ${KUBE_AWS_S3_URI}
+}
+
+nodepool_update() {
+  cd ${WORK_DIR}
+
+  pushd ${NODE_POOL_ASSETS_DIR}
+
+  if [ "${KUBE_AWS_SPOT_FLEET_ENABLED}" ]; then
+    SED_CMD="sed -e 's/targetCapacity: 3/targetCapacity: 5/'"
+    diff --unified cluster.yaml <(cat cluster.yaml | sh -c "${SED_CMD}") || true
+    sh -c "${SED_CMD} -i bak cluster.yaml"
+  else
+    echo 'workerCount: 2' >> cluster.yaml
+  fi
+
+  popd
+
+  ${KUBE_AWS_CMD} node-pools update --node-pool-name ${KUBE_AWS_NODE_POOL_NAME} --s3-uri ${KUBE_AWS_S3_URI}
+}
+
+nodepool_destroy() {
+  cd ${WORK_DIR}
+
+  ${KUBE_AWS_CMD} node-pools destroy --node-pool-name ${KUBE_AWS_NODE_POOL_NAME}
+}
+
+nodepool() {
+  cd ${WORK_DIR}
+
+  nodepool_init
+  nodepool_render
+  nodepool_validate
+  nodepool_up
+  nodepool_update
+}
+
+testinfra_up() {
+  cd ${TESTINFRA_DIR}
+
+  aws cloudformation create-stack \
+    --template-body file://$(pwd)/stack-template.yaml \
+    --stack-name ${KUBE_AWS_TEST_INFRA_STACK_NAME} \
+    --parameter ParameterKey=AZ1,ParameterValue=${KUBE_AWS_AZ_1}
+  aws cloudformation wait stack-create-complete \
+    --stack-name ${KUBE_AWS_TEST_INFRA_STACK_NAME}
+}
+
+testinfra_update() {
+  cd ${TESTINFRA_DIR}
+
+  aws cloudformation update-stack \
+    --template-body file://$(pwd)/stack-template.yaml \
+    --stack-name ${KUBE_AWS_TEST_INFRA_STACK_NAME} \
+    --parameter ParameterKey=AZ1,ParameterValue=${KUBE_AWS_AZ_1}
+  aws cloudformation wait stack-update-complete \
+    --stack-name ${KUBE_AWS_TEST_INFRA_STACK_NAME}
+}
+
+testinfra_destroy() {
+  aws cloudformation delete-stack --stack-name ${KUBE_AWS_TEST_INFRA_STACK_NAME}
+  aws cloudformation wait stack-delete-complete \
+    --stack-name ${KUBE_AWS_TEST_INFRA_STACK_NAME}
+}
+
+testinfra_output() {
+  aws cloudformation describe-stacks --stack-name ${KUBE_AWS_TEST_INFRA_STACK_NAME} | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "'$1'").OutputValue'
+}
+
+testinfra_vpc() {
+  testinfra_output VPC
+}
+
+testinfra_public_routetable() {
+  testinfra_output PublicRouteTable
+}
+
+testinfra_public_lb_backend_sg() {
+  testinfra_output PublicLBBackendSG
+}
+
+testinfra_public_lb() {
+  testinfra_output PublicLB
+}
+
+testinfra_glue_sg() {
+  testinfra_output GlueSG
 }
 
 all() {
   build
+
+  if [ "${KUBE_AWS_DEPLOY_TO_EXISTING_VPC}" != "" ]; then
+    testinfra_up
+  fi
+
   prepare
   configure
   up
   nodepool
   update
   conformance
+}
+
+all_destroy() {
+  nodepool_destroy
+  destroy
+  if [ "${KUBE_AWS_DEPLOY_TO_EXISTING_VPC}" != "" ]; then
+    testinfra_destroy
+  fi
 }
 
 if [ "$1" == "" ]; then

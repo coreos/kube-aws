@@ -12,6 +12,13 @@ coreos:
   units:
     - name: docker.service
       drop-ins:
+{{if .Experimental.EphemeralImageStorage.Enabled}}
+        - name: 10-docker-mount.conf
+          content: |
+            [Unit]
+            After=var-lib-docker.mount
+            Wants=var-lib-docker.mount
+{{end}}
         - name: 40-flannel.conf
           content: |
             [Unit]
@@ -66,8 +73,10 @@ coreos:
         --container-runtime={{.ContainerRuntime}} \
         --rkt-path=/usr/bin/rkt \
         --rkt-stage1-image=coreos.com/rkt/stage1-coreos \
-        --register-node=true \
-        --allow-privileged=true \
+        {{if .Experimental.NodeLabels.Enabled}}--node-labels {{.Experimental.NodeLabels.String}} \
+        {{end}}--register-node=true \
+        {{if .Experimental.Taints}}--register-schedulable=false \
+        {{end}}--allow-privileged=true \
         --pod-manifest-path=/etc/kubernetes/manifests \
         --cluster_dns={{.DNSServiceIP}} \
         --cluster_domain=cluster.local \
@@ -164,7 +173,39 @@ coreos:
           {{.AWSCliImageRepo}}:{{.AWSCliTag}} -- cfn-init -v \
               --region {{.Region}} \
               --resource LaunchConfigurationWorker \
-              --stack {{.ClusterName}}
+              --stack {{.StackName}}
+{{end}}
+
+{{if .Worker.SpotFleet.Enabled}}
+    - name: tag-spot-instance.service
+      enable: true
+      command: start
+      runtime: true
+      content: |
+        [Unit]
+        Description=Tag this spot instance with cluster name
+        After=network-online.target
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=true
+        ExecStart=/opt/bin/tag-spot-instance
+
+{{if .Experimental.LoadBalancer.Enabled}}
+    - name: add-to-load-balancers.service
+      enable: true
+      command: start
+      runtime: true
+      content: |
+        [Unit]
+        Description=Add this spot instance to load balancers
+        After=network-online.target
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=true
+        ExecStart=/opt/bin/add-to-load-balancers
+{{end}}
 {{end}}
 
 {{ if $.ElasticFileSystemID }}
@@ -185,6 +226,27 @@ coreos:
         [Install]
         WantedBy=kubelet.service
 {{ end }}
+
+{{if .Experimental.Taints }}
+    - name: kube-node-taint-and-uncordon.service
+      command: start
+      runtime: true
+      content: |
+        [Unit]
+        Description=Taint this kubernetes node with user-provided taints and then uncordon it
+        Wants=kubelet.service
+        After=kubelet.service
+        Before=cfn-signal.service
+
+        [Service]
+        Type=simple
+        StartLimitInterval=0
+        RestartSec=10
+        Restart=on-failure
+        ExecStartPre=/usr/bin/systemctl is-active kubelet.service
+        ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl  --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null ; then break ; fi;  done"
+        ExecStart=/opt/bin/taint-and-uncordon
+{{end}}
 
 {{ if .Experimental.WaitSignal.Enabled }}
     - name: cfn-signal.service
@@ -208,10 +270,10 @@ coreos:
           {{.AWSCliImageRepo}}:{{.AWSCliTag}} -- cfn-signal -e 0 \
               --region {{.Region}} \
               --resource AutoScaleWorker \
-              --stack {{.ClusterName}}
+              --stack {{.StackName}}
 {{end}}
 
-{{if .Experimental.NodeLabel.Enabled }}
+{{if .Experimental.AwsNodeLabels.Enabled }}
     - name: kube-node-label.service
       enable: true
       command: start
@@ -227,18 +289,18 @@ coreos:
         RemainAfterExit=true
         ExecStop=/bin/true
         ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment INSTANCE_ID=$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id)"
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment SECURITY_GROUPS=$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/security-groups | tr '\n' ',')"
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment AUTOSCALINGGROUP=$(/usr/bin/docker run --rm --net=host \
+        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment SECURITY_GROUPS=\"$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/security-groups | tr '\n' ',')\""
+        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment AUTOSCALINGGROUP=\"$(/usr/bin/docker run --rm --net=host \
           {{.AWSCliImageRepo}}:{{.AWSCliTag}} aws \
           autoscaling describe-auto-scaling-instances \
           --instance-ids ${INSTANCE_ID} --region {{.Region}} \
-          --query 'AutoScalingInstances[].AutoScalingGroupName' --output text)"
+          --query 'AutoScalingInstances[].AutoScalingGroupName' --output text)\""
         ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment \
-          LAUNCHCONFIGURATION=$(/usr/bin/docker run --rm --net=host \
+          LAUNCHCONFIGURATION=\"$(/usr/bin/docker run --rm --net=host \
           {{.AWSCliImageRepo}}:{{.AWSCliTag}} \
           aws autoscaling describe-auto-scaling-groups \
           --auto-scaling-group-name $AUTOSCALINGGROUP --region {{.Region}} \
-          --query 'AutoScalingGroups[].LaunchConfigurationName' --output text)"
+          --query 'AutoScalingGroups[].LaunchConfigurationName' --output text)\""
         ExecStart=/bin/sh -c "/usr/bin/curl \
           --cert   /etc/kubernetes/ssl/worker.pem \
           --key    /etc/kubernetes/ssl/worker-key.pem \
@@ -265,6 +327,7 @@ coreos:
       content: |
         [Unit]
         Description=Formats the ephemeral drive
+        ConditionFirstBoot=yes
         After=dev-{{.Experimental.EphemeralImageStorage.Disk}}.device
         Requires=dev-{{.Experimental.EphemeralImageStorage.Disk}}.device
         [Service]
@@ -370,6 +433,103 @@ write_files:
       for encKey in $(find /etc/kubernetes/ssl/*.pem.enc);do
         base64 --decode < $encKey.b64 > ${encKey%.enc}
       done
+      echo done.
+
+{{if .Worker.SpotFleet.Enabled}}
+  - path: /opt/bin/tag-spot-instance
+    owner: root:root
+    permissions: 0700
+    content: |
+      #!/bin/bash -e
+
+      instance_id=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+
+      sudo rkt run \
+        --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
+        --mount=volume=ssl,target=/etc/kubernetes/ssl \
+        --uuid-file-save=/var/run/coreos/tag-spot-instance.uuid \
+        --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
+        --net=host \
+        --trust-keys-from-https \
+        --insecure-options=ondisk \
+        {{.AWSCliImageRepo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+          -vxc \
+          'echo tagging this spot instance; \
+           instance_id="'$instance_id'"; \
+           /usr/bin/aws \
+             --region {{.Region}} ec2 create-tags \
+             --resource $instance_id \
+             --tags '"'"'Key=KubernetesCluster,Value="{{.ClusterName}}"'"'"' '"'"'Key=Name,Value="{{.StackName}}-kube-aws-worker"'"'"' '"'"'Key="kube-aws:node-pool:name",Value="{{.NodePoolName}}"'"'"'; \
+           echo done.'
+
+      sudo rkt rm --uuid-file=/var/run/coreos/tag-spot-instance.uuid
+{{if .Experimental.LoadBalancer.Enabled}}
+  - path: /opt/bin/add-to-load-balancers
+    owner: root:root
+    permissions: 0700
+    content: |
+      #!/bin/bash -e
+
+      instance_id=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+
+      sudo rkt run \
+        --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
+        --mount=volume=ssl,target=/etc/kubernetes/ssl \
+        --uuid-file-save=/var/run/coreos/add-to-load-balancers.uuid \
+        --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
+        --net=host \
+        --trust-keys-from-https \
+        --insecure-options=ondisk \
+        {{.AWSCliImageRepo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+          -vxc \
+          'echo adding this spot instance to load balancers; \
+           instance_id="'$instance_id'"; \
+           lbs=({{range $i, $lb := .Experimental.LoadBalancer.Names}}"{{$lb}}" {{end}}); \
+           add_to_lb="/usr/bin/aws --region {{.Region}} elb register-instances-with-load-balancer --instances $instance_id --load-balancer-name"; \
+           for lb in ${lbs[@]}; do \
+             echo "$lb"; \
+             $add_to_lb "$lb"; \
+           done; \
+           echo done.'
+
+      sudo rkt rm --uuid-file=/var/run/coreos/add-to-load-balancers.uuid
+{{end}}
+{{end}}
+
+  - path: /opt/bin/taint-and-uncordon
+    owner: root:root
+    permissions: 0700
+    content: |
+      #!/bin/bash -e
+
+      hostname=$(hostname)
+
+      sudo rkt run \
+        --volume=kube,kind=host,source=/etc/kubernetes,readOnly=true \
+        --mount=volume=kube,target=/etc/kubernetes \
+        --uuid-file-save=/var/run/coreos/taint-and-uncordon.uuid \
+        --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
+        --net=host \
+        --trust-keys-from-https \
+        {{.HyperkubeImageRepo}}:{{.K8sVer}} --exec=/bin/bash -- \
+          -vxc \
+          'echo tainting this node; \
+           hostname="'${hostname}'"; \
+           taints=({{range $i, $taint := .Experimental.Taints}}"{{$taint.String}}" {{end}}); \
+           kubectl="/kubectl --server=https://{{.ExternalDNSName}}:443 --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml"; \
+           taint="$kubectl taint node $hostname"; \
+           for t in ${taints[@]}; do \
+             $taint "$t"; \
+           done; \
+           echo done. ;\
+           echo uncordoning this node; \
+           $kubectl uncordon $hostname;\
+           echo done.'
+
+      echo cleaning pod resources.
+
+      sudo rkt rm --uuid-file=/var/run/coreos/taint-and-uncordon.uuid
+
       echo done.
 
   - path: /etc/kubernetes/manifests/kube-proxy.yaml

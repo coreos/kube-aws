@@ -17,13 +17,17 @@
           "{{$subnet.AvailabilityZone}}"
           {{end}}
         ],
-        "DesiredCapacity": "{{.WorkerCount}}",
         "HealthCheckGracePeriod": 600,
         "HealthCheckType": "EC2",
         "LaunchConfigurationName": {
           "Ref": "LaunchConfigurationWorker"
         },
         "MaxSize": "{{.MaxWorkerCount}}",
+        "MetricsCollection": [
+          {
+            "Granularity": "1Minute"
+          }
+        ],
         "MinSize": "{{.MinWorkerCount}}",
         "Tags": [
           {
@@ -60,7 +64,7 @@
       {{if .Experimental.WaitSignal.Enabled}}
       "CreationPolicy" : {
         "ResourceSignal" : {
-          "Count" : "{{.WorkerCount}}",
+          "Count" : "{{.MinWorkerCount}}",
           "Timeout" : "{{.WorkerCreateTimeout}}"
         }
       },
@@ -71,7 +75,7 @@
           {{if .WorkerSpotPrice}}
           "0"
           {{else}}
-          "{{.WorkerCount}}"
+          "{{.WorkerRollingUpdateMinInstancesInService}}"
           {{end}},
           {{if .Experimental.WaitSignal.Enabled}}
           "WaitOnResourceSignals" : "true",
@@ -94,13 +98,17 @@
           "{{$subnet.AvailabilityZone}}"
           {{end}}
         ],
-        "DesiredCapacity": "{{.ControllerCount}}",
         "HealthCheckGracePeriod": 600,
         "HealthCheckType": "EC2",
         "LaunchConfigurationName": {
           "Ref": "LaunchConfigurationController"
         },
         "MaxSize": "{{.MaxControllerCount}}",
+        "MetricsCollection": [
+          {
+            "Granularity": "1Minute"
+          }
+        ],
         "MinSize": "{{.MinControllerCount}}",
         "Tags": [
           {
@@ -131,14 +139,14 @@
       {{if .Experimental.WaitSignal.Enabled}}
       "CreationPolicy" : {
         "ResourceSignal" : {
-          "Count" : "{{.ControllerCount}}",
+          "Count" : "{{.MinControllerCount}}",
           "Timeout" : "{{.ControllerCreateTimeout}}"
         }
       },
       {{end}}
       "UpdatePolicy" : {
         "AutoScalingRollingUpdate" : {
-          "MinInstancesInService" : "{{.ControllerCount}}",
+          "MinInstancesInService" : "{{.ControllerRollingUpdateMinInstancesInService}}",
           "MaxBatchSize" : "1",
           {{if .Experimental.WaitSignal.Enabled}}
           "WaitOnResourceSignals" : "true",
@@ -247,7 +255,7 @@
                     ] }
                 },
                 {{end}}
-                {{if .Experimental.NodeLabel.Enabled}}
+                {{if .Experimental.AwsNodeLabels.Enabled}}
                 {
                   "Action": "autoscaling:Describe*",
                   "Effect": "Allow",
@@ -340,7 +348,7 @@
                     ] }
                 },
                 {{end}}
-                {{if .Experimental.NodeLabel.Enabled}}
+                {{if .Experimental.AwsNodeLabels.Enabled}}
                 {
                   "Action": "autoscaling:Describe*",
                   "Effect": "Allow",
@@ -413,7 +421,11 @@
           {
             "DeviceName": "/dev/xvda",
             "Ebs": {
-              "VolumeSize": "{{$.EtcdRootVolumeSize}}"
+              "VolumeSize": "{{$.EtcdRootVolumeSize}}",
+              {{if gt $.EtcdRootVolumeIOPS 0}}
+              "Iops": "{{$.EtcdRootVolumeIOPS}}",
+              {{end}}
+              "VolumeType": "{{$.EtcdRootVolumeType}}"
             }
           },
 	  {
@@ -422,7 +434,11 @@
 	    "VirtualName" : "ephemeral0"
 	    {{else}}
             "Ebs": {
-              "VolumeSize": "{{$.EtcdDataVolumeSize}}"
+              "VolumeSize": "{{$.EtcdDataVolumeSize}}",
+              {{if gt $.EtcdDataVolumeIOPS 0}}
+              "Iops": "{{$.EtcdDataVolumeIOPS}}",
+              {{end}}
+              "VolumeType": "{{$.EtcdDataVolumeType}}"
             }
 	    {{end}}
           }
@@ -459,6 +475,7 @@
             "Value": "{{$.ClusterName}}-kube-aws-etcd-{{$etcdIndex}}"
           }
         ],
+        "Tenancy": "{{$.EtcdTenancy}}",
         "UserData": { "Fn::FindInMap" : [ "EtcdInstanceParams", "UserData", "cloudconfig"] }
       },
       "Type": "AWS::EC2::Instance"
@@ -485,10 +502,8 @@
         "InstanceType": "{{.WorkerInstanceType}}",
         "KeyName": "{{.KeyName}}",
         "SecurityGroups": [
-          {{if .Experimental.LoadBalancer.Enabled}}
-          {{range $elbsg := .Experimental.LoadBalancer.SecurityGroupIds}}
-            "{{$elbsg}}",
-          {{end}}
+          {{range $sgRef := .WorkerSecurityGroupRefs}}
+            {{$sgRef}},
           {{end}}
           {
             "Ref": "SecurityGroupWorker"
@@ -496,6 +511,8 @@
         ],
         {{if .WorkerSpotPrice}}
         "SpotPrice": {{.WorkerSpotPrice}},
+        {{else}}
+        "PlacementTenancy": "{{.WorkerTenancy}}",
         {{end}}
         "UserData": "{{ .UserDataWorker }}"
       },
@@ -524,7 +541,11 @@
           {
             "DeviceName": "/dev/xvda",
             "Ebs": {
-              "VolumeSize": "{{.ControllerRootVolumeSize}}"
+              "VolumeSize": "{{.ControllerRootVolumeSize}}",
+              {{if gt .ControllerRootVolumeIOPS 0}}
+              "Iops": "{{.ControllerRootVolumeIOPS}}",
+              {{end}}
+              "VolumeType": "{{.ControllerRootVolumeType}}"
             }
           }
         ],
@@ -539,6 +560,7 @@
             "Ref": "SecurityGroupController"
           }
         ],
+        "PlacementTenancy": "{{ .ControllerTenancy }}",
         "UserData": "{{ .UserDataController }}"
       },
   {{ if .Experimental.AwsEnvironment.Enabled }}

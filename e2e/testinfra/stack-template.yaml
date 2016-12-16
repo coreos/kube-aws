@@ -1,0 +1,265 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description:
+  kube-aws E2E testing infrastructure
+Parameters:
+  Id:
+    Description: Id of the infrastructure
+    Default: kube-aws-e2e-infra
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9\\-]*"
+  AZ1:
+    Description: Name of the first AZ
+    Default: us-west-1a
+    Type: String
+    AllowedPattern: "[a-z0-9\\-]*"
+
+Resources:
+# Create VPC
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      InstanceTenancy: default
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ "Ref":"Id" , "vpc" ] ]
+
+# Create Public RouteTable
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ "Ref":"Id" , "public" ] ]
+
+# Create Private RouteTable
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ "Ref":"Id" , "private" ] ]
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.101.0/24
+      AvailabilityZone: !Ref AZ1
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ "Ref":"Id" , "public-1" ] ]
+  PubSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.102.0/24
+      AvailabilityZone: !Ref AZ1
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ "Ref":"Id" , "public-2" ] ]
+  PubSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.201.0/24
+      AvailabilityZone: !Ref AZ1
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ "Ref":"Id" , "private" ] ]
+  PriSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
+  InternetGateway:
+    Type: "AWS::EC2::InternetGateway"
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ "Ref":"Id" , "igw" ] ]
+  IgwAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  RouteToIGW:
+    Type: "AWS::EC2::Route"
+    DependsOn: InternetGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  NAT:
+    DependsOn: IgwAttach
+    Type: "AWS::EC2::NatGateway"
+    Properties:
+      AllocationId: !GetAtt EIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+  EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  RouteToNAT:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NAT
+
+  PublicLB:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      Subnets:
+      - !Ref PublicSubnet1
+      SecurityGroups:
+      - !Ref PublicLBSG
+      Listeners:
+      - LoadBalancerPort: "443"
+        InstancePort: "80"
+        Protocol: HTTP
+      HealthCheck:
+        Target:
+          Fn::Join:
+          - ""
+          - - "HTTP:"
+            - "80"
+            - "/"
+        HealthyThreshold: "3"
+        UnhealthyThreshold: "5"
+        Interval: "30"
+        Timeout: "5"
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ "Ref":"Id" , "public" ] ]
+
+  PrivateLB:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      Subnets:
+      - !Ref PrivateSubnet1
+      SecurityGroups:
+      - !Ref PrivateLBSG
+      Listeners:
+      - LoadBalancerPort: "80"
+        InstancePort: "80"
+        Protocol: HTTP
+      HealthCheck:
+        Target:
+          Fn::Join:
+          - ""
+          - - "HTTP:"
+            - "80"
+            - "/"
+        HealthyThreshold: "3"
+        UnhealthyThreshold: "5"
+        Interval: "30"
+        Timeout: "5"
+      Tags:
+      - Key: Name
+        Value: !Join [ "-", [ "Ref":"Id" , "private" ] ]
+
+  PrivateLBSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Join [ "-", [ "Ref":"Id" , "private-lb" ] ]
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        CidrIp: 0.0.0.0/0
+      VpcId: !Ref VPC
+
+  PublicLBSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Join [ "-", [ "Ref":"Id" , "public-lb" ] ]
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        CidrIp: 0.0.0.0/0
+      VpcId: !Ref VPC
+
+  PrivateLBBackendSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Join [ "-", [ "Ref":"Id" , "private-lb-backend" ] ]
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        SourceSecurityGroupId: !Ref PrivateLBSG
+      VpcId: !Ref VPC
+
+  PublicLBBackendSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Join [ "-", [ "Ref":"Id" , "public-lb-backend" ] ]
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        SourceSecurityGroupId: !Ref PublicLBSG
+      VpcId: !Ref VPC
+
+  GlueSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Join [ "-", [ "Ref":"Id" , "glue" ] ]
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        SourceSecurityGroupId: !Ref ExistingServiceSG
+      VpcId: !Ref VPC
+
+  ExistingServiceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Join [ "-", [ "Ref":"Id" , "existing-service" ] ]
+      VpcId: !Ref VPC
+
+Outputs:
+  VPC:
+    Value: !Ref VPC
+  PublicSubnet1:
+    Value: !Ref PublicSubnet1
+  PrivateSubnet1:
+    Value: !Ref PrivateSubnet1
+  PublicRouteTable:
+    Value: !Ref PublicRouteTable
+  PrivateRouteTable:
+    Value: !Ref PrivateRouteTable
+  PublicLBBackendSG:
+    Value: !Ref PublicLBBackendSG
+  PrivateLBBackendSG:
+    Value: !Ref PrivateLBBackendSG
+  GlueSG:
+    Value: !Ref GlueSG
+  PublicLB:
+    Value: !Ref PublicLB
+  PrivateLB:
+    Value: !Ref PrivateLB
+  PublicLBDNSName:
+    Value: !GetAtt PublicLB.DNSName
+  PrivateLBDNSName:
+    Value: !GetAtt PrivateLB.DNSName

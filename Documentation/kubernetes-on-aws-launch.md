@@ -7,7 +7,7 @@ This is the [third step of running Kubernetes on AWS][aws-step-1]. We're ready t
 Now for the exciting part, creating your cluster:
 
 ```sh
-$ kube-aws up
+$ kube-aws up --s3-uri s3://<your-bucket-name>/<prefix>
 ```
 
 **NOTE**: It can take some time after `kube-aws up` completes before the cluster is available. When the cluster is first being launched, it must download all container images for the cluster components (Kubernetes, dns, heapster, etc). Depending on the speed of your connection, it can take a few minutes before the Kubernetes api-server is available.
@@ -18,7 +18,7 @@ If you configured Route 53 settings in your configuration above via `createRecor
 
 Otherwise, navigate to the DNS registrar hosting the zone for the provided external DNS name. Ensure a single A record exists, routing the value of `externalDNSName` defined in `cluster.yaml` to the externally-accessible IP of the master node instance.
 
-You can invoke `kube-aws status` to get the cluster API IP address after cluster creation, if necessary. This command can take a while.
+You can invoke `kube-aws status` to get the cluster API endpoint after cluster creation, if necessary. This command can take a while.
 
 ## Access the cluster
 
@@ -59,11 +59,11 @@ If you want to share, audit or back up your stack, use the export flag:
 $ kube-aws up --export
 ```
 
-## Destroy the cluster
-
-When you are done with your cluster, simply run `kube-aws destroy` and all cluster components will be destroyed.
-If you created any Kubernetes Services of type `LoadBalancer`, you must delete these first, as the CloudFormation cannot be fully destroyed if any externally-managed resources still exist.
+Once you have successfully launched your cluster, you are ready to [update your cluster][aws-step-4].
 
 [aws-step-1]: kubernetes-on-aws.md
 [aws-step-2]: kubernetes-on-aws-render.md
 [aws-step-3]: kubernetes-on-aws-launch.md
+[aws-step-4]: kube-aws-cluster-updates.md
+[aws-step-5]: kubernetes-on-aws-node-pool.md
+[aws-step-6]: kubernetes-on-aws-destroy.md

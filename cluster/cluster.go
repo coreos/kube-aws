@@ -148,7 +148,7 @@ func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
   ]
 }
 `
-	return cfnstack.NewProvisioner(c.ClusterName, c.StackTags, stackPolicyBody, c.session)
+	return cfnstack.NewProvisioner(c.ClusterName, c.WorkerDeploymentSettings().StackTags(), stackPolicyBody, c.session)
 }
 
 func (c *Cluster) Create(stackBody string, s3URI string) error {
@@ -306,12 +306,7 @@ func (c *Cluster) Info() (*Info, error) {
 }
 
 func (c *Cluster) Destroy() error {
-	cfSvc := cloudformation.New(c.session)
-	dreq := &cloudformation.DeleteStackInput{
-		StackName: aws.String(c.ClusterName),
-	}
-	_, err := cfSvc.DeleteStack(dreq)
-	return err
+	return c.stackProvisioner().Destroy()
 }
 
 func (c *Cluster) validateKeyPair(ec2Svc ec2Service) error {

@@ -3,8 +3,11 @@ package config
 import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/service/kms"
-	"io/ioutil"
-	"os"
+	cfg "github.com/coreos/kube-aws/config"
+	model "github.com/coreos/kube-aws/model"
+	"github.com/coreos/kube-aws/test/helper"
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -29,43 +32,7 @@ const availabilityZoneConfig = `
 availabilityZone: us-west-1c
 `
 
-const singleAzConfigYaml = insufficientConfigYaml + availabilityZoneConfig
-
-func withDummyCredentials(fn func(dir string)) {
-	if _, err := ioutil.ReadDir("temp"); err != nil {
-		if err := os.Mkdir("temp", 0755); err != nil {
-			panic(err)
-		}
-	}
-
-	dir, err := ioutil.TempDir("temp", "dummy-credentials")
-
-	if err != nil {
-		panic(err)
-	}
-
-	defer os.Remove(dir)
-
-	for _, pairName := range []string{"ca", "apiserver", "worker", "admin", "etcd", "etcd-client"} {
-		certFile := fmt.Sprintf("%s/%s.pem", dir, pairName)
-
-		if err := ioutil.WriteFile(certFile, []byte("dummycert"), 0644); err != nil {
-			panic(err)
-		}
-
-		defer os.Remove(certFile)
-
-		keyFile := fmt.Sprintf("%s/%s-key.pem", dir, pairName)
-
-		if err := ioutil.WriteFile(keyFile, []byte("dummykey"), 0644); err != nil {
-			panic(err)
-		}
-
-		defer os.Remove(keyFile)
-	}
-
-	fn(dir)
-}
+type ConfigTester func(c *ProvidedConfig, t *testing.T)
 
 func TestConfig(t *testing.T) {
 	minimalValidConfigYaml := insufficientConfigYaml + `
@@ -73,19 +40,180 @@ availabilityZone: us-west-1c
 dnsServiceIP: "10.3.0.10"
 etcdEndpoints: "10.0.0.1"
 `
+	hasDefaultLaunchSpecifications := func(c *ProvidedConfig, t *testing.T) {
+		expected := []model.LaunchSpecification{
+			{
+				WeightedCapacity: 1,
+				InstanceType:     "m3.medium",
+				RootVolumeSize:   30,
+				RootVolumeIOPS:   0,
+				RootVolumeType:   "gp2",
+			},
+			{
+				WeightedCapacity: 2,
+				InstanceType:     "m3.large",
+				RootVolumeSize:   60,
+				RootVolumeIOPS:   0,
+				RootVolumeType:   "gp2",
+			},
+			{
+				WeightedCapacity: 2,
+				InstanceType:     "m4.large",
+				RootVolumeSize:   60,
+				RootVolumeIOPS:   0,
+				RootVolumeType:   "gp2",
+			},
+		}
+		actual := c.Worker.SpotFleet.LaunchSpecifications
+		if !reflect.DeepEqual(expected, actual) {
+			t.Errorf(
+				"LaunchSpecifications didn't match: expected=%v actual=%v",
+				expected,
+				actual,
+			)
+		}
+	}
+
+	hasDefaultExperimentalFeatures := func(c *ProvidedConfig, t *testing.T) {
+		expected := cfg.Experimental{
+			AuditLog: cfg.AuditLog{
+				Enabled: false,
+				MaxAge:  30,
+				LogPath: "/dev/stdout",
+			},
+			AwsEnvironment: cfg.AwsEnvironment{
+				Enabled: false,
+			},
+			AwsNodeLabels: cfg.AwsNodeLabels{
+				Enabled: false,
+			},
+			EphemeralImageStorage: cfg.EphemeralImageStorage{
+				Enabled:    false,
+				Disk:       "xvdb",
+				Filesystem: "xfs",
+			},
+			LoadBalancer: cfg.LoadBalancer{
+				Enabled: false,
+			},
+			NodeDrainer: cfg.NodeDrainer{
+				Enabled: false,
+			},
+			NodeLabels: cfg.NodeLabels{},
+			Taints:     []cfg.Taint{},
+			WaitSignal: cfg.WaitSignal{
+				Enabled:      false,
+				MaxBatchSize: 1,
+			},
+		}
+
+		actual := c.Experimental
+
+		if !reflect.DeepEqual(expected, actual) {
+			t.Errorf("experimental settings didn't match :\nexpected=%v\nactual=%v", expected, actual)
+		}
+	}
+
 	validCases := []struct {
-		context    string
-		configYaml string
+		context              string
+		configYaml           string
+		assertProvidedConfig []ConfigTester
 	}{
+		{
+			context: "WithExperimentalFeatures",
+			configYaml: minimalValidConfigYaml + `
+experimental:
+  awsEnvironment:
+    enabled: true
+    environment:
+      CFNSTACK: '{ "Ref" : "AWS::StackId" }'
+  awsNodeLabels:
+    enabled: true
+  ephemeralImageStorage:
+    enabled: true
+  loadBalancer:
+    enabled: true
+    names:
+      - manuallymanagedlb
+    securityGroupIds:
+      - sg-12345678
+  nodeDrainer:
+    enabled: true
+  nodeLabels:
+    kube-aws.coreos.com/role: worker
+  taints:
+    - key: reservation
+      value: spot
+      effect: NoSchedule
+  waitSignal:
+    enabled: true
+`,
+			assertProvidedConfig: []ConfigTester{
+				hasDefaultLaunchSpecifications,
+				func(c *ProvidedConfig, t *testing.T) {
+					expected := cfg.Experimental{
+						AuditLog: cfg.AuditLog{
+							Enabled: false,
+							MaxAge:  30,
+							LogPath: "/dev/stdout",
+						},
+						AwsEnvironment: cfg.AwsEnvironment{
+							Enabled: true,
+							Environment: map[string]string{
+								"CFNSTACK": `{ "Ref" : "AWS::StackId" }`,
+							},
+						},
+						AwsNodeLabels: cfg.AwsNodeLabels{
+							Enabled: true,
+						},
+						EphemeralImageStorage: cfg.EphemeralImageStorage{
+							Enabled:    true,
+							Disk:       "xvdb",
+							Filesystem: "xfs",
+						},
+						LoadBalancer: cfg.LoadBalancer{
+							Enabled:          true,
+							Names:            []string{"manuallymanagedlb"},
+							SecurityGroupIds: []string{"sg-12345678"},
+						},
+						NodeDrainer: cfg.NodeDrainer{
+							Enabled: true,
+						},
+						NodeLabels: cfg.NodeLabels{
+							"kube-aws.coreos.com/role": "worker",
+						},
+						Taints: []cfg.Taint{
+							{Key: "reservation", Value: "spot", Effect: "NoSchedule"},
+						},
+						WaitSignal: cfg.WaitSignal{
+							Enabled:      true,
+							MaxBatchSize: 1,
+						},
+					}
+
+					actual := c.Experimental
+
+					if !reflect.DeepEqual(expected, actual) {
+						t.Errorf("experimental settings didn't match : expected=%v actual=%v", expected, actual)
+					}
+				},
+			},
+		},
 		{
 			context:    "WithMinimalValidConfig",
 			configYaml: minimalValidConfigYaml,
-		},
+			assertProvidedConfig: []ConfigTester{
+				hasDefaultExperimentalFeatures,
+				hasDefaultLaunchSpecifications,
+			}},
 		{
 			context: "WithVpcIdSpecified",
 			configYaml: minimalValidConfigYaml + `
 vpcId: vpc-1a2b3c4d
 `,
+			assertProvidedConfig: []ConfigTester{
+				hasDefaultExperimentalFeatures,
+				hasDefaultLaunchSpecifications,
+			},
 		},
 		{
 			context: "WithVpcIdAndRouteTableIdSpecified",
@@ -93,6 +221,186 @@ vpcId: vpc-1a2b3c4d
 vpcId: vpc-1a2b3c4d
 routeTableId: rtb-1a2b3c4d
 `,
+			assertProvidedConfig: []ConfigTester{
+				hasDefaultExperimentalFeatures,
+				hasDefaultLaunchSpecifications,
+			},
+		},
+		{
+			context: "WithSpotFleetEnabled",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  spotFleet:
+    targetCapacity: 10
+`,
+			assertProvidedConfig: []ConfigTester{
+				hasDefaultExperimentalFeatures,
+				hasDefaultLaunchSpecifications,
+			},
+		},
+		{
+			context: "WithSpotFleetWithCustomGp2RootVolumeSettings",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  spotFleet:
+    targetCapacity: 10
+    unitRootVolumeSize: 40
+    launchSpecifications:
+    - weightedCapacity: 1
+      instanceType: m3.medium
+    - weightedCapacity: 2
+      instanceType: m3.large
+      rootVolumeSize: 100
+`,
+			assertProvidedConfig: []ConfigTester{
+				hasDefaultExperimentalFeatures,
+				func(c *ProvidedConfig, t *testing.T) {
+					expected := []model.LaunchSpecification{
+						{
+							WeightedCapacity: 1,
+							InstanceType:     "m3.medium",
+							// RootVolumeSize was not specified in the configYaml but should default to workerRootVolumeSize * weightedCapacity hence:
+							RootVolumeSize: 40,
+							RootVolumeIOPS: 0,
+							// RootVolumeType was not specified in the configYaml but should default to:
+							RootVolumeType: "gp2",
+						},
+						{
+							WeightedCapacity: 2,
+							InstanceType:     "m3.large",
+							RootVolumeSize:   100,
+							RootVolumeIOPS:   0,
+							RootVolumeType:   "gp2",
+						},
+					}
+					actual := c.Worker.SpotFleet.LaunchSpecifications
+					if !reflect.DeepEqual(expected, actual) {
+						t.Errorf(
+							"LaunchSpecifications didn't match: expected=%v actual=%v",
+							expected,
+							actual,
+						)
+					}
+				},
+			},
+		},
+		{
+			context: "WithSpotFleetWithCustomIo1RootVolumeSettings",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  spotFleet:
+    targetCapacity: 10
+    rootVolumeType: io1
+    unitRootVolumeSize: 40
+    unitRootVolumeIOPS: 100
+    launchSpecifications:
+    - weightedCapacity: 1
+      instanceType: m3.medium
+    - weightedCapacity: 2
+      instanceType: m3.large
+      rootVolumeIOPS: 500
+`,
+			assertProvidedConfig: []ConfigTester{
+				hasDefaultExperimentalFeatures,
+				func(c *ProvidedConfig, t *testing.T) {
+					expected := []model.LaunchSpecification{
+						{
+							WeightedCapacity: 1,
+							InstanceType:     "m3.medium",
+							// RootVolumeSize was not specified in the configYaml but should default to workerRootVolumeSize * weightedCapacity hence:
+							RootVolumeSize: 40,
+							// RootVolumeIOPS was not specified in the configYaml but should default to workerRootVolumeIOPS * weightedCapacity hence:
+							RootVolumeIOPS: 100,
+							// RootVolumeType was not specified in the configYaml but should default to:
+							RootVolumeType: "io1",
+						},
+						{
+							WeightedCapacity: 2,
+							InstanceType:     "m3.large",
+							RootVolumeSize:   80,
+							RootVolumeIOPS:   500,
+							// RootVolumeType was not specified in the configYaml but should default to:
+							RootVolumeType: "io1",
+						},
+					}
+					actual := c.Worker.SpotFleet.LaunchSpecifications
+					if !reflect.DeepEqual(expected, actual) {
+						t.Errorf(
+							"LaunchSpecifications didn't match: expected=%v actual=%v",
+							expected,
+							actual,
+						)
+					}
+				},
+			},
+		},
+		{
+			context: "WithWorkerSecurityGroupIds",
+			configYaml: minimalValidConfigYaml + `
+workerSecurityGroupIds:
+  - sg-12345678
+  - sg-abcdefab
+  - sg-23456789
+  - sg-bcdefabc
+`,
+			assertProvidedConfig: []ConfigTester{
+				hasDefaultExperimentalFeatures,
+				hasDefaultLaunchSpecifications,
+				func(c *ProvidedConfig, t *testing.T) {
+					expectedWorkerSecurityGroupIds := []string{
+						`sg-12345678`, `sg-abcdefab`, `sg-23456789`, `sg-bcdefabc`,
+					}
+					if !reflect.DeepEqual(c.WorkerSecurityGroupIds, expectedWorkerSecurityGroupIds) {
+						t.Errorf("WorkerSecurityGroupIds didn't match: expected=%v actual=%v", expectedWorkerSecurityGroupIds, c.WorkerSecurityGroupIds)
+					}
+
+					expectedWorkerSecurityGroupRefs := []string{
+						`"sg-12345678"`, `"sg-abcdefab"`, `"sg-23456789"`, `"sg-bcdefabc"`,
+					}
+					if !reflect.DeepEqual(c.WorkerDeploymentSettings().WorkerSecurityGroupRefs(), expectedWorkerSecurityGroupRefs) {
+						t.Errorf("WorkerSecurityGroupRefs didn't match: expected=%v actual=%v", expectedWorkerSecurityGroupRefs, c.WorkerDeploymentSettings().WorkerSecurityGroupRefs())
+					}
+				},
+			},
+		},
+		{
+			context: "WithWorkerAndLBSecurityGroupIds",
+			configYaml: minimalValidConfigYaml + `
+workerSecurityGroupIds:
+  - sg-12345678
+  - sg-abcdefab
+experimental:
+  loadBalancer:
+    enabled: true
+    securityGroupIds:
+      - sg-23456789
+      - sg-bcdefabc
+`,
+			assertProvidedConfig: []ConfigTester{
+				hasDefaultLaunchSpecifications,
+				func(c *ProvidedConfig, t *testing.T) {
+					expectedWorkerSecurityGroupIds := []string{
+						`sg-12345678`, `sg-abcdefab`,
+					}
+					if !reflect.DeepEqual(c.WorkerSecurityGroupIds, expectedWorkerSecurityGroupIds) {
+						t.Errorf("WorkerSecurityGroupIds didn't match: expected=%v actual=%v", expectedWorkerSecurityGroupIds, c.WorkerSecurityGroupIds)
+					}
+
+					expectedLBSecurityGroupIds := []string{
+						`sg-23456789`, `sg-bcdefabc`,
+					}
+					if !reflect.DeepEqual(c.Experimental.LoadBalancer.SecurityGroupIds, expectedLBSecurityGroupIds) {
+						t.Errorf("LBSecurityGroupIds didn't match: expected=%v actual=%v", expectedLBSecurityGroupIds, c.Experimental.LoadBalancer.SecurityGroupIds)
+					}
+
+					expectedWorkerSecurityGroupRefs := []string{
+						`"sg-23456789"`, `"sg-bcdefabc"`, `"sg-12345678"`, `"sg-abcdefab"`,
+					}
+					if !reflect.DeepEqual(c.WorkerDeploymentSettings().WorkerSecurityGroupRefs(), expectedWorkerSecurityGroupRefs) {
+						t.Errorf("WorkerSecurityGroupRefs didn't match: expected=%v actual=%v", expectedWorkerSecurityGroupRefs, c.WorkerDeploymentSettings().WorkerSecurityGroupRefs())
+					}
+				},
+			},
 		},
 	}
 
@@ -106,7 +414,13 @@ routeTableId: rtb-1a2b3c4d
 			}
 			providedConfig.providedEncryptService = dummyEncryptService{}
 
-			withDummyCredentials(func(dummyTlsAssetsDir string) {
+			t.Run("AssertProvidedConfig", func(t *testing.T) {
+				for _, assertion := range validCase.assertProvidedConfig {
+					assertion(providedConfig, t)
+				}
+			})
+
+			helper.WithDummyCredentials(func(dummyTlsAssetsDir string) {
 				var stackTemplateOptions = StackTemplateOptions{
 					TLSAssetsDir:          dummyTlsAssetsDir,
 					WorkerTmplFile:        "../../config/templates/cloud-config-worker",
@@ -120,7 +434,7 @@ routeTableId: rtb-1a2b3c4d
 				})
 
 				t.Run("RenderStackTemplate", func(t *testing.T) {
-					if _, err := providedConfig.RenderStackTemplate(stackTemplateOptions); err != nil {
+					if _, err := providedConfig.RenderStackTemplate(stackTemplateOptions, false); err != nil {
 						t.Errorf("failed to render stack template: %v", err)
 					}
 				})
@@ -129,9 +443,21 @@ routeTableId: rtb-1a2b3c4d
 	}
 
 	parseErrorCases := []struct {
-		context    string
-		configYaml string
+		context              string
+		configYaml           string
+		expectedErrorMessage string
 	}{
+		{
+			context: "WithInvalidTaint",
+			configYaml: minimalValidConfigYaml + `
+experimental:
+  taints:
+    - key: foo
+      value: bar
+      effect: UnknownEffect
+`,
+			expectedErrorMessage: "Effect must be NoSchdule or PreferNoSchedule, but was UnknownEffect",
+		},
 		{
 			context: "WithVpcIdAndVPCCIDRSpecified",
 			configYaml: minimalValidConfigYaml + `
@@ -139,6 +465,73 @@ vpcId: vpc-1a2b3c4d
 # vpcCIDR (10.1.0.0/16) does not contain instanceCIDR (10.0.1.0/24)
 vpcCIDR: "10.1.0.0/16"
 `,
+		},
+		{
+			context: "WithSpotFleetWithInvalidRootVolumeType",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  spotFleet:
+    targetCapacity: 10
+    launchSpecifications:
+    - weightedCapacity: 1
+      instanceType: m3.medium
+      rootVolumeType: foo
+`,
+		},
+		{
+			context: "WithSpotFleetWithInvalidRootVolumeIOPS",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  spotFleet:
+    targetCapacity: 10
+    launchSpecifications:
+    - weightedCapacity: 1
+      instanceType: m3.medium
+      rootVolumeType: io1
+      # must be 100~2000
+      rootVolumeIOPS: 50
+`,
+		},
+		{
+			context: "WithSpotFleetWithInvalidRootVolumeTypeAndIOPSCombination",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  spotFleet:
+    targetCapacity: 10
+    launchSpecifications:
+    - weightedCapacity: 1
+      instanceType: m3.medium
+      rootVolumeType: gp2
+      rootVolumeIOPS: 1000
+`,
+		},
+		{
+			context: "WithWorkerSecurityGroupIds",
+			configYaml: minimalValidConfigYaml + `
+workerSecurityGroupIds:
+  - sg-12345678
+  - sg-abcdefab
+  - sg-23456789
+  - sg-bcdefabc
+  - sg-34567890
+`,
+			expectedErrorMessage: "number of user provided security groups must be less than or equal to 4 but was 5",
+		},
+		{
+			context: "WithWorkerAndLBSecurityGroupIds",
+			configYaml: minimalValidConfigYaml + `
+workerSecurityGroupIds:
+  - sg-12345678
+  - sg-abcdefab
+  - sg-23456789
+experimental:
+  loadBalancer:
+    enabled: true
+    securityGroupIds:
+      - sg-bcdefabc
+      - sg-34567890
+`,
+			expectedErrorMessage: "number of user provided security groups must be less than or equal to 4 but was 5",
 		},
 	}
 
@@ -149,6 +542,11 @@ vpcCIDR: "10.1.0.0/16"
 			if err == nil {
 				t.Errorf("expected to fail parsing config %s: %v", configBytes, providedConfig)
 				t.FailNow()
+			}
+
+			errorMsg := fmt.Sprintf("%v", err)
+			if !strings.Contains(errorMsg, invalidCase.expectedErrorMessage) {
+				t.Errorf(`expected "%s" to be contained in the errror message : %s`, invalidCase.expectedErrorMessage, errorMsg)
 			}
 		})
 	}

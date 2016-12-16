@@ -1,3 +1,14 @@
+#
+# WARNING!
+#
+# Node Pool is still an experimental feature.
+#
+# Experimental features will change in backward-incompatible ways.
+# Though it would be just a matter of re-creating node pools in case of breaking changes,
+# we at least assume you well understand common VPC, KMS, EC2, ELB, CloudFormation, etc. gotchas.
+#
+# Please use this feature at your own risk.
+
 # Unique name of the node pool. In order to deploy
 # more than one node pool into the same AWS account, this
 # name must not conflict with an existing cluster.
@@ -35,7 +46,7 @@ availabilityZone: {{.AvailabilityZone}}
 # ARN of the KMS key used to encrypt TLS assets.
 kmsKeyArn: "{{.KMSKeyARN}}"
 
-# Number of worker nodes to create
+# Number of worker nodes to create, for more control use `worker.autoScalingGroup` and do not use this setting
 #workerCount: 1
 
 # Instance type for worker nodes
@@ -52,6 +63,82 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 
 # Price (Dollars) to bid for spot instances. Omit for on-demand instances.
 # workerSpotPrice: "0.05"
+
+# Existing "glue" security groups attached to worker nodes which are typically used to allow access from worker nodes to services running on an existing infrastructure
+# workerSecurityGroupIds:
+#   - sg-1234abcd
+#   - sg-5678efab
+
+# Tenancy of the worker nodes. Options are "default" and "dedicated"
+# Documentation: http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/dedicated-instance.html
+# workerTenancy: default
+
+# Experimental worker config which can be changed in backward-incompatible ways
+# worker:
+#   # Auto Scaling Group definition for workers. If only `workerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
+#   autoScalingGroup:
+#     minSize: 1
+#     maxSize: 3
+#     rollingUpdateMinInstancesInService: 2
+#   # Tag the cloudformation stack with the key `kube-aws:cluster-autoscaler:scale-specs` with the value containing
+#   # source of truth for cluster-autoscaler to update their autoscaling target and its min/max size.
+#   # Currently, enabling this configuration doesn't automatically deploy cluster-autoscaler itself.
+#   # Please read [the original issue](https://github.com/coreos/kube-aws/issues/148) carefully for more information.
+#   clusterAutoscaler:
+#     minSize: 1
+#     maxSize: 3
+#  # Spot fleet config for worker nodes
+#  spotFleet:
+#    # Total desired number of units to maintain
+#    # An unit is chosen by you and can be a vCPU, specific amount of memory, size of instance store, etc., according to your requirement.
+#    # Omit or put zero to disable the spot fleet support and use an autoscaling group to manage nodes.
+#    #targetCapacity: 10
+#
+#    # IAM role to grant the Spot fleet permission to bid on, launch, and terminate instances on your behalf
+#    # See http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-fleet-requests.html#spot-fleet-prerequisites
+#    #
+#    # Defaults to "arn:aws:iam::youraccountid:role/aws-ec2-spot-fleet-role" assuming you've arrived "Spot Requests" in EC2 Dashboard
+#    # hence the role is automatically created for you
+#    #iamFleetRoleArn: "arn:aws:iam::youraccountid:role/kube-aws-doesnt-create-this-for-you"
+#
+#    # Price per unit hour = Price per instance hour / num of weighted capacity for the instance
+#    # Defaults to "0.06"
+#    #spotPrice: 0.06
+#
+#    # Disk size (GiB) per unit
+#    # Disk size for each launch specification defaults to unitRootVolumeSize * weightedCapacity
+#    #unitRootVolumeSize: 30
+#
+#    # Disk type for worker node (one of standard, io1, or gp2)
+#    # Can be overridden in each launch specification
+#    #rootVolumeType: gp2
+#
+#    # Number of I/O operations per second (IOPS) per unit. Leave blank if rootVolumeType is not io1
+#    # IOPS for each launch specification defaults to unitRootVolumeIOPS * weightedCapacity
+#    #unitRootVolumeIOPS: 0
+#
+#    launchSpecifications:
+#    - # Number of units provided by an EC2 instance of the instanceType.
+#      weightedCapacity: 1
+#      instanceType: m3.medium
+#
+#      # Price per unit hour = Price per instance hour / num of weighted capacity for the instance
+#      #spotPrice:
+#
+#      # Defaults to worker.spotFleet.rootVolumeType if omitted
+#      #rootVolumeType:
+#
+#      # Defaults to worker.spotFleet.unitRootVolumeSize * weightedCapacity if omitted
+#      #rootVolumeSize:
+#
+#      # Number of provisioned IOPS when rootVlumeType is io1
+#      # Must be within the range between 100 and 2000
+#      # Defaults to worker.spotFleet.unitRootVolumeIOPS * weightedCapacity if omitted
+#      #rootVolumeIOPS:
+#    - weightedCapacity: 2
+#      instanceType: m3.large
+#    - weightedCapacity: 2
+#      instanceType: m4.large
 
 ## Networking config
 
@@ -104,14 +191,24 @@ useCalico: {{.UseCalico}}
 
 # Experimental features will change in backward-incompatible ways
 # experimental:
-#   nodeDrainer:
-#     enabled: true
 #   awsEnvironment:
 #     enabled: true
 #     environment:
 #       CFNSTACK: '{ "Ref" : "AWS::StackId" }'
+#   awsNodeLabels:
+#     enabled: true
+#   loadBalancer:
+#     enabled: true
+#     names: [ "manuallymanagedelb" ]
+#     securityGroupIds: [ "sg-87654321" ]
+#   nodeDrainer:
+#     enabled: true
+#   nodeLabels:
+#     kube-aws.coreos.com/role: worker
+#   waitSignal:
+#     enabled: true
 
-# AWS Tags for cloudformation stack resources 
+# AWS Tags for cloudformation stack resources
 #stackTags:
 #  Name: "Kubernetes"
 #  Environment: "Production"

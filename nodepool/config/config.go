@@ -5,14 +5,12 @@ package config
 
 import (
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/kms"
 	cfg "github.com/coreos/kube-aws/config"
 	"github.com/coreos/kube-aws/coreos/amiregistry"
 	"github.com/coreos/kube-aws/coreos/userdatavalidation"
 	"github.com/coreos/kube-aws/filereader/jsontemplate"
 	"github.com/coreos/kube-aws/filereader/userdatatemplate"
+	model "github.com/coreos/kube-aws/model"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 )
@@ -49,32 +47,18 @@ type stackConfig struct {
 }
 
 func (c ProvidedConfig) stackConfig(opts StackTemplateOptions, compressUserData bool) (*stackConfig, error) {
-	assets, err := cfg.ReadTLSAssets(opts.TLSAssetsDir)
-	if err != nil {
-		return nil, err
-	}
+	var err error
 	stackConfig := stackConfig{}
 
 	if stackConfig.ComputedConfig, err = c.Config(); err != nil {
 		return nil, err
 	}
 
-	// TODO Cleaner way to inject this dependency
-	var kmsSvc cfg.EncryptService
-	if c.providedEncryptService != nil {
-		kmsSvc = c.providedEncryptService
-	} else {
-		awsConfig := aws.NewConfig().
-			WithRegion(stackConfig.ComputedConfig.Region).
-			WithCredentialsChainVerboseErrors(true)
-
-		kmsSvc = kms.New(session.New(awsConfig))
-	}
-
-	compactAssets, err := assets.Compact(stackConfig.ComputedConfig.KMSKeyARN, kmsSvc)
-	if err != nil {
-		return nil, fmt.Errorf("failed to compress TLS assets: %v", err)
-	}
+	compactAssets, err := cfg.ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, cfg.KMSConfig{
+		Region:         stackConfig.ComputedConfig.Region,
+		KMSKeyARN:      c.KMSKeyARN,
+		EncryptService: c.providedEncryptService,
+	})
 
 	stackConfig.ComputedConfig.TLSConfig = compactAssets
 
@@ -98,13 +82,13 @@ func (c ProvidedConfig) ValidateUserData(opts StackTemplateOptions) error {
 	return err
 }
 
-func (c ProvidedConfig) RenderStackTemplate(opts StackTemplateOptions) ([]byte, error) {
+func (c ProvidedConfig) RenderStackTemplate(opts StackTemplateOptions, prettyPrint bool) ([]byte, error) {
 	stackConfig, err := c.stackConfig(opts, true)
 	if err != nil {
 		return nil, err
 	}
 
-	bytes, err := jsontemplate.GetBytes(opts.StackTemplateTmplFile, stackConfig)
+	bytes, err := jsontemplate.GetBytes(opts.StackTemplateTmplFile, stackConfig, prettyPrint)
 
 	if err != nil {
 		return nil, err
@@ -148,6 +132,22 @@ func ClusterFromBytes(data []byte) (*ProvidedConfig, error) {
 		c.InstanceCIDR = "10.0.1.0/24"
 	}
 
+	//Computed defaults
+	launchSpecs := []model.LaunchSpecification{}
+	for _, spec := range c.Worker.SpotFleet.LaunchSpecifications {
+		if spec.RootVolumeType == "" {
+			spec.RootVolumeType = c.Worker.SpotFleet.RootVolumeType
+		}
+		if spec.RootVolumeSize == 0 {
+			spec.RootVolumeSize = c.Worker.SpotFleet.UnitRootVolumeSize * spec.WeightedCapacity
+		}
+		if spec.RootVolumeType == "io1" && spec.RootVolumeIOPS == 0 {
+			spec.RootVolumeIOPS = c.Worker.SpotFleet.UnitRootVolumeIOPS * spec.WeightedCapacity
+		}
+		launchSpecs = append(launchSpecs, spec)
+	}
+	c.Worker.SpotFleet.LaunchSpecifications = launchSpecs
+
 	if err := c.valid(); err != nil {
 		return nil, fmt.Errorf("invalid cluster: %v", err)
 	}
@@ -180,6 +180,13 @@ func (c ProvidedConfig) Config() (*ComputedConfig, error) {
 	return &config, nil
 }
 
+func (c ProvidedConfig) WorkerDeploymentSettings() cfg.WorkerDeploymentSettings {
+	return cfg.WorkerDeploymentSettings{
+		WorkerSettings:     c.WorkerSettings,
+		DeploymentSettings: c.DeploymentSettings,
+	}
+}
+
 func (c ProvidedConfig) valid() error {
 	if _, err := c.DeploymentSettings.Valid(); err != nil {
 		return err
@@ -193,7 +200,21 @@ func (c ProvidedConfig) valid() error {
 		return err
 	}
 
+	if err := c.Worker.Valid(); err != nil {
+		return err
+	}
+
+	if err := c.WorkerDeploymentSettings().Valid(); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// CloudFormation stack name which is unique in an AWS account.
+// This is intended to be used to reference stack name from cloud-config as the target of awscli or cfn-bootstrap-tools commands e.g. `cfn-init` and `cfn-signal`
+func (c ComputedConfig) StackName() string {
+	return c.NodePoolName
 }
 
 func (c ComputedConfig) VPCRef() string {
@@ -212,9 +233,14 @@ func (c ComputedConfig) RouteTableRef() string {
 }
 
 func (c ComputedConfig) WorkerSecurityGroupRefs() []string {
-	return []string{
+	refs := c.WorkerDeploymentSettings().WorkerSecurityGroupRefs()
+
+	refs = append(
+		refs,
 		// The security group assigned to worker nodes to allow communication to etcd nodes and controller nodes
 		// which is created and maintained in the main cluster and then imported to node pools.
 		fmt.Sprintf(`{"Fn::ImportValue" : {"Fn::Sub" : "%s-WorkerSecurityGroup"}}`, c.ClusterName),
-	}
+	)
+
+	return refs
 }

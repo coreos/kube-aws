@@ -5,17 +5,46 @@ import (
 	"testing"
 	"text/template"
 
+	"fmt"
 	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/coreos/coreos-cloudinit/config/validate"
 )
+
+var numEncryption int
 
 type dummyEncryptService struct{}
 
 func (d *dummyEncryptService) Encrypt(input *kms.EncryptInput) (*kms.EncryptOutput, error) {
 	output := kms.EncryptOutput{
-		CiphertextBlob: input.Plaintext,
+		CiphertextBlob: []byte(fmt.Sprintf("%s%d", string(input.Plaintext), numEncryption)),
 	}
+	numEncryption += 1
 	return &output, nil
+}
+
+func TestDummyEncryptService(t *testing.T) {
+	encService := &dummyEncryptService{}
+	plaintext := []byte("mysecretinformation")
+
+	first, err := encService.Encrypt(&kms.EncryptInput{
+		Plaintext: plaintext,
+	})
+
+	if err != nil {
+		t.Errorf("failed to encrypt data %plaintext : %v", plaintext, err)
+	}
+
+	second, err := encService.Encrypt(&kms.EncryptInput{
+		Plaintext: plaintext,
+	})
+
+	if err != nil {
+		t.Errorf("failed to encrypt data %plaintext : %v", plaintext, err)
+	}
+
+	if first == second {
+		t.Errorf("dummy encrypt service should produce different ciphertext for each encryption but it didnt: first = %v, second = %v", first, second)
+	}
 }
 
 func TestCloudConfigTemplating(t *testing.T) {
@@ -37,7 +66,12 @@ func TestCloudConfigTemplating(t *testing.T) {
 		t.Fatalf("Failed to create config: %v", err)
 	}
 
-	compactAssets, err := assets.Compact(cfg.KMSKeyARN, &dummyEncryptService{})
+	encryptedAssets, err := assets.Encrypt(cfg.KMSKeyARN, &dummyEncryptService{})
+	if err != nil {
+		t.Fatalf("failed to compress TLS assets: %v", err)
+	}
+
+	compactAssets, err := encryptedAssets.Compact()
 	if err != nil {
 		t.Fatalf("failed to compress TLS assets: %v", err)
 	}

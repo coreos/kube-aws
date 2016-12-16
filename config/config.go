@@ -12,16 +12,15 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/coreos/go-semver/semver"
 	"github.com/coreos/kube-aws/coreos/amiregistry"
 	"github.com/coreos/kube-aws/coreos/userdatavalidation"
 	"github.com/coreos/kube-aws/filereader/jsontemplate"
 	"github.com/coreos/kube-aws/filereader/userdatatemplate"
+	model "github.com/coreos/kube-aws/model"
 	"github.com/coreos/kube-aws/netutil"
 	yaml "gopkg.in/yaml.v2"
+	"strconv"
 )
 
 const (
@@ -31,7 +30,15 @@ const (
 
 func NewDefaultCluster() *Cluster {
 	experimental := Experimental{
+		AuditLog{
+			Enabled: false,
+			MaxAge:  30,
+			LogPath: "/dev/stdout",
+		},
 		AwsEnvironment{
+			Enabled: false,
+		},
+		AwsNodeLabels{
 			Enabled: false,
 		},
 		EphemeralImageStorage{
@@ -45,9 +52,13 @@ func NewDefaultCluster() *Cluster {
 		NodeDrainer{
 			Enabled: false,
 		},
-		NodeLabel{
-			Enabled: false,
+		NodeLabels{},
+		Plugins{
+			Rbac{
+				Enabled: false,
+			},
 		},
+		[]Taint{},
 		WaitSignal{
 			Enabled:      false,
 			MaxBatchSize: 1,
@@ -72,12 +83,15 @@ func NewDefaultCluster() *Cluster {
 			DNSServiceIP: "10.3.0.10",
 		},
 		WorkerSettings: WorkerSettings{
-			WorkerCount:          1,
-			WorkerCreateTimeout:  "PT15M",
-			WorkerInstanceType:   "m3.medium",
-			WorkerRootVolumeType: "gp2",
-			WorkerRootVolumeIOPS: 0,
-			WorkerRootVolumeSize: 30,
+			Worker:                 model.NewDefaultWorker(),
+			WorkerCount:            1,
+			WorkerCreateTimeout:    "PT15M",
+			WorkerInstanceType:     "m3.medium",
+			WorkerRootVolumeType:   "gp2",
+			WorkerRootVolumeIOPS:   0,
+			WorkerRootVolumeSize:   30,
+			WorkerSecurityGroupIds: []string{},
+			WorkerTenancy:          "default",
 		},
 		ControllerSettings: ControllerSettings{
 			ControllerCount:          1,
@@ -86,12 +100,18 @@ func NewDefaultCluster() *Cluster {
 			ControllerRootVolumeType: "gp2",
 			ControllerRootVolumeIOPS: 0,
 			ControllerRootVolumeSize: 30,
+			ControllerTenancy:        "default",
 		},
 		EtcdSettings: EtcdSettings{
 			EtcdCount:          1,
 			EtcdInstanceType:   "m3.medium",
 			EtcdRootVolumeSize: 30,
+			EtcdRootVolumeType: "gp2",
+			EtcdRootVolumeIOPS: 0,
 			EtcdDataVolumeSize: 30,
+			EtcdDataVolumeType: "gp2",
+			EtcdDataVolumeIOPS: 0,
+			EtcdTenancy:        "default",
 		},
 		FlannelSettings: FlannelSettings{
 			PodCIDR: "10.2.0.0/16",
@@ -216,23 +236,28 @@ type DeploymentSettings struct {
 
 // Part of configuration which is specific to worker nodes
 type WorkerSettings struct {
-	WorkerCount          int    `yaml:"workerCount,omitempty"`
-	WorkerCreateTimeout  string `yaml:"workerCreateTimeout,omitempty"`
-	WorkerInstanceType   string `yaml:"workerInstanceType,omitempty"`
-	WorkerRootVolumeType string `yaml:"workerRootVolumeType,omitempty"`
-	WorkerRootVolumeIOPS int    `yaml:"workerRootVolumeIOPS,omitempty"`
-	WorkerRootVolumeSize int    `yaml:"workerRootVolumeSize,omitempty"`
-	WorkerSpotPrice      string `yaml:"workerSpotPrice,omitempty"`
+	model.Worker           `yaml:"worker,omitempty"`
+	WorkerCount            int      `yaml:"workerCount,omitempty"`
+	WorkerCreateTimeout    string   `yaml:"workerCreateTimeout,omitempty"`
+	WorkerInstanceType     string   `yaml:"workerInstanceType,omitempty"`
+	WorkerRootVolumeType   string   `yaml:"workerRootVolumeType,omitempty"`
+	WorkerRootVolumeIOPS   int      `yaml:"workerRootVolumeIOPS,omitempty"`
+	WorkerRootVolumeSize   int      `yaml:"workerRootVolumeSize,omitempty"`
+	WorkerSpotPrice        string   `yaml:"workerSpotPrice,omitempty"`
+	WorkerSecurityGroupIds []string `yaml:"workerSecurityGroupIds,omitempty"`
+	WorkerTenancy          string   `yaml:"workerTenancy,omitempty"`
 }
 
 // Part of configuration which is specific to controller nodes
 type ControllerSettings struct {
+	model.Controller         `yaml:"controller,omitempty"`
 	ControllerCount          int    `yaml:"controllerCount,omitempty"`
 	ControllerCreateTimeout  string `yaml:"controllerCreateTimeout,omitempty"`
 	ControllerInstanceType   string `yaml:"controllerInstanceType,omitempty"`
 	ControllerRootVolumeType string `yaml:"controllerRootVolumeType,omitempty"`
 	ControllerRootVolumeIOPS int    `yaml:"controllerRootVolumeIOPS,omitempty"`
 	ControllerRootVolumeSize int    `yaml:"controllerRootVolumeSize,omitempty"`
+	ControllerTenancy        string `yaml:"controllerTenancy,omitempty"`
 }
 
 // Part of configuration which is specific to etcd nodes
@@ -240,8 +265,13 @@ type EtcdSettings struct {
 	EtcdCount               int    `yaml:"etcdCount"`
 	EtcdInstanceType        string `yaml:"etcdInstanceType,omitempty"`
 	EtcdRootVolumeSize      int    `yaml:"etcdRootVolumeSize,omitempty"`
+	EtcdRootVolumeType      string `yaml:"etcdRootVolumeType,omitempty"`
+	EtcdRootVolumeIOPS      int    `yaml:"etcdRootVolumeIOPS,omitempty"`
 	EtcdDataVolumeSize      int    `yaml:"etcdDataVolumeSize,omitempty"`
+	EtcdDataVolumeType      string `yaml:"etcdDataVolumeType,omitempty"`
+	EtcdDataVolumeIOPS      int    `yaml:"etcdDataVolumeIOPS,omitempty"`
 	EtcdDataVolumeEphemeral bool   `yaml:"etcdDataVolumEphemeral,omitempty"`
+	EtcdTenancy             string `yaml:"etcdTenancy,omitempty"`
 }
 
 // Part of configuration which is specific to flanneld
@@ -273,17 +303,31 @@ type Subnet struct {
 }
 
 type Experimental struct {
+	AuditLog              AuditLog              `yaml:"auditLog"`
 	AwsEnvironment        AwsEnvironment        `yaml:"awsEnvironment"`
+	AwsNodeLabels         AwsNodeLabels         `yaml:"awsNodeLabels"`
 	EphemeralImageStorage EphemeralImageStorage `yaml:"ephemeralImageStorage"`
 	LoadBalancer          LoadBalancer          `yaml:"loadBalancer"`
 	NodeDrainer           NodeDrainer           `yaml:"nodeDrainer"`
-	NodeLabel             NodeLabel             `yaml:"nodeLabel"`
+	NodeLabels            NodeLabels            `yaml:"nodeLabels"`
+	Plugins               Plugins               `yaml:"plugins"`
+	Taints                []Taint               `yaml:"taints"`
 	WaitSignal            WaitSignal            `yaml:"waitSignal"`
 }
 
 type AwsEnvironment struct {
 	Enabled     bool              `yaml:"enabled"`
 	Environment map[string]string `yaml:"environment"`
+}
+
+type AuditLog struct {
+	Enabled bool   `yaml:"enabled"`
+	MaxAge  int    `yaml:"maxage"`
+	LogPath string `yaml:"logpath"`
+}
+
+type AwsNodeLabels struct {
+	Enabled bool `yaml:"enabled"`
 }
 
 type EphemeralImageStorage struct {
@@ -296,14 +340,43 @@ type NodeDrainer struct {
 	Enabled bool `yaml:"enabled"`
 }
 
-type NodeLabel struct {
-	Enabled bool `yaml:"enabled"`
+type NodeLabels map[string]string
+
+func (l NodeLabels) Enabled() bool {
+	return len(l) > 0
+}
+
+// Returns key=value pairs separated by ',' to be passed to kubelet's `--node-labels` flag
+func (l NodeLabels) String() string {
+	labels := []string{}
+	for k, v := range l {
+		labels = append(labels, fmt.Sprintf("%s=%s", k, v))
+	}
+	return strings.Join(labels, ",")
 }
 
 type LoadBalancer struct {
 	Enabled          bool     `yaml:"enabled"`
 	Names            []string `yaml:"names"`
 	SecurityGroupIds []string `yaml:"securityGroupIds"`
+}
+
+type Plugins struct {
+	Rbac Rbac `yaml:"rbac"`
+}
+
+type Rbac struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type Taint struct {
+	Key    string `yaml:"key"`
+	Value  string `yaml:"value"`
+	Effect string `yaml:"effect"`
+}
+
+func (t Taint) String() string {
+	return fmt.Sprintf("%s=%s:%s", t.Key, t.Value, t.Effect)
 }
 
 type WaitSignal struct {
@@ -322,11 +395,45 @@ var supportedReleaseChannels = map[string]bool{
 }
 
 func (c WorkerSettings) MinWorkerCount() int {
-	return c.WorkerCount - 1
+	if c.Worker.AutoScalingGroup.MinSize == 0 {
+		return c.WorkerCount
+	}
+	return c.Worker.AutoScalingGroup.MinSize
 }
 
 func (c WorkerSettings) MaxWorkerCount() int {
-	return c.WorkerCount + 1
+	if c.Worker.AutoScalingGroup.MaxSize == 0 {
+		return c.WorkerCount
+	}
+	return c.Worker.AutoScalingGroup.MaxSize
+}
+
+func (c WorkerSettings) WorkerRollingUpdateMinInstancesInService() int {
+	if c.AutoScalingGroup.RollingUpdateMinInstancesInService == 0 {
+		return c.MaxWorkerCount() - 1
+	}
+	return c.AutoScalingGroup.RollingUpdateMinInstancesInService
+}
+
+func (c ControllerSettings) MinControllerCount() int {
+	if c.Controller.AutoScalingGroup.MinSize == 0 {
+		return c.ControllerCount
+	}
+	return c.Controller.AutoScalingGroup.MinSize
+}
+
+func (c ControllerSettings) MaxControllerCount() int {
+	if c.Controller.AutoScalingGroup.MaxSize == 0 {
+		return c.ControllerCount
+	}
+	return c.Controller.AutoScalingGroup.MaxSize
+}
+
+func (c ControllerSettings) ControllerRollingUpdateMinInstancesInService() int {
+	if c.AutoScalingGroup.RollingUpdateMinInstancesInService == 0 {
+		return c.MaxControllerCount() - 1
+	}
+	return c.AutoScalingGroup.RollingUpdateMinInstancesInService
 }
 
 // Required by kubelet to locate the apiserver
@@ -341,9 +448,6 @@ func (c KubeClusterSettings) K8sNetworkPlugin() string {
 
 func (c Cluster) Config() (*Config, error) {
 	config := Config{Cluster: c}
-
-	config.MinControllerCount = config.ControllerCount - 1
-	config.MaxControllerCount = config.ControllerCount + 1
 
 	// Check if we are running CoreOS 1151.0.0 or greater when using rkt as
 	// runtime. Proceed regardless if running alpha. TODO(pb) delete when rkt
@@ -508,32 +612,18 @@ type stackConfig struct {
 }
 
 func (c Cluster) stackConfig(opts StackTemplateOptions, compressUserData bool) (*stackConfig, error) {
-	assets, err := ReadTLSAssets(opts.TLSAssetsDir)
-	if err != nil {
-		return nil, err
-	}
+	var err error
 	stackConfig := stackConfig{}
 
 	if stackConfig.Config, err = c.Config(); err != nil {
 		return nil, err
 	}
 
-	awsConfig := aws.NewConfig().
-		WithRegion(stackConfig.Config.Region).
-		WithCredentialsChainVerboseErrors(true)
-
-	// TODO Cleaner way to inject this dependency
-	var kmsSvc EncryptService
-	if c.providedEncryptService != nil {
-		kmsSvc = c.providedEncryptService
-	} else {
-		kmsSvc = kms.New(session.New(awsConfig))
-	}
-
-	compactAssets, err := assets.Compact(stackConfig.Config.KMSKeyARN, kmsSvc)
-	if err != nil {
-		return nil, fmt.Errorf("failed to compress TLS assets: %v", err)
-	}
+	compactAssets, err := ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, KMSConfig{
+		Region:         stackConfig.Config.Region,
+		KMSKeyARN:      c.KMSKeyARN,
+		EncryptService: c.providedEncryptService,
+	})
 
 	stackConfig.Config.TLSConfig = compactAssets
 
@@ -565,13 +655,13 @@ func (c Cluster) ValidateUserData(opts StackTemplateOptions) error {
 	return err
 }
 
-func (c Cluster) RenderStackTemplate(opts StackTemplateOptions) ([]byte, error) {
+func (c Cluster) RenderStackTemplate(opts StackTemplateOptions, prettyPrint bool) ([]byte, error) {
 	stackConfig, err := c.stackConfig(opts, true)
 	if err != nil {
 		return nil, err
 	}
 
-	bytes, err := jsontemplate.GetBytes(opts.StackTemplateTmplFile, stackConfig)
+	bytes, err := jsontemplate.GetBytes(opts.StackTemplateTmplFile, stackConfig, prettyPrint)
 	if err != nil {
 		return nil, err
 	}
@@ -587,9 +677,6 @@ type etcdInstance struct {
 type Config struct {
 	Cluster
 
-	MinControllerCount int
-	MaxControllerCount int
-
 	EtcdEndpoints      string
 	EtcdInitialCluster string
 	EtcdInstances      []etcdInstance
@@ -602,6 +689,12 @@ type Config struct {
 
 	//Reference strings for dynamic resources
 	VPCRef string
+}
+
+// CloudFormation stack name which is unique in an AWS account.
+// This is intended to be used to reference stack name from cloud-config as the target of awscli or cfn-bootstrap-tools commands e.g. `cfn-init` and `cfn-signal`
+func (c Config) StackName() string {
+	return c.ClusterName
 }
 
 func (c Cluster) valid() error {
@@ -682,6 +775,24 @@ func (c Cluster) valid() error {
 
 	if err := c.WorkerSettings.Valid(); err != nil {
 		return err
+	}
+
+	if err := c.WorkerDeploymentSettings().Valid(); err != nil {
+		return err
+	}
+
+	if c.WorkerTenancy != "default" && c.Worker.SpotFleet.Enabled() {
+		return fmt.Errorf("selected worker tenancy (%s) is incompatible with spot fleet", c.WorkerTenancy)
+	}
+
+	if c.WorkerTenancy != "default" && c.WorkerSpotPrice != "" {
+		return fmt.Errorf("selected worker tenancy (%s) is incompatible with spot instances", c.WorkerTenancy)
+	}
+
+	if c.Worker.ClusterAutoscaler.Enabled() {
+		return fmt.Errorf("cluster-autoscaler support can't be enabled for a main cluster because allowing so" +
+			"results in unreliability while scaling nodes out. " +
+			"Use experimental node pools instead to deploy worker nodes with cluster-autoscaler support.")
 	}
 
 	return nil
@@ -787,6 +898,10 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 		}
 	}
 
+	if err := c.Experimental.Valid(); err != nil {
+		return nil, err
+	}
+
 	return &DeploymentValidationResult{vpcNet: vpcNet}, nil
 }
 
@@ -805,6 +920,17 @@ func (c WorkerSettings) Valid() error {
 		}
 	}
 
+	if c.WorkerCount < 0 {
+		return fmt.Errorf("`workerCount` must be zero or greater if specified")
+	}
+	// one is the default WorkerCount
+	if c.WorkerCount != 1 && (c.AutoScalingGroup.MinSize != 0 || c.AutoScalingGroup.MaxSize != 0) {
+		return fmt.Errorf("`worker.autoScalingGroup.minSize` and `worker.autoScalingGroup.maxSize` can only be specified without `workerCount`")
+	}
+	if err := c.AutoScalingGroup.Valid(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -820,6 +946,27 @@ func (c ControllerSettings) Valid() error {
 
 		if c.ControllerRootVolumeType != "standard" && c.ControllerRootVolumeType != "gp2" {
 			return fmt.Errorf("invalid controllerRootVolumeType: %s", c.ControllerRootVolumeType)
+		}
+	}
+
+	if c.ControllerCount < 0 {
+		return fmt.Errorf("`controllerCount` must be zero or greater if specified")
+	}
+	// one is the default ControllerCount
+	if c.ControllerCount != 1 && (c.AutoScalingGroup.MinSize != 0 || c.AutoScalingGroup.MaxSize != 0) {
+		return fmt.Errorf("`controller.autoScalingGroup.minSize` and `controller.autoScalingGroup.maxSize` can only be specified without `controllerCount`")
+	}
+	if err := c.AutoScalingGroup.Valid(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c Experimental) Valid() error {
+	for _, taint := range c.Taints {
+		if taint.Effect != "NoSchedule" && taint.Effect != "PreferNoSchedule" {
+			return fmt.Errorf("Effect must be NoSchdule or PreferNoSchedule, but was %s", taint.Effect)
 		}
 	}
 
@@ -897,6 +1044,65 @@ func (c *Cluster) ValidateExistingVPC(existingVPCCIDR string, existingSubnetCIDR
 				)
 			}
 		}
+	}
+
+	return nil
+}
+
+func (c *Cluster) WorkerDeploymentSettings() WorkerDeploymentSettings {
+	return WorkerDeploymentSettings{
+		WorkerSettings:     c.WorkerSettings,
+		DeploymentSettings: c.DeploymentSettings,
+	}
+}
+
+type WorkerDeploymentSettings struct {
+	WorkerSettings
+	DeploymentSettings
+}
+
+func (c *Cluster) WorkerSecurityGroupRefs() []string {
+	return c.WorkerDeploymentSettings().WorkerSecurityGroupRefs()
+}
+
+func (c WorkerDeploymentSettings) WorkerSecurityGroupRefs() []string {
+	refs := []string{}
+
+	if c.Experimental.LoadBalancer.Enabled {
+		for _, sgId := range c.Experimental.LoadBalancer.SecurityGroupIds {
+			refs = append(refs, fmt.Sprintf(`"%s"`, sgId))
+		}
+	}
+
+	for _, sgId := range c.WorkerSecurityGroupIds {
+		refs = append(refs, fmt.Sprintf(`"%s"`, sgId))
+	}
+
+	return refs
+}
+
+func (c WorkerDeploymentSettings) StackTags() map[string]string {
+	tags := map[string]string{}
+
+	for k, v := range c.DeploymentSettings.StackTags {
+		tags[k] = v
+	}
+
+	if c.Worker.ClusterAutoscaler.Enabled() {
+		tags["kube-aws:cluster-autoscaler:logical-name"] = "AutoScaleWorker"
+		tags["kube-aws:cluster-autoscaler:min-size"] = strconv.Itoa(c.Worker.ClusterAutoscaler.MinSize)
+		tags["kube-aws:cluster-autoscaler:max-size"] = strconv.Itoa(c.Worker.ClusterAutoscaler.MaxSize)
+	}
+
+	return tags
+}
+
+func (c WorkerDeploymentSettings) Valid() error {
+	sgRefs := c.WorkerSecurityGroupRefs()
+	numSGs := len(sgRefs)
+
+	if numSGs > 4 {
+		return fmt.Errorf("number of user provided security groups must be less than or equal to 4 but was %d (actual EC2 limit is 5 but one of them is reserved for kube-aws) : %v", numSGs, sgRefs)
 	}
 
 	return nil

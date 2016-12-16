@@ -50,8 +50,15 @@ availabilityZone: {{.AvailabilityZone}}
 # ARN of the KMS key used to encrypt TLS assets.
 kmsKeyArn: "{{.KMSKeyARN}}"
 
-# Number of controller nodes to create
+# Number of controller nodes to create, for more control use `controller.autoScalingGroup` and do not use this setting
 #controllerCount: 1
+
+controller:
+  # Auto Scaling Group definition for controllers. If only `controllerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
+  # autoScalingGroup:
+  #   minSize: 1
+  #   maxSize: 3
+  #   rollingUpdateMinInstancesInService: 2
 
 # Maximum time to wait for controller creation
 #controlerCreateTimeout: PT15M
@@ -68,8 +75,15 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 # Number of I/O operations per second (IOPS) that the controller node disk supports. Leave blank if controllerRootVolumeType is not io1
 #controllerRootVolumeIOPS: 0
 
-# Number of worker nodes to create
+# Number of worker nodes to create, for more control use `worker.autoScalingGroup` and do not use this setting
 #workerCount: 1
+
+# worker:
+#   # Auto Scaling Group definition for workers. If only `workerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
+#   autoScalingGroup:
+#     minSize: 1
+#     maxSize: 3
+#     rollingUpdateMinInstancesInService: 2
 
 # Maximum time to wait for worker creation
 #workerCreateTimeout: PT15M
@@ -86,8 +100,17 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 # Number of I/O operations per second (IOPS) that the worker node disk supports. Leave blank if workerRootVolumeType is not io1
 #workerRootVolumeIOPS: 0
 
+# Tenancy of the worker nodes. Options are "default" and "dedicated"
+# Documentation: http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/dedicated-instance.html
+# workerTenancy: default
+
 # Price (Dollars) to bid for spot instances. Omit for on-demand instances.
 # workerSpotPrice: "0.05"
+
+# Existing "glue" security groups attached to worker nodes which are typically used to allow access from worker nodes to services running on an existing infrastructure
+# workerSecurityGroupIds:
+#   - sg-1234abcd
+#   - sg-5678efab
 
 ## Etcd Cluster config
 ## WARNING: Any changes to etcd parameters after the cluster is first created will not be applied
@@ -101,16 +124,32 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 # Instance type for etcd node
 # etcdInstanceType: m3.medium
 
-# Root volume disk size (GiB) for etcd node
+# Root volume size (GiB) for etcd node
 # etcdRootVolumeSize: 30
+
+# Root volume type for etcd node (one of standard, io1, or gp2)
+# etcdRootVolumeType: gp2
+
+# Number of I/O operations per second (IOPS) that the etcd node's root volume supports. Leave blank if etcdRootVolumeType is not io1
+# etcdRootVolumeIOPS: 0
 
 # Use ephemeral instance storage for etcd data volume instead of EBS?
 # (Recommended set to true for high-throughput control planes)
 # etcdDataVolumeEphemeral: false
 
-# Data EBS volume disk size (GiB) for etcd node
+# Data volume size (GiB) for etcd node
 # if etcdDataVolumeEphemeral=true, this value is ignored. The size of ephemeral volumes is not configurable.
 # etcdDataVolumeSize: 30
+
+# Data volume type for etcd node (one of standard, io1, or gp2)
+# etcdDataVolumeType: gp2
+
+# Number of I/O operations per second (IOPS) that the etcd node's data volume supports. Leave blank if etcdDataVolumeType is not io1
+# etcdDataVolumeIOPS: 0
+
+# Tenancy of the etcd instances. Options are "default" and "dedicated"
+# Documentation: http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/dedicated-instance.html
+# etcdTenancy: default
 
 ## Networking config
 
@@ -179,15 +218,15 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 
 # Experimental features will change in backward-incompatible ways
 # experimental:
-#   nodeDrainer:
-#     enabled: true
-#   nodeLabel:
-#     enabled: true
 #   awsEnvironment:
 #     enabled: true
 #     environment:
 #       CFNSTACK: '{ "Ref" : "AWS::StackId" }'
-#   waitSignal:
+#   auditLog:
+#     enabled: true
+#     maxage: 30
+#     logpath: /dev/stdout
+#   awsNodeLabels:
 #     enabled: true
 #   # This option has not yet been tested with rkt as container runtime
 #   ephemeralImageStorage:
@@ -196,6 +235,19 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #     enabled: true
 #     names: [ "manuallymanagedelb" ]
 #     securityGroupIds: [ "sg-87654321" ]
+#   nodeDrainer:
+#     enabled: true
+#   nodeLabels:
+#     kube-aws.coreos.com/role: worker
+#   taints:
+#     - key: dedicated
+#       value: search
+#       effect: NoSchedule
+#   waitSignal:
+#     enabled: true
+#   plugins:
+#     rbac:
+#       enabled: true
 
 # AWS Tags for cloudformation stack resources
 #stackTags:

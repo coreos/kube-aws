@@ -1,7 +1,8 @@
-# Kubernetes on AWS
+# Kubernetes on AWS (kube-aws)
 
 This is the source of the `kube-aws` tool and the installation artifacts used by the official Kubernetes on AWS documentation.
-View the full instructions at https://coreos.com/kubernetes/docs/latest/kubernetes-on-aws.html.
+
+View the full instructions at [GitHub](/Documentation/kubernetes-on-aws.md) or at [the CoreOS documentation website](https://coreos.com/kubernetes/docs/latest/kubernetes-on-aws.html).
 
 ---
 
@@ -11,82 +12,45 @@ This survey is meant for those who are currently running at least some workloads
 
 ---
 
-### Download pre-built binary
+## Features
 
-Go to the [releases](https://github.com/coreos/kube-aws/releases) and download the latest release tarball for your architecture.
+* Create, update and destroy Kubernetes clusters on AWS
+* Highly available and scalable Kubernetes clusters backed by multi-AZ deployment and Node Pools
+* Deployment to an existing VPC
+* Powered by various AWS services including CloudFormation, KMS, Auto Scaling, Spot Fleet, EC2, ELB, S3, etc.
 
-Currently, binaries coming from the final release for each version are signed so you should download the corresponding signature (.sig) as well. If you've decided to download a non-final release you can skip down to "Extract the binary:".
+## Getting Started
 
-Import the [CoreOS Application Signing Public Key](https://coreos.com/security/app-signing-key/):
+Check out our getting started tutorial on launching your first Kubernetes cluster in AWS.
 
-```sh
-gpg2 --keyserver pgp.mit.edu --recv-key FC8A365E
+* [Pre-requisites](/Documentation/kubernetes-on-aws-prerequisites.md)
+* [Step 1: Configure](/Documentation/kubernetes-on-aws.md)
+  * Download the latest release of kube-aws
+  * Define account and cluster settings
+* [Step 2: Render](/Documentation/kubernetes-on-aws-render.md)
+  * Compile a re-usable CloudFormation template for the cluster
+  * Optionally adjust template configuration
+  * Validate the rendered CloudFormation stack
+* [Step 3: Launch](/Documentation/kubernetes-on-aws-launch.md)
+  * Create the CloudFormation stack and start our EC2 machines
+  * Set up CLI access to the new cluster
+* [Step 4: Update](/Documentation/kube-aws-cluster-updates.md)
+  * Update the CloudFormation stack
+* [Step 5: Add Node Pool](/Documentation/kubernetes-on-aws-node-pool.md)
+  * Create the additional pool of worker nodes
+  * Adjust template configuration for each pool of worker nodes
+  * Required to support [cluster-autoscaler](https://github.com/kubernetes/contrib/tree/master/cluster-autoscaler)
+* [Step 6: Destroy](/Documentation/kubernetes-on-aws-destroy.md)
+  * Destroy the cluster
+
+## Examples
+
+Generate `cluster.yaml`:
+
 ```
-
-Validate the key fingerprint:
-
-```sh
-gpg2 --fingerprint FC8A365E
-```
-The correct key fingerprint is `18AD 5014 C99E F7E3 BA5F  6CE9 50BD D3E0 FC8A 365E`
-
-Validate the tarball's GPG signature:
-
-```sh
-PLATFORM=linux-amd64
-# Or
-PLATFORM=darwin-amd64
-
-gpg2 --verify kube-aws-${PLATFORM}.tar.gz.sig kube-aws-${PLATFORM}.tar.gz
-```
-Extract the binary:
-
-```sh
-tar zxvf kube-aws-${PLATFORM}.tar.gz
-```
-
-Add kube-aws to your path:
-
-```sh
-mv ${PLATFORM}/kube-aws /usr/local/bin
-```
-
-### AWS Credentials
-The supported way to provide AWS credentials to kube-aws is by exporting the following environment variables:
-
-```sh
-export AWS_ACCESS_KEY_ID=AKID1234567890
-export AWS_SECRET_ACCESS_KEY=MY-SECRET-KEY
-```
-
-### Create a KMS Key
-
-[Amazon KMS](http://docs.aws.amazon.com/kms/latest/developerguide/overview.html) keys are used to encrypt and decrypt cluster TLS assets. If you already have a KMS Key that you would like to use, you can skip this step.
-
-Creating a KMS key can be done via the AWS web console or via the AWS cli tool:
-
-```shell
-$ aws kms --region=us-west-1 create-key --description="kube-aws assets"
-{
-    "KeyMetadata": {
-        "CreationDate": 1458235139.724,
-        "KeyState": "Enabled",
-        "Arn": "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx",
-        "AWSAccountId": "xxxxxxxxxxxxx",
-        "Enabled": true,
-        "KeyUsage": "ENCRYPT_DECRYPT",
-        "KeyId": "xxxxxxxxx",
-        "Description": "kube-aws assets"
-    }
-}
-```
-You'll need the `KeyMetadata.Arn` string for the next step:
-
-## Initialize an asset directory
-```sh
 $ mkdir my-cluster
 $ cd my-cluster
-$ kube-aws init --cluster-name=<my-cluster-name> \
+$ kube-aws init --cluster-name=my-cluster \
 --external-dns-name=<my-cluster-endpoint> \
 --region=us-west-1 \
 --availability-zone=us-west-1c \
@@ -94,140 +58,104 @@ $ kube-aws init --cluster-name=<my-cluster-name> \
 --kms-key-arn="arn:aws:kms:us-west-1:xxxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
 ```
 
-There will now be a cluster.yaml file in the asset directory.
+Generate assets:
 
-## Render contents of the asset directory
-
-* In the simplest case, you can have kube-aws generate both your TLS identities and certificate authority for you.
-
-  ```sh
-  $ kube-aws render credentials --generate-ca
-  ```
-
-  This is not recommended for production.
-
-* It is recommended that, for production, you supply your own immediate certificate signing authority.
-
-  ```sh
-  $ kube-aws render credentials --ca-cert-path=/path/to/ca-cert.pem --ca-key-path=/path/to/ca-key.pem
-  ```
-
-  For more information on operating your own CA, check out this [awesome guide](https://jamielinux.com/docs/openssl-certificate-authority/).
-
-* In certain cases, such as users with advanced pre-existing PKI infrastructure, you may wish to pre-generate all cluster TLS assets. In this case, make sure the file tree below exists in your cluster assets directory before running `kube-aws up`.
-
-  ```sh
-  ls -R credentials/
-  credentials/:
-  admin-key.pem  apiserver-key.pem  ca.pem               etcd-client.pem  etcd.pem        worker.pem
-  admin.pem      apiserver.pem      etcd-client-key.pem  etcd-key.pem     worker-key.pem
-  ```
-
-The next command generates the default set of cluster assets in your asset directory. These assets are templates that are used to create, update and interact with your Kubernetes cluster.
-
-  ```sh
-  $ kube-aws render stack
-  ```
-
-You can now customize your cluster by editing asset files:
-
-* **cluster.yaml**
-
-  This is the configuration file for your cluster. It contains the configuration parameters that are templated into your userdata and cloudformation stack.
-
-* **userdata/**
-
-  * `cloud-config-worker`
-  * `cloud-config-controller`
-
-  This directory contains the [cloud-init](https://github.com/coreos/coreos-cloudinit) cloud-config userdata files. The CoreOS operating system supports automated provisioning via cloud-config files, which describe the various files, scripts and systemd actions necessary to produce a working cluster machine. These files are templated with your cluster configuration parameters and embedded into the cloudformation stack template.
-
-* **stack-template.json**
-
-  This file describes the [AWS cloudformation](https://aws.amazon.com/cloudformation/) stack which encompasses all the AWS resources associated with your cluster. This JSON document is templated with configuration parameters, we well as the encoded userdata files.
-
-* **credentials/**
-
-  This directory contains the **unencrypted** TLS assets for your cluster, along with a pre-configured `kubeconfig` file which provides access to your cluster api via kubectl.
-
-You can also now check the `my-cluster` asset directory into version control if you desire. The contents of this directory are your reproducible cluster assets. Please take care not to commit the `my-cluster/credentials` directory, as it contains your TLS secrets. If you're using git, the `credentials` directory will already be ignored for you.
-
-## Route53 Host Record (optional)
-
-`kube-aws` can optionally create an A record for the controller IP in an existing hosted zone.
-
-Edit the `cluster.yaml` file:
-
-```yaml
-externalDNSName: my-cluster.staging.core-os.net
-createRecordSet: true
-hostedZone: staging.core-os.net
+```
+$ kube-aws render credentials --generate-ca
+$ kube-aws render stack
 ```
 
-If `createRecordSet` is not set to true, the deployer will be responsible for making externalDNSName routable to the controller IP after the cluster is created.
+Validate configuration:
 
-## Validate your cluster assets
-
-The `validate` command check the validity of the cloud-config userdata files and the cloudformation stack description:
-
-```sh
-$ kube-aws validate
+```
+$ kube-aws validate --s3-uri s3://<your-bucket>/<optional-prefix>
 ```
 
-## Create a cluster from asset directory
+Launch:
 
-```sh
-$ kube-aws up
 ```
+$ kube-aws up --s3-uri s3://<your-bucket>/<optional-prefix>
 
-This command can take a while.
-
-## Access the cluster
-
-```sh
-$ kubectl --kubeconfig=kubeconfig get nodes
-```
-
-It can take some time after `kube-aws up` completes before the cluster is available. Until then, you will have a `connection refused` error.
-
-## Export your cloudformation stack
-
-```sh
+# Or export your cloudformation stack
 $ kube-aws up --export
+
+# Access the cluster
+$ KUBECONFIG=kubeconfig kubectl get nodes --show-labels
 ```
 
-## Update an existing kube-aws cluster
+Update:
 
-Read the [cluster update](Documentation/kube-aws-cluster-updates.md) documentation.
+```
+$ $EDITOR cluster.yaml
+$ kube-aws update --s3-uri s3://<your-bucket>/<optional-prefix>
+```
+
+Node Pool:
+
+```
+$ kube-aws node-pools init --node-pool-name my-pool
+$ kube-aws node-pools render --node-pool-name my-pool
+$ kube-aws node-pools validate --node-pool-name my-pool \
+  --s3-uri s3://<your-bucket>/<optional-prefix>
+$ kube-aws node-pools up --node-pool-name my-pool \
+  --s3-uri s3://<your-bucket>/<optional-prefix>
+$ $EDITOR node-pools/my-pool/cluster.yaml
+$ kube-aws node-pools update --node-pool-name my-pool \
+  --s3-uri s3://<your-bucket>/<optional-prefix>
+```
+
+Destroy:
+
+```
+$ kube-aws node-pools destroy --node-pool-name my-pool
+$ kube-aws destroy
+```
 
 ## Development
 
 ### Build
 
-Run the `./build` script to compile `kube-aws` locally.
+Clone this repository to the appropriate path under the GOPATH.
+
+```
+$ export GOPATH=$HOME/go
+$ mkdir -p $GOPATH/src/github.com/coreos/
+$ git clone git@github.com:coreos/kube-aws.git $GOPATH/src/github.com/coreos/kube-aws
+```
+
+Run `make build` to compile `kube-aws` locally.
 
 This depends on having:
-* golang >= 1.5
+* golang >= 1.7
 
 The compiled binary will be available at `bin/kube-aws`.
 
 ### Run Unit Tests
 
 ```sh
-go test $(go list ./... | grep -v '/vendor/')
+make test
 ```
 
-### Modifying templates
-
-The various templates are located in the `pkg/config/templates/` folder of the source repo. `go generate` is used to pack these templates into the source code. In order for changes to templates to be reflected in the source code:
+### Reformat Code
 
 ```sh
-go generate ./pkg/config
+make format
 ```
 
-This command is run automatically as part of the `build` script.
+### Modifying Templates
 
-### Useful Resources
+The various templates are located in the `config/templates/` and the `nodepool/config/templates/` directory of the source repo. `go generate` is used to pack these templates into the source code. In order for changes to templates to be reflected in the source code:
+
+```sh
+make build
+```
+
+## Other Resources
+
+Extra or advanced topics in for kube-aws:
+
+* [Known Limitations](/Documentation/kubernetes-on-aws-limitations.md)
+* [Roadmap](/ROADMAP.md)
 
 The following links can be useful for development:
 

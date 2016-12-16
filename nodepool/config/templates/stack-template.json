@@ -1,10 +1,60 @@
-{{define "WorkerSecurityGroups"}}
-[
-  {{range $sgIndex, $sgRef := $.WorkerSecurityGroupRefs}}
-  {{if gt $sgIndex 0}},{{end}}
-  {{$sgRef}}
-  {{end}}
-]
+{{define "SpotFleet"}}
+  "SpotFleet": {
+    "Type": "AWS::EC2::SpotFleet",
+    "Properties": {
+      "SpotFleetRequestConfigData": {
+        "IamFleetRole": {{$.Worker.SpotFleet.IAMFleetRoleRef}},
+        "AllocationStrategy": "diversified",
+        "TargetCapacity": {{$.Worker.SpotFleet.TargetCapacity}},
+        "SpotPrice": "{{$.Worker.SpotFleet.SpotPrice}}",
+        "LaunchSpecifications": [
+          {{range $subnetIndex, $subnet := $.Subnets}}
+          {{with $subnetLogicalName := printf "Subnet%d" $subnetIndex}}
+          {{range $specIndex, $spec := $.Worker.SpotFleet.LaunchSpecifications}}
+          {{if or (gt $subnetIndex 0) (gt $specIndex 0) }},{{end}}
+          {
+            "ImageId": "{{$.AMI}}",
+            "InstanceType": "{{$spec.InstanceType}}",
+            "KeyName": "{{$.KeyName}}",
+            "WeightedCapacity": {{$spec.WeightedCapacity}},
+            {{if $spec.SpotPrice}}
+            "SpotPrice": "{{$spec.SpotPrice}}",
+            {{end}}
+            "IamInstanceProfile": {
+              "Arn": {
+                "Fn::GetAtt" : ["IAMInstanceProfileWorker", "Arn"]
+              }
+            },
+            "BlockDeviceMappings": [
+              {
+                "DeviceName": "/dev/xvda",
+                "Ebs": {
+                  "VolumeSize": "{{$spec.RootVolumeSize}}",
+                  {{if gt $spec.RootVolumeIOPS 0}}
+                  "Iops": "{{$spec.RootVolumeIOPS}}",
+                  {{end}}
+                  "VolumeType": "{{$spec.RootVolumeType}}"
+                }
+              }
+            ],
+            "SecurityGroups": [
+              {{range $sgIndex, $sgRef := $.WorkerSecurityGroupRefs}}
+              {{if gt $sgIndex 0}},{{end}}
+              {"GroupId":{{$sgRef}}}
+              {{end}}
+            ],
+            "SubnetId": {
+              "Ref": "{{$subnetLogicalName}}"
+            },
+            "UserData": "{{$.UserDataWorker}}"
+          }
+          {{end}}
+          {{end}}
+          {{end}}
+        ]
+      }
+    }
+  },
 {{end}}
 {{define "AutoScaling"}}
     "AutoScaleWorker": {
@@ -15,13 +65,17 @@
           "{{$subnet.AvailabilityZone}}"
           {{end}}
         ],
-        "DesiredCapacity": "{{.WorkerCount}}",
         "HealthCheckGracePeriod": 600,
         "HealthCheckType": "EC2",
         "LaunchConfigurationName": {
           "Ref": "LaunchConfigurationWorker"
         },
         "MaxSize": "{{.MaxWorkerCount}}",
+        "MetricsCollection": [
+          {
+            "Granularity": "1Minute"
+          }
+        ],
         "MinSize": "{{.MinWorkerCount}}",
         "Tags": [
           {
@@ -30,16 +84,24 @@
             "Value": "{{.ClusterName}}"
           },
           {
-            "Key": "KubernetesNodePool",
+            "Key": "kube-aws:node-pool:name",
             "PropagateAtLaunch": "true",
             "Value": "{{.NodePoolName}}"
           },
           {
             "Key": "Name",
             "PropagateAtLaunch": "true",
-            "Value": "{{.NodePoolName}}-kube-aws-worker"
+            "Value": "{{.StackName}}-kube-aws-worker"
           }
         ],
+        {{if .Experimental.LoadBalancer.Enabled}}
+        "LoadBalancerNames" : [
+        {{range $index, $elb := .Experimental.LoadBalancer.Names}}
+        {{if $index}},{{end}}
+          "{{$elb}}"
+        {{end}}
+        ],
+        {{end}}
         "VPCZoneIdentifier": [
           {{range $index, $subnet := .Subnets}}
           {{with $subnetLogicalName := printf "Subnet%d" $index}}
@@ -52,16 +114,30 @@
         ]
       },
       "Type": "AWS::AutoScaling::AutoScalingGroup",
+      {{if .Experimental.WaitSignal.Enabled}}
+      "CreationPolicy" : {
+        "ResourceSignal" : {
+          "Count" : "{{.MinWorkerCount}}",
+          "Timeout" : "{{.WorkerCreateTimeout}}"
+        }
+      },
+      {{end}}
       "UpdatePolicy" : {
         "AutoScalingRollingUpdate" : {
           "MinInstancesInService" :
           {{if .WorkerSpotPrice}}
           "0"
           {{else}}
-          "{{.WorkerCount}}"
+          "{{.WorkerRollingUpdateMinInstancesInService}}"
           {{end}},
+          {{if .Experimental.WaitSignal.Enabled}}
+          "WaitOnResourceSignals" : "true",
+          "MaxBatchSize" : "{{.Experimental.WaitSignal.MaxBatchSize}}",
+          "PauseTime": "{{.WorkerCreateTimeout}}"
+          {{else}}
           "MaxBatchSize" : "1",
-          "PauseTime" : "PT2M"
+          "PauseTime": "PT2M"
+          {{end}}
         }
       }
     },
@@ -86,12 +162,36 @@
         "ImageId": "{{.AMI}}",
         "InstanceType": "{{.WorkerInstanceType}}",
         "KeyName": "{{.KeyName}}",
-        "SecurityGroups": {{template "WorkerSecurityGroups" $}},
+        "SecurityGroups": [
+          {{range $sgIndex, $sgRef := $.WorkerSecurityGroupRefs}}
+          {{if gt $sgIndex 0}},{{end}}
+          {{$sgRef}}
+          {{end}}
+        ],
         {{if .WorkerSpotPrice}}
         "SpotPrice": {{.WorkerSpotPrice}},
+        {{else}}
+        "PlacementTenancy": "{{.WorkerTenancy}}",
         {{end}}
         "UserData": "{{ .UserDataWorker }}"
       },
+  {{ if .Experimental.AwsEnvironment.Enabled }}
+        "Metadata" : {
+          "AWS::CloudFormation::Init" : {
+            "config" : {
+              "commands": {
+                "write-environment": {
+                  "command": { "Fn::Join" : ["", [ "echo '",
+  {{range $variable, $function := .Experimental.AwsEnvironment.Environment}}
+  "{{$variable}}=", {{$function}} , "\n",
+  {{end}}
+  "' > /etc/aws-environment" ] ] }
+                }
+              }
+            }
+          }
+        },
+  {{end}}
       "Type": "AWS::AutoScaling::LaunchConfiguration"
     },
 {{end}}
@@ -99,7 +199,11 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "kube-aws Kubernetes node pool {{.NodePoolName}}",
   "Resources": {
+    {{if .Worker.SpotFleet.Enabled}}
+    {{template "SpotFleet" .}}
+    {{else}}
     {{template "AutoScaling" .}}
+    {{end}}
     "IAMInstanceProfileWorker": {
       "Properties": {
         "Path": "/",
@@ -154,6 +258,43 @@
                   "Effect" : "Allow",
                   "Resource" : "{{.KMSKeyARN}}"
                 },
+                {{if .Experimental.WaitSignal.Enabled}}
+                {
+                  "Action": "cloudformation:SignalResource",
+                  "Effect": "Allow",
+                  "Resource":
+                    { "Fn::Join": [ "", [
+                      "arn:aws:cloudformation:",
+                      { "Ref": "AWS::Region" },
+                      ":",
+                      { "Ref": "AWS::AccountId" },
+                      ":stack/",
+                      { "Ref": "AWS::StackName" },
+                      "/*" ]
+                    ] }
+                },
+                {{end}}
+                {{if .Experimental.AwsNodeLabels.Enabled}}
+                {
+                  "Action": "autoscaling:Describe*",
+                  "Effect": "Allow",
+                  "Resource": [ "*" ]
+                },
+                {{end}}
+                {{if .Worker.SpotFleet.Enabled}}
+                {
+                  "Action": "ec2:CreateTags",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {{if .Experimental.LoadBalancer.Enabled}}
+                {
+                  "Action": "elasticloadbalancing:*",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {{end}}
+                {{end}}
                 {
                   "Action": [
                     "ecr:GetAuthorizationToken",
@@ -187,7 +328,7 @@
         "Tags": [
           {
             "Key": "Name",
-            "Value": "{{$.ClusterName}}-{{$subnetLogicalName}}"
+            "Value": "{{$.NodePoolName}}-{{$subnetLogicalName}}"
           },
           {
             "Key": "KubernetesCluster",

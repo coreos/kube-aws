@@ -281,3 +281,12 @@ func (c *Provisioner) Validate(stackBody string, s3URI string) (string, error) {
 
 	return validationReport.String(), nil
 }
+
+func (c *Provisioner) Destroy() error {
+	cfSvc := cloudformation.New(c.session)
+	dreq := &cloudformation.DeleteStackInput{
+		StackName: aws.String(c.stackName),
+	}
+	_, err := cfSvc.DeleteStack(dreq)
+	return err
+}

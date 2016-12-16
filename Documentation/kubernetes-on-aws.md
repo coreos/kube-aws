@@ -19,10 +19,22 @@ Each of the steps will cover:
 * [Step 3: Launch][aws-step-3]
   * Create the CloudFormation stack and start our EC2 machines
   * Set up CLI access to the new cluster
+* [Step 4: Update][aws-step-4]
+  * Update the CloudFormation stack
+* [Step 5: Add Node Pool][aws-step-5]
+  * Create the additional pool of worker nodes
+  * Adjust template configuration for each pool of worker nodes
+  * Required to support [cluster-autoscaler](https://github.com/kubernetes/contrib/tree/master/cluster-autoscaler)
+* [Step 6: Destroy][aws-step-6]
+  * Destroy the cluster
 
 Let's get started.
 
 ## Download kube-aws
+
+Go to the [releases](https://github.com/coreos/kube-aws/releases) and download the latest release tarball for your architecture.
+
+Currently, binaries coming from the final release for each version are signed so you should download the corresponding signature (.sig) as well. If you've decided to download a non-final release you can skip down to "Extract the binary:".
 
 Import the [CoreOS Application Signing Public Key](https://coreos.com/security/app-signing-key/):
 
@@ -86,6 +98,15 @@ aws_access_key_id = AKID1234567890
 aws_secret_access_key = MY-SECRET-KEY
 ```
 
+### Method 3: Environment variables
+
+Provide AWS credentials to kube-aws by exporting the following environment variables:
+
+```sh
+export AWS_ACCESS_KEY_ID=AKID1234567890
+export AWS_SECRET_ACCESS_KEY=MY-SECRET-KEY
+```
+
 ## Test Credentials
 
 Test that your credentials work by describing any instances you may already have running on your account:
@@ -104,3 +125,6 @@ $ aws ec2 describe-instances
 [aws-step-1]: kubernetes-on-aws.md
 [aws-step-2]: kubernetes-on-aws-render.md
 [aws-step-3]: kubernetes-on-aws-launch.md
+[aws-step-4]: kube-aws-cluster-updates.md
+[aws-step-5]: kubernetes-on-aws-node-pool.md
+[aws-step-6]: kubernetes-on-aws-destroy.md

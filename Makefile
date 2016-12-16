@@ -9,8 +9,8 @@ format:
 
 .PHONY: test
 test: build
-	./test
+	./make/test
 
 .PHONY: test-with-cover
 test-with-cover: build
-	./test with-cover
+	./make/test with-cover

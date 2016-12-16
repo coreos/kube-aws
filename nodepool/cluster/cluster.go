@@ -48,7 +48,18 @@ func New(cfg *config.ProvidedConfig, awsDebug bool) *Cluster {
 }
 
 func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
-	return cfnstack.NewProvisioner(c.NodePoolName, c.StackTags, "{}", c.session)
+	stackPolicyBody := `{
+  "Statement" : [
+    {
+       "Effect" : "Allow",
+       "Principal" : "*",
+       "Action" : "Update:*",
+       "Resource" : "*"
+     }
+  ]
+}`
+
+	return cfnstack.NewProvisioner(c.NodePoolName, c.WorkerDeploymentSettings().StackTags(), stackPolicyBody, c.session)
 }
 
 func (c *Cluster) Create(stackBody string, s3URI string) error {
@@ -58,10 +69,27 @@ func (c *Cluster) Create(stackBody string, s3URI string) error {
 	return c.stackProvisioner().CreateStackAndWait(cfSvc, s3Svc, stackBody, s3URI)
 }
 
+func (c *Cluster) Update(stackBody string, s3URI string) (string, error) {
+	cfSvc := cloudformation.New(c.session)
+	s3Svc := s3.New(c.session)
+
+	updateOutput, err := c.stackProvisioner().UpdateStackAndWait(cfSvc, s3Svc, stackBody, s3URI)
+
+	return updateOutput, err
+}
+
+func (c *Cluster) ValidateStack(stackBody string, s3URI string) (string, error) {
+	return c.stackProvisioner().Validate(stackBody, s3URI)
+}
+
 func (c *Cluster) Info() (*Info, error) {
 	var info Info
 	{
 		info.Name = c.NodePoolName
 	}
 	return &info, nil
+}
+
+func (c *Cluster) Destroy() error {
+	return c.stackProvisioner().Destroy()
 }

@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/coreos/kube-aws/netutil"
+	"github.com/coreos/kube-aws/test/helper"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"net"
-	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -896,42 +895,6 @@ func TestValidateExistingVPC(t *testing.T) {
 	}
 }
 
-func withDummyCredentials(fn func(dir string)) {
-	if _, err := ioutil.ReadDir("temp"); err != nil {
-		if err := os.Mkdir("temp", 0755); err != nil {
-			panic(err)
-		}
-	}
-
-	dir, err := ioutil.TempDir("temp", "dummy-credentials")
-
-	if err != nil {
-		panic(err)
-	}
-
-	defer os.Remove(dir)
-
-	for _, pairName := range []string{"ca", "apiserver", "worker", "admin", "etcd", "etcd-client"} {
-		certFile := fmt.Sprintf("%s/%s.pem", dir, pairName)
-
-		if err := ioutil.WriteFile(certFile, []byte("dummycert"), 0644); err != nil {
-			panic(err)
-		}
-
-		defer os.Remove(certFile)
-
-		keyFile := fmt.Sprintf("%s/%s-key.pem", dir, pairName)
-
-		if err := ioutil.WriteFile(keyFile, []byte("dummykey"), 0644); err != nil {
-			panic(err)
-		}
-
-		defer os.Remove(keyFile)
-	}
-
-	fn(dir)
-}
-
 func TestValidateUserData(t *testing.T) {
 	cluster := newDefaultClusterWithDeps(&dummyEncryptService{})
 
@@ -941,7 +904,7 @@ func TestValidateUserData(t *testing.T) {
 		{"us-west-1b", "10.0.2.0/16", nil},
 	}
 
-	withDummyCredentials(func(dir string) {
+	helper.WithDummyCredentials(func(dir string) {
 		var stackTemplateOptions = StackTemplateOptions{
 			TLSAssetsDir:          dir,
 			ControllerTmplFile:    "templates/cloud-config-controller",
@@ -965,7 +928,7 @@ func TestRenderStackTemplate(t *testing.T) {
 		{"us-west-1b", "10.0.2.0/16", nil},
 	}
 
-	withDummyCredentials(func(dir string) {
+	helper.WithDummyCredentials(func(dir string) {
 		var stackTemplateOptions = StackTemplateOptions{
 			TLSAssetsDir:          dir,
 			ControllerTmplFile:    "templates/cloud-config-controller",
@@ -974,7 +937,7 @@ func TestRenderStackTemplate(t *testing.T) {
 			StackTemplateTmplFile: "templates/stack-template.json",
 		}
 
-		if _, err := cluster.RenderStackTemplate(stackTemplateOptions); err != nil {
+		if _, err := cluster.RenderStackTemplate(stackTemplateOptions, false); err != nil {
 			t.Errorf("failed to render stack template: %v", err)
 		}
 	})
@@ -1012,23 +975,188 @@ func TestWithTrailingDot(t *testing.T) {
 	}
 }
 
+type ConfigTester func(c *Cluster, t *testing.T)
+
 func TestConfig(t *testing.T) {
+	hasDefaultEtcdSettings := func(c *Cluster, t *testing.T) {
+		expected := EtcdSettings{
+			EtcdCount:               1,
+			EtcdInstanceType:        "m3.medium",
+			EtcdRootVolumeSize:      30,
+			EtcdRootVolumeType:      "gp2",
+			EtcdRootVolumeIOPS:      0,
+			EtcdDataVolumeSize:      30,
+			EtcdDataVolumeType:      "gp2",
+			EtcdDataVolumeIOPS:      0,
+			EtcdDataVolumeEphemeral: false,
+			EtcdTenancy:             "default",
+		}
+		actual := c.EtcdSettings
+		if !reflect.DeepEqual(expected, actual) {
+			t.Errorf(
+				"EtcdSettings didn't match: expected=%v actual=%v",
+				expected,
+				actual,
+			)
+		}
+	}
+
+	hasDefaultExperimentalFeatures := func(c *Cluster, t *testing.T) {
+		expected := Experimental{
+			AuditLog: AuditLog{
+				Enabled: false,
+				MaxAge:  30,
+				LogPath: "/dev/stdout",
+			},
+			AwsEnvironment: AwsEnvironment{
+				Enabled: false,
+			},
+			AwsNodeLabels: AwsNodeLabels{
+				Enabled: false,
+			},
+			EphemeralImageStorage: EphemeralImageStorage{
+				Enabled:    false,
+				Disk:       "xvdb",
+				Filesystem: "xfs",
+			},
+			LoadBalancer: LoadBalancer{
+				Enabled: false,
+			},
+			NodeDrainer: NodeDrainer{
+				Enabled: false,
+			},
+			NodeLabels: NodeLabels{},
+			Taints:     []Taint{},
+			WaitSignal: WaitSignal{
+				Enabled:      false,
+				MaxBatchSize: 1,
+			},
+		}
+
+		actual := c.Experimental
+
+		if !reflect.DeepEqual(expected, actual) {
+			t.Errorf("experimental settings didn't match :\nexpected=%v\nactual=%v", expected, actual)
+		}
+	}
+
 	minimalValidConfigYaml := minimalConfigYaml + `
 availabilityZone: us-west-1c
 `
 	validCases := []struct {
-		context    string
-		configYaml string
+		context      string
+		configYaml   string
+		assertConfig []ConfigTester
 	}{
+		{
+			context: "WithExperimentalFeatures",
+			configYaml: minimalValidConfigYaml + `
+experimental:
+  auditLog:
+    enabled: true
+    maxage: 100
+    logpath: "/var/log/audit.log"
+  awsEnvironment:
+    enabled: true
+    environment:
+      CFNSTACK: '{ "Ref" : "AWS::StackId" }'
+  awsNodeLabels:
+    enabled: true
+  ephemeralImageStorage:
+    enabled: true
+  loadBalancer:
+    enabled: true
+    names:
+      - manuallymanagedlb
+    securityGroupIds:
+      - sg-12345678
+  nodeDrainer:
+    enabled: true
+  nodeLabels:
+    kube-aws.coreos.com/role: worker
+  plugins:
+    rbac:
+      enabled: true
+  taints:
+    - key: reservation
+      value: spot
+      effect: NoSchedule
+  waitSignal:
+    enabled: true
+`,
+			assertConfig: []ConfigTester{
+				hasDefaultEtcdSettings,
+				func(c *Cluster, t *testing.T) {
+					expected := Experimental{
+						AuditLog: AuditLog{
+							Enabled: true,
+							MaxAge:  100,
+							LogPath: "/var/log/audit.log",
+						},
+						AwsEnvironment: AwsEnvironment{
+							Enabled: true,
+							Environment: map[string]string{
+								"CFNSTACK": `{ "Ref" : "AWS::StackId" }`,
+							},
+						},
+						AwsNodeLabels: AwsNodeLabels{
+							Enabled: true,
+						},
+						EphemeralImageStorage: EphemeralImageStorage{
+							Enabled:    true,
+							Disk:       "xvdb",
+							Filesystem: "xfs",
+						},
+						LoadBalancer: LoadBalancer{
+							Enabled:          true,
+							Names:            []string{"manuallymanagedlb"},
+							SecurityGroupIds: []string{"sg-12345678"},
+						},
+						NodeDrainer: NodeDrainer{
+							Enabled: true,
+						},
+						NodeLabels: NodeLabels{
+							"kube-aws.coreos.com/role": "worker",
+						},
+						Plugins: Plugins{
+							Rbac: Rbac{
+								Enabled: true,
+							},
+						},
+						Taints: []Taint{
+							{Key: "reservation", Value: "spot", Effect: "NoSchedule"},
+						},
+						WaitSignal: WaitSignal{
+							Enabled:      true,
+							MaxBatchSize: 1,
+						},
+					}
+
+					actual := c.Experimental
+
+					if !reflect.DeepEqual(expected, actual) {
+						t.Errorf("experimental settings didn't match : expected=%v actual=%v", expected, actual)
+					}
+				},
+			},
+		},
 		{
 			context:    "WithMinimalValidConfig",
 			configYaml: minimalValidConfigYaml,
+			assertConfig: []ConfigTester{
+				hasDefaultEtcdSettings,
+				hasDefaultExperimentalFeatures,
+			},
 		},
 		{
 			context: "WithVpcIdSpecified",
 			configYaml: minimalValidConfigYaml + `
 vpcId: vpc-1a2b3c4d
 `,
+			assertConfig: []ConfigTester{
+				hasDefaultEtcdSettings,
+				hasDefaultExperimentalFeatures,
+			},
 		},
 		{
 			context: "WithVpcIdAndRouteTableIdSpecified",
@@ -1036,6 +1164,138 @@ vpcId: vpc-1a2b3c4d
 vpcId: vpc-1a2b3c4d
 routeTableId: rtb-1a2b3c4d
 `,
+			assertConfig: []ConfigTester{
+				hasDefaultEtcdSettings,
+				hasDefaultExperimentalFeatures,
+			},
+		},
+		{
+			context: "WithWorkerSecurityGroupIds",
+			configYaml: minimalValidConfigYaml + `
+workerSecurityGroupIds:
+  - sg-12345678
+  - sg-abcdefab
+  - sg-23456789
+  - sg-bcdefabc
+`,
+			assertConfig: []ConfigTester{
+				hasDefaultEtcdSettings,
+				hasDefaultExperimentalFeatures,
+				func(c *Cluster, t *testing.T) {
+					expectedWorkerSecurityGroupIds := []string{
+						`sg-12345678`, `sg-abcdefab`, `sg-23456789`, `sg-bcdefabc`,
+					}
+					if !reflect.DeepEqual(c.WorkerSecurityGroupIds, expectedWorkerSecurityGroupIds) {
+						t.Errorf("WorkerSecurityGroupIds didn't match: expected=%v actual=%v", expectedWorkerSecurityGroupIds, c.WorkerSecurityGroupIds)
+					}
+
+					expectedWorkerSecurityGroupRefs := []string{
+						`"sg-12345678"`, `"sg-abcdefab"`, `"sg-23456789"`, `"sg-bcdefabc"`,
+					}
+					if !reflect.DeepEqual(c.WorkerSecurityGroupRefs(), expectedWorkerSecurityGroupRefs) {
+						t.Errorf("WorkerSecurityGroupRefs didn't match: expected=%v actual=%v", expectedWorkerSecurityGroupRefs, c.WorkerSecurityGroupRefs())
+					}
+				},
+			},
+		},
+		{
+			context: "WithWorkerAndLBSecurityGroupIds",
+			configYaml: minimalValidConfigYaml + `
+workerSecurityGroupIds:
+  - sg-12345678
+  - sg-abcdefab
+experimental:
+  loadBalancer:
+    enabled: true
+    securityGroupIds:
+      - sg-23456789
+      - sg-bcdefabc
+`,
+			assertConfig: []ConfigTester{
+				hasDefaultEtcdSettings,
+				func(c *Cluster, t *testing.T) {
+					expectedWorkerSecurityGroupIds := []string{
+						`sg-12345678`, `sg-abcdefab`,
+					}
+					if !reflect.DeepEqual(c.WorkerSecurityGroupIds, expectedWorkerSecurityGroupIds) {
+						t.Errorf("WorkerSecurityGroupIds didn't match: expected=%v actual=%v", expectedWorkerSecurityGroupIds, c.WorkerSecurityGroupIds)
+					}
+
+					expectedLBSecurityGroupIds := []string{
+						`sg-23456789`, `sg-bcdefabc`,
+					}
+					if !reflect.DeepEqual(c.Experimental.LoadBalancer.SecurityGroupIds, expectedLBSecurityGroupIds) {
+						t.Errorf("LBSecurityGroupIds didn't match: expected=%v actual=%v", expectedLBSecurityGroupIds, c.Experimental.LoadBalancer.SecurityGroupIds)
+					}
+
+					expectedWorkerSecurityGroupRefs := []string{
+						`"sg-23456789"`, `"sg-bcdefabc"`, `"sg-12345678"`, `"sg-abcdefab"`,
+					}
+					if !reflect.DeepEqual(c.WorkerSecurityGroupRefs(), expectedWorkerSecurityGroupRefs) {
+						t.Errorf("WorkerSecurityGroupRefs didn't match: expected=%v actual=%v", expectedWorkerSecurityGroupRefs, c.WorkerSecurityGroupRefs())
+					}
+				},
+			},
+		},
+		{
+			context: "WithDedicatedInstanceTenancy",
+			configYaml: minimalValidConfigYaml + `
+workerTenancy: dedicated
+controllerTenancy: dedicated
+etcdTenancy: dedicated
+`,
+			assertConfig: []ConfigTester{
+				func(c *Cluster, t *testing.T) {
+					if c.EtcdSettings.EtcdTenancy != "dedicated" {
+						t.Errorf("EtcdSettings.EtcdTenancy didn't match: expected=dedicated actual=%s", c.EtcdSettings.EtcdTenancy)
+					}
+					if c.WorkerTenancy != "dedicated" {
+						t.Errorf("WorkerTenancy didn't match: expected=dedicated actual=%s", c.WorkerTenancy)
+					}
+					if c.ControllerTenancy != "dedicated" {
+						t.Errorf("ControllerTenancy didn't match: expected=dedicated actual=%s", c.ControllerTenancy)
+					}
+				},
+			},
+		},
+		{
+			context: "WithEtcdNodesWithCustomEBSVolumes",
+			configYaml: minimalValidConfigYaml + `
+vpcId: vpc-1a2b3c4d
+routeTableId: rtb-1a2b3c4d
+etcdCount: 2
+etcdRootVolumeSize: 101
+etcdRootVolumeType: io1
+etcdRootVolumeIOPS: 102
+etcdDataVolumeSize: 103
+etcdDataVolumeType: io1
+etcdDataVolumeIOPS: 104
+`,
+			assertConfig: []ConfigTester{
+				hasDefaultExperimentalFeatures,
+				func(c *Cluster, t *testing.T) {
+					expected := EtcdSettings{
+						EtcdCount:               2,
+						EtcdInstanceType:        "m3.medium",
+						EtcdRootVolumeSize:      101,
+						EtcdRootVolumeType:      "io1",
+						EtcdRootVolumeIOPS:      102,
+						EtcdDataVolumeSize:      103,
+						EtcdDataVolumeType:      "io1",
+						EtcdDataVolumeIOPS:      104,
+						EtcdDataVolumeEphemeral: false,
+						EtcdTenancy:             "default",
+					}
+					actual := c.EtcdSettings
+					if !reflect.DeepEqual(expected, actual) {
+						t.Errorf(
+							"EtcdSettings didn't match: expected=%v actual=%v",
+							expected,
+							actual,
+						)
+					}
+				},
+			},
 		},
 	}
 
@@ -1049,7 +1309,13 @@ routeTableId: rtb-1a2b3c4d
 			}
 			providedConfig.providedEncryptService = &dummyEncryptService{}
 
-			withDummyCredentials(func(dummyTlsAssetsDir string) {
+			t.Run("AssertConfig", func(t *testing.T) {
+				for _, assertion := range validCase.assertConfig {
+					assertion(providedConfig, t)
+				}
+			})
+
+			helper.WithDummyCredentials(func(dummyTlsAssetsDir string) {
 				var stackTemplateOptions = StackTemplateOptions{
 					TLSAssetsDir:          dummyTlsAssetsDir,
 					ControllerTmplFile:    "templates/cloud-config-controller",
@@ -1065,7 +1331,7 @@ routeTableId: rtb-1a2b3c4d
 				})
 
 				t.Run("RenderStackTemplate", func(t *testing.T) {
-					if _, err := providedConfig.RenderStackTemplate(stackTemplateOptions); err != nil {
+					if _, err := providedConfig.RenderStackTemplate(stackTemplateOptions, false); err != nil {
 						t.Errorf("failed to render stack template: %v", err)
 					}
 				})
@@ -1074,9 +1340,31 @@ routeTableId: rtb-1a2b3c4d
 	}
 
 	parseErrorCases := []struct {
-		context    string
-		configYaml string
+		context              string
+		configYaml           string
+		expectedErrorMessage string
 	}{
+		{
+			context: "WithClusterAutoscalerEnabledForWorkers",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  clusterAutoscaler:
+    minSize: 1
+    maxSize: 2
+`,
+			expectedErrorMessage: "cluster-autoscaler support can't be enabled for a main cluster",
+		},
+		{
+			context: "WithInvalidTaint",
+			configYaml: minimalValidConfigYaml + `
+experimental:
+  taints:
+    - key: foo
+      value: bar
+      effect: UnknownEffect
+`,
+			expectedErrorMessage: "Effect must be NoSchdule or PreferNoSchedule, but was UnknownEffect",
+		},
 		{
 			context: "WithVpcIdAndVPCCIDRSpecified",
 			configYaml: minimalValidConfigYaml + `
@@ -1092,6 +1380,34 @@ vpcCIDR: "10.1.0.0/16"
 routeTableId: rtb-1a2b3c4d
 `,
 		},
+		{
+			context: "WithWorkerSecurityGroupIds",
+			configYaml: minimalValidConfigYaml + `
+workerSecurityGroupIds:
+  - sg-12345678
+  - sg-abcdefab
+  - sg-23456789
+  - sg-bcdefabc
+  - sg-34567890
+`,
+			expectedErrorMessage: "number of user provided security groups must be less than or equal to 4 but was 5",
+		},
+		{
+			context: "WithWorkerAndLBSecurityGroupIds",
+			configYaml: minimalValidConfigYaml + `
+workerSecurityGroupIds:
+  - sg-12345678
+  - sg-abcdefab
+  - sg-23456789
+experimental:
+  loadBalancer:
+    enabled: true
+    securityGroupIds:
+      - sg-bcdefabc
+      - sg-34567890
+`,
+			expectedErrorMessage: "number of user provided security groups must be less than or equal to 4 but was 5",
+		},
 	}
 
 	for _, invalidCase := range parseErrorCases {
@@ -1101,6 +1417,11 @@ routeTableId: rtb-1a2b3c4d
 			if err == nil {
 				t.Errorf("expected to fail parsing config %s: %v", configBytes, providedConfig)
 				t.FailNow()
+			}
+
+			errorMsg := fmt.Sprintf("%v", err)
+			if !strings.Contains(errorMsg, invalidCase.expectedErrorMessage) {
+				t.Errorf(`expected "%s" to be contained in the errror message : %s`, invalidCase.expectedErrorMessage, errorMsg)
 			}
 		})
 	}

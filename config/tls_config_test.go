@@ -6,6 +6,10 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"github.com/coreos/kube-aws/test/helper"
+	"os"
+	"path/filepath"
+	"reflect"
 )
 
 func genTLSAssets(t *testing.T) *RawTLSAssets {
@@ -101,4 +105,113 @@ func TestTLSGeneration(t *testing.T) {
 				err)
 		}
 	}
+}
+
+func TestReadOrCreateCompactTLSAssets(t *testing.T) {
+	helper.WithDummyCredentials(func(dir string) {
+		kmsConfig := KMSConfig{
+			KMSKeyARN:      "keyarn",
+			Region:         "us-west-1",
+			EncryptService: &dummyEncryptService{},
+		}
+
+		// See https://github.com/coreos/kube-aws/issues/107
+		t.Run("CachedToPreventUnnecessaryNodeReplacement", func(t *testing.T) {
+			created, err := ReadOrCreateCompactTLSAssets(dir, kmsConfig)
+
+			if err != nil {
+				t.Errorf("failed to read or update compact tls assets in %s : %v", dir, err)
+			}
+
+			// This depends on TestDummyEncryptService which ensures dummy encrypt service to produce different ciphertext for each encryption
+			// created == read means that encrypted assets were loaded from cached files named *.pem.enc, instead of re-encryptiong raw tls assets named *.pem files
+			// TODO Use some kind of mocking framework for tests like this
+			read, err := ReadOrCreateCompactTLSAssets(dir, kmsConfig)
+
+			if err != nil {
+				t.Errorf("failed to read or update compact tls assets in %s : %v", dir, err)
+			}
+
+			if !reflect.DeepEqual(created, read) {
+				t.Errorf(`failed to cache encrypted tls assets.
+	encrypted tls assets must not change after their first creation but they did change:
+	created = %v
+	read = %v`, created, read)
+			}
+		})
+
+		t.Run("RemoveOneOrMoreCacheFilesToRegenerateAll", func(t *testing.T) {
+			original, err := ReadOrCreateCompactTLSAssets(dir, kmsConfig)
+
+			if err != nil {
+				t.Errorf("failed to read the original encrypted tls assets : %v", err)
+			}
+
+			if err := os.Remove(filepath.Join(dir, "ca.pem.enc")); err != nil {
+				t.Errorf("failed to remove ca.pem.enc for test setup : %v", err)
+				t.FailNow()
+			}
+
+			regenerated, err := ReadOrCreateCompactTLSAssets(dir, kmsConfig)
+
+			if err != nil {
+				t.Errorf("failed to read the regenerated encrypted tls assets : %v", err)
+			}
+
+			if original.AdminCert == regenerated.AdminCert {
+				t.Errorf("AdminCert must change but it didn't : original = %v, regenrated = %v ", original.AdminCert, regenerated.AdminCert)
+			}
+
+			if original.AdminKey == regenerated.AdminKey {
+				t.Errorf("AdminKey must change but it didn't : original = %v, regenrated = %v ", original.AdminKey, regenerated.AdminKey)
+			}
+
+			if original.CACert == regenerated.CACert {
+				t.Errorf("CACert must change but it didn't : original = %v, regenrated = %v ", original.CACert, regenerated.CACert)
+			}
+
+			if original.CACert == regenerated.CACert {
+				t.Errorf("CACert must change but it didn't : original = %v, regenrated = %v ", original.CACert, regenerated.CACert)
+			}
+
+			if original.WorkerCert == regenerated.WorkerCert {
+				t.Errorf("WorkerCert must change but it didn't : original = %v, regenrated = %v ", original.WorkerCert, regenerated.WorkerCert)
+			}
+
+			if original.WorkerCert == regenerated.WorkerCert {
+				t.Errorf("WorkerCert must change but it didn't : original = %v, regenrated = %v ", original.WorkerCert, regenerated.WorkerCert)
+			}
+
+			if original.APIServerCert == regenerated.APIServerCert {
+				t.Errorf("APIServerCert must change but it didn't : original = %v, regenrated = %v ", original.APIServerCert, regenerated.APIServerCert)
+			}
+
+			if original.APIServerCert == regenerated.APIServerCert {
+				t.Errorf("APIServerCert must change but it didn't : original = %v, regenrated = %v ", original.APIServerCert, regenerated.APIServerCert)
+			}
+
+			if original.EtcdClientCert == regenerated.EtcdClientCert {
+				t.Errorf("EtcdClientCert must change but it didn't : original = %v, regenrated = %v ", original.EtcdClientCert, regenerated.EtcdClientCert)
+			}
+
+			if original.EtcdClientCert == regenerated.EtcdClientCert {
+				t.Errorf("EtcdClientCert must change but it didn't : original = %v, regenrated = %v ", original.EtcdClientCert, regenerated.EtcdClientCert)
+			}
+
+			if original.EtcdCert == regenerated.EtcdCert {
+				t.Errorf("EtcdCert must change but it didn't : original = %v, regenrated = %v ", original.EtcdCert, regenerated.EtcdCert)
+			}
+
+			if original.EtcdCert == regenerated.EtcdCert {
+				t.Errorf("EtcdCert must change but it didn't : original = %v, regenrated = %v ", original.EtcdCert, regenerated.EtcdCert)
+			}
+
+			if reflect.DeepEqual(original, regenerated) {
+				t.Errorf(`unexpecteed data contained in (possibly) regenerated encrypted tls assets.
+	encrypted tls assets must change after regeneration but they didn't:
+	original = %v
+	regenerated = %v`, original, regenerated)
+			}
+		})
+	})
 }
