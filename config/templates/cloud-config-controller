@@ -212,10 +212,7 @@ coreos:
         Type=oneshot
         ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl -s -m 20 -f  http://127.0.0.1:8080/healthz > /dev/null &&  /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10252/healthz > /dev/null && /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10251/healthz > /dev/null &&  /usr/bin/curl --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null ; then break ; fi;  done"
         {{ if .UseCalico }}
-        ExecStartPre=/usr/bin/bash -c "/usr/bin/wget -q https://github.com/projectcalico/calicoctl/releases/download/v1.0.0/calicoctl -O /opt/bin/calicoctl && \
-                                       chmod +x /opt/bin/calicoctl && \
-                                       until /opt/bin/calicoctl node status > /dev/null; do sleep 3; done && \
-                                       echo Calico running"
+        ExecStartPre=/usr/bin/bash -c "until /usr/bin/docker run --net=host --pid=host --rm calico/ctl:v1.0.0 node status > /dev/null; do sleep 3; done && echo Calico running"
         {{ end }}
         ExecStart=/usr/bin/rkt run \
           --uuid-file-save=/var/run/coreos/cfn-signal.uuid \
@@ -903,7 +900,7 @@ write_files:
         }
 {{ end }}
 
-  - path: /srv/kubernetes/manifests/kube-dns-rc.yaml
+  - path: /srv/kubernetes/manifests/kube-dns-autoscaler-de.yaml
     content: |
         apiVersion: extensions/v1beta1
         kind: Deployment
