@@ -25,4 +25,4 @@ fi
 
 FOCUS=${FOCUS:-\[Conformance\]}
 
-go run hack/e2e.go -v --test -check_version_skew=false -check_node_count=true --test_args="--ginkgo.focus=$FOCUS"
+go run hack/e2e.go -v --test -check_version_skew=false --test_args="--ginkgo.focus=$FOCUS"

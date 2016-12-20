@@ -16,16 +16,25 @@ Node Pool allows you to bring up additional pools of worker nodes each with a se
 Edit the `cluster.yaml` file to decrease `workerCount`, which is meant to be number of worker nodes in the "main" cluster, down to zero:
 
 ```yaml
+# `workerCount` should be set to zero explicitly
 workerCount: 0
+# And the below should be added before recreating the cluster
+worker:
+  autoScalingGroup:
+    minSize: 0
+    rollingUpdateMinInstancesInService: 0
+
 subnets:
   - availabilityZone: us-west-1a
     instanceCIDR: "10.0.0.0/24"
 ```
 
-Update the main cluster to catch up changes made in `cluster.yaml`:
+`kube-aws update` doesn't work when decreasing number of workers down to zero as of today.
+Therefore, don't update but recreate the main cluster to catch up changes made in `cluster.yaml`:
 
 ```
-$ kube-aws update \
+$ kube-aws destroy
+$ kube-aws up \
   --s3-uri s3://<my-bucket>/<optional-prefix>
 ```
 
@@ -38,7 +47,7 @@ $ kube-aws node-pools init --node-pool-name first-pool-in-1a \
   --kms-key-arn ${KUBE_AWS_KMS_KEY_ARN}
 
 $ kube-aws node-pools init --node-pool-name second-pool-in-1b \
-  --availability-zone us-west-1a \
+  --availability-zone us-west-1b \
   --key-name ${KUBE_AWS_KEY_NAME} \
   --kms-key-arn ${KUBE_AWS_KMS_KEY_ARN}
 ```
@@ -67,6 +76,14 @@ workerCount: 1
 subnets:
   - availabilityZone: us-west-1b
     instanceCIDR: "10.0.2.0/24"
+```
+
+Render the assets for the node pools including [cloud-init](https://github.com/coreos/coreos-cloudinit) cloud-config userdata and [AWS CloudFormation](https://aws.amazon.com/cloudformation/) template:
+
+```
+$ kube-aws node-pools render stack --node-pool-name first-pool-in-1a
+
+$ kube-aws node-pools render stack --node-pool-name second-pool-in-1b
 ```
 
 Launch the node pools:
@@ -108,9 +125,18 @@ Spot Fleet support may change in backward-incompatible ways as it is still an ex
 So, please use this feature at your own risk.
 However, we'd greatly appreciate your feedbacks because they do accelerate improvements in this area!
 
+### Known Limitations
+
+* Running `kube-aws node-pools update` to increase or decrease `targetCapacity` of a spot fleet resulst in a complete replacement of the Spot Fleet hence some downtime. [This is due to how CloudFormation works for updating a Spot Fleet](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-spotfleet.html#d0e60520)
+   * It is recommented to temporarily bring up an another, spare node pool to maintain the whole cluster capacity at a certain level while replacing the spot fleet
+
+### Pre-requisites
+
 This feature assumes you already have the IAM role with ARN like "arn:aws:iam::youraccountid:role/aws-ec2-spot-fleet-role" in your own AWS account.
 It implies that you've arrived "Spot Requests" in EC2 Dashboard in the AWS console at least once.
 See [the AWS documentation describing pre-requisites for Spot Fleet](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-fleet-requests.html#spot-fleet-prerequisites) for details.
+
+### Steps
 
 To add a node pool powered by Spot Fleet, edit node pool's `cluster.yaml`:
 

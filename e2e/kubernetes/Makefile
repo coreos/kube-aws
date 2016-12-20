@@ -1,4 +1,4 @@
-KUBERNETES_VERSION ?= v1.4.6+coreos.0
+KUBERNETES_VERSION ?= v1.5.1+coreos.0
 DOCKER_REPO ?=
 DOCKER_TAG ?= $(DOCKER_REPO)kube-e2e:$(KUBERNETES_VERSION)
 DOCKER_TAG_SANITIZED ?= $(shell echo $(DOCKER_TAG) | sed -e 's/+/_/')

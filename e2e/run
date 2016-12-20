@@ -208,6 +208,25 @@ conformance() {
     exit 1
   fi
 
+  echo Opening ingress on 4194 and 10250...
+
+  # Authorize these ingresses for E2E testing or it'll end up failing like:
+  #
+  # Summarizing 2 Failures:
+  #
+  # [Fail] [k8s.io] Proxy version v1 [It] should proxy logs on node using proxy subresource [Conformance]
+  # /go/kubernetes/_output/local/go/src/k8s.io/kubernetes/test/e2e/proxy.go:325
+  #
+  # [Fail] [k8s.io] Proxy version v1 [It] should proxy logs on node with explicit kubelet port [Conformance]
+  # /go/kubernetes/_output/local/go/src/k8s.io/kubernetes/test/e2e/proxy.go:325
+  #
+  # Ran 117 of 473 Specs in 3529.785 seconds
+  # FAIL! -- 115 Passed | 2 Failed | 0 Pending | 356 Skipped --- FAIL: TestE2E (3529.90s)
+  #
+  group_id=$(aws cloudformation --output json describe-stack-resources --stack-name ${KUBE_AWS_CLUSTER_NAME} | jq -r '.StackResources[] | select(.LogicalResourceId == "SecurityGroupController").PhysicalResourceId')
+  aws ec2 authorize-security-group-ingress --group-id ${group_id} --protocol tcp --port 4194 --source-group ${group_id} || echo 'skipping authorization for 4194'
+  aws ec2 authorize-security-group-ingress --group-id ${group_id} --protocol tcp --port 10250 --source-group ${group_id} || echo 'skipping authorization for 10250'
+
   master_host=$(controller_host)
 
   echo Connecting to $master_host via SSH
@@ -311,7 +330,14 @@ nodepool_update() {
 nodepool_destroy() {
   cd ${WORK_DIR}
 
-  ${KUBE_AWS_CMD} node-pools destroy --node-pool-name ${KUBE_AWS_NODE_POOL_NAME}
+  status=$(aws cloudformation describe-stacks --stack-name ${KUBE_AWS_NODE_POOL_NAME} --output json | jq -rc '.Stacks[0].StackStatus')
+
+  if [ "$status" != "DELETE_IN_PROGRESS" ]; then
+    ${KUBE_AWS_CMD} node-pools destroy --node-pool-name ${KUBE_AWS_NODE_POOL_NAME}
+  else
+    aws cloudformation wait stack-delete-complete \
+        --stack-name ${KUBE_AWS_NODE_POOL_NAME}
+  fi
 }
 
 nodepool() {

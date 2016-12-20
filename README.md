@@ -94,7 +94,7 @@ Node Pool:
 
 ```
 $ kube-aws node-pools init --node-pool-name my-pool
-$ kube-aws node-pools render --node-pool-name my-pool
+$ kube-aws node-pools render stack --node-pool-name my-pool
 $ kube-aws node-pools validate --node-pool-name my-pool \
   --s3-uri s3://<your-bucket>/<optional-prefix>
 $ kube-aws node-pools up --node-pool-name my-pool \
@@ -165,5 +165,3 @@ The following links can be useful for development:
 
 Submit a PR to this repository, following the [contributors guide](CONTRIBUTING.md).
 The documentation is published from [this source](Documentation/kubernetes-on-aws.md).
-
-

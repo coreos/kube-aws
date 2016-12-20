@@ -129,7 +129,7 @@ func runCmdInit(cmd *cobra.Command, args []string) error {
 
 Next steps:
 1. (Optional) Edit %s to parameterize the cluster.
-2. Use the "kube-aws node-pools render" command to render the stack template.
+2. Use the "kube-aws node-pools render stack" command to render the CloudFormation stack template and coreos-cloudinit userdata.
 `
 
 	fmt.Printf(successMsg, nodePoolClusterConfigFilePath(), nodePoolClusterConfigFilePath())

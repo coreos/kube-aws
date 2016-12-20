@@ -42,7 +42,7 @@ var (
 
 	cmdRenderStack = &cobra.Command{
 		Use:          "stack",
-		Short:        "Render CloudFormation stack",
+		Short:        "Render CloudFormation stack template and coreos-cloudinit userdata",
 		Long:         ``,
 		RunE:         runCmdRenderStack,
 		SilenceUsage: true,

@@ -70,7 +70,7 @@ func NewDefaultCluster() *Cluster {
 			ClusterName:        "kubernetes",
 			VPCCIDR:            "10.0.0.0/16",
 			ReleaseChannel:     "stable",
-			K8sVer:             "v1.4.6_coreos.0",
+			K8sVer:             "v1.5.1_coreos.0",
 			HyperkubeImageRepo: "quay.io/coreos/hyperkube",
 			AWSCliImageRepo:    "quay.io/coreos/awscli",
 			AWSCliTag:          "master",
