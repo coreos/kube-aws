@@ -302,7 +302,7 @@ coreos:
           --auto-scaling-group-name $AUTOSCALINGGROUP --region {{.Region}} \
           --query 'AutoScalingGroups[].LaunchConfigurationName' --output text)\""
         ExecStart=/bin/sh -c "/usr/bin/curl \
-          --cert   /etc/kubernetes/ssl/worker.pem \dns
+          --cert   /etc/kubernetes/ssl/worker.pem \
           --key    /etc/kubernetes/ssl/worker-key.pem \
           --cacert /etc/kubernetes/ssl/ca.pem  \
           --request PATCH \
