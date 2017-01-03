@@ -7,14 +7,15 @@ import (
 	"net"
 	"time"
 
+	"io/ioutil"
+	"path/filepath"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/coreos/kube-aws/gzipcompressor"
 	"github.com/coreos/kube-aws/netutil"
 	"github.com/coreos/kube-aws/tlsutil"
-	"io/ioutil"
-	"path/filepath"
 )
 
 // PEM encoded TLS assets.
@@ -433,6 +434,9 @@ func ReadOrCreateEncryptedTLSAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*
 
 func ReadOrCreateCompactTLSAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*CompactTLSAssets, error) {
 	encryptedAssets, err := ReadOrCreateEncryptedTLSAssets(tlsAssetsDir, kmsConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read/create TLS assets: %v", err)
+	}
 
 	compactAssets, err := encryptedAssets.Compact()
 	if err != nil {

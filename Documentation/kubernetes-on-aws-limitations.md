@@ -17,4 +17,6 @@ If you want to deploy `nginx-ingress-controller` which requires `hostPort`, just
 
 Relevant kube-aws issue: [does hostPort not work on kube-aws/CoreOS?](https://github.com/coreos/kube-aws/issues/91)
 
-See [the upstream issue](https://github.com/kubernetes/kubernetes/issues/23920#issuecomment-254918942) for more information.
+See [the related upstream issue](https://github.com/kubernetes/kubernetes/issues/23920#issuecomment-254918942) for more information.
+
+This limitation is also documented in [the official Kubernetes doc](http://kubernetes.io/docs/admin/network-plugins/#cni).

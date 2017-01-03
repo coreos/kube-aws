@@ -467,6 +467,30 @@ vpcCIDR: "10.1.0.0/16"
 `,
 		},
 		{
+			context: "WithSpotFleetWithExperimentalAwsEnvironment",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  spotFleet:
+    targetCapacity: 10
+experimental:
+  awsEnvironment:
+    enabled: true
+`,
+			expectedErrorMessage: "The experimental feature `awsEnvironment` assumes a node pool is managed by an ASG rather than a Spot Fleet.",
+		},
+		{
+			context: "WithSpotFleetWithExperimentalWaitSignal",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  spotFleet:
+    targetCapacity: 10
+experimental:
+  waitSignal:
+    enabled: true
+`,
+			expectedErrorMessage: "The experimental feature `waitSignal` assumes a node pool is managed by an ASG rather than a Spot Fleet.",
+		},
+		{
 			context: "WithSpotFleetWithInvalidRootVolumeType",
 			configYaml: minimalValidConfigYaml + `
 worker:
