@@ -171,8 +171,10 @@ controller:
 # subnets:
 #   - availabilityZone: us-west-1a
 #     instanceCIDR: "10.0.0.0/24"
+#     subnetId: "subnet-xxxxxxxx" #optional
 #   - availabilityZone: us-west-1b
 #     instanceCIDR: "10.0.1.0/24"
+#     subnetId: "subnet-xxxxxxxx" #optional
 
 # CIDR for all service IP addresses
 # serviceCIDR: "10.3.0.0/24"

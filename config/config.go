@@ -302,6 +302,8 @@ type Cluster struct {
 type Subnet struct {
 	AvailabilityZone  string `yaml:"availabilityZone,omitempty"`
 	InstanceCIDR      string `yaml:"instanceCIDR,omitempty"`
+	SubnetId          string `yaml:"subnetId,omitempty"`
+	SubnetLogicalName string
 	lastAllocatedAddr *net.IP
 }
 
@@ -812,7 +814,11 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 		}
 
 		var instanceCIDRs = make([]*net.IPNet, 0)
+
 		for i, subnet := range c.Subnets {
+			if subnet.SubnetId != "" {
+				continue
+			}
 			if subnet.AvailabilityZone == "" {
 				return nil, fmt.Errorf("availabilityZone must be set for subnet #%d", i)
 			}
@@ -935,7 +941,6 @@ Validates the an existing VPC and it's existing subnets do not conflict with thi
 cluster configuration
 */
 func (c *Cluster) ValidateExistingVPC(existingVPCCIDR string, existingSubnetCIDRS []string) error {
-
 	_, existingVPC, err := net.ParseCIDR(existingVPCCIDR)
 	if err != nil {
 		return fmt.Errorf("error parsing existing vpc cidr %s : %v", existingVPCCIDR, err)
@@ -970,19 +975,23 @@ func (c *Cluster) ValidateExistingVPC(existingVPCCIDR string, existingSubnetCIDR
 	// Loop through all subnets
 	// Note: legacy instanceCIDR/availabilityZone stuff has already been marshalled into this format
 	for _, subnet := range c.Subnets {
-		_, instanceNet, err := net.ParseCIDR(subnet.InstanceCIDR)
-		if err != nil {
-			return fmt.Errorf("error parsing instances cidr %s : %v", c.InstanceCIDR, err)
-		}
+		if subnet.SubnetId != "" {
+			continue
+		} else {
+			_, instanceNet, err := net.ParseCIDR(subnet.InstanceCIDR)
+			if err != nil {
+				return fmt.Errorf("error parsing instances cidr %s : %v", c.InstanceCIDR, err)
+			}
 
-		//Loop through all existing subnets in the VPC and look for conflicting CIDRS
-		for _, existingSubnet := range existingSubnets {
-			if netutil.CidrOverlap(instanceNet, existingSubnet) {
-				return fmt.Errorf(
-					"instance cidr (%s) conflicts with existing subnet cidr=%s",
-					instanceNet,
-					existingSubnet,
-				)
+			//Loop through all existing subnets in the VPC and look for conflicting CIDRS
+			for _, existingSubnet := range existingSubnets {
+				if netutil.CidrOverlap(instanceNet, existingSubnet) {
+					return fmt.Errorf(
+						"instance cidr (%s) conflicts with existing subnet cidr=%s",
+						instanceNet,
+						existingSubnet,
+					)
+				}
 			}
 		}
 	}
@@ -1074,4 +1083,12 @@ func withHostedZoneIDPrefix(id string) string {
 		return fmt.Sprintf("%s%s", hostedZoneIDPrefix, id)
 	}
 	return id
+}
+
+// Ref returns SubnetId or ref to newly created resource
+func (s Subnet) Ref() string {
+	if s.SubnetId != "" {
+		return fmt.Sprintf("%q", s.SubnetId)
+	}
+	return fmt.Sprintf(`{"Ref" : "%s"}`, s.SubnetLogicalName)
 }
