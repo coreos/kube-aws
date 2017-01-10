@@ -3,10 +3,11 @@ package cmd
 import (
 	"fmt"
 
+	"io/ioutil"
+
 	"github.com/coreos/kube-aws/cluster"
 	"github.com/coreos/kube-aws/config"
 	"github.com/spf13/cobra"
-	"io/ioutil"
 )
 
 var (
@@ -47,6 +48,12 @@ func runCmdUp(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Failed to render stack template: %v", err)
 	}
 
+	cluster := cluster.New(conf, upOpts.awsDebug)
+
+	if err := cluster.Validate(string(data), upOpts.s3URI); err != nil {
+		return fmt.Errorf("Error validating cluster: %v", err)
+	}
+
 	if upOpts.export {
 		templatePath := fmt.Sprintf("%s.stack-template.json", conf.ClusterName)
 		fmt.Printf("Exporting %s\n", templatePath)
@@ -59,7 +66,6 @@ func runCmdUp(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	cluster := cluster.New(conf, upOpts.awsDebug)
 	fmt.Printf("Creating AWS resources. This should take around 5 minutes.\n")
 	if err := cluster.Create(string(data), upOpts.s3URI); err != nil {
 		return fmt.Errorf("Error creating cluster: %v", err)
