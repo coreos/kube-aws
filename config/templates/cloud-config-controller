@@ -476,7 +476,7 @@ write_files:
            hostname="'${hostname}'"; \
            kubectl="/kubectl --server=http://127.0.0.1:8080"; \
            taint="$kubectl taint node $hostname"; \
-           $taint "node.alpha.kubernetes.io/role:master:NoSchedule"; \
+           $taint "node.alpha.kubernetes.io/role=master:NoSchedule"; \
            echo done. ;\
            echo uncordoning this node; \
            $kubectl uncordon $hostname;\
