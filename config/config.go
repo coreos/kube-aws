@@ -302,9 +302,9 @@ type Cluster struct {
 type Subnet struct {
 	AvailabilityZone  string `yaml:"availabilityZone,omitempty"`
 	InstanceCIDR      string `yaml:"instanceCIDR,omitempty"`
+	lastAllocatedAddr *net.IP
 	SubnetId          string `yaml:"subnetId,omitempty"`
 	SubnetLogicalName string
-	lastAllocatedAddr *net.IP
 }
 
 type Experimental struct {

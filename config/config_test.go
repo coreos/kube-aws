@@ -3,14 +3,15 @@ package config
 import (
 	"bytes"
 	"fmt"
-	"github.com/coreos/kube-aws/netutil"
-	"github.com/coreos/kube-aws/test/helper"
-	"gopkg.in/yaml.v2"
 	"net"
 	"reflect"
 	"strings"
 	"testing"
 	"text/template"
+
+	"github.com/coreos/kube-aws/netutil"
+	"github.com/coreos/kube-aws/test/helper"
+	"gopkg.in/yaml.v2"
 )
 
 const minimalConfigYaml = `externalDNSName: test.staging.core-os.net
@@ -874,8 +875,8 @@ func TestValidateExistingVPC(t *testing.T) {
 
 	cluster.VPCCIDR = "10.0.0.0/16"
 	cluster.Subnets = []*Subnet{
-		{"ap-northeast-1a", "10.0.1.0/24", nil},
-		{"ap-northeast-1a", "10.0.2.0/24", nil},
+		{"ap-northeast-1a", "10.0.1.0/24", nil, "", ""},
+		{"ap-northeast-1a", "10.0.2.0/24", nil, "", ""},
 	}
 
 	for _, testCase := range validCases {
@@ -900,8 +901,8 @@ func TestValidateUserData(t *testing.T) {
 
 	cluster.Region = "us-west-1"
 	cluster.Subnets = []*Subnet{
-		{"us-west-1a", "10.0.1.0/16", nil},
-		{"us-west-1b", "10.0.2.0/16", nil},
+		{"us-west-1a", "10.0.1.0/16", nil, "", ""},
+		{"us-west-1b", "10.0.2.0/16", nil, "", ""},
 	}
 
 	helper.WithDummyCredentials(func(dir string) {
@@ -924,8 +925,8 @@ func TestRenderStackTemplate(t *testing.T) {
 
 	cluster.Region = "us-west-1"
 	cluster.Subnets = []*Subnet{
-		{"us-west-1a", "10.0.1.0/16", nil},
-		{"us-west-1b", "10.0.2.0/16", nil},
+		{"us-west-1a", "10.0.1.0/16", nil, "", ""},
+		{"us-west-1b", "10.0.2.0/16", nil, "", ""},
 	}
 
 	helper.WithDummyCredentials(func(dir string) {
