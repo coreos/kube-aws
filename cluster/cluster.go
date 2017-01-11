@@ -152,11 +152,6 @@ func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
 }
 
 func (c *Cluster) Validate(stackBody string, s3URI string) error {
-	r53Svc := route53.New(c.session)
-	if err := c.validateDNSConfig(r53Svc); err != nil {
-		return err
-	}
-
 	ec2Svc := ec2.New(c.session)
 	if c.KeyName != "" {
 		if err := c.validateKeyPair(ec2Svc); err != nil {
@@ -180,6 +175,11 @@ func (c *Cluster) Validate(stackBody string, s3URI string) error {
 }
 
 func (c *Cluster) Create(stackBody string, s3URI string) error {
+	r53Svc := route53.New(c.session)
+	if err := c.validateDNSConfig(r53Svc); err != nil {
+		return err
+	}
+
 	if err := c.Validate(stackBody, s3URI); err != nil {
 		return err
 	}

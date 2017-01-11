@@ -49,7 +49,6 @@
         "SpotPrice": "{{$.Worker.SpotFleet.SpotPrice}}",
         "LaunchSpecifications": [
           {{range $subnetIndex, $subnet := $.Subnets}}
-          {{with $subnetLogicalName := printf "Subnet%d" $subnetIndex}}
           {{range $specIndex, $spec := $.Worker.SpotFleet.LaunchSpecifications}}
           {{if or (gt $subnetIndex 0) (gt $specIndex 0) }},{{end}}
           {
@@ -84,11 +83,10 @@
               {{end}}
             ],
             "SubnetId": {
-              "Ref": "{{$subnetLogicalName}}"
+              {{$subnet.Ref}}
             },
             "UserData": "{{$.UserDataWorker}}"
           }
-          {{end}}
           {{end}}
           {{end}}
         ]
@@ -145,12 +143,8 @@
         {{end}}
         "VPCZoneIdentifier": [
           {{range $index, $subnet := .Subnets}}
-          {{with $subnetLogicalName := printf "Subnet%d" $index}}
           {{if gt $index 0}},{{end}}
-          {
-            "Ref": "{{$subnetLogicalName}}"
-          }
-          {{end}}
+          {{$subnet.Ref}}
           {{end}}
         ]
       },
@@ -343,9 +337,9 @@
       "Type": "AWS::IAM::Role"
     }
     {{range $index, $subnet := .Subnets}}
-    {{with $subnetLogicalName := printf "Subnet%d" $index}}
+    {{if not $subnet.SubnetId }}
     ,
-    "{{$subnetLogicalName}}": {
+    "{{$subnet.SubnetLogicalName}}": {
       "Properties": {
         "AvailabilityZone": "{{$subnet.AvailabilityZone}}",
         "CidrBlock": "{{$subnet.InstanceCIDR}}",
@@ -353,7 +347,7 @@
         "Tags": [
           {
             "Key": "Name",
-            "Value": "{{$.NodePoolName}}-{{$subnetLogicalName}}"
+            "Value": "{{$.NodePoolName}}-{{$subnet.SubnetLogicalName}}"
           },
           {
             "Key": "KubernetesCluster",
@@ -363,35 +357,26 @@
         "VpcId": {{$.VPCRef}}
       },
       "Type": "AWS::EC2::Subnet"
+    },
+    "{{$subnet.SubnetLogicalName}}RouteTableAssociation": {
+      "Properties": {
+        "RouteTableId": {{$.RouteTableRef}},
+        "SubnetId": {{$subnet.Ref}},
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation"
     }
+    {{end}}
     {{if $.ElasticFileSystemID}}
     ,
-    "{{$subnetLogicalName}}MountTarget": {
+    "{{$subnet.SubnetLogicalName}}MountTarget": {
       "Properties" : {
         "FileSystemId": "{{$.ElasticFileSystemID}}",
-        "SubnetId": { "Ref": "{{$subnetLogicalName}}" },
+        "SubnetId": { "Ref": "{{$subnet.SubnetLogicalName}}" },
         "SecurityGroups": [ { "Ref": "SecurityGroupMountTarget" } ]
       },
       "Type" : "AWS::EFS::MountTarget"
     }
     {{end}}
     {{end}}
-    {{end}}
-
-    {{range $index, $subnet := .Subnets}}
-    {{with $subnetLogicalName := printf "Subnet%d" $index}}
-    ,
-    "{{$subnetLogicalName}}RouteTableAssociation": {
-      "Properties": {
-        "RouteTableId": {{$.RouteTableRef}},
-        "SubnetId": {
-          "Ref": "{{$subnetLogicalName}}"
-        }
-      },
-      "Type": "AWS::EC2::SubnetRouteTableAssociation"
-    }
-    {{end}}
-    {{end}}
-
   }
 }
