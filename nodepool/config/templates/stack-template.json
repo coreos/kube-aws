@@ -82,9 +82,7 @@
               {"GroupId":{{$sgRef}}}
               {{end}}
             ],
-            "SubnetId": {
-              {{$subnet.Ref}}
-            },
+            "SubnetId": {{$subnet.Ref}},
             "UserData": "{{$.UserDataWorker}}"
           }
           {{end}}
@@ -361,7 +359,7 @@
     "{{$subnet.SubnetLogicalName}}RouteTableAssociation": {
       "Properties": {
         "RouteTableId": {{$.RouteTableRef}},
-        "SubnetId": {{$subnet.Ref}},
+        "SubnetId": {{$subnet.Ref}}
       },
       "Type": "AWS::EC2::SubnetRouteTableAssociation"
     }

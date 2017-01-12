@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"path/filepath"
+
 	cfg "github.com/coreos/kube-aws/config"
 	"github.com/coreos/kube-aws/coreos/amiregistry"
 	"github.com/coreos/kube-aws/coreos/userdatavalidation"
@@ -14,7 +16,6 @@ import (
 	"github.com/coreos/kube-aws/filereader/userdatatemplate"
 	model "github.com/coreos/kube-aws/model"
 	"gopkg.in/yaml.v2"
-	"path/filepath"
 )
 
 type Ref struct {
