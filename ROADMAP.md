@@ -20,6 +20,7 @@ Please file an issue to make suggestions on this roadmap!
 
   * Cluster Auto Scaling
     * Including partial support for auto-scaling worker nodes, kube-dns
+  * Private subnets and NAT gateways for etcd, controller and worker nodes
   * Self-hosted Calico
 
 ## Stage 3: v0.9.4
@@ -28,6 +29,11 @@ Please file an issue to make suggestions on this roadmap!
     * Backups
     * Recovery
   * YAML CloudFormation templates
+  
+## Stage 4: v0.9.5
+
+  * Kubernetes 1.6
+  * Etcd v3 support as it is enabled by default in 1.6: https://github.com/kubernetes/kubernetes/issues/22448#event-913208648
 
 ## Stage N: v0.9.x
 

@@ -76,6 +76,9 @@ $ kube-aws init \
 --kms-key-arn="arn:aws:kms:us-west-1:xxxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
 ```
 
+Here `us-west-1c` is used for parameter `--availability-zone`, but supported availability zone varies among AWS accounts.
+Please check if `us-west-1c` is supported by `aws ec2 --region us-west-1 describe-availability-zones`, if not switch to other supported availability zone. (e.g., `us-west-1a`, or `us-west-1b`)
+
 There will now be a `cluster.yaml` file in the asset directory. This is the main configuration file for your cluster.
 
 ### Render contents of the asset directory
@@ -183,7 +186,6 @@ You can now customize your cluster by editing asset files. Any changes to these 
   - [allow pods to mount RDB][rdb] or [iSCSI volumes][iscsi]
   - [allowing access to insecure container registries][insecure-registry]
   - [use host DNS configuration instead of a public DNS server][host-dns]
-  - [enable the cluster logging add-on][cluster-logging]
   - [changing your CoreOS auto-update settings][update]
   <br/><br/>
 
@@ -289,7 +291,7 @@ Please read [the AWS documentation for more details about AWS Auto Scaling](http
 
 #### For production cluster requiring cluster-autoscaler
 
-You must utilize [an experimental feature called Node Pool](aws-experimental-features) to achieve this deployment.
+You must utilize [an experimental feature called Node Pool][node-pool] to achieve this deployment.
 Please read [the documentation for experimental features](aws-experimental-features) for more instructions.
 
 ### Certificates and Keys
@@ -325,7 +327,7 @@ This includes the certificate authority, signed server certificates for the Kube
 
   The certificate and key granted to the kubelets on worker instances.
   The certificate is shared across all workers, so it must be valid for all worker hostnames.
-  This is achievable with the Subject Alternative Name (SAN) `*.*.cluster.internal`, or `*.ec2.internal` if using the us-east-1 AWS region.
+  This is achievable with the Subject Alternative Name (SAN) `*.*.compute.internal`, or `*.ec2.internal` if using the us-east-1 AWS region.
 
 * **CACert**
 
@@ -362,7 +364,7 @@ If your files are valid, you are ready to [launch your cluster][aws-step-3].
 [k8s-openssl]: openssl.md
 [tls-note]: #certificates-and-keys
 [route53]: https://aws.amazon.com/route53/
-[rdb]: kubelet-wrapper.md#allow-pods-to-use-rbd-volumes
-[iscsi]: kubelet-wrapper.md#allow-pods-to-use-iscsi-mounts
-[host-dns]: kubelet-wrapper.md#use-the-hosts-dns-configuration
-[cluster-logging]: kubelet-wrapper.md#use-the-cluster-logging-add-on
+[rdb]: https://github.com/coreos/coreos-kubernetes/blob/master/Documentation/kubelet-wrapper.md#allow-pods-to-use-rbd-volumes
+[iscsi]: https://github.com/coreos/coreos-kubernetes/blob/master/Documentation/kubelet-wrapper.md#allow-pods-to-use-iscsi-mounts
+[host-dns]: https://github.com/coreos/coreos-kubernetes/blob/master/Documentation/kubelet-wrapper.md#use-the-hosts-dns-configuration
+[node-pool]: kubernetes-on-aws-node-pool.md

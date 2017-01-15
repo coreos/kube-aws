@@ -12,12 +12,19 @@ This survey is meant for those who are currently running at least some workloads
 
 ---
 
+`kube-aws` is a command-line tool to create/update/destroy Kubernetes clusters on AWS.
+
 ## Features
 
 * Create, update and destroy Kubernetes clusters on AWS
 * Highly available and scalable Kubernetes clusters backed by multi-AZ deployment and Node Pools
 * Deployment to an existing VPC
 * Powered by various AWS services including CloudFormation, KMS, Auto Scaling, Spot Fleet, EC2, ELB, S3, etc.
+
+## Design Decisions
+
+* CoreOS as the host OS
+* Allow exporting CloudFormation stack templates for further customizations
 
 ## Getting Started
 
@@ -57,6 +64,9 @@ $ kube-aws init --cluster-name=my-cluster \
 --key-name=<key-pair-name> \
 --kms-key-arn="arn:aws:kms:us-west-1:xxxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
 ```
+
+Here `us-west-1c` is used for parameter `--availability-zone`, but supported availability zone varies among AWS accounts.
+Please check if `us-west-1c` is supported by `aws ec2 --region us-west-1 describe-availability-zones`, if not switch to other supported availability zone. (e.g., `us-west-1a`, or `us-west-1b`)
 
 Generate assets:
 

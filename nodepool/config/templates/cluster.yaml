@@ -50,7 +50,7 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #workerCount: 1
 
 # Instance type for worker nodes
-#workerInstanceType: m3.medium
+#workerInstanceType: t2.medium
 
 # Disk size (GiB) for worker nodes
 #workerRootVolumeSize: 30
@@ -120,7 +120,7 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #    launchSpecifications:
 #    - # Number of units provided by an EC2 instance of the instanceType.
 #      weightedCapacity: 1
-#      instanceType: m3.medium
+#      instanceType: t2.medium
 #
 #      # Price per unit hour = Price per instance hour / num of weighted capacity for the instance
 #      #spotPrice:

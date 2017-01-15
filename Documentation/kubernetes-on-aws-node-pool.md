@@ -154,7 +154,7 @@ worker:
     targetCapacity: 5
     launchSpecifications:
     - weightedCapacity: 1
-      instanceType: m3.medium
+      instanceType: t2.medium
     - weightedCapacity: 2
       instanceType: m3.large
     - weightedCapacity: 2
@@ -163,7 +163,7 @@ worker:
 
 This configuration would normally result in Spot Fleet to bring up 3 instances to meet your target capacity:
 
-* 1x m3.medium = 1 capacity
+* 1x t2.medium = 1 capacity
 * 1x m3.large = 2 capacity
 * 1x m4.large = 2 capacity
 

@@ -160,7 +160,7 @@ coreos:
         Restart=on-failure
         ExecStartPre=/usr/bin/systemctl is-active kubelet.service
         ExecStartPre=/usr/bin/systemctl is-active docker.service
-        ExecStartPre=/usr/bin/curl http://127.0.0.1:8080/version
+        ExecStartPre=/usr/bin/curl -s -f http://127.0.0.1:8080/version
         ExecStart=/opt/bin/install-kube-system
 
 {{ if $.ElasticFileSystemID }}
@@ -317,25 +317,23 @@ write_files:
       /bin/bash /opt/bin/populate-tls-calico-etcd
       /usr/bin/docker run --rm --net=host -v /srv/kubernetes/manifests:/host/manifests {{.HyperkubeImageRepo}}:{{.K8sVer}} /hyperkube kubectl apply -f /host/manifests/calico.yaml
       {{ end }}
-      /usr/bin/curl  -H "Content-Type: application/yaml" -XPOST \
-      -d"$(cat /srv/kubernetes/manifests/kube-dns-de.yaml)" \
-      "http://127.0.0.1:8080/apis/extensions/v1beta1/namespaces/kube-system/deployments"
 
-      /usr/bin/curl  -H "Content-Type: application/yaml" -XPOST \
-      -d"$(cat /srv/kubernetes/manifests/kube-dns-autoscaler-de.yaml)" \
-      "http://127.0.0.1:8080/apis/extensions/v1beta1/namespaces/kube-system/deployments"
+      post_yaml() {
+          /usr/bin/curl  -H "Content-Type: application/yaml" -XPOST \
+          --data-binary "$1" "$2"
+      }
 
-      /usr/bin/curl  -H "Content-Type: application/yaml" -XPOST \
-      -d"$(cat /srv/kubernetes/manifests/kube-dashboard-rc.yaml)" \
+      mfdir=/srv/kubernetes/manifests
+      for manifest in {kube-dns-de,kube-dns-autoscaler-de,heapster-de}.yaml; do
+          post_yaml "@$mfdir/$manifest" \
+          "http://127.0.0.1:8080/apis/extensions/v1beta1/namespaces/kube-system/deployments"
+      done
+
+      post_yaml "@$mfdir/kube-dashboard-rc.yaml" \
       "http://127.0.0.1:8080/api/v1/namespaces/kube-system/replicationcontrollers"
 
-      /usr/bin/curl  -H "Content-Type: application/yaml" -XPOST \
-      -d"$(cat /srv/kubernetes/manifests/heapster-de.yaml)" \
-      "http://127.0.0.1:8080/apis/extensions/v1beta1/namespaces/kube-system/deployments"
-
       for manifest in {kube-dns,heapster,kube-dashboard}-svc.yaml;do
-          /usr/bin/curl  -H "Content-Type: application/yaml" -XPOST \
-          -d"$(cat /srv/kubernetes/manifests/$manifest)" \
+          post_yaml "@$mfdir/$manifest" \
           "http://127.0.0.1:8080/api/v1/namespaces/kube-system/services"
       done
 
@@ -603,7 +601,7 @@ write_files:
     content: |
       #!/bin/bash -e
 
-      sudo rkt run \
+      rkt run \
         --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
         --mount=volume=ssl,target=/etc/kubernetes/ssl \
         --uuid-file-save=/var/run/coreos/decrypt-tls-assets.uuid \
@@ -611,26 +609,23 @@ write_files:
         --net=host \
         --trust-keys-from-https \
         {{.AWSCliImageRepo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
-          -c \
-          'echo decrypting tls assets; \
-           for encKey in $(find /etc/kubernetes/ssl/*.pem.enc); do \
-             echo decrypting $encKey to $encKey.b64; \
+          -ec \
+          'echo decrypting tls assets
+           shopt -s nullglob
+           for encKey in /etc/kubernetes/ssl/*.pem.enc; do
+             echo decrypting $encKey
+             f=$(mktemp $encKey.XXXXXXXX)
              /usr/bin/aws \
                --region {{.Region}} kms decrypt \
                --ciphertext-blob fileb://$encKey \
                --output text \
                --query Plaintext \
-               > $encKey.b64; \
-           done; \
+             | base64 -d > $f
+             mv -f $f ${encKey%.enc}
+           done;
            echo done.'
 
-      sudo rkt rm --uuid-file=/var/run/coreos/decrypt-tls-assets.uuid
-
-      echo base64 decoding decrypted tls assets
-      for encKey in $(find /etc/kubernetes/ssl/*.pem.enc);do
-        base64 --decode < $encKey.b64 > ${encKey%.enc}
-      done
-      echo done.
+      rkt rm --uuid-file=/var/run/coreos/decrypt-tls-assets.uuid || :
 
   - path: /opt/bin/taint-and-uncordon
     owner: root:root
@@ -640,30 +635,20 @@ write_files:
 
       hostname=$(hostname)
 
-      sudo rkt run \
-        --volume=kube,kind=host,source=/etc/kubernetes,readOnly=true \
-        --mount=volume=kube,target=/etc/kubernetes \
-        --uuid-file-save=/var/run/coreos/taint-and-uncordon.uuid \
-        --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
-        --net=host \
-        --trust-keys-from-https \
-        {{.HyperkubeImageRepo}}:{{.K8sVer}} --exec=/bin/bash -- \
-          -vxc \
-          'echo tainting this node; \
-           hostname="'${hostname}'"; \
-           kubectl="/kubectl --server=http://127.0.0.1:8080"; \
-           taint="$kubectl taint node $hostname"; \
-           $taint "node.alpha.kubernetes.io/role:master:NoSchedule"; \
-           echo done. ;\
-           echo uncordoning this node; \
-           $kubectl uncordon $hostname;\
-           echo done.'
-
-      echo cleaning pod resources.
-
-      sudo rkt rm --uuid-file=/var/run/coreos/taint-and-uncordon.uuid
-
-      echo done.
+      docker run --rm --net=host \
+        -v /etc/kubernetes:/etc/kubernetes \
+        -v /etc/resolv.conf:/etc/resolv.conf \
+        {{.HyperkubeImageRepo}}:{{.K8sVer}} /bin/bash \
+          -vxec \
+          'echo "tainting this node."
+           hostname="'${hostname}'"
+           kubectl="/kubectl --server=http://127.0.0.1:8080"
+           taint="$kubectl taint node --overwrite"
+           $taint "$hostname" "node.alpha.kubernetes.io/role=master:NoSchedule"
+           echo "done."
+           echo "uncordoning this node."
+           $kubectl uncordon "$hostname"
+           echo "done."'
 
   - path: /etc/kubernetes/manifests/kube-proxy.yaml
     content: |
@@ -672,8 +657,11 @@ write_files:
         metadata:
           name: kube-proxy
           namespace: kube-system
+          labels:
+            k8s-app: kube-proxy
           annotations:
             rkt.alpha.kubernetes.io/stage1-name-override: coreos.com/rkt/stage1-fly
+
         spec:
           hostNetwork: true
           containers:
@@ -707,6 +695,8 @@ write_files:
       metadata:
         name: kube-apiserver
         namespace: kube-system
+        labels:
+          k8s-app: kube-apiserver
       spec:
         hostNetwork: true
         containers:
@@ -723,6 +713,7 @@ write_files:
           - --allow-privileged=true
           - --service-cluster-ip-range={{.ServiceCIDR}}
           - --secure-port=443
+          - --kubelet-preferred-address-types=InternalIP,Hostname,ExternalIP
           {{if .Experimental.AuditLog.Enabled}}
           - --audit-log-maxage={{.Experimental.AuditLog.MaxAge}}
           - --audit-log-path={{.Experimental.AuditLog.LogPath}}
@@ -776,6 +767,8 @@ write_files:
       metadata:
         name: kube-controller-manager
         namespace: kube-system
+        labels:
+          k8s-app: kube-controller-manager
       spec:
         containers:
         - name: kube-controller-manager
@@ -821,6 +814,8 @@ write_files:
       metadata:
         name: kube-scheduler
         namespace: kube-system
+        labels:
+          k8s-app: kube-scheduler
       spec:
         hostNetwork: true
         containers:
@@ -1189,6 +1184,7 @@ write_files:
           labels: 
             kubernetes.io/cluster-service: "true"
             kubernetes.io/name: "Heapster"
+            k8s-app: heapster
         spec: 
           ports: 
             - port: 80
@@ -1201,11 +1197,11 @@ write_files:
         apiVersion: v1
         kind: ReplicationController
         metadata:
-          name: kubernetes-dashboard-v1.5.0
+          name: kubernetes-dashboard-v1.5.1
           namespace: kube-system
           labels:
             k8s-app: kubernetes-dashboard
-            version: v1.5.0
+            version: v1.5.1
             kubernetes.io/cluster-service: "true"
         spec:
           replicas: 1
@@ -1215,7 +1211,7 @@ write_files:
             metadata:
               labels:
                 k8s-app: kubernetes-dashboard
-                version: v1.5.0
+                version: v1.5.1
                 kubernetes.io/cluster-service: "true"
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
@@ -1223,7 +1219,7 @@ write_files:
             spec:
               containers:
               - name: kubernetes-dashboard
-                image: gcr.io/google_containers/kubernetes-dashboard-amd64:v1.5.0
+                image: gcr.io/google_containers/kubernetes-dashboard-amd64:v1.5.1
                 resources:
                   limits:
                     cpu: 100m

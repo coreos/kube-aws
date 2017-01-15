@@ -213,8 +213,8 @@ func (c ProvidedConfig) valid() error {
 
 // CloudFormation stack name which is unique in an AWS account.
 // This is intended to be used to reference stack name from cloud-config as the target of awscli or cfn-bootstrap-tools commands e.g. `cfn-init` and `cfn-signal`
-func (c ComputedConfig) StackName() string {
-	return c.NodePoolName
+func (c ProvidedConfig) StackName() string {
+	return c.ClusterName + "-" + c.NodePoolName
 }
 
 func (c ComputedConfig) VPCRef() string {

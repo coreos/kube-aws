@@ -44,7 +44,7 @@ etcdEndpoints: "10.0.0.1"
 		expected := []model.LaunchSpecification{
 			{
 				WeightedCapacity: 1,
-				InstanceType:     "m3.medium",
+				InstanceType:     "t2.medium",
 				RootVolumeSize:   30,
 				RootVolumeIOPS:   0,
 				RootVolumeType:   "gp2",
@@ -247,7 +247,7 @@ worker:
     unitRootVolumeSize: 40
     launchSpecifications:
     - weightedCapacity: 1
-      instanceType: m3.medium
+      instanceType: t2.medium
     - weightedCapacity: 2
       instanceType: m3.large
       rootVolumeSize: 100
@@ -258,7 +258,7 @@ worker:
 					expected := []model.LaunchSpecification{
 						{
 							WeightedCapacity: 1,
-							InstanceType:     "m3.medium",
+							InstanceType:     "t2.medium",
 							// RootVolumeSize was not specified in the configYaml but should default to workerRootVolumeSize * weightedCapacity hence:
 							RootVolumeSize: 40,
 							RootVolumeIOPS: 0,
@@ -295,7 +295,7 @@ worker:
     unitRootVolumeIOPS: 100
     launchSpecifications:
     - weightedCapacity: 1
-      instanceType: m3.medium
+      instanceType: t2.medium
     - weightedCapacity: 2
       instanceType: m3.large
       rootVolumeIOPS: 500
@@ -306,7 +306,7 @@ worker:
 					expected := []model.LaunchSpecification{
 						{
 							WeightedCapacity: 1,
-							InstanceType:     "m3.medium",
+							InstanceType:     "t2.medium",
 							// RootVolumeSize was not specified in the configYaml but should default to workerRootVolumeSize * weightedCapacity hence:
 							RootVolumeSize: 40,
 							// RootVolumeIOPS was not specified in the configYaml but should default to workerRootVolumeIOPS * weightedCapacity hence:
@@ -498,7 +498,7 @@ worker:
     targetCapacity: 10
     launchSpecifications:
     - weightedCapacity: 1
-      instanceType: m3.medium
+      instanceType: t2.medium
       rootVolumeType: foo
 `,
 		},
@@ -510,7 +510,7 @@ worker:
     targetCapacity: 10
     launchSpecifications:
     - weightedCapacity: 1
-      instanceType: m3.medium
+      instanceType: t2.medium
       rootVolumeType: io1
       # must be 100~2000
       rootVolumeIOPS: 50
@@ -524,7 +524,7 @@ worker:
     targetCapacity: 10
     launchSpecifications:
     - weightedCapacity: 1
-      instanceType: m3.medium
+      instanceType: t2.medium
       rootVolumeType: gp2
       rootVolumeIOPS: 1000
 `,

@@ -161,7 +161,7 @@ worker:
     unitRootVolumeSize: 40
     launchSpecifications:
     - weightedCapacity: 1
-      instanceType: m3.medium
+      instanceType: t2.medium
     - weightedCapacity: 2
       instanceType: m3.large
       rootVolumeSize: 100
@@ -178,7 +178,7 @@ worker:
     unitRootVolumeIOPS: 100
     launchSpecifications:
     - weightedCapacity: 1
-      instanceType: m3.medium
+      instanceType: t2.medium
     - weightedCapacity: 2
       instanceType: m3.large
       rootVolumeIOPS: 500

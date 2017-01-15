@@ -406,7 +406,7 @@ write_files:
     content: |
       #!/bin/bash -e
 
-      sudo rkt run \
+      rkt run \
         --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
         --mount=volume=ssl,target=/etc/kubernetes/ssl \
         --uuid-file-save=/var/run/coreos/decrypt-tls-assets.uuid \
@@ -414,26 +414,23 @@ write_files:
         --net=host \
         --trust-keys-from-https \
         {{.AWSCliImageRepo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
-          -c \
-          'echo decrypting tls assets; \
-           for encKey in $(find /etc/kubernetes/ssl/*.pem.enc); do \
-             echo decrypting $encKey to $encKey.b64; \
+          -ec \
+          'echo decrypting tls assets
+           shopt -s nullglob
+           for encKey in /etc/kubernetes/ssl/*.pem.enc; do
+             echo decrypting $encKey
+             f=$(mktemp $encKey.XXXXXXXX)
              /usr/bin/aws \
                --region {{.Region}} kms decrypt \
                --ciphertext-blob fileb://$encKey \
                --output text \
                --query Plaintext \
-               > $encKey.b64; \
-           done; \
+             | base64 -d > $f
+             mv -f $f ${encKey%.enc}
+           done;
            echo done.'
 
-      sudo rkt rm --uuid-file=/var/run/coreos/decrypt-tls-assets.uuid
-
-      echo base64 decoding decrypted tls assets
-      for encKey in $(find /etc/kubernetes/ssl/*.pem.enc);do
-        base64 --decode < $encKey.b64 > ${encKey%.enc}
-      done
-      echo done.
+      rkt rm --uuid-file=/var/run/coreos/decrypt-tls-assets.uuid || :
 
 {{if .Worker.SpotFleet.Enabled}}
   - path: /opt/bin/tag-spot-instance
@@ -453,13 +450,13 @@ write_files:
         --trust-keys-from-https \
         --insecure-options=ondisk \
         {{.AWSCliImageRepo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
-          -vxc \
-          'echo tagging this spot instance; \
-           instance_id="'$instance_id'"; \
+          -vxec \
+          'echo tagging this spot instance
+           instance_id="'$instance_id'"
            /usr/bin/aws \
              --region {{.Region}} ec2 create-tags \
              --resource $instance_id \
-             --tags '"'"'Key=KubernetesCluster,Value="{{.ClusterName}}"'"'"' '"'"'Key=Name,Value="{{.StackName}}-kube-aws-worker"'"'"' '"'"'Key="kube-aws:node-pool:name",Value="{{.NodePoolName}}"'"'"'; \
+             --tags '"'"'Key=KubernetesCluster,Value="{{.ClusterName}}"'"'"' '"'"'Key=Name,Value="{{.StackName}}-kube-aws-worker"'"'"' '"'"'Key="kube-aws:node-pool:name",Value="{{.NodePoolName}}"'"'"'
            echo done.'
 
       sudo rkt rm --uuid-file=/var/run/coreos/tag-spot-instance.uuid
@@ -481,15 +478,15 @@ write_files:
         --trust-keys-from-https \
         --insecure-options=ondisk \
         {{.AWSCliImageRepo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
-          -vxc \
-          'echo adding this spot instance to load balancers; \
-           instance_id="'$instance_id'"; \
-           lbs=({{range $i, $lb := .Experimental.LoadBalancer.Names}}"{{$lb}}" {{end}}); \
-           add_to_lb="/usr/bin/aws --region {{.Region}} elb register-instances-with-load-balancer --instances $instance_id --load-balancer-name"; \
-           for lb in ${lbs[@]}; do \
-             echo "$lb"; \
-             $add_to_lb "$lb"; \
-           done; \
+          -vxec \
+          'echo adding this spot instance to load balancers
+           instance_id="'$instance_id'"
+           lbs=({{range $i, $lb := .Experimental.LoadBalancer.Names}}"{{$lb}}" {{end}})
+           add_to_lb="/usr/bin/aws --region {{.Region}} elb register-instances-with-load-balancer --instances $instance_id --load-balancer-name"
+           for lb in ${lbs[@]}; do
+             echo "$lb"
+             $add_to_lb "$lb"
+           done
            echo done.'
 
       sudo rkt rm --uuid-file=/var/run/coreos/add-to-load-balancers.uuid
@@ -504,33 +501,23 @@ write_files:
 
       hostname=$(hostname)
 
-      sudo rkt run \
-        --volume=kube,kind=host,source=/etc/kubernetes,readOnly=true \
-        --mount=volume=kube,target=/etc/kubernetes \
-        --uuid-file-save=/var/run/coreos/taint-and-uncordon.uuid \
-        --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
-        --net=host \
-        --trust-keys-from-https \
-        {{.HyperkubeImageRepo}}:{{.K8sVer}} --exec=/bin/bash -- \
-          -vxc \
-          'echo tainting this node; \
-           hostname="'${hostname}'"; \
-           taints=({{range $i, $taint := .Experimental.Taints}}"{{$taint.String}}" {{end}}); \
-           kubectl="/kubectl --server=https://{{.ExternalDNSName}}:443 --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml"; \
-           taint="$kubectl taint node $hostname"; \
-           for t in ${taints[@]}; do \
-             $taint "$t"; \
-           done; \
-           echo done. ;\
-           echo uncordoning this node; \
-           $kubectl uncordon $hostname;\
-           echo done.'
-
-      echo cleaning pod resources.
-
-      sudo rkt rm --uuid-file=/var/run/coreos/taint-and-uncordon.uuid
-
-      echo done.
+      docker run --rm --net=host \
+        -v /etc/kubernetes:/etc/kubernetes \
+        -v /etc/resolv.conf:/etc/resolv.conf \
+        {{.HyperkubeImageRepo}}:{{.K8sVer}} /bin/bash \
+          -vxec \
+          'echo "tainting this node."
+           hostname="'${hostname}'"
+           taints=({{range $i, $taint := .Experimental.Taints}}"{{$taint.String}}" {{end}})
+           kubectl="/kubectl --server=https://{{.ExternalDNSName}}:443 --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml"
+           taint="$kubectl taint node --overwrite"
+           for t in ${taints[@]}; do
+             $taint "$hostname" "$t"
+           done
+           echo "done."
+           echo "uncordoning this node."
+           $kubectl uncordon $hostname
+           echo "done."'
 
   - path: /etc/kubernetes/manifests/kube-proxy.yaml
     content: |

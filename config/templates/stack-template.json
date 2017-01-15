@@ -628,6 +628,12 @@
             "FromPort": 443,
             "IpProtocol": "tcp",
             "ToPort": 443
+          },
+          {
+             "CidrIp": "0.0.0.0/0",
+             "FromPort": -1,
+             "IpProtocol": "icmp",
+             "ToPort": -1
           }
         ],
         "Tags": [
@@ -948,6 +954,20 @@
         "VpcId": {{.VPCRef}}
       },
       "Type": "AWS::EC2::SecurityGroup"
+    },
+    "SecurityGroupEtcdPeerHealthCheckIngress": {
+      "Properties": {
+        "FromPort": 2379,
+        "GroupId": {
+          "Ref": "SecurityGroupEtcd"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupEtcd"
+        },
+        "ToPort": 2379
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
     },
     "SecurityGroupEtcdPeerIngress": {
       "Properties": {

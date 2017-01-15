@@ -981,7 +981,7 @@ func TestConfig(t *testing.T) {
 	hasDefaultEtcdSettings := func(c *Cluster, t *testing.T) {
 		expected := EtcdSettings{
 			EtcdCount:               1,
-			EtcdInstanceType:        "m3.medium",
+			EtcdInstanceType:        "t2.medium",
 			EtcdRootVolumeSize:      30,
 			EtcdRootVolumeType:      "gp2",
 			EtcdRootVolumeIOPS:      0,
@@ -1276,7 +1276,7 @@ etcdDataVolumeIOPS: 104
 				func(c *Cluster, t *testing.T) {
 					expected := EtcdSettings{
 						EtcdCount:               2,
-						EtcdInstanceType:        "m3.medium",
+						EtcdInstanceType:        "t2.medium",
 						EtcdRootVolumeSize:      101,
 						EtcdRootVolumeType:      "io1",
 						EtcdRootVolumeIOPS:      102,

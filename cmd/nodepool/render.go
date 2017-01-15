@@ -78,7 +78,7 @@ func runCmdRenderStack(cmd *cobra.Command, args []string) error {
 	}
 
 	successMsg :=
-		`Success! Stack rendered to nodepools/%s/stack-template.json.
+		`Success! Stack rendered to node-pools/%s/stack-template.json.
 
 Next steps:
 1. (Optional) Validate your changes to %s with "kube-aws node-pools validate --node-pool-name %s"

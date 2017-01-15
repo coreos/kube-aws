@@ -51,7 +51,7 @@ func newDefaultSpotFleet() SpotFleet {
 		UnitRootVolumeSize: 30,
 		RootVolumeType:     "gp2",
 		LaunchSpecifications: []LaunchSpecification{
-			NewLaunchSpecification(1, "m3.medium"),
+			NewLaunchSpecification(1, "t2.medium"),
 			NewLaunchSpecification(2, "m3.large"),
 			NewLaunchSpecification(2, "m4.large"),
 		},

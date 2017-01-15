@@ -6,6 +6,7 @@ WORK_DIR=${E2E_DIR}/assets/${KUBE_AWS_CLUSTER_NAME}
 TESTINFRA_DIR=${E2E_DIR}/testinfra
 KUBE_AWS_NODE_POOL_INDEX=${KUBE_AWS_NODE_POOL_INDEX:-1}
 KUBE_AWS_NODE_POOL_NAME=${KUBE_AWS_CLUSTER_NAME}-nodepool${KUBE_AWS_NODE_POOL_INDEX}
+KUBE_AWS_NODE_POOL_STACK_NAME=${KUBE_AWS_CLUSTER_NAME}-${KUBE_AWS_NODE_POOL_NAME}
 NODE_POOL_ASSETS_DIR=${E2E_DIR}/assets/${KUBE_AWS_CLUSTER_NAME}/node-pools/${KUBE_AWS_NODE_POOL_NAME}
 KUBE_AWS_TEST_INFRA_STACK_NAME=${KUBE_AWS_TEST_INFRA_STACK_NAME:-${KUBE_AWS_CLUSTER_NAME}-testinfra}
 SRC_DIR=$(cd $(dirname $0); cd ..; pwd)
@@ -330,13 +331,15 @@ nodepool_update() {
 nodepool_destroy() {
   cd ${WORK_DIR}
 
-  status=$(aws cloudformation describe-stacks --stack-name ${KUBE_AWS_NODE_POOL_NAME} --output json | jq -rc '.Stacks[0].StackStatus')
+  status=$(aws cloudformation describe-stacks --stack-name ${KUBE_AWS_NODE_POOL_STACK_NAME} --output json | jq -rc '.Stacks[0].StackStatus')
 
   if [ "$status" != "DELETE_IN_PROGRESS" ]; then
     ${KUBE_AWS_CMD} node-pools destroy --node-pool-name ${KUBE_AWS_NODE_POOL_NAME}
+    aws cloudformation wait stack-delete-complete \
+            --stack-name ${KUBE_AWS_NODE_POOL_STACK_NAME}
   else
     aws cloudformation wait stack-delete-complete \
-        --stack-name ${KUBE_AWS_NODE_POOL_NAME}
+        --stack-name ${KUBE_AWS_NODE_POOL_STACK_NAME}
   fi
 }
 

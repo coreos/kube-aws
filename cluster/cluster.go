@@ -148,7 +148,7 @@ func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
   ]
 }
 `
-	return cfnstack.NewProvisioner(c.ClusterName, c.WorkerDeploymentSettings().StackTags(), stackPolicyBody, c.session)
+	return cfnstack.NewProvisioner(c.StackName(), c.WorkerDeploymentSettings().StackTags(), stackPolicyBody, c.session)
 }
 
 func (c *Cluster) Create(stackBody string, s3URI string) error {
@@ -209,7 +209,7 @@ func (c *Cluster) lockEtcdResources(cfSvc *cloudformation.CloudFormation, stackB
 
 	//Fetch and unmarshal existing stack resource defintions
 	res, err := cfSvc.GetTemplate(&cloudformation.GetTemplateInput{
-		StackName: aws.String(c.ClusterName),
+		StackName: aws.String(c.StackName()),
 	})
 	if err != nil {
 		return "", fmt.Errorf("error getting stack template: %v", err)
@@ -269,7 +269,7 @@ func (c *Cluster) Info() (*Info, error) {
 		resp, err := cfSvc.DescribeStackResource(
 			&cloudformation.DescribeStackResourceInput{
 				LogicalResourceId: aws.String("ElbAPIServer"),
-				StackName:         aws.String(c.ClusterName),
+				StackName:         aws.String(c.StackName()),
 			},
 		)
 		if err != nil {

@@ -64,7 +64,7 @@ controller:
 #controlerCreateTimeout: PT15M
 
 # Instance type for controller node
-#controllerInstanceType: m3.medium
+#controllerInstanceType: t2.medium
 
 # Disk size (GiB) for controller node
 #controllerRootVolumeSize: 30
@@ -89,7 +89,7 @@ controller:
 #workerCreateTimeout: PT15M
 
 # Instance type for worker nodes
-#workerInstanceType: m3.medium
+#workerInstanceType: t2.medium
 
 # Disk size (GiB) for worker nodes
 #workerRootVolumeSize: 30
@@ -122,7 +122,7 @@ controller:
 # etcdCount: 1
 
 # Instance type for etcd node
-# etcdInstanceType: m3.medium
+# etcdInstanceType: t2.medium
 
 # Root volume size (GiB) for etcd node
 # etcdRootVolumeSize: 30
@@ -253,3 +253,7 @@ controller:
 #stackTags:
 #  Name: "Kubernetes"
 #  Environment: "Production"
+
+# User-provided YAML map available in stack-template.json
+#customSettings:
+#  key1: [ 1, 2, 3 ]
