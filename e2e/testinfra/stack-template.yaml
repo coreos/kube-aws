@@ -112,10 +112,10 @@ Resources:
     DependsOn: IgwAttach
     Type: "AWS::EC2::NatGateway"
     Properties:
-      AllocationId: !GetAtt EIP.AllocationId
+      AllocationId: !GetAtt EIPAllocation.AllocationId
       SubnetId: !Ref PublicSubnet1
-  EIP:
-    Type: AWS::EC2::EIP
+  EIPAllocation:
+    Type: AWS::EC2::EIPAllocation
     Properties:
       Domain: vpc
   RouteToNAT:

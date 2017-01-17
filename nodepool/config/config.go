@@ -4,6 +4,7 @@ package config
 //go:generate gofmt -w templates.go
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 
@@ -98,6 +99,57 @@ func (c ProvidedConfig) RenderStackTemplate(opts StackTemplateOptions, prettyPri
 	return bytes, nil
 }
 
+// Backwards compatibility
+// TODO: Delete at 1.0
+func (c *ProvidedConfig) fillLegacySettings() error {
+	if c.VPCID != "" {
+		if c.VPC.ID != "" {
+			return errors.New("Cannot setup VPCID and VPC.ID")
+		}
+		c.VPC.ID = c.VPCID
+	}
+	if c.VPCCIDR != "" {
+		c.VPC.CIDR = c.VPCCIDR
+	}
+	if c.RouteTableID != "" {
+		if c.RouteTable.ID != "" {
+			return errors.New("Cannot setup RouteTableID and RouteTable.ID")
+		}
+		c.RouteTable.ID = c.RouteTableID
+	}
+
+	if c.InstanceCIDR != "" && len(c.Subnets) > 0 && c.Subnets[0].InstanceCIDR != "" {
+		return errors.New("Cannot setup Subnets[0].InstanceCIDR and InstanceCIDR")
+	}
+
+	if len(c.Subnets) > 0 {
+		if c.AvailabilityZone != "" {
+			return fmt.Errorf("The top-level availabilityZone(%s) must be empty when subnets are specified", c.AvailabilityZone)
+		}
+		if c.InstanceCIDR != "" {
+			return fmt.Errorf("The top-level instanceCIDR(%s) must be empty when subnets are specified", c.InstanceCIDR)
+		}
+	}
+
+	if len(c.Subnets) == 0 {
+		if c.AvailabilityZone == "" {
+			return errors.New("Must specify top-level availability zone if no subnets specified")
+		}
+		if c.InstanceCIDR == "" {
+			c.InstanceCIDR = "10.0.1.0/24"
+		}
+		c.Subnets = append(c.Subnets, &model.PublicSubnet{
+			Subnet: model.Subnet{
+				AvailabilityZone: c.AvailabilityZone,
+				InstanceCIDR:     c.InstanceCIDR,
+			},
+			MapPublicIp: c.MapPublicIPs,
+		})
+	}
+
+	return nil
+}
+
 func ClusterFromFile(filename string) (*ProvidedConfig, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -128,9 +180,8 @@ func ClusterFromBytes(data []byte) (*ProvidedConfig, error) {
 		return nil, fmt.Errorf("failed to parse cluster: %v", err)
 	}
 
-	// If the user specified no subnets, we assume that a single AZ configuration with the default instanceCIDR is demanded
-	if len(c.Subnets) == 0 && c.InstanceCIDR == "" {
-		c.InstanceCIDR = "10.0.1.0/24"
+	if err := c.fillLegacySettings(); err != nil {
+		return nil, err
 	}
 
 	//Computed defaults
@@ -151,16 +202,6 @@ func ClusterFromBytes(data []byte) (*ProvidedConfig, error) {
 
 	if err := c.valid(); err != nil {
 		return nil, fmt.Errorf("invalid cluster: %v", err)
-	}
-
-	// For backward-compatibility
-	if len(c.Subnets) == 0 {
-		c.Subnets = []*cfg.Subnet{
-			{
-				AvailabilityZone: c.AvailabilityZone,
-				InstanceCIDR:     c.InstanceCIDR,
-			},
-		}
 	}
 
 	return c, nil
@@ -216,21 +257,6 @@ func (c ProvidedConfig) valid() error {
 // This is intended to be used to reference stack name from cloud-config as the target of awscli or cfn-bootstrap-tools commands e.g. `cfn-init` and `cfn-signal`
 func (c ProvidedConfig) StackName() string {
 	return c.ClusterName + "-" + c.NodePoolName
-}
-
-func (c ComputedConfig) VPCRef() string {
-	//This means this VPC already exists, and we can reference it directly by ID
-	if c.VPCID != "" {
-		return fmt.Sprintf("%q", c.VPCID)
-	}
-	return fmt.Sprintf(`{"Fn::ImportValue" : {"Fn::Sub" : "%s-VPC"}}`, c.ClusterName)
-}
-
-func (c ComputedConfig) RouteTableRef() string {
-	if c.RouteTableID != "" {
-		return fmt.Sprintf("%q", c.RouteTableID)
-	}
-	return fmt.Sprintf(`{"Fn::ImportValue" : {"Fn::Sub" : "%s-RouteTable"}}`, c.ClusterName)
 }
 
 func (c ComputedConfig) WorkerSecurityGroupRefs() []string {

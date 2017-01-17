@@ -152,13 +152,14 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 ## Networking config
 
 # ID of existing VPC to create subnet in. Leave blank to import the value from the base cluster
-vpcId: "{{.VPCID}}"
+vpc:
+  idFromStackOutput: "{{$.ClusterName}}-{{$.VPC.LogicalName}}"
+  cidr: "{{$.VPC.CIDR}}"  # CIDR for Kubernetes VPC. If vpcId is specified, must match the CIDR of existing vpc.
 
 # ID of existing route table in existing VPC to attach subnet to. Leave blank to import the value from the base cluster
-routeTableId: "{{.RouteTableID}}"
+routeTable:
+  idFromStackOutput: "{{$.ClusterName}}-{{$.RouteTable.LogicalName}}"
 
-# CIDR for Kubernetes VPC. If vpcId is specified, must match the CIDR of existing vpc.
-vpcCIDR: "{{.VPCCIDR}}"
 
 # CIDR for Kubernetes subnet when placing nodes in a single availability zone (not highly-available) Leave commented out for multi availability zone setting and use the below `subnets` section instead.
 # instanceCIDR: "10.0.0.0/24"

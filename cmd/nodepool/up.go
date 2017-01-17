@@ -42,7 +42,7 @@ func runCmdUp(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Failed to validate user data: %v", err)
 	}
 
-	data, err := conf.RenderStackTemplate(stackTemplateOptions(), upOpts.export)
+	data, err := conf.RenderStackTemplate(stackTemplateOptions(), upOpts.prettyPrint)
 	if err != nil {
 		return fmt.Errorf("Failed to render stack template: %v", err)
 	}

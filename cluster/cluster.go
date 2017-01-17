@@ -73,33 +73,33 @@ type ec2Service interface {
 }
 
 func (c *Cluster) validateExistingVPCState(ec2Svc ec2Service) error {
-	if c.VPCID == "" {
+	if c.VPC.ID == "" || c.VPC.IDFromStackOutput != "" {
 		//The VPC will be created. No existing state to validate
 		return nil
 	}
 
 	describeVpcsInput := ec2.DescribeVpcsInput{
-		VpcIds: []*string{aws.String(c.VPCID)},
+		VpcIds: []*string{aws.String(c.VPC.ID)},
 	}
 	vpcOutput, err := ec2Svc.DescribeVpcs(&describeVpcsInput)
 	if err != nil {
 		return fmt.Errorf("error describing existing vpc: %v", err)
 	}
 	if len(vpcOutput.Vpcs) == 0 {
-		return fmt.Errorf("could not find vpc %s in region %s", c.VPCID, c.Region)
+		return fmt.Errorf("could not find vpc %s in region %s", c.VPC.ID, c.Region)
 	}
 	if len(vpcOutput.Vpcs) > 1 {
 		//Theoretically this should never happen. If it does, we probably want to know.
-		return fmt.Errorf("found more than one vpc with id %s. this is NOT NORMAL", c.VPCID)
+		return fmt.Errorf("found more than one vpc with id %s. this is NOT NORMAL", c.VPC.ID)
 	}
 
 	existingVPC := vpcOutput.Vpcs[0]
 
-	if *existingVPC.CidrBlock != c.VPCCIDR {
+	if *existingVPC.CidrBlock != c.VPC.CIDR {
 		//If this is the case, our network config validation cannot be trusted and we must abort
 		return fmt.Errorf(
 			"configured vpcCidr (%s) does not match actual existing vpc cidr (%s)",
-			c.VPCCIDR,
+			c.VPC.CIDR,
 			*existingVPC.CidrBlock,
 		)
 	}
@@ -334,53 +334,13 @@ type r53Service interface {
 }
 
 func (c *Cluster) validateDNSConfig(r53 r53Service) error {
-	if !c.CreateRecordSet {
+	if !c.CreateRecordSet || c.HostedZone.IDFromStackOutput != "" {
 		return nil
 	}
 
-	if c.HostedZoneID == "" {
-		//TODO(colhom): When HostedZone parameter is gone, this block can be removed
-		//Config will gaurantee that HostedZoneID is set from the get-go
-		listHostedZoneInput := route53.ListHostedZonesByNameInput{
-			DNSName: aws.String(c.HostedZone),
-		}
-
-		zonesResp, err := r53.ListHostedZonesByName(&listHostedZoneInput)
-		if err != nil {
-			return fmt.Errorf("Error validating HostedZone: %s", err)
-		}
-
-		zones := zonesResp.HostedZones
-
-		if len(zones) == 0 {
-			return fmt.Errorf("hosted zone %s does not exist", c.HostedZone)
-		}
-
-		var matchingZone *route53.HostedZone
-		for _, zone := range zones {
-			if aws.StringValue(zone.Name) == c.HostedZone {
-				if matchingZone != nil {
-					//This means we've found another match, and HostedZone is ambiguous
-					return fmt.Errorf("multiple hosted-zones found for DNS name \"%s\"", c.HostedZone)
-				}
-				matchingZone = zone
-			} else {
-				/* Weird API semantics: if we see a zone which doesn't match the name
-				   we've exhausted all zones which match the name
-				  http://docs.aws.amazon.com/cli/latest/reference/route53/list-hosted-zones-by-name.html#options */
-
-				break
-			}
-		}
-		if matchingZone == nil {
-			return fmt.Errorf("hosted zone %s does not exist", c.HostedZone)
-		}
-		c.HostedZoneID = aws.StringValue(matchingZone.Id)
-	}
-
-	hzOut, err := r53.GetHostedZone(&route53.GetHostedZoneInput{Id: aws.String(c.HostedZoneID)})
+	hzOut, err := r53.GetHostedZone(&route53.GetHostedZoneInput{Id: aws.String(c.HostedZone.ID)})
 	if err != nil {
-		return fmt.Errorf("error getting hosted zone %s: %v", c.HostedZoneID, err)
+		return fmt.Errorf("error getting hosted zone %s: %v", c.HostedZone.ID, err)
 	}
 
 	if !isSubdomain(c.ExternalDNSName, aws.StringValue(hzOut.HostedZone.Name)) {
@@ -393,7 +353,7 @@ func (c *Cluster) validateDNSConfig(r53 r53Service) error {
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("error listing record sets for hosted zone id = %s: %v", c.HostedZoneID, err)
+		return fmt.Errorf("error listing record sets for hosted zone id = %s: %v", c.HostedZone.ID, err)
 	}
 
 	if len(recordSetsResp.ResourceRecordSets) > 0 {

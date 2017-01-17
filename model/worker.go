@@ -4,8 +4,13 @@ import "fmt"
 
 type Worker struct {
 	AutoScalingGroup  `yaml:"autoScalingGroup,omitempty"`
-	ClusterAutoscaler ClusterAutoscaler `yaml:"clusterAutoscaler"`
 	SpotFleet         `yaml:"spotFleet,omitempty"`
+	ClusterAutoscaler ClusterAutoscaler `yaml:"clusterAutoscaler"`
+	PrivateSubnets    []*PrivateSubnet  `yaml:"privateSubnets,omitempty"`
+}
+
+func (c Worker) TopologyPrivate() bool {
+	return len(c.PrivateSubnets) > 0
 }
 
 type ClusterAutoscaler struct {

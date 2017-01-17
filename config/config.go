@@ -68,15 +68,14 @@ func NewDefaultCluster() *Cluster {
 	return &Cluster{
 		DeploymentSettings: DeploymentSettings{
 			ClusterName:        "kubernetes",
-			VPCCIDR:            "10.0.0.0/16",
+			VPC:                model.VPC{CIDR: "10.0.0.0/16"},
 			ReleaseChannel:     "stable",
 			K8sVer:             "v1.5.1_coreos.0",
 			HyperkubeImageRepo: "quay.io/coreos/hyperkube",
 			AWSCliImageRepo:    "quay.io/coreos/awscli",
 			AWSCliTag:          "master",
 			ContainerRuntime:   "docker",
-			Subnets:            []*Subnet{},
-			MapPublicIPs:       true,
+			Subnets:            []*model.PublicSubnet{},
 			Experimental:       experimental,
 		},
 		KubeClusterSettings: KubeClusterSettings{
@@ -154,29 +153,14 @@ func ClusterFromBytes(data []byte) (*Cluster, error) {
 		return nil, fmt.Errorf("failed to parse cluster: %v", err)
 	}
 
-	// HostedZone needs to end with a '.', amazon will not append it for you.
-	// as it will with RecordSets
-	c.HostedZone = WithTrailingDot(c.HostedZone)
-
-	// If the user specified no subnets, we assume that a single AZ configuration with the default instanceCIDR is demanded
-	if len(c.Subnets) == 0 && c.InstanceCIDR == "" {
-		c.InstanceCIDR = "10.0.0.0/24"
+	if err := c.fillLegacySettings(); err != nil {
+		return nil, err
 	}
 
-	c.HostedZoneID = withHostedZoneIDPrefix(c.HostedZoneID)
+	c.HostedZone.ID = withHostedZoneIDPrefix(c.HostedZone.ID)
 
 	if err := c.valid(); err != nil {
 		return nil, fmt.Errorf("invalid cluster: %v", err)
-	}
-
-	// For backward-compatibility
-	if len(c.Subnets) == 0 {
-		c.Subnets = []*Subnet{
-			{
-				AvailabilityZone: c.AvailabilityZone,
-				InstanceCIDR:     c.InstanceCIDR,
-			},
-		}
 	}
 
 	return c, nil
@@ -209,30 +193,37 @@ type ComputedDeploymentSettings struct {
 //
 // Though it is highly configurable, it's basically users' responsibility to provide `correct` values if they're going beyond the defaults.
 type DeploymentSettings struct {
+	LegacyDeploymentSettings `yaml:",inline"`
 	ComputedDeploymentSettings
-	ClusterName      string `yaml:"clusterName,omitempty"`
-	KeyName          string `yaml:"keyName,omitempty"`
-	Region           string `yaml:"region,omitempty"`
-	AvailabilityZone string `yaml:"availabilityZone,omitempty"`
-	ReleaseChannel   string `yaml:"releaseChannel,omitempty"`
-	AmiId            string `yaml:"amiId,omitempty"`
+	ClusterName         string                `yaml:"clusterName,omitempty"`
+	KeyName             string                `yaml:"keyName,omitempty"`
+	Region              string                `yaml:"region,omitempty"`
+	ReleaseChannel      string                `yaml:"releaseChannel,omitempty"`
+	AmiId               string                `yaml:"iami,omitempty"`
+	VPC                 model.VPC             `yaml:"vpc,omitempty"`
+	InternetGateway     model.InternetGateway `yaml:"internetGateway,omitempty"`
+	RouteTable          model.RouteTable      `yaml:"routeTable,omitempty"`
+	K8sVer              string                `yaml:"kubernetesVersion,omitempty"`
+	HyperkubeImageRepo  string                `yaml:"hyperkubeImageRepo,omitempty"`
+	AWSCliImageRepo     string                `yaml:"awsCliImageRepo,omitempty"`
+	AWSCliTag           string                `yaml:"awsCliTag,omitempty"`
+	ContainerRuntime    string                `yaml:"containerRuntime,omitempty"`
+	KMSKeyARN           string                `yaml:"kmsKeyArn,omitempty"`
+	StackTags           map[string]string     `yaml:"stackTags,omitempty"`
+	Subnets             []*model.PublicSubnet `yaml:"subnets,omitempty"`
+	ElasticFileSystemID string                `yaml:"elasticFileSystemId,omitempty"`
+	SSHAuthorizedKeys   []string              `yaml:"sshAuthorizedKeys,omitempty"`
+	Experimental        Experimental          `yaml:"experimental"`
+}
+
+type LegacyDeploymentSettings struct {
 	VPCID            string `yaml:"vpcId,omitempty"`
+	VPCCIDR          string `yaml:"vpcCIDR,omitempty"`
 	RouteTableID     string `yaml:"routeTableId,omitempty"`
-	// Required for validations like e.g. if instance cidr is contained in vpc cidr
-	VPCCIDR             string            `yaml:"vpcCIDR,omitempty"`
-	InstanceCIDR        string            `yaml:"instanceCIDR,omitempty"`
-	K8sVer              string            `yaml:"kubernetesVersion,omitempty"`
-	HyperkubeImageRepo  string            `yaml:"hyperkubeImageRepo,omitempty"`
-	AWSCliImageRepo     string            `yaml:"awsCliImageRepo,omitempty"`
-	AWSCliTag           string            `yaml:"awsCliTag,omitempty"`
-	ContainerRuntime    string            `yaml:"containerRuntime,omitempty"`
-	KMSKeyARN           string            `yaml:"kmsKeyArn,omitempty"`
-	StackTags           map[string]string `yaml:"stackTags,omitempty"`
-	Subnets             []*Subnet         `yaml:"subnets,omitempty"`
-	MapPublicIPs        bool              `yaml:"mapPublicIPs,omitempty"`
-	ElasticFileSystemID string            `yaml:"elasticFileSystemId,omitempty"`
-	SSHAuthorizedKeys   []string          `yaml:"sshAuthorizedKeys,omitempty"`
-	Experimental        Experimental      `yaml:"experimental"`
+	AvailabilityZone string `yaml:"availabilityZone,omitempty"`
+	InstanceCIDR     string `yaml:"instanceCIDR,omitempty"`
+	HostedZoneID     string `yaml:"hostedZoneId,omitempty"`
+	MapPublicIPs     bool   `yaml:"mapPublicIPs,omitempty"`
 }
 
 // Part of configuration which is specific to worker nodes
@@ -247,22 +238,25 @@ type WorkerSettings struct {
 	WorkerSpotPrice        string   `yaml:"workerSpotPrice,omitempty"`
 	WorkerSecurityGroupIds []string `yaml:"workerSecurityGroupIds,omitempty"`
 	WorkerTenancy          string   `yaml:"workerTenancy,omitempty"`
+	WorkerTopologyPrivate  bool     `yaml:"workerTopologyPrivate,omitempty"`
 }
 
 // Part of configuration which is specific to controller nodes
 type ControllerSettings struct {
-	model.Controller         `yaml:"controller,omitempty"`
-	ControllerCount          int    `yaml:"controllerCount,omitempty"`
-	ControllerCreateTimeout  string `yaml:"controllerCreateTimeout,omitempty"`
-	ControllerInstanceType   string `yaml:"controllerInstanceType,omitempty"`
-	ControllerRootVolumeType string `yaml:"controllerRootVolumeType,omitempty"`
-	ControllerRootVolumeIOPS int    `yaml:"controllerRootVolumeIOPS,omitempty"`
-	ControllerRootVolumeSize int    `yaml:"controllerRootVolumeSize,omitempty"`
-	ControllerTenancy        string `yaml:"controllerTenancy,omitempty"`
+	model.Controller              `yaml:"controller,omitempty"`
+	ControllerCount               int    `yaml:"controllerCount,omitempty"`
+	ControllerCreateTimeout       string `yaml:"controllerCreateTimeout,omitempty"`
+	ControllerInstanceType        string `yaml:"controllerInstanceType,omitempty"`
+	ControllerLoadBalancerPrivate string `yaml:"controllerLoadBalancerPrivate,omitempty"`
+	ControllerRootVolumeType      string `yaml:"controllerRootVolumeType,omitempty"`
+	ControllerRootVolumeIOPS      int    `yaml:"controllerRootVolumeIOPS,omitempty"`
+	ControllerRootVolumeSize      int    `yaml:"controllerRootVolumeSize,omitempty"`
+	ControllerTenancy             string `yaml:"controllerTenancy,omitempty"`
 }
 
 // Part of configuration which is specific to etcd nodes
 type EtcdSettings struct {
+	model.Etcd              `yaml:"etcd,omitempty"`
 	EtcdCount               int    `yaml:"etcdCount"`
 	EtcdInstanceType        string `yaml:"etcdInstanceType,omitempty"`
 	EtcdRootVolumeSize      int    `yaml:"etcdRootVolumeSize,omitempty"`
@@ -287,21 +281,72 @@ type Cluster struct {
 	ControllerSettings     `yaml:",inline"`
 	EtcdSettings           `yaml:",inline"`
 	FlannelSettings        `yaml:",inline"`
-	ServiceCIDR            string `yaml:"serviceCIDR,omitempty"`
-	CreateRecordSet        bool   `yaml:"createRecordSet,omitempty"`
-	RecordSetTTL           int    `yaml:"recordSetTTL,omitempty"`
-	TLSCADurationDays      int    `yaml:"tlsCADurationDays,omitempty"`
-	TLSCertDurationDays    int    `yaml:"tlsCertDurationDays,omitempty"`
-	HostedZone             string `yaml:"hostedZone,omitempty"`
-	HostedZoneID           string `yaml:"hostedZoneId,omitempty"`
+	ServiceCIDR            string           `yaml:"serviceCIDR,omitempty"`
+	CreateRecordSet        bool             `yaml:"createRecordSet,omitempty"`
+	RecordSetTTL           int              `yaml:"recordSetTTL,omitempty"`
+	TLSCADurationDays      int              `yaml:"tlsCADurationDays,omitempty"`
+	TLSCertDurationDays    int              `yaml:"tlsCertDurationDays,omitempty"`
+	HostedZone             model.HostedZone `yaml:"hostedZone,omitempty"`
 	providedEncryptService EncryptService
 	CustomSettings         map[string]interface{} `yaml:"customSettings,omitempty"`
 }
 
-type Subnet struct {
-	AvailabilityZone  string `yaml:"availabilityZone,omitempty"`
-	InstanceCIDR      string `yaml:"instanceCIDR,omitempty"`
-	lastAllocatedAddr *net.IP
+// Backwards compatibility
+// TODO: Delete at 1.0
+func (c *Cluster) fillLegacySettings() error {
+	if c.VPCID != "" {
+		if c.VPC.ID != "" {
+			return errors.New("Cannot setup VPCID and VPC.ID")
+		}
+		c.VPC.ID = c.VPCID
+	}
+	if c.VPCCIDR != "" {
+		c.VPC.CIDR = c.VPCCIDR
+	}
+	if c.RouteTableID != "" {
+		if c.RouteTable.ID != "" {
+			return errors.New("Cannot setup RouteTableID and RouteTable.ID")
+		}
+		c.RouteTable.ID = c.RouteTableID
+	}
+
+	if c.InstanceCIDR != "" && len(c.Subnets) > 0 && c.Subnets[0].InstanceCIDR != "" {
+		return errors.New("Cannot setup Subnets[0].InstanceCIDR and InstanceCIDR")
+	}
+
+	if len(c.Subnets) > 0 {
+		if c.AvailabilityZone != "" {
+			return fmt.Errorf("The top-level availabilityZone(%s) must be empty when subnets are specified", c.AvailabilityZone)
+		}
+		if c.InstanceCIDR != "" {
+			return fmt.Errorf("The top-level instanceCIDR(%s) must be empty when subnets are specified", c.InstanceCIDR)
+		}
+	}
+
+	if len(c.Subnets) == 0 {
+		if c.AvailabilityZone == "" {
+			return errors.New("Must specify top-level availability zone if no subnets specified")
+		}
+		if c.InstanceCIDR == "" {
+			c.InstanceCIDR = "10.0.0.0/24"
+		}
+		c.Subnets = append(c.Subnets, &model.PublicSubnet{
+			Subnet: model.Subnet{
+				AvailabilityZone: c.AvailabilityZone,
+				InstanceCIDR:     c.InstanceCIDR,
+			},
+			MapPublicIp: c.MapPublicIPs,
+		})
+	}
+
+	if c.HostedZoneID != "" {
+		if c.HostedZone.ID != "" {
+			return errors.New("Cannot setup HostedZoneID and HostedZone.ID")
+		}
+		c.HostedZone.ID = c.HostedZoneID
+	}
+
+	return nil
 }
 
 type Experimental struct {
@@ -385,10 +430,6 @@ type WaitSignal struct {
 	Enabled      bool `yaml:"enabled"`
 	MaxBatchSize int  `yaml:"maxBatchSize"`
 }
-
-const (
-	vpcLogicalName = "VPC"
-)
 
 var supportedReleaseChannels = map[string]bool{
 	"alpha":  true,
@@ -476,52 +517,42 @@ func (c Cluster) Config() (*Config, error) {
 		config.AMI = c.AmiId
 	}
 
-	//Set logical name constants
-	config.VPCLogicalName = vpcLogicalName
-
-	//Set reference strings
-
-	//Assume VPC does not exist, reference by logical name
-	config.VPCRef = fmt.Sprintf(`{ "Ref" : %q }`, config.VPCLogicalName)
-	if config.VPCID != "" {
-		//This means this VPC already exists, and we can reference it directly by ID
-		config.VPCRef = fmt.Sprintf("%q", config.VPCID)
-	}
-
 	config.EtcdInstances = make([]etcdInstance, config.EtcdCount)
 	var etcdEndpoints, etcdInitialCluster bytes.Buffer
 
-	// Reset lastAllocatedAddr or we'll end up returning different cluster config w/ inconsistent static private ips
-	// for each time we call this function `cluster.Config()`
-	for _, subnet := range config.Subnets {
-		subnet.lastAllocatedAddr = nil
-	}
-
+	var lastAllocatedAddr = make(map[string]*net.IP)
 	for etcdIndex := 0; etcdIndex < config.EtcdCount; etcdIndex++ {
-
 		//Round-robbin etcd instances across all available subnets
 		subnetIndex := etcdIndex % len(config.Subnets)
-		subnet := config.Subnets[subnetIndex]
 
-		_, subnetCIDR, err := net.ParseCIDR(subnet.InstanceCIDR)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing subnet instance cidr %s: %v", subnet.InstanceCIDR, err)
+		subnetRef := config.Subnets[subnetIndex].Ref()
+		subnetLogicalName := config.Subnets[subnetIndex].LogicalName()
+		subnetInstanceCIDR := config.Subnets[subnetIndex].InstanceCIDR
+		if config.Etcd.TopologyPrivate() {
+			subnetRef = config.Etcd.PrivateSubnets[subnetIndex].Ref("Etcd")
+			subnetLogicalName = config.Etcd.PrivateSubnets[subnetIndex].LogicalName("Etcd")
+			subnetInstanceCIDR = config.Etcd.PrivateSubnets[subnetIndex].InstanceCIDR
 		}
 
-		if subnet.lastAllocatedAddr == nil {
+		_, subnetCIDR, err := net.ParseCIDR(subnetInstanceCIDR)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing subnet instance cidr %s: %v", subnetInstanceCIDR, err)
+		}
+
+		if lastAllocatedAddr[subnetLogicalName] == nil {
 			ip := subnetCIDR.IP
 			//TODO:(chom) this is sloppy, but "soon-ish" etcd with be self-hosted so we'll leave this be
 			for i := 0; i < 3; i++ {
 				ip = netutil.IncrementIP(ip)
 			}
-			subnet.lastAllocatedAddr = &ip
+			lastAllocatedAddr[subnetLogicalName] = &ip
 		}
 
-		nextAddr := netutil.IncrementIP(*subnet.lastAllocatedAddr)
-		subnet.lastAllocatedAddr = &nextAddr
+		nextAddr := netutil.IncrementIP(*lastAllocatedAddr[subnetLogicalName])
+		lastAllocatedAddr[subnetLogicalName] = &nextAddr
 		instance := etcdInstance{
-			IPAddress:   *subnet.lastAllocatedAddr,
-			SubnetIndex: subnetIndex,
+			IPAddress: *lastAllocatedAddr[subnetLogicalName],
+			SubnetRef: subnetRef,
 		}
 
 		//TODO(chom): validate we're not overflowing the address space
@@ -675,8 +706,8 @@ func (c Cluster) RenderStackTemplate(opts StackTemplateOptions, prettyPrint bool
 }
 
 type etcdInstance struct {
-	IPAddress   net.IP
-	SubnetIndex int
+	IPAddress net.IP
+	SubnetRef string
 }
 
 type Config struct {
@@ -688,12 +719,6 @@ type Config struct {
 
 	// Encoded TLS assets
 	TLSConfig *CompactTLSAssets
-
-	//Logical names of dynamic resources
-	VPCLogicalName string
-
-	//Reference strings for dynamic resources
-	VPCRef string
 }
 
 // CloudFormation stack name which is unique in an AWS account.
@@ -703,16 +728,9 @@ func (c Cluster) StackName() string {
 }
 
 func (c Cluster) valid() error {
-	if c.CreateRecordSet {
-		if c.HostedZone == "" && c.HostedZoneID == "" {
-			return errors.New("hostedZone or hostedZoneID must be specified createRecordSet is true")
-		}
-		if c.HostedZone != "" && c.HostedZoneID != "" {
-			return errors.New("hostedZone and hostedZoneID cannot both be specified")
-		}
-
-		if c.HostedZone != "" {
-			fmt.Printf("Warning: the 'hostedZone' parameter is deprecated. Use 'hostedZoneId' instead\n")
+	if c.HostedZone.IDFromStackOutput == "" && c.CreateRecordSet {
+		if c.HostedZone.ID == "" {
+			return errors.New("hostedZone.ID must be specified createRecordSet is true")
 		}
 
 		if c.RecordSetTTL < 1 {
@@ -752,10 +770,10 @@ func (c Cluster) valid() error {
 		return fmt.Errorf("invalid serviceCIDR: %v", err)
 	}
 	if netutil.CidrOverlap(serviceNet, vpcNet) {
-		return fmt.Errorf("vpcCIDR (%s) overlaps with serviceCIDR (%s)", c.VPCCIDR, c.ServiceCIDR)
+		return fmt.Errorf("vpc.CIDR (%s) overlaps with serviceCIDR (%s)", c.VPC.CIDR, c.ServiceCIDR)
 	}
 	if netutil.CidrOverlap(podNet, vpcNet) {
-		return fmt.Errorf("vpcCIDR (%s) overlaps with podCIDR (%s)", c.VPCCIDR, c.PodCIDR)
+		return fmt.Errorf("vpc.CIDR (%s) overlaps with podCIDR (%s)", c.VPC.CIDR, c.PodCIDR)
 	}
 	if netutil.CidrOverlap(serviceNet, podNet) {
 		return fmt.Errorf("serviceCIDR (%s) overlaps with podCIDR (%s)", c.ServiceCIDR, c.PodCIDR)
@@ -840,57 +858,40 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 		return nil, errors.New("kmsKeyArn must be set")
 	}
 
-	if c.VPCID == "" && c.RouteTableID != "" {
-		return nil, errors.New("vpcId must be specified if routeTableId is specified")
+	if c.VPC.ID == "" && (c.RouteTable.ID != "" || c.InternetGateway.ID != "") {
+		return nil, errors.New("vpc.Id must be specified if routeTable.Id or internetGateway.Id are specified")
 	}
 
 	if c.Region == "" {
 		return nil, errors.New("region must be set")
 	}
 
-	_, vpcNet, err := net.ParseCIDR(c.VPCCIDR)
+	_, vpcNet, err := net.ParseCIDR(c.VPC.CIDR)
 	if err != nil {
-		return nil, fmt.Errorf("invalid vpcCIDR: %v", err)
+		return nil, fmt.Errorf("invalid vpc.CIDR: %v", err)
 	}
 
 	if len(c.Subnets) == 0 {
-		if c.AvailabilityZone == "" {
-			return nil, fmt.Errorf("availabilityZone must be set")
-		}
-		_, instanceCIDR, err := net.ParseCIDR(c.InstanceCIDR)
-		if err != nil {
-			return nil, fmt.Errorf("invalid instanceCIDR: %v", err)
-		}
-		if !vpcNet.Contains(instanceCIDR.IP) {
-			return nil, fmt.Errorf("vpcCIDR (%s) does not contain instanceCIDR (%s)",
-				c.VPCCIDR,
-				c.InstanceCIDR,
-			)
-		}
+		return nil, fmt.Errorf("at least one subnet must be specified")
 	} else {
-		if c.InstanceCIDR != "" {
-			return nil, fmt.Errorf("The top-level instanceCIDR(%s) must be empty when subnets are specified", c.InstanceCIDR)
-		}
-		if c.AvailabilityZone != "" {
-			return nil, fmt.Errorf("The top-level availabilityZone(%s) must be empty when subnets are specified", c.AvailabilityZone)
-		}
-
 		var instanceCIDRs = make([]*net.IPNet, 0)
 		for i, subnet := range c.Subnets {
 			if subnet.AvailabilityZone == "" {
 				return nil, fmt.Errorf("availabilityZone must be set for subnet #%d", i)
 			}
-			_, instanceCIDR, err := net.ParseCIDR(subnet.InstanceCIDR)
-			if err != nil {
-				return nil, fmt.Errorf("invalid instanceCIDR for subnet #%d: %v", i, err)
-			}
-			instanceCIDRs = append(instanceCIDRs, instanceCIDR)
-			if !vpcNet.Contains(instanceCIDR.IP) {
-				return nil, fmt.Errorf("vpcCIDR (%s) does not contain instanceCIDR (%s) for subnet #%d",
-					c.VPCCIDR,
-					c.InstanceCIDR,
-					i,
-				)
+			if !subnet.HasIdentifier() {
+				_, instanceCIDR, err := net.ParseCIDR(subnet.InstanceCIDR)
+				if err != nil {
+					return nil, fmt.Errorf("invalid instanceCIDR for subnet #%d: %v", i, err)
+				}
+				instanceCIDRs = append(instanceCIDRs, instanceCIDR)
+				if !vpcNet.Contains(instanceCIDR.IP) {
+					return nil, fmt.Errorf("vpcCIDR (%s) does not contain instanceCIDR (%s) for subnet #%d",
+						c.VPC.CIDR,
+						subnet.InstanceCIDR,
+						i,
+					)
+				}
 			}
 		}
 
@@ -982,16 +983,20 @@ func (c Experimental) Valid() error {
 Returns the availability zones referenced by the cluster configuration
 */
 func (c *Cluster) AvailabilityZones() []string {
-	if len(c.Subnets) == 0 {
-		return []string{c.AvailabilityZone}
-	}
+	//if len(c.Subnets) == 0 {
+	//	return []string{c.AvailabilityZone}
+	//}
 
-	azs := make([]string, len(c.Subnets))
-	for i := range azs {
-		azs[i] = c.Subnets[i].AvailabilityZone
+	result := []string{}
+	seen := map[string]bool{}
+	for _, s := range c.Subnets {
+		val := s.AvailabilityZone
+		if _, ok := seen[val]; !ok {
+			result = append(result, val)
+			seen[val] = true
+		}
 	}
-
-	return azs
+	return result
 }
 
 /*
@@ -1017,9 +1022,9 @@ func (c *Cluster) ValidateExistingVPC(existingVPCCIDR string, existingSubnetCIDR
 		}
 	}
 
-	_, vpcNet, err := net.ParseCIDR(c.VPCCIDR)
+	_, vpcNet, err := net.ParseCIDR(c.VPC.CIDR)
 	if err != nil {
-		return fmt.Errorf("error parsing vpc cidr %s: %v", c.VPCCIDR, err)
+		return fmt.Errorf("error parsing vpc cidr %s: %v", c.VPC.CIDR, err)
 	}
 
 	//Verify that existing vpc CIDR matches declared vpc CIDR
@@ -1034,19 +1039,21 @@ func (c *Cluster) ValidateExistingVPC(existingVPCCIDR string, existingSubnetCIDR
 	// Loop through all subnets
 	// Note: legacy instanceCIDR/availabilityZone stuff has already been marshalled into this format
 	for _, subnet := range c.Subnets {
-		_, instanceNet, err := net.ParseCIDR(subnet.InstanceCIDR)
-		if err != nil {
-			return fmt.Errorf("error parsing instances cidr %s : %v", c.InstanceCIDR, err)
-		}
+		if subnet.ID == "" {
+			_, instanceNet, err := net.ParseCIDR(subnet.InstanceCIDR)
+			if err != nil {
+				return fmt.Errorf("error parsing instances cidr %s : %v", subnet.InstanceCIDR, err)
+			}
 
-		//Loop through all existing subnets in the VPC and look for conflicting CIDRS
-		for _, existingSubnet := range existingSubnets {
-			if netutil.CidrOverlap(instanceNet, existingSubnet) {
-				return fmt.Errorf(
-					"instance cidr (%s) conflicts with existing subnet cidr=%s",
-					instanceNet,
-					existingSubnet,
-				)
+			//Loop through all existing subnets in the VPC and look for conflicting CIDRS
+			for _, existingSubnet := range existingSubnets {
+				if netutil.CidrOverlap(instanceNet, existingSubnet) {
+					return fmt.Errorf(
+						"instance cidr (%s) conflicts with existing subnet cidr=%s",
+						instanceNet,
+						existingSubnet,
+					)
+				}
 			}
 		}
 	}

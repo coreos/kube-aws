@@ -3,14 +3,17 @@ package config
 import (
 	"bytes"
 	"fmt"
-	"github.com/coreos/kube-aws/netutil"
-	"github.com/coreos/kube-aws/test/helper"
-	"gopkg.in/yaml.v2"
 	"net"
 	"reflect"
 	"strings"
 	"testing"
 	"text/template"
+
+	"github.com/coreos/kube-aws/netutil"
+	"github.com/coreos/kube-aws/test/helper"
+	"gopkg.in/yaml.v2"
+
+	model "github.com/coreos/kube-aws/model"
 )
 
 const minimalConfigYaml = `externalDNSName: test.staging.core-os.net
@@ -49,14 +52,14 @@ routeTableId: rtb-xxxxxx
 vpcId: vpc-xxxxx
 `, `
 createRecordSet: false
-hostedZone: ""
+hostedZoneId: "XXXXXXXXXXX"
 `, `
 createRecordSet: true
 recordSetTTL: 400
-hostedZone: core-os.net
+hostedZoneId: "XXXXXXXXXXX"
 `, `
 createRecordSet: true
-hostedZone: "staging.core-os.net"
+hostedZoneId: "XXXXXXXXXXX"
 `, `
 createRecordSet: true
 hostedZoneId: "XXXXXXXXXXX"
@@ -123,13 +126,13 @@ recordSetTTL: 400
 `, `
 createRecordSet: true
 recordSetTTL: 60
-hostedZone: staging.core-os.net
-hostedZoneId: /hostedzone/staging_id_2 #hostedZone and hostedZoneId defined
+hostedZone:
+  id: staging.core-os.net
+hostedZoneId: /hostedzone/staging_id_2 #hostedZoneId and hostedZone.id defined
 `,
 }
 
 func TestNetworkValidation(t *testing.T) {
-
 	for _, networkConfig := range goodNetworkingConfigs {
 		configBody := singleAzConfigYaml + networkConfig
 		if _, err := ClusterFromBytes([]byte(configBody)); err != nil {
@@ -143,7 +146,30 @@ func TestNetworkValidation(t *testing.T) {
 			t.Errorf("Incorrect config tested valid, expected error:\n%s", networkConfig)
 		}
 	}
+}
 
+func TestLegacySettings(t *testing.T) {
+	vpcConfig := `
+vpcId: some-vpc-id
+availabilityZone: some-az
+instanceCIDR: 10.0.0.0/16
+`
+	cfg, err := ClusterFromBytes([]byte(minimalConfigYaml + vpcConfig))
+	if err != nil {
+		t.Error("Failed to parse config", err)
+	}
+	if cfg.VPC.ID != "some-vpc-id" {
+		t.Errorf("Expected VPC.ID to equal some-vpc-id, got %s", cfg.VPC.ID)
+	}
+	if len(cfg.Subnets) != 1 {
+		t.Errorf("Expected Subnets to have length 1, got %d", len(cfg.Subnets))
+	}
+	if cfg.Subnets[0].AvailabilityZone != "some-az" {
+		t.Errorf("Expected Subnets[0].AvailabilityZone to be %s, got %s", "some-az", cfg.Subnets[0].AvailabilityZone)
+	}
+	if cfg.Subnets[0].InstanceCIDR != "10.0.0.0/16" {
+		t.Errorf("Expected Subnets[0].InstanceCIDR to be %s, got %s", "10.0.0.0/16", cfg.Subnets[0].InstanceCIDR)
+	}
 }
 
 func TestKubernetesServiceIPInference(t *testing.T) {
@@ -314,7 +340,7 @@ func TestMultipleSubnets(t *testing.T) {
 
 	validConfigs := []struct {
 		conf    string
-		subnets []*Subnet
+		subnets []*model.PublicSubnet
 	}{
 		{
 			conf: `
@@ -327,14 +353,19 @@ subnets:
   - availabilityZone: ap-northeast-1c
     instanceCIDR: 10.4.4.0/24
 `,
-			subnets: []*Subnet{
+
+			subnets: []*model.PublicSubnet{
 				{
-					InstanceCIDR:     "10.4.3.0/24",
-					AvailabilityZone: "ap-northeast-1a",
+					Subnet: model.Subnet{
+						AvailabilityZone: "ap-northeast-1a",
+						InstanceCIDR:     "10.4.3.0/24",
+					},
 				},
 				{
-					InstanceCIDR:     "10.4.4.0/24",
-					AvailabilityZone: "ap-northeast-1c",
+					Subnet: model.Subnet{
+						AvailabilityZone: "ap-northeast-1c",
+						InstanceCIDR:     "10.4.4.0/24",
+					},
 				},
 			},
 		},
@@ -346,12 +377,12 @@ controllerIP: 10.4.3.50
 availabilityZone: ap-northeast-1a
 instanceCIDR: 10.4.3.0/24
 `,
-			subnets: []*Subnet{
-				{
+			subnets: []*model.PublicSubnet{{
+				Subnet: model.Subnet{
 					AvailabilityZone: "ap-northeast-1a",
 					InstanceCIDR:     "10.4.3.0/24",
 				},
-			},
+			}},
 		},
 		{
 			conf: `
@@ -362,12 +393,12 @@ availabilityZone: ap-northeast-1a
 instanceCIDR: 10.4.3.0/24
 subnets: []
 `,
-			subnets: []*Subnet{
-				{
+			subnets: []*model.PublicSubnet{{
+				Subnet: model.Subnet{
 					AvailabilityZone: "ap-northeast-1a",
 					InstanceCIDR:     "10.4.3.0/24",
 				},
-			},
+			}},
 		},
 		{
 			conf: `
@@ -375,24 +406,24 @@ subnets: []
 availabilityZone: "ap-northeast-1a"
 subnets: []
 `,
-			subnets: []*Subnet{
-				{
+			subnets: []*model.PublicSubnet{{
+				Subnet: model.Subnet{
 					AvailabilityZone: "ap-northeast-1a",
 					InstanceCIDR:     "10.0.0.0/24",
 				},
-			},
+			}},
 		},
 		{
 			conf: `
 # Missing subnets field fall-backs to the single subnet with the default az/cidr.
 availabilityZone: "ap-northeast-1a"
 `,
-			subnets: []*Subnet{
-				{
+			subnets: []*model.PublicSubnet{{
+				Subnet: model.Subnet{
 					AvailabilityZone: "ap-northeast-1a",
 					InstanceCIDR:     "10.0.0.0/24",
 				},
-			},
+			}},
 		},
 	}
 
@@ -730,14 +761,18 @@ func newMinimalConfig() (*Config, error) {
 	cluster := NewDefaultCluster()
 	cluster.ExternalDNSName = "k8s.example.com"
 	cluster.Region = "us-west-1"
-	cluster.Subnets = []*Subnet{
-		&Subnet{
-			AvailabilityZone: "us-west-1a",
-			InstanceCIDR:     "10.0.0.0/24",
+	cluster.Subnets = []*model.PublicSubnet{
+		&model.PublicSubnet{
+			Subnet: model.Subnet{
+				AvailabilityZone: "us-west-1a",
+				InstanceCIDR:     "10.0.0.0/24",
+			},
 		},
-		&Subnet{
-			AvailabilityZone: "us-west-1b",
-			InstanceCIDR:     "10.0.1.0/24",
+		&model.PublicSubnet{
+			Subnet: model.Subnet{
+				AvailabilityZone: "us-west-1b",
+				InstanceCIDR:     "10.0.1.0/24",
+			},
 		},
 	}
 	c, err := cluster.Config()
@@ -873,9 +908,9 @@ func TestValidateExistingVPC(t *testing.T) {
 	cluster := NewDefaultCluster()
 
 	cluster.VPCCIDR = "10.0.0.0/16"
-	cluster.Subnets = []*Subnet{
-		{"ap-northeast-1a", "10.0.1.0/24", nil},
-		{"ap-northeast-1a", "10.0.2.0/24", nil},
+	cluster.Subnets = []*model.PublicSubnet{
+		{Subnet: model.Subnet{AvailabilityZone: "ap-northeast-1a", InstanceCIDR: "10.0.1.0/24"}},
+		{Subnet: model.Subnet{AvailabilityZone: "ap-northeast-1a", InstanceCIDR: "10.0.2.0/24"}},
 	}
 
 	for _, testCase := range validCases {
@@ -899,9 +934,9 @@ func TestValidateUserData(t *testing.T) {
 	cluster := newDefaultClusterWithDeps(&dummyEncryptService{})
 
 	cluster.Region = "us-west-1"
-	cluster.Subnets = []*Subnet{
-		{"us-west-1a", "10.0.1.0/16", nil},
-		{"us-west-1b", "10.0.2.0/16", nil},
+	cluster.Subnets = []*model.PublicSubnet{
+		{Subnet: model.Subnet{AvailabilityZone: "us-west-1a", InstanceCIDR: "10.0.1.0/16"}},
+		{Subnet: model.Subnet{AvailabilityZone: "us-west-1b", InstanceCIDR: "10.0.2.0/16"}},
 	}
 
 	helper.WithDummyCredentials(func(dir string) {
@@ -923,9 +958,9 @@ func TestRenderStackTemplate(t *testing.T) {
 	cluster := newDefaultClusterWithDeps(&dummyEncryptService{})
 
 	cluster.Region = "us-west-1"
-	cluster.Subnets = []*Subnet{
-		{"us-west-1a", "10.0.1.0/16", nil},
-		{"us-west-1b", "10.0.2.0/16", nil},
+	cluster.Subnets = []*model.PublicSubnet{
+		{Subnet: model.Subnet{AvailabilityZone: "us-west-1a", InstanceCIDR: "10.0.1.0/16"}},
+		{Subnet: model.Subnet{AvailabilityZone: "us-west-1b", InstanceCIDR: "10.0.2.0/16"}},
 	}
 
 	helper.WithDummyCredentials(func(dir string) {

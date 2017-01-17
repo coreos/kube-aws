@@ -377,7 +377,8 @@ func TestValidateDNSConfig(t *testing.T) {
 		`
 createRecordSet: true
 recordSetTTL: 60
-hostedZone: core-os.net
+hostedZone:
+  id: /hostedzone/staging_id_4
 `, `
 createRecordSet: true
 recordSetTTL: 60
@@ -393,23 +394,16 @@ hostedZoneId: /hostedzone/staging_id_2
 		`
 createRecordSet: true
 recordSetTTL: 60
-hostedZone: staging.core-os.net # hostedZone is ambiguous
-`, `
-createRecordSet: true
-recordSetTTL: 60
 hostedZoneId: /hostedzone/staging_id_3 # <staging_id_id> is not a super-domain
 `, `
 createRecordSet: true
 recordSetTTL: 60
-hostedZone: zebras.coreos.com # zebras.coreos.com is not a super-domain
+hostedZone:
+  id: zebras.coreos.com # zebras.coreos.com is not a super-domain
 `, `
 createRecordSet: true
 recordSetTTL: 60
 hostedZoneId: /hostedzone/staging_id_5 #non-existant hostedZoneId
-`, `
-createRecordSet: true
-recordSetTTL: 60
-hostedZone: unicorns.core-os.net  #non-existant hostedZone DNS name
 `,
 	}
 

@@ -87,8 +87,8 @@ func runCmdInit(cmd *cobra.Command, args []string) error {
 		initOpts.ReleaseChannel = main.ReleaseChannel
 	}
 
-	if initOpts.VPCCIDR == "" {
-		initOpts.VPCCIDR = main.VPCCIDR
+	if initOpts.VPC.CIDR == "" {
+		initOpts.VPC.CIDR = main.VPC.CIDR
 	}
 
 	// Required, inheritable and importable settings for the node pool.
@@ -97,12 +97,12 @@ func runCmdInit(cmd *cobra.Command, args []string) error {
 	// If omitted from it, these can also can be exported from the main cluster
 	// and then imported to the node pool in the cloudformation layer.
 
-	if initOpts.VPCID == "" {
-		initOpts.VPCID = main.VPCID
+	if initOpts.VPC.ID == "" {
+		initOpts.VPC.ID = main.VPC.ID
 	}
 
-	if initOpts.RouteTableID == "" {
-		initOpts.RouteTableID = main.RouteTableID
+	if initOpts.RouteTable.ID == "" {
+		initOpts.RouteTable.ID = main.RouteTable.ID
 	}
 
 	if initOpts.EtcdEndpoints == "" {
