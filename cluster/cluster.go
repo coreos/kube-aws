@@ -259,10 +259,6 @@ func (c *Cluster) lockEtcdResources(cfSvc *cloudformation.CloudFormation, stackB
 }
 
 func (c *Cluster) Update(stackBody string, s3URI string) (string, error) {
-	if err := c.Validate(stackBody, s3URI); err != nil {
-		return "", err
-	}
-
 	cfSvc := cloudformation.New(c.session)
 	s3Svc := s3.New(c.session)
 
