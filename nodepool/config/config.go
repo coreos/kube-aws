@@ -6,6 +6,7 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 
 	cfg "github.com/coreos/kube-aws/config"
 	"github.com/coreos/kube-aws/coreos/amiregistry"
@@ -14,7 +15,6 @@ import (
 	"github.com/coreos/kube-aws/filereader/userdatatemplate"
 	model "github.com/coreos/kube-aws/model"
 	"gopkg.in/yaml.v2"
-	"path/filepath"
 )
 
 type Ref struct {
@@ -165,6 +165,9 @@ func ClusterFromBytes(data []byte, main *cfg.Config) (*ProvidedConfig, error) {
 		if spec.RootVolumeType == "io1" && spec.RootVolumeIOPS == 0 {
 			spec.RootVolumeIOPS = c.Worker.SpotFleet.UnitRootVolumeIOPS * spec.WeightedCapacity
 		}
+
+		spec.RootVolumeEncrypted = c.Worker.SpotFleet.RootVolumeEncrypted
+
 		launchSpecs = append(launchSpecs, spec)
 	}
 	c.Worker.SpotFleet.LaunchSpecifications = launchSpecs

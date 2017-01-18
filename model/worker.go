@@ -25,18 +25,20 @@ type SpotFleet struct {
 	SpotPrice            string                `yaml:"spotPrice,omitempty"`
 	IAMFleetRoleARN      string                `yaml:"iamFleetRoleArn,omitempty"`
 	RootVolumeType       string                `yaml:"rootVolumeType"`
+	RootVolumeEncrypted  bool                  `yaml:"rootVolumeEncrypted"`
 	UnitRootVolumeSize   int                   `yaml:"unitRootVolumeSize"`
 	UnitRootVolumeIOPS   int                   `yaml:"unitRootVolumeIOPS"`
 	LaunchSpecifications []LaunchSpecification `yaml:"launchSpecifications,omitempty"`
 }
 
 type LaunchSpecification struct {
-	WeightedCapacity int    `yaml:"weightedCapacity,omitempty"`
-	InstanceType     string `yaml:"instanceType,omitempty"`
-	SpotPrice        string `yaml:"spotPrice,omitempty"`
-	RootVolumeSize   int    `yaml:"rootVolumeSize,omitempty"`
-	RootVolumeType   string `yaml:"rootVolumeType,omitempty"`
-	RootVolumeIOPS   int    `yaml:"rootVolumeIOPS,omitempty"`
+	WeightedCapacity    int    `yaml:"weightedCapacity,omitempty"`
+	InstanceType        string `yaml:"instanceType,omitempty"`
+	SpotPrice           string `yaml:"spotPrice,omitempty"`
+	RootVolumeSize      int    `yaml:"rootVolumeSize,omitempty"`
+	RootVolumeType      string `yaml:"rootVolumeType,omitempty"`
+	RootVolumeEncrypted bool   `yaml:"rootVolumeEncrypted,omitempty"`
+	RootVolumeIOPS      int    `yaml:"rootVolumeIOPS,omitempty"`
 }
 
 func NewDefaultWorker() Worker {
