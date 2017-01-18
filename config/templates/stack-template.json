@@ -533,7 +533,8 @@
               {{if gt $.EtcdRootVolumeIOPS 0}}
               "Iops": "{{$.EtcdRootVolumeIOPS}}",
               {{end}}
-              "VolumeType": "{{$.EtcdRootVolumeType}}"
+              "VolumeType": "{{$.EtcdRootVolumeType}}",
+              "Encrypted": {{$.EtcdRootVolumeEncrypted}}
             }
           },
 	  {
@@ -546,7 +547,8 @@
               {{if gt $.EtcdDataVolumeIOPS 0}}
               "Iops": "{{$.EtcdDataVolumeIOPS}}",
               {{end}}
-              "VolumeType": "{{$.EtcdDataVolumeType}}"
+              "VolumeType": "{{$.EtcdDataVolumeType}}",
+              "Encrypted": {{$.EtcdDataVolumeEncrypted}}
             }
 	    {{end}}
           }
@@ -589,7 +591,8 @@
               {{if gt .WorkerRootVolumeIOPS 0}}
               "Iops": "{{.WorkerRootVolumeIOPS}}",
               {{end}}
-              "VolumeType": "{{.WorkerRootVolumeType}}"
+              "VolumeType": "{{.WorkerRootVolumeType}}",
+              "Encrypted": {{.WorkerRootVolumeEncrypted}}
             }
           }
         ],
@@ -626,7 +629,8 @@
               {{if gt .ControllerRootVolumeIOPS 0}}
               "Iops": "{{.ControllerRootVolumeIOPS}}",
               {{end}}
-              "VolumeType": "{{.ControllerRootVolumeType}}"
+              "VolumeType": "{{.ControllerRootVolumeType}}",
+              "Encrypted": {{.ControllerRootVolumeEncrypted}}
             }
           }
         ],

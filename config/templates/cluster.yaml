@@ -73,6 +73,9 @@ controller:
 # Disk type for controller node (one of standard, io1, or gp2)
 #controllerRootVolumeType: gp2
 
+# Indicates whether the volume is encrypted
+#controllerRootVolumeEncrypted: true
+
 # Number of I/O operations per second (IOPS) that the controller node disk supports. Leave blank if controllerRootVolumeType is not io1
 #controllerRootVolumeIOPS: 0
 
@@ -98,6 +101,9 @@ controller:
 
 # Disk type for worker node (one of standard, io1, or gp2)
 #workerRootVolumeType: gp2
+
+# Indicates whether the volume is encrypted
+#workerRootVolumeEncrypted: true
 
 # Number of I/O operations per second (IOPS) that the worker node disk supports. Leave blank if workerRootVolumeType is not io1
 #workerRootVolumeIOPS: 0
@@ -132,6 +138,9 @@ controller:
 # Root volume type for etcd node (one of standard, io1, or gp2)
 # etcdRootVolumeType: gp2
 
+# Indicates whether the volume is encrypted
+#etcdRootVolumeEncrypted: true
+
 # Number of I/O operations per second (IOPS) that the etcd node's root volume supports. Leave blank if etcdRootVolumeType is not io1
 # etcdRootVolumeIOPS: 0
 
@@ -145,6 +154,9 @@ controller:
 
 # Data volume type for etcd node (one of standard, io1, or gp2)
 # etcdDataVolumeType: gp2
+
+# Indicates whether the volume is encrypted
+# etcdDataVolumeEncrypted: true
 
 # Number of I/O operations per second (IOPS) that the etcd node's data volume supports. Leave blank if etcdDataVolumeType is not io1
 # etcdDataVolumeIOPS: 0

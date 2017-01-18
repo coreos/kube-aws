@@ -73,7 +73,8 @@
                   {{if gt $spec.RootVolumeIOPS 0}}
                   "Iops": "{{$spec.RootVolumeIOPS}}",
                   {{end}}
-                  "VolumeType": "{{$spec.RootVolumeType}}"
+                  "VolumeType": "{{$spec.RootVolumeType}}",
+                  "Encrypted": {{$spec.RootVolumeEncrypted}}
                 }
               }
             ],
@@ -194,7 +195,8 @@
               {{if gt .WorkerRootVolumeIOPS 0}}
               "Iops": "{{.WorkerRootVolumeIOPS}}",
               {{end}}
-              "VolumeType": "{{.WorkerRootVolumeType}}"
+              "VolumeType": "{{.WorkerRootVolumeType}}",
+              "Encrypted": {{.WorkerRootVolumeEncrypted}}
             }
           }
         ],

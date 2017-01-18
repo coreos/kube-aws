@@ -238,28 +238,30 @@ type DeploymentSettings struct {
 
 // Part of configuration which is specific to worker nodes
 type WorkerSettings struct {
-	model.Worker           `yaml:"worker,omitempty"`
-	WorkerCount            int      `yaml:"workerCount,omitempty"`
-	WorkerCreateTimeout    string   `yaml:"workerCreateTimeout,omitempty"`
-	WorkerInstanceType     string   `yaml:"workerInstanceType,omitempty"`
-	WorkerRootVolumeType   string   `yaml:"workerRootVolumeType,omitempty"`
-	WorkerRootVolumeIOPS   int      `yaml:"workerRootVolumeIOPS,omitempty"`
-	WorkerRootVolumeSize   int      `yaml:"workerRootVolumeSize,omitempty"`
-	WorkerSpotPrice        string   `yaml:"workerSpotPrice,omitempty"`
-	WorkerSecurityGroupIds []string `yaml:"workerSecurityGroupIds,omitempty"`
-	WorkerTenancy          string   `yaml:"workerTenancy,omitempty"`
+	model.Worker              `yaml:"worker,omitempty"`
+	WorkerCount               int      `yaml:"workerCount,omitempty"`
+	WorkerCreateTimeout       string   `yaml:"workerCreateTimeout,omitempty"`
+	WorkerInstanceType        string   `yaml:"workerInstanceType,omitempty"`
+	WorkerRootVolumeType      string   `yaml:"workerRootVolumeType,omitempty"`
+	WorkerRootVolumeEncrypted bool     `yaml:"workerRootVolumeEncrypted,omitempty"`
+	WorkerRootVolumeIOPS      int      `yaml:"workerRootVolumeIOPS,omitempty"`
+	WorkerRootVolumeSize      int      `yaml:"workerRootVolumeSize,omitempty"`
+	WorkerSpotPrice           string   `yaml:"workerSpotPrice,omitempty"`
+	WorkerSecurityGroupIds    []string `yaml:"workerSecurityGroupIds,omitempty"`
+	WorkerTenancy             string   `yaml:"workerTenancy,omitempty"`
 }
 
 // Part of configuration which is specific to controller nodes
 type ControllerSettings struct {
-	model.Controller         `yaml:"controller,omitempty"`
-	ControllerCount          int    `yaml:"controllerCount,omitempty"`
-	ControllerCreateTimeout  string `yaml:"controllerCreateTimeout,omitempty"`
-	ControllerInstanceType   string `yaml:"controllerInstanceType,omitempty"`
-	ControllerRootVolumeType string `yaml:"controllerRootVolumeType,omitempty"`
-	ControllerRootVolumeIOPS int    `yaml:"controllerRootVolumeIOPS,omitempty"`
-	ControllerRootVolumeSize int    `yaml:"controllerRootVolumeSize,omitempty"`
-	ControllerTenancy        string `yaml:"controllerTenancy,omitempty"`
+	model.Controller              `yaml:"controller,omitempty"`
+	ControllerCount               int    `yaml:"controllerCount,omitempty"`
+	ControllerCreateTimeout       string `yaml:"controllerCreateTimeout,omitempty"`
+	ControllerInstanceType        string `yaml:"controllerInstanceType,omitempty"`
+	ControllerRootVolumeType      string `yaml:"controllerRootVolumeType,omitempty"`
+	ControllerRootVolumeEncrypted bool   `yaml:"controllerRootVolumeEncrypted,omitempty"`
+	ControllerRootVolumeIOPS      int    `yaml:"controllerRootVolumeIOPS,omitempty"`
+	ControllerRootVolumeSize      int    `yaml:"controllerRootVolumeSize,omitempty"`
+	ControllerTenancy             string `yaml:"controllerTenancy,omitempty"`
 }
 
 // Part of configuration which is specific to etcd nodes
@@ -268,9 +270,11 @@ type EtcdSettings struct {
 	EtcdInstanceType        string `yaml:"etcdInstanceType,omitempty"`
 	EtcdRootVolumeSize      int    `yaml:"etcdRootVolumeSize,omitempty"`
 	EtcdRootVolumeType      string `yaml:"etcdRootVolumeType,omitempty"`
+	EtcdRootVolumeEncrypted bool   `yaml:"etcdRootVolumeEncrypted,omitempty"`
 	EtcdRootVolumeIOPS      int    `yaml:"etcdRootVolumeIOPS,omitempty"`
 	EtcdDataVolumeSize      int    `yaml:"etcdDataVolumeSize,omitempty"`
 	EtcdDataVolumeType      string `yaml:"etcdDataVolumeType,omitempty"`
+	EtcdDataVolumeEncrypted bool   `yaml:"etcdDataVolumeEncrypted,omitempty"`
 	EtcdDataVolumeIOPS      int    `yaml:"etcdDataVolumeIOPS,omitempty"`
 	EtcdDataVolumeEphemeral bool   `yaml:"etcdDataVolumeEphemeral,omitempty"`
 	EtcdTenancy             string `yaml:"etcdTenancy,omitempty"`
