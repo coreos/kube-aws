@@ -40,13 +40,13 @@ func runCmdValidate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Failed to validate user data: %v", err)
 	}
 
-	data, err := conf.RenderStackTemplate(stackTemplateOptions(), false)
+	stackConf, err := conf.RenderStackTemplate(stackTemplateOptions(), false, validateOpts.s3URI)
 	if err != nil {
 		return fmt.Errorf("Failed to render stack template: %v", err)
 	}
 
-	cluster := cluster.New(conf, validateOpts.awsDebug)
-	report, err := cluster.ValidateStack(string(data), validateOpts.s3URI)
+	cluster := cluster.New(stackConf, validateOpts.awsDebug)
+	report, err := cluster.ValidateStack()
 	if report != "" {
 		fmt.Fprintf(os.Stderr, "Validation Report: %s\n", report)
 	}

@@ -872,7 +872,7 @@ func TestUploadTemplateWithDirectory(t *testing.T) {
 
 	c := &Cluster{Cluster: *clusterConfig}
 
-	suppliedURL, err := c.stackProvisioner().UploadTemplate(s3Svc, s3URI, body)
+	suppliedURL, err := c.stackProvisioner().UploadTemplate(s3Svc, s3URI, body, "stack.json")
 
 	if err != nil {
 		t.Errorf("error uploading template: %v", err)
@@ -902,7 +902,7 @@ func TestUploadTemplateWithoutDirectory(t *testing.T) {
 
 	c := &Cluster{Cluster: *clusterConfig}
 
-	suppliedURL, err := c.stackProvisioner().UploadTemplate(s3Svc, s3URI, body)
+	suppliedURL, err := c.stackProvisioner().UploadTemplate(s3Svc, s3URI, body, "stack.json")
 
 	if err != nil {
 		t.Errorf("error uploading template: %v", err)

@@ -33,7 +33,13 @@ func runCmdDestroy(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Error parsing config: %v", err)
 	}
 
-	c := cluster.New(cfg, destroyOpts.awsDebug)
+	// call it here purely to make it compile
+	stackConf, err := cfg.RenderStackTemplate(stackTemplateOptions, upOpts.export, "")
+	if err != nil {
+		return fmt.Errorf("Failed to render stack template: %v", err)
+	}
+
+	c := cluster.New(stackConf, destroyOpts.awsDebug)
 	if err := c.Destroy(); err != nil {
 		return fmt.Errorf("Failed destroying cluster: %v", err)
 	}

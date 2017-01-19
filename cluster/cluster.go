@@ -41,7 +41,7 @@ func (c *Info) String() string {
 	return buf.String()
 }
 
-func New(cfg *config.Cluster, awsDebug bool) *Cluster {
+func New(cfg *config.StackConfig, awsDebug bool) *Cluster {
 	awsConfig := aws.NewConfig().
 		WithRegion(cfg.Region).
 		WithCredentialsChainVerboseErrors(true)
@@ -51,18 +51,18 @@ func New(cfg *config.Cluster, awsDebug bool) *Cluster {
 	}
 
 	return &Cluster{
-		Cluster: *cfg,
-		session: session.New(awsConfig),
+		StackConfig: *cfg,
+		session:     session.New(awsConfig),
 	}
 }
 
 type Cluster struct {
-	config.Cluster
+	config.StackConfig
 	session *session.Session
 }
 
-func (c *Cluster) ValidateStack(stackBody string, s3URI string) (string, error) {
-	return c.stackProvisioner().Validate(stackBody, s3URI)
+func (c *Cluster) ValidateStack() (string, error) {
+	return c.stackProvisioner().Validate(string(c.StackBody), c.S3URI)
 }
 
 type ec2Service interface {
@@ -151,7 +151,7 @@ func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
 	return cfnstack.NewProvisioner(c.StackName(), c.WorkerDeploymentSettings().StackTags(), stackPolicyBody, c.session)
 }
 
-func (c *Cluster) Create(stackBody string, s3URI string) error {
+func (c *Cluster) Create() error {
 	r53Svc := route53.New(c.session)
 	if err := c.validateDNSConfig(r53Svc); err != nil {
 		return err
@@ -179,7 +179,14 @@ func (c *Cluster) Create(stackBody string, s3URI string) error {
 	cfSvc := cloudformation.New(c.session)
 	s3Svc := s3.New(c.session)
 
-	return c.stackProvisioner().CreateStackAndWait(cfSvc, s3Svc, stackBody, s3URI)
+	uploads := map[string]string{
+		"stack.json":          string(c.StackBody),
+		"userdata-controller": c.UserDataController,
+		"userdata-worker":     c.UserDataWorker,
+		"userdata-etcd":       c.UserDataEtcd,
+	}
+
+	return c.stackProvisioner().CreateStackAndWait(cfSvc, s3Svc, uploads, c.S3URI)
 }
 
 /*
@@ -197,6 +204,7 @@ func (c *Cluster) lockEtcdResources(cfSvc *cloudformation.CloudFormation, stackB
 
 	//Unmarshal incoming stack resource defintions
 	var newStack cfStackResources
+
 	if err := json.Unmarshal([]byte(stackBody), &newStack); err != nil {
 		return "", fmt.Errorf("error unmarshaling new stack json: %v", err)
 	}
@@ -250,16 +258,23 @@ func (c *Cluster) lockEtcdResources(cfSvc *cloudformation.CloudFormation, stackB
 	return buf.String(), nil
 }
 
-func (c *Cluster) Update(stackBody string, s3URI string) (string, error) {
+func (c *Cluster) Update() (string, error) {
 	cfSvc := cloudformation.New(c.session)
 	s3Svc := s3.New(c.session)
 
 	var err error
-	if stackBody, err = c.lockEtcdResources(cfSvc, stackBody); err != nil {
+	var stackBody string
+	if stackBody, err = c.lockEtcdResources(cfSvc, string(c.StackBody)); err != nil {
 		return "", err
 	}
 
-	updateOutput, err := c.stackProvisioner().UpdateStackAndWait(cfSvc, s3Svc, stackBody, s3URI)
+	uploads := map[string]string{
+		"stack.json":          stackBody,
+		"userdata-controller": c.UserDataController,
+		"userdata-worker":     c.UserDataWorker,
+		"userdata-etcd":       c.UserDataEtcd,
+	}
+	updateOutput, err := c.stackProvisioner().UpdateStackAndWait(cfSvc, s3Svc, uploads, c.S3URI)
 
 	return updateOutput, err
 }

@@ -13,7 +13,7 @@ import (
 )
 
 type Cluster struct {
-	config.ProvidedConfig
+	config.StackConfig
 	session *session.Session
 }
 
@@ -32,7 +32,7 @@ func (c *Info) String() string {
 	return buf.String()
 }
 
-func New(cfg *config.ProvidedConfig, awsDebug bool) *Cluster {
+func New(cfg *config.StackConfig, awsDebug bool) *Cluster {
 	awsConfig := aws.NewConfig().
 		WithRegion(cfg.Region).
 		WithCredentialsChainVerboseErrors(true)
@@ -42,8 +42,8 @@ func New(cfg *config.ProvidedConfig, awsDebug bool) *Cluster {
 	}
 
 	return &Cluster{
-		ProvidedConfig: *cfg,
-		session:        session.New(awsConfig),
+		StackConfig: *cfg,
+		session:     session.New(awsConfig),
 	}
 }
 
@@ -62,24 +62,34 @@ func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
 	return cfnstack.NewProvisioner(c.StackName(), c.WorkerDeploymentSettings().StackTags(), stackPolicyBody, c.session)
 }
 
-func (c *Cluster) Create(stackBody string, s3URI string) error {
+func (c *Cluster) Create() error {
 	cfSvc := cloudformation.New(c.session)
 	s3Svc := s3.New(c.session)
 
-	return c.stackProvisioner().CreateStackAndWait(cfSvc, s3Svc, stackBody, s3URI)
+	uploads := map[string]string{
+		"stack.json":      string(c.StackBody),
+		"userdata-worker": c.UserDataWorker,
+	}
+
+	return c.stackProvisioner().CreateStackAndWait(cfSvc, s3Svc, uploads, c.S3URI)
 }
 
-func (c *Cluster) Update(stackBody string, s3URI string) (string, error) {
+func (c *Cluster) Update() (string, error) {
 	cfSvc := cloudformation.New(c.session)
 	s3Svc := s3.New(c.session)
 
-	updateOutput, err := c.stackProvisioner().UpdateStackAndWait(cfSvc, s3Svc, stackBody, s3URI)
+	uploads := map[string]string{
+		"stack.json":      string(c.StackBody),
+		"userdata-worker": c.UserDataWorker,
+	}
+
+	updateOutput, err := c.stackProvisioner().UpdateStackAndWait(cfSvc, s3Svc, uploads, c.S3URI)
 
 	return updateOutput, err
 }
 
-func (c *Cluster) ValidateStack(stackBody string, s3URI string) (string, error) {
-	return c.stackProvisioner().Validate(stackBody, s3URI)
+func (c *Cluster) ValidateStack() (string, error) {
+	return c.stackProvisioner().Validate(string(c.StackBody), c.S3URI)
 }
 
 func (c *Cluster) Info() (*Info, error) {

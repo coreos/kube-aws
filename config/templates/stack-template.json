@@ -4,7 +4,7 @@
   "Mappings" : {
     "EtcdInstanceParams" : {
       "UserData" : {
-	"cloudconfig" : "{{.UserDataEtcd}}"
+       "cloudconfig" : "{{.UserDataEtcd}}"
       }
     }
   },
@@ -327,6 +327,13 @@
                   "Effect": "Allow",
                   "Resource": "*"
                 },
+		{
+                  "Effect": "Allow",
+		  "Action": [
+			"s3:GetObject"
+		  ],
+		  "Resource": "arn:aws:s3:::{{ printf "%s%s/%s/userdata-controller" (.S3URI | urlparse).Host (.S3URI | urlparse).Path .ClusterName }}"
+		},
                 {{if .Experimental.WaitSignal.Enabled}}
                 {
                   "Action": "cloudformation:SignalResource",
@@ -416,6 +423,13 @@
                   "Action": "ec2:DetachVolume",
                   "Effect": "Allow",
                   "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject"
+                  ],
+                  "Resource": "arn:aws:s3:::{{ printf "%s%s/%s/userdata-worker" (.S3URI | urlparse).Host (.S3URI | urlparse).Path .ClusterName }}"
                 },
                 {{if .ManageCertificates}}
                 {
@@ -612,7 +626,29 @@
         {{else}}
         "PlacementTenancy": "{{.WorkerTenancy}}",
         {{end}}
-        "UserData": "{{ .UserDataWorker }}"
+        "UserData": { "Fn::Base64": { "Fn::Join" : ["\n", [
+            "#cloud-config",
+            "coreos:",
+            "  units:",
+            "  - name: bypass-user-data-limit.service",
+            "    command: start",
+            "    content: |",
+            "      [Unit]",
+            "      Description=Fetch and execute cloud config from s3",
+            "      [Service]",
+            "      Environment=USERDATA_FILE=userdata-worker",
+            "      EnvironmentFile=/etc/environment",
+            "      EnvironmentFile=-/var/run/coreos/region.env",
+            "      Restart=on-failure",
+            "      ExecStartPre=/bin/sh -ec 'echo REGION=$$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region) >/var/run/coreos/region.env'",
+            "      ExecStartPre=/usr/bin/rkt run \\",
+            "         --net=host \\",
+            "         --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \\",
+            "         --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false --mount volume=awsenv,target=/var/run/coreos \\",
+            "         --trust-keys-from-https \\",
+            "         {{.AWSCliImageRepo}}:{{.AWSCliTag}} -- aws s3 --region ${REGION}  cp {{ .S3URI }}/{{ .ClusterName }}/${USERDATA_FILE} /var/run/coreos/",
+            "      ExecStart=/usr/bin/coreos-cloudinit --from-file /var/run/coreos/${USERDATA_FILE}"
+            ]]}}
       },
       "Type": "AWS::AutoScaling::LaunchConfiguration"
     },
@@ -642,7 +678,29 @@
           }
         ],
         "PlacementTenancy": "{{ .ControllerTenancy }}",
-        "UserData": "{{ .UserDataController }}"
+        "UserData": { "Fn::Base64": { "Fn::Join" : ["\n", [
+            "#cloud-config",
+            "coreos:",
+            "  units:",
+            "  - name: bypass-user-data-limit.service",
+            "    command: start",
+            "    content: |",
+            "      [Unit]",
+            "      Description=Fetch and execute cloud config from s3",
+            "      [Service]",
+            "      Environment=USERDATA_FILE=userdata-controller",
+            "      EnvironmentFile=/etc/environment",
+            "      EnvironmentFile=-/var/run/coreos/region.env",
+            "      Restart=on-failure",
+            "      ExecStartPre=/bin/sh -ec 'echo REGION=$$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region) >/var/run/coreos/region.env'",
+            "      ExecStartPre=/usr/bin/rkt run \\",
+            "         --net=host \\",
+            "         --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \\",
+            "         --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false --mount volume=awsenv,target=/var/run/coreos \\",
+            "         --trust-keys-from-https \\",
+            "         {{.AWSCliImageRepo}}:{{.AWSCliTag}} -- aws s3 --region ${REGION}  cp {{ .S3URI }}/{{ .ClusterName }}/${USERDATA_FILE} /var/run/coreos/",
+            "      ExecStart=/usr/bin/coreos-cloudinit --from-file /var/run/coreos/${USERDATA_FILE}"
+            ]]}}
       },
       "Type": "AWS::AutoScaling::LaunchConfiguration"
     },

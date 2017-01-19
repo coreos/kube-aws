@@ -545,17 +545,19 @@ type StackTemplateOptions struct {
 	StackTemplateTmplFile string
 }
 
-type stackConfig struct {
+type StackConfig struct {
 	*Config
 	UserDataWorker        string
 	UserDataController    string
 	UserDataEtcd          string
 	ControllerSubnetIndex int
+	S3URI                 string
+	StackBody             []byte
 }
 
-func (c Cluster) stackConfig(opts StackTemplateOptions, compressUserData bool) (*stackConfig, error) {
+func (c Cluster) stackConfig(opts StackTemplateOptions, compressUserData bool) (*StackConfig, error) {
 	var err error
-	stackConfig := stackConfig{}
+	stackConfig := StackConfig{}
 
 	if stackConfig.Config, err = c.Config(); err != nil {
 		return nil, err
@@ -575,10 +577,10 @@ func (c Cluster) stackConfig(opts StackTemplateOptions, compressUserData bool) (
 		stackConfig.Config.TLSConfig = compactAssets
 	}
 
-	if stackConfig.UserDataWorker, err = userdatatemplate.GetString(opts.WorkerTmplFile, stackConfig.Config, compressUserData); err != nil {
+	if stackConfig.UserDataWorker, err = userdatatemplate.GetString(opts.WorkerTmplFile, stackConfig.Config, false); err != nil {
 		return nil, fmt.Errorf("failed to render worker cloud config: %v", err)
 	}
-	if stackConfig.UserDataController, err = userdatatemplate.GetString(opts.ControllerTmplFile, stackConfig.Config, compressUserData); err != nil {
+	if stackConfig.UserDataController, err = userdatatemplate.GetString(opts.ControllerTmplFile, stackConfig.Config, false); err != nil {
 		return nil, fmt.Errorf("failed to render controller cloud config: %v", err)
 	}
 	if stackConfig.UserDataEtcd, err = userdatatemplate.GetString(opts.EtcdTmplFile, stackConfig.Config, compressUserData); err != nil {
@@ -603,18 +605,20 @@ func (c Cluster) ValidateUserData(opts StackTemplateOptions) error {
 	return err
 }
 
-func (c Cluster) RenderStackTemplate(opts StackTemplateOptions, prettyPrint bool) ([]byte, error) {
+func (c Cluster) RenderStackTemplate(opts StackTemplateOptions, prettyPrint bool, s3URI string) (*StackConfig, error) {
 	stackConfig, err := c.stackConfig(opts, true)
 	if err != nil {
 		return nil, err
 	}
+	stackConfig.S3URI = strings.TrimSuffix(s3URI, "/")
 
 	bytes, err := jsontemplate.GetBytes(opts.StackTemplateTmplFile, stackConfig, prettyPrint)
 	if err != nil {
 		return nil, err
 	}
+	stackConfig.StackBody = bytes
 
-	return bytes, nil
+	return stackConfig, nil
 }
 
 type Config struct {

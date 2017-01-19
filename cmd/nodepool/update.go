@@ -2,6 +2,8 @@ package nodepool
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/coreos/kube-aws/nodepool/cluster"
 	"github.com/coreos/kube-aws/nodepool/config"
@@ -31,6 +33,22 @@ func init() {
 }
 
 func runCmdUpdate(cmd *cobra.Command, args []string) error {
+	// Update flags.
+	required := []struct {
+		name, val string
+	}{
+		{"--s3-uri", updateOpts.s3URI},
+	}
+	var missing []string
+	for _, req := range required {
+		if req.val == "" {
+			missing = append(missing, strconv.Quote(req.name))
+		}
+	}
+	if len(missing) != 0 {
+		return fmt.Errorf("Missing required flag(s): %s", strings.Join(missing, ", "))
+	}
+
 	conf, err := config.ClusterFromFile(nodePoolClusterConfigFilePath())
 	if err != nil {
 		return fmt.Errorf("Failed to read node pool config: %v", err)
@@ -40,14 +58,14 @@ func runCmdUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Failed to validate user data: %v", err)
 	}
 
-	data, err := conf.RenderStackTemplate(stackTemplateOptions(), updateOpts.prettyPrint)
+	stackConf, err := conf.RenderStackTemplate(stackTemplateOptions(), updateOpts.prettyPrint, updateOpts.s3URI)
 	if err != nil {
 		return fmt.Errorf("Failed to render stack template: %v", err)
 	}
 
-	cluster := cluster.New(conf, updateOpts.awsDebug)
+	cluster := cluster.New(stackConf, updateOpts.awsDebug)
 
-	report, err := cluster.Update(string(data), updateOpts.s3URI)
+	report, err := cluster.Update()
 	if err != nil {
 		return fmt.Errorf("Error updating node pool: %v", err)
 	}

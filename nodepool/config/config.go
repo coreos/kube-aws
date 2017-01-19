@@ -15,6 +15,7 @@ import (
 	model "github.com/coreos/kube-aws/model"
 	"gopkg.in/yaml.v2"
 	"path/filepath"
+	"strings"
 )
 
 type Ref struct {
@@ -47,14 +48,16 @@ type StackTemplateOptions struct {
 	TLSAssetsDir          string
 }
 
-type stackConfig struct {
+type StackConfig struct {
 	*ComputedConfig
 	UserDataWorker string
+	StackBody      []byte
+	S3URI          string
 }
 
-func (c ProvidedConfig) stackConfig(opts StackTemplateOptions, compressUserData bool) (*stackConfig, error) {
+func (c ProvidedConfig) stackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	var err error
-	stackConfig := stackConfig{}
+	stackConfig := StackConfig{}
 
 	if stackConfig.ComputedConfig, err = c.Config(); err != nil {
 		return nil, err
@@ -68,7 +71,7 @@ func (c ProvidedConfig) stackConfig(opts StackTemplateOptions, compressUserData 
 
 	stackConfig.ComputedConfig.TLSConfig = compactAssets
 
-	if stackConfig.UserDataWorker, err = userdatatemplate.GetString(opts.WorkerTmplFile, stackConfig.ComputedConfig, compressUserData); err != nil {
+	if stackConfig.UserDataWorker, err = userdatatemplate.GetString(opts.WorkerTmplFile, stackConfig.ComputedConfig, false); err != nil {
 		return nil, fmt.Errorf("failed to render worker cloud config: %v", err)
 	}
 
@@ -76,7 +79,7 @@ func (c ProvidedConfig) stackConfig(opts StackTemplateOptions, compressUserData 
 }
 
 func (c ProvidedConfig) ValidateUserData(opts StackTemplateOptions) error {
-	stackConfig, err := c.stackConfig(opts, false)
+	stackConfig, err := c.stackConfig(opts)
 	if err != nil {
 		return fmt.Errorf("failed to create stack config: %v", err)
 	}
@@ -88,19 +91,21 @@ func (c ProvidedConfig) ValidateUserData(opts StackTemplateOptions) error {
 	return err
 }
 
-func (c ProvidedConfig) RenderStackTemplate(opts StackTemplateOptions, prettyPrint bool) ([]byte, error) {
-	stackConfig, err := c.stackConfig(opts, true)
+func (c ProvidedConfig) RenderStackTemplate(opts StackTemplateOptions, prettyPrint bool, s3URI string) (*StackConfig, error) {
+	stackConfig, err := c.stackConfig(opts)
 	if err != nil {
 		return nil, err
 	}
 
+	stackConfig.S3URI = strings.TrimSuffix(s3URI, "/")
 	bytes, err := jsontemplate.GetBytes(opts.StackTemplateTmplFile, stackConfig, prettyPrint)
 
 	if err != nil {
 		return nil, err
 	}
+	stackConfig.StackBody = bytes
 
-	return bytes, nil
+	return stackConfig, nil
 }
 
 func ClusterFromFile(filename string) (*ProvidedConfig, error) {
