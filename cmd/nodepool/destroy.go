@@ -33,7 +33,7 @@ func runCmdDestroy(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Error parsing node pool config: %v", err)
 	}
 
-	c := cluster.New(cfg, destroyOpts.awsDebug)
+	c := cluster.NewClusterRef(cfg, destroyOpts.awsDebug)
 	if err := c.Destroy(); err != nil {
 		return fmt.Errorf("Failed destroying node pool: %v", err)
 	}

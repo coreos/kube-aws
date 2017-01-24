@@ -14,8 +14,68 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/coreos/kube-aws/cfnstack"
 	"github.com/coreos/kube-aws/config"
+	"github.com/coreos/kube-aws/test/helper"
 	yaml "gopkg.in/yaml.v2"
 )
+
+type dummyS3ObjectPutterService struct {
+	ExpectedBucket        string
+	ExpectedKey           string
+	ExpectedBody          string
+	ExpectedContentType   string
+	ExpectedContentLength int64
+}
+
+func (s3Svc dummyS3ObjectPutterService) PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
+
+	if s3Svc.ExpectedContentLength != *input.ContentLength {
+		return nil, fmt.Errorf(
+			"expected content length does not match supplied content length\nexpected=%v, supplied=%v",
+			s3Svc.ExpectedContentLength,
+			input.ContentLength,
+		)
+	}
+
+	if s3Svc.ExpectedBucket != *input.Bucket {
+		return nil, fmt.Errorf(
+			"expected bucket does not match supplied bucket\nexpected=%v, supplied=%v",
+			s3Svc.ExpectedBucket,
+			input.Bucket,
+		)
+	}
+
+	if s3Svc.ExpectedKey != *input.Key {
+		return nil, fmt.Errorf(
+			"expected key does not match supplied key\nexpected=%v, supplied=%v",
+			s3Svc.ExpectedKey,
+			*input.Key,
+		)
+	}
+
+	if s3Svc.ExpectedContentType != *input.ContentType {
+		return nil, fmt.Errorf(
+			"expected content type does not match supplied content type\nexpected=%v, supplied=%v",
+			s3Svc.ExpectedContentType,
+			input.ContentType,
+		)
+	}
+
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(input.Body)
+	suppliedBody := buf.String()
+
+	if s3Svc.ExpectedBody != suppliedBody {
+		return nil, fmt.Errorf(
+			"expected body does not match supplied body\nexpected=%v, supplied=%v",
+			s3Svc.ExpectedBody,
+			suppliedBody,
+		)
+	}
+
+	resp := &s3.PutObjectOutput{}
+
+	return resp, nil
+}
 
 /*
 TODO(colhom): when we fully deprecate instanceCIDR/availabilityZone, this block of
@@ -255,8 +315,8 @@ subnets:
 			return nil
 		}
 
-		cluster := &Cluster{
-			Cluster: *clusterConfig,
+		cluster := &ClusterRef{
+			Cluster: clusterConfig,
 		}
 
 		return cluster.validateExistingVPCState(ec2Service)
@@ -282,7 +342,7 @@ func TestValidateKeyPair(t *testing.T) {
 		t.Errorf("could not get valid cluster config: %v", err)
 	}
 
-	c := &Cluster{Cluster: *clusterConfig}
+	c := &ClusterRef{Cluster: clusterConfig}
 
 	ec2Svc := dummyEC2Service{}
 	ec2Svc.KeyPairs = map[string]bool{
@@ -420,7 +480,7 @@ hostedZone: unicorns.core-os.net  #non-existant hostedZone DNS name
 			t.Errorf("could not get valid cluster config: %v", err)
 			continue
 		}
-		c := &Cluster{Cluster: *clusterConfig}
+		c := &ClusterRef{Cluster: clusterConfig}
 
 		if err := c.validateDNSConfig(r53); err != nil {
 			t.Errorf("returned error for valid config: %v", err)
@@ -434,7 +494,7 @@ hostedZone: unicorns.core-os.net  #non-existant hostedZone DNS name
 			t.Errorf("could not get valid cluster config: %v", err)
 			continue
 		}
-		c := &Cluster{Cluster: *clusterConfig}
+		c := &ClusterRef{Cluster: clusterConfig}
 
 		if err := c.validateDNSConfig(r53); err == nil {
 			t.Errorf("failed to produce error for invalid config: %s", configBody)
@@ -484,65 +544,6 @@ func (cfSvc *dummyCloudformationService) CreateStack(req *cloudformation.CreateS
 	return resp, nil
 }
 
-type dummyS3ObjectPutterService struct {
-	ExpectedBucket        string
-	ExpectedKey           string
-	ExpectedBody          string
-	ExpectedContentType   string
-	ExpectedContentLength int64
-}
-
-func (s3Svc dummyS3ObjectPutterService) PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
-
-	if s3Svc.ExpectedContentLength != *input.ContentLength {
-		return nil, fmt.Errorf(
-			"expected content length does not match supplied content length\nexpected=%v, supplied=%v",
-			s3Svc.ExpectedContentLength,
-			input.ContentLength,
-		)
-	}
-
-	if s3Svc.ExpectedBucket != *input.Bucket {
-		return nil, fmt.Errorf(
-			"expected bucket does not match supplied bucket\nexpected=%v, supplied=%v",
-			s3Svc.ExpectedBucket,
-			input.Bucket,
-		)
-	}
-
-	if s3Svc.ExpectedKey != *input.Key {
-		return nil, fmt.Errorf(
-			"expected key does not match supplied key\nexpected=%v, supplied=%v",
-			s3Svc.ExpectedKey,
-			*input.Key,
-		)
-	}
-
-	if s3Svc.ExpectedContentType != *input.ContentType {
-		return nil, fmt.Errorf(
-			"expected content type does not match supplied content type\nexpected=%v, supplied=%v",
-			s3Svc.ExpectedContentType,
-			input.ContentType,
-		)
-	}
-
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(input.Body)
-	suppliedBody := buf.String()
-
-	if s3Svc.ExpectedBody != suppliedBody {
-		return nil, fmt.Errorf(
-			"expected body does not match supplied body\nexpected=%v, supplied=%v",
-			s3Svc.ExpectedBody,
-			suppliedBody,
-		)
-	}
-
-	resp := &s3.PutObjectOutput{}
-
-	return resp, nil
-}
-
 func TestStackTags(t *testing.T) {
 	testCases := []struct {
 		expectedTags []*cloudformation.Tag
@@ -580,25 +581,46 @@ stackTags:
 
 	for _, testCase := range testCases {
 		configBody := defaultConfigValues(t, testCase.clusterYaml)
-		clusterConfig, err := config.ClusterFromBytes([]byte(configBody))
+		clusterConfig, err := config.ClusterFromBytesWithEncryptService([]byte(configBody), helper.DummyEncryptService{})
 		if err != nil {
 			t.Errorf("could not get valid cluster config: %v", err)
 			continue
-		}
-
-		cluster := &Cluster{
-			Cluster: *clusterConfig,
 		}
 
 		cfSvc := &dummyCloudformationService{
 			ExpectedTags: testCase.expectedTags,
 		}
 
-		_, err = cluster.stackProvisioner().CreateStackFromTemplateBody(cfSvc, "")
-
-		if err != nil {
-			t.Errorf("error creating cluster: %v\nfor test case %+v", err, testCase)
+		s3Svc := &dummyS3ObjectPutterService{
+			ExpectedBody:          "{}",
+			ExpectedBucket:        "test-bucket",
+			ExpectedContentType:   "application/json",
+			ExpectedKey:           "foo/bar/test-cluster-name/stack.json",
+			ExpectedContentLength: 2,
 		}
+
+		helper.WithDummyCredentials(func(dummyTlsAssetsDir string) {
+			var stackTemplateOptions = config.StackTemplateOptions{
+				TLSAssetsDir:          dummyTlsAssetsDir,
+				ControllerTmplFile:    "../config/templates/cloud-config-controller",
+				WorkerTmplFile:        "../config/templates/cloud-config-worker",
+				EtcdTmplFile:          "../config/templates/cloud-config-etcd",
+				StackTemplateTmplFile: "../config/templates/stack-template.json",
+				S3URI: "s3://test-bucket/foo/bar",
+			}
+
+			cluster, err := NewCluster(clusterConfig, stackTemplateOptions, false)
+			if err != nil {
+				t.Errorf("%v", err)
+				t.FailNow()
+			}
+
+			_, err = cluster.stackProvisioner().CreateStack(cfSvc, s3Svc, "{}", map[string]string{})
+
+			if err != nil {
+				t.Errorf("error creating cluster: %v\nfor test case %+v", err, testCase)
+			}
+		})
 	}
 }
 
@@ -768,8 +790,8 @@ controllerRootVolumeIOPS: 2000
 			continue
 		}
 
-		c := &Cluster{
-			Cluster: *clusterConfig,
+		c := &ClusterRef{
+			Cluster: clusterConfig,
 		}
 
 		ec2Svc := &dummyEC2Service{
@@ -840,8 +862,8 @@ workerRootVolumeIOPS: 2000
 			continue
 		}
 
-		c := &Cluster{
-			Cluster: *clusterConfig,
+		c := &ClusterRef{
+			Cluster: clusterConfig,
 		}
 
 		ec2Svc := &dummyEC2Service{
@@ -851,65 +873,5 @@ workerRootVolumeIOPS: 2000
 		if err := c.validateWorkerRootVolume(ec2Svc); err != nil {
 			t.Errorf("error creating cluster: %v\nfor test case %+v", err, testCase)
 		}
-	}
-}
-
-func TestUploadTemplateWithDirectory(t *testing.T) {
-	body := "{}"
-	s3URI := "s3://mybucket/mykey"
-	s3Svc := dummyS3ObjectPutterService{
-		ExpectedBucket:        "mybucket",
-		ExpectedKey:           "mykey/test-cluster-name/stack.json",
-		ExpectedContentLength: 2,
-		ExpectedContentType:   "application/json",
-		ExpectedBody:          body,
-	}
-
-	clusterConfig, err := config.ClusterFromBytes([]byte(defaultConfigValues(t, "")))
-	if err != nil {
-		t.Errorf("could not get valid cluster config: %v", err)
-	}
-
-	c := &Cluster{Cluster: *clusterConfig}
-
-	suppliedURL, err := c.stackProvisioner().UploadTemplate(s3Svc, s3URI, body)
-
-	if err != nil {
-		t.Errorf("error uploading template: %v", err)
-	}
-
-	expectedURL := "https://s3.amazonaws.com/mybucket/mykey/test-cluster-name/stack.json"
-	if suppliedURL != expectedURL {
-		t.Errorf("supplied template url doesn't match expected one: expected=%s, supplied=%s", expectedURL, suppliedURL)
-	}
-}
-
-func TestUploadTemplateWithoutDirectory(t *testing.T) {
-	body := "{}"
-	s3URI := "s3://mybucket"
-	s3Svc := dummyS3ObjectPutterService{
-		ExpectedBucket:        "mybucket",
-		ExpectedKey:           "test-cluster-name/stack.json",
-		ExpectedContentLength: 2,
-		ExpectedContentType:   "application/json",
-		ExpectedBody:          body,
-	}
-
-	clusterConfig, err := config.ClusterFromBytes([]byte(defaultConfigValues(t, "")))
-	if err != nil {
-		t.Errorf("could not get valid cluster config: %v", err)
-	}
-
-	c := &Cluster{Cluster: *clusterConfig}
-
-	suppliedURL, err := c.stackProvisioner().UploadTemplate(s3Svc, s3URI, body)
-
-	if err != nil {
-		t.Errorf("error uploading template: %v", err)
-	}
-
-	expectedURL := "https://s3.amazonaws.com/mybucket/test-cluster-name/stack.json"
-	if suppliedURL != expectedURL {
-		t.Errorf("supplied template url doesn't match expected one: expected=%s, supplied=%s", expectedURL, suppliedURL)
 	}
 }

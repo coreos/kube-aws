@@ -1,5 +1,21 @@
+{{define "UserData"}}
+{ "Fn::Base64": { "Fn::Join" : ["\n", [
+  "#!/bin/bash",
+  "# userdata hash: {{ .UserDataWorker | sha1 }}",
+  " . /etc/environment",
+  "export COREOS_PRIVATE_IPV4 COREOS_PRIVATE_IPV6 COREOS_PUBLIC_IPV4 COREOS_PUBLIC_IPV6",
+  "REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')",
+  "USERDATA_FILE=userdata-worker",
+  "/usr/bin/rkt run \\",
+  "   --net=host \\",
+  "   --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf  \\",
+  "   --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false --mount volume=awsenv,target=/var/run/coreos \\",
+  "   --trust-keys-from-https \\",
+  "   {{.AWSCliImageRepo}}:{{.AWSCliTag}} -- aws s3 --region $REGION  cp {{ .S3URI }}/{{ .StackName }}/$USERDATA_FILE /var/run/coreos/",
+  "exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE"
+]]}}
+{{end}}
 {{define "Metadata"}}
-
 {
   "AWS::CloudFormation::Init" : {
     "configSets" : {
@@ -48,8 +64,7 @@
         "TargetCapacity": {{$.Worker.SpotFleet.TargetCapacity}},
         "SpotPrice": "{{$.Worker.SpotFleet.SpotPrice}}",
         "LaunchSpecifications": [
-          {{range $subnetIndex, $subnet := $.Subnets}}
-          {{with $subnetLogicalName := printf "Subnet%d" $subnetIndex}}
+          {{range $subnetIndex, $workerSubnet := $.Worker.Subnets}}
           {{range $specIndex, $spec := $.Worker.SpotFleet.LaunchSpecifications}}
           {{if or (gt $subnetIndex 0) (gt $specIndex 0) }},{{end}}
           {
@@ -85,11 +100,10 @@
               {{end}}
             ],
             "SubnetId": {
-              "Ref": "{{$subnetLogicalName}}"
+              "Ref": "{{$.Worker.SubnetLogicalNamePrefix}}{{$workerSubnet.LogicalName}}"
             },
-            "UserData": "{{$.UserDataWorker}}"
+            "UserData": {{template "UserData" $}}
           }
-          {{end}}
           {{end}}
           {{end}}
         ]
@@ -101,12 +115,6 @@
 {{define "AutoScaling"}}
     "{{.Worker.LogicalName}}": {
       "Properties": {
-        "AvailabilityZones": [
-          {{range $index, $subnet := .Subnets}}
-          {{if gt $index 0}},{{end}}
-          "{{$subnet.AvailabilityZone}}"
-          {{end}}
-        ],
         "HealthCheckGracePeriod": 600,
         "HealthCheckType": "EC2",
         "LaunchConfigurationName": {
@@ -138,20 +146,18 @@
         ],
         {{if .Experimental.LoadBalancer.Enabled}}
         "LoadBalancerNames" : [
-        {{range $index, $elb := .Experimental.LoadBalancer.Names}}
-        {{if $index}},{{end}}
+          {{range $index, $elb := .Experimental.LoadBalancer.Names}}
+          {{if $index}},{{end}}
           "{{$elb}}"
-        {{end}}
+          {{end}}
         ],
         {{end}}
         "VPCZoneIdentifier": [
-          {{range $index, $subnet := .Subnets}}
-          {{with $subnetLogicalName := printf "Subnet%d" $index}}
+          {{range $index, $workerSubnet := .Worker.Subnets}}
           {{if gt $index 0}},{{end}}
           {
-            "Ref": "{{$subnetLogicalName}}"
+            "Ref": "{{$.Worker.SubnetLogicalNamePrefix}}{{$workerSubnet.LogicalName}}"
           }
-          {{end}}
           {{end}}
         ]
       },
@@ -217,14 +223,14 @@
         {{else}}
         "PlacementTenancy": "{{.WorkerTenancy}}",
         {{end}}
-        "UserData": "{{ .UserDataWorker }}"
+        "UserData": {{template "UserData" $}}
       },
       "Type": "AWS::AutoScaling::LaunchConfiguration"
     },
 {{end}}
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "kube-aws Kubernetes node pool {{.NodePoolName}}",
+  "Description": "kube-aws Kubernetes node pool {{.ClusterName}} {{.NodePoolName}}",
   "Resources": {
     {{if .Worker.SpotFleet.Enabled}}
     {{template "SpotFleet" .}}
@@ -279,6 +285,13 @@
                   "Action": "ec2:DetachVolume",
                   "Effect": "Allow",
                   "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject"
+                  ],
+                  "Resource": "arn:aws:s3:::{{$.UserDataWorkerS3Path}}"
                 },
                 {
                   "Action" : "kms:Decrypt",
@@ -344,18 +357,32 @@
       },
       "Type": "AWS::IAM::Role"
     }
-    {{range $index, $subnet := .Subnets}}
-    {{with $subnetLogicalName := printf "Subnet%d" $index}}
+
+    {{if $.ElasticFileSystemID}}
+    {{range $index, $subnet := .Worker.Subnets}}
     ,
-    "{{$subnetLogicalName}}": {
+    "{{$.Worker.SubnetLogicalNamePrefix}}{{$subnet.LogicalName}}MountTarget": {
+      "Properties" : {
+        "FileSystemId": "{{$.ElasticFileSystemID}}",
+        "SubnetId": { "Ref": "{{$.Worker.SubnetLogicalNamePrefix}}{{$subnet.LogicalName}}" },
+        "SecurityGroups": [ { "Ref": "SecurityGroupMountTarget" } ]
+      },
+      "Type" : "AWS::EFS::MountTarget"
+    }
+    {{end}}
+    {{end}}
+
+    {{range $index, $subnet := .Worker.Subnets}}
+    ,
+    "{{$.Worker.SubnetLogicalNamePrefix}}{{$subnet.LogicalName}}": {
       "Properties": {
         "AvailabilityZone": "{{$subnet.AvailabilityZone}}",
         "CidrBlock": "{{$subnet.InstanceCIDR}}",
-        "MapPublicIpOnLaunch": {{$.MapPublicIPs}},
+        "MapPublicIpOnLaunch": {{not $.Worker.TopologyPrivate}},
         "Tags": [
           {
             "Key": "Name",
-            "Value": "{{$.NodePoolName}}-{{$subnetLogicalName}}"
+            "Value": "{{$.ClusterName}}-{{$.NodePoolName}}-{{$.Worker.SubnetLogicalNamePrefix}}{{$subnet.LogicalName}}"
           },
           {
             "Key": "KubernetesCluster",
@@ -365,35 +392,25 @@
         "VpcId": {{$.VPCRef}}
       },
       "Type": "AWS::EC2::Subnet"
-    }
-    {{if $.ElasticFileSystemID}}
-    ,
-    "{{$subnetLogicalName}}MountTarget": {
-      "Properties" : {
-        "FileSystemId": "{{$.ElasticFileSystemID}}",
-        "SubnetId": { "Ref": "{{$subnetLogicalName}}" },
-        "SecurityGroups": [ { "Ref": "SecurityGroupMountTarget" } ]
-      },
-      "Type" : "AWS::EFS::MountTarget"
-    }
-    {{end}}
-    {{end}}
-    {{end}}
-
-    {{range $index, $subnet := .Subnets}}
-    {{with $subnetLogicalName := printf "Subnet%d" $index}}
-    ,
-    "{{$subnetLogicalName}}RouteTableAssociation": {
+    },
+    "{{$.Worker.SubnetLogicalNamePrefix}}{{$subnet.LogicalName}}RouteTableAssociation": {
       "Properties": {
-        "RouteTableId": {{$.RouteTableRef}},
+        "RouteTableId":
+          {{if not $subnet.RouteTableID}}
+          {{if $.WorkerTopologyPrivate}}
+          {"Fn::ImportValue" : {"Fn::Sub" : "{{$.ClusterName}}-PrivateRouteTable{{$subnet.AvailabilityZoneLogicalName}}"}},
+          {{else}}
+          {"Fn::ImportValue" : {"Fn::Sub" : "{{$.ClusterName}}-PublicRouteTable"}},
+          {{end}}
+          {{else}}
+          "{{$subnet.RouteTableID}}",
+          {{end}}
         "SubnetId": {
-          "Ref": "{{$subnetLogicalName}}"
+          "Ref": "{{$.Worker.SubnetLogicalNamePrefix}}{{$subnet.LogicalName}}"
         }
       },
       "Type": "AWS::EC2::SubnetRouteTableAssociation"
     }
     {{end}}
-    {{end}}
-
   }
 }

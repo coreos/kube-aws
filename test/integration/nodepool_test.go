@@ -1,26 +1,19 @@
-package config
+package integration
 
 import (
 	"fmt"
-	"github.com/aws/aws-sdk-go/service/kms"
 	cfg "github.com/coreos/kube-aws/config"
-	model "github.com/coreos/kube-aws/model"
+	"github.com/coreos/kube-aws/model"
+	"github.com/coreos/kube-aws/nodepool/cluster"
+	"github.com/coreos/kube-aws/nodepool/config"
 	"github.com/coreos/kube-aws/test/helper"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
 )
 
-type dummyEncryptService struct{}
-
-func (d dummyEncryptService) Encrypt(input *kms.EncryptInput) (*kms.EncryptOutput, error) {
-	output := kms.EncryptOutput{
-		CiphertextBlob: input.Plaintext,
-	}
-	return &output, nil
-}
-
-const insufficientConfigYaml = `clusterName: mycluster
+const nodepoolInsufficientConfigYaml = `clusterName: mycluster
 nodePoolName: myculster-pool1
 externalDNSName: test.staging.core-os.net
 keyName: test-key-name
@@ -28,19 +21,49 @@ kmsKeyArn: "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
 region: us-west-1
 `
 
-const availabilityZoneConfig = `
-availabilityZone: us-west-1c
-`
+type nodePoolSettings struct {
+	kubeAwsSettings
+	nodePoolName        string
+	nodePoolClusterYaml string
+}
 
-type ConfigTester func(c *ProvidedConfig, t *testing.T)
+func newNodePoolSettingsFromEnv(t *testing.T) nodePoolSettings {
+	env := testEnv{t: t}
+
+	kubeAwsSettings := newKubeAwsSettingsFromEnv(t)
+
+	if useRealAWS() {
+		nodePoolName := env.get("KUBE_AWS_NODE_POOL_NAME")
+		yaml := fmt.Sprintf(`clusterName: %s
+nodePoolName: %s
+externalDNSName: "%s"
+keyName: "%s"
+kmsKeyArn: "%s"
+region: "%s"
+`, kubeAwsSettings.clusterName, nodePoolName, kubeAwsSettings.externalDNSName, kubeAwsSettings.keyName, kubeAwsSettings.kmsKeyArn, kubeAwsSettings.region)
+		return nodePoolSettings{
+			kubeAwsSettings:     kubeAwsSettings,
+			nodePoolName:        nodePoolName,
+			nodePoolClusterYaml: yaml,
+		}
+	} else {
+		return nodePoolSettings{
+			kubeAwsSettings:     kubeAwsSettings,
+			nodePoolClusterYaml: nodepoolInsufficientConfigYaml,
+		}
+	}
+}
+
+type NodePoolConfigTester func(c *config.ProvidedConfig, t *testing.T)
 
 func TestNodePoolConfig(t *testing.T) {
-	minimalValidConfigYaml := insufficientConfigYaml + `
+	settings := newNodePoolSettingsFromEnv(t)
+	minimalValidConfigYaml := settings.nodePoolClusterYaml + `
 availabilityZone: us-west-1c
 dnsServiceIP: "10.3.0.10"
 etcdEndpoints: "10.0.0.1"
 `
-	hasDefaultLaunchSpecifications := func(c *ProvidedConfig, t *testing.T) {
+	hasDefaultLaunchSpecifications := func(c *config.ProvidedConfig, t *testing.T) {
 		expected := []model.LaunchSpecification{
 			{
 				WeightedCapacity: 1,
@@ -67,7 +90,7 @@ etcdEndpoints: "10.0.0.1"
 		}
 	}
 
-	hasDefaultExperimentalFeatures := func(c *ProvidedConfig, t *testing.T) {
+	hasDefaultExperimentalFeatures := func(c *config.ProvidedConfig, t *testing.T) {
 		expected := cfg.Experimental{
 			AuditLog: cfg.AuditLog{
 				Enabled: false,
@@ -109,7 +132,7 @@ etcdEndpoints: "10.0.0.1"
 	validCases := []struct {
 		context              string
 		configYaml           string
-		assertProvidedConfig []ConfigTester
+		assertProvidedConfig []NodePoolConfigTester
 	}{
 		{
 			context: "WithExperimentalFeatures",
@@ -140,9 +163,9 @@ experimental:
   waitSignal:
     enabled: true
 `,
-			assertProvidedConfig: []ConfigTester{
+			assertProvidedConfig: []NodePoolConfigTester{
 				hasDefaultLaunchSpecifications,
-				func(c *ProvidedConfig, t *testing.T) {
+				func(c *config.ProvidedConfig, t *testing.T) {
 					expected := cfg.Experimental{
 						AuditLog: cfg.AuditLog{
 							Enabled: false,
@@ -194,7 +217,7 @@ experimental:
 		{
 			context:    "WithMinimalValidConfig",
 			configYaml: minimalValidConfigYaml,
-			assertProvidedConfig: []ConfigTester{
+			assertProvidedConfig: []NodePoolConfigTester{
 				hasDefaultExperimentalFeatures,
 				hasDefaultLaunchSpecifications,
 			}},
@@ -203,7 +226,7 @@ experimental:
 			configYaml: minimalValidConfigYaml + `
 vpcId: vpc-1a2b3c4d
 `,
-			assertProvidedConfig: []ConfigTester{
+			assertProvidedConfig: []NodePoolConfigTester{
 				hasDefaultExperimentalFeatures,
 				hasDefaultLaunchSpecifications,
 			},
@@ -214,7 +237,7 @@ vpcId: vpc-1a2b3c4d
 vpcId: vpc-1a2b3c4d
 routeTableId: rtb-1a2b3c4d
 `,
-			assertProvidedConfig: []ConfigTester{
+			assertProvidedConfig: []NodePoolConfigTester{
 				hasDefaultExperimentalFeatures,
 				hasDefaultLaunchSpecifications,
 			},
@@ -226,7 +249,7 @@ worker:
   spotFleet:
     targetCapacity: 10
 `,
-			assertProvidedConfig: []ConfigTester{
+			assertProvidedConfig: []NodePoolConfigTester{
 				hasDefaultExperimentalFeatures,
 				hasDefaultLaunchSpecifications,
 			},
@@ -245,9 +268,9 @@ worker:
       instanceType: c4.xlarge
       rootVolumeSize: 100
 `,
-			assertProvidedConfig: []ConfigTester{
+			assertProvidedConfig: []NodePoolConfigTester{
 				hasDefaultExperimentalFeatures,
-				func(c *ProvidedConfig, t *testing.T) {
+				func(c *config.ProvidedConfig, t *testing.T) {
 					expected := []model.LaunchSpecification{
 						{
 							WeightedCapacity: 1,
@@ -290,9 +313,9 @@ worker:
     - weightedCapacity: 2
       instanceType: m4.xlarge
 `,
-			assertProvidedConfig: []ConfigTester{
+			assertProvidedConfig: []NodePoolConfigTester{
 				hasDefaultExperimentalFeatures,
-				func(c *ProvidedConfig, t *testing.T) {
+				func(c *config.ProvidedConfig, t *testing.T) {
 					expected := []model.LaunchSpecification{
 						{
 							WeightedCapacity: 1,
@@ -337,9 +360,9 @@ worker:
       instanceType: c4.xlarge
       rootVolumeIOPS: 500
 `,
-			assertProvidedConfig: []ConfigTester{
+			assertProvidedConfig: []NodePoolConfigTester{
 				hasDefaultExperimentalFeatures,
-				func(c *ProvidedConfig, t *testing.T) {
+				func(c *config.ProvidedConfig, t *testing.T) {
 					expected := []model.LaunchSpecification{
 						{
 							WeightedCapacity: 1,
@@ -380,10 +403,10 @@ workerSecurityGroupIds:
   - sg-23456789
   - sg-bcdefabc
 `,
-			assertProvidedConfig: []ConfigTester{
+			assertProvidedConfig: []NodePoolConfigTester{
 				hasDefaultExperimentalFeatures,
 				hasDefaultLaunchSpecifications,
-				func(c *ProvidedConfig, t *testing.T) {
+				func(c *config.ProvidedConfig, t *testing.T) {
 					expectedWorkerSecurityGroupIds := []string{
 						`sg-12345678`, `sg-abcdefab`, `sg-23456789`, `sg-bcdefabc`,
 					}
@@ -413,9 +436,9 @@ experimental:
       - sg-23456789
       - sg-bcdefabc
 `,
-			assertProvidedConfig: []ConfigTester{
+			assertProvidedConfig: []NodePoolConfigTester{
 				hasDefaultLaunchSpecifications,
-				func(c *ProvidedConfig, t *testing.T) {
+				func(c *config.ProvidedConfig, t *testing.T) {
 					expectedWorkerSecurityGroupIds := []string{
 						`sg-12345678`, `sg-abcdefab`,
 					}
@@ -463,12 +486,11 @@ kmsKeyArn: mykmskeyarn
 	for _, validCase := range validCases {
 		t.Run(validCase.context, func(t *testing.T) {
 			configBytes := validCase.configYaml
-			providedConfig, err := ClusterFromBytes([]byte(configBytes), mainConfig)
+			providedConfig, err := config.ClusterFromBytesWithEncryptService([]byte(configBytes), mainConfig, settings.encryptService)
 			if err != nil {
 				t.Errorf("failed to parse config %s: %v", configBytes, err)
 				t.FailNow()
 			}
-			providedConfig.providedEncryptService = dummyEncryptService{}
 
 			t.Run("AssertProvidedConfig", func(t *testing.T) {
 				for _, assertion := range validCase.assertProvidedConfig {
@@ -477,23 +499,50 @@ kmsKeyArn: mykmskeyarn
 			})
 
 			helper.WithDummyCredentials(func(dummyTlsAssetsDir string) {
-				var stackTemplateOptions = StackTemplateOptions{
+				s3URI, s3URIExists := os.LookupEnv("KUBE_AWS_S3_DIR_URI")
+
+				var stackTemplateOptions = config.StackTemplateOptions{
 					TLSAssetsDir:          dummyTlsAssetsDir,
 					WorkerTmplFile:        "../../config/templates/cloud-config-worker",
-					StackTemplateTmplFile: "templates/stack-template.json",
+					StackTemplateTmplFile: "../../nodepool/config/templates/stack-template.json",
+					S3URI: s3URI,
+				}
+
+				cluster, err := cluster.NewCluster(providedConfig, stackTemplateOptions, false)
+				if err != nil {
+					t.Errorf("failed to create cluster driver : %v", err)
+					t.FailNow()
 				}
 
 				t.Run("ValidateUserData", func(t *testing.T) {
-					if err := providedConfig.ValidateUserData(stackTemplateOptions); err != nil {
+					if err := cluster.ValidateUserData(); err != nil {
 						t.Errorf("failed to validate user data: %v", err)
 					}
 				})
 
 				t.Run("RenderStackTemplate", func(t *testing.T) {
-					if _, err := providedConfig.RenderStackTemplate(stackTemplateOptions, false); err != nil {
+					if _, err := cluster.RenderStackTemplateAsString(); err != nil {
 						t.Errorf("failed to render stack template: %v", err)
 					}
 				})
+
+				if !useRealAWS() {
+					t.Skipf("`export KUBE_AWS_INTEGRATION_TEST=1` is required to run integration tests. Skipping.")
+					t.SkipNow()
+				} else {
+					t.Run("ValidateStack", func(t *testing.T) {
+						if !s3URIExists {
+							t.Errorf("failed to obtain value for KUBE_AWS_S3_DIR_URI")
+							t.FailNow()
+						}
+
+						report, err := cluster.ValidateStack()
+
+						if err != nil {
+							t.Errorf("failed to validate stack: %s %v", report, err)
+						}
+					})
+				}
 			})
 		})
 	}
@@ -606,7 +655,7 @@ experimental:
 	for _, invalidCase := range parseErrorCases {
 		t.Run(invalidCase.context, func(t *testing.T) {
 			configBytes := invalidCase.configYaml
-			providedConfig, err := ClusterFromBytes([]byte(configBytes), mainConfig)
+			providedConfig, err := config.ClusterFromBytes([]byte(configBytes), mainConfig)
 			if err == nil {
 				t.Errorf("expected to fail parsing config %s: %v", configBytes, providedConfig)
 				t.FailNow()

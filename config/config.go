@@ -14,10 +14,8 @@ import (
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/coreos/kube-aws/coreos/amiregistry"
-	"github.com/coreos/kube-aws/coreos/userdatavalidation"
-	"github.com/coreos/kube-aws/filereader/jsontemplate"
 	"github.com/coreos/kube-aws/filereader/userdatatemplate"
-	model "github.com/coreos/kube-aws/model"
+	"github.com/coreos/kube-aws/model"
 	"github.com/coreos/kube-aws/netutil"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -74,7 +72,8 @@ func NewDefaultCluster() *Cluster {
 			AWSCliImageRepo:    "quay.io/coreos/awscli",
 			AWSCliTag:          "master",
 			ContainerRuntime:   "docker",
-			Subnets:            []*Subnet{},
+			Subnets:            []*model.Subnet{},
+			EIPAllocationIDs:   []string{},
 			MapPublicIPs:       true,
 			Experimental:       experimental,
 			ManageCertificates: true,
@@ -171,7 +170,7 @@ func ClusterFromBytes(data []byte) (*Cluster, error) {
 
 	// For backward-compatibility
 	if len(c.Subnets) == 0 {
-		c.Subnets = []*Subnet{
+		c.Subnets = []*model.Subnet{
 			{
 				AvailabilityZone: c.AvailabilityZone,
 				InstanceCIDR:     c.InstanceCIDR,
@@ -179,7 +178,24 @@ func ClusterFromBytes(data []byte) (*Cluster, error) {
 		}
 	}
 
+	for i, s := range c.Subnets {
+		if s.CustomName == "" {
+			s.CustomName = fmt.Sprintf("Subnet%d", i)
+		}
+		// Mark top-level subnets appropriately
+		s.TopLevel = true
+	}
+
 	return c, nil
+}
+
+func ClusterFromBytesWithEncryptService(data []byte, encryptService EncryptService) (*Cluster, error) {
+	cluster, err := ClusterFromBytes(data)
+	if err != nil {
+		return nil, err
+	}
+	cluster.providedEncryptService = encryptService
+	return cluster, nil
 }
 
 // Part of configuration which is shared between controller nodes and worker nodes.
@@ -210,14 +226,15 @@ type ComputedDeploymentSettings struct {
 // Though it is highly configurable, it's basically users' responsibility to provide `correct` values if they're going beyond the defaults.
 type DeploymentSettings struct {
 	ComputedDeploymentSettings
-	ClusterName      string `yaml:"clusterName,omitempty"`
-	KeyName          string `yaml:"keyName,omitempty"`
-	Region           string `yaml:"region,omitempty"`
-	AvailabilityZone string `yaml:"availabilityZone,omitempty"`
-	ReleaseChannel   string `yaml:"releaseChannel,omitempty"`
-	AmiId            string `yaml:"amiId,omitempty"`
-	VPCID            string `yaml:"vpcId,omitempty"`
-	RouteTableID     string `yaml:"routeTableId,omitempty"`
+	ClusterName       string `yaml:"clusterName,omitempty"`
+	KeyName           string `yaml:"keyName,omitempty"`
+	Region            string `yaml:"region,omitempty"`
+	AvailabilityZone  string `yaml:"availabilityZone,omitempty"`
+	ReleaseChannel    string `yaml:"releaseChannel,omitempty"`
+	AmiId             string `yaml:"amiId,omitempty"`
+	VPCID             string `yaml:"vpcId,omitempty"`
+	InternetGatewayID string `yaml:"internetGatewayId,omitempty"`
+	RouteTableID      string `yaml:"routeTableId,omitempty"`
 	// Required for validations like e.g. if instance cidr is contained in vpc cidr
 	VPCCIDR             string            `yaml:"vpcCIDR,omitempty"`
 	InstanceCIDR        string            `yaml:"instanceCIDR,omitempty"`
@@ -228,7 +245,8 @@ type DeploymentSettings struct {
 	ContainerRuntime    string            `yaml:"containerRuntime,omitempty"`
 	KMSKeyARN           string            `yaml:"kmsKeyArn,omitempty"`
 	StackTags           map[string]string `yaml:"stackTags,omitempty"`
-	Subnets             []*Subnet         `yaml:"subnets,omitempty"`
+	Subnets             []*model.Subnet   `yaml:"subnets,omitempty"`
+	EIPAllocationIDs    []string          `yaml:"eipAllocationIDs,omitempty"`
 	MapPublicIPs        bool              `yaml:"mapPublicIPs,omitempty"`
 	ElasticFileSystemID string            `yaml:"elasticFileSystemId,omitempty"`
 	SSHAuthorizedKeys   []string          `yaml:"sshAuthorizedKeys,omitempty"`
@@ -238,17 +256,17 @@ type DeploymentSettings struct {
 
 // Part of configuration which is specific to worker nodes
 type WorkerSettings struct {
-	model.Worker              `yaml:"worker,omitempty"`
-	WorkerCount               int      `yaml:"workerCount,omitempty"`
-	WorkerCreateTimeout       string   `yaml:"workerCreateTimeout,omitempty"`
-	WorkerInstanceType        string   `yaml:"workerInstanceType,omitempty"`
-	WorkerRootVolumeType      string   `yaml:"workerRootVolumeType,omitempty"`
-	WorkerRootVolumeEncrypted bool     `yaml:"workerRootVolumeEncrypted,omitempty"`
-	WorkerRootVolumeIOPS      int      `yaml:"workerRootVolumeIOPS,omitempty"`
-	WorkerRootVolumeSize      int      `yaml:"workerRootVolumeSize,omitempty"`
-	WorkerSpotPrice           string   `yaml:"workerSpotPrice,omitempty"`
-	WorkerSecurityGroupIds    []string `yaml:"workerSecurityGroupIds,omitempty"`
-	WorkerTenancy             string   `yaml:"workerTenancy,omitempty"`
+	model.Worker           `yaml:"worker,omitempty"`
+	WorkerCount            int      `yaml:"workerCount,omitempty"`
+	WorkerCreateTimeout    string   `yaml:"workerCreateTimeout,omitempty"`
+	WorkerInstanceType     string   `yaml:"workerInstanceType,omitempty"`
+	WorkerRootVolumeType   string   `yaml:"workerRootVolumeType,omitempty"`
+	WorkerRootVolumeIOPS   int      `yaml:"workerRootVolumeIOPS,omitempty"`
+	WorkerRootVolumeSize   int      `yaml:"workerRootVolumeSize,omitempty"`
+	WorkerSpotPrice        string   `yaml:"workerSpotPrice,omitempty"`
+	WorkerSecurityGroupIds []string `yaml:"workerSecurityGroupIds,omitempty"`
+	WorkerTenancy          string   `yaml:"workerTenancy,omitempty"`
+	WorkerTopologyPrivate  bool     `yaml:"workerTopologyPrivate,omitempty"`
 }
 
 // Part of configuration which is specific to controller nodes
@@ -257,6 +275,7 @@ type ControllerSettings struct {
 	ControllerCount               int    `yaml:"controllerCount,omitempty"`
 	ControllerCreateTimeout       string `yaml:"controllerCreateTimeout,omitempty"`
 	ControllerInstanceType        string `yaml:"controllerInstanceType,omitempty"`
+	ControllerLoadBalancerPrivate bool   `yaml:"controllerLoadBalancerPrivate,omitempty"`
 	ControllerRootVolumeType      string `yaml:"controllerRootVolumeType,omitempty"`
 	ControllerRootVolumeEncrypted bool   `yaml:"controllerRootVolumeEncrypted,omitempty"`
 	ControllerRootVolumeIOPS      int    `yaml:"controllerRootVolumeIOPS,omitempty"`
@@ -266,6 +285,7 @@ type ControllerSettings struct {
 
 // Part of configuration which is specific to etcd nodes
 type EtcdSettings struct {
+	model.Etcd              `yaml:"etcd,omitempty"`
 	EtcdCount               int    `yaml:"etcdCount"`
 	EtcdInstanceType        string `yaml:"etcdInstanceType,omitempty"`
 	EtcdRootVolumeSize      int    `yaml:"etcdRootVolumeSize,omitempty"`
@@ -301,12 +321,6 @@ type Cluster struct {
 	HostedZoneID           string `yaml:"hostedZoneId,omitempty"`
 	providedEncryptService EncryptService
 	CustomSettings         map[string]interface{} `yaml:"customSettings,omitempty"`
-}
-
-type Subnet struct {
-	AvailabilityZone  string `yaml:"availabilityZone,omitempty"`
-	InstanceCIDR      string `yaml:"instanceCIDR,omitempty"`
-	lastAllocatedAddr *net.IP
 }
 
 type Experimental struct {
@@ -392,7 +406,8 @@ type WaitSignal struct {
 }
 
 const (
-	vpcLogicalName = "VPC"
+	vpcLogicalName             = "VPC"
+	internetGatewayLogicalName = "InternetGateway"
 )
 
 var supportedReleaseChannels = map[string]bool{
@@ -481,33 +496,40 @@ func (c Cluster) Config() (*Config, error) {
 		config.AMI = c.AmiId
 	}
 
-	//Set logical name constants
-	config.VPCLogicalName = vpcLogicalName
-
-	//Set reference strings
-
-	//Assume VPC does not exist, reference by logical name
-	config.VPCRef = fmt.Sprintf(`{ "Ref" : %q }`, config.VPCLogicalName)
-	if config.VPCID != "" {
-		//This means this VPC already exists, and we can reference it directly by ID
-		config.VPCRef = fmt.Sprintf("%q", config.VPCID)
-	}
-
 	config.EtcdInstances = make([]model.EtcdInstance, config.EtcdCount)
 
 	for etcdIndex := 0; etcdIndex < config.EtcdCount; etcdIndex++ {
 
 		//Round-robbin etcd instances across all available subnets
 		subnetIndex := etcdIndex % len(config.Subnets)
+		subnet := *config.Subnets[subnetIndex]
+		if config.Etcd.TopologyPrivate() {
+			subnet = *config.Etcd.Subnets[subnetIndex]
+		}
 
 		instance := model.EtcdInstance{
-			SubnetIndex: subnetIndex,
+			Subnet: subnet,
 		}
 
 		config.EtcdInstances[etcdIndex] = instance
 
 		//http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-instance-addressing.html#concepts-private-addresses
 
+	}
+
+	// Populate top-level subnets to model
+	if len(config.Subnets) > 0 {
+		if config.WorkerSettings.MinWorkerCount() > 0 && config.WorkerSettings.TopologyPrivate() == false {
+			config.WorkerSettings.Subnets = config.Subnets
+		}
+		if config.ControllerSettings.MinControllerCount() > 0 && config.ControllerSettings.TopologyPrivate() == false {
+			config.ControllerSettings.Subnets = config.Subnets
+		}
+	}
+	config.ControllerElb.Private = config.ControllerSettings.ControllerLoadBalancerPrivate
+	config.ControllerElb.Subnets = config.Subnets
+	if config.ControllerElb.Private == true {
+		config.ControllerElb.Subnets = config.ControllerSettings.Subnets
 	}
 
 	config.IsChinaRegion = strings.HasPrefix(config.Region, "cn")
@@ -547,19 +569,13 @@ type StackTemplateOptions struct {
 	WorkerTmplFile        string
 	EtcdTmplFile          string
 	StackTemplateTmplFile string
+	S3URI                 string
+	PrettyPrint           bool
 }
 
-type stackConfig struct {
-	*Config
-	UserDataWorker        string
-	UserDataController    string
-	UserDataEtcd          string
-	ControllerSubnetIndex int
-}
-
-func (c Cluster) stackConfig(opts StackTemplateOptions, compressUserData bool) (*stackConfig, error) {
+func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	var err error
-	stackConfig := stackConfig{}
+	stackConfig := StackConfig{}
 
 	if stackConfig.Config, err = c.Config(); err != nil {
 		return nil, err
@@ -579,67 +595,61 @@ func (c Cluster) stackConfig(opts StackTemplateOptions, compressUserData bool) (
 		stackConfig.Config.TLSConfig = compactAssets
 	}
 
-	if stackConfig.UserDataWorker, err = userdatatemplate.GetString(opts.WorkerTmplFile, stackConfig.Config, compressUserData); err != nil {
+	if stackConfig.UserDataWorker, err = userdatatemplate.GetString(opts.WorkerTmplFile, stackConfig.Config); err != nil {
 		return nil, fmt.Errorf("failed to render worker cloud config: %v", err)
 	}
-	if stackConfig.UserDataController, err = userdatatemplate.GetString(opts.ControllerTmplFile, stackConfig.Config, compressUserData); err != nil {
+	if stackConfig.UserDataController, err = userdatatemplate.GetString(opts.ControllerTmplFile, stackConfig.Config); err != nil {
 		return nil, fmt.Errorf("failed to render controller cloud config: %v", err)
 	}
-	if stackConfig.UserDataEtcd, err = userdatatemplate.GetString(opts.EtcdTmplFile, stackConfig.Config, compressUserData); err != nil {
+	if stackConfig.userDataEtcd, err = userdatatemplate.GetString(opts.EtcdTmplFile, stackConfig.Config); err != nil {
 		return nil, fmt.Errorf("failed to render etcd cloud config: %v", err)
 	}
 
+	stackConfig.S3URI = strings.TrimSuffix(opts.S3URI, "/")
+
+	stackConfig.StackTemplateOptions = opts
+
 	return &stackConfig, nil
-}
-
-func (c Cluster) ValidateUserData(opts StackTemplateOptions) error {
-	stackConfig, err := c.stackConfig(opts, false)
-	if err != nil {
-		return err
-	}
-
-	err = userdatavalidation.Execute([]userdatavalidation.Entry{
-		{Name: "UserDataWorker", Content: stackConfig.UserDataWorker},
-		{Name: "UserDataController", Content: stackConfig.UserDataController},
-		{Name: "UserDataEtcd", Content: stackConfig.UserDataEtcd},
-	})
-
-	return err
-}
-
-func (c Cluster) RenderStackTemplate(opts StackTemplateOptions, prettyPrint bool) ([]byte, error) {
-	stackConfig, err := c.stackConfig(opts, true)
-	if err != nil {
-		return nil, err
-	}
-
-	bytes, err := jsontemplate.GetBytes(opts.StackTemplateTmplFile, stackConfig, prettyPrint)
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes, nil
 }
 
 type Config struct {
 	Cluster
 
+	ControllerElb model.ControllerElb
 	EtcdInstances []model.EtcdInstance
 
 	// Encoded TLS assets
 	TLSConfig *CompactTLSAssets
-
-	//Logical names of dynamic resources
-	VPCLogicalName string
-
-	//Reference strings for dynamic resources
-	VPCRef string
 }
 
 // CloudFormation stack name which is unique in an AWS account.
 // This is intended to be used to reference stack name from cloud-config as the target of awscli or cfn-bootstrap-tools commands e.g. `cfn-init` and `cfn-signal`
 func (c Cluster) StackName() string {
 	return c.ClusterName
+}
+
+func (c Config) VPCLogicalName() string {
+	return vpcLogicalName
+}
+
+func (c Config) VPCRef() string {
+	if c.VPCID != "" {
+		return fmt.Sprintf("%q", c.VPCID)
+	} else {
+		return fmt.Sprintf(`{ "Ref" : %q }`, c.VPCLogicalName())
+	}
+}
+
+func (c Config) InternetGatewayLogicalName() string {
+	return internetGatewayLogicalName
+}
+
+func (c Config) InternetGatewayRef() string {
+	if c.InternetGatewayID != "" {
+		return fmt.Sprintf("%q", c.InternetGatewayID)
+	} else {
+		return fmt.Sprintf(`{ "Ref" : %q }`, c.InternetGatewayLogicalName())
+	}
 }
 
 func (c Cluster) valid() error {
@@ -780,8 +790,8 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 		return nil, errors.New("kmsKeyArn must be set")
 	}
 
-	if c.VPCID == "" && c.RouteTableID != "" {
-		return nil, errors.New("vpcId must be specified if routeTableId is specified")
+	if c.VPCID == "" && (c.RouteTableID != "" || c.InternetGatewayID != "") {
+		return nil, errors.New("vpcId must be specified if routeTableId or internetGatewayId are specified")
 	}
 
 	if c.Region == "" {
@@ -816,7 +826,11 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 		}
 
 		var instanceCIDRs = make([]*net.IPNet, 0)
+
 		for i, subnet := range c.Subnets {
+			if subnet.ID != "" {
+				continue
+			}
 			if subnet.AvailabilityZone == "" {
 				return nil, fmt.Errorf("availabilityZone must be set for subnet #%d", i)
 			}
@@ -926,12 +940,16 @@ func (c *Cluster) AvailabilityZones() []string {
 		return []string{c.AvailabilityZone}
 	}
 
-	azs := make([]string, len(c.Subnets))
-	for i := range azs {
-		azs[i] = c.Subnets[i].AvailabilityZone
+	result := []string{}
+	seen := map[string]bool{}
+	for _, s := range c.Subnets {
+		val := s.AvailabilityZone
+		if _, ok := seen[val]; !ok {
+			result = append(result, val)
+			seen[val] = true
+		}
 	}
-
-	return azs
+	return result
 }
 
 /*
@@ -939,7 +957,6 @@ Validates the an existing VPC and it's existing subnets do not conflict with thi
 cluster configuration
 */
 func (c *Cluster) ValidateExistingVPC(existingVPCCIDR string, existingSubnetCIDRS []string) error {
-
 	_, existingVPC, err := net.ParseCIDR(existingVPCCIDR)
 	if err != nil {
 		return fmt.Errorf("error parsing existing vpc cidr %s : %v", existingVPCCIDR, err)
@@ -974,19 +991,23 @@ func (c *Cluster) ValidateExistingVPC(existingVPCCIDR string, existingSubnetCIDR
 	// Loop through all subnets
 	// Note: legacy instanceCIDR/availabilityZone stuff has already been marshalled into this format
 	for _, subnet := range c.Subnets {
-		_, instanceNet, err := net.ParseCIDR(subnet.InstanceCIDR)
-		if err != nil {
-			return fmt.Errorf("error parsing instances cidr %s : %v", c.InstanceCIDR, err)
-		}
+		if subnet.ID != "" {
+			continue
+		} else {
+			_, instanceNet, err := net.ParseCIDR(subnet.InstanceCIDR)
+			if err != nil {
+				return fmt.Errorf("error parsing instances cidr %s : %v", c.InstanceCIDR, err)
+			}
 
-		//Loop through all existing subnets in the VPC and look for conflicting CIDRS
-		for _, existingSubnet := range existingSubnets {
-			if netutil.CidrOverlap(instanceNet, existingSubnet) {
-				return fmt.Errorf(
-					"instance cidr (%s) conflicts with existing subnet cidr=%s",
-					instanceNet,
-					existingSubnet,
-				)
+			//Loop through all existing subnets in the VPC and look for conflicting CIDRS
+			for _, existingSubnet := range existingSubnets {
+				if netutil.CidrOverlap(instanceNet, existingSubnet) {
+					return fmt.Errorf(
+						"instance cidr (%s) conflicts with existing subnet cidr=%s",
+						instanceNet,
+						existingSubnet,
+					)
+				}
 			}
 		}
 	}

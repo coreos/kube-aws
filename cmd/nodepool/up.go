@@ -2,6 +2,8 @@ package nodepool
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/coreos/kube-aws/nodepool/cluster"
 	"github.com/coreos/kube-aws/nodepool/config"
@@ -33,16 +35,39 @@ func init() {
 }
 
 func runCmdUp(cmd *cobra.Command, args []string) error {
+	// Up flags.
+	required := []struct {
+		name, val string
+	}{
+		{"--s3-uri", upOpts.s3URI},
+	}
+	var missing []string
+	for _, req := range required {
+		if req.val == "" {
+			missing = append(missing, strconv.Quote(req.name))
+		}
+	}
+	if len(missing) != 0 {
+		return fmt.Errorf("Missing required flag(s): %s", strings.Join(missing, ", "))
+	}
+
 	conf, err := config.ClusterFromFile(nodePoolClusterConfigFilePath())
 	if err != nil {
 		return fmt.Errorf("Failed to read cluster config: %v", err)
 	}
 
-	if err := conf.ValidateUserData(stackTemplateOptions()); err != nil {
+	opts := stackTemplateOptions(upOpts.s3URI, upOpts.prettyPrint)
+
+	cluster, err := cluster.NewCluster(conf, opts, upOpts.awsDebug)
+	if err != nil {
+		return fmt.Errorf("Failed to initialize cluster driver : %v", err)
+	}
+
+	if err := cluster.ValidateUserData(); err != nil {
 		return fmt.Errorf("Failed to validate user data: %v", err)
 	}
 
-	data, err := conf.RenderStackTemplate(stackTemplateOptions(), upOpts.export)
+	stackTemplate, err := cluster.RenderStackTemplateAsBytes()
 	if err != nil {
 		return fmt.Errorf("Failed to render stack template: %v", err)
 	}
@@ -50,7 +75,7 @@ func runCmdUp(cmd *cobra.Command, args []string) error {
 	if upOpts.export {
 		templatePath := nodePoolExportedStackTemplatePath()
 		fmt.Printf("Exporting %s\n", templatePath)
-		if err := ioutil.WriteFile(templatePath, data, 0600); err != nil {
+		if err := ioutil.WriteFile(templatePath, stackTemplate, 0600); err != nil {
 			return fmt.Errorf("Error writing %s : %v", templatePath, err)
 		}
 		if conf.KMSKeyARN == "" {
@@ -59,9 +84,8 @@ func runCmdUp(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	cluster := cluster.New(conf, upOpts.awsDebug)
 	fmt.Printf("Creating AWS resources. This should take around 5 minutes.\n")
-	if err := cluster.Create(string(data), upOpts.s3URI); err != nil {
+	if err := cluster.Create(); err != nil {
 		return fmt.Errorf("Error creating cluster: %v", err)
 	}
 

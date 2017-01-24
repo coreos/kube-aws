@@ -27,7 +27,8 @@ func runCmdStatus(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to read cluster config: %v", err)
 	}
-	info, err := cluster.New(conf, false).Info()
+
+	info, err := cluster.NewClusterRef(conf, false).Info()
 	if err != nil {
 		return fmt.Errorf("Failed fetching cluster info: %v", err)
 	}

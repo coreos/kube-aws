@@ -64,8 +64,8 @@ func runCmdRenderStack(cmd *cobra.Command, args []string) error {
 		data []byte
 		mode os.FileMode
 	}{
-		{stackTemplateOptions().WorkerTmplFile, cfg.CloudConfigWorker, 0644},
-		{stackTemplateOptions().StackTemplateTmplFile, config.StackTemplateTemplate, 0644},
+		{stackRenderOptions().WorkerTmplFile, cfg.CloudConfigWorker, 0644},
+		{stackRenderOptions().StackTemplateTmplFile, config.StackTemplateTemplate, 0644},
 	}
 	for _, file := range files {
 		if err := os.MkdirAll(path.Dir(file.name), 0755); err != nil {

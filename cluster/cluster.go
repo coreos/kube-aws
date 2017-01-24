@@ -41,7 +41,7 @@ func (c *Info) String() string {
 	return buf.String()
 }
 
-func New(cfg *config.Cluster, awsDebug bool) *Cluster {
+func NewClusterRef(cfg *config.Cluster, awsDebug bool) *ClusterRef {
 	awsConfig := aws.NewConfig().
 		WithRegion(cfg.Region).
 		WithCredentialsChainVerboseErrors(true)
@@ -50,19 +50,20 @@ func New(cfg *config.Cluster, awsDebug bool) *Cluster {
 		awsConfig = awsConfig.WithLogLevel(aws.LogDebug)
 	}
 
-	return &Cluster{
-		Cluster: *cfg,
+	return &ClusterRef{
+		Cluster: cfg,
 		session: session.New(awsConfig),
 	}
 }
 
-type Cluster struct {
-	config.Cluster
+type ClusterRef struct {
+	*config.Cluster
 	session *session.Session
 }
 
-func (c *Cluster) ValidateStack(stackBody string, s3URI string) (string, error) {
-	return c.stackProvisioner().Validate(stackBody, s3URI)
+type Cluster struct {
+	*ClusterRef
+	*config.CompressedStackConfig
 }
 
 type ec2Service interface {
@@ -72,7 +73,7 @@ type ec2Service interface {
 	DescribeKeyPairs(*ec2.DescribeKeyPairsInput) (*ec2.DescribeKeyPairsOutput, error)
 }
 
-func (c *Cluster) validateExistingVPCState(ec2Svc ec2Service) error {
+func (c *ClusterRef) validateExistingVPCState(ec2Svc ec2Service) error {
 	if c.VPCID == "" {
 		//The VPC will be created. No existing state to validate
 		return nil
@@ -130,6 +131,41 @@ func (c *Cluster) validateExistingVPCState(ec2Svc ec2Service) error {
 	return nil
 }
 
+func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, awsDebug bool) (*Cluster, error) {
+	cluster := NewClusterRef(cfg, awsDebug)
+	stackConfig, err := cluster.StackConfig(opts)
+	if err != nil {
+		return nil, err
+	}
+	compressed, err := stackConfig.Compress()
+	if err != nil {
+		return nil, err
+	}
+	return &Cluster{
+		ClusterRef:            cluster,
+		CompressedStackConfig: compressed,
+	}, nil
+}
+
+func (c *Cluster) ValidateStack() (string, error) {
+	if err := c.ValidateUserData(); err != nil {
+		return "", fmt.Errorf("failed to validate userdata : %v", err)
+	}
+	stackTemplate, err := c.RenderStackTemplateAsString()
+	if err != nil {
+		return "", fmt.Errorf("Error while rendering stack template : %v", err)
+	}
+	return c.stackProvisioner().Validate(stackTemplate)
+}
+
+func (c *Cluster) RenderTemplateAsString() (string, error) {
+	data, err := c.RenderStackTemplateAsString()
+	if err != nil {
+		return "", fmt.Errorf("Error while rendering stack template : %v", err)
+	}
+	return data, nil
+}
+
 func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
 	stackPolicyBody := `{
   "Statement" : [
@@ -148,15 +184,15 @@ func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
   ]
 }
 `
-	return cfnstack.NewProvisioner(c.StackName(), c.WorkerDeploymentSettings().StackTags(), stackPolicyBody, c.session)
+	return cfnstack.NewProvisioner(
+		c.StackName(),
+		c.WorkerDeploymentSettings().StackTags(),
+		c.S3URI,
+		stackPolicyBody,
+		c.session)
 }
 
-func (c *Cluster) Create(stackBody string, s3URI string) error {
-	r53Svc := route53.New(c.session)
-	if err := c.validateDNSConfig(r53Svc); err != nil {
-		return err
-	}
-
+func (c *Cluster) Validate() error {
 	ec2Svc := ec2.New(c.session)
 	if c.KeyName != "" {
 		if err := c.validateKeyPair(ec2Svc); err != nil {
@@ -176,10 +212,33 @@ func (c *Cluster) Create(stackBody string, s3URI string) error {
 		return err
 	}
 
+	return nil
+}
+
+func (c *Cluster) Create() error {
+	r53Svc := route53.New(c.session)
+	if err := c.validateDNSConfig(r53Svc); err != nil {
+		return err
+	}
+
+	if err := c.Validate(); err != nil {
+		return err
+	}
+
 	cfSvc := cloudformation.New(c.session)
 	s3Svc := s3.New(c.session)
 
-	return c.stackProvisioner().CreateStackAndWait(cfSvc, s3Svc, stackBody, s3URI)
+	stackTemplate, err := c.RenderTemplateAsString()
+	if err != nil {
+		return fmt.Errorf("Error while rendering template : %v", err)
+	}
+
+	cloudConfigs := map[string]string{
+		"userdata-controller": c.UserDataController,
+		"userdata-worker":     c.UserDataWorker,
+	}
+
+	return c.stackProvisioner().CreateStackAndWait(cfSvc, s3Svc, stackTemplate, cloudConfigs)
 }
 
 /*
@@ -193,10 +252,11 @@ type cfStackResources struct {
 	Mappings  map[string]interface{}            `json:"Mappings"`
 }
 
-func (c *Cluster) lockEtcdResources(cfSvc *cloudformation.CloudFormation, stackBody string) (string, error) {
+func (c *ClusterRef) lockEtcdResources(cfSvc *cloudformation.CloudFormation, stackBody string) (string, error) {
 
 	//Unmarshal incoming stack resource defintions
 	var newStack cfStackResources
+
 	if err := json.Unmarshal([]byte(stackBody), &newStack); err != nil {
 		return "", fmt.Errorf("error unmarshaling new stack json: %v", err)
 	}
@@ -250,21 +310,33 @@ func (c *Cluster) lockEtcdResources(cfSvc *cloudformation.CloudFormation, stackB
 	return buf.String(), nil
 }
 
-func (c *Cluster) Update(stackBody string, s3URI string) (string, error) {
+func (c *Cluster) Update() (string, error) {
 	cfSvc := cloudformation.New(c.session)
 	s3Svc := s3.New(c.session)
 
 	var err error
-	if stackBody, err = c.lockEtcdResources(cfSvc, stackBody); err != nil {
+
+	var stackTemplate string
+	if stackTemplate, err = c.RenderTemplateAsString(); err != nil {
+		return "", fmt.Errorf("Error while rendering template : %v", err)
+	}
+
+	var stackBody string
+	if stackBody, err = c.lockEtcdResources(cfSvc, stackTemplate); err != nil {
 		return "", err
 	}
 
-	updateOutput, err := c.stackProvisioner().UpdateStackAndWait(cfSvc, s3Svc, stackBody, s3URI)
+	cloudConfigs := map[string]string{
+		"userdata-controller": c.UserDataController,
+		"userdata-worker":     c.UserDataWorker,
+		"userdata-etcd":       c.UserDataEtcd,
+	}
+	updateOutput, err := c.stackProvisioner().UpdateStackAndWait(cfSvc, s3Svc, stackBody, cloudConfigs)
 
 	return updateOutput, err
 }
 
-func (c *Cluster) Info() (*Info, error) {
+func (c *ClusterRef) Info() (*Info, error) {
 	var elbName string
 	{
 		cfSvc := cloudformation.New(c.session)
@@ -307,11 +379,11 @@ func (c *Cluster) Info() (*Info, error) {
 	return &info, nil
 }
 
-func (c *Cluster) Destroy() error {
-	return c.stackProvisioner().Destroy()
+func (c *ClusterRef) Destroy() error {
+	return cfnstack.NewDestroyer(c.StackName(), c.session).Destroy()
 }
 
-func (c *Cluster) validateKeyPair(ec2Svc ec2Service) error {
+func (c *ClusterRef) validateKeyPair(ec2Svc ec2Service) error {
 	_, err := ec2Svc.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{
 		KeyNames: []*string{aws.String(c.KeyName)},
 	})
@@ -333,7 +405,7 @@ type r53Service interface {
 	GetHostedZone(*route53.GetHostedZoneInput) (*route53.GetHostedZoneOutput, error)
 }
 
-func (c *Cluster) validateDNSConfig(r53 r53Service) error {
+func (c *ClusterRef) validateDNSConfig(r53 r53Service) error {
 	if !c.CreateRecordSet {
 		return nil
 	}
@@ -432,7 +504,7 @@ func isSubdomain(sub, parent string) bool {
 	return true
 }
 
-func (c *Cluster) validateControllerRootVolume(ec2Svc ec2Service) error {
+func (c *ClusterRef) validateControllerRootVolume(ec2Svc ec2Service) error {
 
 	//Send a dry-run request to validate the controller root volume parameters
 	controllerRootVolume := &ec2.CreateVolumeInput{
@@ -452,7 +524,7 @@ func (c *Cluster) validateControllerRootVolume(ec2Svc ec2Service) error {
 	return nil
 }
 
-func (c *Cluster) validateWorkerRootVolume(ec2Svc ec2Service) error {
+func (c *ClusterRef) validateWorkerRootVolume(ec2Svc ec2Service) error {
 
 	//Send a dry-run request to validate the worker root volume parameters
 	workerRootVolume := &ec2.CreateVolumeInput{

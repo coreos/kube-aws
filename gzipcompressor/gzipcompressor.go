@@ -17,3 +17,8 @@ func CompressData(d []byte) (string, error) {
 	}
 	return base64.StdEncoding.EncodeToString(buff.Bytes()), nil
 }
+
+func CompressString(str string) (string, error) {
+	bytes := []byte(str)
+	return CompressData(bytes)
+}

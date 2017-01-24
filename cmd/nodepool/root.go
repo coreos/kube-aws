@@ -32,12 +32,18 @@ func nodePoolExportedStackTemplatePath() string {
 	return fmt.Sprintf("%s/%s.stack-template.json", nodePoolConfigDirPath(), nodePoolOpts.PoolName)
 }
 
-func stackTemplateOptions() config.StackTemplateOptions {
+func stackRenderOptions() config.StackTemplateOptions {
 	return config.StackTemplateOptions{
 		TLSAssetsDir:          "credentials",
 		WorkerTmplFile:        fmt.Sprintf("%s/userdata/cloud-config-worker", nodePoolConfigDirPath()),
 		StackTemplateTmplFile: fmt.Sprintf("%s/stack-template.json", nodePoolConfigDirPath()),
 	}
+}
+func stackTemplateOptions(s3URI string, prettyPrint bool) config.StackTemplateOptions {
+	opts := stackRenderOptions()
+	opts.S3URI = s3URI
+	opts.PrettyPrint = prettyPrint
+	return opts
 }
 
 func init() {

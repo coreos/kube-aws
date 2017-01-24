@@ -46,20 +46,15 @@ func runCmdValidate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Unable to load cluster config: %v", err)
 	}
 
-	fmt.Printf("Validating UserData...\n")
-	if err := cfg.ValidateUserData(stackTemplateOptions); err != nil {
-		return err
-	}
-	fmt.Printf("UserData is valid.\n\n")
+	opts := stackTemplateOptions(validateOpts.s3URI, validateOpts.awsDebug)
 
-	fmt.Printf("Validating stack template...\n")
-	data, err := cfg.RenderStackTemplate(stackTemplateOptions, false)
+	cluster, err := cluster.NewCluster(cfg, opts, validateOpts.awsDebug)
 	if err != nil {
-		return fmt.Errorf("Failed to render stack template: %v", err)
+		return fmt.Errorf("Failed to initialize cluster driver : %v", err)
 	}
 
-	cluster := cluster.New(cfg, validateOpts.awsDebug)
-	report, err := cluster.ValidateStack(string(data), validateOpts.s3URI)
+	fmt.Printf("Validating UserData and stack template...\n")
+	report, err := cluster.ValidateStack()
 	if report != "" {
 		fmt.Fprintf(os.Stderr, "Validation Report: %s\n", report)
 	}

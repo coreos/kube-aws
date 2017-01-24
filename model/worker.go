@@ -6,6 +6,21 @@ type Worker struct {
 	AutoScalingGroup  `yaml:"autoScalingGroup,omitempty"`
 	ClusterAutoscaler ClusterAutoscaler `yaml:"clusterAutoscaler"`
 	SpotFleet         `yaml:"spotFleet,omitempty"`
+	Subnets           []*Subnet `yaml:"subnets,omitempty"`
+}
+
+func (c Worker) TopologyPrivate() bool {
+	if len(c.Subnets) > 0 {
+		return !c.Subnets[0].TopLevel
+	}
+	return false
+}
+
+func (c Worker) SubnetLogicalNamePrefix() string {
+	if c.TopologyPrivate() == true {
+		return "Worker"
+	}
+	return ""
 }
 
 type ClusterAutoscaler struct {

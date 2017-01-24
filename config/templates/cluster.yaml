@@ -53,15 +53,23 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 # Number of controller nodes to create, for more control use `controller.autoScalingGroup` and do not use this setting
 #controllerCount: 1
 
-controller:
-  # Auto Scaling Group definition for controllers. If only `controllerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
-  # autoScalingGroup:
-  #   minSize: 1
-  #   maxSize: 3
-  #   rollingUpdateMinInstancesInService: 2
+#controller:
+#  # Auto Scaling Group definition for controllers. If only `controllerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
+#  autoScalingGroup:
+#    minSize: 1
+#    maxSize: 3
+#    rollingUpdateMinInstancesInService: 2
+#  subnets:
+#    - availabilityZone: us-west-1a
+#      instanceCIDR: "10.0.4.0/24"
+#    - availabilityZone: us-west-1b
+#      instanceCIDR: "10.0.5.0/24"
+
+# Set to true to put the ELB on the public subnet although having controller nodes on private subnets
+#controllerLoadBalancerPrivate: false
 
 # Maximum time to wait for controller creation
-#controlerCreateTimeout: PT15M
+#controllerCreateTimeout: PT15M
 
 # Instance type for controller node.
 # CAUTION: Don't use t2.micro or the cluster won't work. See https://github.com/kubernetes/kubernetes/issues/18975
@@ -82,12 +90,20 @@ controller:
 # Number of worker nodes to create, for more control use `worker.autoScalingGroup` and do not use this setting
 #workerCount: 1
 
-# worker:
-#   # Auto Scaling Group definition for workers. If only `workerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
-#   autoScalingGroup:
-#     minSize: 1
-#     maxSize: 3
-#     rollingUpdateMinInstancesInService: 2
+#worker:
+#  # Auto Scaling Group definition for workers. If only `workerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
+#  autoScalingGroup:
+#    minSize: 1
+#    maxSize: 3
+#    rollingUpdateMinInstancesInService: 2
+#  subnets:
+#    - availabilityZone: us-west-1a
+#      instanceCIDR: "10.0.6.0/24"
+#    - availabilityZone: us-west-1b
+#      instanceCIDR: "10.0.7.0/24"
+
+# Setting worker topology private ensures NAT Gateways are created for use in node pools.
+#workerTopologyPrivate: false
 
 # Maximum time to wait for worker creation
 #workerCreateTimeout: PT15M
@@ -128,6 +144,13 @@ controller:
 # Number of etcd nodes
 # (Set to an odd number >= 3 for HA control plane)
 # etcdCount: 1
+
+#etcd:
+#  subnets:
+#    - availabilityZone: us-west-1a
+#      instanceCIDR: "10.0.2.0/24"
+#    - availabilityZone: us-west-1b
+#      instanceCIDR: "10.0.3.0/24"
 
 # Instance type for etcd node
 # etcdInstanceType: t2.medium
@@ -170,6 +193,9 @@ controller:
 # ID of existing VPC to create subnet in. Leave blank to create a new VPC
 # vpcId:
 
+# ID of existing Internet Gateway to associate subnet with. Leave blank to create a new Internet Gateway
+# internetGatewayId:
+
 # ID of existing route table in existing VPC to attach subnet to. Leave blank to use the VPC's main route table.
 # routeTableId:
 
@@ -183,8 +209,15 @@ controller:
 # subnets:
 #   - availabilityZone: us-west-1a
 #     instanceCIDR: "10.0.0.0/24"
+#     subnetId: "subnet-xxxxxxxx" #optional
 #   - availabilityZone: us-west-1b
 #     instanceCIDR: "10.0.1.0/24"
+#     # natGateway:
+#     #   # Pre-allocated NAT Gateway. Used with private subnets.
+#     #   id: "ngw-abcdef12"
+#     #   # Pre-allocated EIP for NAT Gateways. Used with private subnets.
+#     #   eipAllocationId: "eipalloc-abcdef12"
+#     subnetId: "subnet-xxxxxxxx" #optional
 
 # CIDR for all service IP addresses
 # serviceCIDR: "10.3.0.0/24"

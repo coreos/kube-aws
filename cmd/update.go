@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/coreos/kube-aws/cluster"
 	"github.com/coreos/kube-aws/config"
@@ -31,23 +33,39 @@ func init() {
 }
 
 func runCmdUpdate(cmd *cobra.Command, args []string) error {
-	conf, err := config.ClusterFromFile(configPath)
+	// Up flags.
+	required := []struct {
+		name, val string
+	}{
+		{"--s3-uri", updateOpts.s3URI},
+	}
+	var missing []string
+	for _, req := range required {
+		if req.val == "" {
+			missing = append(missing, strconv.Quote(req.name))
+		}
+	}
+	if len(missing) != 0 {
+		return fmt.Errorf("Missing required flag(s): %s", strings.Join(missing, ", "))
+	}
+
+	confCluster, err := config.ClusterFromFile(configPath)
 	if err != nil {
 		return fmt.Errorf("Failed to read cluster config: %v", err)
 	}
 
-	if err := conf.ValidateUserData(stackTemplateOptions); err != nil {
+	opts := stackTemplateOptions(updateOpts.s3URI, updateOpts.prettyPrint)
+
+	cluster, err := cluster.NewCluster(confCluster, opts, upOpts.awsDebug)
+	if err != nil {
+		return fmt.Errorf("Failed to initialize cluster driver : %v", cluster)
+	}
+
+	if err := cluster.ValidateUserData(); err != nil {
 		return err
 	}
 
-	data, err := conf.RenderStackTemplate(stackTemplateOptions, updateOpts.prettyPrint)
-	if err != nil {
-		return fmt.Errorf("Failed to render stack template: %v", err)
-	}
-
-	cluster := cluster.New(conf, updateOpts.awsDebug)
-
-	report, err := cluster.Update(string(data), updateOpts.s3URI)
+	report, err := cluster.Update()
 	if err != nil {
 		return fmt.Errorf("Error updating cluster: %v", err)
 	}
