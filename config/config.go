@@ -256,17 +256,18 @@ type DeploymentSettings struct {
 
 // Part of configuration which is specific to worker nodes
 type WorkerSettings struct {
-	model.Worker           `yaml:"worker,omitempty"`
-	WorkerCount            int      `yaml:"workerCount,omitempty"`
-	WorkerCreateTimeout    string   `yaml:"workerCreateTimeout,omitempty"`
-	WorkerInstanceType     string   `yaml:"workerInstanceType,omitempty"`
-	WorkerRootVolumeType   string   `yaml:"workerRootVolumeType,omitempty"`
-	WorkerRootVolumeIOPS   int      `yaml:"workerRootVolumeIOPS,omitempty"`
-	WorkerRootVolumeSize   int      `yaml:"workerRootVolumeSize,omitempty"`
-	WorkerSpotPrice        string   `yaml:"workerSpotPrice,omitempty"`
-	WorkerSecurityGroupIds []string `yaml:"workerSecurityGroupIds,omitempty"`
-	WorkerTenancy          string   `yaml:"workerTenancy,omitempty"`
-	WorkerTopologyPrivate  bool     `yaml:"workerTopologyPrivate,omitempty"`
+	model.Worker              `yaml:"worker,omitempty"`
+	WorkerCount               int      `yaml:"workerCount,omitempty"`
+	WorkerCreateTimeout       string   `yaml:"workerCreateTimeout,omitempty"`
+	WorkerInstanceType        string   `yaml:"workerInstanceType,omitempty"`
+	WorkerRootVolumeType      string   `yaml:"workerRootVolumeType,omitempty"`
+	WorkerRootVolumeEncrypted bool     `yaml:"workerRootVolumeEncrypted,omitempty"`
+	WorkerRootVolumeIOPS      int      `yaml:"workerRootVolumeIOPS,omitempty"`
+	WorkerRootVolumeSize      int      `yaml:"workerRootVolumeSize,omitempty"`
+	WorkerSpotPrice           string   `yaml:"workerSpotPrice,omitempty"`
+	WorkerSecurityGroupIds    []string `yaml:"workerSecurityGroupIds,omitempty"`
+	WorkerTenancy             string   `yaml:"workerTenancy,omitempty"`
+	WorkerTopologyPrivate     bool     `yaml:"workerTopologyPrivate,omitempty"`
 }
 
 // Part of configuration which is specific to controller nodes
