@@ -72,6 +72,9 @@ manageCertificates: {{.ManageCertificates}}
 # Disk type for worker node (one of standard, io1, or gp2)
 #workerRootVolumeType: gp2
 
+# Indicates whether the volume is encrypted
+#workerRootVolumeEncrypted: true
+
 # Number of I/O operations per second (IOPS) that the worker node disk supports. Leave blank if workerRootVolumeType is not io1
 #workerRootVolumeIOPS: 0
 
@@ -126,6 +129,9 @@ manageCertificates: {{.ManageCertificates}}
 #    # Disk type for worker node (one of standard, io1, or gp2)
 #    # Can be overridden in each launch specification
 #    #rootVolumeType: gp2
+#     
+#    # Indicates whether the volume is encrypted
+#    #rootVolumeEncrypted: true
 #
 #    # Number of I/O operations per second (IOPS) per unit. Leave blank if rootVolumeType is not io1
 #    # IOPS for each launch specification defaults to unitRootVolumeIOPS * weightedCapacity
@@ -141,6 +147,9 @@ manageCertificates: {{.ManageCertificates}}
 #
 #      # Defaults to worker.spotFleet.rootVolumeType if omitted
 #      #rootVolumeType:
+#
+#      # Indicates whether the volume is encrypted
+#      #rootVolumeEncrypted: true
 #
 #      # Defaults to worker.spotFleet.unitRootVolumeSize * weightedCapacity if omitted
 #      #rootVolumeSize:
