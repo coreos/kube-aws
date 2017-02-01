@@ -478,3 +478,5 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 # User-provided YAML map available in stack-template.json
 #customSettings:
 #  key1: [ 1, 2, 3 ]
+#  clusterAutoScaler:
+#    enabled: false

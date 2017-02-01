@@ -38,6 +38,9 @@ func NewDefaultCluster() *Cluster {
 		AwsNodeLabels{
 			Enabled: false,
 		},
+		ClusterAutoScaler{
+			Enabled: false,
+		},
 		EphemeralImageStorage{
 			Enabled:    false,
 			Disk:       "xvdb",
@@ -404,6 +407,7 @@ type Experimental struct {
 	AuditLog              AuditLog              `yaml:"auditLog"`
 	AwsEnvironment        AwsEnvironment        `yaml:"awsEnvironment"`
 	AwsNodeLabels         AwsNodeLabels         `yaml:"awsNodeLabels"`
+	ClusterAutoScaler     ClusterAutoScaler     `yaml:"clusterAutoScaler"`
 	EphemeralImageStorage EphemeralImageStorage `yaml:"ephemeralImageStorage"`
 	LoadBalancer          LoadBalancer          `yaml:"loadBalancer"`
 	NodeDrainer           NodeDrainer           `yaml:"nodeDrainer"`
@@ -425,6 +429,10 @@ type AuditLog struct {
 }
 
 type AwsNodeLabels struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type ClusterAutoScaler struct {
 	Enabled bool `yaml:"enabled"`
 }
 

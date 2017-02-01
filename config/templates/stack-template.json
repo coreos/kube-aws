@@ -444,6 +444,18 @@
                   "Resource": [ "*" ]
                 },
                 {{end}}
+                {{if .Experimental.ClusterAutoScaler.Enabled}}
+                {
+                "Effect": "Allow",
+                  "Action": [
+                    "autoscaling:DescribeAutoScalingGroups",
+                    "autoscaling:DescribeAutoScalingInstances",
+                    "autoscaling:SetDesiredCapacity",
+                    "autoscaling:TerminateInstanceInAutoScalingGroup"
+                  ],
+                  "Resource": "*"
+                },
+                {{end}}
                 {
                   "Action": [
                     "ecr:GetAuthorizationToken",
@@ -742,7 +754,13 @@
         "SecurityGroups" : [
           { "Ref" : "SecurityGroupElbAPIServer" }
         ]
-      }
+      },
+      "DependsOn" : [
+        {{range $etcdIndex, $etcdInstance := .EtcdInstances}}
+        {{if gt $etcdIndex 0}},{{end}}
+        "InstanceEtcd{{$etcdIndex}}"
+        {{end}}
+      ]
     },
     "SecurityGroupElbAPIServer" : {
       "Properties": {
