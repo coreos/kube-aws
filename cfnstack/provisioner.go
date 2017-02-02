@@ -166,7 +166,7 @@ func (c *Provisioner) baseCreateStackInput() *cloudformation.CreateStackInput {
 	return &cloudformation.CreateStackInput{
 		StackName:       aws.String(c.stackName),
 		OnFailure:       aws.String(cloudformation.OnFailureDoNothing),
-		Capabilities:    []*string{aws.String(cloudformation.CapabilityCapabilityIam)},
+		Capabilities:    []*string{aws.String(cloudformation.CapabilityCapabilityIam),aws.String(cloudformation.CapabilityCapabilityNamedIam)},
 		Tags:            tags,
 		StackPolicyBody: aws.String(c.stackPolicyBody),
 	}

@@ -60,6 +60,9 @@ func NewDefaultCluster() *Cluster {
 			Enabled:      false,
 			MaxBatchSize: 1,
 		},
+		Kube2IAMSupport{
+			Enabled: false,
+		},
 	}
 
 	return &Cluster{
@@ -411,6 +414,7 @@ type Experimental struct {
 	Plugins               Plugins               `yaml:"plugins"`
 	Taints                []Taint               `yaml:"taints"`
 	WaitSignal            WaitSignal            `yaml:"waitSignal"`
+	Kube2IAMSupport       Kube2IAMSupport       `yaml:"kube2IAMSupport,omitempty"`
 }
 
 type AwsEnvironment struct {
@@ -480,6 +484,12 @@ func (t Taint) String() string {
 type WaitSignal struct {
 	Enabled      bool `yaml:"enabled"`
 	MaxBatchSize int  `yaml:"maxBatchSize"`
+}
+
+type Kube2IAMSupport struct {
+	Enabled bool `yaml:"enabled"`
+	WorkerNamedIAMRole  string   `yaml:"workerNamedIAMRole,omitempty"`
+
 }
 
 const (

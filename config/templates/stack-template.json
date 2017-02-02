@@ -228,7 +228,7 @@
       },
       "DependsOn": ["InstanceEtcd0"]
     },
-    {{ if .CreateRecordSet }}
+    {{ if .CreateRecordSet }}>
     "ExternalDNS": {
       "Type": "AWS::Route53::RecordSet",
       "Properties": {
@@ -388,6 +388,9 @@
           "Version": "2012-10-17"
         },
         "Path": "/",
+        {{if .Experimental.Kube2IAMSupport.WorkerNamedIAMRole}}
+        "RoleName":  {"Fn::Join": ["", [{"Ref": "AWS::Region"}, "-", "{{.Experimental.Kube2IAMSupport.WorkerNamedIAMRole}}" ]]},
+        {{end}}
         "Policies": [
           {
             "PolicyDocument": {
@@ -407,13 +410,20 @@
                   "Effect": "Allow",
                   "Resource": "*"
                 },
-		{
-                  "Effect": "Allow",
-		  "Action": [
-			"s3:GetObject"
-		  ],
-		  "Resource": "arn:aws:s3:::{{$.UserDataWorkerS3Path}}"
-		},
+                {
+                          "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject"
+                  ],
+                  "Resource": "arn:aws:s3:::{{$.UserDataWorkerS3Path}}"
+                },
+                {{if .Experimental.Kube2IAMSupport.Enabled }}
+                {
+                  "Action": "sts:AssumeRole",
+                  "Effect":"Allow",
+                  "Resource":"*"
+                },
+                {{end}}
                 {{if .ManageCertificates}}
                 {
                   "Action" : "kms:Decrypt",

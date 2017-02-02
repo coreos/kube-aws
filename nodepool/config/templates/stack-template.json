@@ -261,6 +261,9 @@
           "Version": "2012-10-17"
         },
         "Path": "/",
+        {{if .Experimental.Kube2IAMSupport.WorkerNamedIAMRole}}
+        "RoleName":  {"Fn::Join": ["", [{"Ref": "AWS::Region"}, "-", "{{.Experimental.Kube2IAMSupport.WorkerNamedIAMRole}}" ]]},
+        {{end}}
         "Policies": [
           {
             "PolicyDocument": {
@@ -287,6 +290,13 @@
                   ],
                   "Resource": "arn:aws:s3:::{{$.UserDataWorkerS3Path}}"
                 },
+                {{if .Experimental.Kube2IAMSupport.Enabled }}
+                {
+                  "Action": "sts:AssumeRole",
+                  "Effect":"Allow",
+                  "Resource":"*"
+                },
+                {{end}}
                 {
                   "Action" : "kms:Decrypt",
                   "Effect" : "Allow",
