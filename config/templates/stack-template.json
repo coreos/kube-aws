@@ -444,7 +444,7 @@
                   "Resource": [ "*" ]
                 },
                 {{end}}
-                {{if .Experimental.ClusterAutoScaler.Enabled}}
+                {{if .Experimental.ClusterAutoscalerSupport.Enabled}}
                 {
                 "Effect": "Allow",
                   "Action": [

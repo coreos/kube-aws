@@ -38,7 +38,7 @@ func NewDefaultCluster() *Cluster {
 		AwsNodeLabels{
 			Enabled: false,
 		},
-		ClusterAutoScaler{
+		ClusterAutoscalerSupport{
 			Enabled: false,
 		},
 		EphemeralImageStorage{
@@ -404,17 +404,17 @@ type Cluster struct {
 }
 
 type Experimental struct {
-	AuditLog              AuditLog              `yaml:"auditLog"`
-	AwsEnvironment        AwsEnvironment        `yaml:"awsEnvironment"`
-	AwsNodeLabels         AwsNodeLabels         `yaml:"awsNodeLabels"`
-	ClusterAutoScaler     ClusterAutoScaler     `yaml:"clusterAutoScaler"`
-	EphemeralImageStorage EphemeralImageStorage `yaml:"ephemeralImageStorage"`
-	LoadBalancer          LoadBalancer          `yaml:"loadBalancer"`
-	NodeDrainer           NodeDrainer           `yaml:"nodeDrainer"`
-	NodeLabels            NodeLabels            `yaml:"nodeLabels"`
-	Plugins               Plugins               `yaml:"plugins"`
-	Taints                []Taint               `yaml:"taints"`
-	WaitSignal            WaitSignal            `yaml:"waitSignal"`
+	AuditLog                 AuditLog                 `yaml:"auditLog"`
+	AwsEnvironment           AwsEnvironment           `yaml:"awsEnvironment"`
+	AwsNodeLabels            AwsNodeLabels            `yaml:"awsNodeLabels"`
+	ClusterAutoscalerSupport ClusterAutoscalerSupport `yaml:"clusterAutoscalerSupport"`
+	EphemeralImageStorage    EphemeralImageStorage    `yaml:"ephemeralImageStorage"`
+	LoadBalancer             LoadBalancer             `yaml:"loadBalancer"`
+	NodeDrainer              NodeDrainer              `yaml:"nodeDrainer"`
+	NodeLabels               NodeLabels               `yaml:"nodeLabels"`
+	Plugins                  Plugins                  `yaml:"plugins"`
+	Taints                   []Taint                  `yaml:"taints"`
+	WaitSignal               WaitSignal               `yaml:"waitSignal"`
 }
 
 type AwsEnvironment struct {
@@ -432,7 +432,7 @@ type AwsNodeLabels struct {
 	Enabled bool `yaml:"enabled"`
 }
 
-type ClusterAutoScaler struct {
+type ClusterAutoscalerSupport struct {
 	Enabled bool `yaml:"enabled"`
 }
 

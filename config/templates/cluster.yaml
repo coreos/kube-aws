@@ -441,6 +441,9 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #   # The set includes names of launch configurations and autoscaling groups
 #   awsNodeLabels:
 #     enabled: true
+#   # Will provision worker nodes with IAM permissions to run cluster-autoscaler
+#   clusterAutoscalerSupport:
+#     enable: true
 #   # This option has not yet been tested with rkt as container runtime
 #   ephemeralImageStorage:
 #     enabled: true
@@ -478,5 +481,3 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 # User-provided YAML map available in stack-template.json
 #customSettings:
 #  key1: [ 1, 2, 3 ]
-#  clusterAutoScaler:
-#    enabled: false
