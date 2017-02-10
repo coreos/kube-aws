@@ -754,13 +754,7 @@
         "SecurityGroups" : [
           { "Ref" : "SecurityGroupElbAPIServer" }
         ]
-      },
-      "DependsOn" : [
-        {{range $etcdIndex, $etcdInstance := .EtcdInstances}}
-        {{if gt $etcdIndex 0}},{{end}}
-        "InstanceEtcd{{$etcdIndex}}"
-        {{end}}
-      ]
+      }
     },
     "SecurityGroupElbAPIServer" : {
       "Properties": {
