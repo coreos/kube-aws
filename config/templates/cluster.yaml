@@ -472,6 +472,12 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #     # See https://github.com/coreos/kube-aws/issues/230 for more information.
 #     rbac:
 #       enabled: true
+#    # When enabled it will grant sts:assumeRole permission to everyrole in the IAM Worker Role.
+#    # if you specify workerNamedIAMRole the role created will not suffix the random id at the end
+#    # which is useful to update trust policy in target IAM roles that container wants to use through kube2iam.
+#    kube2IAMSupport:
+#      enabled: true
+#      workerNamedIAMRole: "yournamedrole"
 
 # AWS Tags for cloudformation stack resources
 #stackTags:
