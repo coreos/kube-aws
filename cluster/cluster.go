@@ -148,13 +148,26 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, awsDebug 
 }
 
 func (c *Cluster) ValidateStack() (string, error) {
+
+	if err := c.Validate(); err != nil {
+		return "", fmt.Errorf("Error validating cluster: %v", err)
+	}
+
 	if err := c.ValidateUserData(); err != nil {
 		return "", fmt.Errorf("failed to validate userdata : %v", err)
 	}
+
+	//just render to check if is valid
+	_, err := c.RenderStackTemplateAsBytes()
+	if err != nil {
+		return "", fmt.Errorf("Failed to render stack template as bytes: %v", err)
+	}
+
 	stackTemplate, err := c.RenderStackTemplateAsString()
 	if err != nil {
-		return "", fmt.Errorf("Error while rendering stack template : %v", err)
+		return "", fmt.Errorf("Error while rendering stack template as string: %v", err)
 	}
+
 	return c.stackProvisioner().Validate(stackTemplate)
 }
 
@@ -209,6 +222,10 @@ func (c *Cluster) Validate() error {
 	}
 
 	if err := c.validateWorkerRootVolume(ec2Svc); err != nil {
+		return err
+	}
+
+	if err := c.validateRollingUpdateMinInstancesInService(); err != nil {
 		return err
 	}
 
@@ -519,6 +536,30 @@ func (c *ClusterRef) validateControllerRootVolume(ec2Svc ec2Service) error {
 		if operr, ok := err.(awserr.Error); ok && operr.Code() != "DryRunOperation" {
 			return fmt.Errorf("create volume dry-run request failed: %v", err)
 		}
+	}
+
+	return nil
+}
+
+func (c *ClusterRef) validateRollingUpdateMinInstancesInService() error {
+	worker := c.Cluster.WorkerSettings.Worker.AutoScalingGroup
+
+	if worker.RollingUpdateMinInstancesInService > 0 && worker.RollingUpdateMinInstancesInService >= worker.MaxSize {
+		return fmt.Errorf("worker.rollingUpdateMinInstancesInService must be less than the worker.MaxSize")
+	}
+
+	if worker.RollingUpdateMinInstancesInService < 0 {
+		return fmt.Errorf("worker.rollingUpdateMinInstancesInService must be greater than or equal to 0")
+	}
+
+	controller := c.Cluster.ControllerSettings.Controller.AutoScalingGroup
+
+	if controller.RollingUpdateMinInstancesInService > 0 && controller.RollingUpdateMinInstancesInService >= controller.MaxSize {
+		return fmt.Errorf("controller.rollingUpdateMinInstancesInService must be less than the controller.MaxSize")
+	}
+
+	if controller.RollingUpdateMinInstancesInService < 0 {
+		return fmt.Errorf("controller.rollingUpdateMinInstancesInService must be greater than or equal to 0")
 	}
 
 	return nil

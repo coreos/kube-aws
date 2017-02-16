@@ -542,7 +542,7 @@ func (c WorkerSettings) MaxWorkerCount() int {
 }
 
 func (c WorkerSettings) WorkerRollingUpdateMinInstancesInService() int {
-	if c.AutoScalingGroup.RollingUpdateMinInstancesInService == 0 {
+	if c.AutoScalingGroup.RollingUpdateMinInstancesInService > 0 {
 		return c.MaxWorkerCount() - 1
 	}
 	return c.AutoScalingGroup.RollingUpdateMinInstancesInService
@@ -563,7 +563,7 @@ func (c ControllerSettings) MaxControllerCount() int {
 }
 
 func (c ControllerSettings) ControllerRollingUpdateMinInstancesInService() int {
-	if c.AutoScalingGroup.RollingUpdateMinInstancesInService == 0 {
+	if c.AutoScalingGroup.RollingUpdateMinInstancesInService > 0 {
 		return c.MaxControllerCount() - 1
 	}
 	return c.AutoScalingGroup.RollingUpdateMinInstancesInService

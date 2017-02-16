@@ -60,6 +60,7 @@
         }
       },
       {{end}}
+      {{if .MinWorkerCount }}
       "UpdatePolicy" : {
         "AutoScalingRollingUpdate" : {
           "MinInstancesInService" :
@@ -68,7 +69,7 @@
           {{else}}
           "{{.WorkerRollingUpdateMinInstancesInService}}"
           {{end}},
-          {{if .WaitSignal.Enabled}}
+          {{if .Experimental.WaitSignal.Enabled}}
           "WaitOnResourceSignals" : "true",
           "MaxBatchSize" : "{{.WaitSignal.MaxBatchSize}}",
           "PauseTime": "{{.WorkerCreateTimeout}}"
@@ -78,6 +79,7 @@
           {{end}}
         }
       },
+      {{ end }}
       "Metadata" : {
         "AWS::CloudFormation::Init" : {
           "configSets" : {
@@ -161,6 +163,7 @@
         }
       },
       {{end}}
+      {{if .MinControllerCount }}
       "UpdatePolicy" : {
         "AutoScalingRollingUpdate" : {
           "MinInstancesInService" : "{{.ControllerRollingUpdateMinInstancesInService}}",
@@ -173,6 +176,7 @@
           {{end}}
         }
       },
+      {{ end }}
       "Metadata" : {
         "AWS::CloudFormation::Init" : {
           "configSets" : {

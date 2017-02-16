@@ -732,6 +732,100 @@ func TestIsSubdomain(t *testing.T) {
 
 }
 
+func TestValidateRollingUpdateMinInstancesInService(t *testing.T) {
+	validCluster := []struct {
+		clusterYaml string
+	}{
+		{
+			clusterYaml: `
+worker:
+  autoScalingGroup:
+    maxSize: 10
+    rollingUpdateMinInstancesInService: 5
+controller:
+  autoScalingGroup:
+    maxSize: 4
+    rollingUpdateMinInstancesInService: 3`,
+		},
+		{
+			clusterYaml: `
+worker:
+  autoScalingGroup:
+    maxSize: 0
+    rollingUpdateMinInstancesInService: 0
+controller:
+  autoScalingGroup:
+    maxSize: 0
+    rollingUpdateMinInstancesInService: 0`,
+		},
+	}
+
+	invalidCluster := []struct {
+		clusterYaml string
+	}{
+		{
+			clusterYaml: `
+worker:
+  autoScalingGroup:
+    maxSize: 0
+    rollingUpdateMinInstancesInService: 1
+controller:
+  autoScalingGroup:
+    maxSize: 0
+    rollingUpdateMinInstancesInService: 1`,
+		},
+		{
+			clusterYaml: `
+worker:
+  autoScalingGroup:
+    maxSize: 1
+    rollingUpdateMinInstancesInService: 1
+controller:
+  autoScalingGroup:
+    maxSize: 1
+    rollingUpdateMinInstancesInService: 1`,
+		},
+	}
+
+	for _, valid := range validCluster {
+
+		configBody := defaultConfigValues(t, valid.clusterYaml)
+		clusterConfig, err := config.ClusterFromBytes([]byte(configBody))
+
+		if err != nil {
+			t.Errorf("could not get valid cluster config: %v", err)
+			continue
+		}
+
+		c := &ClusterRef{
+			Cluster: clusterConfig,
+		}
+
+		if err := c.validateRollingUpdateMinInstancesInService(); err != nil {
+			t.Errorf("error creating cluster: %v\nfor test case %+v", err, valid)
+		}
+	}
+
+	for _, invalid := range invalidCluster {
+
+		configBody := defaultConfigValues(t, invalid.clusterYaml)
+		clusterConfig, err := config.ClusterFromBytes([]byte(configBody))
+
+		if err != nil {
+			t.Errorf("could not get valid cluster config: %v", err)
+			continue
+		}
+
+		c := &ClusterRef{
+			Cluster: clusterConfig,
+		}
+
+		if err := c.validateRollingUpdateMinInstancesInService(); err == nil {
+			t.Errorf("error creating cluster: %v\nfor test case %+v", err, invalid)
+		}
+	}
+
+}
 func TestValidateControllerRootVolume(t *testing.T) {
 	testCases := []struct {
 		expectedRootVolume *ec2.CreateVolumeInput

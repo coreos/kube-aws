@@ -10,6 +10,7 @@ import (
 	"github.com/coreos/kube-aws/cluster"
 	"github.com/coreos/kube-aws/config"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var (
@@ -65,8 +66,9 @@ func runCmdUp(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Failed to initialize cluster driver: %v", err)
 	}
 
-	if err := cluster.ValidateUserData(); err != nil {
-		return err
+	report, err := cluster.ValidateStack()
+	if report != "" {
+		fmt.Fprintf(os.Stderr, "Validation Report: %s\n", report)
 	}
 
 	stackTemplate, err := cluster.RenderStackTemplateAsBytes()
