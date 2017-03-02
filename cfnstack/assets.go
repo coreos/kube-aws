@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"golang.org/x/tools/go/gcimporter15/testdata"
 )
 
 type Assets interface {
@@ -100,10 +101,11 @@ func (b *assetsBuilderImpl) Build() Assets {
 	}
 }
 
-func NewAssetsBuilder(stackName string, s3URI string) AssetsBuilder {
+func NewAssetsBuilder(stackName string, s3URI string, s3Region string) AssetsBuilder {
 	return &assetsBuilderImpl{
 		locProvider: AssetLocationProvider{
 			s3URI:     s3URI,
+			s3Region:  s3Region,
 			stackName: stackName,
 		},
 		assets: map[AssetID]Asset{},
@@ -117,23 +119,29 @@ type Asset struct {
 
 type AssetLocationProvider struct {
 	s3URI     string
+	s3Region  string
 	stackName string
 }
 
 type AssetLocation struct {
-	ID     AssetID
-	Key    string
-	Bucket string
-	Path   string
+	ID       AssetID
+	Key      string
+	Bucket   string
+	Path     string
+	S3Region string
 }
 
 func (l AssetLocation) URL() string {
+	if strings.HasPrefix(l.S3Region, "cn") {
+		return fmt.Sprintf("https://s3.cn-north-1.amazonaws.com.cn/%s/%s", l.Bucket, l.Key)
+	}
 	return fmt.Sprintf("https://s3.amazonaws.com/%s/%s", l.Bucket, l.Key)
 }
 
-func newAssetLocationProvider(stackName string, s3URI string) AssetLocationProvider {
+func newAssetLocationProvider(stackName string, s3URI string, s3Region string) AssetLocationProvider {
 	return AssetLocationProvider{
 		s3URI:     s3URI,
+		s3Region:  s3Region,
 		stackName: stackName,
 	}
 }

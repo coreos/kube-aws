@@ -11,11 +11,12 @@ type options struct {
 	ControlPlaneStackTemplateTmplFile string
 	NodePoolStackTemplateTmplFile     string
 	S3URI                             string
+	S3Region                          string
 	SkipWait                          bool
 	PrettyPrint                       bool
 }
 
-func NewOptions(s3URI string, prettyPrint bool, skipWait bool) options {
+func NewOptions(s3URI string, s3Region string, prettyPrint bool, skipWait bool) options {
 	return options{
 		TLSAssetsDir:                      defaults.TLSAssetsDir,
 		ControllerTmplFile:                defaults.ControllerTmplFile,
@@ -24,8 +25,9 @@ func NewOptions(s3URI string, prettyPrint bool, skipWait bool) options {
 		ControlPlaneStackTemplateTmplFile: defaults.ControlPlaneStackTemplateTmplFile,
 		NodePoolStackTemplateTmplFile:     defaults.NodePoolStackTemplateTmplFile,
 		RootStackTemplateTmplFile:         defaults.RootStackTemplateTmplFile,
-		S3URI:       s3URI,
-		SkipWait:    skipWait,
-		PrettyPrint: prettyPrint,
+		S3URI:                             s3URI,
+		S3Region:                          s3Region,
+		SkipWait:                          skipWait,
+		PrettyPrint:                       prettyPrint,
 	}
 }

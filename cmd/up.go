@@ -19,6 +19,7 @@ var (
 	upOpts = struct {
 		awsDebug, export, prettyPrint, skipWait bool
 		s3URI                                   string
+		s3Region                                string
 	}{}
 )
 
@@ -28,6 +29,7 @@ func init() {
 	cmdUp.Flags().BoolVar(&upOpts.prettyPrint, "pretty-print", false, "Pretty print the resulting CloudFormation")
 	cmdUp.Flags().BoolVar(&upOpts.awsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
 	cmdUp.Flags().StringVar(&upOpts.s3URI, "s3-uri", "", "When your template is bigger than the cloudformation limit of 51200 bytes, upload the template to the specified location in S3. S3 location expressed as s3://<bucket>/path/to/dir")
+	cmdUp.Flags().StringVar(&upOpts.s3Region, "s3-region", "us-east-1", "When your template is bigger than the cloudformation limit of 51200 bytes, upload the template to the specified location in S3. S3 region expressed as 'us-east-1', 'cn-north-1', etc.")
 	cmdUp.Flags().BoolVar(&upOpts.skipWait, "skip-wait", false, "Don't wait for the cluster components be ready")
 }
 
@@ -39,7 +41,7 @@ func runCmdUp(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	opts := root.NewOptions(upOpts.s3URI, upOpts.prettyPrint, upOpts.skipWait)
+	opts := root.NewOptions(upOpts.s3URI, upOpts.s3Region, upOpts.prettyPrint, upOpts.skipWait)
 
 	cluster, err := root.ClusterFromFile(configPath, opts, upOpts.awsDebug)
 	if err != nil {

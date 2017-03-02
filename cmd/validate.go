@@ -21,6 +21,7 @@ var (
 		awsDebug bool
 		skipWait bool
 		s3URI    string
+		s3Region string
 	}{}
 )
 
@@ -38,10 +39,16 @@ func init() {
 		"",
 		"When your template is bigger than the cloudformation limit of 51200 bytes, upload the template to the specified location in S3. S3 location expressed as s3://<bucket>/path/to/dir",
 	)
+	cmdValidate.Flags().StringVar(
+		&validateOpts.s3Region,
+		"s3-region",
+		"us-east-1",
+		"When your template is bigger than the cloudformation limit of 51200 bytes, upload the template to the specified location in S3. S3 region expressed as 'us-east-1', 'cn-north-1', etc.",
+	)
 }
 
 func runCmdValidate(cmd *cobra.Command, args []string) error {
-	opts := root.NewOptions(validateOpts.s3URI, validateOpts.awsDebug, validateOpts.skipWait)
+	opts := root.NewOptions(validateOpts.s3URI, validateOpts.s3Region, validateOpts.awsDebug, validateOpts.skipWait)
 
 	cluster, err := root.ClusterFromFile(configPath, opts, validateOpts.awsDebug)
 	if err != nil {

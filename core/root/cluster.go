@@ -220,7 +220,7 @@ func (c clusterImpl) Assets() (cfnstack.Assets, error) {
 		c.controlPlane.ClusterName,
 	)
 
-	assets := cfnstack.NewAssetsBuilder(c.stackName(), s3URI).Add(REMOTE_STACK_TEMPLATE_FILENAME, stackTemplate).Build()
+	assets := cfnstack.NewAssetsBuilder(c.stackName(), s3URI, c.controlPlane.Region).Add(REMOTE_STACK_TEMPLATE_FILENAME, stackTemplate).Build()
 
 	cpAssets, err := c.controlPlane.Assets()
 	if err != nil {
@@ -271,6 +271,7 @@ func (c clusterImpl) stackProvisioner() *cfnstack.Provisioner {
 		c.stackName(),
 		c.tags(),
 		c.opts.S3URI,
+		c.opts.S3Region,
 		stackPolicyBody,
 		c.session)
 }

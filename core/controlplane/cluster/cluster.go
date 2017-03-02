@@ -136,7 +136,7 @@ func (c *Cluster) Assets() (cfnstack.Assets, error) {
 		return nil, fmt.Errorf("Error while rendering template : %v", err)
 	}
 
-	return cfnstack.NewAssetsBuilder(c.StackName(), c.StackConfig.S3URI).
+	return cfnstack.NewAssetsBuilder(c.StackName(), c.StackConfig.S3URI, c.StackConfig.Region).
 		Add("userdata-controller", c.UserDataController).
 		Add("userdata-etcd", c.UserDataEtcd).
 		Add(STACK_TEMPLATE_FILENAME, stackTemplate).
@@ -197,6 +197,7 @@ func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
 		c.StackName(),
 		c.StackTags,
 		c.S3URI,
+		c.Region,
 		stackPolicyBody,
 		c.session)
 }

@@ -17,20 +17,22 @@ type Provisioner struct {
 	stackPolicyBody string
 	session         *session.Session
 	s3URI           string
+	s3Region        string
 }
 
-func NewProvisioner(name string, stackTags map[string]string, s3URI string, stackPolicyBody string, session *session.Session) *Provisioner {
+func NewProvisioner(name string, stackTags map[string]string, s3URI string, s3Region string, stackPolicyBody string, session *session.Session) *Provisioner {
 	return &Provisioner{
 		stackName:       name,
 		stackTags:       stackTags,
 		stackPolicyBody: stackPolicyBody,
 		session:         session,
 		s3URI:           s3URI,
+		s3Region:        s3Region,
 	}
 }
 
 func (c *Provisioner) uploadFile(s3Svc S3ObjectPutterService, content string, filename string) (string, error) {
-	locProvider := newAssetLocationProvider(c.stackName, c.s3URI)
+	locProvider := newAssetLocationProvider(c.stackName, c.s3URI, c.s3Region)
 	loc, err := locProvider.locationFor(filename)
 	if err != nil {
 		return "", err
