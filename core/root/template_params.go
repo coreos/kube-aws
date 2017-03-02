@@ -66,10 +66,10 @@ func (p nodePool) Tags() map[string]string {
 }
 
 func (p nodePool) TemplateURL() (string, error) {
-	u := p.nodePool.TemplateURL()
+	u, err := p.nodePool.TemplateURL()
 
-	if u == "" {
-		return "", fmt.Errorf("failed to get TemplateURL: %+v", *p.nodePool)
+	if err != nil || u == "" {
+		return "", fmt.Errorf("failed to get template url: %v", err)
 	}
 
 	return u, nil

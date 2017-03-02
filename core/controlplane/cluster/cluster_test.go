@@ -376,10 +376,6 @@ func TestValidateDNSConfig(t *testing.T) {
 		`
 createRecordSet: true
 recordSetTTL: 60
-hostedZone: core-os.net
-`, `
-createRecordSet: true
-recordSetTTL: 60
 hostedZoneId: staging_id_1
 `, `
 createRecordSet: true
@@ -392,23 +388,11 @@ hostedZoneId: /hostedzone/staging_id_2
 		`
 createRecordSet: true
 recordSetTTL: 60
-hostedZone: staging.core-os.net # hostedZone is ambiguous
-`, `
-createRecordSet: true
-recordSetTTL: 60
 hostedZoneId: /hostedzone/staging_id_3 # <staging_id_id> is not a super-domain
 `, `
 createRecordSet: true
 recordSetTTL: 60
-hostedZone: zebras.coreos.com # zebras.coreos.com is not a super-domain
-`, `
-createRecordSet: true
-recordSetTTL: 60
 hostedZoneId: /hostedzone/staging_id_5 #non-existant hostedZoneId
-`, `
-createRecordSet: true
-recordSetTTL: 60
-hostedZone: unicorns.core-os.net  #non-existant hostedZone DNS name
 `,
 	}
 
@@ -416,7 +400,7 @@ hostedZone: unicorns.core-os.net  #non-existant hostedZone DNS name
 		configBody := defaultConfigValues(t, validConfig)
 		clusterConfig, err := config.ClusterFromBytes([]byte(configBody))
 		if err != nil {
-			t.Errorf("could not get valid cluster config: %v", err)
+			t.Errorf("could not get valid cluster config in `%s`: %v", configBody, err)
 			continue
 		}
 		c := &ClusterRef{Cluster: clusterConfig}

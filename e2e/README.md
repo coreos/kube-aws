@@ -78,6 +78,10 @@ The test cluster created by the `e2e/run` script can be customized via various e
 
 `KUBE_AWS_USE_CALICO=true`: Enable Calico throughout the cluster.
 
+`ETCD_COUNT=1`: Number of etcd nodes in the cluster. Defaults to 1. Set to an odd number greater than or equal to 3 for testing a H/A etcd cluster
+
+`ETCD_MEMBER_IDENTITY_PROVIDER=<eni|eip>`: "eni" for using secondary NICs=ENIs for etcd node=member identity. "eip" for using EIPs and Amazon DNS.
+
+`ETCD_INTERNAL_DOMAIN_NAME=internal.example.com`: Used only when `ETCD_MEMBER_IDENTITY_PROVIDER` is set to "eni". See comments in `cluster.yaml` for more details.
+
 `KUBE_AWS_CLUSTER_NAME=mycluster`: The name of a kube-aws main cluster i.e. a cloudformation stack for the main cluster. Must be unique in your AWS account.
-
-

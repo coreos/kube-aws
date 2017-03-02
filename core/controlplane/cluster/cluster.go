@@ -6,14 +6,12 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/route53"
 
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -25,23 +23,6 @@ import (
 var VERSION = "UNKNOWN"
 
 const STACK_TEMPLATE_FILENAME = "stack.json"
-
-type Info struct {
-	Name           string
-	ControllerHost string
-}
-
-func (c *Info) String() string {
-	buf := new(bytes.Buffer)
-	w := new(tabwriter.Writer)
-	w.Init(buf, 0, 8, 0, '\t', 0)
-
-	fmt.Fprintf(w, "Cluster Name:\t%s\n", c.Name)
-	fmt.Fprintf(w, "Controller DNS Name:\t%s\n", c.ControllerHost)
-
-	w.Flush()
-	return buf.String()
-}
 
 func NewClusterRef(cfg *config.Cluster, awsDebug bool) *ClusterRef {
 	awsConfig := aws.NewConfig().
@@ -157,7 +138,7 @@ func (c *Cluster) Assets() (cfnstack.Assets, error) {
 
 	return cfnstack.NewAssetsBuilder(c.StackName(), c.StackConfig.S3URI).
 		Add("userdata-controller", c.UserDataController).
-		Add("userdata-worker", c.UserDataWorker).
+		Add("userdata-etcd", c.UserDataEtcd).
 		Add(STACK_TEMPLATE_FILENAME, stackTemplate).
 		Build(), nil
 }
@@ -167,7 +148,12 @@ func (c *Cluster) TemplateURL() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return assets.FindAssetByStackAndFileName(c.StackName(), STACK_TEMPLATE_FILENAME).URL, nil
+	asset, err := assets.FindAssetByStackAndFileName(c.StackName(), STACK_TEMPLATE_FILENAME)
+	if err != nil {
+		return "", fmt.Errorf("failed to get template URL: %v", err)
+	}
+
+	return asset.URL(), nil
 }
 
 func (c *Cluster) ValidateStack() (string, error) {
@@ -360,46 +346,8 @@ func (c *Cluster) Update() (string, error) {
 }
 
 func (c *ClusterRef) Info() (*Info, error) {
-	var elbName string
-	{
-		cfSvc := cloudformation.New(c.session)
-		resp, err := cfSvc.DescribeStackResource(
-			&cloudformation.DescribeStackResourceInput{
-				LogicalResourceId: aws.String("ElbAPIServer"),
-				StackName:         aws.String(c.StackName()),
-			},
-		)
-		if err != nil {
-			errmsg := "unable to get public IP of controller instance:\n" + err.Error()
-			return nil, fmt.Errorf(errmsg)
-		}
-		elbName = *resp.StackResourceDetail.PhysicalResourceId
-	}
-
-	elbSvc := elb.New(c.session)
-
-	var info Info
-	{
-		resp, err := elbSvc.DescribeLoadBalancers(&elb.DescribeLoadBalancersInput{
-			LoadBalancerNames: []*string{
-				aws.String(elbName),
-			},
-			PageSize: aws.Int64(2),
-		})
-		if err != nil {
-			return nil, fmt.Errorf("error describing load balancer %s: %v", elbName, err)
-		}
-		if len(resp.LoadBalancerDescriptions) == 0 {
-			return nil, fmt.Errorf("could not find a load balancer with name %s", elbName)
-		}
-		if len(resp.LoadBalancerDescriptions) > 1 {
-			return nil, fmt.Errorf("found multiple load balancers with name %s: %v", elbName, resp)
-		}
-
-		info.Name = c.ClusterName
-		info.ControllerHost = *resp.LoadBalancerDescriptions[0].DNSName
-	}
-	return &info, nil
+	describer := NewClusterDescriber(c.ClusterName, c.StackName(), c.session)
+	return describer.Info()
 }
 
 func (c *ClusterRef) Destroy() error {
@@ -433,46 +381,6 @@ func (c *ClusterRef) validateDNSConfig(r53 r53Service) error {
 		return nil
 	}
 
-	if c.HostedZoneID == "" {
-		//TODO(colhom): When HostedZone parameter is gone, this block can be removed
-		//Config will gaurantee that HostedZoneID is set from the get-go
-		listHostedZoneInput := route53.ListHostedZonesByNameInput{
-			DNSName: aws.String(c.HostedZone),
-		}
-
-		zonesResp, err := r53.ListHostedZonesByName(&listHostedZoneInput)
-		if err != nil {
-			return fmt.Errorf("Error validating HostedZone: %s", err)
-		}
-
-		zones := zonesResp.HostedZones
-
-		if len(zones) == 0 {
-			return fmt.Errorf("hosted zone %s does not exist", c.HostedZone)
-		}
-
-		var matchingZone *route53.HostedZone
-		for _, zone := range zones {
-			if aws.StringValue(zone.Name) == c.HostedZone {
-				if matchingZone != nil {
-					//This means we've found another match, and HostedZone is ambiguous
-					return fmt.Errorf("multiple hosted-zones found for DNS name \"%s\"", c.HostedZone)
-				}
-				matchingZone = zone
-			} else {
-				/* Weird API semantics: if we see a zone which doesn't match the name
-				   we've exhausted all zones which match the name
-				  http://docs.aws.amazon.com/cli/latest/reference/route53/list-hosted-zones-by-name.html#options */
-
-				break
-			}
-		}
-		if matchingZone == nil {
-			return fmt.Errorf("hosted zone %s does not exist", c.HostedZone)
-		}
-		c.HostedZoneID = aws.StringValue(matchingZone.Id)
-	}
-
 	hzOut, err := r53.GetHostedZone(&route53.GetHostedZoneInput{Id: aws.String(c.HostedZoneID)})
 	if err != nil {
 		return fmt.Errorf("error getting hosted zone %s: %v", c.HostedZoneID, err)
@@ -497,7 +405,7 @@ func (c *ClusterRef) validateDNSConfig(r53 r53Service) error {
 				return fmt.Errorf(
 					"RecordSet for \"%s\" already exists in Hosted Zone \"%s.\"",
 					c.ExternalDNSName,
-					c.HostedZone,
+					c.HostedZoneID,
 				)
 			}
 		}

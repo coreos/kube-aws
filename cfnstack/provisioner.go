@@ -53,7 +53,7 @@ func (c *Provisioner) uploadFile(s3Svc S3ObjectPutterService, content string, fi
 		return "", err
 	}
 
-	return loc.URL, nil
+	return loc.URL(), nil
 }
 
 func (c *Provisioner) uploadAsset(s3Svc S3ObjectPutterService, asset Asset) error {
@@ -77,7 +77,7 @@ func (c *Provisioner) uploadAsset(s3Svc S3ObjectPutterService, asset Asset) erro
 func (c *Provisioner) uploadStackAssets(s3Svc S3ObjectPutterService, stackTemplate string, cloudConfigs map[string]string) (*string, error) {
 	templateURL, err := c.uploadFile(s3Svc, stackTemplate, "stack.json")
 	if err != nil {
-		return nil, fmt.Errorf("Template uplaod failed: %v", err)
+		return nil, fmt.Errorf("Template upload failed: %v", err)
 	}
 
 	for filename, content := range cloudConfigs {

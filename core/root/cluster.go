@@ -25,17 +25,8 @@ const (
 	REMOTE_STACK_TEMPLATE_FILENAME = "stack.json"
 )
 
-type Info struct {
-	Name           string
-	ControllerHost string
-}
-
-func (i *Info) String() string {
-	return fmt.Sprintf("Name=%s, ControllerHost=%s", i.Name, i.ControllerHost)
-}
-
 func (c clusterImpl) Export() error {
-	assets, err := c.assets()
+	assets, err := c.Assets()
 
 	if err != nil {
 		return err
@@ -102,11 +93,8 @@ func (c clusterImpl) EstimateCost() ([]string, error) {
 
 }
 
-func (c clusterImpl) Info() (*Info, error) {
-	return &Info{}, nil
-}
-
 type Cluster interface {
+	Assets() (cfnstack.Assets, error)
 	Create() error
 	Export() error
 	EstimateCost() ([]string, error)
@@ -117,7 +105,7 @@ type Cluster interface {
 	ValidateUserData() error
 }
 
-func ClusterFromFile(configPath string, opts Options, awsDebug bool) (Cluster, error) {
+func ClusterFromFile(configPath string, opts options, awsDebug bool) (Cluster, error) {
 	cfg, err := config.ConfigFromFile(configPath)
 	if err != nil {
 		return nil, err
@@ -125,7 +113,7 @@ func ClusterFromFile(configPath string, opts Options, awsDebug bool) (Cluster, e
 	return ClusterFromConfig(cfg, opts, awsDebug)
 }
 
-func ClusterFromConfig(cfg *config.Config, opts Options, awsDebug bool) (Cluster, error) {
+func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster, error) {
 	cpOpts := controlplane_cfg.StackTemplateOptions{
 		TLSAssetsDir:          opts.TLSAssetsDir,
 		ControllerTmplFile:    opts.ControllerTmplFile,
@@ -178,7 +166,7 @@ func ClusterFromConfig(cfg *config.Config, opts Options, awsDebug bool) (Cluster
 type clusterImpl struct {
 	controlPlane *controlplane.Cluster
 	nodePools    []*nodepool.Cluster
-	opts         Options
+	opts         options
 	session      *session.Session
 }
 
@@ -193,8 +181,13 @@ func (c clusterImpl) Create() error {
 	return c.stackProvisioner().CreateStackAtURLAndWait(cfSvc, stackTemplateURL)
 }
 
+func (c clusterImpl) Info() (*Info, error) {
+	describer := NewClusterDescriber(c.controlPlane.ClusterName, c.stackName(), c.session)
+	return describer.Info()
+}
+
 func (c clusterImpl) prepareTemplateWithAssets() (string, error) {
-	assets, err := c.assets()
+	assets, err := c.Assets()
 
 	if err != nil {
 		return "", err
@@ -206,17 +199,28 @@ func (c clusterImpl) prepareTemplateWithAssets() (string, error) {
 		return "", err
 	}
 
-	url := assets.FindAssetByStackAndFileName(c.stackName(), REMOTE_STACK_TEMPLATE_FILENAME).URL
+	asset, err := assets.FindAssetByStackAndFileName(c.stackName(), REMOTE_STACK_TEMPLATE_FILENAME)
+
+	if err != nil {
+		return "", fmt.Errorf("failed to prepare template with assets: %v", err)
+	}
+
+	url := asset.URL()
 
 	return url, nil
 }
 
-func (c clusterImpl) assets() (cfnstack.Assets, error) {
+func (c clusterImpl) Assets() (cfnstack.Assets, error) {
 	stackTemplate, err := c.renderTemplateAsString()
 	if err != nil {
 		return nil, fmt.Errorf("Error while rendering template : %v", err)
 	}
-	assets := cfnstack.NewAssetsBuilder(c.stackName(), c.opts.S3URI).Add(REMOTE_STACK_TEMPLATE_FILENAME, stackTemplate).Build()
+	s3URI := fmt.Sprintf("%s/kube-aws/clusters/%s/exported/stacks",
+		strings.TrimSuffix(c.opts.S3URI, "/"),
+		c.controlPlane.ClusterName,
+	)
+
+	assets := cfnstack.NewAssetsBuilder(c.stackName(), s3URI).Add(REMOTE_STACK_TEMPLATE_FILENAME, stackTemplate).Build()
 
 	cpAssets, err := c.controlPlane.Assets()
 	if err != nil {

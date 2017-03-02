@@ -174,8 +174,19 @@ worker:
 #          # Must be within the range between 100 and 2000
 #          # Defaults to worker.spotFleet.unitRootVolumeIOPS * weightedCapacity if omitted
 #          #rootVolumeIOPS:
+#
 #        - weightedCapacity: 2
 #          instanceType: c4.xlarge
+#
+#    #  # Additional EBS volumes mounted on the worker
+#    #  # No additional EBS volume by default. All parameter values do not default - they must be explicitly defined
+#    #  volumeMounts:
+#    #  - type: "gp2"
+#    #    iops: 0
+#    #    sizeGb: 30
+#    #    # Follow the aws convention of '/dev/xvd*' where '*' is a single letter from 'f' to 'z'
+#    #    device: "/dev/xvdf"
+#    #    mountPath: "/ebs"
 #      # Used to provide `/etc/environment` env vars with values from arbitrary CloudFormation refs
 #      awsEnvironment:
 #        enabled: true
@@ -202,6 +213,15 @@ worker:
 #        names: [ "manuallymanagedelb" ]
 #        # IDs of "glue" security groups attached to worker nodes to allow the ELBs to communicate with worker nodes
 #        securityGroupIds: [ "sg-87654321" ]
+#      # Configuration for external managed ALBs Target Groups for worker nodes
+#      targetGroup:
+#        enabled: true
+#        # ARNs of ALBs Target Groups attached to worker nodes
+#        arns:
+#        - arn:aws:elasticloadbalancing:eu-west-1:xxxxxxxxxxxx:targetgroup/manuallymanagedetg/xxxxxxxxxxxxxxxx
+#        # IDs of "glue" security groups attached to worker nodes to allow the ALBs Target Groups to communicate with worker nodes
+#        securityGroupIds: [ "sg-87654321" ]
+
 #      # If you specify managedIamRoleName the role created for worker nodes will not suffix the random id at the end
 #      # Role will be created with "Ref": {"AWS::StackName"}-{"AWS::Region"}-yourManagedRole
 #      # to follow the recommendation in AWS documentation  http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
@@ -224,6 +244,7 @@ worker:
 #        enabled: true
 #        # Max number of nodes concurrently updated
 #        maxBatchSize: 1
+#
 #      # Other less common customizations per node pool
 #      # All these settings default to the top-level ones
 #      keyName:
@@ -234,6 +255,9 @@ worker:
 #      AwsCliImageRepo: quay.io/coreos/awscli
 #      awsCliTag: edge
 #      sshAuthorizedKeys:
+#      # User-provided YAML map available in control-plane's stack-template.json
+#      customSettings:
+#        key1: [ 1, 2, 3 ]
 
 # Maximum time to wait for worker creation
 #workerCreateTimeout: PT15M
@@ -278,6 +302,55 @@ worker:
 #    # References subnets defined under the top-level `subnets` key by their names
 #    - name: ManagedPrivateSubnet1
 #    - name: ManagedPrivateSubnet2
+#
+#  # The strategy to provide your etcd nodes, in combination with floating EBS volumes, stable member identities. Defaults to "eip".
+#  #
+#  # Available options: eip, eni
+#  #
+#  # With every option, etcd nodes communicate to each other via their private IPs.
+#  #
+#  # eip: Use EC2 public hostnames stabilized with EIPs and "resolved eventually to private IPs"
+#  #      Requires Amazon DNS (at the second IP of your VPC, e.g. 10.0.0.2) to work.
+#  #      1st recommendation because less moving parts and relatively easy disaster recovery for a single-AZ etcd cluster.
+#  #      If you run a single-AZ etcd cluster and the AZ failed, EBS volumes created from latest snapshots and EIPs can be reused in an another AZ to reproduce your etcd cluster in the AZ.
+#  #
+#  # eni: [EXPERIMENTAL] Use secondary ENIs and Route53 record sets to provide etcd nodes stable hostnames
+#  #      Requires Amazon DNS (at the second IP of your VPC, e.g. 10.0.0.2) or an another DNS which can resolve dns names in the hosted zone managed by kube-aws to work.
+#  #      2nd recommendation because relatively easy disaster recovery for a single-AZ etcd cluster but more moving parts than "eip".
+#  #      If you run a single-AZ etcd cluster and the AZ failed, EBS volumes created from latest snapshots and record sets can be reused in an another AZ to reproduce your etcd cluster in the AZ.
+#  #
+#  memberIdentityProvider: eip
+#
+#  # Domain of the hostname used for etcd peer discovery.
+#  # Used only when `memberIdentityProvider: eni` for TLS key/cert generation
+#  # If omitted, defaults to "ec2.internal" for us-east-1 region and "<region>.compute.internal" otherwise
+#  internalDomainName:
+#
+#  # Set to `false` to disable creation of record sets.
+#  # Used only when `memberIdentityProvider` is set to `eni`
+#  # When disabled, it's your responsibility to configure all the etcd nodes so that
+#  # they can resolve each other's FQDN(specified via the below `etcd.nods[].fqdn` settings) via your DNS(can be the Amazon DNS or your own DNS. Configure it with e.g. coroes-cloudinit)
+#  manageRecordSets:
+#
+#  # Advanced configuration used only when `memberIdentityProvider: eni`
+#  hostedZone:
+#    # The hosted zone where record sets for etcd nodes managed by kube-aws are created
+#    # If omitted, kube-aws creates a hosted zone for you
+#    id:
+#
+#  # CAUTION: Advanced configuration. This should be omitted unless you have very deep knowledge of etcd and kube-aws
+#  nodes:
+#  - # The name of this etcd node. Specified only when you want to customize the etcd member's name shown in ETCD_INITIAL_CLUSTER and ETCD_NAME
+#    name: etcd0
+#    # The FQDN of this etcd node
+#    # Usually this should be omitted so that kube-aws can choose a proper value.
+#    # Specified only when `memberIdentityProvider: eni` and `manageRecordSets: false` i.e.
+#    # it is your responsibility to properly configure EC2 instances to use a DNS which is able to resolve the FQDN.
+#    fqdn: etcd0.<internalDomainName>
+#  - name: etcd1
+#    fqdn: etcd1.<internalDomainName>
+#  - name: etcd2
+#    fqdn: etcd2.<internalDomainName>
 
 # Instance type for etcd node
 # etcdInstanceType: t2.medium
@@ -559,6 +632,10 @@ worker:
 
 # Experimental features will change in backward-incompatible ways
 # experimental:
+#   # Enable admission controllers
+#   admission:
+#     podSecurityPolicy:
+#       enabled: true
 #   # Used to provide `/etc/environment` env vars with values from arbitrary CloudFormation refs
 #   awsEnvironment:
 #     enabled: true
@@ -613,6 +690,6 @@ worker:
 #  Name: "Kubernetes"
 #  Environment: "Production"
 
-# User-provided YAML map available in stack-template.json
+# User-provided YAML map available in control-plane's stack-template.json
 #customSettings:
 #  key1: [ 1, 2, 3 ]

@@ -46,14 +46,11 @@ routeTableId: rtb-xxxxxx
 vpcId: vpc-xxxxx
 `, `
 createRecordSet: false
-hostedZone: ""
+hostedZoneId: ""
 `, `
 createRecordSet: true
 recordSetTTL: 400
-hostedZone: core-os.net
-`, `
-createRecordSet: true
-hostedZone: "staging.core-os.net"
+hostedZoneId: "XXXXXXXXXXX"
 `, `
 createRecordSet: true
 hostedZoneId: "XXXXXXXXXXX"
@@ -118,10 +115,13 @@ createRecordSet: true
 createRecordSet: false
 recordSetTTL: 400
 `, `
-createRecordSet: true
-recordSetTTL: 60
-hostedZone: staging.core-os.net
+# hostedZoneId should'nt be modified when createRecordSet is false
+createRecordSet: false
 hostedZoneId: /hostedzone/staging_id_2 #hostedZone and hostedZoneId defined
+`, `
+# hostedZone had been deprecated and then dropped
+createRecordSet: true
+hostedZone: "staging.core-os.net"
 `,
 }
 

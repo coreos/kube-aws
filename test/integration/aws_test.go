@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"github.com/coreos/kube-aws/core/controlplane/config"
+	"github.com/coreos/kube-aws/model"
 	"github.com/coreos/kube-aws/test/helper"
 	"os"
 	"testing"
@@ -23,32 +24,32 @@ func (r testEnv) get(name string) string {
 	return v
 }
 
-const minimalMainClusterYaml = `clusterName: test-cluster-name
-externalDNSName: test.staging.core-os.net
-keyName: test-key-name
-kmsKeyArn: "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
-region: us-west-1
-`
-
 func useRealAWS() bool {
 	return os.Getenv("KUBE_AWS_INTEGRATION_TEST") != ""
 }
 
 type kubeAwsSettings struct {
-	clusterName     string
-	externalDNSName string
-	keyName         string
-	kmsKeyArn       string
-	region          string
-	mainClusterYaml string
-	encryptService  config.EncryptService
+	clusterName                   string
+	etcdNodeDefaultInternalDomain string
+	externalDNSName               string
+	keyName                       string
+	kmsKeyArn                     string
+	region                        string
+	mainClusterYaml               string
+	encryptService                config.EncryptService
 }
 
 func newKubeAwsSettingsFromEnv(t *testing.T) kubeAwsSettings {
 	env := testEnv{t: t}
 
+	clusterName, clusterNameExists := os.LookupEnv("KUBE_AWS_CLUSTER_NAME")
+
+	if !clusterNameExists || clusterName == "" {
+		clusterName = "kubeaws-it"
+		t.Logf(`Falling back clusterName to a stub value "%s" for tests of validating stack templates. No assets will actually be uploaded to S3 and no clusters will be created with CloudFormation`, clusterName)
+	}
+
 	if useRealAWS() {
-		clusterName := env.get("KUBE_AWS_CLUSTER_NAME")
 		externalDnsName := fmt.Sprintf("%s.%s", clusterName, env.get("KUBE_AWS_DOMAIN"))
 		keyName := env.get("KUBE_AWS_KEY_NAME")
 		kmsKeyArn := env.get("KUBE_AWS_KMS_KEY_ARN")
@@ -66,17 +67,25 @@ region: "%s"
 			region,
 		)
 		return kubeAwsSettings{
-			clusterName:     clusterName,
-			externalDNSName: externalDnsName,
-			keyName:         keyName,
-			kmsKeyArn:       kmsKeyArn,
-			region:          region,
-			mainClusterYaml: yaml,
+			clusterName:                   clusterName,
+			etcdNodeDefaultInternalDomain: model.RegionForName(region).PrivateDomainName(),
+			externalDNSName:               externalDnsName,
+			keyName:                       keyName,
+			kmsKeyArn:                     kmsKeyArn,
+			region:                        region,
+			mainClusterYaml:               yaml,
 		}
 	} else {
 		return kubeAwsSettings{
-			mainClusterYaml: minimalMainClusterYaml,
-			encryptService:  helper.DummyEncryptService{},
+			clusterName: clusterName,
+			mainClusterYaml: fmt.Sprintf(`clusterName: %s
+externalDNSName: test.staging.core-os.net
+keyName: test-key-name
+kmsKeyArn: "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
+region: us-west-1
+`, clusterName),
+			encryptService:                helper.DummyEncryptService{},
+			etcdNodeDefaultInternalDomain: model.RegionForName("us-west-1").PrivateDomainName(),
 		}
 	}
 }

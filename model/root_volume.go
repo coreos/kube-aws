@@ -31,11 +31,11 @@ func (v RootVolume) Validate() error {
 		}
 	} else {
 		if v.RootVolumeIOPS != 0 {
-			return fmt.Errorf(`invalid rootVolumeIOPS %d for volume type "%s" in %+v": rootVolumeIOPS must be 0 when rootVolumeType is "standard" or "gp1"`, v.RootVolumeIOPS, v.RootVolumeType, v)
+			return fmt.Errorf(`invalid rootVolumeIOPS %d for volume type "%s" in %+v": rootVolumeIOPS must be 0 when rootVolumeType is "standard" or "gp2"`, v.RootVolumeIOPS, v.RootVolumeType, v)
 		}
 
 		if v.RootVolumeType != "standard" && v.RootVolumeType != "gp2" {
-			return fmt.Errorf(`invalid rootVolumeType "%s" in %+v: rootVolumeType must be one of "standard", "gp1", "io1"`, v.RootVolumeType, v)
+			return fmt.Errorf(`invalid rootVolumeType "%s" in %+v: rootVolumeType must be one of "standard", "gp2", "io1"`, v.RootVolumeType, v)
 		}
 	}
 	return nil

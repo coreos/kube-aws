@@ -7,6 +7,7 @@ TESTINFRA_DIR=${E2E_DIR}/testinfra
 KUBE_AWS_TEST_INFRA_STACK_NAME=${KUBE_AWS_TEST_INFRA_STACK_NAME:-${KUBE_AWS_CLUSTER_NAME}-testinfra}
 SRC_DIR=$(cd $(dirname $0); cd ..; pwd)
 KUBECONFIG=${WORK_DIR}/kubeconfig
+ETCD_COUNT=${ETCD_COUNT:-1}
 
 export KUBECONFIG
 
@@ -99,7 +100,7 @@ configure() {
     echo 'useCalico: true' >> cluster.yaml
   fi
 
-  customize_worker
+  customize_cluster_yaml
 
   ${KUBE_AWS_CMD} render
 
@@ -111,7 +112,7 @@ configure() {
   find .
 }
 
-customize_worker() {
+customize_cluster_yaml() {
   echo Writing to $(pwd)/cluster.yaml
 
   if [ "${KUBE_AWS_DEPLOY_TO_EXISTING_VPC}" != "" ]; then
@@ -154,9 +155,15 @@ worker:
     loadBalancer:
       enabled: true
       names:
-      - $(testinfra_public_lb)
+      - $(testinfra_public_elb)
       securityGroupIds:
-      - $(testinfra_public_lb_backend_sg)" >> cluster.yaml
+      - $(testinfra_public_elb_backend_sg)
+    targetGroup:
+      enabled: true
+      arns:
+      - $(testinfra_target_group)
+      securityGroupIds:
+      - $(testinfra_public_alb_backend_sg)" >> cluster.yaml
   fi
 
   echo -e "
@@ -188,9 +195,15 @@ worker:
     loadBalancer:
       enabled: true
       names:
-      - $(testinfra_public_lb)
+      - $(testinfra_public_elb)
       securityGroupIds:
-      - $(testinfra_public_lb_backend_sg)" >> cluster.yaml
+      - $(testinfra_public_elb_backend_sg)
+    targetGroup:
+      enabled: true
+      arns:
+      - $(testinfra_target_group)
+      securityGroupIds:
+      - $(testinfra_public_alb_backend_sg)" >> cluster.yaml
   fi
 
   echo -e "
@@ -199,7 +212,20 @@ waitSignal:
   enabled: true
 awsNodeLabels:
   enabled: true
+etcdCount: $ETCD_COUNT
 " >> cluster.yaml
+
+  if [ "${ETCD_MEMBER_IDENTITY_PROVIDER}" != "" ]; then
+    echo -e "
+# etcd configuration
+etcd:
+  memberIdentityProvider: ${ETCD_MEMBER_IDENTITY_PROVIDER}
+" >> cluster.yaml
+  fi
+
+  if [ "${ETCD_INTERNAL_DOMAIN_NAME}" != "" ]; then
+    echo -e "  internalDomainName: ${ETCD_INTERNAL_DOMAIN_NAME}" >> cluster.yaml
+  fi
 }
 
 clean() {
@@ -215,7 +241,7 @@ up() {
 
   starttime=$(date +%s)
 
-  ${KUBE_AWS_CMD} up --s3-uri ${KUBE_AWS_S3_URI}
+  ${KUBE_AWS_CMD} up --s3-uri ${KUBE_AWS_S3_URI} --pretty-print
 
   set +vx
 
@@ -229,6 +255,8 @@ up() {
   endtime=$(date +%s)
 
   echo Done. it took $(($endtime - $starttime)) seconds until kubeapiserver to be in service.
+
+  ${KUBE_AWS_CMD} status
 
   set -vx
 }
@@ -364,7 +392,7 @@ testinfra_up() {
   aws cloudformation create-stack \
     --template-body file://$(pwd)/stack-template.yaml \
     --stack-name ${KUBE_AWS_TEST_INFRA_STACK_NAME} \
-    --parameter ParameterKey=AZ1,ParameterValue=${KUBE_AWS_AZ_1}
+    --parameter ParameterKey=AZ1,ParameterValue=${KUBE_AWS_AZ_1} ParameterKey=Id,ParameterValue=${KUBE_AWS_CLUSTER_NAME}-infra
   aws cloudformation wait stack-create-complete \
     --stack-name ${KUBE_AWS_TEST_INFRA_STACK_NAME}
 }
@@ -398,12 +426,20 @@ testinfra_public_routetable() {
   testinfra_output PublicRouteTable
 }
 
-testinfra_public_lb_backend_sg() {
-  testinfra_output PublicLBBackendSG
+testinfra_public_elb_backend_sg() {
+  testinfra_output PublicELBBackendSG
 }
 
-testinfra_public_lb() {
-  testinfra_output PublicLB
+testinfra_public_alb_backend_sg() {
+  testinfra_output PublicALBBackendSG
+}
+
+testinfra_public_elb() {
+  testinfra_output PublicELB
+}
+
+testinfra_target_group() {
+  testinfra_output TargetGroup
 }
 
 testinfra_glue_sg() {

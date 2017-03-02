@@ -28,6 +28,7 @@ func (c SpotFleet) Valid() error {
 			return fmt.Errorf("invalid launchSpecification at index %d: %v", i, err)
 		}
 	}
+
 	return nil
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/coreos/kube-aws/coreos/amiregistry"
 	"github.com/coreos/kube-aws/filereader/userdatatemplate"
 	"github.com/coreos/kube-aws/model"
+	"github.com/coreos/kube-aws/model/derived"
 	"gopkg.in/yaml.v2"
 	"strconv"
 )
@@ -43,7 +44,7 @@ type DeploymentSettings struct {
 }
 
 type MainClusterSettings struct {
-	EtcdInstances []model.EtcdInstance
+	EtcdNodes []derived.EtcdNode
 }
 
 type StackTemplateOptions struct {
@@ -178,7 +179,7 @@ define one or more public subnets in cluster.yaml or explicitly reference privat
 		}
 	}
 
-	c.EtcdInstances = main.EtcdInstances
+	c.EtcdNodes = main.EtcdNodes
 
 	return nil
 }
@@ -313,6 +314,12 @@ func (c WorkerDeploymentSettings) WorkerSecurityGroupRefs() []string {
 
 	if c.Experimental.LoadBalancer.Enabled {
 		for _, sgId := range c.Experimental.LoadBalancer.SecurityGroupIds {
+			refs = append(refs, fmt.Sprintf(`"%s"`, sgId))
+		}
+	}
+
+	if c.Experimental.TargetGroup.Enabled {
+		for _, sgId := range c.Experimental.TargetGroup.SecurityGroupIds {
 			refs = append(refs, fmt.Sprintf(`"%s"`, sgId))
 		}
 	}
