@@ -19,7 +19,7 @@ import (
 )
 
 // PEM encoded TLS assets.
-type RawTLSAssets struct {
+type TLSAssets struct {
 	CACert         []byte
 	CAKey          []byte
 	APIServerCert  []byte
@@ -34,20 +34,14 @@ type RawTLSAssets struct {
 	EtcdClientKey  []byte
 }
 
+// PEM encoded TLS assets.
+type RawTLSAssets struct {
+	TLSAssets
+}
+
 // Encrypted PEM encoded TLS assets
 type EncryptedTLSAssets struct {
-	CACert         []byte
-	CAKey          []byte
-	APIServerCert  []byte
-	APIServerKey   []byte
-	WorkerCert     []byte
-	WorkerKey      []byte
-	AdminCert      []byte
-	AdminKey       []byte
-	EtcdCert       []byte
-	EtcdClientCert []byte
-	EtcdKey        []byte
-	EtcdClientKey  []byte
+	TLSAssets
 }
 
 // PEM -> encrypted -> gzip -> base64 encoded TLS assets.
@@ -174,7 +168,7 @@ func (c *Cluster) NewTLSAssets(caKey *rsa.PrivateKey, caCert *x509.Certificate) 
 		return nil, err
 	}
 
-	return &RawTLSAssets{
+	return &RawTLSAssets{TLSAssets{
 		CACert:         tlsutil.EncodeCertificatePEM(caCert),
 		APIServerCert:  tlsutil.EncodeCertificatePEM(apiServerCert),
 		WorkerCert:     tlsutil.EncodeCertificatePEM(workerCert),
@@ -187,7 +181,7 @@ func (c *Cluster) NewTLSAssets(caKey *rsa.PrivateKey, caCert *x509.Certificate) 
 		AdminKey:       tlsutil.EncodePrivateKeyPEM(adminKey),
 		EtcdKey:        tlsutil.EncodePrivateKeyPEM(etcdKey),
 		EtcdClientKey:  tlsutil.EncodePrivateKeyPEM(etcdClientKey),
-	}, nil
+	}}, nil
 }
 
 func ReadRawTLSAssets(dirname string) (*RawTLSAssets, error) {
@@ -309,7 +303,7 @@ func (r *RawTLSAssets) Encrypt(kMSKeyARN string, kmsSvc EncryptService) (*Encryp
 		}
 		return encryptOutput.CiphertextBlob
 	}
-	encryptedAssets := EncryptedTLSAssets{
+	encryptedAssets := EncryptedTLSAssets{TLSAssets{
 		CACert:         encrypt(r.CACert),
 		APIServerCert:  encrypt(r.APIServerCert),
 		APIServerKey:   encrypt(r.APIServerKey),
@@ -321,7 +315,7 @@ func (r *RawTLSAssets) Encrypt(kMSKeyARN string, kmsSvc EncryptService) (*Encryp
 		EtcdClientCert: encrypt(r.EtcdClientCert),
 		EtcdClientKey:  encrypt(r.EtcdClientKey),
 		EtcdKey:        encrypt(r.EtcdKey),
-	}
+	}}
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +351,7 @@ func (r *EncryptedTLSAssets) WriteToDir(dirname string, includeCAKey bool) error
 	return nil
 }
 
-func (r *EncryptedTLSAssets) Compact() (*CompactTLSAssets, error) {
+func (r *TLSAssets) Compact() (*CompactTLSAssets, error) {
 	var err error
 	compact := func(data []byte) string {
 		if err != nil {
@@ -437,6 +431,20 @@ func ReadOrCreateCompactTLSAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*Co
 	}
 
 	compactAssets, err := encryptedAssets.Compact()
+	if err != nil {
+		return nil, fmt.Errorf("failed to compress TLS assets: %v", err)
+	}
+
+	return compactAssets, nil
+}
+
+func ReadOrCreateUnecryptedCompactTLSAssets(tlsAssetsDir string) (*CompactTLSAssets, error) {
+	unencryptedAssets, err := ReadRawTLSAssets(tlsAssetsDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read/create TLS assets: %v", err)
+	}
+
+	compactAssets, err := unencryptedAssets.Compact()
 	if err != nil {
 		return nil, fmt.Errorf("failed to compress TLS assets: %v", err)
 	}

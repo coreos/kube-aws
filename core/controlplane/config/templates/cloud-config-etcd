@@ -73,6 +73,7 @@ coreos:
         [Install]
         RequiredBy=var-lib-etcd2.mount
 
+{{if not .IsChinaRegion}}
     - name: decrypt-tls-assets.service
       enable: true
       content: |
@@ -112,6 +113,7 @@ coreos:
 
         [Install]
         RequiredBy=etcd2.service
+{{ end }}
 
 {{ if .WaitSignal.Enabled }}
     - name: cfn-signal.service
@@ -499,23 +501,23 @@ write_files:
 
 {{ if .ManageCertificates }}
 
-  - path: /etc/etcd2/ssl/ca.pem.enc
+  - path: /etc/etcd2/ssl/ca.pem{{if not .IsChinaRegion}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.CACert}}
 
-  - path: /etc/etcd2/ssl/etcd-key.pem.enc
+  - path: /etc/etcd2/ssl/etcd-key.pem{{if not .IsChinaRegion}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdKey}}
 
-  - path: /etc/etcd2/ssl/etcd.pem.enc
+  - path: /etc/etcd2/ssl/etcd.pem{{if not .IsChinaRegion}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdCert}}
 
-  - path: /etc/etcd2/ssl/etcd-client.pem.enc
+  - path: /etc/etcd2/ssl/etcd-client.pem{{if not .IsChinaRegion}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientCert}}
 
-  - path: /etc/etcd2/ssl/etcd-client-key.pem.enc
+  - path: /etc/etcd2/ssl/etcd-client-key.pem{{if not .IsChinaRegion}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientKey}}
 

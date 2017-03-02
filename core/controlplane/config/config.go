@@ -81,18 +81,18 @@ func NewDefaultCluster() *Cluster {
 
 	return &Cluster{
 		DeploymentSettings: DeploymentSettings{
-			ClusterName:        "kubernetes",
-			VPCCIDR:            "10.0.0.0/16",
-			ReleaseChannel:     "stable",
-			K8sVer:             "v1.5.3_coreos.0",
-			AWSCliTag:          "master",
-			ContainerRuntime:   "docker",
-			Subnets:            []model.Subnet{},
-			EIPAllocationIDs:   []string{},
-			MapPublicIPs:       true,
-			Experimental:       experimental,
-			ManageCertificates: true,
-			WaitSignal:         WaitSignal{Enabled: true, MaxBatchSize: 1},
+			ClusterName:                 "kubernetes",
+			VPCCIDR:                     "10.0.0.0/16",
+			ReleaseChannel:              "stable",
+			K8sVer:                      "v1.5.3_coreos.0",
+			AWSCliTag:                   "master",
+			ContainerRuntime:            "docker",
+			Subnets:                     []model.Subnet{},
+			EIPAllocationIDs:            []string{},
+			MapPublicIPs:                true,
+			Experimental:                experimental,
+			ManageCertificates:          true,
+			WaitSignal:                  WaitSignal{Enabled: true, MaxBatchSize: 1},
 			HyperkubeImage:              Image{Repo: "quay.io/coreos/hyperkube", IsDockerRepo: false},
 			AWSCliImage:                 Image{Repo: "quay.io/coreos/awscli", IsDockerRepo: false},
 			CalicoNodeImage:             Image{Repo: "quay.io/calico/node:v1.0.2", IsDockerRepo: false},
@@ -209,6 +209,7 @@ func (c *Cluster) Load() error {
 	}
 
 	c.HostedZoneID = withHostedZoneIDPrefix(c.HostedZoneID)
+	c.IsChinaRegion = strings.HasPrefix(c.Region, "cn")
 
 	if err := c.valid(); err != nil {
 		return fmt.Errorf("invalid cluster: %v", err)
@@ -671,8 +672,6 @@ func (c Cluster) Config() (*Config, error) {
 		}
 	}
 
-	config.IsChinaRegion = strings.HasPrefix(config.Region, "cn")
-
 	return &config, nil
 }
 
@@ -726,18 +725,25 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 		return nil, err
 	}
 
-	var compactAssets *CompactTLSAssets
-
 	if c.ManageCertificates {
-		compactAssets, err = ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, KMSConfig{
-			Region:         stackConfig.Config.Region,
-			KMSKeyARN:      c.KMSKeyARN,
-			EncryptService: c.ProvidedEncryptService,
-		})
-		if err != nil {
-			return nil, err
+		if c.IsChinaRegion {
+			rawAssets, err := ReadOrCreateUnecryptedCompactTLSAssets(opts.TLSAssetsDir)
+			if err != nil {
+				return nil, err
+			}
+			stackConfig.Config.TLSConfig = rawAssets
+		} else {
+			var compactAssets *CompactTLSAssets
+			compactAssets, err = ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, KMSConfig{
+				Region:         stackConfig.Config.Region,
+				KMSKeyARN:      c.KMSKeyARN,
+				EncryptService: c.ProvidedEncryptService,
+			})
+			if err != nil {
+				return nil, err
+			}
+			stackConfig.Config.TLSConfig = compactAssets
 		}
-		stackConfig.Config.TLSConfig = compactAssets
 	}
 
 	if stackConfig.UserDataController, err = userdatatemplate.GetString(opts.ControllerTmplFile, stackConfig.Config); err != nil {
@@ -944,7 +950,7 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 	if c.ClusterName == "" {
 		return nil, errors.New("clusterName must be set")
 	}
-	if c.KMSKeyARN == "" && c.ManageCertificates {
+	if c.KMSKeyARN == "" && (c.ManageCertificates && !c.IsChinaRegion) {
 		return nil, errors.New("kmsKeyArn must be set")
 	}
 

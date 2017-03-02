@@ -167,9 +167,10 @@ func (p AssetLocationProvider) locationFor(filename string) (*AssetLocation, err
 	id := NewAssetID(p.stackName, filename)
 
 	return &AssetLocation{
-		ID:     id,
-		Key:    key,
-		Bucket: uri.Bucket(),
-		Path:   filepath.Join(relativePathComponents...),
+		ID:       id,
+		Key:      key,
+		Bucket:   uri.Bucket(),
+		Path:     filepath.Join(relativePathComponents...),
+		S3Region: p.s3Region,
 	}, nil
 }

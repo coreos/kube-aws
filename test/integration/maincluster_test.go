@@ -22,10 +22,16 @@ func TestMainClusterConfig(t *testing.T) {
 	kubeAwsSettings := newKubeAwsSettingsFromEnv(t)
 
 	s3URI, s3URIExists := os.LookupEnv("KUBE_AWS_S3_DIR_URI")
+	s3Region, s3RegionExists := os.LookupEnv("KUBE_AWS_S3_REGION")
 
 	if !s3URIExists || s3URI == "" {
 		s3URI = "s3://examplebucket/exampledir"
 		t.Logf(`Falling back s3URI to a stub value "%s" for tests of validating stack templates. No assets will actually be uploaded to S3`, s3URI)
+	}
+
+	if !s3RegionExists || s3Region == "" {
+		s3Region = "us-east-1"
+		t.Logf(`Falling back s3Region to a stub value "%s" for tests of validating stack templates. No assets will actually be uploaded to S3`, s3Region)
 	}
 
 	s3Loc, err := cfnstack.S3URIFromString(s3URI)
@@ -2478,7 +2484,7 @@ etcdDataVolumeIOPS: 104
 			})
 
 			helper.WithDummyCredentials(func(dummyTlsAssetsDir string) {
-				var stackTemplateOptions = root.NewOptions(s3URI, false, false)
+				var stackTemplateOptions = root.NewOptions(s3URI, s3Region, false, false)
 				stackTemplateOptions.TLSAssetsDir = dummyTlsAssetsDir
 				stackTemplateOptions.ControllerTmplFile = "../../core/controlplane/config/templates/cloud-config-controller"
 				stackTemplateOptions.WorkerTmplFile = "../../core/controlplane/config/templates/cloud-config-worker"

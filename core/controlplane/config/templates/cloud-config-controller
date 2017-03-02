@@ -740,6 +740,7 @@ write_files:
 
 {{ end }}
 
+{{if not .IsChinaRegion}}
   - path: /opt/bin/decrypt-tls-assets
     owner: root:root
     permissions: 0700
@@ -774,6 +775,7 @@ write_files:
            echo done.'
 
       rkt rm --uuid-file=/var/run/coreos/decrypt-tls-assets.uuid || :
+{{ end }}
 
   - path: /opt/bin/taint-and-uncordon
     owner: root:root
@@ -1423,19 +1425,19 @@ write_files:
     encoding: gzip+base64
     content: {{.TLSConfig.CACert}}
 
-  - path: /etc/kubernetes/ssl/apiserver.pem.enc
+  - path: /etc/kubernetes/ssl/apiserver.pem{{if not .IsChinaRegion}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.APIServerCert}}
 
-  - path: /etc/kubernetes/ssl/apiserver-key.pem.enc
+  - path: /etc/kubernetes/ssl/apiserver-key.pem{{if not .IsChinaRegion}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.APIServerKey}}
 
-  - path: /etc/kubernetes/ssl/etcd-client.pem.enc
+  - path: /etc/kubernetes/ssl/etcd-client.pem{{if not .IsChinaRegion}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientCert}}
 
-  - path: /etc/kubernetes/ssl/etcd-client-key.pem.enc
+  - path: /etc/kubernetes/ssl/etcd-client-key.pem{{if not .IsChinaRegion}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientKey}}
 {{ end }}

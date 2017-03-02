@@ -34,9 +34,9 @@ type ProvidedConfig struct {
 	WorkerNodePoolConfig    `yaml:",inline"`
 	DeploymentSettings      `yaml:",inline"`
 	cfg.Experimental        `yaml:",inline"`
-	Private                 bool   `yaml:"private,omitempty"`
-	NodePoolName            string `yaml:"name,omitempty"`
-	providedEncryptService  cfg.EncryptService
+	Private                bool   `yaml:"private,omitempty"`
+	NodePoolName           string `yaml:"name,omitempty"`
+	providedEncryptService cfg.EncryptService
 }
 
 type DeploymentSettings struct {
@@ -64,13 +64,19 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 		return nil, fmt.Errorf("failed to generate config : %v", err)
 	}
 
-	compactAssets, err := cfg.ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, cfg.KMSConfig{
-		Region:         stackConfig.ComputedConfig.Region,
-		KMSKeyARN:      c.KMSKeyARN,
-		EncryptService: c.providedEncryptService,
-	})
+	if stackConfig.ComputedConfig.IsChinaRegion {
+		rawAssets, _ := cfg.ReadOrCreateUnecryptedCompactTLSAssets(opts.TLSAssetsDir)
+		stackConfig.ComputedConfig.TLSConfig = rawAssets
 
-	stackConfig.ComputedConfig.TLSConfig = compactAssets
+	} else {
+		compactAssets, _ := cfg.ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, cfg.KMSConfig{
+			Region:         stackConfig.ComputedConfig.Region,
+			KMSKeyARN:      c.KMSKeyARN,
+			EncryptService: c.providedEncryptService,
+		})
+
+		stackConfig.ComputedConfig.TLSConfig = compactAssets
+	}
 
 	if stackConfig.UserDataWorker, err = userdatatemplate.GetString(opts.WorkerTmplFile, stackConfig.ComputedConfig); err != nil {
 		return nil, fmt.Errorf("failed to render worker cloud config: %v", err)
@@ -204,6 +210,8 @@ func (c ProvidedConfig) Config() (*ComputedConfig, error) {
 	} else {
 		config.AMI = c.AmiId
 	}
+
+	config.IsChinaRegion = strings.HasPrefix(config.Region, "cn")
 
 	return &config, nil
 }

@@ -175,7 +175,7 @@
 		  "Action": [
 			"s3:GetObject"
 		  ],
-		  "Resource": "arn:aws:s3:::{{$.UserDataControllerS3Path}}"
+		  "Resource": "arn:aws{{if .IsChinaRegion}}-cn{{end}}:s3:::{{$.UserDataControllerS3Path}}"
 		},
                 {{if .WaitSignal.Enabled}}
                 {
@@ -183,7 +183,7 @@
                   "Effect": "Allow",
                   "Resource":
                     { "Fn::Join": [ "", [
-                      "arn:aws:cloudformation:",
+                      "arn:aws{{if .IsChinaRegion}}-cn{{end}}:cloudformation:",
                       { "Ref": "AWS::Region" },
                       ":",
                       { "Ref": "AWS::AccountId" },
@@ -219,7 +219,7 @@
                   "Resource":"*"
                 },
                 {{end}}
-                {{if .ManageCertificates}}
+                {{if (and (.ManageCertificates) (not .IsChinaRegion))}}
                 {
                   "Action" : "kms:Decrypt",
                   "Effect" : "Allow",
@@ -270,7 +270,7 @@
         "Policies": [
           {
             "PolicyDocument": {
-              "Statement": [{{if .ManageCertificates}}
+              "Statement": [{{if (and (.ManageCertificates) (not .IsChinaRegion))}}
                 {
                   "Action" : "kms:Decrypt",
                   "Effect" : "Allow",
@@ -330,7 +330,7 @@
                   "Action": [
                     "s3:GetObject"
                   ],
-                  "Resource": "arn:aws:s3:::{{$.UserDataEtcdS3Path}}"
+                  "Resource": "arn:aws{{if .IsChinaRegion}}-cn{{end}}:s3:::{{$.UserDataEtcdS3Path}}"
                 }
               ],
               "Version": "2012-10-17"
@@ -570,7 +570,7 @@
           "   --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf  \\",
           "   --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false --mount volume=awsenv,target=/var/run/coreos \\",
           "   --trust-keys-from-https \\",
-          {{- if .AWSCliImage.IsDockerRepo }}
+          {{- if $.AWSCliImage.IsDockerRepo }}
           "   --insecure-options=image \\",
           {{- end }}
           "   {{ if $.AWSCliImage.IsDockerRepo }}docker://{{ end }}{{$.AWSCliImage.Repo}}:{{$.AWSCliTag}} --exec=aws -- s3 --region $REGION  cp {{ $.S3URI }}/{{ $.StackName }}/$USERDATA_FILE /var/run/coreos/",

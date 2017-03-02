@@ -215,3 +215,28 @@ func TestReadOrCreateCompactTLSAssets(t *testing.T) {
 		})
 	})
 }
+
+func TestReadOrCreateUnEcryptedCompactTLSAssets(t *testing.T) {
+	helper.WithDummyCredentials(func(dir string) {
+		t.Run("CachedToPreventUnnecessaryNodeReplacementOnUnencrypted", func(t *testing.T) {
+			created, err := ReadOrCreateUnecryptedCompactTLSAssets(dir)
+
+			if err != nil {
+				t.Errorf("failed to read or update compact tls assets in %s : %v", dir, err)
+			}
+
+			read, err := ReadOrCreateUnecryptedCompactTLSAssets(dir)
+
+			if err != nil {
+				t.Errorf("failed to read or update compact tls assets in %s : %v", dir, err)
+			}
+
+			if !reflect.DeepEqual(created, read) {
+				t.Errorf(`failed to cache unencrypted tls assets.
+ 	unencrypted tls assets must not change after their first creation but they did change:
+ 	created = %v
+ 	read = %v`, created, read)
+			}
+		})
+	})
+}

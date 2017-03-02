@@ -508,28 +508,29 @@ write_files:
 
 {{ if .ManageCertificates }}
 
-  - path: /etc/kubernetes/ssl/etcd-client.pem.enc
+  - path: /etc/kubernetes/ssl/etcd-client.pem{{if not .IsChinaRegion}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientCert}}
 
-  - path: /etc/kubernetes/ssl/etcd-client-key.pem.enc
+  - path: /etc/kubernetes/ssl/etcd-client-key.pem{{if not .IsChinaRegion}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientKey}}
 
-  - path: /etc/kubernetes/ssl/worker.pem.enc
+  - path: /etc/kubernetes/ssl/worker.pem{{if not .IsChinaRegion}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.WorkerCert}}
 
-  - path: /etc/kubernetes/ssl/worker-key.pem.enc
+  - path: /etc/kubernetes/ssl/worker-key.pem{{if not .IsChinaRegion}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.WorkerKey}}
 
-  - path: /etc/kubernetes/ssl/ca.pem.enc
+  - path: /etc/kubernetes/ssl/ca.pem{{if not .IsChinaRegion}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.CACert}}
 
 {{ end }}
 
+{{ if not .IsChinaRegion }}
   - path: /opt/bin/decrypt-tls-assets
     owner: root:root
     permissions: 0700
@@ -564,6 +565,7 @@ write_files:
            echo done.'
 
       rkt rm --uuid-file=/var/run/coreos/decrypt-tls-assets.uuid || :
+{{ end }}
 
 {{if .SpotFleet.Enabled}}
   - path: /opt/bin/tag-spot-instance
