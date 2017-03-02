@@ -130,10 +130,7 @@ func (c *Cluster) NewTLSAssets(caKey *rsa.PrivateKey, caCert *x509.Certificate) 
 
 	etcdConfig := tlsutil.ServerCertConfig{
 		CommonName: "kube-etcd",
-		DNSNames: []string{
-			fmt.Sprintf("*.%s.compute.internal", c.Region),
-			"*.ec2.internal",
-		},
+		DNSNames:   c.EtcdCluster().DNSNames(),
 		//etcd https client/peer interfaces are not exposed externally
 		//will live the full year with the CA
 		Duration: tlsutil.Duration365d,
@@ -168,8 +165,9 @@ func (c *Cluster) NewTLSAssets(caKey *rsa.PrivateKey, caCert *x509.Certificate) 
 	}
 
 	adminConfig := tlsutil.ClientCertConfig{
-		CommonName: "kube-admin",
-		Duration:   certDuration,
+		CommonName:   "kube-admin",
+		Organization: []string{"system:masters"},
+		Duration:     certDuration,
 	}
 	adminCert, err := tlsutil.NewSignedClientCertificate(adminConfig, adminKey, caCert, caKey)
 	if err != nil {

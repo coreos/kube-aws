@@ -2,7 +2,7 @@ package root
 
 import "github.com/coreos/kube-aws/core/root/defaults"
 
-type Options struct {
+type options struct {
 	TLSAssetsDir                      string
 	ControllerTmplFile                string
 	WorkerTmplFile                    string
@@ -15,8 +15,8 @@ type Options struct {
 	PrettyPrint                       bool
 }
 
-func NewOptions(s3URI string, prettyPrint bool, skipWait bool) Options {
-	return Options{
+func NewOptions(s3URI string, prettyPrint bool, skipWait bool) options {
+	return options{
 		TLSAssetsDir:                      defaults.TLSAssetsDir,
 		ControllerTmplFile:                defaults.ControllerTmplFile,
 		WorkerTmplFile:                    defaults.WorkerTmplFile,

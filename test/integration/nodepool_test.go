@@ -161,6 +161,21 @@ loadBalancer:
 			expectedErrorMessage: "number of user provided security groups must be less than or equal to 4 but was 5",
 		},
 		{
+			context: "WithWorkerAndALBSecurityGroupIds",
+			configYaml: minimalValidConfigYaml + `
+securityGroupIds:
+  - sg-12345678
+  - sg-abcdefab
+  - sg-23456789
+targetGroup:
+  enabled: true
+  securityGroupIds:
+    - sg-bcdefabc
+    - sg-34567890
+`,
+			expectedErrorMessage: "number of user provided security groups must be less than or equal to 4 but was 5",
+		},
+		{
 			context: "WithKmsKeyArn",
 			configYaml: minimalValidConfigYaml + `
 kmsKeyArn: "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"

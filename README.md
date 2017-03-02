@@ -5,19 +5,9 @@
 
 **Note**: The `master` branch may be in an *unstable or even broken state* during development. Please use [releases](https://github.com/coreos/kube-aws/releases) instead of the `master` branch in order to get stable binaries.
 
-This is the source of the `kube-aws` tool and the installation artifacts used by the official Kubernetes on AWS documentation.
-
-View the full instructions at [GitHub](/Documentation/kubernetes-on-aws.md) or at [the CoreOS documentation website](https://coreos.com/kubernetes/docs/latest/kubernetes-on-aws.html).
-
----
-
-CoreOS is interested in learning more about how people are launching clusters on AWS - fill out [this survey](https://docs.google.com/forms/d/e/1FAIpQLSf7rktZ_1QABIPkzYqxlMuGSE4W82ZFUYmyYk0ER7tqHMPBRg/viewform) to help us out.
-
-This survey is meant for those who are currently running at least some workloads (dev, staging, or prod) on Kubernetes on AWS. Once we have received enough responses, we will share our learnings, anonymized and in aggregate, with the general Kubernetes community.
-
----
-
 `kube-aws` is a command-line tool to create/update/destroy Kubernetes clusters on AWS.
+
+View the latest manual for the `kube-aws` tool on [GitHub](/Documentation/kubernetes-on-aws.md).
 
 ## Features
 
@@ -25,11 +15,6 @@ This survey is meant for those who are currently running at least some workloads
 * Highly available and scalable Kubernetes clusters backed by multi-AZ deployment and Node Pools
 * Deployment to an existing VPC
 * Powered by various AWS services including CloudFormation, KMS, Auto Scaling, Spot Fleet, EC2, ELB, S3, etc.
-
-## Design Decisions
-
-* CoreOS as the host OS
-* Allow exporting CloudFormation stack templates for further customizations
 
 ## Getting Started
 

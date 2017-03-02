@@ -96,12 +96,16 @@ func (c *Cluster) Assets() (cfnstack.Assets, error) {
 		Build(), nil
 }
 
-func (c *Cluster) TemplateURL() string {
+func (c *Cluster) TemplateURL() (string, error) {
 	assets, err := c.Assets()
 	if err != nil {
-		panic(err)
+		return "", fmt.Errorf("failed to get template url: %v", err)
 	}
-	return assets.FindAssetByStackAndFileName(c.StackName(), STACK_TEMPLATE_FILENAME).URL
+	asset, err := assets.FindAssetByStackAndFileName(c.StackName(), STACK_TEMPLATE_FILENAME)
+	if err != nil {
+		return "", fmt.Errorf("failed to get template url: %v", err)
+	}
+	return asset.URL(), nil
 }
 
 func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {

@@ -14,7 +14,8 @@ func GetBytesBuffer(filename string, data interface{}) (*bytes.Buffer, error) {
 		return nil, err
 	}
 	funcMap := template.FuncMap{
-		"sha1": func(v string) string { return fmt.Sprintf("%x", sha1.Sum([]byte(v))) },
+		"sha1":  func(v string) string { return fmt.Sprintf("%x", sha1.Sum([]byte(v))) },
+		"minus": func(a, b int) int { return a - b },
 	}
 
 	tmpl, err := template.New(filename).Funcs(funcMap).Parse(string(raw))

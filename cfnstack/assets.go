@@ -2,33 +2,47 @@ package cfnstack
 
 import (
 	"fmt"
-	"regexp"
+	"path/filepath"
+	"strings"
 )
 
 type Assets interface {
 	Merge(Assets) Assets
-	AsMap() map[assetID]Asset
-	FindAssetByStackAndFileName(string, string) Asset
+	AsMap() map[AssetID]Asset
+	FindAssetByStackAndFileName(string, string) (Asset, error)
 }
 
 type assetsImpl struct {
-	underlying map[assetID]Asset
+	underlying map[AssetID]Asset
 }
 
-type assetID struct {
-	StackName string
-	Filename  string
+type AssetID interface {
+	StackName() string
+	Filename() string
 }
 
-func NewAssetID(stack string, file string) assetID {
-	return assetID{
-		StackName: stack,
-		Filename:  file,
+type assetIDImpl struct {
+	stackName string
+	filename  string
+}
+
+func (i assetIDImpl) StackName() string {
+	return i.stackName
+}
+
+func (i assetIDImpl) Filename() string {
+	return i.filename
+}
+
+func NewAssetID(stack string, file string) AssetID {
+	return assetIDImpl{
+		stackName: stack,
+		filename:  file,
 	}
 }
 
 func (a assetsImpl) Merge(other Assets) Assets {
-	merged := map[assetID]Asset{}
+	merged := map[AssetID]Asset{}
 
 	for k, v := range a.underlying {
 		merged[k] = v
@@ -42,19 +56,19 @@ func (a assetsImpl) Merge(other Assets) Assets {
 	}
 }
 
-func (a assetsImpl) AsMap() map[assetID]Asset {
+func (a assetsImpl) AsMap() map[AssetID]Asset {
 	return a.underlying
 }
 
-func (a assetsImpl) findAssetByID(id assetID) Asset {
+func (a assetsImpl) findAssetByID(id AssetID) (Asset, error) {
 	asset, ok := a.underlying[id]
 	if !ok {
-		panic(fmt.Sprintf("[bug] failed to get the asset for the id \"%s\"", id))
+		return asset, fmt.Errorf("[bug] failed to get the asset for the id \"%s\"", id)
 	}
-	return asset
+	return asset, nil
 }
 
-func (a assetsImpl) FindAssetByStackAndFileName(stack string, file string) Asset {
+func (a assetsImpl) FindAssetByStackAndFileName(stack string, file string) (Asset, error) {
 	return a.findAssetByID(NewAssetID(stack, file))
 }
 
@@ -65,7 +79,7 @@ type AssetsBuilder interface {
 
 type assetsBuilderImpl struct {
 	locProvider AssetLocationProvider
-	assets      map[assetID]Asset
+	assets      map[AssetID]Asset
 }
 
 func (b *assetsBuilderImpl) Add(filename string, content string) AssetsBuilder {
@@ -92,7 +106,7 @@ func NewAssetsBuilder(stackName string, s3URI string) AssetsBuilder {
 			s3URI:     s3URI,
 			stackName: stackName,
 		},
-		assets: map[assetID]Asset{},
+		assets: map[AssetID]Asset{},
 	}
 }
 
@@ -107,11 +121,14 @@ type AssetLocationProvider struct {
 }
 
 type AssetLocation struct {
-	ID     assetID
+	ID     AssetID
 	Key    string
 	Bucket string
 	Path   string
-	URL    string
+}
+
+func (l AssetLocation) URL() string {
+	return fmt.Sprintf("https://s3.amazonaws.com/%s/%s", l.Bucket, l.Key)
 }
 
 func newAssetLocationProvider(stackName string, s3URI string) AssetLocationProvider {
@@ -124,38 +141,28 @@ func newAssetLocationProvider(stackName string, s3URI string) AssetLocationProvi
 func (p AssetLocationProvider) locationFor(filename string) (*AssetLocation, error) {
 	s3URI := p.s3URI
 
-	re := regexp.MustCompile("s3://(?P<bucket>[^/]+)/(?P<directory>.+[^/])/*$")
-	matches := re.FindStringSubmatch(s3URI)
+	uri, err := S3URIFromString(s3URI)
 
-	path := fmt.Sprintf("%s/%s", p.stackName, filename)
-
-	var bucket string
-	var key string
-	if len(matches) == 3 {
-		bucket = matches[1]
-		directory := matches[2]
-
-		key = fmt.Sprintf("%s/%s", directory, path)
-	} else {
-		re := regexp.MustCompile("s3://(?P<bucket>[^/]+)/*$")
-		matches := re.FindStringSubmatch(s3URI)
-
-		if len(matches) == 2 {
-			bucket = matches[1]
-			key = path
-		} else {
-			return nil, fmt.Errorf("failed to parse s3 uri(=%s): The valid uri pattern for it is s3://mybucket/mydir or s3://mybucket", s3URI)
-		}
+	if err != nil {
+		return nil, fmt.Errorf("failed to determin location for %s: %v", filename, err)
 	}
 
-	url := fmt.Sprintf("https://s3.amazonaws.com/%s/%s", bucket, key)
-	id := assetID{StackName: p.stackName, Filename: filename}
+	relativePathComponents := []string{
+		p.stackName,
+		filename,
+	}
+
+	key := strings.Join(
+		append(uri.PathComponents(), relativePathComponents...),
+		"/",
+	)
+
+	id := NewAssetID(p.stackName, filename)
 
 	return &AssetLocation{
 		ID:     id,
 		Key:    key,
-		Bucket: bucket,
-		Path:   path,
-		URL:    url,
+		Bucket: uri.Bucket(),
+		Path:   filepath.Join(relativePathComponents...),
 	}, nil
 }

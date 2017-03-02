@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/coreos/kube-aws/coreos/userdatavalidation"
 	"github.com/coreos/kube-aws/filereader/jsontemplate"
-	"github.com/coreos/kube-aws/gzipcompressor"
 	"net/url"
 )
 
@@ -13,13 +12,12 @@ type StackConfig struct {
 	StackTemplateOptions
 	UserDataWorker        string
 	UserDataController    string
-	userDataEtcd          string
+	UserDataEtcd          string
 	ControllerSubnetIndex int
 }
 
 type CompressedStackConfig struct {
 	*StackConfig
-	UserDataEtcd string
 }
 
 func (c *StackConfig) UserDataControllerS3Path() (string, error) {
@@ -30,28 +28,27 @@ func (c *StackConfig) UserDataControllerS3Path() (string, error) {
 	return fmt.Sprintf("%s%s/%s/userdata-controller", s3uri.Host, s3uri.Path, c.StackName()), nil
 }
 
+func (c *StackConfig) UserDataEtcdS3Path() (string, error) {
+	s3uri, err := url.Parse(c.S3URI)
+	if err != nil {
+		return "", fmt.Errorf("Error in UserDataEtcdS3Path : %v", err)
+	}
+	return fmt.Sprintf("%s%s/%s/userdata-etcd", s3uri.Host, s3uri.Path, c.StackName()), nil
+}
+
 func (c *StackConfig) ValidateUserData() error {
 	err := userdatavalidation.Execute([]userdatavalidation.Entry{
 		{Name: "UserDataWorker", Content: c.UserDataWorker},
 		{Name: "UserDataController", Content: c.UserDataController},
-		{Name: "UserDataEtcd", Content: c.userDataEtcd},
+		{Name: "UserDataEtcd", Content: c.UserDataEtcd},
 	})
 
 	return err
 }
 
 func (c *StackConfig) Compress() (*CompressedStackConfig, error) {
-	var err error
-	var compressedEtcdUserData string
-
-	if compressedEtcdUserData, err = gzipcompressor.CompressString(c.userDataEtcd); err != nil {
-		return nil, err
-	}
-
 	var stackConfig CompressedStackConfig
 	stackConfig.StackConfig = &(*c)
-	stackConfig.UserDataEtcd = compressedEtcdUserData
-
 	return &stackConfig, nil
 }
 

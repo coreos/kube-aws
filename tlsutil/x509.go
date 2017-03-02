@@ -30,10 +30,11 @@ type ServerCertConfig struct {
 }
 
 type ClientCertConfig struct {
-	CommonName  string
-	DNSNames    []string
-	IPAddresses []string
-	Duration    time.Duration
+	CommonName   string
+	Organization []string
+	DNSNames     []string
+	IPAddresses  []string
+	Duration     time.Duration
 }
 
 func NewSelfSignedCACertificate(cfg CACertConfig, key *rsa.PrivateKey) (*x509.Certificate, error) {
@@ -114,7 +115,7 @@ func NewSignedClientCertificate(cfg ClientCertConfig, key *rsa.PrivateKey, caCer
 	certTmpl := x509.Certificate{
 		Subject: pkix.Name{
 			CommonName:   cfg.CommonName,
-			Organization: caCert.Subject.Organization,
+			Organization: append(caCert.Subject.Organization, cfg.Organization...),
 		},
 		DNSNames:     cfg.DNSNames,
 		IPAddresses:  ips,

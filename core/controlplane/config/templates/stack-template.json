@@ -1,13 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "kube-aws Kubernetes cluster {{.ClusterName}}",
-  "Mappings" : {
-    "EtcdInstanceParams" : {
-      "UserData" : {
-       "cloudconfig" : "{{.UserDataEtcd}}"
-      }
-    }
-  },
   "Resources": {
     "{{.Controller.LogicalName}}": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
@@ -69,7 +62,6 @@
       "Metadata" : {
         "AWS::CloudFormation::Init" : {
           "configSets" : {
-              "etcd-server": [ "etcd-server-env" ],
               "etcd-client": [ "etcd-client-env" ]{{if .Experimental.AwsEnvironment.Enabled}},
               "aws-environment": [ "aws-environment-env" ]{{end}}
           },
@@ -86,32 +78,15 @@
             }
           },
           {{ end }}
-          "etcd-server-env": {
-            "files" : {
-              "/var/run/coreos/etcd-environment": {
-                "content": { "Fn::Join" : [ "", [
-                  "ETCD_INITIAL_CLUSTER='",
-                  {{range $index, $_ := $.EtcdInstances}}
-                  {{if $index}}",", {{end}}
-                  { "Fn::GetAtt" : [ "InstanceEtcd{{$index}}", "PrivateDnsName" ] },
-                  "=https://",
-                  { "Fn::GetAtt" : [ "InstanceEtcd{{$index}}", "PrivateDnsName" ] },
-                  ":2380",
-                  {{end}}
-                  "'\n"
-                ]]}
-              }
-            }
-          },
           "etcd-client-env": {
             "files" : {
               "/var/run/coreos/etcd-environment": {
                 "content": { "Fn::Join" : [ "", [
                   "ETCD_ENDPOINTS='",
-{{range $index, $_ := $.EtcdInstances}}
+                  {{range $index, $etcdInstance := $.EtcdNodes}}
                   {{if $index}}",", {{end}} "https://",
-                    { "Fn::GetAtt" : [ "InstanceEtcd{{$index}}", "PrivateDnsName" ] }, ":2379",
-{{end}}
+                  {{$etcdInstance.AdvertisedFQDNRef}}, ":2379",
+                  {{end}}
                   "'\n"
                 ]]}
               }
@@ -119,7 +94,7 @@
           }
         }
       },
-      "DependsOn": ["InstanceEtcd0"]
+      "DependsOn": ["{{$.Etcd.LogicalName}}{{minus $.EtcdCount 1}}"]
     },
     {{ if .CreateRecordSet }}
     "ExternalDNS": {
@@ -305,6 +280,57 @@
                   "Action": "ec2:DescribeTags",
                   "Effect": "Allow",
                   "Resource": "*"
+                },
+                {{/* Required for cfn-etcd-environment.service to discover the volume */}}
+                {
+                  "Action": "ec2:DescribeVolumes",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {{/* Required for cfn-etcd-environment.service to start attaching the volume */}}
+                {
+                  "Action": "ec2:AttachVolume",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {{/* Required for cfn-etcd-environment.service to wait until the volume is attached */}}
+                {
+                  "Action": "ec2:DescribeVolumeStatus",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {{if $.Etcd.NodeShouldHaveEIP -}}
+                {{/* Required for cfn-etcd-environment.service to associate an EIP */}}
+                {
+                  "Action": "ec2:AssociateAddress",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {{end -}}
+                {{if $.Etcd.NodeShouldHaveSecondaryENI -}}
+                {{/* Required for cfn-etcd-environment.service to associate a network interface */}}
+                {
+                  "Action": "ec2:AttachNetworkInterface",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {
+                  "Action": "ec2:DescribeNetworkInterfaces",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {
+                  "Action": "ec2:DescribeNetworkInterfaceAttribute",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {{end -}}
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject"
+                  ],
+                  "Resource": "arn:aws:s3:::{{$.UserDataEtcdS3Path}}"
                 }
               ],
               "Version": "2012-10-17"
@@ -316,8 +342,43 @@
 
       "Type": "AWS::IAM::Role"
     },
-    {{range $etcdIndex, $etcdInstance := .EtcdInstances}}
-    "InstanceEtcd{{$etcdIndex}}eni": {
+    {{if $.Etcd.HostedZoneManaged}}
+    "{{$.Etcd.HostedZoneLogicalName}}": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "HostedZoneConfig": {
+          "Comment": "My hosted zone for {{$.Etcd.InternalDomainName}}"
+        },
+        "Name": "{{$.Etcd.InternalDomainName}}",
+        "VPCs": [{
+          "VPCId": {{$.VPCRef}},
+          "VPCRegion": { "Ref": "AWS::Region" }
+        }],
+        "HostedZoneTags" : [{
+          "Key": "KubernetesCluster",
+          "Value": "{{$.ClusterName}}"
+        }]
+      }
+    },
+    {{end}}
+    {{range $etcdIndex, $etcdInstance := .EtcdNodes}}
+    {{if $etcdInstance.RecordSetManaged}}
+    "{{$etcdInstance.RecordSetLogicalName}}" : {
+      "Type" : "AWS::Route53::RecordSet",
+        "Properties" : {
+        "HostedZoneId": {{$.Etcd.HostedZoneRef}},
+        "Name": {{$etcdInstance.AdvertisedFQDNRef}},
+        "Comment" : "A record for the private IP address of Etcd node named {{$etcdInstance.Name}} at index {{$etcdIndex}}",
+        "Type" : "A",
+        "TTL" : "300",
+        "ResourceRecords" : [
+          {{$etcdInstance.NetworkInterfacePrivateIPRef}}
+        ]
+      }
+    },
+    {{end}}
+    {{if $etcdInstance.NetworkInterfaceManaged}}
+    "{{$etcdInstance.NetworkInterfaceLogicalName}}": {
       "Properties": {
           "SubnetId": {{$etcdInstance.SubnetRef}},
           "GroupSet": [
@@ -328,20 +389,141 @@
       },
       "Type": "AWS::EC2::NetworkInterface"
     },
-    {{if not $.EtcdDataVolumeEphemeral}}
-    "InstanceEtcd{{$etcdIndex}}ebs": {
+    {{end}}
+    {{if $etcdInstance.EIPManaged}}
+    "{{$etcdInstance.EIPLogicalName}}": {
       "Properties": {
-          "AvailabilityZone": "{{ $etcdInstance.SubnetAvailabilityZone}}",
+        "Domain": "vpc"
+      },
+      "Type": "AWS::EC2::EIP"
+    },
+    {{end}}
+    {{if not $.EtcdDataVolumeEphemeral}}
+    "{{$etcdInstance.EBSLogicalName}}": {
+      "Properties": {
+          "AvailabilityZone": "{{$etcdInstance.SubnetAvailabilityZone}}",
           "Size": "{{$.EtcdDataVolumeSize}}",
           {{if gt $.EtcdDataVolumeIOPS 0}}
           "Iops": "{{$.EtcdDataVolumeIOPS}}",
           {{end}}
-          "VolumeType": "{{$.EtcdDataVolumeType}}"
+          "VolumeType": "{{$.EtcdDataVolumeType}}",
+          "Tags": [
+            {
+              "Key": "kube-aws:etcd:index",
+              "Value": "{{$etcdIndex}}"
+            },
+            {{if $etcdInstance.EIPManaged}}{
+              "Key": "{{$.Etcd.EIPAllocationIDTagKey}}",
+              "Value": {{$etcdInstance.EIPAllocationIDRef}}
+            },{{end}}
+            {{if $etcdInstance.NetworkInterfaceManaged}}{
+              "Key": "{{$.Etcd.NetworkInterfaceIDTagKey}}",
+              "Value": {{$etcdInstance.NetworkInterfaceIDRef}}
+            },{{end}}
+            {
+              "Key": "{{$.Etcd.AdvertisedFQDNTagKey}}",
+              "Value": {{$etcdInstance.AdvertisedFQDNRef}}
+            },
+            {
+              "Key": "{{$.Etcd.NameTagKey}}",
+              "Value": "{{$etcdInstance.Name}}"
+            }
+          ]
       },
       "Type": "AWS::EC2::Volume"
     },
     {{end}}
-    "InstanceEtcd{{$etcdIndex}}": {
+    "{{$etcdInstance.LogicalName}}": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "HealthCheckGracePeriod": 600,
+        "HealthCheckType": "EC2",
+        "LaunchConfigurationName": {
+          "Ref": "{{$etcdInstance.LaunchConfigurationLogicalName}}"
+        },
+        "MaxSize": "1",
+        "MetricsCollection": [
+          {
+            "Granularity": "1Minute"
+          }
+        ],
+        "MinSize": "1",
+        "Tags": [
+          {
+            "Key": "KubernetesCluster",
+            "PropagateAtLaunch": "true",
+            "Value": "{{$.ClusterName}}"
+          },
+          {
+            "Key": "Name",
+            "PropagateAtLaunch": "true",
+            "Value": "{{$.ClusterName}}-{{$.StackName}}-kube-aws-etcd-{{$etcdIndex}}"
+          }
+        ],
+        "VPCZoneIdentifier": [
+          {{$etcdInstance.SubnetRef}}
+        ]
+      },
+      {{if $.WaitSignal.Enabled}}
+      "CreationPolicy" : {
+        "ResourceSignal" : {
+          "Count" : "1",
+          "Timeout" : "{{$.ControllerCreateTimeout}}"
+        }
+      },
+      {{end}}
+      "UpdatePolicy" : {
+        "AutoScalingRollingUpdate" : {
+          "MinInstancesInService" : "0",
+          "MaxBatchSize" : "1",
+          {{if $.WaitSignal.Enabled}}
+          "WaitOnResourceSignals" : "true",
+          "PauseTime": "{{$.ControllerCreateTimeout}}"
+          {{else}}
+          "PauseTime": "PT2M"
+          {{end}}
+        }
+      },
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "configSets" : {
+              "etcd-server": [ "etcd-server-env" ]
+          },
+          "etcd-server-env": {
+            "files" : {
+              "/var/run/coreos/etcd-environment": {
+                "content": { "Fn::Join" : [ "", [
+                  "ETCD_INITIAL_CLUSTER='",
+                    {{range $etcdIndex, $etcdInstance := $.EtcdNodes}}
+                    {{if $etcdIndex}}",", {{end}}
+                    "{{$etcdInstance.Name}}",
+                    "=https://",
+                    {{$etcdInstance.AdvertisedFQDNRef}},
+                    ":2380",
+                    {{end}}
+                  "'\n"
+                ]]}
+              }
+            }
+          }
+        }
+      },
+      "DependsOn": [
+        {{if $etcdInstance.DependencyExists}}{{$etcdInstance.DependencyRef}},{{end}}
+        {{if $etcdIndex}}"{{$.Etcd.LogicalName}}{{minus $etcdIndex 1}}",{{end}}
+        {{if $etcdInstance.EIPManaged}}
+        "{{$etcdInstance.EIPLogicalName}}",
+        {{end}}
+        {{if $etcdInstance.NetworkInterfaceManaged}}
+        "{{$etcdInstance.NetworkInterfaceLogicalName}}",
+        {{end}}
+        {{if $etcdInstance.RecordSetManaged}}
+        "{{$etcdInstance.RecordSetLogicalName}}",
+        {{end}}
+        "{{$etcdInstance.EBSLogicalName}}"
+      ]
+    },
+    "{{$etcdInstance.LaunchConfigurationLogicalName}}": {
       "Properties": {
         "BlockDeviceMappings": [
           {
@@ -368,35 +550,31 @@
         "ImageId": "{{$.AMI}}",
         "InstanceType": "{{$.EtcdInstanceType}}",
         {{if $.KeyName}}"KeyName": "{{$.KeyName}}",{{end}}
-        "NetworkInterfaces": [
+        "SecurityGroups": [
           {
-            "NetworkInterfaceId": { "Ref": "InstanceEtcd{{$etcdIndex}}eni" },
-            "DeviceIndex": "0"
+            "Ref": "SecurityGroupEtcd"
           }
         ],
-        "Tags": [
-          {
-            "Key": "KubernetesCluster",
-            "Value": "{{$.ClusterName}}"
-          },
-          {
-            "Key": "Name",
-            "Value": "{{$.ClusterName}}-{{$.StackName}}-kube-aws-etcd-{{$etcdIndex}}"
-          }
-        ],
-        "Tenancy": "{{$.EtcdTenancy}}",
-        "UserData": { "Fn::FindInMap" : [ "EtcdInstanceParams", "UserData", "cloudconfig"] }
-        {{if not $.EtcdDataVolumeEphemeral}}
-        ,
-        "Volumes": [
-            { "VolumeId": { "Ref": "InstanceEtcd{{$etcdIndex}}ebs" }, "Device": "/dev/xvdf" }
-        ]
-        {{end}}
+        "PlacementTenancy": "{{$.EtcdTenancy}}",
+        "UserData": { "Fn::Base64": { "Fn::Join" : ["\n", [
+          "#!/bin/bash",
+          "# userdata hash: {{ $.UserDataEtcd | sha1 }}",
+          {"Fn::Join":["",[ "echo '{{$.StackNameEnvVarName}}=", { "Ref": "AWS::StackName" }, "' >> {{$.EtcdNodeEnvFileName}}" ]]},
+          "echo '{{$.EtcdIndexEnvVarName}}={{$etcdIndex}}' >> {{$.EtcdNodeEnvFileName}}",
+          " . /etc/environment",
+          "export COREOS_PRIVATE_IPV4 COREOS_PRIVATE_IPV6 COREOS_PUBLIC_IPV4 COREOS_PUBLIC_IPV6",
+          "REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')",
+          "USERDATA_FILE=userdata-etcd",
+          "/usr/bin/rkt run \\",
+          "   --net=host \\",
+          "   --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf  \\",
+          "   --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false --mount volume=awsenv,target=/var/run/coreos \\",
+          "   --trust-keys-from-https \\",
+          "   {{$.AWSCliImageRepo}}:{{$.AWSCliTag}} -- aws s3 --region $REGION  cp {{ $.S3URI }}/{{ $.StackName }}/$USERDATA_FILE /var/run/coreos/",
+          "exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE"
+        ]]}}
       },
-      {{if $etcdInstance.DependencyExists}}
-      "DependsOn": [{{$etcdInstance.DependencyRef}}],
-      {{end}}
-      "Type": "AWS::EC2::Instance"
+      "Type": "AWS::AutoScaling::LaunchConfiguration"
     },
     {{end}}
     "{{.Controller.LogicalName}}LC": {
@@ -1098,6 +1276,22 @@
     },
     {{end}}
     {{end}}
+    {{range $index, $etcdInstance := $.EtcdNodes}}
+    {{if $etcdInstance.EIPManaged}}
+    "{{$etcdInstance.EIPLogicalName}}": {
+      "Description": "The EIP for etcd node {{$index}}",
+      "Value": {{$etcdInstance.EIPRef}},
+      "Export": { "Name" : {"Fn::Sub": "${AWS::StackName}-{{$etcdInstance.EIPLogicalName}}" }}
+    },
+    {{end}}
+    {{if $etcdInstance.NetworkInterfaceManaged}}
+    "{{$etcdInstance.NetworkInterfacePrivateIPLogicalName}}": {
+      "Description": "The private IP for etcd node {{$index}}",
+      "Value": {{$etcdInstance.NetworkInterfacePrivateIPRef}},
+      "Export": { "Name" : {"Fn::Sub": "${AWS::StackName}-{{$etcdInstance.NetworkInterfacePrivateIPLogicalName}}" }}
+    },
+    {{end}}
+    {{end}}
     "WorkerSecurityGroup" : {
       "Description" : "The security group assigned to worker nodes",
       "Value" :  { "Ref" : "SecurityGroupWorker" },
@@ -1106,13 +1300,6 @@
     "StackName": {
       "Description": "The name of this stack which is used by node pool stacks to import outputs from this stack",
       "Value": { "Ref": "AWS::StackName" }
-    },
-    {{range $index, $_ := $.EtcdInstances}}
-    {{if $index}},{{end}}"InstanceEtcd{{$index}}PrivateDnsName": {
-      "Description": "The resolvable hostname of etcd node {{$index}}",
-      "Value": { "Fn::GetAtt" : [ "InstanceEtcd{{$index}}", "PrivateDnsName" ] },
-      "Export": { "Name" : "{{$.ClusterName}}-InstanceEtcd{{$index}}PrivateDnsName" }
     }
-    {{end}}
   }
 }

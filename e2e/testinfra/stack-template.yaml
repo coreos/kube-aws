@@ -125,13 +125,13 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId: !Ref NAT
 
-  PublicLB:
+  PublicELB:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
       Subnets:
       - !Ref PublicSubnet1
       SecurityGroups:
-      - !Ref PublicLBSG
+      - !Ref PublicELBSG
       Listeners:
       - LoadBalancerPort: "443"
         InstancePort: "80"
@@ -151,13 +151,13 @@ Resources:
       - Key: Name
         Value: !Join [ "-", [ "Ref":"Id" , "public" ] ]
 
-  PrivateLB:
+  PrivateELB:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
       Subnets:
       - !Ref PrivateSubnet1
       SecurityGroups:
-      - !Ref PrivateLBSG
+      - !Ref PrivateELBSG
       Listeners:
       - LoadBalancerPort: "80"
         InstancePort: "80"
@@ -177,7 +177,22 @@ Resources:
       - Key: Name
         Value: !Join [ "-", [ "Ref":"Id" , "private" ] ]
 
-  PrivateLBSG:
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Join [ "-", [ "Ref":"Id" , "target-group" ] ]
+      Port: "80"
+      Protocol: HTTP
+      HealthCheckIntervalSeconds: "30"
+      HealthCheckPort: "80"
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: "/"
+      HealthCheckTimeoutSeconds: "5"
+      HealthyThresholdCount: "3"
+      UnhealthyThresholdCount: "5"
+      VpcId: !Ref VPC
+
+  PrivateELBSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: !Join [ "-", [ "Ref":"Id" , "private-lb" ] ]
@@ -188,7 +203,7 @@ Resources:
         CidrIp: 0.0.0.0/0
       VpcId: !Ref VPC
 
-  PublicLBSG:
+  PublicELBSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: !Join [ "-", [ "Ref":"Id" , "public-lb" ] ]
@@ -199,26 +214,37 @@ Resources:
         CidrIp: 0.0.0.0/0
       VpcId: !Ref VPC
 
-  PrivateLBBackendSG:
+  PrivateELBBackendSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: !Join [ "-", [ "Ref":"Id" , "private-lb-backend" ] ]
+      GroupDescription: !Join [ "-", [ "Ref":"Id" , "private-elb-backend" ] ]
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: '80'
         ToPort: '80'
-        SourceSecurityGroupId: !Ref PrivateLBSG
+        SourceSecurityGroupId: !Ref PrivateELBSG
       VpcId: !Ref VPC
 
-  PublicLBBackendSG:
+  PublicALBBackendSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: !Join [ "-", [ "Ref":"Id" , "public-lb-backend" ] ]
+      GroupDescription: !Join [ "-", [ "Ref":"Id" , "public-alb-backend" ] ]
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: '80'
         ToPort: '80'
-        SourceSecurityGroupId: !Ref PublicLBSG
+        SourceSecurityGroupId: !Ref PublicELBSG
+      VpcId: !Ref VPC
+
+  PublicELBBackendSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Join [ "-", [ "Ref":"Id" , "public-elb-backend" ] ]
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        SourceSecurityGroupId: !Ref PublicELBSG
       VpcId: !Ref VPC
 
   GlueSG:
@@ -249,17 +275,21 @@ Outputs:
     Value: !Ref PublicRouteTable
   PrivateRouteTable:
     Value: !Ref PrivateRouteTable
-  PublicLBBackendSG:
-    Value: !Ref PublicLBBackendSG
-  PrivateLBBackendSG:
-    Value: !Ref PrivateLBBackendSG
+  PublicELBBackendSG:
+    Value: !Ref PublicELBBackendSG
+  PublicALBBackendSG:
+    Value: !Ref PublicALBBackendSG
+  PrivateELBBackendSG:
+    Value: !Ref PrivateELBBackendSG
   GlueSG:
     Value: !Ref GlueSG
-  PublicLB:
-    Value: !Ref PublicLB
-  PrivateLB:
-    Value: !Ref PrivateLB
-  PublicLBDNSName:
-    Value: !GetAtt PublicLB.DNSName
-  PrivateLBDNSName:
-    Value: !GetAtt PrivateLB.DNSName
+  PublicELB:
+    Value: !Ref PublicELB
+  PrivateELB:
+    Value: !Ref PrivateELB
+  TargetGroup:
+    Value: !Ref TargetGroup
+  PublicELBDNSName:
+    Value: !GetAtt PublicELB.DNSName
+  PrivateELBDNSName:
+    Value: !GetAtt PrivateELB.DNSName
