@@ -85,8 +85,6 @@ func NewDefaultCluster() *Cluster {
 			VPCCIDR:            "10.0.0.0/16",
 			ReleaseChannel:     "stable",
 			K8sVer:             "v1.5.3_coreos.0",
-			HyperkubeImageRepo: "quay.io/coreos/hyperkube",
-			AWSCliImageRepo:    "quay.io/coreos/awscli",
 			AWSCliTag:          "master",
 			ContainerRuntime:   "docker",
 			Subnets:            []model.Subnet{},
@@ -95,6 +93,20 @@ func NewDefaultCluster() *Cluster {
 			Experimental:       experimental,
 			ManageCertificates: true,
 			WaitSignal:         WaitSignal{Enabled: true, MaxBatchSize: 1},
+			HyperkubeImage:              Image{Repo: "quay.io/coreos/hyperkube", IsDockerRepo: false},
+			AWSCliImage:                 Image{Repo: "quay.io/coreos/awscli", IsDockerRepo: false},
+			CalicoNodeImage:             Image{Repo: "quay.io/calico/node:v1.0.2", IsDockerRepo: false},
+			CalicoCniImage:              Image{Repo: "quay.io/calico/cni:v1.5.6", IsDockerRepo: false},
+			CalicoPolicyControllerImage: Image{Repo: "quay.io/calico/kube-policy-controller:v0.5.2", IsDockerRepo: false},
+			ClusterAutoscalerImage:      Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64:1.0.0", IsDockerRepo: false},
+			KubeDnsImage:                Image{Repo: "gcr.io/google_containers/kubedns-amd64:1.9", IsDockerRepo: false},
+			KubeDnsMasqImage:            Image{Repo: "gcr.io/google_containers/kube-dnsmasq-amd64:1.4", IsDockerRepo: false},
+			DnsMasqMetricsImage:         Image{Repo: "gcr.io/google_containers/dnsmasq-metrics-amd64:1.0", IsDockerRepo: false},
+			ExecHealthzImage:            Image{Repo: "gcr.io/google_containers/exechealthz-amd64:1.2", IsDockerRepo: false},
+			HeapsterImage:               Image{Repo: "gcr.io/google_containers/heapster:v1.2.0", IsDockerRepo: false},
+			AddonResizerImage:           Image{Repo: "gcr.io/google_containers/addon-resizer:1.6", IsDockerRepo: false},
+			KubeDashboardImage:          Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64:v1.5.1", IsDockerRepo: false},
+			CalicoCtlImage:              Image{Repo: "calico/ctl:v1.0.0", IsDockerRepo: false},
 		},
 		KubeClusterSettings: KubeClusterSettings{
 			DNSServiceIP: "10.3.0.10",
@@ -341,8 +353,6 @@ type DeploymentSettings struct {
 	VPCCIDR             string            `yaml:"vpcCIDR,omitempty"`
 	InstanceCIDR        string            `yaml:"instanceCIDR,omitempty"`
 	K8sVer              string            `yaml:"kubernetesVersion,omitempty"`
-	HyperkubeImageRepo  string            `yaml:"hyperkubeImageRepo,omitempty"`
-	AWSCliImageRepo     string            `yaml:"awsCliImageRepo,omitempty"`
 	AWSCliTag           string            `yaml:"awsCliTag,omitempty"`
 	ContainerRuntime    string            `yaml:"containerRuntime,omitempty"`
 	KMSKeyARN           string            `yaml:"kmsKeyArn,omitempty"`
@@ -355,6 +365,23 @@ type DeploymentSettings struct {
 	Experimental        Experimental      `yaml:"experimental"`
 	ManageCertificates  bool              `yaml:"manageCertificates,omitempty"`
 	WaitSignal          WaitSignal        `yaml:"waitSignal"`
+
+	// Images repository
+	HyperkubeImage              Image `yaml:"hyperkubeImage,omitempty"`
+	AWSCliImage                 Image `yaml:"awsCliImage,omitempty"`
+	CalicoNodeImage             Image `yaml:"calicoNodeImage,omitempty"`
+	CalicoCniImage              Image `yaml:"calicoCniImage,omitempty"`
+	CalicoCtlImage              Image `yaml:"calicoCtlImage,omitempty"`
+	CalicoPolicyControllerImage Image `yaml:"calicoPolicyControllerImage,omitempty"`
+	ClusterAutoscalerImage      Image `yaml:"clusterAutoscalerImage,omitempty"`
+	KubeDnsImage                Image `yaml:"kubeDnsImage,omitempty"`
+	KubeDnsMasqImage            Image `yaml:"kubeDnsMasqImage,omitempty"`
+	DnsMasqMetricsImage         Image `yaml:"dnsMasqMetricsImage,omitempty"`
+	ExecHealthzImage            Image `yaml:"execHealthzImage,omitempty"`
+	HeapsterImage               Image `yaml:"heapsterImage,omitempty"`
+	AddonResizerImage           Image `yaml:"addonResizerImage,omitempty"`
+	KubeDashboardImage          Image `yaml:"kubeDashboardImage,omitempty"`
+	FlannelImage                Image `yaml:"flannelImage,omitempty"`
 }
 
 // Part of configuration which is specific to worker nodes
@@ -436,6 +463,11 @@ type Experimental struct {
 	NodeLabels               NodeLabels               `yaml:"nodeLabels"`
 	Plugins                  Plugins                  `yaml:"plugins"`
 	Taints                   []Taint                  `yaml:"taints"`
+}
+
+type Image struct {
+	Repo         string `yaml:"repo,omitempty"`
+	IsDockerRepo bool   `yaml:"isDockerRepo,omitempty"`
 }
 
 type Admission struct {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-	"golang.org/x/tools/go/gcimporter15/testdata"
 )
 
 type Assets interface {

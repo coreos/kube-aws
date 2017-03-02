@@ -89,12 +89,19 @@ func (c DeploymentSettings) WithDefaultsFrom(main cfg.DeploymentSettings) Deploy
 		c.K8sVer = main.K8sVer
 	}
 
-	if c.HyperkubeImageRepo == "" {
-		c.HyperkubeImageRepo = main.HyperkubeImageRepo
+	if c.HyperkubeImage.Repo == "" {
+		c.HyperkubeImage.Repo = main.HyperkubeImage.Repo
+		c.HyperkubeImage.IsDockerRepo = main.HyperkubeImage.IsDockerRepo
 	}
 
-	if c.AWSCliImageRepo == "" {
-		c.AWSCliImageRepo = main.AWSCliImageRepo
+	if c.AWSCliImage.Repo == "" {
+		c.AWSCliImage.Repo = main.AWSCliImage.Repo
+		c.AWSCliImage.IsDockerRepo = main.AWSCliImage.IsDockerRepo
+	}
+
+	if c.CalicoCtlImage.Repo == "" {
+		c.CalicoCtlImage.Repo = main.CalicoCtlImage.Repo
+		c.CalicoCtlImage.IsDockerRepo = main.CalicoCtlImage.IsDockerRepo
 	}
 
 	if c.AWSCliTag == "" {
