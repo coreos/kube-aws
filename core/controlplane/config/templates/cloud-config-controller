@@ -1423,7 +1423,7 @@ write_files:
             targetPort: 9090
 
 {{ if .ManageCertificates }}
-  - path: /etc/kubernetes/ssl/ca.pem.enc
+  - path: /etc/kubernetes/ssl/ca.pem{{if not .IsChinaRegion}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.CACert}}
 
