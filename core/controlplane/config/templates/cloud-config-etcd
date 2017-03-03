@@ -28,16 +28,19 @@ coreos:
       drop-ins:
         - name: 20-etcd2-aws-cluster.conf
           content: |
+            {{- if not .IsChinaRegion}}
             [Unit]
             Wants=decrypt-tls-assets.service cfn-etcd-environment.service
             After=decrypt-tls-assets.service cfn-etcd-environment.service
-
+            {{- end}}
             [Service]
             EnvironmentFile=-/etc/etcd-environment
 
             PermissionsStartOnly=true
             ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
+            {{- if not .IsChinaRegion}}
             ExecStartPre=/usr/bin/systemctl is-active decrypt-tls-assets.service
+            {{- end}}
             ExecStartPre=/usr/bin/chown -R etcd:etcd /var/lib/etcd2
       enable: true
       command: start

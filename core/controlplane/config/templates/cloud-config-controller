@@ -76,7 +76,9 @@ coreos:
             EnvironmentFile=-/run/flannel/etcd-endpoints.opts
             ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
             ExecStartPre=/bin/sh -ec "echo FLANNELD_ETCD_ENDPOINTS=${ETCD_ENDPOINTS} >/run/flannel/etcd-endpoints.opts"
+            {{- if not .IsChinaRegion }}
             ExecStartPre=/opt/bin/decrypt-tls-assets
+            {{- end}}
             ExecStartPre=/usr/bin/etcdctl \
             --ca-file=/etc/kubernetes/ssl/ca.pem \
             --cert-file=/etc/kubernetes/ssl/etcd-client.pem \
