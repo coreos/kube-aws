@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"strings"
 	"time"
+	"log"
 )
 
 type Provisioner struct {
@@ -32,6 +33,7 @@ func NewProvisioner(name string, stackTags map[string]string, s3URI string, s3Re
 }
 
 func (c *Provisioner) uploadFile(s3Svc S3ObjectPutterService, content string, filename string) (string, error) {
+	log.Printf("Uploading file: %s", filename)
 	locProvider := newAssetLocationProvider(c.stackName, c.s3URI, c.s3Region)
 	loc, err := locProvider.locationFor(filename)
 	if err != nil {
@@ -59,6 +61,7 @@ func (c *Provisioner) uploadFile(s3Svc S3ObjectPutterService, content string, fi
 }
 
 func (c *Provisioner) uploadAsset(s3Svc S3ObjectPutterService, asset Asset) error {
+	log.Printf("Uploading asset: %s", asset.URL())
 	bucket := asset.Bucket
 	key := asset.Key
 	content := asset.Content

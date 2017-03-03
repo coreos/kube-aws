@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"log"
 )
 
 type Assets interface {
@@ -131,10 +132,14 @@ type AssetLocation struct {
 }
 
 func (l AssetLocation) URL() string {
+	var url string
 	if strings.HasPrefix(l.S3Region, "cn") {
-		return fmt.Sprintf("https://s3.cn-north-1.amazonaws.com.cn/%s/%s", l.Bucket, l.Key)
+		url = fmt.Sprintf("https://s3.cn-north-1.amazonaws.com.cn/%s/%s", l.Bucket, l.Key)
+	} else {
+		url = fmt.Sprintf("https://s3.amazonaws.com/%s/%s", l.Bucket, l.Key)
 	}
-	return fmt.Sprintf("https://s3.amazonaws.com/%s/%s", l.Bucket, l.Key)
+	log.Printf("Using S3 URL: %s on region: %s", url, l.S3Region)
+	return url
 }
 
 func newAssetLocationProvider(stackName string, s3URI string, s3Region string) AssetLocationProvider {
