@@ -338,7 +338,7 @@
                   "Resource":"*"
                 },
                 {{end}}
-				{{if .ManageCertificates}}
+                {{if (and (.ManageCertificates) (not .IsChinaRegion))}}
                 {
                   "Action" : "kms:Decrypt",
                   "Effect" : "Allow",
