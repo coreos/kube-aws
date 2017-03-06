@@ -93,21 +93,21 @@ func NewDefaultCluster() *Cluster {
 			Experimental:                experimental,
 			ManageCertificates:          true,
 			WaitSignal:                  WaitSignal{Enabled: true, MaxBatchSize: 1},
-			HyperkubeImage:              Image{Repo: "quay.io/coreos/hyperkube", IsDockerRepo: false},
-			AWSCliImage:                 Image{Repo: "quay.io/coreos/awscli", IsDockerRepo: false},
-			CalicoNodeImage:             Image{Repo: "quay.io/calico/node:v1.0.2", IsDockerRepo: false},
-			CalicoCniImage:              Image{Repo: "quay.io/calico/cni:v1.5.6", IsDockerRepo: false},
-			CalicoPolicyControllerImage: Image{Repo: "quay.io/calico/kube-policy-controller:v0.5.2", IsDockerRepo: false},
-			ClusterAutoscalerImage:      Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64:1.0.0", IsDockerRepo: false},
-			KubeDnsImage:                Image{Repo: "gcr.io/google_containers/kubedns-amd64:1.9", IsDockerRepo: false},
-			KubeDnsMasqImage:            Image{Repo: "gcr.io/google_containers/kube-dnsmasq-amd64:1.4", IsDockerRepo: false},
-			DnsMasqMetricsImage:         Image{Repo: "gcr.io/google_containers/dnsmasq-metrics-amd64:1.0", IsDockerRepo: false},
-			ExecHealthzImage:            Image{Repo: "gcr.io/google_containers/exechealthz-amd64:1.2", IsDockerRepo: false},
-			HeapsterImage:               Image{Repo: "gcr.io/google_containers/heapster:v1.2.0", IsDockerRepo: false},
-			AddonResizerImage:           Image{Repo: "gcr.io/google_containers/addon-resizer:1.6", IsDockerRepo: false},
-			KubeDashboardImage:          Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64:v1.5.1", IsDockerRepo: false},
-			CalicoCtlImage:              Image{Repo: "calico/ctl:v1.0.0", IsDockerRepo: false},
-			PauseImage:                  Image{Repo: "gcr.io/google_containers/pause-amd64:3.0", IsDockerRepo: false},
+			HyperkubeImage:              Image{Repo: "quay.io/coreos/hyperkube", RktPullDocker: false},
+			AWSCliImage:                 Image{Repo: "quay.io/coreos/awscli", RktPullDocker: false},
+			CalicoNodeImage:             Image{Repo: "quay.io/calico/node:v1.0.2", RktPullDocker: false},
+			CalicoCniImage:              Image{Repo: "quay.io/calico/cni:v1.5.6", RktPullDocker: false},
+			CalicoPolicyControllerImage: Image{Repo: "quay.io/calico/kube-policy-controller:v0.5.2", RktPullDocker: false},
+			ClusterAutoscalerImage:      Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64:1.0.0", RktPullDocker: false},
+			KubeDnsImage:                Image{Repo: "gcr.io/google_containers/kubedns-amd64:1.9", RktPullDocker: false},
+			KubeDnsMasqImage:            Image{Repo: "gcr.io/google_containers/kube-dnsmasq-amd64:1.4", RktPullDocker: false},
+			DnsMasqMetricsImage:         Image{Repo: "gcr.io/google_containers/dnsmasq-metrics-amd64:1.0", RktPullDocker: false},
+			ExecHealthzImage:            Image{Repo: "gcr.io/google_containers/exechealthz-amd64:1.2", RktPullDocker: false},
+			HeapsterImage:               Image{Repo: "gcr.io/google_containers/heapster:v1.2.0", RktPullDocker: false},
+			AddonResizerImage:           Image{Repo: "gcr.io/google_containers/addon-resizer:1.6", RktPullDocker: false},
+			KubeDashboardImage:          Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64:v1.5.1", RktPullDocker: false},
+			CalicoCtlImage:              Image{Repo: "calico/ctl:v1.0.0", RktPullDocker: false},
+			PauseImage:                  Image{Repo: "gcr.io/google_containers/pause-amd64:3.0", RktPullDocker: false},
 		},
 		KubeClusterSettings: KubeClusterSettings{
 			DNSServiceIP: "10.3.0.10",
@@ -468,8 +468,8 @@ type Experimental struct {
 }
 
 type Image struct {
-	Repo         string `yaml:"repo,omitempty"`
-	IsDockerRepo bool   `yaml:"isDockerRepo,omitempty"`
+	Repo          string `yaml:"repo,omitempty"`
+	RktPullDocker bool   `yaml:"rktPullDocker,omitempty"`
 }
 
 type Admission struct {

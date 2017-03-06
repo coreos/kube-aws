@@ -95,10 +95,10 @@ coreos:
           --mount volume=dns,target=/etc/resolv.conf \
           --net=host \
           --trust-keys-from-https \
-        {{- if .AWSCliImage.IsDockerRepo }}
+        {{- if .AWSCliImage.RktPullDocker }}
         --insecure-options=image \
         {{- end }}
-        {{ if .AWSCliImage.IsDockerRepo }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{ if .AWSCliImage.RktPullDocker }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
             -ec \
             'echo decrypting tls assets; \
              shopt -s nullglob; \
@@ -425,10 +425,10 @@ write_files:
            --set-env={{.EtcdIndexEnvVarName}}=${{.EtcdIndexEnvVarName}} \
            --net=host \
            --trust-keys-from-https \
-           {{- if .AWSCliImage.IsDockerRepo }}
+           {{- if .AWSCliImage.RktPullDocker }}
            --insecure-options=image \
            {{- end }}
-           {{ if .AWSCliImage.IsDockerRepo }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/opt/bin/$1 -- $2
+           {{ if .AWSCliImage.RktPullDocker }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/opt/bin/$1 -- $2
 
            rkt rm --uuid-file=/var/run/coreos/$1.uuid || :
         }
@@ -490,10 +490,10 @@ write_files:
         --set-env={{.EtcdIndexEnvVarName}}=${{.EtcdIndexEnvVarName}} \
         --net=host \
         --trust-keys-from-https \
-        {{- if .AWSCliImage.IsDockerRepo }}
+        {{- if .AWSCliImage.RktPullDocker }}
         --insecure-options=image \
         {{- end }}
-        {{ if .AWSCliImage.IsDockerRepo }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{ if .AWSCliImage.RktPullDocker }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
           -vxec \
           '
            cfn-signal -e 0 --region {{.Region}} --resource {{.Etcd.LogicalName}}${{.EtcdIndexEnvVarName}} --stack ${{.StackNameEnvVarName}}
