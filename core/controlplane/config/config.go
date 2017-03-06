@@ -107,6 +107,7 @@ func NewDefaultCluster() *Cluster {
 			AddonResizerImage:           Image{Repo: "gcr.io/google_containers/addon-resizer:1.6", IsDockerRepo: false},
 			KubeDashboardImage:          Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64:v1.5.1", IsDockerRepo: false},
 			CalicoCtlImage:              Image{Repo: "calico/ctl:v1.0.0", IsDockerRepo: false},
+			PauseImage:                  Image{Repo: "gcr.io/google_containers/pause-amd64:3.0", IsDockerRepo: false},
 		},
 		KubeClusterSettings: KubeClusterSettings{
 			DNSServiceIP: "10.3.0.10",
@@ -382,7 +383,7 @@ type DeploymentSettings struct {
 	HeapsterImage               Image `yaml:"heapsterImage,omitempty"`
 	AddonResizerImage           Image `yaml:"addonResizerImage,omitempty"`
 	KubeDashboardImage          Image `yaml:"kubeDashboardImage,omitempty"`
-	FlannelImage                Image `yaml:"flannelImage,omitempty"`
+	PauseImage                  Image `yaml:"pauseImage,omitempty"`
 }
 
 // Part of configuration which is specific to worker nodes

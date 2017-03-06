@@ -333,6 +333,23 @@ ssh_authorized_keys:
   {{end}}
 {{end}}
 
+{{if .IsChinaRegion}}
+    - name: pause-amd64.service
+      enable: true
+      command: start
+      runtime: true
+      content: |
+        [Unit]
+        Description=Pull and tag a mirror image for pause-amd64
+        After=docker.service
+        Wants=docker.service
+
+        [Service]
+        Restart=on-failure
+        RemainAfterExit=true
+        ExecStartPre=/usr/bin/docker pull {{.PauseImage.Repo}}
+        ExecStart=/usr/bin/docker tag  {{.PauseImage.Repo}} gcr.io/google_containers/pause-amd64:3.0
+{{end}}
 write_files:
 {{if .Experimental.AwsEnvironment.Enabled}}
   - path: /opt/bin/set-aws-environment
