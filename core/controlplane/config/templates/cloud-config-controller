@@ -1079,6 +1079,28 @@ write_files:
             initialDelaySeconds: 15
             timeoutSeconds: 15
 
+  - path: /etc/kubernetes/manifests/kube-rescheduler.yaml
+    content: |
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: rescheduler-v0.2.2
+        namespace: kube-system
+        labels:
+          k8s-app: rescheduler
+          version: v0.2.2
+          kubernetes.io/cluster-service: "true"
+          kubernetes.io/name: "Rescheduler"
+      spec:
+        hostNetwork: true
+        containers:
+        - name: rescheduler
+          image: gcr.io/google-containers/rescheduler:v0.2.2
+          # TODO: Make resource requirements depend on the size of the cluster
+          resources:
+            requests:
+              cpu: 10m
+              memory: 100Mi
 
   - path: /srv/kubernetes/manifests/kube-dns-autoscaler-de.yaml
     content: |
