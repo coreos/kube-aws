@@ -258,9 +258,13 @@ worker:
 #      releaseChannel: alpha
 #      amiId:
 #      kubernetesVersion: 1.6.0-alpha.1
-#      hyperkubeImageRepo:
-#      AwsCliImageRepo: quay.io/coreos/awscli
-#      awsCliTag: edge
+
+#      # Images are taken from controlplane by default, but you can override values for node pools here. E.g.:
+#      AwsCliImage:
+#        repo: quay.io/coreos/awscli
+#        tag: edge
+#        rktPullDocker: false
+
 #      sshAuthorizedKeys:
 #      # User-provided YAML map available in control-plane's stack-template.json
 #      customSettings:
@@ -605,74 +609,85 @@ worker:
 # AWS CLI image repository to use.
 # awsCliImage:
 #   repo: quay.io/coreos/awscli
-#    rktPullDocker: false
-
-# AWS CLI image tag to use.
-# awsCliTag: master
+#   tag: master
+#   rktPullDocker: false
 
 # Calico Node image repository to use.
 #calicoNodeImage:
-#  repo: quay.io/calico/node:v1.0.2
+#  repo: quay.io/calico/node
+#  tag: v1.0.2
 #  rktPullDocker: false
 
 # Calico CNI image repository to use.
 #calicoCniImage:
-#  repo: quay.io/calico/cni:v1.5.6
+#  repo: quay.io/calico/cni
+#  tag: v1.5.6
 #  rktPullDocker: false
 
 # Calico Policy Controller image repository to use.
 #calicoPolicyControllerImage:
-#  repo: quay.io/calico/kube-policy-controller:v0.5.2
+#  repo: quay.io/calico/kube-policy-controller
+#  tag: v0.5.2
 #  rktPullDocker: false
 
 # Cluster Autoscaler image repository to use.
 #clusterAutoscalerImage:
-#  repo: gcr.io/google_containers/cluster-proportional-autoscaler-amd64:1.0.0
+#  repo: gcr.io/google_containers/cluster-proportional-autoscaler-amd64
+#  tag: 1.0.0
 #  rktPullDocker: false
 
 # kube DNS image repository to use.
 #kubeDnsImage:
-#  repo: gcr.io/google_containers/kubedns-amd64:1.9
+#  repo: gcr.io/google_containers/kubedns-amd64
+#  tag: 1.9
 #  rktPullDocker: false
 
 # kube DNS Masq image repository to use.
 #kubeDnsMasqImage:
-#  repo: gcr.io/google_containers/kube-dnsmasq-amd64:1.4
+#  repo: gcr.io/google_containers/kube-dnsmasq-amd64
+#  tag: 1.4
 #  rktPullDocker: false
 
 # DNS Masq metrics image repository to use.
 #dnsMasqMetricsImage:
-#  gcr.io/google_containers/dnsmasq-metrics-amd64:1.0
+#  gcr.io/google_containers/dnsmasq-metrics-amd64
+#  tag: 1.0
 #  rktPullDocker: false
 
 # Exec Healthz image repository to use.
 #execHealthzImage:
-#  repo: gcr.io/google_containers/exechealthz-amd64:1.2
+#  repo: gcr.io/google_containers/exechealthz-amd64
+#  tag: 1.2
 #  rktPullDocker: false
 
 # Heapster image repository to use.
 #heapsterImage:
-#  repo: gcr.io/google_containers/heapster:v1.2.0
+#  repo: gcr.io/google_containers/heapster
+#  tag: v1.2.0
 #  rktPullDocker: false
 
 # Addon Resizer image repository to use.
 #addonResizerImage:
-#  repo: gcr.io/google_containers/addon-resizer:1.6
+#  repo: gcr.io/google_containers/addon-resizer
+#  tag: 1.6
 #  rktPullDocker: false
 
 # Kube Dashboard image repository to use.
 #kubeDashboardImage:
-#  repo: gcr.io/google_containers/kubernetes-dashboard-amd64:v1.5.1
+#  repo: gcr.io/google_containers/kubernetes-dashboard-amd64
+#  tag: v1.5.1
 #  rktPullDocker: false
 
 # Calico Controller image repository to use.
 #calicoCtlImage:
-#  repo: calico/ctl:v1.0.0
+#  repo: calico/ctl
+#  tag: v1.0.0
 #  rktPullDocker: false
 
 # Pause image repository to use.This works only if you are deploying your cluster in "cn-north-1" region.
 #pauseImage:
-#  repo: gcr.io/google_containers/pause-amd64:3.0
+#  repo: gcr.io/google_containers/pause-amd64
+#  tag: 3.0
 #  rktPullDocker: false
 
 # Use Calico for network policy.

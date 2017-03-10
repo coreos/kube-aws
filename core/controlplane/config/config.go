@@ -21,6 +21,8 @@ import (
 )
 
 const (
+	k8sVer = "v1.5.4_coreos.0"
+
 	credentialsDir = "credentials"
 	userDataDir    = "userdata"
 )
@@ -84,29 +86,28 @@ func NewDefaultCluster() *Cluster {
 			ClusterName:                 "kubernetes",
 			VPCCIDR:                     "10.0.0.0/16",
 			ReleaseChannel:              "stable",
-			K8sVer:                      "v1.5.4_coreos.0",
-			AWSCliTag:                   "master",
+			K8sVer:                      k8sVer,
 			ContainerRuntime:            "docker",
 			Subnets:                     []model.Subnet{},
 			EIPAllocationIDs:            []string{},
 			MapPublicIPs:                true,
 			Experimental:                experimental,
 			ManageCertificates:          true,
-			HyperkubeImage:              Image{Repo: "quay.io/coreos/hyperkube", RktPullDocker: false},
-			AWSCliImage:                 Image{Repo: "quay.io/coreos/awscli", RktPullDocker: false},
-			CalicoNodeImage:             Image{Repo: "quay.io/calico/node:v1.0.2", RktPullDocker: false},
-			CalicoCniImage:              Image{Repo: "quay.io/calico/cni:v1.5.6", RktPullDocker: false},
-			CalicoPolicyControllerImage: Image{Repo: "quay.io/calico/kube-policy-controller:v0.5.2", RktPullDocker: false},
-			ClusterAutoscalerImage:      Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64:1.0.0", RktPullDocker: false},
-			KubeDnsImage:                Image{Repo: "gcr.io/google_containers/kubedns-amd64:1.9", RktPullDocker: false},
-			KubeDnsMasqImage:            Image{Repo: "gcr.io/google_containers/kube-dnsmasq-amd64:1.4", RktPullDocker: false},
-			DnsMasqMetricsImage:         Image{Repo: "gcr.io/google_containers/dnsmasq-metrics-amd64:1.0", RktPullDocker: false},
-			ExecHealthzImage:            Image{Repo: "gcr.io/google_containers/exechealthz-amd64:1.2", RktPullDocker: false},
-			HeapsterImage:               Image{Repo: "gcr.io/google_containers/heapster:v1.2.0", RktPullDocker: false},
-			AddonResizerImage:           Image{Repo: "gcr.io/google_containers/addon-resizer:1.6", RktPullDocker: false},
-			KubeDashboardImage:          Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64:v1.5.1", RktPullDocker: false},
-			CalicoCtlImage:              Image{Repo: "calico/ctl:v1.0.0", RktPullDocker: false},
-			PauseImage:                  Image{Repo: "gcr.io/google_containers/pause-amd64:3.0", RktPullDocker: false},
+			HyperkubeImage:              Image{Repo: "quay.io/coreos/hyperkube", Tag: k8sVer, RktPullDocker: false},
+			AWSCliImage:                 Image{Repo: "quay.io/coreos/awscli", Tag: "master", RktPullDocker: false},
+			CalicoNodeImage:             Image{Repo: "quay.io/calico/node", Tag: "v1.0.2", RktPullDocker: false},
+			CalicoCniImage:              Image{Repo: "quay.io/calico/cni", Tag: "v1.5.6", RktPullDocker: false},
+			CalicoPolicyControllerImage: Image{Repo: "quay.io/calico/kube-policy-controller", Tag: "v0.5.2", RktPullDocker: false},
+			ClusterAutoscalerImage:      Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64", Tag: "1.0.0", RktPullDocker: false},
+			KubeDnsImage:                Image{Repo: "gcr.io/google_containers/kubedns-amd64", Tag: "1.9", RktPullDocker: false},
+			KubeDnsMasqImage:            Image{Repo: "gcr.io/google_containers/kube-dnsmasq-amd64", Tag: "1.4", RktPullDocker: false},
+			DnsMasqMetricsImage:         Image{Repo: "gcr.io/google_containers/dnsmasq-metrics-amd64", Tag: "1.0", RktPullDocker: false},
+			ExecHealthzImage:            Image{Repo: "gcr.io/google_containers/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
+			HeapsterImage:               Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.2.0", RktPullDocker: false},
+			AddonResizerImage:           Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "1.6", RktPullDocker: false},
+			KubeDashboardImage:          Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.5.1", RktPullDocker: false},
+			CalicoCtlImage:              Image{Repo: "calico/ctl", Tag: "v1.0.0", RktPullDocker: false},
+			PauseImage:                  Image{Repo: "gcr.io/google_containers/pause-amd64", Tag: "3.0", RktPullDocker: false},
 		},
 		KubeClusterSettings: KubeClusterSettings{
 			DNSServiceIP: "10.3.0.10",
@@ -158,6 +159,7 @@ func NewDefaultCluster() *Cluster {
 
 func newDefaultClusterWithDeps(encSvc EncryptService) *Cluster {
 	cluster := NewDefaultCluster()
+	cluster.HyperkubeImage.Tag = cluster.K8sVer
 	cluster.ProvidedEncryptService = encSvc
 	return cluster
 }
@@ -182,6 +184,7 @@ func ClusterFromBytes(data []byte) (*Cluster, error) {
 	if err := yaml.Unmarshal(data, c); err != nil {
 		return nil, fmt.Errorf("failed to parse cluster: %v", err)
 	}
+	c.HyperkubeImage.Tag = c.K8sVer
 
 	if err := c.Load(); err != nil {
 		return nil, err
@@ -354,7 +357,6 @@ type DeploymentSettings struct {
 	VPCCIDR             string            `yaml:"vpcCIDR,omitempty"`
 	InstanceCIDR        string            `yaml:"instanceCIDR,omitempty"`
 	K8sVer              string            `yaml:"kubernetesVersion,omitempty"`
-	AWSCliTag           string            `yaml:"awsCliTag,omitempty"`
 	ContainerRuntime    string            `yaml:"containerRuntime,omitempty"`
 	KMSKeyARN           string            `yaml:"kmsKeyArn,omitempty"`
 	StackTags           map[string]string `yaml:"stackTags,omitempty"`
@@ -469,6 +471,41 @@ type Experimental struct {
 type Image struct {
 	Repo          string `yaml:"repo,omitempty"`
 	RktPullDocker bool   `yaml:"rktPullDocker,omitempty"`
+	Tag           string `yaml:"tag,omitempty"`
+}
+
+func (i Image) MergeIfEmpty(other Image) {
+	if i.Repo == "" || i.Tag == "" {
+		i.Repo = other.Repo
+		i.Tag = other.Tag
+		i.RktPullDocker = other.RktPullDocker
+	}
+}
+
+func (i Image) Options() string {
+	if i.RktPullDocker {
+		return "--insecure-options=image "
+	}
+	return ""
+}
+
+func (i Image) RktRepo() string {
+	if i.RktPullDocker {
+		return fmt.Sprintf("docker://%s:%s", i.Repo, i.Tag)
+	}
+	return fmt.Sprintf("%s:%s", i.Repo, i.Tag)
+}
+
+func (i Image) RktRepoWithoutTag() string {
+	if i.RktPullDocker {
+		return fmt.Sprintf("docker://%s", i.Repo)
+	}
+	return i.Repo
+}
+
+
+func (i Image) RepoWithTag() string {
+	return fmt.Sprintf("%s:%s", i.Repo, i.Tag)
 }
 
 type Admission struct {

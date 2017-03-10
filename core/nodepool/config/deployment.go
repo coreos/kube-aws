@@ -90,24 +90,11 @@ func (c DeploymentSettings) WithDefaultsFrom(main cfg.DeploymentSettings) Deploy
 		c.K8sVer = main.K8sVer
 	}
 
-	if c.HyperkubeImage.Repo == "" {
-		c.HyperkubeImage.Repo = main.HyperkubeImage.Repo
-		c.HyperkubeImage.RktPullDocker = main.HyperkubeImage.RktPullDocker
-	}
-
-	if c.AWSCliImage.Repo == "" {
-		c.AWSCliImage.Repo = main.AWSCliImage.Repo
-		c.AWSCliImage.RktPullDocker = main.AWSCliImage.RktPullDocker
-	}
-
-	if c.CalicoCtlImage.Repo == "" {
-		c.CalicoCtlImage.Repo = main.CalicoCtlImage.Repo
-		c.CalicoCtlImage.RktPullDocker = main.CalicoCtlImage.RktPullDocker
-	}
-
-	if c.AWSCliTag == "" {
-		c.AWSCliTag = main.AWSCliTag
-	}
+	// Use main images if not defined in nodepool configuration
+	c.HyperkubeImage.MergeIfEmpty(main.HyperkubeImage)
+	c.HyperkubeImage.Tag = c.K8sVer
+	c.AWSCliImage.MergeIfEmpty(main.AWSCliImage)
+	c.CalicoCtlImage.MergeIfEmpty(main.CalicoCtlImage)
 
 	if len(c.SSHAuthorizedKeys) == 0 {
 		c.SSHAuthorizedKeys = main.SSHAuthorizedKeys

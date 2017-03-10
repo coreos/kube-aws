@@ -12,10 +12,7 @@
   "   --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf  \\",
   "   --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false --mount volume=awsenv,target=/var/run/coreos \\",
   "   --trust-keys-from-https \\",
-  {{- if .AWSCliImage.RktPullDocker }}
-  "   --insecure-options=image \\",
-  {{- end }}
-  "   {{ if .AWSCliImage.RktPullDocker }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=aws -- s3 --region $REGION  cp {{ .S3URI }}/{{ .StackName }}/$USERDATA_FILE /var/run/coreos/",
+  "   {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=aws -- s3 --region $REGION  cp {{ .S3URI }}/{{ .StackName }}/$USERDATA_FILE /var/run/coreos/",
   "exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE"
 ]]}}
 {{end}}
