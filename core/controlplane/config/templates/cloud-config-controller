@@ -898,6 +898,7 @@ write_files:
           command:
           - /hyperkube
           - apiserver
+          - --apiserver-count={{if .MinControllerCount}}{{ .MinControllerCount }}{{else}}{{ .ControllerCount }}{{end}}
           - --bind-address=0.0.0.0
           - --etcd-servers=#ETCD_ENDPOINTS#
           - --etcd-cafile=/etc/kubernetes/ssl/ca.pem

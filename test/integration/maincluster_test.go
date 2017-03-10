@@ -119,13 +119,12 @@ func TestMainClusterConfig(t *testing.T) {
 			t.Errorf("experimental settings didn't match :\nexpected=%v\nactual=%v", expected, actual)
 		}
 
-		expected2 := controlplane_config.WaitSignal{
-			Enabled:      true,
-			MaxBatchSize: 1,
+		if !c.WaitSignal.Enabled() {
+			t.Errorf("waitSignal should be enabled but was not: %v", c.WaitSignal)
 		}
-		actual2 := c.WaitSignal
-		if !reflect.DeepEqual(expected2, actual2) {
-			t.Errorf("waitSignal doesn't match:\nexpected=%v\nactual=%v", expected2, actual2)
+
+		if c.WaitSignal.MaxBatchSize() != 1 {
+			t.Errorf("waitSignal.maxBatchSize should be 1 but was %d: %v", c.WaitSignal.MaxBatchSize(), c.WaitSignal)
 		}
 	}
 
@@ -164,43 +163,31 @@ func TestMainClusterConfig(t *testing.T) {
 	}
 
 	spotFleetBasedNodePoolHasWaitSignalDisabled := func(c *config.Config, t *testing.T) {
-		expected := controlplane_config.WaitSignal{
-			Enabled:      false,
-			MaxBatchSize: 1,
-		}
 		p := c.NodePools[0]
 
 		if !p.SpotFleet.Enabled() {
 			t.Errorf("1st node pool is expected to be a spot fleet based one but was not: %+v", p)
 		}
 
-		actual := p.WaitSignal
-		if !reflect.DeepEqual(expected, actual) {
+		if p.WaitSignal.Enabled() {
 			t.Errorf(
-				"WaitSignal didn't match: expected=%v actual=%v",
-				expected,
-				actual,
+				"WaitSignal should be enabled but was not: %v",
+				p.WaitSignal,
 			)
 		}
 	}
 
 	asgBasedNodePoolHasWaitSignalEnabled := func(c *config.Config, t *testing.T) {
-		expected := controlplane_config.WaitSignal{
-			Enabled:      true,
-			MaxBatchSize: 1,
-		}
 		p := c.NodePools[0]
 
 		if p.SpotFleet.Enabled() {
 			t.Errorf("1st node pool is expected to be an asg-based one but was not: %+v", p)
 		}
 
-		actual := p.WaitSignal
-		if !reflect.DeepEqual(expected, actual) {
+		if !p.WaitSignal.Enabled() {
 			t.Errorf(
-				"WaitSignal didn't match: expected=%v actual=%v",
-				expected,
-				actual,
+				"WaitSignal should be disabled but was not: %v",
+				p.WaitSignal,
 			)
 		}
 	}
@@ -412,6 +399,19 @@ worker:
 			},
 			assertCluster: []ClusterTester{
 				hasDefaultCluster,
+			},
+		},
+		{
+			context: "WithEtcdDataVolumeEncrypted",
+			configYaml: minimalValidConfigYaml + `
+etcdDataVolumeEncrypted: true
+`,
+			assertConfig: []ConfigTester{
+				func(c *config.Config, t *testing.T) {
+					if !c.EtcdDataVolumeEncrypted {
+						t.Errorf("Etcd data volume should be encrypted but was not: %v", c.Etcd)
+					}
+				},
 			},
 		},
 		{
@@ -1126,6 +1126,61 @@ worker:
 			},
 		},
 		{
+			context: "WithWaitSignalDisabled",
+			configYaml: minimalValidConfigYaml + `
+waitSignal:
+  enabled: false
+`,
+			assertConfig: []ConfigTester{
+				hasDefaultEtcdSettings,
+				func(c *config.Config, t *testing.T) {
+					if c.WaitSignal.Enabled() {
+						t.Errorf("waitSignal should be disabled but was not: %v", c.WaitSignal)
+					}
+				},
+			},
+		},
+		{
+			context: "WithWaitSignalEnabled",
+			configYaml: minimalValidConfigYaml + `
+waitSignal:
+  enabled: true
+`,
+			assertConfig: []ConfigTester{
+				hasDefaultEtcdSettings,
+				func(c *config.Config, t *testing.T) {
+					if !c.WaitSignal.Enabled() {
+						t.Errorf("waitSignal should be enabled but was not: %v", c.WaitSignal)
+					}
+				},
+			},
+		},
+		{
+			context: "WithNodePoolWithWaitSignalDisabled",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  nodePools:
+  - name: pool1
+    waitSignal:
+      enabled: false
+  - name: pool2
+    waitSignal:
+      enabled: false
+      maxBatchSize: 2
+`,
+			assertConfig: []ConfigTester{
+				hasDefaultEtcdSettings,
+				func(c *config.Config, t *testing.T) {
+					if c.NodePools[0].WaitSignal.Enabled() {
+						t.Errorf("waitSignal should be disabled for node pool at index %d but was not", 0)
+					}
+					if c.NodePools[1].WaitSignal.Enabled() {
+						t.Errorf("waitSignal should be disabled for node pool at index %d but was not", 1)
+					}
+				},
+			},
+		},
+		{
 			context: "WithNodePoolWithWaitSignalEnabled",
 			configYaml: minimalValidConfigYaml + `
 worker:
@@ -1141,16 +1196,16 @@ worker:
 			assertConfig: []ConfigTester{
 				hasDefaultEtcdSettings,
 				func(c *config.Config, t *testing.T) {
-					if !c.NodePools[0].WaitSignal.Enabled {
+					if !c.NodePools[0].WaitSignal.Enabled() {
 						t.Errorf("waitSignal should be enabled for node pool at index %d but was not", 0)
 					}
-					if c.NodePools[0].WaitSignal.MaxBatchSize != 1 {
+					if c.NodePools[0].WaitSignal.MaxBatchSize() != 1 {
 						t.Errorf("waitSignal.maxBatchSize should be 1 for node pool at index %d but was %d", 0, c.NodePools[0].WaitSignal.MaxBatchSize)
 					}
-					if !c.NodePools[1].WaitSignal.Enabled {
+					if !c.NodePools[1].WaitSignal.Enabled() {
 						t.Errorf("waitSignal should be enabled for node pool at index %d but was not", 1)
 					}
-					if c.NodePools[1].WaitSignal.MaxBatchSize != 2 {
+					if c.NodePools[1].WaitSignal.MaxBatchSize() != 2 {
 						t.Errorf("waitSignal.maxBatchSize should be 2 for node pool at index %d but was %d", 1, c.NodePools[1].WaitSignal.MaxBatchSize)
 					}
 				},

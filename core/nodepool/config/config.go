@@ -82,7 +82,8 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 	stackConfig.S3URI = fmt.Sprintf("%s/kube-aws/clusters/%s/exported/stacks", baseS3URI, c.ClusterName)
 
 	if opts.SkipWait {
-		stackConfig.WaitSignal.Enabled = false
+		enabled := false
+		stackConfig.WaitSignal.EnabledOverride = &enabled
 	}
 
 	return &stackConfig, nil
@@ -91,14 +92,6 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 func newDefaultCluster() *ProvidedConfig {
 	return &ProvidedConfig{
 		WorkerNodePoolConfig: NewWorkerNodePoolConfig(),
-		DeploymentSettings: DeploymentSettings{
-			DeploymentSettings: cfg.DeploymentSettings{
-				WaitSignal: cfg.WaitSignal{
-					Enabled:      true,
-					MaxBatchSize: 1,
-				},
-			},
-		},
 	}
 }
 
@@ -125,11 +118,9 @@ func (c *ProvidedConfig) Load(main *cfg.Config) error {
 	if c.Count == nil {
 		c.Count = defaults.Count
 	}
-	if !c.WaitSignal.Enabled {
-		c.WaitSignal = defaults.WaitSignal
-	}
 	if c.SpotFleet.Enabled() {
-		c.WaitSignal.Enabled = false
+		enabled := false
+		c.WaitSignal.EnabledOverride = &enabled
 	}
 
 	c.WorkerNodePoolConfig = c.WorkerNodePoolConfig.WithDefaultsFrom(main.DefaultWorkerSettings)

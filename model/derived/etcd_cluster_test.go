@@ -65,7 +65,7 @@ func TestEtcdClusterDNSNames(t *testing.T) {
 		t.Run("us-east-1", func(t *testing.T) {
 			cluster := NewEtcdCluster(config, usEast1, etcdNet, etcdCount)
 			actual := cluster.DNSNames()
-			expected := []string{"*.us-east-1.compute.amazonaws.com"}
+			expected := []string{"*.compute-1.amazonaws.com"}
 			if !reflect.DeepEqual(actual, expected) {
 				t.Errorf("invalid dns names: expecetd=%v, got=%v", expected, actual)
 			}

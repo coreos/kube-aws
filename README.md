@@ -131,7 +131,7 @@ make format
 
 ### Modifying Templates
 
-The various templates are located in the `config/templates/` and the `nodepool/config/templates/` directory of the source repo. `go generate` is used to pack these templates into the source code. In order for changes to templates to be reflected in the source code:
+The various templates are located in the `core/controlplane/config/templates/` and the `core/nodepool/config/templates/` directory of the source repo. `go generate` is used to pack these templates into the source code. In order for changes to templates to be reflected in the source code:
 
 ```sh
 make build

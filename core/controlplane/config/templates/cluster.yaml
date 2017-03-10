@@ -110,7 +110,7 @@ worker:
 #      # Number of worker nodes to create for an autoscaling group based pool
 #      count: 1
 #      # If omitted, public subnets are created by kube-aws and used for worker nodes
-#      subnet:
+#      subnets:
 #      - # References subnets defined under the top-level `subnets` key by their names
 #        name: ManagedPublicSubnet1
 #      # Auto Scaling Group definition for workers. If only `workerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
@@ -179,14 +179,14 @@ worker:
 #          instanceType: c4.xlarge
 #
 #    #  # Additional EBS volumes mounted on the worker
-#    #  # No additional EBS volume by default. All parameter values do not default - they must be explicitly defined
+#    #  # No additional EBS volumes by default. All parameter values do not default - they must be explicitly defined
 #    #  volumeMounts:
 #    #  - type: "gp2"
 #    #    iops: 0
-#    #    sizeGb: 30
+#    #    size: 30
 #    #    # Follow the aws convention of '/dev/xvd*' where '*' is a single letter from 'f' to 'z'
 #    #    device: "/dev/xvdf"
-#    #    mountPath: "/ebs"
+#    #    path: "/ebs"
 #      # Used to provide `/etc/environment` env vars with values from arbitrary CloudFormation refs
 #      awsEnvironment:
 #        enabled: true
@@ -202,6 +202,13 @@ worker:
 #      # This option has not yet been tested with rkt as container runtime
 #      ephemeralImageStorage:
 #        enabled: true
+#
+#      # Existing "glue" security groups attached to worker nodes which are typically used to allow
+#      # access from worker nodes to services running on an existing infrastructure
+#      securityGroupIds:
+#        - sg-1234abcd
+#        - sg-5678efab
+#
 #      # When enabled it will grant sts:assumeRole permission to the IAM roles for worker nodes.
 #      # This is intended to be used in combination with managedIamRoleName. See #297 for more information.
 #      kube2IamSupport:
@@ -281,11 +288,6 @@ worker:
 
 # Price (Dollars) to bid for spot instances. Omit for on-demand instances.
 # workerSpotPrice: "0.05"
-
-# Existing "glue" security groups attached to worker nodes which are typically used to allow access from worker nodes to services running on an existing infrastructure
-# workerSecurityGroupIds:
-#   - sg-1234abcd
-#   - sg-5678efab
 
 ## Etcd Cluster config
 ## WARNING: Any changes to etcd parameters after the cluster is first created will not be applied
@@ -590,7 +592,7 @@ worker:
 #tlsCertDurationDays: 365
 
 # Version of hyperkube image to use. This is the tag for the hyperkube image repository.
-# kubernetesVersion: v1.5.3_coreos.0
+# kubernetesVersion: v1.5.4_coreos.0
 
 # Hyperkube image repository to use.
 # hyperkubeImageRepo: quay.io/coreos/hyperkube

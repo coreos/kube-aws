@@ -28,6 +28,9 @@ func (r regionImpl) PrivateDomainName() string {
 }
 
 func (r regionImpl) PublicDomainName() string {
+	if r.name == "us-east-1" {
+		return "compute-1.amazonaws.com"
+	}
 	return fmt.Sprintf("%s.compute.amazonaws.com", r.name)
 }
 
