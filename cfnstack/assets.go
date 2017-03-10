@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-	"log"
 )
 
 type Assets interface {
@@ -138,7 +137,6 @@ func (l AssetLocation) URL() string {
 	} else {
 		url = fmt.Sprintf("https://s3.amazonaws.com/%s/%s", l.Bucket, l.Key)
 	}
-	log.Printf("Using S3 URL: %s on region: %s", url, l.S3Region)
 	return url
 }
 
