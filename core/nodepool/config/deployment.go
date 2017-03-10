@@ -95,6 +95,7 @@ func (c DeploymentSettings) WithDefaultsFrom(main cfg.DeploymentSettings) Deploy
 	c.HyperkubeImage.Tag = c.K8sVer
 	c.AWSCliImage.MergeIfEmpty(main.AWSCliImage)
 	c.CalicoCtlImage.MergeIfEmpty(main.CalicoCtlImage)
+	c.PauseImage.MergeIfEmpty(main.PauseImage)
 
 	if len(c.SSHAuthorizedKeys) == 0 {
 		c.SSHAuthorizedKeys = main.SSHAuthorizedKeys

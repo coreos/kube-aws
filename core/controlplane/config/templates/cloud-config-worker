@@ -423,7 +423,7 @@ ssh_authorized_keys:
         Restart=on-failure
         RemainAfterExit=true
         ExecStartPre=/usr/bin/docker pull {{.PauseImage.RepoWithTag}}
-        ExecStart=/usr/bin/docker tag  {{.PauseImage.RepoWithTag}} gcr.io/google_containers/pause-amd64:3.0
+        ExecStart=/usr/bin/docker tag {{.PauseImage.RepoWithTag}} gcr.io/google_containers/pause-amd64:3.0
 {{end}}
 write_files:
 {{if .AwsEnvironment.Enabled}}
