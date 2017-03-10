@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+
 	cfg "github.com/coreos/kube-aws/core/controlplane/config"
 )
 
@@ -91,17 +92,17 @@ func (c DeploymentSettings) WithDefaultsFrom(main cfg.DeploymentSettings) Deploy
 
 	if c.HyperkubeImage.Repo == "" {
 		c.HyperkubeImage.Repo = main.HyperkubeImage.Repo
-		c.HyperkubeImage.IsDockerRepo = main.HyperkubeImage.IsDockerRepo
+		c.HyperkubeImage.RktPullDocker = main.HyperkubeImage.RktPullDocker
 	}
 
 	if c.AWSCliImage.Repo == "" {
 		c.AWSCliImage.Repo = main.AWSCliImage.Repo
-		c.AWSCliImage.IsDockerRepo = main.AWSCliImage.IsDockerRepo
+		c.AWSCliImage.RktPullDocker = main.AWSCliImage.RktPullDocker
 	}
 
 	if c.CalicoCtlImage.Repo == "" {
 		c.CalicoCtlImage.Repo = main.CalicoCtlImage.Repo
-		c.CalicoCtlImage.IsDockerRepo = main.CalicoCtlImage.IsDockerRepo
+		c.CalicoCtlImage.RktPullDocker = main.CalicoCtlImage.RktPullDocker
 	}
 
 	if c.AWSCliTag == "" {

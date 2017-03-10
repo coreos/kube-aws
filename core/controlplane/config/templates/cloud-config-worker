@@ -101,9 +101,9 @@ coreos:
         [Service]
         EnvironmentFile=-/etc/etcd-environment
         Environment=KUBELET_VERSION={{.K8sVer}}
-        Environment=KUBELET_ACI={{ if .HyperkubeImage.IsDockerRepo }}docker://{{ end }}{{.HyperkubeImage.Repo}}
+        Environment=KUBELET_ACI={{ if .HyperkubeImage.RktPullDocker }}docker://{{ end }}{{.HyperkubeImage.Repo}}
         Environment="RKT_OPTS=--volume dns,kind=host,source=/etc/resolv.conf \
-        {{- if .HyperkubeImage.IsDockerRepo }}
+        {{- if .HyperkubeImage.RktPullDocker }}
         --insecure-options=image \
         {{- end }}
         --set-env=ETCD_CA_CERT_FILE=/etc/kubernetes/ssl/ca.pem \
@@ -411,7 +411,23 @@ ssh_authorized_keys:
   - {{$sshkey}}
   {{end}}
 {{end}}
+{{if .IsChinaRegion}}
+    - name: pause-amd64.service
+      enable: true
+      command: start
+      runtime: true
+      content: |
+        [Unit]
+        Description=Pull and tag a mirror image for pause-amd64
+        After=docker.service
+        Wants=docker.service
 
+        [Service]
+        Restart=on-failure
+        RemainAfterExit=true
+        ExecStartPre=/usr/bin/docker pull {{.PauseImage.Repo}}
+        ExecStart=/usr/bin/docker tag  {{.PauseImage.Repo}} gcr.io/google_containers/pause-amd64:3.0
+{{end}}
 write_files:
 {{if .AwsEnvironment.Enabled}}
   - path: /opt/bin/set-aws-environment
@@ -428,10 +444,10 @@ write_files:
         --uuid-file-save=/var/run/coreos/set-aws-environment.uuid \
         --net=host \
         --trust-keys-from-https \
-        {{- if .AWSCliImage.IsDockerRepo }}
+        {{- if .AWSCliImage.RktPullDocker }}
         --insecure-options=image \
         {{- end }}
-        {{ if .AWSCliImage.IsDockerRepo }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{ if .AWSCliImage.RktPullDocker }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
           -ec \
           '
             cfn-init -v -c "aws-environment" --region {{.Region}} --resource {{.LogicalName}} --stack '${{.StackNameEnvVarName}}'
@@ -452,10 +468,10 @@ write_files:
         --uuid-file-save=/var/run/coreos/cfn-signal.uuid \
         --net=host \
         --trust-keys-from-https \
-        {{- if .AWSCliImage.IsDockerRepo }}
+        {{- if .AWSCliImage.RktPullDocker }}
         --insecure-options=image \
         {{- end }}
-        {{ if .AWSCliImage.IsDockerRepo }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{ if .AWSCliImage.RktPullDocker }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
           -ec \
           '
             cfn-signal -e 0 --region {{.Region}} --resource {{.LogicalName}} --stack '${{.StackNameEnvVarName}}'
@@ -477,10 +493,10 @@ write_files:
         --uuid-file-save=/var/run/coreos/cfn-etcd-environment.uuid \
         --net=host \
         --trust-keys-from-https \
-        {{- if .AWSCliImage.IsDockerRepo }}
+        {{- if .AWSCliImage.RktPullDocker }}
         --insecure-options=image \
         {{- end }}
-        {{ if .AWSCliImage.IsDockerRepo }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{ if .AWSCliImage.RktPullDocker }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
           -ec \
           '
             cfn-init -v -c "etcd-client" --region {{.Region}} --resource {{.LogicalName}} --stack '${{.StackNameEnvVarName}}'
@@ -546,10 +562,10 @@ write_files:
         --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
         --net=host \
         --trust-keys-from-https \
-        {{- if .AWSCliImage.IsDockerRepo }}
+        {{- if .AWSCliImage.RktPullDocker }}
         --insecure-options=image \
         {{- end }}
-        {{ if .AWSCliImage.IsDockerRepo }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{ if .AWSCliImage.RktPullDocker }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
           -ec \
           'echo decrypting tls assets
            shopt -s nullglob
@@ -586,10 +602,10 @@ write_files:
         --net=host \
         --trust-keys-from-https \
         --insecure-options=ondisk \
-        {{- if .AWSCliImage.IsDockerRepo }}
+        {{- if .AWSCliImage.RktPullDocker }}
         --insecure-options=image \
         {{- end }}
-        {{ if .AWSCliImage.IsDockerRepo }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{ if .AWSCliImage.RktPullDocker }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
           -vxec \
           'echo tagging this spot instance
            instance_id="'$instance_id'"
@@ -617,10 +633,10 @@ write_files:
         --net=host \
         --trust-keys-from-https \
         --insecure-options=ondisk \
-        {{- if .AWSCliImage.IsDockerRepo }}
+        {{- if .AWSCliImage.RktPullDocker }}
         --insecure-options=image \
         {{- end }}
-        {{ if .AWSCliImage.IsDockerRepo }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{ if .AWSCliImage.RktPullDocker }}docker://{{ end }}{{.AWSCliImage.Repo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
           -vxec \
           'echo adding this spot instance to load balancers
            instance_id="'$instance_id'"
