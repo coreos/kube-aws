@@ -64,18 +64,19 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 		return nil, fmt.Errorf("failed to generate config : %v", err)
 	}
 
-	if stackConfig.ComputedConfig.IsChinaRegion {
-		rawAssets, _ := cfg.ReadOrCreateUnecryptedCompactTLSAssets(opts.TLSAssetsDir)
-		stackConfig.ComputedConfig.TLSConfig = rawAssets
+	if stackConfig.ManageCertificates {
+		if stackConfig.ComputedConfig.TLSAssetsEncryptionEnabled() {
+			compactAssets, _ := cfg.ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, cfg.KMSConfig{
+				Region:         stackConfig.ComputedConfig.Region,
+				KMSKeyARN:      c.KMSKeyARN,
+				EncryptService: c.providedEncryptService,
+			})
 
-	} else {
-		compactAssets, _ := cfg.ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, cfg.KMSConfig{
-			Region:         stackConfig.ComputedConfig.Region,
-			KMSKeyARN:      c.KMSKeyARN,
-			EncryptService: c.providedEncryptService,
-		})
-
-		stackConfig.ComputedConfig.TLSConfig = compactAssets
+			stackConfig.ComputedConfig.TLSConfig = compactAssets
+		} else {
+			rawAssets, _ := cfg.ReadOrCreateUnecryptedCompactTLSAssets(opts.TLSAssetsDir)
+			stackConfig.ComputedConfig.TLSConfig = rawAssets
+		}
 	}
 
 	if stackConfig.UserDataWorker, err = userdatatemplate.GetString(opts.WorkerTmplFile, stackConfig.ComputedConfig); err != nil {

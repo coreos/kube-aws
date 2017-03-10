@@ -159,6 +159,10 @@ func TestMinimalChinaConfig(t *testing.T) {
 	if !c.IsChinaRegion {
 		t.Error("IsChinaRegion test failed.")
 	}
+
+	if c.TLSAssetsEncryptionEnabled() {
+		t.Error("TLS Assets encryption must be disabled on China.")
+	}
 }
 
 func TestKubernetesServiceIPInference(t *testing.T) {

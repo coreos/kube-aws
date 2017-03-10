@@ -761,13 +761,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	}
 
 	if c.ManageCertificates {
-		if c.IsChinaRegion {
-			rawAssets, err := ReadOrCreateUnecryptedCompactTLSAssets(opts.TLSAssetsDir)
-			if err != nil {
-				return nil, err
-			}
-			stackConfig.Config.TLSConfig = rawAssets
-		} else {
+		if c.TLSAssetsEncryptionEnabled() {
 			var compactAssets *CompactTLSAssets
 			compactAssets, err = ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, KMSConfig{
 				Region:         stackConfig.Config.Region,
@@ -778,6 +772,12 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 				return nil, err
 			}
 			stackConfig.Config.TLSConfig = compactAssets
+		}else {
+			rawAssets, err := ReadOrCreateUnecryptedCompactTLSAssets(opts.TLSAssetsDir)
+			if err != nil {
+				return nil, err
+			}
+			stackConfig.Config.TLSConfig = rawAssets
 		}
 	}
 
@@ -986,7 +986,7 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 	if c.ClusterName == "" {
 		return nil, errors.New("clusterName must be set")
 	}
-	if c.KMSKeyARN == "" && (c.ManageCertificates && !c.IsChinaRegion) {
+	if c.KMSKeyARN == "" && c.TLSAssetsEncryptionEnabled() {
 		return nil, errors.New("kmsKeyArn must be set")
 	}
 
@@ -1085,6 +1085,10 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 	}
 
 	return &DeploymentValidationResult{vpcNet: vpcNet}, nil
+}
+
+func (c DeploymentSettings) TLSAssetsEncryptionEnabled() bool {
+	return c.ManageCertificates && !c.IsChinaRegion
 }
 
 func (s DeploymentSettings) AllSubnets() []model.Subnet {

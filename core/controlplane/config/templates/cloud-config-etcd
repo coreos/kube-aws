@@ -28,7 +28,7 @@ coreos:
       drop-ins:
         - name: 20-etcd2-aws-cluster.conf
           content: |
-            {{- if not .IsChinaRegion}}
+            {{- if .TLSAssetsEncryptionEnabled}}
             [Unit]
             Wants=decrypt-tls-assets.service cfn-etcd-environment.service
             After=decrypt-tls-assets.service cfn-etcd-environment.service
@@ -38,7 +38,7 @@ coreos:
 
             PermissionsStartOnly=true
             ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
-            {{- if not .IsChinaRegion}}
+            {{- if .TLSAssetsEncryptionEnabled}}
             ExecStartPre=/usr/bin/systemctl is-active decrypt-tls-assets.service
             {{- end}}
             ExecStartPre=/usr/bin/chown -R etcd:etcd /var/lib/etcd2
@@ -76,7 +76,7 @@ coreos:
         [Install]
         RequiredBy=var-lib-etcd2.mount
 
-{{if not .IsChinaRegion}}
+{{if .TLSAssetsEncryptionEnabled}}
     - name: decrypt-tls-assets.service
       enable: true
       content: |
@@ -495,23 +495,23 @@ write_files:
 
 {{ if .ManageCertificates }}
 
-  - path: /etc/etcd2/ssl/ca.pem{{if not .IsChinaRegion}}.enc{{end}}
+  - path: /etc/etcd2/ssl/ca.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.CACert}}
 
-  - path: /etc/etcd2/ssl/etcd-key.pem{{if not .IsChinaRegion}}.enc{{end}}
+  - path: /etc/etcd2/ssl/etcd-key.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdKey}}
 
-  - path: /etc/etcd2/ssl/etcd.pem{{if not .IsChinaRegion}}.enc{{end}}
+  - path: /etc/etcd2/ssl/etcd.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdCert}}
 
-  - path: /etc/etcd2/ssl/etcd-client.pem{{if not .IsChinaRegion}}.enc{{end}}
+  - path: /etc/etcd2/ssl/etcd-client.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientCert}}
 
-  - path: /etc/etcd2/ssl/etcd-client-key.pem{{if not .IsChinaRegion}}.enc{{end}}
+  - path: /etc/etcd2/ssl/etcd-client-key.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientKey}}
 

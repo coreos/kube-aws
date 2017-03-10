@@ -219,7 +219,7 @@
                   "Resource":"*"
                 },
                 {{end}}
-                {{if (and (.ManageCertificates) (not .IsChinaRegion))}}
+                {{if .TLSAssetsEncryptionEnabled}}
                 {
                   "Action" : "kms:Decrypt",
                   "Effect" : "Allow",
@@ -270,7 +270,7 @@
         "Policies": [
           {
             "PolicyDocument": {
-              "Statement": [{{if (and (.ManageCertificates) (not .IsChinaRegion))}}
+              "Statement": [{{if .TLSAssetsEncryptionEnabled}}
                 {
                   "Action" : "kms:Decrypt",
                   "Effect" : "Allow",
