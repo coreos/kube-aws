@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"github.com/coreos/kube-aws/model"
 )
 
 type Assets interface {
@@ -100,11 +101,11 @@ func (b *assetsBuilderImpl) Build() Assets {
 	}
 }
 
-func NewAssetsBuilder(stackName string, s3URI string, s3Region string) AssetsBuilder {
+func NewAssetsBuilder(stackName string, s3URI string, region model.Region) AssetsBuilder {
 	return &assetsBuilderImpl{
 		locProvider: AssetLocationProvider{
 			s3URI:     s3URI,
-			s3Region:  s3Region,
+			region:    region,
 			stackName: stackName,
 		},
 		assets: map[AssetID]Asset{},
@@ -118,32 +119,26 @@ type Asset struct {
 
 type AssetLocationProvider struct {
 	s3URI     string
-	s3Region  string
+	region    model.Region
 	stackName string
 }
 
 type AssetLocation struct {
-	ID       AssetID
-	Key      string
-	Bucket   string
-	Path     string
-	S3Region string
+	ID     AssetID
+	Key    string
+	Bucket string
+	Path   string
+	Region model.Region
 }
 
 func (l AssetLocation) URL() string {
-	var url string
-	if strings.HasPrefix(l.S3Region, "cn") {
-		url = fmt.Sprintf("https://s3.cn-north-1.amazonaws.com.cn/%s/%s", l.Bucket, l.Key)
-	} else {
-		url = fmt.Sprintf("https://s3.amazonaws.com/%s/%s", l.Bucket, l.Key)
-	}
-	return url
+	return fmt.Sprintf("%s/%s/%s", l.Region.S3Endpoint(), l.Bucket, l.Key)
 }
 
-func newAssetLocationProvider(stackName string, s3URI string, s3Region string) AssetLocationProvider {
+func newAssetLocationProvider(stackName string, s3URI string, region model.Region) AssetLocationProvider {
 	return AssetLocationProvider{
 		s3URI:     s3URI,
-		s3Region:  s3Region,
+		region:    region,
 		stackName: stackName,
 	}
 }
@@ -170,10 +165,10 @@ func (p AssetLocationProvider) locationFor(filename string) (*AssetLocation, err
 	id := NewAssetID(p.stackName, filename)
 
 	return &AssetLocation{
-		ID:       id,
-		Key:      key,
-		Bucket:   uri.Bucket(),
-		Path:     filepath.Join(relativePathComponents...),
-		S3Region: p.s3Region,
+		ID:     id,
+		Key:    key,
+		Bucket: uri.Bucket(),
+		Path:   filepath.Join(relativePathComponents...),
+		Region: p.region,
 	}, nil
 }

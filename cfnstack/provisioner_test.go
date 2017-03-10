@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"testing"
+	"github.com/coreos/kube-aws/model"
 )
 
 type dummyS3ObjectPutterService struct {
@@ -69,7 +70,6 @@ func (s3Svc dummyS3ObjectPutterService) PutObject(input *s3.PutObjectInput) (*s3
 func TestUploadTemplateWithDirectory(t *testing.T) {
 	body := "{}"
 	s3URI := "s3://mybucket/mykey"
-	s3Region := "us-east-1"
 	s3Svc := dummyS3ObjectPutterService{
 		ExpectedBucket:        "mybucket",
 		ExpectedKey:           "mykey/test-cluster-name/stack.json",
@@ -78,7 +78,7 @@ func TestUploadTemplateWithDirectory(t *testing.T) {
 		ExpectedBody:          body,
 	}
 
-	provisioner := NewProvisioner("test-cluster-name", map[string]string{}, s3URI, s3Region, body, nil)
+	provisioner := NewProvisioner("test-cluster-name", map[string]string{}, s3URI, model.RegionForName("us-east-1"), body, nil)
 
 	suppliedURL, err := provisioner.uploadFile(s3Svc, body, "stack.json")
 
@@ -95,7 +95,6 @@ func TestUploadTemplateWithDirectory(t *testing.T) {
 func TestUploadTemplateWithDirectoryOnChina(t *testing.T) {
 	body := "{}"
 	s3URI := "s3://mybucket/mykey"
-	s3Region := "cn-north-1"
 	s3Svc := dummyS3ObjectPutterService{
 		ExpectedBucket:        "mybucket",
 		ExpectedKey:           "mykey/test-cluster-name/stack.json",
@@ -104,7 +103,7 @@ func TestUploadTemplateWithDirectoryOnChina(t *testing.T) {
 		ExpectedBody:          body,
 	}
 
-	provisioner := NewProvisioner("test-cluster-name", map[string]string{}, s3URI, s3Region, body, nil)
+	provisioner := NewProvisioner("test-cluster-name", map[string]string{}, s3URI, model.RegionForName("cn-north-1"), body, nil)
 
 	suppliedURL, err := provisioner.uploadFile(s3Svc, body, "stack.json")
 
@@ -121,7 +120,6 @@ func TestUploadTemplateWithDirectoryOnChina(t *testing.T) {
 func TestUploadTemplateWithoutDirectory(t *testing.T) {
 	body := "{}"
 	s3URI := "s3://mybucket"
-	s3Region := "us-east-1"
 	s3Svc := dummyS3ObjectPutterService{
 		ExpectedBucket:        "mybucket",
 		ExpectedKey:           "test-cluster-name/stack.json",
@@ -130,7 +128,7 @@ func TestUploadTemplateWithoutDirectory(t *testing.T) {
 		ExpectedBody:          body,
 	}
 
-	provisioner := NewProvisioner("test-cluster-name", map[string]string{}, s3URI, s3Region, body, nil)
+	provisioner := NewProvisioner("test-cluster-name", map[string]string{}, s3URI, model.RegionForName("us-east-1"), body, nil)
 
 	suppliedURL, err := provisioner.uploadFile(s3Svc, body, "stack.json")
 
@@ -147,7 +145,6 @@ func TestUploadTemplateWithoutDirectory(t *testing.T) {
 func TestUploadTemplateWithoutDirectoryOnChina(t *testing.T) {
 	body := "{}"
 	s3URI := "s3://mybucket"
-	s3Region := "cn-north-1"
 	s3Svc := dummyS3ObjectPutterService{
 		ExpectedBucket:        "mybucket",
 		ExpectedKey:           "test-cluster-name/stack.json",
@@ -156,7 +153,7 @@ func TestUploadTemplateWithoutDirectoryOnChina(t *testing.T) {
 		ExpectedBody:          body,
 	}
 
-	provisioner := NewProvisioner("test-cluster-name", map[string]string{}, s3URI, s3Region, body, nil)
+	provisioner := NewProvisioner("test-cluster-name", map[string]string{}, s3URI, model.RegionForName("cn-north-1"), body, nil)
 
 	suppliedURL, err := provisioner.uploadFile(s3Svc, body, "stack.json")
 

@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"strings"
 	"time"
-	"log"
+	"github.com/coreos/kube-aws/model"
 )
 
 type Provisioner struct {
@@ -18,22 +18,22 @@ type Provisioner struct {
 	stackPolicyBody string
 	session         *session.Session
 	s3URI           string
-	s3Region        string
+	region          model.Region
 }
 
-func NewProvisioner(name string, stackTags map[string]string, s3URI string, s3Region string, stackPolicyBody string, session *session.Session) *Provisioner {
+func NewProvisioner(name string, stackTags map[string]string, s3URI string, region model.Region, stackPolicyBody string, session *session.Session) *Provisioner {
 	return &Provisioner{
 		stackName:       name,
 		stackTags:       stackTags,
 		stackPolicyBody: stackPolicyBody,
 		session:         session,
 		s3URI:           s3URI,
-		s3Region:        s3Region,
+		region:          region,
 	}
 }
 
 func (c *Provisioner) uploadFile(s3Svc S3ObjectPutterService, content string, filename string) (string, error) {
-	locProvider := newAssetLocationProvider(c.stackName, c.s3URI, c.s3Region)
+	locProvider := newAssetLocationProvider(c.stackName, c.s3URI, c.region)
 	loc, err := locProvider.locationFor(filename)
 	if err != nil {
 		return "", err

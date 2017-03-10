@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/coreos/kube-aws/cfnstack"
 	"github.com/coreos/kube-aws/core/controlplane/config"
+	"github.com/coreos/kube-aws/model"
 )
 
 // VERSION set by build script
@@ -136,7 +137,7 @@ func (c *Cluster) Assets() (cfnstack.Assets, error) {
 		return nil, fmt.Errorf("Error while rendering template : %v", err)
 	}
 
-	return cfnstack.NewAssetsBuilder(c.StackName(), c.StackConfig.S3URI, c.StackConfig.Region).
+	return cfnstack.NewAssetsBuilder(c.StackName(), c.StackConfig.S3URI, model.RegionForName(c.StackConfig.Region)).
 		Add("userdata-controller", c.UserDataController).
 		Add("userdata-etcd", c.UserDataEtcd).
 		Add(STACK_TEMPLATE_FILENAME, stackTemplate).
@@ -197,7 +198,7 @@ func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
 		c.StackName(),
 		c.StackTags,
 		c.S3URI,
-		c.Region,
+		model.RegionForName(c.Region),
 		stackPolicyBody,
 		c.session)
 }

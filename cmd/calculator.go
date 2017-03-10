@@ -22,7 +22,6 @@ var (
 	calculatorOpts = struct {
 		awsDebug bool
 		s3URI    string
-		s3Region string
 	}{}
 )
 
@@ -30,7 +29,6 @@ func init() {
 	RootCmd.AddCommand(cmdCalculator)
 	cmdCalculator.Flags().BoolVar(&calculatorOpts.awsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
 	cmdCalculator.Flags().StringVar(&calculatorOpts.s3URI, "s3-uri", "", "When your template is bigger than the cloudformation limit of 51200 bytes, upload the template to the specified location in S3. S3 location expressed as s3://<bucket>/path/to/dir")
-	cmdCalculator.Flags().StringVar(&calculatorOpts.s3Region, "s3-region", "us-east-1", "When your template is bigger than the cloudformation limit of 51200 bytes, upload the template to the specified location in S3. S3 region expressed as 'us-east-1', 'cn-north-1', etc.")
 }
 
 func runCmdCalculator(cmd *cobra.Command, args []string) error {
@@ -39,7 +37,7 @@ func runCmdCalculator(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	opts := root.NewOptions(calculatorOpts.s3URI, calculatorOpts.s3Region, false, false)
+	opts := root.NewOptions(calculatorOpts.s3URI, false, false)
 
 	cluster, err := root.ClusterFromFile(configPath, opts, calculatorOpts.awsDebug)
 	if err != nil {
