@@ -104,12 +104,17 @@ configure() {
 
   ${KUBE_AWS_CMD} render
 
-  ${KUBE_AWS_CMD} validate --s3-uri ${KUBE_AWS_S3_URI}
+  validate
 
   ${KUBE_AWS_CMD} up --export --s3-uri ${KUBE_AWS_S3_URI} --pretty-print
 
   echo Generated configuration files in ${WORK_DIR}:
   find .
+}
+
+validate() {
+  cd ${WORK_DIR}
+  ${KUBE_AWS_CMD} validate --s3-uri ${KUBE_AWS_S3_URI}
 }
 
 customize_cluster_yaml() {

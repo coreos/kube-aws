@@ -28,10 +28,14 @@ func (r regionImpl) PrivateDomainName() string {
 }
 
 func (r regionImpl) PublicDomainName() string {
-	if r.name == "cn-north-1" {
+	switch r.name {
+	case "cn-north-1":
 		return fmt.Sprintf("%s.compute.amazonaws.com.cn", r.name)
+	case "us-east-1":
+		return "compute-1.amazonaws.com"
+	default:
+		return fmt.Sprintf("%s.compute.amazonaws.com", r.name)
 	}
-	return fmt.Sprintf("%s.compute.amazonaws.com", r.name)
 }
 
 func (r regionImpl) String() string {

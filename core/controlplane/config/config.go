@@ -84,7 +84,7 @@ func NewDefaultCluster() *Cluster {
 			ClusterName:                 "kubernetes",
 			VPCCIDR:                     "10.0.0.0/16",
 			ReleaseChannel:              "stable",
-			K8sVer:                      "v1.5.3_coreos.0",
+			K8sVer:                      "v1.5.4_coreos.0",
 			AWSCliTag:                   "master",
 			ContainerRuntime:            "docker",
 			Subnets:                     []model.Subnet{},
@@ -92,7 +92,6 @@ func NewDefaultCluster() *Cluster {
 			MapPublicIPs:                true,
 			Experimental:                experimental,
 			ManageCertificates:          true,
-			WaitSignal:                  WaitSignal{Enabled: true, MaxBatchSize: 1},
 			HyperkubeImage:              Image{Repo: "quay.io/coreos/hyperkube", RktPullDocker: false},
 			AWSCliImage:                 Image{Repo: "quay.io/coreos/awscli", RktPullDocker: false},
 			CalicoNodeImage:             Image{Repo: "quay.io/calico/node:v1.0.2", RktPullDocker: false},
@@ -569,25 +568,24 @@ func (t Taint) String() string {
 }
 
 type WaitSignal struct {
-	Enabled      bool `yaml:"enabled"`
-	MaxBatchSize int  `yaml:"maxBatchSize"`
+	// WaitSignal is enabled by default. If you'd like to explicitly disable it, set this to `false`.
+	// Keeping this `nil` results in the WaitSignal to be enabled.
+	EnabledOverride      *bool `yaml:"enabled"`
+	MaxBatchSizeOverride *int  `yaml:"maxBatchSize"`
 }
 
-func (s *WaitSignal) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	aux := struct {
-		Enabled      bool `yaml:"enabled"`
-		MaxBatchSize int  `yaml:"maxBatchSize"`
-	}{
-		Enabled:      true,
-		MaxBatchSize: 1,
+func (s WaitSignal) Enabled() bool {
+	if s.EnabledOverride != nil {
+		return *s.EnabledOverride
 	}
-	if err := unmarshal(&aux); err != nil {
-		return err
-	}
+	return true
+}
 
-	s.Enabled = aux.Enabled
-	s.MaxBatchSize = aux.MaxBatchSize
-	return nil
+func (s WaitSignal) MaxBatchSize() int {
+	if s.MaxBatchSizeOverride != nil {
+		return *s.MaxBatchSizeOverride
+	}
+	return 1
 }
 
 const (
@@ -760,7 +758,8 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	stackConfig.S3URI = fmt.Sprintf("%s/kube-aws/clusters/%s/exported/stacks", baseS3URI, c.ClusterName)
 
 	if opts.SkipWait {
-		stackConfig.WaitSignal.Enabled = false
+		enabled := false
+		stackConfig.WaitSignal.EnabledOverride = &enabled
 	}
 
 	return &stackConfig, nil
