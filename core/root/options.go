@@ -24,8 +24,8 @@ func NewOptions(s3URI string, prettyPrint bool, skipWait bool) options {
 		ControlPlaneStackTemplateTmplFile: defaults.ControlPlaneStackTemplateTmplFile,
 		NodePoolStackTemplateTmplFile:     defaults.NodePoolStackTemplateTmplFile,
 		RootStackTemplateTmplFile:         defaults.RootStackTemplateTmplFile,
-		S3URI:                             s3URI,
-		SkipWait:                          skipWait,
-		PrettyPrint:                       prettyPrint,
+		S3URI:       s3URI,
+		SkipWait:    skipWait,
+		PrettyPrint: prettyPrint,
 	}
 }

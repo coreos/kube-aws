@@ -2,9 +2,9 @@ package cfnstack
 
 import (
 	"fmt"
+	"github.com/coreos/kube-aws/model"
 	"path/filepath"
 	"strings"
-	"github.com/coreos/kube-aws/model"
 )
 
 type Assets interface {

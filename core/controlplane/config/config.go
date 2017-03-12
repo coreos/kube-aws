@@ -772,7 +772,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 				return nil, err
 			}
 			stackConfig.Config.TLSConfig = compactAssets
-		}else {
+		} else {
 			rawAssets, err := ReadOrCreateUnecryptedCompactTLSAssets(opts.TLSAssetsDir)
 			if err != nil {
 				return nil, err

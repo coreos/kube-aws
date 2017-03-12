@@ -11,8 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/coreos/kube-aws/cfnstack"
 	"github.com/coreos/kube-aws/core/nodepool/config"
-	"text/tabwriter"
 	"github.com/coreos/kube-aws/model"
+	"text/tabwriter"
 )
 
 const STACK_TEMPLATE_FILENAME = "stack.json"

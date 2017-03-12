@@ -14,11 +14,11 @@ import (
 	"github.com/coreos/kube-aws/core/root/config"
 	"github.com/coreos/kube-aws/core/root/defaults"
 	"github.com/coreos/kube-aws/filereader/jsontemplate"
+	"github.com/coreos/kube-aws/model"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-	"github.com/coreos/kube-aws/model"
 )
 
 const (

@@ -34,9 +34,9 @@ type ProvidedConfig struct {
 	WorkerNodePoolConfig    `yaml:",inline"`
 	DeploymentSettings      `yaml:",inline"`
 	cfg.Experimental        `yaml:",inline"`
-	Private                bool   `yaml:"private,omitempty"`
-	NodePoolName           string `yaml:"name,omitempty"`
-	providedEncryptService cfg.EncryptService
+	Private                 bool   `yaml:"private,omitempty"`
+	NodePoolName            string `yaml:"name,omitempty"`
+	providedEncryptService  cfg.EncryptService
 }
 
 type DeploymentSettings struct {

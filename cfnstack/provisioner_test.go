@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"testing"
 	"github.com/coreos/kube-aws/model"
+	"testing"
 )
 
 type dummyS3ObjectPutterService struct {
