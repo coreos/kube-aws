@@ -93,21 +93,21 @@ func NewDefaultCluster() *Cluster {
 			MapPublicIPs:                true,
 			Experimental:                experimental,
 			ManageCertificates:          true,
-			HyperkubeImage:              Image{Repo: "quay.io/coreos/hyperkube", Tag: k8sVer, RktPullDocker: false},
-			AWSCliImage:                 Image{Repo: "quay.io/coreos/awscli", Tag: "master", RktPullDocker: false},
-			CalicoNodeImage:             Image{Repo: "quay.io/calico/node", Tag: "v1.0.2", RktPullDocker: false},
-			CalicoCniImage:              Image{Repo: "quay.io/calico/cni", Tag: "v1.5.6", RktPullDocker: false},
-			CalicoPolicyControllerImage: Image{Repo: "quay.io/calico/kube-policy-controller", Tag: "v0.5.2", RktPullDocker: false},
-			ClusterAutoscalerImage:      Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64", Tag: "1.0.0", RktPullDocker: false},
-			KubeDnsImage:                Image{Repo: "gcr.io/google_containers/kubedns-amd64", Tag: "1.9", RktPullDocker: false},
-			KubeDnsMasqImage:            Image{Repo: "gcr.io/google_containers/kube-dnsmasq-amd64", Tag: "1.4", RktPullDocker: false},
-			DnsMasqMetricsImage:         Image{Repo: "gcr.io/google_containers/dnsmasq-metrics-amd64", Tag: "1.0", RktPullDocker: false},
-			ExecHealthzImage:            Image{Repo: "gcr.io/google_containers/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
-			HeapsterImage:               Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.2.0", RktPullDocker: false},
-			AddonResizerImage:           Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "1.6", RktPullDocker: false},
-			KubeDashboardImage:          Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.5.1", RktPullDocker: false},
-			CalicoCtlImage:              Image{Repo: "calico/ctl", Tag: "v1.0.0", RktPullDocker: false},
-			PauseImage:                  Image{Repo: "gcr.io/google_containers/pause-amd64", Tag: "3.0", RktPullDocker: false},
+			HyperkubeImage:              model.Image{Repo: "quay.io/coreos/hyperkube", Tag: k8sVer, RktPullDocker: false},
+			AWSCliImage:                 model.Image{Repo: "quay.io/coreos/awscli", Tag: "master", RktPullDocker: false},
+			CalicoNodeImage:             model.Image{Repo: "quay.io/calico/node", Tag: "v1.0.2", RktPullDocker: false},
+			CalicoCniImage:              model.Image{Repo: "quay.io/calico/cni", Tag: "v1.5.6", RktPullDocker: false},
+			CalicoPolicyControllerImage: model.Image{Repo: "quay.io/calico/kube-policy-controller", Tag: "v0.5.2", RktPullDocker: false},
+			ClusterAutoscalerImage:      model.Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64", Tag: "1.0.0", RktPullDocker: false},
+			KubeDnsImage:                model.Image{Repo: "gcr.io/google_containers/kubedns-amd64", Tag: "1.9", RktPullDocker: false},
+			KubeDnsMasqImage:            model.Image{Repo: "gcr.io/google_containers/kube-dnsmasq-amd64", Tag: "1.4", RktPullDocker: false},
+			DnsMasqMetricsImage:         model.Image{Repo: "gcr.io/google_containers/dnsmasq-metrics-amd64", Tag: "1.0", RktPullDocker: false},
+			ExecHealthzImage:            model.Image{Repo: "gcr.io/google_containers/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
+			HeapsterImage:               model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.2.0", RktPullDocker: false},
+			AddonResizerImage:           model.Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "1.6", RktPullDocker: false},
+			KubeDashboardImage:          model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.5.1", RktPullDocker: false},
+			CalicoCtlImage:              model.Image{Repo: "calico/ctl", Tag: "v1.0.0", RktPullDocker: false},
+			PauseImage:                  model.Image{Repo: "gcr.io/google_containers/pause-amd64", Tag: "3.0", RktPullDocker: false},
 		},
 		KubeClusterSettings: KubeClusterSettings{
 			DNSServiceIP: "10.3.0.10",
@@ -370,21 +370,21 @@ type DeploymentSettings struct {
 	WaitSignal          WaitSignal        `yaml:"waitSignal"`
 
 	// Images repository
-	HyperkubeImage              Image `yaml:"hyperkubeImage,omitempty"`
-	AWSCliImage                 Image `yaml:"awsCliImage,omitempty"`
-	CalicoNodeImage             Image `yaml:"calicoNodeImage,omitempty"`
-	CalicoCniImage              Image `yaml:"calicoCniImage,omitempty"`
-	CalicoCtlImage              Image `yaml:"calicoCtlImage,omitempty"`
-	CalicoPolicyControllerImage Image `yaml:"calicoPolicyControllerImage,omitempty"`
-	ClusterAutoscalerImage      Image `yaml:"clusterAutoscalerImage,omitempty"`
-	KubeDnsImage                Image `yaml:"kubeDnsImage,omitempty"`
-	KubeDnsMasqImage            Image `yaml:"kubeDnsMasqImage,omitempty"`
-	DnsMasqMetricsImage         Image `yaml:"dnsMasqMetricsImage,omitempty"`
-	ExecHealthzImage            Image `yaml:"execHealthzImage,omitempty"`
-	HeapsterImage               Image `yaml:"heapsterImage,omitempty"`
-	AddonResizerImage           Image `yaml:"addonResizerImage,omitempty"`
-	KubeDashboardImage          Image `yaml:"kubeDashboardImage,omitempty"`
-	PauseImage                  Image `yaml:"pauseImage,omitempty"`
+	HyperkubeImage              model.Image `yaml:"hyperkubeImage,omitempty"`
+	AWSCliImage                 model.Image `yaml:"awsCliImage,omitempty"`
+	CalicoNodeImage             model.Image `yaml:"calicoNodeImage,omitempty"`
+	CalicoCniImage              model.Image `yaml:"calicoCniImage,omitempty"`
+	CalicoCtlImage              model.Image `yaml:"calicoCtlImage,omitempty"`
+	CalicoPolicyControllerImage model.Image `yaml:"calicoPolicyControllerImage,omitempty"`
+	ClusterAutoscalerImage      model.Image `yaml:"clusterAutoscalerImage,omitempty"`
+	KubeDnsImage                model.Image `yaml:"kubeDnsImage,omitempty"`
+	KubeDnsMasqImage            model.Image `yaml:"kubeDnsMasqImage,omitempty"`
+	DnsMasqMetricsImage         model.Image `yaml:"dnsMasqMetricsImage,omitempty"`
+	ExecHealthzImage            model.Image `yaml:"execHealthzImage,omitempty"`
+	HeapsterImage               model.Image `yaml:"heapsterImage,omitempty"`
+	AddonResizerImage           model.Image `yaml:"addonResizerImage,omitempty"`
+	KubeDashboardImage          model.Image `yaml:"kubeDashboardImage,omitempty"`
+	PauseImage                  model.Image `yaml:"pauseImage,omitempty"`
 }
 
 // Part of configuration which is specific to worker nodes
@@ -466,45 +466,6 @@ type Experimental struct {
 	NodeLabels               NodeLabels               `yaml:"nodeLabels"`
 	Plugins                  Plugins                  `yaml:"plugins"`
 	Taints                   []Taint                  `yaml:"taints"`
-}
-
-type Image struct {
-	Repo          string `yaml:"repo,omitempty"`
-	RktPullDocker bool   `yaml:"rktPullDocker,omitempty"`
-	Tag           string `yaml:"tag,omitempty"`
-}
-
-func (i *Image) MergeIfEmpty(other Image) {
-	if i.Repo == "" || i.Tag == "" {
-		i.Repo = other.Repo
-		i.Tag = other.Tag
-		i.RktPullDocker = other.RktPullDocker
-	}
-}
-
-func (i *Image) Options() string {
-	if i.RktPullDocker {
-		return "--insecure-options=image "
-	}
-	return ""
-}
-
-func (i *Image) RktRepo() string {
-	if i.RktPullDocker {
-		return fmt.Sprintf("docker://%s:%s", i.Repo, i.Tag)
-	}
-	return fmt.Sprintf("%s:%s", i.Repo, i.Tag)
-}
-
-func (i *Image) RktRepoWithoutTag() string {
-	if i.RktPullDocker {
-		return fmt.Sprintf("docker://%s", i.Repo)
-	}
-	return i.Repo
-}
-
-func (i *Image) RepoWithTag() string {
-	return fmt.Sprintf("%s:%s", i.Repo, i.Tag)
 }
 
 type Admission struct {
