@@ -6,11 +6,11 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"github.com/coreos/kube-aws/model"
 	"github.com/coreos/kube-aws/test/helper"
 	"os"
 	"path/filepath"
 	"reflect"
-	"github.com/coreos/kube-aws/model"
 )
 
 func genTLSAssets(t *testing.T) *RawTLSAssets {

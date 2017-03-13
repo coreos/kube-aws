@@ -14,9 +14,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/coreos/kube-aws/gzipcompressor"
+	"github.com/coreos/kube-aws/model"
 	"github.com/coreos/kube-aws/netutil"
 	"github.com/coreos/kube-aws/tlsutil"
-	"github.com/coreos/kube-aws/model"
 )
 
 // PEM encoded TLS assets.

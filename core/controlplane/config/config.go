@@ -327,7 +327,7 @@ type KubeClusterSettings struct {
 
 // Part of configuration which can't be provided via user input but is computed from user input
 type ComputedDeploymentSettings struct {
-	AMI           string
+	AMI string
 }
 
 // Part of configuration which can be customized for each type/group of nodes(etcd/controller/worker/) by its nature.
@@ -342,15 +342,15 @@ type ComputedDeploymentSettings struct {
 // Though it is highly configurable, it's basically users' responsibility to provide `correct` values if they're going beyond the defaults.
 type DeploymentSettings struct {
 	ComputedDeploymentSettings
-	ClusterName       string `yaml:"clusterName,omitempty"`
-	KeyName           string `yaml:"keyName,omitempty"`
+	ClusterName       string       `yaml:"clusterName,omitempty"`
+	KeyName           string       `yaml:"keyName,omitempty"`
 	Region            model.Region `yaml:",inline"`
-	AvailabilityZone  string `yaml:"availabilityZone,omitempty"`
-	ReleaseChannel    string `yaml:"releaseChannel,omitempty"`
-	AmiId             string `yaml:"amiId,omitempty"`
-	VPCID             string `yaml:"vpcId,omitempty"`
-	InternetGatewayID string `yaml:"internetGatewayId,omitempty"`
-	RouteTableID      string `yaml:"routeTableId,omitempty"`
+	AvailabilityZone  string       `yaml:"availabilityZone,omitempty"`
+	ReleaseChannel    string       `yaml:"releaseChannel,omitempty"`
+	AmiId             string       `yaml:"amiId,omitempty"`
+	VPCID             string       `yaml:"vpcId,omitempty"`
+	InternetGatewayID string       `yaml:"internetGatewayId,omitempty"`
+	RouteTableID      string       `yaml:"routeTableId,omitempty"`
 	// Required for validations like e.g. if instance cidr is contained in vpc cidr
 	VPCCIDR             string            `yaml:"vpcCIDR,omitempty"`
 	InstanceCIDR        string            `yaml:"instanceCIDR,omitempty"`
