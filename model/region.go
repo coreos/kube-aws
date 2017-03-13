@@ -2,50 +2,68 @@ package model
 
 import (
 	"fmt"
+	"strings"
 )
 
-type Region interface {
-	PrivateDomainName() string
-	PublicDomainName() string
-	String() string
-	S3Endpoint() string
-}
-
-type regionImpl struct {
-	name string
+type Region struct {
+	Name string `yaml:"region,omitempty"`
 }
 
 func RegionForName(name string) Region {
-	return regionImpl{
-		name: name,
+	return Region{
+		Name: name,
 	}
 }
 
-func (r regionImpl) PrivateDomainName() string {
-	if r.name == "us-east-1" {
+func (r Region) PrivateDomainName() string {
+	if r.Name == "us-east-1" {
 		return "ec2.internal"
 	}
-	return fmt.Sprintf("%s.compute.internal", r.name)
+	return fmt.Sprintf("%s.compute.internal", r.Name)
 }
 
-func (r regionImpl) PublicDomainName() string {
-	switch r.name {
-	case "cn-north-1":
-		return fmt.Sprintf("%s.compute.amazonaws.com.cn", r.name)
+func (r Region) PublicComputeDomainName() string {
+	switch r.Name {
 	case "us-east-1":
-		return "compute-1.amazonaws.com"
+		return fmt.Sprintf("compute-1.%s", r.PublicDomainName())
 	default:
-		return fmt.Sprintf("%s.compute.amazonaws.com", r.name)
+		return fmt.Sprintf("%s.compute.%s", r.Name, r.PublicDomainName())
 	}
 }
 
-func (r regionImpl) String() string {
-	return r.name
+func (r Region) PublicDomainName() string {
+	if r.IsChina() {
+		return "amazonaws.com.cn"
+	}
+	return "amazonaws.com"
 }
 
-func (r regionImpl) S3Endpoint() string {
-	if r.name == "cn-north-1" {
-		return "https://s3.cn-north-1.amazonaws.com.cn"
+func (r Region) String() string {
+	return r.Name
+}
+
+func (r Region) S3Endpoint() string {
+	if r.IsChina() {
+		return fmt.Sprintf("https://s3.%s.amazonaws.com.cn", r.Name)
 	}
 	return "https://s3.amazonaws.com"
+}
+
+func (r Region) Partition() string {
+	if r.IsChina() {
+		return "aws-cn"
+	}
+	return "aws"
+}
+
+func (r Region) IsChina() bool {
+	return strings.HasPrefix(r.Name, "cn-")
+}
+
+func (r Region) IsEmpty() bool {
+	return r.Name == ""
+}
+
+func (r Region) SupportsKMS() bool {
+	return !r.IsChina()
 }

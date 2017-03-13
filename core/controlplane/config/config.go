@@ -212,7 +212,6 @@ func (c *Cluster) Load() error {
 	}
 
 	c.HostedZoneID = withHostedZoneIDPrefix(c.HostedZoneID)
-	c.IsChinaRegion = strings.HasPrefix(c.Region, "cn")
 
 	if err := c.valid(); err != nil {
 		return fmt.Errorf("invalid cluster: %v", err)
@@ -329,7 +328,6 @@ type KubeClusterSettings struct {
 // Part of configuration which can't be provided via user input but is computed from user input
 type ComputedDeploymentSettings struct {
 	AMI           string
-	IsChinaRegion bool
 }
 
 // Part of configuration which can be customized for each type/group of nodes(etcd/controller/worker/) by its nature.
@@ -346,7 +344,7 @@ type DeploymentSettings struct {
 	ComputedDeploymentSettings
 	ClusterName       string `yaml:"clusterName,omitempty"`
 	KeyName           string `yaml:"keyName,omitempty"`
-	Region            string `yaml:"region,omitempty"`
+	Region            model.Region `yaml:",inline"`
 	AvailabilityZone  string `yaml:"availabilityZone,omitempty"`
 	ReleaseChannel    string `yaml:"releaseChannel,omitempty"`
 	AmiId             string `yaml:"amiId,omitempty"`
@@ -648,7 +646,7 @@ func (c Cluster) Config() (*Config, error) {
 
 	if c.AmiId == "" {
 		var err error
-		if config.AMI, err = amiregistry.GetAMI(config.Region, config.ReleaseChannel); err != nil {
+		if config.AMI, err = amiregistry.GetAMI(config.Region.String(), config.ReleaseChannel); err != nil {
 			return nil, fmt.Errorf("failed getting AMI for config: %v", err)
 		}
 	} else {
@@ -672,9 +670,8 @@ func (c Cluster) Config() (*Config, error) {
 }
 
 func (c *Cluster) EtcdCluster() derived.EtcdCluster {
-	region := model.RegionForName(c.Region)
 	etcdNetwork := derived.NewNetwork(c.Etcd.Subnets, c.NATGateways())
-	return derived.NewEtcdCluster(c.Etcd.Cluster, region, etcdNetwork, c.EtcdCount)
+	return derived.NewEtcdCluster(c.Etcd.Cluster, c.Region, etcdNetwork, c.EtcdCount)
 }
 
 // releaseVersionIsGreaterThan will return true if the supplied version is greater then
@@ -955,7 +952,7 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 		return nil, errors.New("vpcId must be specified if routeTableId or internetGatewayId are specified")
 	}
 
-	if c.Region == "" {
+	if c.Region.IsEmpty() {
 		return nil, errors.New("region must be set")
 	}
 
@@ -1049,7 +1046,7 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 }
 
 func (c DeploymentSettings) TLSAssetsEncryptionEnabled() bool {
-	return c.ManageCertificates && !c.IsChinaRegion
+	return c.ManageCertificates && c.Region.SupportsKMS()
 }
 
 func (s DeploymentSettings) AllSubnets() []model.Subnet {

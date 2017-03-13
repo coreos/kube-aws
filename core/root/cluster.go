@@ -14,7 +14,6 @@ import (
 	"github.com/coreos/kube-aws/core/root/config"
 	"github.com/coreos/kube-aws/core/root/defaults"
 	"github.com/coreos/kube-aws/filereader/jsontemplate"
-	"github.com/coreos/kube-aws/model"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -145,7 +144,7 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 		nodePools = append(nodePools, np)
 	}
 	awsConfig := aws.NewConfig().
-		WithRegion(cfg.Region).
+		WithRegion(cfg.Region.String()).
 		WithCredentialsChainVerboseErrors(true)
 
 	if awsDebug {
@@ -221,7 +220,7 @@ func (c clusterImpl) Assets() (cfnstack.Assets, error) {
 		c.controlPlane.ClusterName,
 	)
 
-	assets := cfnstack.NewAssetsBuilder(c.stackName(), s3URI, model.RegionForName(c.controlPlane.Region)).Add(REMOTE_STACK_TEMPLATE_FILENAME, stackTemplate).Build()
+	assets := cfnstack.NewAssetsBuilder(c.stackName(), s3URI, c.controlPlane.Region).Add(REMOTE_STACK_TEMPLATE_FILENAME, stackTemplate).Build()
 
 	cpAssets, err := c.controlPlane.Assets()
 	if err != nil {
@@ -272,7 +271,7 @@ func (c clusterImpl) stackProvisioner() *cfnstack.Provisioner {
 		c.stackName(),
 		c.tags(),
 		c.opts.S3URI,
-		model.RegionForName(c.controlPlane.Region),
+		c.controlPlane.Region,
 		stackPolicyBody,
 		c.session)
 }

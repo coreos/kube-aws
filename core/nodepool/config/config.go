@@ -196,14 +196,12 @@ func (c ProvidedConfig) Config() (*ComputedConfig, error) {
 
 	if c.AmiId == "" {
 		var err error
-		if config.AMI, err = amiregistry.GetAMI(config.Region, config.ReleaseChannel); err != nil {
+		if config.AMI, err = amiregistry.GetAMI(config.Region.String(), config.ReleaseChannel); err != nil {
 			return nil, fmt.Errorf("failed getting AMI for config: %v", err)
 		}
 	} else {
 		config.AMI = c.AmiId
 	}
-
-	config.IsChinaRegion = strings.HasPrefix(config.Region, "cn")
 
 	return &config, nil
 }

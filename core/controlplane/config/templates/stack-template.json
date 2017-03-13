@@ -145,7 +145,7 @@
               "Effect": "Allow",
               "Principal": {
                 "Service": [
-                  "ec2.amazonaws.com{{if .IsChinaRegion}}.cn{{end}}"
+                  "ec2.{{.Region.PublicDomainName}}"
                 ]
               }
             }
@@ -175,7 +175,7 @@
 		  "Action": [
 			"s3:GetObject"
 		  ],
-		  "Resource": "arn:aws{{if .IsChinaRegion}}-cn{{end}}:s3:::{{$.UserDataControllerS3Path}}"
+		  "Resource": "arn:{{.Region.Partition}}:s3:::{{$.UserDataControllerS3Path}}"
 		},
                 {{if .WaitSignal.Enabled}}
                 {
@@ -183,7 +183,7 @@
                   "Effect": "Allow",
                   "Resource":
                     { "Fn::Join": [ "", [
-                      "arn:aws{{if .IsChinaRegion}}-cn{{end}}:cloudformation:",
+                      "arn:{{.Region.Partition}}:cloudformation:",
                       { "Ref": "AWS::Region" },
                       ":",
                       { "Ref": "AWS::AccountId" },
@@ -259,7 +259,7 @@
               "Effect": "Allow",
               "Principal": {
                 "Service": [
-                  "ec2.amazonaws.com{{if .IsChinaRegion}}.cn{{end}}"
+                  "ec2.{{.Region.PublicDomainName}}"
                 ]
               }
             }
@@ -330,7 +330,7 @@
                   "Action": [
                     "s3:GetObject"
                   ],
-                  "Resource": "arn:aws{{if .IsChinaRegion}}-cn{{end}}:s3:::{{$.UserDataEtcdS3Path}}"
+                  "Resource": "arn:{{.Region.Partition}}:s3:::{{$.UserDataEtcdS3Path}}"
                 }
               ],
               "Version": "2012-10-17"

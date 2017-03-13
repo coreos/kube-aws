@@ -408,7 +408,7 @@ ssh_authorized_keys:
   - {{$sshkey}}
   {{end}}
 {{end}}
-{{if .IsChinaRegion}}
+{{if .Region.IsChina}}
     - name: pause-amd64.service
       enable: true
       command: start

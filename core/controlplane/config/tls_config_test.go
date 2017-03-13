@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"github.com/coreos/kube-aws/model"
 )
 
 func genTLSAssets(t *testing.T) *RawTLSAssets {
@@ -111,7 +112,7 @@ func TestReadOrCreateCompactTLSAssets(t *testing.T) {
 	helper.WithDummyCredentials(func(dir string) {
 		kmsConfig := KMSConfig{
 			KMSKeyARN:      "keyarn",
-			Region:         "us-west-1",
+			Region:         model.RegionForName("us-west-1"),
 			EncryptService: &dummyEncryptService{},
 		}
 

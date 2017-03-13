@@ -291,7 +291,7 @@
               "Effect": "Allow",
               "Principal": {
                 "Service": [
-                  "ec2.amazonaws.com{{if .IsChinaRegion}}.cn{{end}}"
+                  "ec2.{{.Region.PublicDomainName}}"
                 ]
               }
             }
@@ -326,7 +326,7 @@
                   "Action": [
                     "s3:GetObject"
                   ],
-                  "Resource": "arn:aws{{if .IsChinaRegion}}-cn{{end}}:s3:::{{$.UserDataWorkerS3Path}}"
+                  "Resource": "arn:{{.Region.Partition}}:s3:::{{$.UserDataWorkerS3Path}}"
                 },
                 {{if .Kube2IamSupport.Enabled }}
                 {
@@ -348,7 +348,7 @@
                   "Effect": "Allow",
                   "Resource":
                     { "Fn::Join": [ "", [
-                      "arn:aws{{if .IsChinaRegion}}-cn{{end}}:cloudformation:",
+                      "arn:{{.Region.Partition}}:cloudformation:",
                       { "Ref": "AWS::Region" },
                       ":",
                       { "Ref": "AWS::AccountId" },

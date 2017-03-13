@@ -44,7 +44,7 @@ func (c DeploymentSettings) ValidateInputs() error {
 	// * ContainerRuntime
 	// * KMSKeyARN
 
-	if c.Region != "" {
+	if !c.Region.IsEmpty() {
 		return fmt.Errorf("although you can't customize `region` per node pool but you did specify \"%s\" in your cluster.yaml", c.Region)
 	}
 	if c.ContainerRuntime != "" {

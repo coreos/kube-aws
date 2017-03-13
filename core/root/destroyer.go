@@ -30,7 +30,7 @@ func ClusterDestroyerFromFile(configPath string, opts DestroyOptions) (ClusterDe
 	stackName := cfg.RootStackName()
 
 	awsConfig := aws.NewConfig().
-		WithRegion(region).
+		WithRegion(region.String()).
 		WithCredentialsChainVerboseErrors(true)
 
 	if opts.AwsDebug {

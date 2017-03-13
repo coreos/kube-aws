@@ -16,6 +16,7 @@ import (
 	"github.com/coreos/kube-aws/gzipcompressor"
 	"github.com/coreos/kube-aws/netutil"
 	"github.com/coreos/kube-aws/tlsutil"
+	"github.com/coreos/kube-aws/model"
 )
 
 // PEM encoded TLS assets.
@@ -384,7 +385,7 @@ func (r *TLSAssets) Compact() (*CompactTLSAssets, error) {
 }
 
 type KMSConfig struct {
-	Region         string
+	Region         model.Region
 	EncryptService EncryptService
 	KMSKeyARN      string
 }
@@ -400,7 +401,7 @@ func ReadOrCreateEncryptedTLSAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*
 		}
 
 		awsConfig := aws.NewConfig().
-			WithRegion(kmsConfig.Region).
+			WithRegion(kmsConfig.Region.String()).
 			WithCredentialsChainVerboseErrors(true)
 
 		// TODO Cleaner way to inject this dependency

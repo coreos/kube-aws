@@ -156,7 +156,7 @@ func TestMinimalChinaConfig(t *testing.T) {
 		t.Errorf("Failed to parse config %s: %v", minimalChinaConfigYaml, err)
 	}
 
-	if !c.IsChinaRegion {
+	if !c.Region.IsChina() {
 		t.Error("IsChinaRegion test failed.")
 	}
 
