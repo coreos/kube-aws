@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
 )
 
 // UseServiceDefaultRetries instructs the config to use the service's own
@@ -21,9 +22,9 @@ type RequestRetryer interface{}
 //
 //     // Create Session with MaxRetry configuration to be shared by multiple
 //     // service clients.
-//     sess, err := session.NewSession(&aws.Config{
+//     sess := session.Must(session.NewSession(&aws.Config{
 //         MaxRetries: aws.Int(3),
-//     })
+//     }))
 //
 //     // Create S3 service client with a specific Region.
 //     svc := s3.New(sess, &aws.Config{
@@ -47,6 +48,10 @@ type Config struct {
 	// @note You must still provide a `Region` value when specifying an
 	//   endpoint for a client.
 	Endpoint *string
+
+	// The resolver to use for looking up endpoints for AWS service clients
+	// to use based on region.
+	EndpointResolver endpoints.Resolver
 
 	// The region to send requests to. This parameter is required and must
 	// be configured globally or on a per-client basis unless otherwise
@@ -149,7 +154,8 @@ type Config struct {
 	// the EC2Metadata overriding the timeout for default credentials chain.
 	//
 	// Example:
-	//    sess, err := session.NewSession(aws.NewConfig().WithEC2MetadataDiableTimeoutOverride(true))
+	//    sess := session.Must(session.NewSession(aws.NewConfig()
+	//       .WithEC2MetadataDiableTimeoutOverride(true)))
 	//
 	//    svc := s3.New(sess)
 	//
@@ -169,7 +175,7 @@ type Config struct {
 	//
 	// Only supported with.
 	//
-	//     sess, err := session.NewSession()
+	//     sess := session.Must(session.NewSession())
 	//
 	//     svc := s3.New(sess, &aws.Config{
 	//         UseDualStack: aws.Bool(true),
@@ -182,6 +188,21 @@ type Config struct {
 	// the delay of a request see the aws/client.DefaultRetryer and
 	// aws/request.Retryer.
 	SleepDelay func(time.Duration)
+
+	// DisableRestProtocolURICleaning will not clean the URL path when making rest protocol requests.
+	// Will default to false. This would only be used for empty directory names in s3 requests.
+	//
+	// Example:
+	//    sess := session.Must(session.NewSession(&aws.Config{
+	//         DisableRestProtocolURICleaning: aws.Bool(true),
+	//    }))
+	//
+	//    svc := s3.New(sess)
+	//    out, err := svc.GetObject(&s3.GetObjectInput {
+	//    	Bucket: aws.String("bucketname"),
+	//    	Key: aws.String("//foo//bar//moo"),
+	//    })
+	DisableRestProtocolURICleaning *bool
 }
 
 // NewConfig returns a new Config pointer that can be chained with builder
@@ -189,9 +210,9 @@ type Config struct {
 //
 //     // Create Session with MaxRetry configuration to be shared by multiple
 //     // service clients.
-//     sess, err := session.NewSession(aws.NewConfig().
+//     sess := session.Must(session.NewSession(aws.NewConfig().
 //         WithMaxRetries(3),
-//     )
+//     ))
 //
 //     // Create S3 service client with a specific Region.
 //     svc := s3.New(sess, aws.NewConfig().
@@ -219,6 +240,13 @@ func (c *Config) WithCredentials(creds *credentials.Credentials) *Config {
 // chaining.
 func (c *Config) WithEndpoint(endpoint string) *Config {
 	c.Endpoint = &endpoint
+	return c
+}
+
+// WithEndpointResolver sets a config EndpointResolver value returning a
+// Config pointer for chaining.
+func (c *Config) WithEndpointResolver(resolver endpoints.Resolver) *Config {
+	c.EndpointResolver = resolver
 	return c
 }
 
@@ -344,6 +372,10 @@ func mergeInConfig(dst *Config, other *Config) {
 		dst.Endpoint = other.Endpoint
 	}
 
+	if other.EndpointResolver != nil {
+		dst.EndpointResolver = other.EndpointResolver
+	}
+
 	if other.Region != nil {
 		dst.Region = other.Region
 	}
@@ -402,6 +434,10 @@ func mergeInConfig(dst *Config, other *Config) {
 
 	if other.SleepDelay != nil {
 		dst.SleepDelay = other.SleepDelay
+	}
+
+	if other.DisableRestProtocolURICleaning != nil {
+		dst.DisableRestProtocolURICleaning = other.DisableRestProtocolURICleaning
 	}
 }
 

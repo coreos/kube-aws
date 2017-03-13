@@ -36,6 +36,7 @@ const opAddTagsToResource = "AddTagsToResource"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/AddTagsToResource
 func (c *CloudHSM) AddTagsToResourceRequest(input *AddTagsToResourceInput) (req *request.Request, output *AddTagsToResourceOutput) {
 	op := &request.Operation{
 		Name:       opAddTagsToResource,
@@ -47,9 +48,8 @@ func (c *CloudHSM) AddTagsToResourceRequest(input *AddTagsToResourceInput) (req 
 		input = &AddTagsToResourceInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &AddTagsToResourceOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -57,8 +57,7 @@ func (c *CloudHSM) AddTagsToResourceRequest(input *AddTagsToResourceInput) (req 
 //
 // Adds or overwrites one or more tags for the specified AWS CloudHSM resource.
 //
-// Each tag consists of a key and a value. Tag keys must be unique to each
-// resource.
+// Each tag consists of a key and a value. Tag keys must be unique to each resource.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -68,15 +67,16 @@ func (c *CloudHSM) AddTagsToResourceRequest(input *AddTagsToResourceInput) (req 
 // API operation AddTagsToResource for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/AddTagsToResource
 func (c *CloudHSM) AddTagsToResource(input *AddTagsToResourceInput) (*AddTagsToResourceOutput, error) {
 	req, out := c.AddTagsToResourceRequest(input)
 	err := req.Send()
@@ -109,6 +109,7 @@ const opCreateHapg = "CreateHapg"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/CreateHapg
 func (c *CloudHSM) CreateHapgRequest(input *CreateHapgInput) (req *request.Request, output *CreateHapgOutput) {
 	op := &request.Operation{
 		Name:       opCreateHapg,
@@ -120,9 +121,8 @@ func (c *CloudHSM) CreateHapgRequest(input *CreateHapgInput) (req *request.Reque
 		input = &CreateHapgInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &CreateHapgOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -139,15 +139,16 @@ func (c *CloudHSM) CreateHapgRequest(input *CreateHapgInput) (req *request.Reque
 // API operation CreateHapg for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/CreateHapg
 func (c *CloudHSM) CreateHapg(input *CreateHapgInput) (*CreateHapgOutput, error) {
 	req, out := c.CreateHapgRequest(input)
 	err := req.Send()
@@ -180,6 +181,7 @@ const opCreateHsm = "CreateHsm"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/CreateHsm
 func (c *CloudHSM) CreateHsmRequest(input *CreateHsmInput) (req *request.Request, output *CreateHsmOutput) {
 	op := &request.Operation{
 		Name:       opCreateHsm,
@@ -191,9 +193,8 @@ func (c *CloudHSM) CreateHsmRequest(input *CreateHsmInput) (req *request.Request
 		input = &CreateHsmInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &CreateHsmOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -207,7 +208,7 @@ func (c *CloudHSM) CreateHsmRequest(input *CreateHsmInput) (req *request.Request
 // the AWS Support Center (https://console.aws.amazon.com/support/home#/), create
 // a new case, and select Account and Billing Support.
 //
-//  It can take up to 20 minutes to create and provision an HSM. You can monitor
+// It can take up to 20 minutes to create and provision an HSM. You can monitor
 // the status of the HSM with the DescribeHsm operation. The HSM is ready to
 // be initialized when the status changes to RUNNING.
 //
@@ -219,15 +220,16 @@ func (c *CloudHSM) CreateHsmRequest(input *CreateHsmInput) (req *request.Request
 // API operation CreateHsm for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/CreateHsm
 func (c *CloudHSM) CreateHsm(input *CreateHsmInput) (*CreateHsmOutput, error) {
 	req, out := c.CreateHsmRequest(input)
 	err := req.Send()
@@ -260,6 +262,7 @@ const opCreateLunaClient = "CreateLunaClient"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/CreateLunaClient
 func (c *CloudHSM) CreateLunaClientRequest(input *CreateLunaClientInput) (req *request.Request, output *CreateLunaClientOutput) {
 	op := &request.Operation{
 		Name:       opCreateLunaClient,
@@ -271,9 +274,8 @@ func (c *CloudHSM) CreateLunaClientRequest(input *CreateLunaClientInput) (req *r
 		input = &CreateLunaClientInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &CreateLunaClientOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -289,15 +291,16 @@ func (c *CloudHSM) CreateLunaClientRequest(input *CreateLunaClientInput) (req *r
 // API operation CreateLunaClient for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/CreateLunaClient
 func (c *CloudHSM) CreateLunaClient(input *CreateLunaClientInput) (*CreateLunaClientOutput, error) {
 	req, out := c.CreateLunaClientRequest(input)
 	err := req.Send()
@@ -330,6 +333,7 @@ const opDeleteHapg = "DeleteHapg"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DeleteHapg
 func (c *CloudHSM) DeleteHapgRequest(input *DeleteHapgInput) (req *request.Request, output *DeleteHapgOutput) {
 	op := &request.Operation{
 		Name:       opDeleteHapg,
@@ -341,9 +345,8 @@ func (c *CloudHSM) DeleteHapgRequest(input *DeleteHapgInput) (req *request.Reque
 		input = &DeleteHapgInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DeleteHapgOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -359,15 +362,16 @@ func (c *CloudHSM) DeleteHapgRequest(input *DeleteHapgInput) (req *request.Reque
 // API operation DeleteHapg for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DeleteHapg
 func (c *CloudHSM) DeleteHapg(input *DeleteHapgInput) (*DeleteHapgOutput, error) {
 	req, out := c.DeleteHapgRequest(input)
 	err := req.Send()
@@ -400,6 +404,7 @@ const opDeleteHsm = "DeleteHsm"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DeleteHsm
 func (c *CloudHSM) DeleteHsmRequest(input *DeleteHsmInput) (req *request.Request, output *DeleteHsmOutput) {
 	op := &request.Operation{
 		Name:       opDeleteHsm,
@@ -411,9 +416,8 @@ func (c *CloudHSM) DeleteHsmRequest(input *DeleteHsmInput) (req *request.Request
 		input = &DeleteHsmInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DeleteHsmOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -430,15 +434,16 @@ func (c *CloudHSM) DeleteHsmRequest(input *DeleteHsmInput) (req *request.Request
 // API operation DeleteHsm for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DeleteHsm
 func (c *CloudHSM) DeleteHsm(input *DeleteHsmInput) (*DeleteHsmOutput, error) {
 	req, out := c.DeleteHsmRequest(input)
 	err := req.Send()
@@ -471,6 +476,7 @@ const opDeleteLunaClient = "DeleteLunaClient"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DeleteLunaClient
 func (c *CloudHSM) DeleteLunaClientRequest(input *DeleteLunaClientInput) (req *request.Request, output *DeleteLunaClientOutput) {
 	op := &request.Operation{
 		Name:       opDeleteLunaClient,
@@ -482,9 +488,8 @@ func (c *CloudHSM) DeleteLunaClientRequest(input *DeleteLunaClientInput) (req *r
 		input = &DeleteLunaClientInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DeleteLunaClientOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -500,15 +505,16 @@ func (c *CloudHSM) DeleteLunaClientRequest(input *DeleteLunaClientInput) (req *r
 // API operation DeleteLunaClient for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DeleteLunaClient
 func (c *CloudHSM) DeleteLunaClient(input *DeleteLunaClientInput) (*DeleteLunaClientOutput, error) {
 	req, out := c.DeleteLunaClientRequest(input)
 	err := req.Send()
@@ -541,6 +547,7 @@ const opDescribeHapg = "DescribeHapg"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DescribeHapg
 func (c *CloudHSM) DescribeHapgRequest(input *DescribeHapgInput) (req *request.Request, output *DescribeHapgOutput) {
 	op := &request.Operation{
 		Name:       opDescribeHapg,
@@ -552,9 +559,8 @@ func (c *CloudHSM) DescribeHapgRequest(input *DescribeHapgInput) (req *request.R
 		input = &DescribeHapgInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeHapgOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -570,15 +576,16 @@ func (c *CloudHSM) DescribeHapgRequest(input *DescribeHapgInput) (req *request.R
 // API operation DescribeHapg for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DescribeHapg
 func (c *CloudHSM) DescribeHapg(input *DescribeHapgInput) (*DescribeHapgOutput, error) {
 	req, out := c.DescribeHapgRequest(input)
 	err := req.Send()
@@ -611,6 +618,7 @@ const opDescribeHsm = "DescribeHsm"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DescribeHsm
 func (c *CloudHSM) DescribeHsmRequest(input *DescribeHsmInput) (req *request.Request, output *DescribeHsmOutput) {
 	op := &request.Operation{
 		Name:       opDescribeHsm,
@@ -622,9 +630,8 @@ func (c *CloudHSM) DescribeHsmRequest(input *DescribeHsmInput) (req *request.Req
 		input = &DescribeHsmInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeHsmOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -641,15 +648,16 @@ func (c *CloudHSM) DescribeHsmRequest(input *DescribeHsmInput) (req *request.Req
 // API operation DescribeHsm for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DescribeHsm
 func (c *CloudHSM) DescribeHsm(input *DescribeHsmInput) (*DescribeHsmOutput, error) {
 	req, out := c.DescribeHsmRequest(input)
 	err := req.Send()
@@ -682,6 +690,7 @@ const opDescribeLunaClient = "DescribeLunaClient"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DescribeLunaClient
 func (c *CloudHSM) DescribeLunaClientRequest(input *DescribeLunaClientInput) (req *request.Request, output *DescribeLunaClientOutput) {
 	op := &request.Operation{
 		Name:       opDescribeLunaClient,
@@ -693,9 +702,8 @@ func (c *CloudHSM) DescribeLunaClientRequest(input *DescribeLunaClientInput) (re
 		input = &DescribeLunaClientInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeLunaClientOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -711,15 +719,16 @@ func (c *CloudHSM) DescribeLunaClientRequest(input *DescribeLunaClientInput) (re
 // API operation DescribeLunaClient for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DescribeLunaClient
 func (c *CloudHSM) DescribeLunaClient(input *DescribeLunaClientInput) (*DescribeLunaClientOutput, error) {
 	req, out := c.DescribeLunaClientRequest(input)
 	err := req.Send()
@@ -752,6 +761,7 @@ const opGetConfig = "GetConfig"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/GetConfig
 func (c *CloudHSM) GetConfigRequest(input *GetConfigInput) (req *request.Request, output *GetConfigOutput) {
 	op := &request.Operation{
 		Name:       opGetConfig,
@@ -763,9 +773,8 @@ func (c *CloudHSM) GetConfigRequest(input *GetConfigInput) (req *request.Request
 		input = &GetConfigInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &GetConfigOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -782,15 +791,16 @@ func (c *CloudHSM) GetConfigRequest(input *GetConfigInput) (req *request.Request
 // API operation GetConfig for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/GetConfig
 func (c *CloudHSM) GetConfig(input *GetConfigInput) (*GetConfigOutput, error) {
 	req, out := c.GetConfigRequest(input)
 	err := req.Send()
@@ -823,6 +833,7 @@ const opListAvailableZones = "ListAvailableZones"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListAvailableZones
 func (c *CloudHSM) ListAvailableZonesRequest(input *ListAvailableZonesInput) (req *request.Request, output *ListAvailableZonesOutput) {
 	op := &request.Operation{
 		Name:       opListAvailableZones,
@@ -834,9 +845,8 @@ func (c *CloudHSM) ListAvailableZonesRequest(input *ListAvailableZonesInput) (re
 		input = &ListAvailableZonesInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ListAvailableZonesOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -852,15 +862,16 @@ func (c *CloudHSM) ListAvailableZonesRequest(input *ListAvailableZonesInput) (re
 // API operation ListAvailableZones for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListAvailableZones
 func (c *CloudHSM) ListAvailableZones(input *ListAvailableZonesInput) (*ListAvailableZonesOutput, error) {
 	req, out := c.ListAvailableZonesRequest(input)
 	err := req.Send()
@@ -893,6 +904,7 @@ const opListHapgs = "ListHapgs"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListHapgs
 func (c *CloudHSM) ListHapgsRequest(input *ListHapgsInput) (req *request.Request, output *ListHapgsOutput) {
 	op := &request.Operation{
 		Name:       opListHapgs,
@@ -904,9 +916,8 @@ func (c *CloudHSM) ListHapgsRequest(input *ListHapgsInput) (req *request.Request
 		input = &ListHapgsInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ListHapgsOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -927,15 +938,16 @@ func (c *CloudHSM) ListHapgsRequest(input *ListHapgsInput) (req *request.Request
 // API operation ListHapgs for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListHapgs
 func (c *CloudHSM) ListHapgs(input *ListHapgsInput) (*ListHapgsOutput, error) {
 	req, out := c.ListHapgsRequest(input)
 	err := req.Send()
@@ -968,6 +980,7 @@ const opListHsms = "ListHsms"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListHsms
 func (c *CloudHSM) ListHsmsRequest(input *ListHsmsInput) (req *request.Request, output *ListHsmsOutput) {
 	op := &request.Operation{
 		Name:       opListHsms,
@@ -979,9 +992,8 @@ func (c *CloudHSM) ListHsmsRequest(input *ListHsmsInput) (req *request.Request, 
 		input = &ListHsmsInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ListHsmsOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1003,15 +1015,16 @@ func (c *CloudHSM) ListHsmsRequest(input *ListHsmsInput) (req *request.Request, 
 // API operation ListHsms for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListHsms
 func (c *CloudHSM) ListHsms(input *ListHsmsInput) (*ListHsmsOutput, error) {
 	req, out := c.ListHsmsRequest(input)
 	err := req.Send()
@@ -1044,6 +1057,7 @@ const opListLunaClients = "ListLunaClients"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListLunaClients
 func (c *CloudHSM) ListLunaClientsRequest(input *ListLunaClientsInput) (req *request.Request, output *ListLunaClientsOutput) {
 	op := &request.Operation{
 		Name:       opListLunaClients,
@@ -1055,9 +1069,8 @@ func (c *CloudHSM) ListLunaClientsRequest(input *ListLunaClientsInput) (req *req
 		input = &ListLunaClientsInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ListLunaClientsOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1078,15 +1091,16 @@ func (c *CloudHSM) ListLunaClientsRequest(input *ListLunaClientsInput) (req *req
 // API operation ListLunaClients for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListLunaClients
 func (c *CloudHSM) ListLunaClients(input *ListLunaClientsInput) (*ListLunaClientsOutput, error) {
 	req, out := c.ListLunaClientsRequest(input)
 	err := req.Send()
@@ -1119,6 +1133,7 @@ const opListTagsForResource = "ListTagsForResource"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListTagsForResource
 func (c *CloudHSM) ListTagsForResourceRequest(input *ListTagsForResourceInput) (req *request.Request, output *ListTagsForResourceOutput) {
 	op := &request.Operation{
 		Name:       opListTagsForResource,
@@ -1130,9 +1145,8 @@ func (c *CloudHSM) ListTagsForResourceRequest(input *ListTagsForResourceInput) (
 		input = &ListTagsForResourceInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ListTagsForResourceOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1148,15 +1162,16 @@ func (c *CloudHSM) ListTagsForResourceRequest(input *ListTagsForResourceInput) (
 // API operation ListTagsForResource for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListTagsForResource
 func (c *CloudHSM) ListTagsForResource(input *ListTagsForResourceInput) (*ListTagsForResourceOutput, error) {
 	req, out := c.ListTagsForResourceRequest(input)
 	err := req.Send()
@@ -1189,6 +1204,7 @@ const opModifyHapg = "ModifyHapg"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ModifyHapg
 func (c *CloudHSM) ModifyHapgRequest(input *ModifyHapgInput) (req *request.Request, output *ModifyHapgOutput) {
 	op := &request.Operation{
 		Name:       opModifyHapg,
@@ -1200,9 +1216,8 @@ func (c *CloudHSM) ModifyHapgRequest(input *ModifyHapgInput) (req *request.Reque
 		input = &ModifyHapgInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ModifyHapgOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1218,15 +1233,16 @@ func (c *CloudHSM) ModifyHapgRequest(input *ModifyHapgInput) (req *request.Reque
 // API operation ModifyHapg for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ModifyHapg
 func (c *CloudHSM) ModifyHapg(input *ModifyHapgInput) (*ModifyHapgOutput, error) {
 	req, out := c.ModifyHapgRequest(input)
 	err := req.Send()
@@ -1259,6 +1275,7 @@ const opModifyHsm = "ModifyHsm"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ModifyHsm
 func (c *CloudHSM) ModifyHsmRequest(input *ModifyHsmInput) (req *request.Request, output *ModifyHsmOutput) {
 	op := &request.Operation{
 		Name:       opModifyHsm,
@@ -1270,9 +1287,8 @@ func (c *CloudHSM) ModifyHsmRequest(input *ModifyHsmInput) (req *request.Request
 		input = &ModifyHsmInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ModifyHsmOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1280,8 +1296,8 @@ func (c *CloudHSM) ModifyHsmRequest(input *ModifyHsmInput) (req *request.Request
 //
 // Modifies an HSM.
 //
-//  This operation can result in the HSM being offline for up to 15 minutes
-// while the AWS CloudHSM service is reconfigured. If you are modifying a production
+// This operation can result in the HSM being offline for up to 15 minutes while
+// the AWS CloudHSM service is reconfigured. If you are modifying a production
 // HSM, you should ensure that your AWS CloudHSM service is configured for high
 // availability, and consider executing this operation during a maintenance
 // window.
@@ -1294,15 +1310,16 @@ func (c *CloudHSM) ModifyHsmRequest(input *ModifyHsmInput) (req *request.Request
 // API operation ModifyHsm for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ModifyHsm
 func (c *CloudHSM) ModifyHsm(input *ModifyHsmInput) (*ModifyHsmOutput, error) {
 	req, out := c.ModifyHsmRequest(input)
 	err := req.Send()
@@ -1335,6 +1352,7 @@ const opModifyLunaClient = "ModifyLunaClient"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ModifyLunaClient
 func (c *CloudHSM) ModifyLunaClientRequest(input *ModifyLunaClientInput) (req *request.Request, output *ModifyLunaClientOutput) {
 	op := &request.Operation{
 		Name:       opModifyLunaClient,
@@ -1346,9 +1364,8 @@ func (c *CloudHSM) ModifyLunaClientRequest(input *ModifyLunaClientInput) (req *r
 		input = &ModifyLunaClientInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ModifyLunaClientOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1367,9 +1384,10 @@ func (c *CloudHSM) ModifyLunaClientRequest(input *ModifyLunaClientInput) (req *r
 // API operation ModifyLunaClient for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ModifyLunaClient
 func (c *CloudHSM) ModifyLunaClient(input *ModifyLunaClientInput) (*ModifyLunaClientOutput, error) {
 	req, out := c.ModifyLunaClientRequest(input)
 	err := req.Send()
@@ -1402,6 +1420,7 @@ const opRemoveTagsFromResource = "RemoveTagsFromResource"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/RemoveTagsFromResource
 func (c *CloudHSM) RemoveTagsFromResourceRequest(input *RemoveTagsFromResourceInput) (req *request.Request, output *RemoveTagsFromResourceOutput) {
 	op := &request.Operation{
 		Name:       opRemoveTagsFromResource,
@@ -1413,9 +1432,8 @@ func (c *CloudHSM) RemoveTagsFromResourceRequest(input *RemoveTagsFromResourceIn
 		input = &RemoveTagsFromResourceInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &RemoveTagsFromResourceOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1423,8 +1441,8 @@ func (c *CloudHSM) RemoveTagsFromResourceRequest(input *RemoveTagsFromResourceIn
 //
 // Removes one or more tags from the specified AWS CloudHSM resource.
 //
-// To remove a tag, specify only the tag key to remove (not the value). To
-// overwrite the value for an existing tag, use AddTagsToResource.
+// To remove a tag, specify only the tag key to remove (not the value). To overwrite
+// the value for an existing tag, use AddTagsToResource.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -1434,21 +1452,23 @@ func (c *CloudHSM) RemoveTagsFromResourceRequest(input *RemoveTagsFromResourceIn
 // API operation RemoveTagsFromResource for usage and error information.
 //
 // Returned Error Codes:
-//   * CloudHsmServiceException
+//   * ErrCodeCloudHsmServiceException "CloudHsmServiceException"
 //   Indicates that an exception occurred in the AWS CloudHSM service.
 //
-//   * CloudHsmInternalException
+//   * ErrCodeCloudHsmInternalException "CloudHsmInternalException"
 //   Indicates that an internal error occurred.
 //
-//   * InvalidRequestException
+//   * ErrCodeInvalidRequestException "InvalidRequestException"
 //   Indicates that one or more of the request parameters are not valid.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/RemoveTagsFromResource
 func (c *CloudHSM) RemoveTagsFromResource(input *RemoveTagsFromResourceInput) (*RemoveTagsFromResourceOutput, error) {
 	req, out := c.RemoveTagsFromResourceRequest(input)
 	err := req.Send()
 	return out, err
 }
 
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/AddTagsToResourceRequest
 type AddTagsToResourceInput struct {
 	_ struct{} `type:"structure"`
 
@@ -1499,6 +1519,19 @@ func (s *AddTagsToResourceInput) Validate() error {
 	return nil
 }
 
+// SetResourceArn sets the ResourceArn field's value.
+func (s *AddTagsToResourceInput) SetResourceArn(v string) *AddTagsToResourceInput {
+	s.ResourceArn = &v
+	return s
+}
+
+// SetTagList sets the TagList field's value.
+func (s *AddTagsToResourceInput) SetTagList(v []*Tag) *AddTagsToResourceInput {
+	s.TagList = v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/AddTagsToResourceResponse
 type AddTagsToResourceOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -1518,7 +1551,14 @@ func (s AddTagsToResourceOutput) GoString() string {
 	return s.String()
 }
 
+// SetStatus sets the Status field's value.
+func (s *AddTagsToResourceOutput) SetStatus(v string) *AddTagsToResourceOutput {
+	s.Status = &v
+	return s
+}
+
 // Contains the inputs for the CreateHapgRequest action.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/CreateHapgRequest
 type CreateHapgInput struct {
 	_ struct{} `type:"structure"`
 
@@ -1551,7 +1591,14 @@ func (s *CreateHapgInput) Validate() error {
 	return nil
 }
 
+// SetLabel sets the Label field's value.
+func (s *CreateHapgInput) SetLabel(v string) *CreateHapgInput {
+	s.Label = &v
+	return s
+}
+
 // Contains the output of the CreateHAPartitionGroup action.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/CreateHapgResponse
 type CreateHapgOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -1569,7 +1616,14 @@ func (s CreateHapgOutput) GoString() string {
 	return s.String()
 }
 
+// SetHapgArn sets the HapgArn field's value.
+func (s *CreateHapgOutput) SetHapgArn(v string) *CreateHapgOutput {
+	s.HapgArn = &v
+	return s
+}
+
 // Contains the inputs for the CreateHsm operation.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/CreateHsmRequest
 type CreateHsmInput struct {
 	_ struct{} `locationName:"CreateHsmRequest" type:"structure"`
 
@@ -1604,8 +1658,8 @@ type CreateHsmInput struct {
 
 	// Specifies the type of subscription for the HSM.
 	//
-	//  PRODUCTION - The HSM is being used in a production environment. TRIAL -
-	// The HSM is being used in a product trial.
+	//    * PRODUCTION - The HSM is being used in a production environment.
+	//    * TRIAL - The HSM is being used in a product trial.
 	//
 	// SubscriptionType is a required field
 	SubscriptionType *string `locationName:"SubscriptionType" type:"string" required:"true" enum:"SubscriptionType"`
@@ -1647,7 +1701,56 @@ func (s *CreateHsmInput) Validate() error {
 	return nil
 }
 
+// SetClientToken sets the ClientToken field's value.
+func (s *CreateHsmInput) SetClientToken(v string) *CreateHsmInput {
+	s.ClientToken = &v
+	return s
+}
+
+// SetEniIp sets the EniIp field's value.
+func (s *CreateHsmInput) SetEniIp(v string) *CreateHsmInput {
+	s.EniIp = &v
+	return s
+}
+
+// SetExternalId sets the ExternalId field's value.
+func (s *CreateHsmInput) SetExternalId(v string) *CreateHsmInput {
+	s.ExternalId = &v
+	return s
+}
+
+// SetIamRoleArn sets the IamRoleArn field's value.
+func (s *CreateHsmInput) SetIamRoleArn(v string) *CreateHsmInput {
+	s.IamRoleArn = &v
+	return s
+}
+
+// SetSshKey sets the SshKey field's value.
+func (s *CreateHsmInput) SetSshKey(v string) *CreateHsmInput {
+	s.SshKey = &v
+	return s
+}
+
+// SetSubnetId sets the SubnetId field's value.
+func (s *CreateHsmInput) SetSubnetId(v string) *CreateHsmInput {
+	s.SubnetId = &v
+	return s
+}
+
+// SetSubscriptionType sets the SubscriptionType field's value.
+func (s *CreateHsmInput) SetSubscriptionType(v string) *CreateHsmInput {
+	s.SubscriptionType = &v
+	return s
+}
+
+// SetSyslogIp sets the SyslogIp field's value.
+func (s *CreateHsmInput) SetSyslogIp(v string) *CreateHsmInput {
+	s.SyslogIp = &v
+	return s
+}
+
 // Contains the output of the CreateHsm operation.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/CreateHsmResponse
 type CreateHsmOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -1665,7 +1768,14 @@ func (s CreateHsmOutput) GoString() string {
 	return s.String()
 }
 
+// SetHsmArn sets the HsmArn field's value.
+func (s *CreateHsmOutput) SetHsmArn(v string) *CreateHsmOutput {
+	s.HsmArn = &v
+	return s
+}
+
 // Contains the inputs for the CreateLunaClient action.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/CreateLunaClientRequest
 type CreateLunaClientInput struct {
 	_ struct{} `type:"structure"`
 
@@ -1705,7 +1815,20 @@ func (s *CreateLunaClientInput) Validate() error {
 	return nil
 }
 
+// SetCertificate sets the Certificate field's value.
+func (s *CreateLunaClientInput) SetCertificate(v string) *CreateLunaClientInput {
+	s.Certificate = &v
+	return s
+}
+
+// SetLabel sets the Label field's value.
+func (s *CreateLunaClientInput) SetLabel(v string) *CreateLunaClientInput {
+	s.Label = &v
+	return s
+}
+
 // Contains the output of the CreateLunaClient action.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/CreateLunaClientResponse
 type CreateLunaClientOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -1723,7 +1846,14 @@ func (s CreateLunaClientOutput) GoString() string {
 	return s.String()
 }
 
+// SetClientArn sets the ClientArn field's value.
+func (s *CreateLunaClientOutput) SetClientArn(v string) *CreateLunaClientOutput {
+	s.ClientArn = &v
+	return s
+}
+
 // Contains the inputs for the DeleteHapg action.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DeleteHapgRequest
 type DeleteHapgInput struct {
 	_ struct{} `type:"structure"`
 
@@ -1756,7 +1886,14 @@ func (s *DeleteHapgInput) Validate() error {
 	return nil
 }
 
+// SetHapgArn sets the HapgArn field's value.
+func (s *DeleteHapgInput) SetHapgArn(v string) *DeleteHapgInput {
+	s.HapgArn = &v
+	return s
+}
+
 // Contains the output of the DeleteHapg action.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DeleteHapgResponse
 type DeleteHapgOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -1776,7 +1913,14 @@ func (s DeleteHapgOutput) GoString() string {
 	return s.String()
 }
 
+// SetStatus sets the Status field's value.
+func (s *DeleteHapgOutput) SetStatus(v string) *DeleteHapgOutput {
+	s.Status = &v
+	return s
+}
+
 // Contains the inputs for the DeleteHsm operation.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DeleteHsmRequest
 type DeleteHsmInput struct {
 	_ struct{} `locationName:"DeleteHsmRequest" type:"structure"`
 
@@ -1809,7 +1953,14 @@ func (s *DeleteHsmInput) Validate() error {
 	return nil
 }
 
+// SetHsmArn sets the HsmArn field's value.
+func (s *DeleteHsmInput) SetHsmArn(v string) *DeleteHsmInput {
+	s.HsmArn = &v
+	return s
+}
+
 // Contains the output of the DeleteHsm operation.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DeleteHsmResponse
 type DeleteHsmOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -1829,6 +1980,13 @@ func (s DeleteHsmOutput) GoString() string {
 	return s.String()
 }
 
+// SetStatus sets the Status field's value.
+func (s *DeleteHsmOutput) SetStatus(v string) *DeleteHsmOutput {
+	s.Status = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DeleteLunaClientRequest
 type DeleteLunaClientInput struct {
 	_ struct{} `type:"structure"`
 
@@ -1861,6 +2019,13 @@ func (s *DeleteLunaClientInput) Validate() error {
 	return nil
 }
 
+// SetClientArn sets the ClientArn field's value.
+func (s *DeleteLunaClientInput) SetClientArn(v string) *DeleteLunaClientInput {
+	s.ClientArn = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DeleteLunaClientResponse
 type DeleteLunaClientOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -1880,7 +2045,14 @@ func (s DeleteLunaClientOutput) GoString() string {
 	return s.String()
 }
 
+// SetStatus sets the Status field's value.
+func (s *DeleteLunaClientOutput) SetStatus(v string) *DeleteLunaClientOutput {
+	s.Status = &v
+	return s
+}
+
 // Contains the inputs for the DescribeHapg action.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DescribeHapgRequest
 type DescribeHapgInput struct {
 	_ struct{} `type:"structure"`
 
@@ -1913,7 +2085,14 @@ func (s *DescribeHapgInput) Validate() error {
 	return nil
 }
 
+// SetHapgArn sets the HapgArn field's value.
+func (s *DescribeHapgInput) SetHapgArn(v string) *DescribeHapgInput {
+	s.HapgArn = &v
+	return s
+}
+
 // Contains the output of the DescribeHapg action.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DescribeHapgResponse
 type DescribeHapgOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -1956,7 +2135,62 @@ func (s DescribeHapgOutput) GoString() string {
 	return s.String()
 }
 
+// SetHapgArn sets the HapgArn field's value.
+func (s *DescribeHapgOutput) SetHapgArn(v string) *DescribeHapgOutput {
+	s.HapgArn = &v
+	return s
+}
+
+// SetHapgSerial sets the HapgSerial field's value.
+func (s *DescribeHapgOutput) SetHapgSerial(v string) *DescribeHapgOutput {
+	s.HapgSerial = &v
+	return s
+}
+
+// SetHsmsLastActionFailed sets the HsmsLastActionFailed field's value.
+func (s *DescribeHapgOutput) SetHsmsLastActionFailed(v []*string) *DescribeHapgOutput {
+	s.HsmsLastActionFailed = v
+	return s
+}
+
+// SetHsmsPendingDeletion sets the HsmsPendingDeletion field's value.
+func (s *DescribeHapgOutput) SetHsmsPendingDeletion(v []*string) *DescribeHapgOutput {
+	s.HsmsPendingDeletion = v
+	return s
+}
+
+// SetHsmsPendingRegistration sets the HsmsPendingRegistration field's value.
+func (s *DescribeHapgOutput) SetHsmsPendingRegistration(v []*string) *DescribeHapgOutput {
+	s.HsmsPendingRegistration = v
+	return s
+}
+
+// SetLabel sets the Label field's value.
+func (s *DescribeHapgOutput) SetLabel(v string) *DescribeHapgOutput {
+	s.Label = &v
+	return s
+}
+
+// SetLastModifiedTimestamp sets the LastModifiedTimestamp field's value.
+func (s *DescribeHapgOutput) SetLastModifiedTimestamp(v string) *DescribeHapgOutput {
+	s.LastModifiedTimestamp = &v
+	return s
+}
+
+// SetPartitionSerialList sets the PartitionSerialList field's value.
+func (s *DescribeHapgOutput) SetPartitionSerialList(v []*string) *DescribeHapgOutput {
+	s.PartitionSerialList = v
+	return s
+}
+
+// SetState sets the State field's value.
+func (s *DescribeHapgOutput) SetState(v string) *DescribeHapgOutput {
+	s.State = &v
+	return s
+}
+
 // Contains the inputs for the DescribeHsm operation.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DescribeHsmRequest
 type DescribeHsmInput struct {
 	_ struct{} `type:"structure"`
 
@@ -1979,7 +2213,20 @@ func (s DescribeHsmInput) GoString() string {
 	return s.String()
 }
 
+// SetHsmArn sets the HsmArn field's value.
+func (s *DescribeHsmInput) SetHsmArn(v string) *DescribeHsmInput {
+	s.HsmArn = &v
+	return s
+}
+
+// SetHsmSerialNumber sets the HsmSerialNumber field's value.
+func (s *DescribeHsmInput) SetHsmSerialNumber(v string) *DescribeHsmInput {
+	s.HsmSerialNumber = &v
+	return s
+}
+
 // Contains the output of the DescribeHsm operation.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DescribeHsmResponse
 type DescribeHsmOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2039,8 +2286,8 @@ type DescribeHsmOutput struct {
 
 	// Specifies the type of subscription for the HSM.
 	//
-	//  PRODUCTION - The HSM is being used in a production environment. TRIAL -
-	// The HSM is being used in a product trial.
+	//    * PRODUCTION - The HSM is being used in a production environment.
+	//    * TRIAL - The HSM is being used in a product trial.
 	SubscriptionType *string `type:"string" enum:"SubscriptionType"`
 
 	// The name of the HSM vendor.
@@ -2060,6 +2307,133 @@ func (s DescribeHsmOutput) GoString() string {
 	return s.String()
 }
 
+// SetAvailabilityZone sets the AvailabilityZone field's value.
+func (s *DescribeHsmOutput) SetAvailabilityZone(v string) *DescribeHsmOutput {
+	s.AvailabilityZone = &v
+	return s
+}
+
+// SetEniId sets the EniId field's value.
+func (s *DescribeHsmOutput) SetEniId(v string) *DescribeHsmOutput {
+	s.EniId = &v
+	return s
+}
+
+// SetEniIp sets the EniIp field's value.
+func (s *DescribeHsmOutput) SetEniIp(v string) *DescribeHsmOutput {
+	s.EniIp = &v
+	return s
+}
+
+// SetHsmArn sets the HsmArn field's value.
+func (s *DescribeHsmOutput) SetHsmArn(v string) *DescribeHsmOutput {
+	s.HsmArn = &v
+	return s
+}
+
+// SetHsmType sets the HsmType field's value.
+func (s *DescribeHsmOutput) SetHsmType(v string) *DescribeHsmOutput {
+	s.HsmType = &v
+	return s
+}
+
+// SetIamRoleArn sets the IamRoleArn field's value.
+func (s *DescribeHsmOutput) SetIamRoleArn(v string) *DescribeHsmOutput {
+	s.IamRoleArn = &v
+	return s
+}
+
+// SetPartitions sets the Partitions field's value.
+func (s *DescribeHsmOutput) SetPartitions(v []*string) *DescribeHsmOutput {
+	s.Partitions = v
+	return s
+}
+
+// SetSerialNumber sets the SerialNumber field's value.
+func (s *DescribeHsmOutput) SetSerialNumber(v string) *DescribeHsmOutput {
+	s.SerialNumber = &v
+	return s
+}
+
+// SetServerCertLastUpdated sets the ServerCertLastUpdated field's value.
+func (s *DescribeHsmOutput) SetServerCertLastUpdated(v string) *DescribeHsmOutput {
+	s.ServerCertLastUpdated = &v
+	return s
+}
+
+// SetServerCertUri sets the ServerCertUri field's value.
+func (s *DescribeHsmOutput) SetServerCertUri(v string) *DescribeHsmOutput {
+	s.ServerCertUri = &v
+	return s
+}
+
+// SetSoftwareVersion sets the SoftwareVersion field's value.
+func (s *DescribeHsmOutput) SetSoftwareVersion(v string) *DescribeHsmOutput {
+	s.SoftwareVersion = &v
+	return s
+}
+
+// SetSshKeyLastUpdated sets the SshKeyLastUpdated field's value.
+func (s *DescribeHsmOutput) SetSshKeyLastUpdated(v string) *DescribeHsmOutput {
+	s.SshKeyLastUpdated = &v
+	return s
+}
+
+// SetSshPublicKey sets the SshPublicKey field's value.
+func (s *DescribeHsmOutput) SetSshPublicKey(v string) *DescribeHsmOutput {
+	s.SshPublicKey = &v
+	return s
+}
+
+// SetStatus sets the Status field's value.
+func (s *DescribeHsmOutput) SetStatus(v string) *DescribeHsmOutput {
+	s.Status = &v
+	return s
+}
+
+// SetStatusDetails sets the StatusDetails field's value.
+func (s *DescribeHsmOutput) SetStatusDetails(v string) *DescribeHsmOutput {
+	s.StatusDetails = &v
+	return s
+}
+
+// SetSubnetId sets the SubnetId field's value.
+func (s *DescribeHsmOutput) SetSubnetId(v string) *DescribeHsmOutput {
+	s.SubnetId = &v
+	return s
+}
+
+// SetSubscriptionEndDate sets the SubscriptionEndDate field's value.
+func (s *DescribeHsmOutput) SetSubscriptionEndDate(v string) *DescribeHsmOutput {
+	s.SubscriptionEndDate = &v
+	return s
+}
+
+// SetSubscriptionStartDate sets the SubscriptionStartDate field's value.
+func (s *DescribeHsmOutput) SetSubscriptionStartDate(v string) *DescribeHsmOutput {
+	s.SubscriptionStartDate = &v
+	return s
+}
+
+// SetSubscriptionType sets the SubscriptionType field's value.
+func (s *DescribeHsmOutput) SetSubscriptionType(v string) *DescribeHsmOutput {
+	s.SubscriptionType = &v
+	return s
+}
+
+// SetVendorName sets the VendorName field's value.
+func (s *DescribeHsmOutput) SetVendorName(v string) *DescribeHsmOutput {
+	s.VendorName = &v
+	return s
+}
+
+// SetVpcId sets the VpcId field's value.
+func (s *DescribeHsmOutput) SetVpcId(v string) *DescribeHsmOutput {
+	s.VpcId = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DescribeLunaClientRequest
 type DescribeLunaClientInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2080,6 +2454,19 @@ func (s DescribeLunaClientInput) GoString() string {
 	return s.String()
 }
 
+// SetCertificateFingerprint sets the CertificateFingerprint field's value.
+func (s *DescribeLunaClientInput) SetCertificateFingerprint(v string) *DescribeLunaClientInput {
+	s.CertificateFingerprint = &v
+	return s
+}
+
+// SetClientArn sets the ClientArn field's value.
+func (s *DescribeLunaClientInput) SetClientArn(v string) *DescribeLunaClientInput {
+	s.ClientArn = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/DescribeLunaClientResponse
 type DescribeLunaClientOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2109,6 +2496,37 @@ func (s DescribeLunaClientOutput) GoString() string {
 	return s.String()
 }
 
+// SetCertificate sets the Certificate field's value.
+func (s *DescribeLunaClientOutput) SetCertificate(v string) *DescribeLunaClientOutput {
+	s.Certificate = &v
+	return s
+}
+
+// SetCertificateFingerprint sets the CertificateFingerprint field's value.
+func (s *DescribeLunaClientOutput) SetCertificateFingerprint(v string) *DescribeLunaClientOutput {
+	s.CertificateFingerprint = &v
+	return s
+}
+
+// SetClientArn sets the ClientArn field's value.
+func (s *DescribeLunaClientOutput) SetClientArn(v string) *DescribeLunaClientOutput {
+	s.ClientArn = &v
+	return s
+}
+
+// SetLabel sets the Label field's value.
+func (s *DescribeLunaClientOutput) SetLabel(v string) *DescribeLunaClientOutput {
+	s.Label = &v
+	return s
+}
+
+// SetLastModifiedTimestamp sets the LastModifiedTimestamp field's value.
+func (s *DescribeLunaClientOutput) SetLastModifiedTimestamp(v string) *DescribeLunaClientOutput {
+	s.LastModifiedTimestamp = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/GetConfigRequest
 type GetConfigInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2158,6 +2576,25 @@ func (s *GetConfigInput) Validate() error {
 	return nil
 }
 
+// SetClientArn sets the ClientArn field's value.
+func (s *GetConfigInput) SetClientArn(v string) *GetConfigInput {
+	s.ClientArn = &v
+	return s
+}
+
+// SetClientVersion sets the ClientVersion field's value.
+func (s *GetConfigInput) SetClientVersion(v string) *GetConfigInput {
+	s.ClientVersion = &v
+	return s
+}
+
+// SetHapgList sets the HapgList field's value.
+func (s *GetConfigInput) SetHapgList(v []*string) *GetConfigInput {
+	s.HapgList = v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/GetConfigResponse
 type GetConfigOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2181,7 +2618,26 @@ func (s GetConfigOutput) GoString() string {
 	return s.String()
 }
 
+// SetConfigCred sets the ConfigCred field's value.
+func (s *GetConfigOutput) SetConfigCred(v string) *GetConfigOutput {
+	s.ConfigCred = &v
+	return s
+}
+
+// SetConfigFile sets the ConfigFile field's value.
+func (s *GetConfigOutput) SetConfigFile(v string) *GetConfigOutput {
+	s.ConfigFile = &v
+	return s
+}
+
+// SetConfigType sets the ConfigType field's value.
+func (s *GetConfigOutput) SetConfigType(v string) *GetConfigOutput {
+	s.ConfigType = &v
+	return s
+}
+
 // Contains the inputs for the ListAvailableZones action.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListAvailableZonesRequest
 type ListAvailableZonesInput struct {
 	_ struct{} `type:"structure"`
 }
@@ -2196,6 +2652,7 @@ func (s ListAvailableZonesInput) GoString() string {
 	return s.String()
 }
 
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListAvailableZonesResponse
 type ListAvailableZonesOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2213,6 +2670,13 @@ func (s ListAvailableZonesOutput) GoString() string {
 	return s.String()
 }
 
+// SetAZList sets the AZList field's value.
+func (s *ListAvailableZonesOutput) SetAZList(v []*string) *ListAvailableZonesOutput {
+	s.AZList = v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListHapgsRequest
 type ListHapgsInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2231,6 +2695,13 @@ func (s ListHapgsInput) GoString() string {
 	return s.String()
 }
 
+// SetNextToken sets the NextToken field's value.
+func (s *ListHapgsInput) SetNextToken(v string) *ListHapgsInput {
+	s.NextToken = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListHapgsResponse
 type ListHapgsOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2254,6 +2725,19 @@ func (s ListHapgsOutput) GoString() string {
 	return s.String()
 }
 
+// SetHapgList sets the HapgList field's value.
+func (s *ListHapgsOutput) SetHapgList(v []*string) *ListHapgsOutput {
+	s.HapgList = v
+	return s
+}
+
+// SetNextToken sets the NextToken field's value.
+func (s *ListHapgsOutput) SetNextToken(v string) *ListHapgsOutput {
+	s.NextToken = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListHsmsRequest
 type ListHsmsInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2272,7 +2756,14 @@ func (s ListHsmsInput) GoString() string {
 	return s.String()
 }
 
+// SetNextToken sets the NextToken field's value.
+func (s *ListHsmsInput) SetNextToken(v string) *ListHsmsInput {
+	s.NextToken = &v
+	return s
+}
+
 // Contains the output of the ListHsms operation.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListHsmsResponse
 type ListHsmsOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2294,6 +2785,19 @@ func (s ListHsmsOutput) GoString() string {
 	return s.String()
 }
 
+// SetHsmList sets the HsmList field's value.
+func (s *ListHsmsOutput) SetHsmList(v []*string) *ListHsmsOutput {
+	s.HsmList = v
+	return s
+}
+
+// SetNextToken sets the NextToken field's value.
+func (s *ListHsmsOutput) SetNextToken(v string) *ListHsmsOutput {
+	s.NextToken = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListLunaClientsRequest
 type ListLunaClientsInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2312,6 +2816,13 @@ func (s ListLunaClientsInput) GoString() string {
 	return s.String()
 }
 
+// SetNextToken sets the NextToken field's value.
+func (s *ListLunaClientsInput) SetNextToken(v string) *ListLunaClientsInput {
+	s.NextToken = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListLunaClientsResponse
 type ListLunaClientsOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2335,6 +2846,19 @@ func (s ListLunaClientsOutput) GoString() string {
 	return s.String()
 }
 
+// SetClientList sets the ClientList field's value.
+func (s *ListLunaClientsOutput) SetClientList(v []*string) *ListLunaClientsOutput {
+	s.ClientList = v
+	return s
+}
+
+// SetNextToken sets the NextToken field's value.
+func (s *ListLunaClientsOutput) SetNextToken(v string) *ListLunaClientsOutput {
+	s.NextToken = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListTagsForResourceRequest
 type ListTagsForResourceInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2367,6 +2891,13 @@ func (s *ListTagsForResourceInput) Validate() error {
 	return nil
 }
 
+// SetResourceArn sets the ResourceArn field's value.
+func (s *ListTagsForResourceInput) SetResourceArn(v string) *ListTagsForResourceInput {
+	s.ResourceArn = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ListTagsForResourceResponse
 type ListTagsForResourceOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2386,6 +2917,13 @@ func (s ListTagsForResourceOutput) GoString() string {
 	return s.String()
 }
 
+// SetTagList sets the TagList field's value.
+func (s *ListTagsForResourceOutput) SetTagList(v []*Tag) *ListTagsForResourceOutput {
+	s.TagList = v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ModifyHapgRequest
 type ModifyHapgInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2425,6 +2963,25 @@ func (s *ModifyHapgInput) Validate() error {
 	return nil
 }
 
+// SetHapgArn sets the HapgArn field's value.
+func (s *ModifyHapgInput) SetHapgArn(v string) *ModifyHapgInput {
+	s.HapgArn = &v
+	return s
+}
+
+// SetLabel sets the Label field's value.
+func (s *ModifyHapgInput) SetLabel(v string) *ModifyHapgInput {
+	s.Label = &v
+	return s
+}
+
+// SetPartitionSerialList sets the PartitionSerialList field's value.
+func (s *ModifyHapgInput) SetPartitionSerialList(v []*string) *ModifyHapgInput {
+	s.PartitionSerialList = v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ModifyHapgResponse
 type ModifyHapgOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2442,7 +2999,14 @@ func (s ModifyHapgOutput) GoString() string {
 	return s.String()
 }
 
+// SetHapgArn sets the HapgArn field's value.
+func (s *ModifyHapgOutput) SetHapgArn(v string) *ModifyHapgOutput {
+	s.HapgArn = &v
+	return s
+}
+
 // Contains the inputs for the ModifyHsm operation.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ModifyHsmRequest
 type ModifyHsmInput struct {
 	_ struct{} `locationName:"ModifyHsmRequest" type:"structure"`
 
@@ -2496,7 +3060,44 @@ func (s *ModifyHsmInput) Validate() error {
 	return nil
 }
 
+// SetEniIp sets the EniIp field's value.
+func (s *ModifyHsmInput) SetEniIp(v string) *ModifyHsmInput {
+	s.EniIp = &v
+	return s
+}
+
+// SetExternalId sets the ExternalId field's value.
+func (s *ModifyHsmInput) SetExternalId(v string) *ModifyHsmInput {
+	s.ExternalId = &v
+	return s
+}
+
+// SetHsmArn sets the HsmArn field's value.
+func (s *ModifyHsmInput) SetHsmArn(v string) *ModifyHsmInput {
+	s.HsmArn = &v
+	return s
+}
+
+// SetIamRoleArn sets the IamRoleArn field's value.
+func (s *ModifyHsmInput) SetIamRoleArn(v string) *ModifyHsmInput {
+	s.IamRoleArn = &v
+	return s
+}
+
+// SetSubnetId sets the SubnetId field's value.
+func (s *ModifyHsmInput) SetSubnetId(v string) *ModifyHsmInput {
+	s.SubnetId = &v
+	return s
+}
+
+// SetSyslogIp sets the SyslogIp field's value.
+func (s *ModifyHsmInput) SetSyslogIp(v string) *ModifyHsmInput {
+	s.SyslogIp = &v
+	return s
+}
+
 // Contains the output of the ModifyHsm operation.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ModifyHsmResponse
 type ModifyHsmOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2514,6 +3115,13 @@ func (s ModifyHsmOutput) GoString() string {
 	return s.String()
 }
 
+// SetHsmArn sets the HsmArn field's value.
+func (s *ModifyHsmOutput) SetHsmArn(v string) *ModifyHsmOutput {
+	s.HsmArn = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ModifyLunaClientRequest
 type ModifyLunaClientInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2557,6 +3165,19 @@ func (s *ModifyLunaClientInput) Validate() error {
 	return nil
 }
 
+// SetCertificate sets the Certificate field's value.
+func (s *ModifyLunaClientInput) SetCertificate(v string) *ModifyLunaClientInput {
+	s.Certificate = &v
+	return s
+}
+
+// SetClientArn sets the ClientArn field's value.
+func (s *ModifyLunaClientInput) SetClientArn(v string) *ModifyLunaClientInput {
+	s.ClientArn = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/ModifyLunaClientResponse
 type ModifyLunaClientOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2574,6 +3195,13 @@ func (s ModifyLunaClientOutput) GoString() string {
 	return s.String()
 }
 
+// SetClientArn sets the ClientArn field's value.
+func (s *ModifyLunaClientOutput) SetClientArn(v string) *ModifyLunaClientOutput {
+	s.ClientArn = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/RemoveTagsFromResourceRequest
 type RemoveTagsFromResourceInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2617,6 +3245,19 @@ func (s *RemoveTagsFromResourceInput) Validate() error {
 	return nil
 }
 
+// SetResourceArn sets the ResourceArn field's value.
+func (s *RemoveTagsFromResourceInput) SetResourceArn(v string) *RemoveTagsFromResourceInput {
+	s.ResourceArn = &v
+	return s
+}
+
+// SetTagKeyList sets the TagKeyList field's value.
+func (s *RemoveTagsFromResourceInput) SetTagKeyList(v []*string) *RemoveTagsFromResourceInput {
+	s.TagKeyList = v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/RemoveTagsFromResourceResponse
 type RemoveTagsFromResourceOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2636,8 +3277,15 @@ func (s RemoveTagsFromResourceOutput) GoString() string {
 	return s.String()
 }
 
+// SetStatus sets the Status field's value.
+func (s *RemoveTagsFromResourceOutput) SetStatus(v string) *RemoveTagsFromResourceOutput {
+	s.Status = &v
+	return s
+}
+
 // A key-value pair that identifies or specifies metadata about an AWS CloudHSM
 // resource.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/cloudhsm-2014-05-30/Tag
 type Tag struct {
 	_ struct{} `type:"structure"`
 
@@ -2679,6 +3327,18 @@ func (s *Tag) Validate() error {
 		return invalidParams
 	}
 	return nil
+}
+
+// SetKey sets the Key field's value.
+func (s *Tag) SetKey(v string) *Tag {
+	s.Key = &v
+	return s
+}
+
+// SetValue sets the Value field's value.
+func (s *Tag) SetValue(v string) *Tag {
+	s.Value = &v
+	return s
 }
 
 const (
@@ -2725,8 +3385,8 @@ const (
 
 // Specifies the type of subscription for the HSM.
 //
-//  PRODUCTION - The HSM is being used in a production environment. TRIAL -
-// The HSM is being used in a product trial.
+//    * PRODUCTION - The HSM is being used in a production environment.
+//    * TRIAL - The HSM is being used in a product trial.
 const (
 	// SubscriptionTypeProduction is a SubscriptionType enum value
 	SubscriptionTypeProduction = "PRODUCTION"

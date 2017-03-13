@@ -36,6 +36,7 @@ const opGenerateDataSet = "GenerateDataSet"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/GenerateDataSet
 func (c *MarketplaceCommerceAnalytics) GenerateDataSetRequest(input *GenerateDataSetInput) (req *request.Request, output *GenerateDataSetOutput) {
 	op := &request.Operation{
 		Name:       opGenerateDataSet,
@@ -47,9 +48,8 @@ func (c *MarketplaceCommerceAnalytics) GenerateDataSetRequest(input *GenerateDat
 		input = &GenerateDataSetInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &GenerateDataSetOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -74,9 +74,10 @@ func (c *MarketplaceCommerceAnalytics) GenerateDataSetRequest(input *GenerateDat
 // API operation GenerateDataSet for usage and error information.
 //
 // Returned Error Codes:
-//   * Exception
+//   * ErrCodeException "Exception"
 //   This exception is thrown when an internal service error occurs.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/GenerateDataSet
 func (c *MarketplaceCommerceAnalytics) GenerateDataSet(input *GenerateDataSetInput) (*GenerateDataSetOutput, error) {
 	req, out := c.GenerateDataSetRequest(input)
 	err := req.Send()
@@ -109,6 +110,7 @@ const opStartSupportDataExport = "StartSupportDataExport"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/StartSupportDataExport
 func (c *MarketplaceCommerceAnalytics) StartSupportDataExportRequest(input *StartSupportDataExportInput) (req *request.Request, output *StartSupportDataExportOutput) {
 	op := &request.Operation{
 		Name:       opStartSupportDataExport,
@@ -120,9 +122,8 @@ func (c *MarketplaceCommerceAnalytics) StartSupportDataExportRequest(input *Star
 		input = &StartSupportDataExportInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &StartSupportDataExportOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -148,9 +149,10 @@ func (c *MarketplaceCommerceAnalytics) StartSupportDataExportRequest(input *Star
 // API operation StartSupportDataExport for usage and error information.
 //
 // Returned Error Codes:
-//   * Exception
+//   * ErrCodeException "Exception"
 //   This exception is thrown when an internal service error occurs.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/StartSupportDataExport
 func (c *MarketplaceCommerceAnalytics) StartSupportDataExport(input *StartSupportDataExportInput) (*StartSupportDataExportOutput, error) {
 	req, out := c.StartSupportDataExportRequest(input)
 	err := req.Send()
@@ -158,6 +160,7 @@ func (c *MarketplaceCommerceAnalytics) StartSupportDataExport(input *StartSuppor
 }
 
 // Container for the parameters to the GenerateDataSet operation.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/GenerateDataSetRequest
 type GenerateDataSetInput struct {
 	_ struct{} `type:"structure"`
 
@@ -178,29 +181,48 @@ type GenerateDataSetInput struct {
 
 	// The desired data set type.
 	//
-	//   customer_subscriber_hourly_monthly_subscriptions - Available daily by
-	// 5:00 PM Pacific Time since 2014-07-21. customer_subscriber_annual_subscriptions
-	// - Available daily by 5:00 PM Pacific Time since 2014-07-21. daily_business_usage_by_instance_type
-	// - Available daily by 5:00 PM Pacific Time since 2015-01-26. daily_business_fees
-	// - Available daily by 5:00 PM Pacific Time since 2015-01-26. daily_business_free_trial_conversions
-	// - Available daily by 5:00 PM Pacific Time since 2015-01-26. daily_business_new_instances
-	// - Available daily by 5:00 PM Pacific Time since 2015-01-26. daily_business_new_product_subscribers
-	// - Available daily by 5:00 PM Pacific Time since 2015-01-26. daily_business_canceled_product_subscribers
-	// - Available daily by 5:00 PM Pacific Time since 2015-01-26. monthly_revenue_billing_and_revenue_data
-	// - Available monthly on the 4th day of the month by 5:00 PM Pacific Time since
-	// 2015-02. monthly_revenue_annual_subscriptions - Available monthly on the
-	// 4th day of the month by 5:00 PM Pacific Time since 2015-02. disbursed_amount_by_product
-	// - Available every 30 days by 5:00 PM Pacific Time since 2015-01-26. disbursed_amount_by_product_with_uncollected_funds
-	// -This data set is only available from 2012-04-19 until 2015-01-25. After
-	// 2015-01-25, this data set was split into three data sets: disbursed_amount_by_product,
-	// disbursed_amount_by_age_of_uncollected_funds, and disbursed_amount_by_age_of_disbursed_funds.
-	//  disbursed_amount_by_customer_geo - Available every 30 days by 5:00 PM Pacific
-	// Time since 2012-04-19. disbursed_amount_by_age_of_uncollected_funds - Available
-	// every 30 days by 5:00 PM Pacific Time since 2015-01-26. disbursed_amount_by_age_of_disbursed_funds
-	// - Available every 30 days by 5:00 PM Pacific Time since 2015-01-26. customer_profile_by_industry
-	// - Available daily by 5:00 PM Pacific Time since 2015-10-01. customer_profile_by_revenue
-	// - Available daily by 5:00 PM Pacific Time since 2015-10-01. customer_profile_by_geography
-	// - Available daily by 5:00 PM Pacific Time since 2015-10-01.
+	// customer_subscriber_hourly_monthly_subscriptions - Available daily by 5:00
+	// PM Pacific Time since 2014-07-21.
+	// customer_subscriber_annual_subscriptions - Available daily by 5:00 PM Pacific
+	// Time since 2014-07-21.
+	// daily_business_usage_by_instance_type - Available daily by 5:00 PM Pacific
+	// Time since 2015-01-26.
+	// daily_business_fees - Available daily by 5:00 PM Pacific Time since 2015-01-26.
+	//
+	// daily_business_free_trial_conversions - Available daily by 5:00 PM Pacific
+	// Time since 2015-01-26.
+	// daily_business_new_instances - Available daily by 5:00 PM Pacific Time since
+	// 2015-01-26.
+	// daily_business_new_product_subscribers - Available daily by 5:00 PM Pacific
+	// Time since 2015-01-26.
+	// daily_business_canceled_product_subscribers - Available daily by 5:00 PM
+	// Pacific Time since 2015-01-26.
+	// monthly_revenue_billing_and_revenue_data - Available monthly on the 4th day
+	// of the month by 5:00 PM Pacific Time since 2015-02.
+	// monthly_revenue_annual_subscriptions - Available monthly on the 4th day of
+	// the month by 5:00 PM Pacific Time since 2015-02.
+	// disbursed_amount_by_product - Available every 30 days by 5:00 PM Pacific
+	// Time since 2015-01-26.
+	// disbursed_amount_by_product_with_uncollected_funds -This data set is only
+	// available from 2012-04-19 until 2015-01-25. After 2015-01-25, this data set
+	// was split into three data sets: disbursed_amount_by_product, disbursed_amount_by_age_of_uncollected_funds,
+	// and disbursed_amount_by_age_of_disbursed_funds.
+	// disbursed_amount_by_instance_hours - Available every 30 days by 5:00 PM Pacific
+	// Time since 2012-09-04.
+	// disbursed_amount_by_customer_geo - Available every 30 days by 5:00 PM Pacific
+	// Time since 2012-04-19.
+	// disbursed_amount_by_age_of_uncollected_funds - Available every 30 days by
+	// 5:00 PM Pacific Time since 2015-01-26.
+	// disbursed_amount_by_age_of_disbursed_funds - Available every 30 days by 5:00
+	// PM Pacific Time since 2015-01-26.
+	// customer_profile_by_industry - Available daily by 5:00 PM Pacific Time since
+	// 2015-10-01.
+	// customer_profile_by_revenue - Available daily by 5:00 PM Pacific Time since
+	// 2015-10-01.
+	// customer_profile_by_geography - Available daily by 5:00 PM Pacific Time since
+	// 2015-10-01.
+	// sales_compensation_billed_revenue - Available monthly on the 4th day of the
+	// month by 5:00 PM Pacific Time since 2016-12.
 	//
 	// DataSetType is a required field
 	DataSetType *string `locationName:"dataSetType" min:"1" type:"string" required:"true" enum:"DataSetType"`
@@ -281,7 +303,50 @@ func (s *GenerateDataSetInput) Validate() error {
 	return nil
 }
 
+// SetCustomerDefinedValues sets the CustomerDefinedValues field's value.
+func (s *GenerateDataSetInput) SetCustomerDefinedValues(v map[string]*string) *GenerateDataSetInput {
+	s.CustomerDefinedValues = v
+	return s
+}
+
+// SetDataSetPublicationDate sets the DataSetPublicationDate field's value.
+func (s *GenerateDataSetInput) SetDataSetPublicationDate(v time.Time) *GenerateDataSetInput {
+	s.DataSetPublicationDate = &v
+	return s
+}
+
+// SetDataSetType sets the DataSetType field's value.
+func (s *GenerateDataSetInput) SetDataSetType(v string) *GenerateDataSetInput {
+	s.DataSetType = &v
+	return s
+}
+
+// SetDestinationS3BucketName sets the DestinationS3BucketName field's value.
+func (s *GenerateDataSetInput) SetDestinationS3BucketName(v string) *GenerateDataSetInput {
+	s.DestinationS3BucketName = &v
+	return s
+}
+
+// SetDestinationS3Prefix sets the DestinationS3Prefix field's value.
+func (s *GenerateDataSetInput) SetDestinationS3Prefix(v string) *GenerateDataSetInput {
+	s.DestinationS3Prefix = &v
+	return s
+}
+
+// SetRoleNameArn sets the RoleNameArn field's value.
+func (s *GenerateDataSetInput) SetRoleNameArn(v string) *GenerateDataSetInput {
+	s.RoleNameArn = &v
+	return s
+}
+
+// SetSnsTopicArn sets the SnsTopicArn field's value.
+func (s *GenerateDataSetInput) SetSnsTopicArn(v string) *GenerateDataSetInput {
+	s.SnsTopicArn = &v
+	return s
+}
+
 // Container for the result of the GenerateDataSet operation.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/GenerateDataSetResult
 type GenerateDataSetOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -301,7 +366,14 @@ func (s GenerateDataSetOutput) GoString() string {
 	return s.String()
 }
 
+// SetDataSetRequestId sets the DataSetRequestId field's value.
+func (s *GenerateDataSetOutput) SetDataSetRequestId(v string) *GenerateDataSetOutput {
+	s.DataSetRequestId = &v
+	return s
+}
+
 // Container for the parameters to the StartSupportDataExport operation.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/StartSupportDataExportRequest
 type StartSupportDataExportInput struct {
 	_ struct{} `type:"structure"`
 
@@ -311,15 +383,14 @@ type StartSupportDataExportInput struct {
 
 	// Specifies the data set type to be written to the output csv file. The data
 	// set types customer_support_contacts_data and test_customer_support_contacts_data
-	// both result in a csv file containing the following fields: Product Id, Customer
-	// Guid, Subscription Guid, Subscription Start Date, Organization, AWS Account
-	// Id, Given Name, Surname, Telephone Number, Email, Title, Country Code, ZIP
-	// Code, Operation Type, and Operation Time. Currently, only the test_customer_support_contacts_data
-	// value is supported
+	// both result in a csv file containing the following fields: Product Id, Product
+	// Code, Customer Guid, Subscription Guid, Subscription Start Date, Organization,
+	// AWS Account Id, Given Name, Surname, Telephone Number, Email, Title, Country
+	// Code, ZIP Code, Operation Type, and Operation Time.
 	//
-	//   customer_support_contacts_data Customer support contact data. The data
-	// set will contain all changes (Creates, Updates, and Deletes) to customer
-	// support contact data from the date specified in the from_date parameter.
+	// customer_support_contacts_data Customer support contact data. The data set
+	// will contain all changes (Creates, Updates, and Deletes) to customer support
+	// contact data from the date specified in the from_date parameter.
 	// test_customer_support_contacts_data An example data set containing static
 	// test data in the same format as customer_support_contacts_data
 	//
@@ -339,8 +410,8 @@ type StartSupportDataExportInput struct {
 	// prefix is provided, the data set will be published to the S3 bucket root.
 	DestinationS3Prefix *string `locationName:"destinationS3Prefix" type:"string"`
 
-	// The start date from which to retrieve the data set. This parameter only affects
-	// the customer_support_contacts_data data set type.
+	// The start date from which to retrieve the data set in UTC. This parameter
+	// only affects the customer_support_contacts_data data set type.
 	//
 	// FromDate is a required field
 	FromDate *time.Time `locationName:"fromDate" type:"timestamp" timestampFormat:"unix" required:"true"`
@@ -408,7 +479,50 @@ func (s *StartSupportDataExportInput) Validate() error {
 	return nil
 }
 
+// SetCustomerDefinedValues sets the CustomerDefinedValues field's value.
+func (s *StartSupportDataExportInput) SetCustomerDefinedValues(v map[string]*string) *StartSupportDataExportInput {
+	s.CustomerDefinedValues = v
+	return s
+}
+
+// SetDataSetType sets the DataSetType field's value.
+func (s *StartSupportDataExportInput) SetDataSetType(v string) *StartSupportDataExportInput {
+	s.DataSetType = &v
+	return s
+}
+
+// SetDestinationS3BucketName sets the DestinationS3BucketName field's value.
+func (s *StartSupportDataExportInput) SetDestinationS3BucketName(v string) *StartSupportDataExportInput {
+	s.DestinationS3BucketName = &v
+	return s
+}
+
+// SetDestinationS3Prefix sets the DestinationS3Prefix field's value.
+func (s *StartSupportDataExportInput) SetDestinationS3Prefix(v string) *StartSupportDataExportInput {
+	s.DestinationS3Prefix = &v
+	return s
+}
+
+// SetFromDate sets the FromDate field's value.
+func (s *StartSupportDataExportInput) SetFromDate(v time.Time) *StartSupportDataExportInput {
+	s.FromDate = &v
+	return s
+}
+
+// SetRoleNameArn sets the RoleNameArn field's value.
+func (s *StartSupportDataExportInput) SetRoleNameArn(v string) *StartSupportDataExportInput {
+	s.RoleNameArn = &v
+	return s
+}
+
+// SetSnsTopicArn sets the SnsTopicArn field's value.
+func (s *StartSupportDataExportInput) SetSnsTopicArn(v string) *StartSupportDataExportInput {
+	s.SnsTopicArn = &v
+	return s
+}
+
 // Container for the result of the StartSupportDataExport operation.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/StartSupportDataExportResult
 type StartSupportDataExportOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -426,6 +540,12 @@ func (s StartSupportDataExportOutput) String() string {
 // GoString returns the string representation
 func (s StartSupportDataExportOutput) GoString() string {
 	return s.String()
+}
+
+// SetDataSetRequestId sets the DataSetRequestId field's value.
+func (s *StartSupportDataExportOutput) SetDataSetRequestId(v string) *StartSupportDataExportOutput {
+	s.DataSetRequestId = &v
+	return s
 }
 
 const (
@@ -465,6 +585,9 @@ const (
 	// DataSetTypeDisbursedAmountByProductWithUncollectedFunds is a DataSetType enum value
 	DataSetTypeDisbursedAmountByProductWithUncollectedFunds = "disbursed_amount_by_product_with_uncollected_funds"
 
+	// DataSetTypeDisbursedAmountByInstanceHours is a DataSetType enum value
+	DataSetTypeDisbursedAmountByInstanceHours = "disbursed_amount_by_instance_hours"
+
 	// DataSetTypeDisbursedAmountByCustomerGeo is a DataSetType enum value
 	DataSetTypeDisbursedAmountByCustomerGeo = "disbursed_amount_by_customer_geo"
 
@@ -482,6 +605,9 @@ const (
 
 	// DataSetTypeCustomerProfileByGeography is a DataSetType enum value
 	DataSetTypeCustomerProfileByGeography = "customer_profile_by_geography"
+
+	// DataSetTypeSalesCompensationBilledRevenue is a DataSetType enum value
+	DataSetTypeSalesCompensationBilledRevenue = "sales_compensation_billed_revenue"
 )
 
 const (

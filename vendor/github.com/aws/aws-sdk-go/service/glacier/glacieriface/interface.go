@@ -45,7 +45,7 @@ import (
 //        // mock response/functionality
 //    }
 //
-//    TestMyFunc(t *testing.T) {
+//    func TestMyFunc(t *testing.T) {
 //        // Setup Test
 //        mockSvc := &mockGlacierClient{}
 //
@@ -157,6 +157,10 @@ type GlacierAPI interface {
 
 	ListPartsPages(*glacier.ListPartsInput, func(*glacier.ListPartsOutput, bool) bool) error
 
+	ListProvisionedCapacityRequest(*glacier.ListProvisionedCapacityInput) (*request.Request, *glacier.ListProvisionedCapacityOutput)
+
+	ListProvisionedCapacity(*glacier.ListProvisionedCapacityInput) (*glacier.ListProvisionedCapacityOutput, error)
+
 	ListTagsForVaultRequest(*glacier.ListTagsForVaultInput) (*request.Request, *glacier.ListTagsForVaultOutput)
 
 	ListTagsForVault(*glacier.ListTagsForVaultInput) (*glacier.ListTagsForVaultOutput, error)
@@ -166,6 +170,10 @@ type GlacierAPI interface {
 	ListVaults(*glacier.ListVaultsInput) (*glacier.ListVaultsOutput, error)
 
 	ListVaultsPages(*glacier.ListVaultsInput, func(*glacier.ListVaultsOutput, bool) bool) error
+
+	PurchaseProvisionedCapacityRequest(*glacier.PurchaseProvisionedCapacityInput) (*request.Request, *glacier.PurchaseProvisionedCapacityOutput)
+
+	PurchaseProvisionedCapacity(*glacier.PurchaseProvisionedCapacityInput) (*glacier.PurchaseProvisionedCapacityOutput, error)
 
 	RemoveTagsFromVaultRequest(*glacier.RemoveTagsFromVaultInput) (*request.Request, *glacier.RemoveTagsFromVaultOutput)
 

@@ -25,7 +25,7 @@ import (
 //    // myFunc uses an SDK service client to make a request to
 //    // Amazon Elastic MapReduce.
 //    func myFunc(svc emriface.EMRAPI) bool {
-//        // Make svc.AddInstanceGroups request
+//        // Make svc.AddInstanceFleet request
 //    }
 //
 //    func main() {
@@ -41,11 +41,11 @@ import (
 //    type mockEMRClient struct {
 //        emriface.EMRAPI
 //    }
-//    func (m *mockEMRClient) AddInstanceGroups(input *emr.AddInstanceGroupsInput) (*emr.AddInstanceGroupsOutput, error) {
+//    func (m *mockEMRClient) AddInstanceFleet(input *emr.AddInstanceFleetInput) (*emr.AddInstanceFleetOutput, error) {
 //        // mock response/functionality
 //    }
 //
-//    TestMyFunc(t *testing.T) {
+//    func TestMyFunc(t *testing.T) {
 //        // Setup Test
 //        mockSvc := &mockEMRClient{}
 //
@@ -59,6 +59,10 @@ import (
 // and waiters. Its suggested to use the pattern above for testing, or using
 // tooling to generate mocks to satisfy the interfaces.
 type EMRAPI interface {
+	AddInstanceFleetRequest(*emr.AddInstanceFleetInput) (*request.Request, *emr.AddInstanceFleetOutput)
+
+	AddInstanceFleet(*emr.AddInstanceFleetInput) (*emr.AddInstanceFleetOutput, error)
+
 	AddInstanceGroupsRequest(*emr.AddInstanceGroupsInput) (*request.Request, *emr.AddInstanceGroupsOutput)
 
 	AddInstanceGroups(*emr.AddInstanceGroupsInput) (*emr.AddInstanceGroupsOutput, error)
@@ -70,6 +74,10 @@ type EMRAPI interface {
 	AddTagsRequest(*emr.AddTagsInput) (*request.Request, *emr.AddTagsOutput)
 
 	AddTags(*emr.AddTagsInput) (*emr.AddTagsOutput, error)
+
+	CancelStepsRequest(*emr.CancelStepsInput) (*request.Request, *emr.CancelStepsOutput)
+
+	CancelSteps(*emr.CancelStepsInput) (*emr.CancelStepsOutput, error)
 
 	CreateSecurityConfigurationRequest(*emr.CreateSecurityConfigurationInput) (*request.Request, *emr.CreateSecurityConfigurationOutput)
 
@@ -107,6 +115,12 @@ type EMRAPI interface {
 
 	ListClustersPages(*emr.ListClustersInput, func(*emr.ListClustersOutput, bool) bool) error
 
+	ListInstanceFleetsRequest(*emr.ListInstanceFleetsInput) (*request.Request, *emr.ListInstanceFleetsOutput)
+
+	ListInstanceFleets(*emr.ListInstanceFleetsInput) (*emr.ListInstanceFleetsOutput, error)
+
+	ListInstanceFleetsPages(*emr.ListInstanceFleetsInput, func(*emr.ListInstanceFleetsOutput, bool) bool) error
+
 	ListInstanceGroupsRequest(*emr.ListInstanceGroupsInput) (*request.Request, *emr.ListInstanceGroupsOutput)
 
 	ListInstanceGroups(*emr.ListInstanceGroupsInput) (*emr.ListInstanceGroupsOutput, error)
@@ -129,9 +143,21 @@ type EMRAPI interface {
 
 	ListStepsPages(*emr.ListStepsInput, func(*emr.ListStepsOutput, bool) bool) error
 
+	ModifyInstanceFleetRequest(*emr.ModifyInstanceFleetInput) (*request.Request, *emr.ModifyInstanceFleetOutput)
+
+	ModifyInstanceFleet(*emr.ModifyInstanceFleetInput) (*emr.ModifyInstanceFleetOutput, error)
+
 	ModifyInstanceGroupsRequest(*emr.ModifyInstanceGroupsInput) (*request.Request, *emr.ModifyInstanceGroupsOutput)
 
 	ModifyInstanceGroups(*emr.ModifyInstanceGroupsInput) (*emr.ModifyInstanceGroupsOutput, error)
+
+	PutAutoScalingPolicyRequest(*emr.PutAutoScalingPolicyInput) (*request.Request, *emr.PutAutoScalingPolicyOutput)
+
+	PutAutoScalingPolicy(*emr.PutAutoScalingPolicyInput) (*emr.PutAutoScalingPolicyOutput, error)
+
+	RemoveAutoScalingPolicyRequest(*emr.RemoveAutoScalingPolicyInput) (*request.Request, *emr.RemoveAutoScalingPolicyOutput)
+
+	RemoveAutoScalingPolicy(*emr.RemoveAutoScalingPolicyInput) (*emr.RemoveAutoScalingPolicyOutput, error)
 
 	RemoveTagsRequest(*emr.RemoveTagsInput) (*request.Request, *emr.RemoveTagsOutput)
 
@@ -154,6 +180,8 @@ type EMRAPI interface {
 	TerminateJobFlows(*emr.TerminateJobFlowsInput) (*emr.TerminateJobFlowsOutput, error)
 
 	WaitUntilClusterRunning(*emr.DescribeClusterInput) error
+
+	WaitUntilClusterTerminated(*emr.DescribeClusterInput) error
 
 	WaitUntilStepComplete(*emr.DescribeStepInput) error
 }

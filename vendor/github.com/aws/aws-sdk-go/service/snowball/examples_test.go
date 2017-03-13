@@ -15,12 +15,29 @@ import (
 var _ time.Duration
 var _ bytes.Buffer
 
-func ExampleSnowball_CancelJob() {
-	sess, err := session.NewSession()
+func ExampleSnowball_CancelCluster() {
+	sess := session.Must(session.NewSession())
+
+	svc := snowball.New(sess)
+
+	params := &snowball.CancelClusterInput{
+		ClusterId: aws.String("ClusterId"), // Required
+	}
+	resp, err := svc.CancelCluster(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleSnowball_CancelJob() {
+	sess := session.Must(session.NewSession())
 
 	svc := snowball.New(sess)
 
@@ -41,11 +58,7 @@ func ExampleSnowball_CancelJob() {
 }
 
 func ExampleSnowball_CreateAddress() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := snowball.New(sess)
 
@@ -79,19 +92,27 @@ func ExampleSnowball_CreateAddress() {
 	fmt.Println(resp)
 }
 
-func ExampleSnowball_CreateJob() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+func ExampleSnowball_CreateCluster() {
+	sess := session.Must(session.NewSession())
 
 	svc := snowball.New(sess)
 
-	params := &snowball.CreateJobInput{
+	params := &snowball.CreateClusterInput{
 		AddressId: aws.String("AddressId"), // Required
 		JobType:   aws.String("JobType"),   // Required
 		Resources: &snowball.JobResource{ // Required
+			LambdaResources: []*snowball.LambdaResource{
+				{ // Required
+					EventTriggers: []*snowball.EventTriggerDefinition{
+						{ // Required
+							EventResourceARN: aws.String("ResourceARN"),
+						},
+						// More values...
+					},
+					LambdaArn: aws.String("ResourceARN"),
+				},
+				// More values...
+			},
 			S3Resources: []*snowball.S3Resource{
 				{ // Required
 					BucketArn: aws.String("ResourceARN"),
@@ -115,7 +136,68 @@ func ExampleSnowball_CreateJob() {
 			NotifyAll:   aws.Bool(true),
 			SnsTopicARN: aws.String("SnsTopicARN"),
 		},
+		SnowballType: aws.String("Type"),
+	}
+	resp, err := svc.CreateCluster(params)
+
+	if err != nil {
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
+		return
+	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleSnowball_CreateJob() {
+	sess := session.Must(session.NewSession())
+
+	svc := snowball.New(sess)
+
+	params := &snowball.CreateJobInput{
+		AddressId:   aws.String("AddressId"),
+		ClusterId:   aws.String("ClusterId"),
+		Description: aws.String("String"),
+		JobType:     aws.String("JobType"),
+		KmsKeyARN:   aws.String("KmsKeyARN"),
+		Notification: &snowball.Notification{
+			JobStatesToNotify: []*string{
+				aws.String("JobState"), // Required
+				// More values...
+			},
+			NotifyAll:   aws.Bool(true),
+			SnsTopicARN: aws.String("SnsTopicARN"),
+		},
+		Resources: &snowball.JobResource{
+			LambdaResources: []*snowball.LambdaResource{
+				{ // Required
+					EventTriggers: []*snowball.EventTriggerDefinition{
+						{ // Required
+							EventResourceARN: aws.String("ResourceARN"),
+						},
+						// More values...
+					},
+					LambdaArn: aws.String("ResourceARN"),
+				},
+				// More values...
+			},
+			S3Resources: []*snowball.S3Resource{
+				{ // Required
+					BucketArn: aws.String("ResourceARN"),
+					KeyRange: &snowball.KeyRange{
+						BeginMarker: aws.String("String"),
+						EndMarker:   aws.String("String"),
+					},
+				},
+				// More values...
+			},
+		},
+		RoleARN:                    aws.String("RoleARN"),
+		ShippingOption:             aws.String("ShippingOption"),
 		SnowballCapacityPreference: aws.String("Capacity"),
+		SnowballType:               aws.String("Type"),
 	}
 	resp, err := svc.CreateJob(params)
 
@@ -131,11 +213,7 @@ func ExampleSnowball_CreateJob() {
 }
 
 func ExampleSnowball_DescribeAddress() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := snowball.New(sess)
 
@@ -156,11 +234,7 @@ func ExampleSnowball_DescribeAddress() {
 }
 
 func ExampleSnowball_DescribeAddresses() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := snowball.New(sess)
 
@@ -181,12 +255,29 @@ func ExampleSnowball_DescribeAddresses() {
 	fmt.Println(resp)
 }
 
-func ExampleSnowball_DescribeJob() {
-	sess, err := session.NewSession()
+func ExampleSnowball_DescribeCluster() {
+	sess := session.Must(session.NewSession())
+
+	svc := snowball.New(sess)
+
+	params := &snowball.DescribeClusterInput{
+		ClusterId: aws.String("ClusterId"), // Required
+	}
+	resp, err := svc.DescribeCluster(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleSnowball_DescribeJob() {
+	sess := session.Must(session.NewSession())
 
 	svc := snowball.New(sess)
 
@@ -207,11 +298,7 @@ func ExampleSnowball_DescribeJob() {
 }
 
 func ExampleSnowball_GetJobManifest() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := snowball.New(sess)
 
@@ -232,11 +319,7 @@ func ExampleSnowball_GetJobManifest() {
 }
 
 func ExampleSnowball_GetJobUnlockCode() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := snowball.New(sess)
 
@@ -257,11 +340,7 @@ func ExampleSnowball_GetJobUnlockCode() {
 }
 
 func ExampleSnowball_GetSnowballUsage() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := snowball.New(sess)
 
@@ -279,12 +358,53 @@ func ExampleSnowball_GetSnowballUsage() {
 	fmt.Println(resp)
 }
 
-func ExampleSnowball_ListJobs() {
-	sess, err := session.NewSession()
+func ExampleSnowball_ListClusterJobs() {
+	sess := session.Must(session.NewSession())
+
+	svc := snowball.New(sess)
+
+	params := &snowball.ListClusterJobsInput{
+		ClusterId:  aws.String("ClusterId"), // Required
+		MaxResults: aws.Int64(1),
+		NextToken:  aws.String("String"),
+	}
+	resp, err := svc.ListClusterJobs(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleSnowball_ListClusters() {
+	sess := session.Must(session.NewSession())
+
+	svc := snowball.New(sess)
+
+	params := &snowball.ListClustersInput{
+		MaxResults: aws.Int64(1),
+		NextToken:  aws.String("String"),
+	}
+	resp, err := svc.ListClusters(params)
+
+	if err != nil {
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
+		return
+	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleSnowball_ListJobs() {
+	sess := session.Must(session.NewSession())
 
 	svc := snowball.New(sess)
 
@@ -305,12 +425,65 @@ func ExampleSnowball_ListJobs() {
 	fmt.Println(resp)
 }
 
-func ExampleSnowball_UpdateJob() {
-	sess, err := session.NewSession()
+func ExampleSnowball_UpdateCluster() {
+	sess := session.Must(session.NewSession())
+
+	svc := snowball.New(sess)
+
+	params := &snowball.UpdateClusterInput{
+		ClusterId:   aws.String("ClusterId"), // Required
+		AddressId:   aws.String("AddressId"),
+		Description: aws.String("String"),
+		Notification: &snowball.Notification{
+			JobStatesToNotify: []*string{
+				aws.String("JobState"), // Required
+				// More values...
+			},
+			NotifyAll:   aws.Bool(true),
+			SnsTopicARN: aws.String("SnsTopicARN"),
+		},
+		Resources: &snowball.JobResource{
+			LambdaResources: []*snowball.LambdaResource{
+				{ // Required
+					EventTriggers: []*snowball.EventTriggerDefinition{
+						{ // Required
+							EventResourceARN: aws.String("ResourceARN"),
+						},
+						// More values...
+					},
+					LambdaArn: aws.String("ResourceARN"),
+				},
+				// More values...
+			},
+			S3Resources: []*snowball.S3Resource{
+				{ // Required
+					BucketArn: aws.String("ResourceARN"),
+					KeyRange: &snowball.KeyRange{
+						BeginMarker: aws.String("String"),
+						EndMarker:   aws.String("String"),
+					},
+				},
+				// More values...
+			},
+		},
+		RoleARN:        aws.String("RoleARN"),
+		ShippingOption: aws.String("ShippingOption"),
+	}
+	resp, err := svc.UpdateCluster(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleSnowball_UpdateJob() {
+	sess := session.Must(session.NewSession())
 
 	svc := snowball.New(sess)
 
@@ -327,6 +500,18 @@ func ExampleSnowball_UpdateJob() {
 			SnsTopicARN: aws.String("SnsTopicARN"),
 		},
 		Resources: &snowball.JobResource{
+			LambdaResources: []*snowball.LambdaResource{
+				{ // Required
+					EventTriggers: []*snowball.EventTriggerDefinition{
+						{ // Required
+							EventResourceARN: aws.String("ResourceARN"),
+						},
+						// More values...
+					},
+					LambdaArn: aws.String("ResourceARN"),
+				},
+				// More values...
+			},
 			S3Resources: []*snowball.S3Resource{
 				{ // Required
 					BucketArn: aws.String("ResourceARN"),

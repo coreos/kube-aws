@@ -7,7 +7,8 @@
     "protocol":"json",
     "serviceFullName":"Amazon GameLift",
     "signatureVersion":"v4",
-    "targetPrefix":"GameLift"
+    "targetPrefix":"GameLift",
+    "uid":"gamelift-2015-10-01"
   },
   "operations":{
     "CreateAlias":{
@@ -77,6 +78,20 @@
         {"shape":"FleetCapacityExceededException"},
         {"shape":"LimitExceededException"},
         {"shape":"IdempotentParameterMismatchException"}
+      ]
+    },
+    "CreateGameSessionQueue":{
+      "name":"CreateGameSessionQueue",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"CreateGameSessionQueueInput"},
+      "output":{"shape":"CreateGameSessionQueueOutput"},
+      "errors":[
+        {"shape":"InternalServiceException"},
+        {"shape":"InvalidRequestException"},
+        {"shape":"UnauthorizedException"}
       ]
     },
     "CreatePlayerSession":{
@@ -156,6 +171,21 @@
         {"shape":"InvalidFleetStatusException"},
         {"shape":"UnauthorizedException"},
         {"shape":"InvalidRequestException"}
+      ]
+    },
+    "DeleteGameSessionQueue":{
+      "name":"DeleteGameSessionQueue",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DeleteGameSessionQueueInput"},
+      "output":{"shape":"DeleteGameSessionQueueOutput"},
+      "errors":[
+        {"shape":"InternalServiceException"},
+        {"shape":"InvalidRequestException"},
+        {"shape":"NotFoundException"},
+        {"shape":"UnauthorizedException"}
       ]
     },
     "DeleteScalingPolicy":{
@@ -307,6 +337,36 @@
         {"shape":"TerminalRoutingStrategyException"}
       ]
     },
+    "DescribeGameSessionPlacement":{
+      "name":"DescribeGameSessionPlacement",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DescribeGameSessionPlacementInput"},
+      "output":{"shape":"DescribeGameSessionPlacementOutput"},
+      "errors":[
+        {"shape":"InternalServiceException"},
+        {"shape":"InvalidRequestException"},
+        {"shape":"NotFoundException"},
+        {"shape":"UnauthorizedException"}
+      ]
+    },
+    "DescribeGameSessionQueues":{
+      "name":"DescribeGameSessionQueues",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DescribeGameSessionQueuesInput"},
+      "output":{"shape":"DescribeGameSessionQueuesOutput"},
+      "errors":[
+        {"shape":"InternalServiceException"},
+        {"shape":"InvalidRequestException"},
+        {"shape":"NotFoundException"},
+        {"shape":"UnauthorizedException"}
+      ]
+    },
     "DescribeGameSessions":{
       "name":"DescribeGameSessions",
       "http":{
@@ -396,6 +456,21 @@
         {"shape":"NotFoundException"},
         {"shape":"UnauthorizedException"},
         {"shape":"InvalidRequestException"}
+      ]
+    },
+    "GetInstanceAccess":{
+      "name":"GetInstanceAccess",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"GetInstanceAccessInput"},
+      "output":{"shape":"GetInstanceAccessOutput"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"InvalidRequestException"},
+        {"shape":"NotFoundException"},
+        {"shape":"InternalServiceException"}
       ]
     },
     "ListAliases":{
@@ -503,6 +578,36 @@
         {"shape":"TerminalRoutingStrategyException"}
       ]
     },
+    "StartGameSessionPlacement":{
+      "name":"StartGameSessionPlacement",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"StartGameSessionPlacementInput"},
+      "output":{"shape":"StartGameSessionPlacementOutput"},
+      "errors":[
+        {"shape":"InternalServiceException"},
+        {"shape":"InvalidRequestException"},
+        {"shape":"NotFoundException"},
+        {"shape":"UnauthorizedException"}
+      ]
+    },
+    "StopGameSessionPlacement":{
+      "name":"StopGameSessionPlacement",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"StopGameSessionPlacementInput"},
+      "output":{"shape":"StopGameSessionPlacementOutput"},
+      "errors":[
+        {"shape":"InternalServiceException"},
+        {"shape":"InvalidRequestException"},
+        {"shape":"NotFoundException"},
+        {"shape":"UnauthorizedException"}
+      ]
+    },
     "UpdateAlias":{
       "name":"UpdateAlias",
       "http":{
@@ -604,6 +709,21 @@
         {"shape":"InvalidRequestException"}
       ]
     },
+    "UpdateGameSessionQueue":{
+      "name":"UpdateGameSessionQueue",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"UpdateGameSessionQueueInput"},
+      "output":{"shape":"UpdateGameSessionQueueOutput"},
+      "errors":[
+        {"shape":"InternalServiceException"},
+        {"shape":"InvalidRequestException"},
+        {"shape":"NotFoundException"},
+        {"shape":"UnauthorizedException"}
+      ]
+    },
     "UpdateRuntimeConfiguration":{
       "name":"UpdateRuntimeConfiguration",
       "http":{
@@ -627,6 +747,7 @@
       "members":{
         "AliasId":{"shape":"AliasId"},
         "Name":{"shape":"NonBlankAndLengthConstraintString"},
+        "AliasArn":{"shape":"ArnStringModel"},
         "Description":{"shape":"FreeText"},
         "RoutingStrategy":{"shape":"RoutingStrategy"},
         "CreationTime":{"shape":"Timestamp"},
@@ -781,6 +902,21 @@
         "GameSession":{"shape":"GameSession"}
       }
     },
+    "CreateGameSessionQueueInput":{
+      "type":"structure",
+      "required":["Name"],
+      "members":{
+        "Name":{"shape":"GameSessionQueueName"},
+        "TimeoutInSeconds":{"shape":"WholeNumber"},
+        "Destinations":{"shape":"GameSessionQueueDestinationList"}
+      }
+    },
+    "CreateGameSessionQueueOutput":{
+      "type":"structure",
+      "members":{
+        "GameSessionQueue":{"shape":"GameSessionQueue"}
+      }
+    },
     "CreatePlayerSessionInput":{
       "type":"structure",
       "required":[
@@ -789,7 +925,8 @@
       ],
       "members":{
         "GameSessionId":{"shape":"ArnStringModel"},
-        "PlayerId":{"shape":"NonZeroAndMaxString"}
+        "PlayerId":{"shape":"NonZeroAndMaxString"},
+        "PlayerData":{"shape":"PlayerData"}
       }
     },
     "CreatePlayerSessionOutput":{
@@ -806,7 +943,8 @@
       ],
       "members":{
         "GameSessionId":{"shape":"ArnStringModel"},
-        "PlayerIds":{"shape":"PlayerIdList"}
+        "PlayerIds":{"shape":"PlayerIdList"},
+        "PlayerDataMap":{"shape":"PlayerDataMap"}
       }
     },
     "CreatePlayerSessionsOutput":{
@@ -834,6 +972,18 @@
       "required":["FleetId"],
       "members":{
         "FleetId":{"shape":"FleetId"}
+      }
+    },
+    "DeleteGameSessionQueueInput":{
+      "type":"structure",
+      "required":["Name"],
+      "members":{
+        "Name":{"shape":"GameSessionQueueName"}
+      }
+    },
+    "DeleteGameSessionQueueOutput":{
+      "type":"structure",
+      "members":{
       }
     },
     "DeleteScalingPolicyInput":{
@@ -979,6 +1129,34 @@
         "NextToken":{"shape":"NonZeroAndMaxString"}
       }
     },
+    "DescribeGameSessionPlacementInput":{
+      "type":"structure",
+      "required":["PlacementId"],
+      "members":{
+        "PlacementId":{"shape":"IdStringModel"}
+      }
+    },
+    "DescribeGameSessionPlacementOutput":{
+      "type":"structure",
+      "members":{
+        "GameSessionPlacement":{"shape":"GameSessionPlacement"}
+      }
+    },
+    "DescribeGameSessionQueuesInput":{
+      "type":"structure",
+      "members":{
+        "Names":{"shape":"GameSessionQueueNameList"},
+        "Limit":{"shape":"PositiveInteger"},
+        "NextToken":{"shape":"NonZeroAndMaxString"}
+      }
+    },
+    "DescribeGameSessionQueuesOutput":{
+      "type":"structure",
+      "members":{
+        "GameSessionQueues":{"shape":"GameSessionQueueList"},
+        "NextToken":{"shape":"NonZeroAndMaxString"}
+      }
+    },
     "DescribeGameSessionsInput":{
       "type":"structure",
       "members":{
@@ -1061,6 +1239,17 @@
         "ScalingPolicies":{"shape":"ScalingPolicyList"},
         "NextToken":{"shape":"NonZeroAndMaxString"}
       }
+    },
+    "DesiredPlayerSession":{
+      "type":"structure",
+      "members":{
+        "PlayerId":{"shape":"NonZeroAndMaxString"},
+        "PlayerData":{"shape":"PlayerData"}
+      }
+    },
+    "DesiredPlayerSessionList":{
+      "type":"list",
+      "member":{"shape":"DesiredPlayerSession"}
     },
     "Double":{"type":"double"},
     "EC2InstanceCounts":{
@@ -1150,7 +1339,15 @@
         "FLEET_VALIDATION_TIMED_OUT",
         "FLEET_ACTIVATION_FAILED",
         "FLEET_ACTIVATION_FAILED_NO_INSTANCES",
-        "FLEET_NEW_GAME_SESSION_PROTECTION_POLICY_UPDATED"
+        "FLEET_NEW_GAME_SESSION_PROTECTION_POLICY_UPDATED",
+        "SERVER_PROCESS_INVALID_PATH",
+        "SERVER_PROCESS_SDK_INITIALIZATION_TIMEOUT",
+        "SERVER_PROCESS_PROCESS_READY_TIMEOUT",
+        "SERVER_PROCESS_CRASHED",
+        "SERVER_PROCESS_TERMINATED_UNHEALTHY",
+        "SERVER_PROCESS_FORCE_TERMINATED",
+        "SERVER_PROCESS_PROCESS_EXIT_TIMEOUT",
+        "GAME_SESSION_ACTIVATION_TIMEOUT"
       ]
     },
     "EventList":{
@@ -1161,6 +1358,7 @@
       "type":"structure",
       "members":{
         "FleetId":{"shape":"FleetId"},
+        "FleetArn":{"shape":"ArnStringModel"},
         "Description":{"shape":"NonZeroAndMaxString"},
         "Name":{"shape":"NonZeroAndMaxString"},
         "CreationTime":{"shape":"Timestamp"},
@@ -1235,6 +1433,7 @@
       "type":"list",
       "member":{"shape":"FleetUtilization"}
     },
+    "Float":{"type":"float"},
     "FreeText":{"type":"string"},
     "GameProperty":{
       "type":"structure",
@@ -1300,6 +1499,63 @@
       "type":"list",
       "member":{"shape":"GameSession"}
     },
+    "GameSessionPlacement":{
+      "type":"structure",
+      "members":{
+        "PlacementId":{"shape":"IdStringModel"},
+        "GameSessionQueueName":{"shape":"GameSessionQueueName"},
+        "Status":{"shape":"GameSessionPlacementState"},
+        "GameProperties":{"shape":"GamePropertyList"},
+        "MaximumPlayerSessionCount":{"shape":"WholeNumber"},
+        "GameSessionName":{"shape":"NonZeroAndMaxString"},
+        "GameSessionArn":{"shape":"NonZeroAndMaxString"},
+        "GameSessionRegion":{"shape":"NonZeroAndMaxString"},
+        "PlayerLatencies":{"shape":"PlayerLatencyList"},
+        "StartTime":{"shape":"Timestamp"},
+        "EndTime":{"shape":"Timestamp"}
+      }
+    },
+    "GameSessionPlacementState":{
+      "type":"string",
+      "enum":[
+        "PENDING",
+        "FULFILLED",
+        "CANCELLED",
+        "TIMED_OUT"
+      ]
+    },
+    "GameSessionQueue":{
+      "type":"structure",
+      "members":{
+        "Name":{"shape":"GameSessionQueueName"},
+        "TimeoutInSeconds":{"shape":"WholeNumber"},
+        "Destinations":{"shape":"GameSessionQueueDestinationList"}
+      }
+    },
+    "GameSessionQueueDestination":{
+      "type":"structure",
+      "members":{
+        "DestinationArn":{"shape":"ArnStringModel"}
+      }
+    },
+    "GameSessionQueueDestinationList":{
+      "type":"list",
+      "member":{"shape":"GameSessionQueueDestination"}
+    },
+    "GameSessionQueueList":{
+      "type":"list",
+      "member":{"shape":"GameSessionQueue"}
+    },
+    "GameSessionQueueName":{
+      "type":"string",
+      "max":128,
+      "min":1,
+      "pattern":"[a-zA-Z0-9-]+"
+    },
+    "GameSessionQueueNameList":{
+      "type":"list",
+      "member":{"shape":"GameSessionQueueName"}
+    },
     "GameSessionStatus":{
       "type":"string",
       "enum":[
@@ -1321,6 +1577,23 @@
       "type":"structure",
       "members":{
         "PreSignedUrl":{"shape":"NonZeroAndMaxString"}
+      }
+    },
+    "GetInstanceAccessInput":{
+      "type":"structure",
+      "required":[
+        "FleetId",
+        "InstanceId"
+      ],
+      "members":{
+        "FleetId":{"shape":"FleetId"},
+        "InstanceId":{"shape":"InstanceId"}
+      }
+    },
+    "GetInstanceAccessOutput":{
+      "type":"structure",
+      "members":{
+        "InstanceAccess":{"shape":"InstanceAccess"}
       }
     },
     "IdStringModel":{
@@ -1347,6 +1620,24 @@
         "Status":{"shape":"InstanceStatus"},
         "CreationTime":{"shape":"Timestamp"}
       }
+    },
+    "InstanceAccess":{
+      "type":"structure",
+      "members":{
+        "FleetId":{"shape":"FleetId"},
+        "InstanceId":{"shape":"InstanceId"},
+        "IpAddress":{"shape":"IpAddress"},
+        "OperatingSystem":{"shape":"OperatingSystem"},
+        "Credentials":{"shape":"InstanceCredentials"}
+      }
+    },
+    "InstanceCredentials":{
+      "type":"structure",
+      "members":{
+        "UserName":{"shape":"NonEmptyString"},
+        "Secret":{"shape":"NonEmptyString"}
+      },
+      "sensitive":true
     },
     "InstanceId":{
       "type":"string",
@@ -1483,7 +1774,9 @@
         "ActiveInstances",
         "AvailablePlayerSessions",
         "CurrentPlayerSessions",
-        "IdleInstances"
+        "IdleInstances",
+        "QueueDepth",
+        "WaitTime"
       ]
     },
     "NonBlankAndLengthConstraintString":{
@@ -1519,11 +1812,33 @@
         "AMAZON_LINUX"
       ]
     },
+    "PlayerData":{
+      "type":"string",
+      "max":2048,
+      "min":1
+    },
+    "PlayerDataMap":{
+      "type":"map",
+      "key":{"shape":"NonZeroAndMaxString"},
+      "value":{"shape":"PlayerData"}
+    },
     "PlayerIdList":{
       "type":"list",
       "member":{"shape":"NonZeroAndMaxString"},
       "max":25,
       "min":1
+    },
+    "PlayerLatency":{
+      "type":"structure",
+      "members":{
+        "PlayerId":{"shape":"NonZeroAndMaxString"},
+        "RegionIdentifier":{"shape":"NonZeroAndMaxString"},
+        "LatencyInMilliseconds":{"shape":"Float"}
+      }
+    },
+    "PlayerLatencyList":{
+      "type":"list",
+      "member":{"shape":"PlayerLatency"}
     },
     "PlayerSession":{
       "type":"structure",
@@ -1536,7 +1851,8 @@
         "TerminationTime":{"shape":"Timestamp"},
         "Status":{"shape":"PlayerSessionStatus"},
         "IpAddress":{"shape":"IpAddress"},
-        "Port":{"shape":"PortNumber"}
+        "Port":{"shape":"PortNumber"},
+        "PlayerData":{"shape":"PlayerData"}
       }
     },
     "PlayerSessionCreationPolicy":{
@@ -1749,6 +2065,42 @@
       "max":50,
       "min":1
     },
+    "StartGameSessionPlacementInput":{
+      "type":"structure",
+      "required":[
+        "PlacementId",
+        "GameSessionQueueName",
+        "MaximumPlayerSessionCount"
+      ],
+      "members":{
+        "PlacementId":{"shape":"IdStringModel"},
+        "GameSessionQueueName":{"shape":"GameSessionQueueName"},
+        "GameProperties":{"shape":"GamePropertyList"},
+        "MaximumPlayerSessionCount":{"shape":"WholeNumber"},
+        "GameSessionName":{"shape":"NonZeroAndMaxString"},
+        "PlayerLatencies":{"shape":"PlayerLatencyList"},
+        "DesiredPlayerSessions":{"shape":"DesiredPlayerSessionList"}
+      }
+    },
+    "StartGameSessionPlacementOutput":{
+      "type":"structure",
+      "members":{
+        "GameSessionPlacement":{"shape":"GameSessionPlacement"}
+      }
+    },
+    "StopGameSessionPlacementInput":{
+      "type":"structure",
+      "required":["PlacementId"],
+      "members":{
+        "PlacementId":{"shape":"IdStringModel"}
+      }
+    },
+    "StopGameSessionPlacementOutput":{
+      "type":"structure",
+      "members":{
+        "GameSessionPlacement":{"shape":"GameSessionPlacement"}
+      }
+    },
     "StringList":{
       "type":"list",
       "member":{"shape":"NonZeroAndMaxString"}
@@ -1862,6 +2214,21 @@
       "type":"structure",
       "members":{
         "GameSession":{"shape":"GameSession"}
+      }
+    },
+    "UpdateGameSessionQueueInput":{
+      "type":"structure",
+      "required":["Name"],
+      "members":{
+        "Name":{"shape":"GameSessionQueueName"},
+        "TimeoutInSeconds":{"shape":"WholeNumber"},
+        "Destinations":{"shape":"GameSessionQueueDestinationList"}
+      }
+    },
+    "UpdateGameSessionQueueOutput":{
+      "type":"structure",
+      "members":{
+        "GameSessionQueue":{"shape":"GameSessionQueue"}
       }
     },
     "UpdateRuntimeConfigurationInput":{

@@ -8,7 +8,8 @@
     "serviceFullName":"Amazon DynamoDB Streams",
     "signatureVersion":"v4",
     "signingName":"dynamodb",
-    "targetPrefix":"DynamoDBStreams_20120810"
+    "targetPrefix":"DynamoDBStreams_20120810",
+    "uid":"streams-dynamodb-2012-08-10"
   },
   "operations":{
     "DescribeStream":{
@@ -158,6 +159,13 @@
         "ShardIterator":{"shape":"ShardIterator"}
       }
     },
+    "Identity":{
+      "type":"structure",
+      "members":{
+        "PrincipalId":{"shape":"String"},
+        "Type":{"shape":"String"}
+      }
+    },
     "InternalServerError":{
       "type":"structure",
       "members":{
@@ -256,7 +264,8 @@
         "eventVersion":{"shape":"String"},
         "eventSource":{"shape":"String"},
         "awsRegion":{"shape":"String"},
-        "dynamodb":{"shape":"StreamRecord"}
+        "dynamodb":{"shape":"StreamRecord"},
+        "userIdentity":{"shape":"Identity"}
       }
     },
     "RecordList":{
