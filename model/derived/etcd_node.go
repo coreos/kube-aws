@@ -129,7 +129,7 @@ func (i etcdNodeImpl) defaultPublicDNSNameRefFromIPRef(ipRef string) string {
                 { "Fn::Join" : [ "-", { "Fn::Split" : [ ".", %s ] } ] }
                 ]]},
                 "%s"
-                ]]}`, ipRef, i.region().PublicDomainName())
+                ]]}`, ipRef, i.region().PublicComputeDomainName())
 }
 
 func (i etcdNodeImpl) AdvertisedFQDNRef() (string, error) {

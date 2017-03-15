@@ -17,6 +17,13 @@ clusterName: test-cluster-name
 kmsKeyArn: "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
 `
 
+const minimalChinaConfigYaml = `externalDNSName: test.staging.core-os.net
+keyName: test-key-name
+region: cn-north-1
+availabilityZone: cn-north-1a
+clusterName: test-cluster-name
+`
+
 const availabilityZoneConfig = `
 availabilityZone: us-west-1c
 `
@@ -141,6 +148,21 @@ func TestNetworkValidation(t *testing.T) {
 		}
 	}
 
+}
+
+func TestMinimalChinaConfig(t *testing.T) {
+	c, err := ClusterFromBytes([]byte(minimalChinaConfigYaml))
+	if err != nil {
+		t.Errorf("Failed to parse config %s: %v", minimalChinaConfigYaml, err)
+	}
+
+	if !c.Region.IsChina() {
+		t.Error("IsChinaRegion test failed.")
+	}
+
+	if c.TLSAssetsEncryptionEnabled() {
+		t.Error("TLS Assets encryption must be disabled on China.")
+	}
 }
 
 func TestKubernetesServiceIPInference(t *testing.T) {

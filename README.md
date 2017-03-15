@@ -148,6 +148,18 @@ The following links can be useful for development:
 
 - [AWS CloudFormation resource types](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-template-resource-type-ref.html)
 
+## Kubernetes Incubator
+
+This is a [Kubernetes Incubator project](https://github.com/kubernetes/community/blob/master/incubator.md). The project was established 2017-03-15. The incubator team for the project is:
+
+- Sponsor: Tim Hockin (@thockin)
+- Champion: Mike Danese (@mikedanese)
+- SIG: sig-aws
+
+### Code of conduct
+
+Participation in the Kubernetes community is governed by the [Kubernetes Code of Conduct](code-of-conduct.md).
+
 ## Contributing
 
 Submit a PR to this repository, following the [contributors guide](CONTRIBUTING.md).

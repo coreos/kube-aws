@@ -21,6 +21,8 @@ import (
 )
 
 const (
+	k8sVer = "v1.5.4_coreos.0"
+
 	credentialsDir = "credentials"
 	userDataDir    = "userdata"
 )
@@ -84,19 +86,31 @@ func NewDefaultCluster() *Cluster {
 
 	return &Cluster{
 		DeploymentSettings: DeploymentSettings{
-			ClusterName:        "kubernetes",
-			VPCCIDR:            "10.0.0.0/16",
-			ReleaseChannel:     "stable",
-			K8sVer:             "v1.5.4_coreos.0",
-			HyperkubeImageRepo: "quay.io/coreos/hyperkube",
-			AWSCliImageRepo:    "quay.io/coreos/awscli",
-			AWSCliTag:          "master",
-			ContainerRuntime:   "docker",
-			Subnets:            []model.Subnet{},
-			EIPAllocationIDs:   []string{},
-			MapPublicIPs:       true,
-			Experimental:       experimental,
-			ManageCertificates: true,
+			ClusterName:                 "kubernetes",
+			VPCCIDR:                     "10.0.0.0/16",
+			ReleaseChannel:              "stable",
+			K8sVer:                      k8sVer,
+			ContainerRuntime:            "docker",
+			Subnets:                     []model.Subnet{},
+			EIPAllocationIDs:            []string{},
+			MapPublicIPs:                true,
+			Experimental:                experimental,
+			ManageCertificates:          true,
+			HyperkubeImage:              model.Image{Repo: "quay.io/coreos/hyperkube", Tag: k8sVer, RktPullDocker: false},
+			AWSCliImage:                 model.Image{Repo: "quay.io/coreos/awscli", Tag: "master", RktPullDocker: false},
+			CalicoNodeImage:             model.Image{Repo: "quay.io/calico/node", Tag: "v1.0.2", RktPullDocker: false},
+			CalicoCniImage:              model.Image{Repo: "quay.io/calico/cni", Tag: "v1.5.6", RktPullDocker: false},
+			CalicoPolicyControllerImage: model.Image{Repo: "quay.io/calico/kube-policy-controller", Tag: "v0.5.2", RktPullDocker: false},
+			ClusterAutoscalerImage:      model.Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64", Tag: "1.0.0", RktPullDocker: false},
+			KubeDnsImage:                model.Image{Repo: "gcr.io/google_containers/kubedns-amd64", Tag: "1.9", RktPullDocker: false},
+			KubeDnsMasqImage:            model.Image{Repo: "gcr.io/google_containers/kube-dnsmasq-amd64", Tag: "1.4", RktPullDocker: false},
+			DnsMasqMetricsImage:         model.Image{Repo: "gcr.io/google_containers/dnsmasq-metrics-amd64", Tag: "1.0", RktPullDocker: false},
+			ExecHealthzImage:            model.Image{Repo: "gcr.io/google_containers/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
+			HeapsterImage:               model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.2.0", RktPullDocker: false},
+			AddonResizerImage:           model.Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "1.6", RktPullDocker: false},
+			KubeDashboardImage:          model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.5.1", RktPullDocker: false},
+			CalicoCtlImage:              model.Image{Repo: "calico/ctl", Tag: "v1.0.0", RktPullDocker: false},
+			PauseImage:                  model.Image{Repo: "gcr.io/google_containers/pause-amd64", Tag: "3.0", RktPullDocker: false},
 		},
 		KubeClusterSettings: KubeClusterSettings{
 			DNSServiceIP: "10.3.0.10",
@@ -148,6 +162,7 @@ func NewDefaultCluster() *Cluster {
 
 func newDefaultClusterWithDeps(encSvc EncryptService) *Cluster {
 	cluster := NewDefaultCluster()
+	cluster.HyperkubeImage.Tag = cluster.K8sVer
 	cluster.ProvidedEncryptService = encSvc
 	return cluster
 }
@@ -172,6 +187,7 @@ func ClusterFromBytes(data []byte) (*Cluster, error) {
 	if err := yaml.Unmarshal(data, c); err != nil {
 		return nil, fmt.Errorf("failed to parse cluster: %v", err)
 	}
+	c.HyperkubeImage.Tag = c.K8sVer
 
 	if err := c.Load(); err != nil {
 		return nil, err
@@ -314,8 +330,7 @@ type KubeClusterSettings struct {
 
 // Part of configuration which can't be provided via user input but is computed from user input
 type ComputedDeploymentSettings struct {
-	AMI           string
-	IsChinaRegion bool
+	AMI string
 }
 
 // Part of configuration which can be customized for each type/group of nodes(etcd/controller/worker/) by its nature.
@@ -330,22 +345,19 @@ type ComputedDeploymentSettings struct {
 // Though it is highly configurable, it's basically users' responsibility to provide `correct` values if they're going beyond the defaults.
 type DeploymentSettings struct {
 	ComputedDeploymentSettings
-	ClusterName       string `yaml:"clusterName,omitempty"`
-	KeyName           string `yaml:"keyName,omitempty"`
-	Region            string `yaml:"region,omitempty"`
-	AvailabilityZone  string `yaml:"availabilityZone,omitempty"`
-	ReleaseChannel    string `yaml:"releaseChannel,omitempty"`
-	AmiId             string `yaml:"amiId,omitempty"`
-	VPCID             string `yaml:"vpcId,omitempty"`
-	InternetGatewayID string `yaml:"internetGatewayId,omitempty"`
-	RouteTableID      string `yaml:"routeTableId,omitempty"`
+	ClusterName       string       `yaml:"clusterName,omitempty"`
+	KeyName           string       `yaml:"keyName,omitempty"`
+	Region            model.Region `yaml:",inline"`
+	AvailabilityZone  string       `yaml:"availabilityZone,omitempty"`
+	ReleaseChannel    string       `yaml:"releaseChannel,omitempty"`
+	AmiId             string       `yaml:"amiId,omitempty"`
+	VPCID             string       `yaml:"vpcId,omitempty"`
+	InternetGatewayID string       `yaml:"internetGatewayId,omitempty"`
+	RouteTableID      string       `yaml:"routeTableId,omitempty"`
 	// Required for validations like e.g. if instance cidr is contained in vpc cidr
 	VPCCIDR             string            `yaml:"vpcCIDR,omitempty"`
 	InstanceCIDR        string            `yaml:"instanceCIDR,omitempty"`
 	K8sVer              string            `yaml:"kubernetesVersion,omitempty"`
-	HyperkubeImageRepo  string            `yaml:"hyperkubeImageRepo,omitempty"`
-	AWSCliImageRepo     string            `yaml:"awsCliImageRepo,omitempty"`
-	AWSCliTag           string            `yaml:"awsCliTag,omitempty"`
 	ContainerRuntime    string            `yaml:"containerRuntime,omitempty"`
 	KMSKeyARN           string            `yaml:"kmsKeyArn,omitempty"`
 	StackTags           map[string]string `yaml:"stackTags,omitempty"`
@@ -357,6 +369,23 @@ type DeploymentSettings struct {
 	Experimental        Experimental      `yaml:"experimental"`
 	ManageCertificates  bool              `yaml:"manageCertificates,omitempty"`
 	WaitSignal          WaitSignal        `yaml:"waitSignal"`
+
+	// Images repository
+	HyperkubeImage              model.Image `yaml:"hyperkubeImage,omitempty"`
+	AWSCliImage                 model.Image `yaml:"awsCliImage,omitempty"`
+	CalicoNodeImage             model.Image `yaml:"calicoNodeImage,omitempty"`
+	CalicoCniImage              model.Image `yaml:"calicoCniImage,omitempty"`
+	CalicoCtlImage              model.Image `yaml:"calicoCtlImage,omitempty"`
+	CalicoPolicyControllerImage model.Image `yaml:"calicoPolicyControllerImage,omitempty"`
+	ClusterAutoscalerImage      model.Image `yaml:"clusterAutoscalerImage,omitempty"`
+	KubeDnsImage                model.Image `yaml:"kubeDnsImage,omitempty"`
+	KubeDnsMasqImage            model.Image `yaml:"kubeDnsMasqImage,omitempty"`
+	DnsMasqMetricsImage         model.Image `yaml:"dnsMasqMetricsImage,omitempty"`
+	ExecHealthzImage            model.Image `yaml:"execHealthzImage,omitempty"`
+	HeapsterImage               model.Image `yaml:"heapsterImage,omitempty"`
+	AddonResizerImage           model.Image `yaml:"addonResizerImage,omitempty"`
+	KubeDashboardImage          model.Image `yaml:"kubeDashboardImage,omitempty"`
+	PauseImage                  model.Image `yaml:"pauseImage,omitempty"`
 }
 
 // Part of configuration which is specific to worker nodes
@@ -625,7 +654,7 @@ func (c Cluster) Config() (*Config, error) {
 
 	if c.AmiId == "" {
 		var err error
-		if config.AMI, err = amiregistry.GetAMI(config.Region, config.ReleaseChannel); err != nil {
+		if config.AMI, err = amiregistry.GetAMI(config.Region.String(), config.ReleaseChannel); err != nil {
 			return nil, fmt.Errorf("failed getting AMI for config: %v", err)
 		}
 	} else {
@@ -645,15 +674,12 @@ func (c Cluster) Config() (*Config, error) {
 		}
 	}
 
-	config.IsChinaRegion = strings.HasPrefix(config.Region, "cn")
-
 	return &config, nil
 }
 
 func (c *Cluster) EtcdCluster() derived.EtcdCluster {
-	region := model.RegionForName(c.Region)
 	etcdNetwork := derived.NewNetwork(c.Etcd.Subnets, c.NATGateways())
-	return derived.NewEtcdCluster(c.Etcd.Cluster, region, etcdNetwork, c.EtcdCount)
+	return derived.NewEtcdCluster(c.Etcd.Cluster, c.Region, etcdNetwork, c.EtcdCount)
 }
 
 // releaseVersionIsGreaterThan will return true if the supplied version is greater then
@@ -700,18 +726,25 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 		return nil, err
 	}
 
-	var compactAssets *CompactTLSAssets
-
 	if c.ManageCertificates {
-		compactAssets, err = ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, KMSConfig{
-			Region:         stackConfig.Config.Region,
-			KMSKeyARN:      c.KMSKeyARN,
-			EncryptService: c.ProvidedEncryptService,
-		})
-		if err != nil {
-			return nil, err
+		if c.TLSAssetsEncryptionEnabled() {
+			var compactAssets *CompactTLSAssets
+			compactAssets, err = ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, KMSConfig{
+				Region:         stackConfig.Config.Region,
+				KMSKeyARN:      c.KMSKeyARN,
+				EncryptService: c.ProvidedEncryptService,
+			})
+			if err != nil {
+				return nil, err
+			}
+			stackConfig.Config.TLSConfig = compactAssets
+		} else {
+			rawAssets, err := ReadOrCreateUnecryptedCompactTLSAssets(opts.TLSAssetsDir)
+			if err != nil {
+				return nil, err
+			}
+			stackConfig.Config.TLSConfig = rawAssets
 		}
-		stackConfig.Config.TLSConfig = compactAssets
 	}
 
 	if stackConfig.UserDataController, err = userdatatemplate.GetString(opts.ControllerTmplFile, stackConfig.Config); err != nil {
@@ -923,7 +956,7 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 	if c.ClusterName == "" {
 		return nil, errors.New("clusterName must be set")
 	}
-	if c.KMSKeyARN == "" && c.ManageCertificates {
+	if c.KMSKeyARN == "" && c.TLSAssetsEncryptionEnabled() {
 		return nil, errors.New("kmsKeyArn must be set")
 	}
 
@@ -931,7 +964,7 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 		return nil, errors.New("vpcId must be specified if routeTableId or internetGatewayId are specified")
 	}
 
-	if c.Region == "" {
+	if c.Region.IsEmpty() {
 		return nil, errors.New("region must be set")
 	}
 
@@ -1022,6 +1055,10 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 	}
 
 	return &DeploymentValidationResult{vpcNet: vpcNet}, nil
+}
+
+func (c DeploymentSettings) TLSAssetsEncryptionEnabled() bool {
+	return c.ManageCertificates && c.Region.SupportsKMS()
 }
 
 func (s DeploymentSettings) AllSubnets() []model.Subnet {
