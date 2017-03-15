@@ -2,6 +2,8 @@ package config
 
 //go:generate go run ../../../codegen/templates_gen.go CloudConfigController=cloud-config-controller CloudConfigWorker=cloud-config-worker CloudConfigEtcd=cloud-config-etcd DefaultClusterConfig=cluster.yaml KubeConfigTemplate=kubeconfig.tmpl StackTemplateTemplate=stack-template.json
 //go:generate gofmt -w templates.go
+//go:generate go run ../../../codegen/files_gen.go Etcdadm=../../../etcdadm/etcdadm
+//go:generate gofmt -w files.go
 
 import (
 	"errors"
@@ -18,6 +20,7 @@ import (
 	"github.com/coreos/kube-aws/model/derived"
 	"github.com/coreos/kube-aws/netutil"
 	yaml "gopkg.in/yaml.v2"
+	"github.com/coreos/kube-aws/gzipcompressor"
 )
 
 const (
@@ -810,6 +813,10 @@ func (c Config) InternetGatewayRef() string {
 	} else {
 		return fmt.Sprintf(`{ "Ref" : %q }`, c.InternetGatewayLogicalName())
 	}
+}
+
+func (c *Config) Etcdadm() (string, error) {
+	return gzipcompressor.CompressData(Etcdadm)
 }
 
 func (c Cluster) valid() error {

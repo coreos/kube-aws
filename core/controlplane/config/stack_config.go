@@ -5,6 +5,7 @@ import (
 	"github.com/coreos/kube-aws/coreos/userdatavalidation"
 	"github.com/coreos/kube-aws/filereader/jsontemplate"
 	"net/url"
+	"strings"
 )
 
 type StackConfig struct {
@@ -34,6 +35,30 @@ func (c *StackConfig) UserDataEtcdS3Path() (string, error) {
 		return "", fmt.Errorf("Error in UserDataEtcdS3Path : %v", err)
 	}
 	return fmt.Sprintf("%s%s/%s/userdata-etcd", s3uri.Host, s3uri.Path, c.StackName()), nil
+}
+
+func (c *StackConfig) EtcdSnapshotsS3Path() (string, error) {
+	s3uri, err := url.Parse(c.S3URI)
+	if err != nil {
+		return "", fmt.Errorf("Error in EtcdSnapshotsS3Path : %v", err)
+	}
+	return fmt.Sprintf("%s%s/etcd-snapshots", s3uri.Host, s3uri.Path), nil
+}
+
+func (c *StackConfig) EtcdSnapshotsS3Bucket() (string, error) {
+	s3uri, err := url.Parse(c.S3URI)
+	if err != nil {
+		return "", fmt.Errorf("Error in EtcdSnapshotsS3Bucket : %v", err)
+	}
+	return s3uri.Host, nil
+}
+
+func (c *StackConfig) EtcdSnapshotsS3Prefix() (string, error) {
+	s3uri, err := url.Parse(c.S3URI)
+	if err != nil {
+		return "", fmt.Errorf("Error in EtcdSnapshotsS3Prefix : %v", err)
+	}
+	return strings.TrimLeft(s3uri.Path, "/"), nil
 }
 
 func (c *StackConfig) ValidateUserData() error {

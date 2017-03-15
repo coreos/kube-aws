@@ -331,6 +331,33 @@
                     "s3:GetObject"
                   ],
                   "Resource": "arn:{{.Region.Partition}}:s3:::{{$.UserDataEtcdS3Path}}"
+                },
+                {{/* Required for `etcdadm reconfigure` to check existence of an etcd snapshot in S3 */}}
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:List*"
+                  ],
+                  "Resource": "arn:{{.Region.Partition}}:s3:::{{$.EtcdSnapshotsS3Bucket}}",
+                  "Condition": {
+                    "StringLike": {
+                      "s3:prefix": "{{$.EtcdSnapshotsS3Prefix}}/*"
+                    }
+                  }
+                },
+                {{/* Required for `etcdadm save` to save etcd snapshots in S3 */}}
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:*"
+                  ],
+                  "Resource": "arn:{{.Region.Partition}}:s3:::{{$.EtcdSnapshotsS3Path}}/*"
+                },
+                {{/* Required for `etcdadm reconfigure` to determine the number of active etcd nodes */}}
+                {
+                  "Action": "ec2:DescribeInstances",
+                  "Resource": "*",
+                  "Effect": "Allow"
                 }
               ],
               "Version": "2012-10-17"
@@ -461,6 +488,11 @@
             "Key": "Name",
             "PropagateAtLaunch": "true",
             "Value": "{{$.ClusterName}}-{{$.StackName}}-kube-aws-etcd-{{$etcdIndex}}"
+          },
+          {
+            "Key": "kube-aws:role",
+            "PropagateAtLaunch": "true",
+            "Value": "etcd"
           }
         ],
         "VPCZoneIdentifier": [
@@ -504,6 +536,42 @@
                     {{$etcdInstance.AdvertisedFQDNRef}},
                     ":2380",
                     {{end}}
+                  "'\n"
+                ]]}
+              },
+              "/var/run/coreos/etcdadm-environment": {
+                "content": { "Fn::Join" : [ "", [
+                  "ETCD_ENDPOINTS='",
+                    {{range $index, $etcdInstance := $.EtcdNodes}}
+                    {{if $index}}",", {{end}}
+                    "https://",
+                    {{$etcdInstance.AdvertisedFQDNRef}},
+                    ":2379",
+                    {{end}}
+                  "'\n",
+                  "ETCDCTL_CACERT='",
+                    "/etc/ssl/certs/ca.pem",
+                  "'\n",
+                  "ETCDCTL_CERT='",
+                    "/etc/ssl/certs/etcd.pem",
+                  "'\n",
+                  "ETCDCTL_KEY='",
+                    "/etc/ssl/certs/etcd-key.pem",
+                  "'\n",
+                  "ETCDADM_MEMBER_SYSTEMD_SERVICE_NAME='",
+                    "etcd-member",
+                  "'\n",
+                  "ETCDADM_CLUSTER_SNAPSHOTS_S3_URI='",
+                    "s3://{{$.EtcdSnapshotsS3Path}}",
+                  "'\n",
+                  "ETCDADM_STATE_FILES_DIR='",
+                    "/var/run/coreos/etcdadm",
+                  "'\n",
+                  "ETCDADM_MEMBER_COUNT='",
+                    "{{$.EtcdCount}}",
+                  "'\n",
+                  "ETCDADM_MEMBER_INDEX='",
+                    "{{$etcdIndex}}",
                   "'\n"
                 ]]}
               }

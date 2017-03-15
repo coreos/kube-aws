@@ -91,3 +91,11 @@ echo \
   ./etcdadm \
   tester_run_all_tests | sudo bash
 ```
+
+### Notes for kube-aws users
+
+You can manually invoke `etcdadm` on an etcd node by running:
+```bash
+set -a; source /var/run/coreos/etcdadm-environment; set +a
+/opt/bin/etcdadm <any command>
+```

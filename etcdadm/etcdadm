@@ -145,13 +145,19 @@ cluster_majority() {
 
 cluster_num_running_nodes() {
   # TODO aws autoscaling describe-auto-scaling-group
-  local f
-  local n
-  f=$(tester_num_running_nodes_file)
-  if [ -f "${f}" ]; then
-    n=$(cat "${f}")
+  if [ -f /sys/hypervisor/uuid ] && [ `head -c 3 /sys/hypervisor/uuid` == ec2 ]; then
+    local describe_instances
+    describe_instances=$(_awscli_command ec2 describe-instances --filter Name=tag:kube-aws:role,Values=etcd)
+    $describe_instances | jq -r '[ .Reservations[].Instances[] ] | length'
+  else
+    local f
+    local n
+    f=$(tester_num_running_nodes_file)
+    if [ -f "${f}" ]; then
+      n=$(cat "${f}")
+    fi
+    echo "${n:-0}"
   fi
-  echo "${n:-0}"
 }
 
 cluster_num_healthy_members() {
@@ -704,8 +710,21 @@ member_data_dir() {
 
 member_etcdctl() {
   local uuid_file
+  local rkt_opts=()
+
   uuid_file="$(config_state_dir)/etcdctl-$BASHPID.uuid"
-  _run_as_root rkt run \
+
+  if [ "${ETCDCTL_CACERT:-}" != "" -a "${ETCDCTL_CERT:-}" != "" -a  "${ETCDCTL_KEY:-}" != "" ]; then
+    local credentials
+    credentials=$(dirname "${ETCDCTL_CACERT}")
+    rkt_opts+=(--set-env ETCDCTL_CACERT=${ETCDCTL_CACERT})
+    rkt_opts+=(--set-env ETCDCTL_CERT=${ETCDCTL_CERT})
+    rkt_opts+=(--set-env ETCDCTL_KEY=${ETCDCTL_KEY})
+    rkt_opts+=(--volume credentials,kind=host,source=${credentials})
+    rkt_opts+=(--mount volume=credentials,target=${credentials})
+  fi
+
+  _run_as_root rkt run ${rkt_opts[*]} \
     --insecure-options=image \
     --set-env ETCDCTL_API=3 \
     --net=host \
