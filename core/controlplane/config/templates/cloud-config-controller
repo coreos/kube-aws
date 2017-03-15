@@ -487,6 +487,14 @@ write_files:
           "http://127.0.0.1:8080/apis/rbac.authorization.k8s.io/v1alpha1/clusterrolebindings"
       done
 
+      {{ if .Experimental.ClusterTLSBootstrap.Enabled }}
+      post_yaml "@${mfdir}/cluster-roles/csr.yaml" \
+      "http://127.0.0.1:8080/apis/rbac.authorization.k8s.io/v1alpha1/clusterroles" |true
+
+      post_yaml "@${mfdir}/cluster-role-bindings/csr.yaml" \
+      "http://127.0.0.1:8080/apis/rbac.authorization.k8s.io/v1alpha1/clusterrolebindings" |true
+      {{ end }}
+
       {{ end }}
 
   - path: /etc/kubernetes/cni/docker_opts_cni.env
@@ -862,6 +870,37 @@ write_files:
           kind: ClusterRole
           name: cluster-admin
           apiGroup: rbac.authorization.k8s.io
+
+{{ if .Experimental.ClusterTLSBootstrap.Enabled }}
+  - path: /srv/kubernetes/rbac/cluster-roles/csr.yaml
+    content: |
+        kind: ClusterRole
+        apiVersion: rbac.authorization.k8s.io/v1alpha1
+        metadata:
+          name: certificate-signing-requests
+        rules:
+          - apiGroups:
+              - '*'
+            resources:
+              - certificatesigningrequests
+            verbs:
+              - '*'
+
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/csr.yaml
+    content: |
+        kind: ClusterRoleBinding
+        apiVersion: rbac.authorization.k8s.io/v1alpha1
+        metadata:
+          name: kubelet-bootstrap-csr
+        subjects:
+          - kind: Group
+            namespace: '*'
+            name: system:kubelet-bootstrap
+        roleRef:
+          kind: ClusterRole
+          name: certificate-signing-requests
+          apiGroup: rbac.authorization.k8s.io
+{{ end }}
 {{ end }}
 
   - path: /etc/kubernetes/manifests/kube-proxy.yaml
@@ -949,6 +988,9 @@ write_files:
           - --client-ca-file=/etc/kubernetes/ssl/ca.pem
           - --service-account-key-file=/etc/kubernetes/ssl/apiserver-key.pem
           - --runtime-config=extensions/v1beta1/networkpolicies=true,batch/v2alpha1{{if .Experimental.Plugins.Rbac.Enabled}},rbac.authorization.k8s.io/v1alpha1=true{{ end }}{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},extensions/v1beta1/podsecuritypolicy=true{{ end }}
+          {{ if .Experimental.ClusterTLSBootstrap.Enabled }}
+          - --token-auth-file=/etc/kubernetes/ssl/csr-bootstrap-token.csv
+          {{ end }}
           - --cloud-provider=aws
           livenessProbe:
             httpGet:
@@ -1008,6 +1050,11 @@ write_files:
           - --master=http://127.0.0.1:8080
           - --leader-elect=true
           - --service-account-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+          {{ if .Experimental.ClusterTLSBootstrap.Enabled }}
+          - --insecure-experimental-approve-all-kubelet-csrs-for-group=system:kubelet-bootstrap
+          - --cluster-signing-cert-file=/etc/kubernetes/ssl/ca.pem
+          - --cluster-signing-key-file=/etc/kubernetes/ssl/ca-key.pem
+          {{ end }}
           - --root-ca-file=/etc/kubernetes/ssl/ca.pem
           - --cloud-provider=aws
           resources:
@@ -1425,10 +1472,23 @@ write_files:
           - port: 80
             targetPort: 9090
 
+{{ if .Experimental.ClusterTLSBootstrap.Enabled }}
+  # TODO: remove hard-coded token
+  - path: /etc/kubernetes/ssl/csr-bootstrap-token.csv
+    content: |
+      WNY9xavOd1SrFmffhBBXgFX1vTw3lgRh,kubelet-bootstrap,10001,"system:kubelet-bootstrap"
+{{ end }}
+
 {{ if .ManageCertificates }}
   - path: /etc/kubernetes/ssl/ca.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.CACert}}
+
+{{ if .Experimental.ClusterTLSBootstrap.Enabled }}
+  - path: /etc/kubernetes/ssl/ca-key.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
+    encoding: gzip+base64
+    content: {{.TLSConfig.CAKey}}
+{{ end }}
 
   - path: /etc/kubernetes/ssl/apiserver.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64

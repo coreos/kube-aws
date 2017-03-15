@@ -55,6 +55,9 @@ func NewDefaultCluster() *Cluster {
 		ClusterAutoscalerSupport{
 			Enabled: false,
 		},
+		ClusterTLSBootstrap{
+			Enabled: false,
+		},
 		EphemeralImageStorage{
 			Enabled:    false,
 			Disk:       "xvdb",
@@ -456,6 +459,7 @@ type Experimental struct {
 	AwsEnvironment           AwsEnvironment           `yaml:"awsEnvironment"`
 	AwsNodeLabels            AwsNodeLabels            `yaml:"awsNodeLabels"`
 	ClusterAutoscalerSupport ClusterAutoscalerSupport `yaml:"clusterAutoscalerSupport"`
+	ClusterTLSBootstrap      ClusterTLSBootstrap      `yaml:"clusterTLSBootstrap"`
 	EphemeralImageStorage    EphemeralImageStorage    `yaml:"ephemeralImageStorage"`
 	Kube2IamSupport          Kube2IamSupport          `yaml:"kube2IamSupport,omitempty"`
 	LoadBalancer             LoadBalancer             `yaml:"loadBalancer"`
@@ -500,6 +504,10 @@ type AwsNodeLabels struct {
 }
 
 type ClusterAutoscalerSupport struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type ClusterTLSBootstrap struct {
 	Enabled bool `yaml:"enabled"`
 }
 
@@ -906,6 +914,10 @@ func (c Cluster) valid() error {
 
 	if c.ControllerInstanceType == "t2.micro" || c.EtcdInstanceType == "t2.micro" || c.ControllerInstanceType == "t2.nano" || c.EtcdInstanceType == "t2.nano" {
 		fmt.Println(`WARNING: instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/coreos/kube-aws/issues/258 for more information`)
+	}
+
+	if c.Experimental.ClusterTLSBootstrap.Enabled && !c.Experimental.Plugins.Rbac.Enabled {
+		fmt.Println(`WARNING: enabling cluster-level TLS bootstrapping without RBAC is not recommended. See https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/ for more information`)
 	}
 
 	return nil

@@ -191,7 +191,7 @@ func ReadRawTLSAssets(dirname string) (*RawTLSAssets, error) {
 		name      string
 		cert, key *[]byte
 	}{
-		{"ca", &r.CACert, nil},
+		{"ca", &r.CACert, &r.CAKey},
 		{"apiserver", &r.APIServerCert, &r.APIServerKey},
 		{"worker", &r.WorkerCert, &r.WorkerKey},
 		{"admin", &r.AdminCert, &r.AdminKey},
@@ -225,7 +225,7 @@ func ReadEncryptedTLSAssets(dirname string) (*EncryptedTLSAssets, error) {
 		name      string
 		cert, key *[]byte
 	}{
-		{"ca", &r.CACert, nil},
+		{"ca", &r.CACert, &r.CAKey},
 		{"apiserver", &r.APIServerCert, &r.APIServerKey},
 		{"worker", &r.WorkerCert, &r.WorkerKey},
 		{"admin", &r.AdminCert, &r.AdminKey},
@@ -306,6 +306,7 @@ func (r *RawTLSAssets) Encrypt(kMSKeyARN string, kmsSvc EncryptService) (*Encryp
 	}
 	encryptedAssets := EncryptedTLSAssets{TLSAssets{
 		CACert:         encrypt(r.CACert),
+		CAKey:          encrypt(r.CAKey),
 		APIServerCert:  encrypt(r.APIServerCert),
 		APIServerKey:   encrypt(r.APIServerKey),
 		WorkerCert:     encrypt(r.WorkerCert),
@@ -367,6 +368,7 @@ func (r *TLSAssets) Compact() (*CompactTLSAssets, error) {
 	}
 	compactAssets := CompactTLSAssets{
 		CACert:         compact(r.CACert),
+		CAKey:          compact(r.CAKey),
 		APIServerCert:  compact(r.APIServerCert),
 		APIServerKey:   compact(r.APIServerKey),
 		WorkerCert:     compact(r.WorkerCert),

@@ -95,6 +95,9 @@ func TestMainClusterConfig(t *testing.T) {
 			ClusterAutoscalerSupport: controlplane_config.ClusterAutoscalerSupport{
 				Enabled: false,
 			},
+			ClusterTLSBootstrap: controlplane_config.ClusterTLSBootstrap{
+				Enabled: false,
+			},
 			EphemeralImageStorage: controlplane_config.EphemeralImageStorage{
 				Enabled:    false,
 				Disk:       "xvdb",
@@ -871,6 +874,8 @@ experimental:
     enabled: true
   clusterAutoscalerSupport:
     enabled: true
+  clusterTLSBootstrap:
+    enabled: true
   ephemeralImageStorage:
     enabled: true
   kube2IamSupport:
@@ -934,6 +939,9 @@ worker:
 							Enabled: true,
 						},
 						ClusterAutoscalerSupport: controlplane_config.ClusterAutoscalerSupport{
+							Enabled: true,
+						},
+						ClusterTLSBootstrap: controlplane_config.ClusterTLSBootstrap{
 							Enabled: true,
 						},
 						EphemeralImageStorage: controlplane_config.EphemeralImageStorage{
@@ -1007,6 +1015,8 @@ worker:
       enabled: true
     clusterAutoscalerSupport:
       enabled: true
+    clusterTLSBootstrap:
+      enabled: true
     ephemeralImageStorage:
       enabled: true
     kube2IamSupport:
@@ -1047,6 +1057,9 @@ worker:
 							Enabled: true,
 						},
 						ClusterAutoscalerSupport: controlplane_config.ClusterAutoscalerSupport{
+							Enabled: true,
+						},
+						ClusterTLSBootstrap: controlplane_config.ClusterTLSBootstrap{
 							Enabled: true,
 						},
 						EphemeralImageStorage: controlplane_config.EphemeralImageStorage{
