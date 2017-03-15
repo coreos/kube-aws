@@ -729,6 +729,69 @@ nodeDrainer:
 
 }
 
+func TestClusterTLSBootstrapConfig(t *testing.T) {
+
+	validConfigs := []struct {
+		conf                string
+		clusterTLSBootstrap ClusterTLSBootstrap
+	}{
+		{
+			conf: `
+`,
+			clusterTLSBootstrap: ClusterTLSBootstrap{
+				Enabled: false,
+			},
+		},
+		{
+			conf: `
+experimental:
+  clusterTLSBootstrap:
+    enabled: false
+`,
+			clusterTLSBootstrap: ClusterTLSBootstrap{
+				Enabled: false,
+			},
+		},
+		{
+			conf: `
+experimental:
+  clusterTLSBootstrap:
+    enabled: true
+`,
+			clusterTLSBootstrap: ClusterTLSBootstrap{
+				Enabled: true,
+			},
+		},
+		{
+			conf: `
+# Settings for an experimental feature must be under the "experimental" field. Ignored.
+clusterTLSBootstrap:
+  enabled: true
+`,
+			clusterTLSBootstrap: ClusterTLSBootstrap{
+				Enabled: false,
+			},
+		},
+	}
+
+	for _, conf := range validConfigs {
+		confBody := singleAzConfigYaml + conf.conf
+		c, err := ClusterFromBytes([]byte(confBody))
+		if err != nil {
+			t.Errorf("failed to parse config %s: %v", confBody, err)
+			continue
+		}
+		if !reflect.DeepEqual(c.Experimental.ClusterTLSBootstrap, conf.clusterTLSBootstrap) {
+			t.Errorf(
+				"parsed cluster TLS bootstrap settings %+v does not match config: %s",
+				c.Experimental.ClusterTLSBootstrap,
+				confBody,
+			)
+		}
+	}
+
+}
+
 func TestRktConfig(t *testing.T) {
 	validChannels := []string{
 		"alpha",

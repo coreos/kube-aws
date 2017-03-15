@@ -662,6 +662,10 @@ worker:
 #   # Will provision controller nodes with IAM permissions to run cluster-autoscaler
 #   clusterAutoscalerSupport:
 #     enable: true
+#   # If enabled, instructs the controller manager to automatically issue TLS certificates to worker nodes via certificate signing requests (csr) made to the API server using the bootstrap token.
+#   # If enabled, also consider enabling the rbac plugin to limit requests using the bootstrap token to only be able to make requests related to certificate provisioning.
+#   clusterTLSBootstrap:
+#     enable: true
 #   # This option has not yet been tested with rkt as container runtime
 #   ephemeralImageStorage:
 #     enabled: true

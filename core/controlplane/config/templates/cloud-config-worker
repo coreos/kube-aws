@@ -144,7 +144,8 @@ coreos:
         --cluster_dns={{.DNSServiceIP}} \
         --cluster_domain=cluster.local \
         --cloud-provider=aws \
-        --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
+        {{if .ClusterTLSBootstrap.Enabled}}--experimental-bootstrap-kubeconfig=/etc/kubernetes/worker-bootstrap-kubeconfig.yaml
+        {{end}}--kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
         --tls-cert-file=/etc/kubernetes/ssl/worker.pem \
         --tls-private-key-file=/etc/kubernetes/ssl/worker-key.pem
         Restart=always
@@ -504,6 +505,7 @@ write_files:
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientKey}}
 
+{{ if not .ClusterTLSBootstrap.Enabled }}
   - path: /etc/kubernetes/ssl/worker.pem.enc
     encoding: gzip+base64
     content: {{.TLSConfig.WorkerCert}}
@@ -511,6 +513,7 @@ write_files:
   - path: /etc/kubernetes/ssl/worker-key.pem.enc
     encoding: gzip+base64
     content: {{.TLSConfig.WorkerKey}}
+{{ end }}
 
   - path: /etc/kubernetes/ssl/ca.pem.enc
     encoding: gzip+base64
@@ -684,6 +687,28 @@ write_files:
                 path: /var/run/dbus
               name: dbus
 
+{{ if .ClusterTLSBootstrap.Enabled }}
+  - path: /etc/kubernetes/worker-bootstrap-kubeconfig.yaml
+    content: |
+        apiVersion: v1
+        kind: Config
+        clusters:
+        - name: local
+          cluster:
+            certificate-authority: /etc/kubernetes/ssl/ca.pem
+            server: https://{{.ExternalDNSName}}:443
+        users:
+        - name: kubelet-bootstrap
+          user:
+            # TODO: generate a dedicated token, send it encrypted to the CloudFormation template, and decrypt it on provisioning
+            token: WNY9xavOd1SrFmffhBBXgFX1vTw3lgRh
+        contexts:
+        - context:
+            cluster: local
+            user: kubelet-bootstrap
+          name: kubelet-bootstrap-context
+        current-context: kubelet-bootstrap-context
+{{ else }}
   - path: /etc/kubernetes/worker-kubeconfig.yaml
     content: |
         apiVersion: v1
@@ -703,6 +728,7 @@ write_files:
             user: kubelet
           name: kubelet-context
         current-context: kubelet-context
+{{ end }}
 
 {{ if not .UseCalico }}
   - path: /etc/kubernetes/cni/net.d/10-flannel.conf
