@@ -7,7 +7,8 @@ TESTINFRA_DIR=${E2E_DIR}/testinfra
 KUBE_AWS_TEST_INFRA_STACK_NAME=${KUBE_AWS_TEST_INFRA_STACK_NAME:-${KUBE_AWS_CLUSTER_NAME}-testinfra}
 SRC_DIR=$(cd $(dirname $0); cd ..; pwd)
 KUBECONFIG=${WORK_DIR}/kubeconfig
-ETCD_COUNT=${ETCD_COUNT:-1}
+ETCD_COUNT=${ETCD_COUNT:-3}
+CONTROLLER_COUNT=${CONTROLLER_COUNT:-2}
 
 export KUBECONFIG
 
@@ -217,6 +218,7 @@ waitSignal:
   enabled: true
 awsNodeLabels:
   enabled: true
+controllerCount: $CONTROLLER_COUNT
 etcdCount: $ETCD_COUNT
 " >> cluster.yaml
 
