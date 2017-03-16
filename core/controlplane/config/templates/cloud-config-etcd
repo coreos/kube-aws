@@ -47,10 +47,9 @@ coreos:
 
     - name: etcdadm-check.service
       enable: true
-      runtime: true
       content: |
         [Unit]
-        Description=etcdadm check runner
+        Description=etcd health check
         Wants=network.target
 
         [Service]
@@ -60,12 +59,27 @@ coreos:
         ExecStart=/opt/bin/etcdadm check
         TimeoutStartSec=120
 
-    - name: etcdadm-save.service
+    - name: etcdadm-check.timer
       enable: true
-      runtime: true
+      command: start
       content: |
         [Unit]
-        Description=etcdadm save runner
+        Description=periodic etcd health check
+
+        [Timer]
+        OnBootSec=120sec
+        # Actual interval would be OnUnitInactiveSec+0~AccuracySec=10+0~5 sec
+        OnUnitInactiveSec=10sec
+        AccuracySec=5sec
+
+        [Install]
+        WantedBy=timers.target
+
+    - name: etcdadm-save.service
+      enable: true
+      content: |
+        [Unit]
+        Description=etcd snapshot
         Wants=network.target
 
         [Service]
@@ -76,6 +90,22 @@ coreos:
         ExecStartPre=systemctl is-active etcd-member.service
         ExecStart=/opt/bin/etcdadm check
         TimeoutStartSec=300
+
+    - name: etcdadm-save.timer
+      enable: true
+      command: start
+      content: |
+        [Unit]
+        Description=periodic etcd snapshot
+
+        [Timer]
+        OnBootSec=120sec
+        # Actual interval would be 60+0~5 sec
+        OnUnitInactiveSec=60sec
+        AccuracySec=5sec
+
+        [Install]
+        WantedBy=timers.target
 
     - name: etcd-member.service
       drop-ins:
