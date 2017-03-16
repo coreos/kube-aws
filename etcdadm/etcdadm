@@ -147,7 +147,7 @@ cluster_num_running_nodes() {
   # TODO aws autoscaling describe-auto-scaling-group
   if [ -f /sys/hypervisor/uuid ] && [ `head -c 3 /sys/hypervisor/uuid` == ec2 ]; then
     local describe_instances
-    describe_instances=$(_awscli_command ec2 describe-instances --filter Name=tag:kube-aws:role,Values=etcd)
+    describe_instances=$(_awscli_command ec2 describe-instances --filter Name=tag:kube-aws:role,Values=etcd Name=tag:KubernetesCluster,Values=$KUBERNETES_CLUSTER)
     $describe_instances | jq -r '[ .Reservations[].Instances[] ] | length'
   else
     local f

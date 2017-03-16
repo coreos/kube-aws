@@ -549,6 +549,9 @@
                     ":2379",
                     {{end}}
                   "'\n",
+                  "KUBERNETES_CLUSTER='",
+                    "{{$.ClusterName}}",
+                  "'\n",
                   "ETCDCTL_CACERT='",
                     "/etc/ssl/certs/ca.pem",
                   "'\n",
