@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# To prevent etcdctl errors like "Error:  net/http: TLS handshake timeout" when ETCD_ENDPOINT is set in e.g. /etc/environment
+# Gotcha: ETCDCTL_ENDPOINT seems to be preferred over --peers flag, which results in `etcdctl --peers` to be useless
+unset ETCDCTL_ENDPOINT
+
+export | grep ETCDCTL
+
 ETCD_WORK_DIR=${ETCD_WORK_DIR:-$(pwd)/work}
 
 if [ "${DEBUG:-}" == "yes" ]; then
