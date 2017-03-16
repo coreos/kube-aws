@@ -16,11 +16,11 @@ import (
 	"github.com/coreos/go-semver/semver"
 	"github.com/coreos/kube-aws/coreos/amiregistry"
 	"github.com/coreos/kube-aws/filereader/userdatatemplate"
+	"github.com/coreos/kube-aws/gzipcompressor"
 	"github.com/coreos/kube-aws/model"
 	"github.com/coreos/kube-aws/model/derived"
 	"github.com/coreos/kube-aws/netutil"
 	yaml "gopkg.in/yaml.v2"
-	"github.com/coreos/kube-aws/gzipcompressor"
 )
 
 const (
