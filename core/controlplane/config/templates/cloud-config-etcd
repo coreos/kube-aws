@@ -116,7 +116,8 @@ coreos:
             Wants=decrypt-tls-assets.service cfn-etcd-environment.service
             After=decrypt-tls-assets.service cfn-etcd-environment.service
             {{- end}}
-            Wants=etcdadm-reconfigure.service
+            {{/* can be `Wants` if you like etcd-member to not stop when etcdadm-reconfigure failed */}}
+            BindsTo=etcdadm-reconfigure.service
             After=etcdadm-reconfigure.service
             [Service]
             EnvironmentFile=-/etc/etcd-environment
