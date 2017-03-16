@@ -65,7 +65,7 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 	}
 
 	if stackConfig.ManageCertificates {
-		if stackConfig.ComputedConfig.TLSAssetsEncryptionEnabled() {
+		if stackConfig.ComputedConfig.AssetsEncryptionEnabled() {
 			compactAssets, _ := cfg.ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, cfg.KMSConfig{
 				Region:         stackConfig.ComputedConfig.Region,
 				KMSKeyARN:      c.KMSKeyARN,

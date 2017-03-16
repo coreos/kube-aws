@@ -219,7 +219,7 @@
                   "Resource":"*"
                 },
                 {{end}}
-                {{if .TLSAssetsEncryptionEnabled}}
+                {{if .AssetsEncryptionEnabled}}
                 {
                   "Action" : "kms:Decrypt",
                   "Effect" : "Allow",
@@ -270,7 +270,7 @@
         "Policies": [
           {
             "PolicyDocument": {
-              "Statement": [{{if .TLSAssetsEncryptionEnabled}}
+              "Statement": [{{if .AssetsEncryptionEnabled}}
                 {
                   "Action" : "kms:Decrypt",
                   "Effect" : "Allow",

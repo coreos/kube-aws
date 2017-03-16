@@ -335,7 +335,7 @@
                   "Resource":"*"
                 },
                 {{end}}
-                {{if .TLSAssetsEncryptionEnabled }}
+                {{if .AssetsEncryptionEnabled }}
                 {
                   "Action" : "kms:Decrypt",
                   "Effect" : "Allow",

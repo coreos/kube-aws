@@ -85,7 +85,7 @@ coreos:
             EnvironmentFile=-/run/flannel/etcd-endpoints.opts
             ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
             ExecStartPre=/bin/sh -ec "echo FLANNELD_ETCD_ENDPOINTS=${ETCD_ENDPOINTS} >/run/flannel/etcd-endpoints.opts"
-            {{- if .TLSAssetsEncryptionEnabled}}
+            {{- if .AssetsEncryptionEnabled}}
             ExecStartPre=/opt/bin/decrypt-tls-assets
             {{- end}}
             Environment="ETCD_SSL_DIR=/etc/kubernetes/ssl"
@@ -514,29 +514,29 @@ write_files:
 
 {{ if .ManageCertificates }}
 
-  - path: /etc/kubernetes/ssl/etcd-client.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/ssl/etcd-client.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientCert}}
 
-  - path: /etc/kubernetes/ssl/etcd-client-key.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/ssl/etcd-client-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientKey}}
 
-  - path: /etc/kubernetes/ssl/worker.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/ssl/worker.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.WorkerCert}}
 
-  - path: /etc/kubernetes/ssl/worker-key.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/ssl/worker-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.WorkerKey}}
 
-  - path: /etc/kubernetes/ssl/ca.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/ssl/ca.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.CACert}}
 
 {{ end }}
 
-{{ if .TLSAssetsEncryptionEnabled }}
+{{ if .AssetsEncryptionEnabled }}
   - path: /opt/bin/decrypt-tls-assets
     owner: root:root
     permissions: 0700

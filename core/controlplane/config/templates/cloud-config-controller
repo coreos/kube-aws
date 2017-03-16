@@ -76,7 +76,7 @@ coreos:
             EnvironmentFile=-/run/flannel/etcd-endpoints.opts
             ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
             ExecStartPre=/bin/sh -ec "echo FLANNELD_ETCD_ENDPOINTS=${ETCD_ENDPOINTS} >/run/flannel/etcd-endpoints.opts"
-            {{- if .TLSAssetsEncryptionEnabled }}
+            {{- if .AssetsEncryptionEnabled }}
             ExecStartPre=/opt/bin/decrypt-tls-assets
             {{- end}}
             ExecStartPre=/usr/bin/etcdctl \
@@ -747,7 +747,7 @@ write_files:
 
 {{ end }}
 
-{{if .TLSAssetsEncryptionEnabled }}
+{{if .AssetsEncryptionEnabled }}
   - path: /opt/bin/decrypt-tls-assets
     owner: root:root
     permissions: 0700
@@ -1426,23 +1426,23 @@ write_files:
             targetPort: 9090
 
 {{ if .ManageCertificates }}
-  - path: /etc/kubernetes/ssl/ca.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/ssl/ca.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.CACert}}
 
-  - path: /etc/kubernetes/ssl/apiserver.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/ssl/apiserver.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.APIServerCert}}
 
-  - path: /etc/kubernetes/ssl/apiserver-key.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/ssl/apiserver-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.APIServerKey}}
 
-  - path: /etc/kubernetes/ssl/etcd-client.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/ssl/etcd-client.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientCert}}
 
-  - path: /etc/kubernetes/ssl/etcd-client-key.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/ssl/etcd-client-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientKey}}
 {{ end }}

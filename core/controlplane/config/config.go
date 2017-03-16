@@ -719,7 +719,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	}
 
 	if c.ManageCertificates {
-		if c.TLSAssetsEncryptionEnabled() {
+		if c.AssetsEncryptionEnabled() {
 			var compactAssets *CompactTLSAssets
 			compactAssets, err = ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, KMSConfig{
 				Region:         stackConfig.Config.Region,
@@ -944,7 +944,7 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 	if c.ClusterName == "" {
 		return nil, errors.New("clusterName must be set")
 	}
-	if c.KMSKeyARN == "" && c.TLSAssetsEncryptionEnabled() {
+	if c.KMSKeyARN == "" && c.AssetsEncryptionEnabled() {
 		return nil, errors.New("kmsKeyArn must be set")
 	}
 
@@ -1045,7 +1045,7 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 	return &DeploymentValidationResult{vpcNet: vpcNet}, nil
 }
 
-func (c DeploymentSettings) TLSAssetsEncryptionEnabled() bool {
+func (c DeploymentSettings) AssetsEncryptionEnabled() bool {
 	return c.ManageCertificates && c.Region.SupportsKMS()
 }
 
