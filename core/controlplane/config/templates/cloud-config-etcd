@@ -30,8 +30,8 @@ coreos:
           content: |
             {{- if .AssetsEncryptionEnabled}}
             [Unit]
-            Wants=decrypt-tls-assets.service cfn-etcd-environment.service
-            After=decrypt-tls-assets.service cfn-etcd-environment.service
+            Wants=decrypt-assets.service cfn-etcd-environment.service
+            After=decrypt-assets.service cfn-etcd-environment.service
             {{- end}}
             [Service]
             EnvironmentFile=-/etc/etcd-environment
@@ -39,7 +39,7 @@ coreos:
             PermissionsStartOnly=true
             ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
             {{- if .AssetsEncryptionEnabled}}
-            ExecStartPre=/usr/bin/systemctl is-active decrypt-tls-assets.service
+            ExecStartPre=/usr/bin/systemctl is-active decrypt-assets.service
             {{- end}}
             ExecStartPre=/usr/bin/chown -R etcd:etcd /var/lib/etcd2
       enable: true
@@ -77,7 +77,7 @@ coreos:
         RequiredBy=var-lib-etcd2.mount
 
 {{if .AssetsEncryptionEnabled}}
-    - name: decrypt-tls-assets.service
+    - name: decrypt-assets.service
       enable: true
       content: |
         [Unit]
@@ -88,7 +88,7 @@ coreos:
         Restart=on-failure
         RemainAfterExit=yes
         ExecStartPre=/usr/bin/rkt run \
-          --uuid-file-save=/var/run/coreos/decrypt-tls-assets.uuid \
+          --uuid-file-save=/var/run/coreos/decrypt-assets.uuid \
           --volume=ssl,kind=host,source=/etc/etcd2/ssl,readOnly=false \
           --mount=volume=ssl,target=/etc/etcd2/ssl \
           --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true \
@@ -109,7 +109,7 @@ coreos:
              | base64 -d > $${encKey%.enc}; \
              done; \
              echo done.'
-        ExecStart=-/usr/bin/rkt rm --uuid-file=/var/run/coreos/decrypt-tls-assets.uuid
+        ExecStart=-/usr/bin/rkt rm --uuid-file=/var/run/coreos/decrypt-assets.uuid
 
         [Install]
         RequiredBy=etcd2.service

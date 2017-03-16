@@ -86,7 +86,7 @@ coreos:
             ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
             ExecStartPre=/bin/sh -ec "echo FLANNELD_ETCD_ENDPOINTS=${ETCD_ENDPOINTS} >/run/flannel/etcd-endpoints.opts"
             {{- if .AssetsEncryptionEnabled}}
-            ExecStartPre=/opt/bin/decrypt-tls-assets
+            ExecStartPre=/opt/bin/decrypt-assets
             {{- end}}
             Environment="ETCD_SSL_DIR=/etc/kubernetes/ssl"
             TimeoutStartSec=120
@@ -537,7 +537,7 @@ write_files:
 {{ end }}
 
 {{ if .AssetsEncryptionEnabled }}
-  - path: /opt/bin/decrypt-tls-assets
+  - path: /opt/bin/decrypt-assets
     owner: root:root
     permissions: 0700
     content: |
@@ -546,7 +546,7 @@ write_files:
       rkt run \
         --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
         --mount=volume=ssl,target=/etc/kubernetes/ssl \
-        --uuid-file-save=/var/run/coreos/decrypt-tls-assets.uuid \
+        --uuid-file-save=/var/run/coreos/decrypt-assets.uuid \
         --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
         --net=host \
         --trust-keys-from-https \
@@ -567,7 +567,7 @@ write_files:
            done;
            echo done.'
 
-      rkt rm --uuid-file=/var/run/coreos/decrypt-tls-assets.uuid || :
+      rkt rm --uuid-file=/var/run/coreos/decrypt-assets.uuid || :
 {{ end }}
 
 {{if .SpotFleet.Enabled}}
