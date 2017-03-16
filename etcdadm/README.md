@@ -26,17 +26,20 @@ ETCDADM_ETCDCTL_CONTAINER_RUNTIME=rkt \
 ETCDADM_MEMBER_FAILURE_PERIOD_LIMIT=10 \
 ETCDADM_CLUSTER_FAILURE_PERIOD_LIMIT=30 \
 ETCDADM_STATE_FILES_DIR=/var/run/coreos/etcdadm \
-  kubeadm [save|restore|check|reconfigure]
+  etcdadm [save|restore|check|reconfigure|replace]
 ```
 
-* `kubeadm save` takes a snapshot of an etcd cluster from the etcd member running on the same node as etcdadm and then
+* `etcdadm save` takes a snapshot of an etcd cluster from the etcd member running on the same node as etcdadm and then
 save it in S3
-* `kubeadm restore` restores the etcd member running on the same node as etcdadm from a snapshot saved in S3
-* `kubeadm check` runs health checks against all the members in an etcd cluster so that `kubeadm reconfigure` updates the etcd member accordingly to the situation
-* `kubeadm reconfigure`  reconfigures the etcd member on the same node as etcdadm so that it survives:
+* `etcdadm restore` restores the etcd member running on the same node as etcdadm from a snapshot saved in S3
+* `etcdadm check` runs health checks against all the members in an etcd cluster so that `kubeadm reconfigure` updates the etcd member accordingly to the situation
+* `etcdadm reconfigure` reconfigures the etcd member on the same node as etcdadm so that it survives:
   * `N/2` or less permanently failed members, by automatically removing a permanently failed member and then re-add it as a brand-new member with empty data according to ["Replace a failed etcd member on CoreOS Container Linux"](https://coreos.com/etcd/docs/latest/etcd-live-cluster-reconfiguration.html#replace-a-failed-etcd-member-on-coreos-container-linux)
   * `(N/2)+1` or more permanently failed members, by automatically initiating a new cluster, from a snapshot if it exists, according to ["etcd disaster recovery on CoreOS Container Linux"](https://coreos.com/etcd/docs/latest/etcd-live-cluster-reconfiguration.html#etcd-disaster-recovery-on-coreos-container-linux)  
-
+* `etcdadm replace` is used to manually recover from an etcd memer from a permanent failure. It resets the etcd member running on the same node as etcdadm by:
+  1. clearing the contents of the etcd data dir 
+  2. removing and then re-adding the etcd member by running `etcdctl member remove` and then `etcdctl memer add` 
+  
 ## Pre-requisites
 
 * etcd3

@@ -425,7 +425,11 @@ member_replace_failed() {
 
   _info "connecting to ${client_url}"
   etcdctl --peers "${client_url}" member list
-  id=$(etcdctl --peers "${client_url}" member list | grep "name=${name}" | cut -d ':' -f 1)
+  # Outputs from `member list` could be something like:
+  # 2be084460d94d630: name=etcd0 peerURLs=https://ec2-54-92-69-116.ap-northeast-1.compute.amazonaws.com:2380 clientURLs=https://ec2-54-92-69-116.ap-northeast-1.compute.amazonaws.com:2379 isLeader=true
+  # 5eee1d3e770689e1: name=etcd1 peerURLs=https://ec2-52-193-215-187.ap-northeast-1.compute.amazonaws.com:2380 clientURLs=https://ec2-52-193-215-187.ap-northeast-1.compute.amazonaws.com:2379 isLeader=false
+  # bd14b8ad55c143ad[unstarted]: peerURLs=https://ec2-13-112-206-16.ap-northeast-1.compute.amazonaws.com:2380
+  id=$(etcdctl --peers "${client_url}" member list | grep "${peer_url}" | cut -d ':' -f 1 | cut -d '[' -f 1)
 
   _info "removing member ${id}"
   etcdctl --peers "${client_url}" member remove "${id}"
@@ -435,6 +439,10 @@ member_replace_failed() {
   etcdctl --peers "${client_url}" member add "${name}" "${peer_url}"
 
   member_set_initial_cluster_state existing
+
+  member_status_set_replaced
+
+  _systemctl_daemon_reload
 }
 
 member_bootstrap() {
@@ -452,6 +460,13 @@ member_bootstrap() {
   fi
 
   member_set_initial_cluster_state new
+
+  _systemctl_daemon_reload
+}
+
+_systemctl_daemon_reload() {
+  _info "running \`systemctl daemon-reload\` to reload $(config_member_systemd_unit_name)"
+  _run_as_root systemctl daemon-reload
 }
 
 member_restore_from_local_snapshot() {
@@ -567,6 +582,36 @@ member_failure_beginning_time_record() {
   fi
 }
 
+member_status() {
+  local f
+  f=$(member_status_file)
+  cat "$f"
+}
+
+member_status_file() {
+  local status
+  status="$(config_state_dir)/status"
+  echo "$status"
+}
+
+member_was_replaced_but_not_started_yet() {
+  local status
+  status=$(member_status)
+  [ "$status" == "replaced" ]
+}
+
+member_status_set_replaced() {
+  local f
+  f=$(member_status_file)
+  echo replaced > "$f"
+}
+
+member_status_set_started() {
+  local f
+  f=$(member_status_file)
+  echo started > "$f"
+}
+
 member_reconfigure() {
   member_validate
 
@@ -585,11 +630,18 @@ member_reconfigure() {
     if member_is_unstarted; then
       # This member appeared to be "unstarted" in outputs of `etcdctl member list` against other etcd members
       #
-      # It happens only when a cluster has successfully recovered from a snapshot and
+      # It happens only when:
+      # (1) a cluster has successfully recovered from a snapshot and
       # the snapshot contained the information about this member hence it is recognized to be "unstarted" by other members,
       # instead of just being invisible from them.
-      _info 'cluster is already healthy but still in bootstrap process. searching for a etcd snapshot to recover this member'
-      member_bootstrap
+      # (2) this member is previously failed and then replaced member
+      # In this case, we don't want to recover from snapshot
+      if member_was_replaced_but_not_started_yet; then
+        _info 'cluster is already healthy but this member has not yet started after it is replaced due to a permanent failure'
+      else
+        _info 'cluster is already healthy but still in bootstrap process. searching for a etcd snapshot to recover this member'
+        member_bootstrap
+      fi
     elif member_is_failing_longer_than_limit; then
       # This member seems to be consistently failing
       #
@@ -644,11 +696,9 @@ member_reconfigure() {
       member_bootstrap
     else
       _info "all the nodes are present but cluster is still unhealthy, which means cluster failed to bootstrap. keep retrying a while"
+      _systemctl_daemon_reload
     fi
   fi
-
-  _info "running \`systemctl daemon-reload\` to reload $(config_member_systemd_unit_name)"
-  _run_as_root systemctl daemon-reload
 }
 
 member_is_unstarted() {
@@ -1459,6 +1509,9 @@ main() {
   case "${cmd}" in
     "save" )
       member_save_snapshot
+      ;;
+    "replace" )
+      member_replace_failed
       ;;
     "reconfigure" )
       member_reconfigure

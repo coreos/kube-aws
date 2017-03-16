@@ -45,6 +45,24 @@ coreos:
         ExecStart=/opt/bin/etcdadm reconfigure
         TimeoutStartSec=120
 
+    - name: etcdadm-update-status.service
+      enable: true
+      content: |
+        [Unit]
+        Description=etcdadm update status
+        BindsTo=etcd-member.service
+        After=etcd-member.service
+        Wants=network.target
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        RestartSec=5
+        EnvironmentFile=-/etc/etcd-environment
+        EnvironmentFile=-/var/run/coreos/etcdadm-environment
+        ExecStart=/opt/bin/etcdadm member_status_set_starteed
+        TimeoutStartSec=120
+
     - name: etcdadm-check.service
       enable: true
       content: |
@@ -117,8 +135,9 @@ coreos:
             After=decrypt-tls-assets.service cfn-etcd-environment.service
             {{- end}}
             {{/* can be `Wants` if you like etcd-member to not stop when etcdadm-reconfigure failed */}}
-            BindsTo=etcdadm-reconfigure.service
+            BindsTo=etcdadm-reconfigure.service etcdadm-update-status.service
             After=etcdadm-reconfigure.service
+            Before=etcdadm-update-status.service
             [Service]
             EnvironmentFile=-/etc/etcd-environment
 
