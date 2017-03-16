@@ -755,8 +755,8 @@ write_files:
       #!/bin/bash -e
 
       rkt run \
-        --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
-        --mount=volume=ssl,target=/etc/kubernetes/ssl \
+        --volume=kube,kind=host,source=/etc/kubernetes,readOnly=false \
+        --mount=volume=kube,target=/etc/kubernetes \
         --uuid-file-save=/var/run/coreos/decrypt-assets.uuid \
         --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
         --net=host \
@@ -765,7 +765,7 @@ write_files:
           -ec \
           'echo decrypting assets
            shopt -s nullglob
-           for encKey in /etc/kubernetes/ssl/*.pem.enc; do
+           for encKey in /etc/kubernetes/{ssl,auth}/*.enc; do
              echo decrypting $encKey
              f=$(mktemp $encKey.XXXXXXXX)
              /usr/bin/aws \
@@ -929,6 +929,8 @@ write_files:
           - --service-cluster-ip-range={{.ServiceCIDR}}
           - --secure-port=443
           - --kubelet-preferred-address-types=InternalIP,Hostname,ExternalIP
+          # FIXME: only applies the flag if a token file is provided by the user
+          - --token-auth-file=/etc/kubernetes/auth/tokens.csv
           {{if .Experimental.AuditLog.Enabled}}
           - --audit-log-maxage={{.Experimental.AuditLog.MaxAge}}
           - --audit-log-path={{.Experimental.AuditLog.LogPath}}
@@ -1424,6 +1426,11 @@ write_files:
           ports:
           - port: 80
             targetPort: 9090
+
+  # FIXME: Empty token string, replace by actual token
+  - path: /etc/kubernetes/auth/tokens.csv{{if .AssetsEncryptionEnabled}}.enc{{end}}
+    encoding: gzip+base64
+    content: H4sIAGyzylgAAwMAAAAAAAAAAAA=
 
 {{ if .ManageCertificates }}
   - path: /etc/kubernetes/ssl/ca.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
