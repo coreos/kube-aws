@@ -88,7 +88,7 @@ coreos:
         EnvironmentFile=-/var/run/coreos/etcdadm-environment
         Restart=no
         ExecStartPre=systemctl is-active etcd-member.service
-        ExecStart=/opt/bin/etcdadm check
+        ExecStart=/opt/bin/etcdadm save
         TimeoutStartSec=300
 
     - name: etcdadm-save.timer
