@@ -161,7 +161,7 @@ func TestMinimalChinaConfig(t *testing.T) {
 	}
 
 	if c.AssetsEncryptionEnabled() {
-		t.Error("TLS Assets encryption must be disabled on China.")
+		t.Error("Assets encryption must be disabled on China.")
 	}
 }
 
