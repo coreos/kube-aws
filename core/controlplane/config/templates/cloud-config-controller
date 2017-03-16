@@ -928,6 +928,7 @@ write_files:
           - --allow-privileged=true
           - --service-cluster-ip-range={{.ServiceCIDR}}
           - --secure-port=443
+          - --storage-backend=etcd3
           - --kubelet-preferred-address-types=InternalIP,Hostname,ExternalIP
           {{if .Experimental.AuditLog.Enabled}}
           - --audit-log-maxage={{.Experimental.AuditLog.MaxAge}}
