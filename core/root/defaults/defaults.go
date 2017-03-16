@@ -1,7 +1,7 @@
 package defaults
 
 const (
-	TLSAssetsDir                      = "credentials"
+	AssetsDir                         = "credentials"
 	ControllerTmplFile                = "userdata/cloud-config-controller"
 	WorkerTmplFile                    = "userdata/cloud-config-worker"
 	EtcdTmplFile                      = "userdata/cloud-config-etcd"

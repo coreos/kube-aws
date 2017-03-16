@@ -701,7 +701,7 @@ func releaseVersionIsGreaterThan(minVersion semver.Version, release string) (boo
 }
 
 type StackTemplateOptions struct {
-	TLSAssetsDir          string
+	AssetsDir             string
 	ControllerTmplFile    string
 	EtcdTmplFile          string
 	StackTemplateTmplFile string
@@ -718,10 +718,14 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 		return nil, err
 	}
 
+	// TODO: Check if new tests are needed to verify the auth token file is handled correctly
+
 	if c.ManageCertificates {
 		if c.AssetsEncryptionEnabled() {
 			var compactAssets *CompactTLSAssets
-			compactAssets, err = ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, KMSConfig{
+			var compactAuthTokens *CompactAuthTokens
+
+			compactAssets, err = ReadOrCreateCompactTLSAssets(opts.AssetsDir, KMSConfig{
 				Region:         stackConfig.Config.Region,
 				KMSKeyARN:      c.KMSKeyARN,
 				EncryptService: c.ProvidedEncryptService,
@@ -729,13 +733,31 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 			if err != nil {
 				return nil, err
 			}
-			stackConfig.Config.TLSConfig = compactAssets
-		} else {
-			rawAssets, err := ReadOrCreateUnecryptedCompactTLSAssets(opts.TLSAssetsDir)
+
+			compactAuthTokens, err = ReadOrCreateCompactAuthTokens(opts.AssetsDir, KMSConfig{
+				Region:         stackConfig.Config.Region,
+				KMSKeyARN:      c.KMSKeyARN,
+				EncryptService: c.ProvidedEncryptService,
+			})
 			if err != nil {
 				return nil, err
 			}
+
+			stackConfig.Config.TLSConfig = compactAssets
+			stackConfig.Config.AuthTokensConfig = compactAuthTokens
+		} else {
+			rawAssets, err := ReadOrCreateUnecryptedCompactTLSAssets(opts.AssetsDir)
+			if err != nil {
+				return nil, err
+			}
+
+			rawAuthTokens, err := ReadOrCreateUnecryptedCompactAuthTokens(opts.AssetsDir)
+			if err != nil {
+				return nil, err
+			}
+
 			stackConfig.Config.TLSConfig = rawAssets
+			stackConfig.Config.AuthTokensConfig = rawAuthTokens
 		}
 	}
 
@@ -763,6 +785,8 @@ type Config struct {
 	Cluster
 
 	EtcdNodes []derived.EtcdNode
+
+	AuthTokensConfig *CompactAuthTokens
 
 	// Encoded TLS assets
 	TLSConfig *CompactTLSAssets

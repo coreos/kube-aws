@@ -232,9 +232,9 @@ name: pool1
 		ExpectedContentLength: 2,
 	}
 
-	helper.WithDummyCredentials(func(dummyTlsAssetsDir string) {
+	helper.WithDummyCredentials(func(dummyAssetsDir string) {
 		var stackTemplateOptions = config.StackTemplateOptions{
-			TLSAssetsDir:          dummyTlsAssetsDir,
+			AssetsDir:             dummyAssetsDir,
 			StackTemplateTmplFile: "../config/templates/stack-template.json",
 			WorkerTmplFile:        "../../controlplane/config/templates/cloud-config-worker",
 			S3URI:                 "s3://test-bucket/foo/bar",

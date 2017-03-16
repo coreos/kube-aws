@@ -481,9 +481,9 @@ stackTags:
 			ExpectedContentLength: 2,
 		}
 
-		helper.WithDummyCredentials(func(dummyTlsAssetsDir string) {
+		helper.WithDummyCredentials(func(dummyAssetsDir string) {
 			var stackTemplateOptions = config.StackTemplateOptions{
-				TLSAssetsDir:          dummyTlsAssetsDir,
+				AssetsDir:             dummyAssetsDir,
 				ControllerTmplFile:    "../config/templates/cloud-config-controller",
 				EtcdTmplFile:          "../config/templates/cloud-config-etcd",
 				StackTemplateTmplFile: "../config/templates/stack-template.json",

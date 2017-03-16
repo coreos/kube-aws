@@ -18,7 +18,7 @@ func TestRenderStackTemplate(t *testing.T) {
 
 	helper.WithDummyCredentials(func(dir string) {
 		var stackTemplateOptions = StackTemplateOptions{
-			TLSAssetsDir:          dir,
+			AssetsDir:             dir,
 			ControllerTmplFile:    "templates/cloud-config-controller",
 			EtcdTmplFile:          "templates/cloud-config-etcd",
 			StackTemplateTmplFile: "templates/stack-template.json",
@@ -52,7 +52,7 @@ func TestValidateUserData(t *testing.T) {
 
 	helper.WithDummyCredentials(func(dir string) {
 		var stackTemplateOptions = StackTemplateOptions{
-			TLSAssetsDir:          dir,
+			AssetsDir:             dir,
 			ControllerTmplFile:    "templates/cloud-config-controller",
 			EtcdTmplFile:          "templates/cloud-config-etcd",
 			StackTemplateTmplFile: "templates/stack-template.json",

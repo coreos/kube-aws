@@ -115,7 +115,7 @@ func ClusterFromFile(configPath string, opts options, awsDebug bool) (Cluster, e
 
 func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster, error) {
 	cpOpts := controlplane_cfg.StackTemplateOptions{
-		TLSAssetsDir:          opts.TLSAssetsDir,
+		AssetsDir:             opts.AssetsDir,
 		ControllerTmplFile:    opts.ControllerTmplFile,
 		EtcdTmplFile:          opts.EtcdTmplFile,
 		StackTemplateTmplFile: opts.ControlPlaneStackTemplateTmplFile,
@@ -130,7 +130,7 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 	nodePools := []*nodepool.Cluster{}
 	for i, c := range cfg.NodePools {
 		npOpts := nodepool_cfg.StackTemplateOptions{
-			TLSAssetsDir:          opts.TLSAssetsDir,
+			AssetsDir:             opts.AssetsDir,
 			WorkerTmplFile:        opts.WorkerTmplFile,
 			StackTemplateTmplFile: opts.NodePoolStackTemplateTmplFile,
 			PrettyPrint:           opts.PrettyPrint,

@@ -929,8 +929,9 @@ write_files:
           - --service-cluster-ip-range={{.ServiceCIDR}}
           - --secure-port=443
           - --kubelet-preferred-address-types=InternalIP,Hostname,ExternalIP
-          # FIXME: only applies the flag if a token file is provided by the user
+          {{ if .AuthTokensConfig.HasTokens }}
           - --token-auth-file=/etc/kubernetes/auth/tokens.csv
+          {{ end }}
           {{if .Experimental.AuditLog.Enabled}}
           - --audit-log-maxage={{.Experimental.AuditLog.MaxAge}}
           - --audit-log-path={{.Experimental.AuditLog.LogPath}}
@@ -1427,10 +1428,11 @@ write_files:
           - port: 80
             targetPort: 9090
 
-  # FIXME: Empty token string, replace by actual token
+{{ if .AuthTokensConfig.HasTokens }}
   - path: /etc/kubernetes/auth/tokens.csv{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: H4sIAGyzylgAAwMAAAAAAAAAAAA=
+    content: {{.AuthTokensConfig.Contents}}
+{{ end }}
 
 {{ if .ManageCertificates }}
   - path: /etc/kubernetes/ssl/ca.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}

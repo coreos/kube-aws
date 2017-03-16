@@ -60,18 +60,26 @@ func (r credentialsRendererImpl) RenderFiles(renderCredentialsOpts CredentialsOp
 			}
 		}
 	}
+
+	dir := defaults.AssetsDir
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return err
+	}
+
 	fmt.Printf("-> Generating new TLS assets\n")
 	assets, err := cluster.NewTLSAssets(caKey, caCert)
 	if err != nil {
 		return fmt.Errorf("Error generating default assets: %v", err)
 	}
-
-	dir := defaults.TLSAssetsDir
-	if err := os.MkdirAll(dir, 0700); err != nil {
-		return err
-	}
 	if err := assets.WriteToDir(dir, renderCredentialsOpts.GenerateCA); err != nil {
 		return fmt.Errorf("Error create assets: %v", err)
 	}
+
+	fmt.Printf("-> Generating auth token file\n")
+	authToken := cluster.NewAuthTokenFile()
+	if err := authToken.WriteToDir(dir); err != nil {
+		return fmt.Errorf("Error create auth token file: %v", err)
+	}
+
 	return nil
 }

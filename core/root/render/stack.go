@@ -37,7 +37,7 @@ func (r stackRendererImpl) RenderFiles() error {
 	}
 
 	if err := filegen.Render(
-		filegen.File(filepath.Join(defaults.TLSAssetsDir, ".gitignore"), []byte("*"), 0644),
+		filegen.File(filepath.Join(defaults.AssetsDir, ".gitignore"), []byte("*"), 0644),
 		filegen.File(defaults.ControllerTmplFile, controlplane.CloudConfigController, 0644),
 		filegen.File(defaults.WorkerTmplFile, controlplane.CloudConfigWorker, 0644),
 		filegen.File(defaults.EtcdTmplFile, controlplane.CloudConfigEtcd, 0644),

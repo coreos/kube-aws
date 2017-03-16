@@ -52,6 +52,13 @@ func TestCloudConfigTemplating(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unable to load cluster config: %v", err)
 	}
+
+	cfg, err := cluster.Config()
+	if err != nil {
+		t.Fatalf("Failed to create config: %v", err)
+	}
+
+	// TLS assets
 	caKey, caCert, err := cluster.NewTLSCA()
 	if err != nil {
 		t.Fatalf("failed generating tls ca: %v", err)
@@ -59,11 +66,6 @@ func TestCloudConfigTemplating(t *testing.T) {
 	assets, err := cluster.NewTLSAssets(caKey, caCert)
 	if err != nil {
 		t.Fatalf("Error generating default assets: %v", err)
-	}
-
-	cfg, err := cluster.Config()
-	if err != nil {
-		t.Fatalf("Failed to create config: %v", err)
 	}
 
 	encryptedAssets, err := assets.Encrypt(cfg.KMSKeyARN, &dummyEncryptService{})
@@ -77,6 +79,21 @@ func TestCloudConfigTemplating(t *testing.T) {
 	}
 
 	cfg.TLSConfig = compactAssets
+
+	// Auth tokens
+	authTokens := cluster.NewAuthTokenFile()
+
+	encryptedAuthTokens, err := authTokens.Encrypt(cfg.KMSKeyARN, &dummyEncryptService{})
+	if err != nil {
+		t.Fatalf("failed to compress auth token file: %v", err)
+	}
+
+	compactAuthTokens, err := encryptedAuthTokens.Compact()
+	if err != nil {
+		t.Fatalf("failed to compress auth token file: %v", err)
+	}
+
+	cfg.AuthTokensConfig = compactAuthTokens
 
 	for _, cloudTemplate := range []struct {
 		Name     string

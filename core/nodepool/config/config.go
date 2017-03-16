@@ -50,7 +50,7 @@ type MainClusterSettings struct {
 type StackTemplateOptions struct {
 	WorkerTmplFile        string
 	StackTemplateTmplFile string
-	TLSAssetsDir          string
+	AssetsDir             string
 	PrettyPrint           bool
 	S3URI                 string
 	SkipWait              bool
@@ -66,7 +66,7 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 
 	if stackConfig.ManageCertificates {
 		if stackConfig.ComputedConfig.AssetsEncryptionEnabled() {
-			compactAssets, _ := cfg.ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, cfg.KMSConfig{
+			compactAssets, _ := cfg.ReadOrCreateCompactTLSAssets(opts.AssetsDir, cfg.KMSConfig{
 				Region:         stackConfig.ComputedConfig.Region,
 				KMSKeyARN:      c.KMSKeyARN,
 				EncryptService: c.providedEncryptService,
@@ -74,7 +74,7 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 
 			stackConfig.ComputedConfig.TLSConfig = compactAssets
 		} else {
-			rawAssets, _ := cfg.ReadOrCreateUnecryptedCompactTLSAssets(opts.TLSAssetsDir)
+			rawAssets, _ := cfg.ReadOrCreateUnecryptedCompactTLSAssets(opts.AssetsDir)
 			stackConfig.ComputedConfig.TLSConfig = rawAssets
 		}
 	}

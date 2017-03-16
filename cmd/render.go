@@ -20,7 +20,7 @@ var (
 
 	cmdRenderCredentials = &cobra.Command{
 		Use:          "credentials",
-		Short:        "Render TLS credentials",
+		Short:        "Render credentials",
 		Long:         ``,
 		RunE:         runCmdRenderCredentials,
 		SilenceUsage: true,

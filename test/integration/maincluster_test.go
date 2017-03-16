@@ -2532,9 +2532,9 @@ etcdDataVolumeIOPS: 104
 				}
 			})
 
-			helper.WithDummyCredentials(func(dummyTlsAssetsDir string) {
+			helper.WithDummyCredentials(func(dummyAssetsDir string) {
 				var stackTemplateOptions = root.NewOptions(s3URI, false, false)
-				stackTemplateOptions.TLSAssetsDir = dummyTlsAssetsDir
+				stackTemplateOptions.AssetsDir = dummyAssetsDir
 				stackTemplateOptions.ControllerTmplFile = "../../core/controlplane/config/templates/cloud-config-controller"
 				stackTemplateOptions.WorkerTmplFile = "../../core/controlplane/config/templates/cloud-config-worker"
 				stackTemplateOptions.EtcdTmplFile = "../../core/controlplane/config/templates/cloud-config-etcd"
