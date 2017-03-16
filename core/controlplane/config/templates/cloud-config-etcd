@@ -60,7 +60,7 @@ coreos:
         RestartSec=5
         EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=-/var/run/coreos/etcdadm-environment
-        ExecStart=/opt/bin/etcdadm member_status_set_starteed
+        ExecStart=/opt/bin/etcdadm member_status_set_started
         TimeoutStartSec=120
 
     - name: etcdadm-check.service
