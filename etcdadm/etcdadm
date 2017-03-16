@@ -398,12 +398,18 @@ member_clean_data_dir() {
   _info "cleaning data dir of $(member_name)"
   if [ -d "${data_dir}" ]; then
     _info "data dir ${data_dir} exists. finding files to remove"
-    sudo find "$data_dir" -type f | while read -r file; do
-      _info "removing file $file"
-      sudo rm "$file"
-    done
-    _info "removing directory $data_dir"
-    sudo rm -rf "$data_dir"
+    local c
+    c=$(ls "$data_dir" | wc -l)
+    if (( c != 0 )); then
+      sudo bash -c "cd $data_dir && find *" | while read -r entry; do
+        local file="$data_dir/$entry"
+        _info "removing $file"
+        sudo rm -rf "$file"
+      done
+      _info "leaving directory $data_dir"
+    else
+      _info "no files found in $data_dir"
+    fi
   else
     _info "data dir ${data_dir} does not exist. nothing to remove"
   fi
@@ -482,6 +488,16 @@ member_restore_from_local_snapshot() {
   # * Don't try to mount the data-dir directly or etcdctl ends up with "Error:  data-dir "/etcd-data" exists"
   # * `--volume data-dir,kind=empty` is required to suppress the warning: "stage1: warning: no volume specified for mount point "data-dir", implicitly creating an "empty" volume. This volume will be removed when the pod is garbage-collected."
 
+  local data_dir
+  local restored_dir
+  data_dir=$(member_data_dir)
+  restored_dir="${data_dir}-restored"
+
+  if [ -d "$restored_dir" ]; then
+    _info "directory \"$restored_dir\" exists. removing..."
+    rm -rf "$restored_dir"
+  fi
+
   _run_as_root rkt run \
       --insecure-options=image \
       --set-env ETCDCTL_API=3 \
@@ -489,8 +505,8 @@ member_restore_from_local_snapshot() {
       --net=host \
       --volume $(member_snapshots_dir_name),kind=host,source="$(member_host_snapshots_dir_path)" \
       --mount volume="$(member_snapshots_dir_name)",target=/"$(member_snapshots_dir_name)" \
-      --volume data-dir-root,kind=host,source="$(dirname "$(member_data_dir)")" \
-      --mount volume=data-dir-root,target="$(dirname "$(member_data_dir)")" \
+      --volume data-dir-root,kind=host,source="$(dirname "$restored_dir")" \
+      --mount volume=data-dir-root,target="$(dirname "$restored_dir")" \
       --volume data-dir,kind=empty \
       --mount volume=data-dir,target=/var/lib/etcd \
       --uuid-file-save="$uuid_file" \
@@ -498,7 +514,7 @@ member_restore_from_local_snapshot() {
       --exec etcdctl -- \
         --write-out simple \
         --endpoints "$(member_client_url)" snapshot restore \
-        --data-dir "$(member_data_dir)" \
+        --data-dir "$restored_dir" \
         --initial-cluster "$(config_etcd_initial_cluster)" \
         --initial-advertise-peer-urls "$(member_peer_url)" \
         --name "$(member_name)" \
@@ -506,8 +522,11 @@ member_restore_from_local_snapshot() {
   _run_as_root rkt stop --force --uuid-file "$uuid_file" || echo pod is already stopped
   _run_as_root rkt rm --uuid-file "$uuid_file"
 
+  _run_as_root mv "$restored_dir"/* "$data_dir"/
+  _run_as_root rm -rf "$restored_dir"
+
   # Do this or etcd ends up with "error listing data dir /var/lib/etcd"
-  _run_as_root chown -R etcd:etcd "$(member_data_dir)"
+  _run_as_root chown -R etcd:etcd "$data_dir"
 
   member_remove_snapshot
 
