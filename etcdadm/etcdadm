@@ -174,7 +174,7 @@ cluster_num_healthy_members() {
 
 cluster_is_failing_longer_than_limit() {
   cluster_failure_beginning_time_is_set &&
-    (( $(current_time) > $(cluster_failure_beginning_time) + $(cluster_failure_period_limit) ))
+    (( $(_current_time) > $(cluster_failure_beginning_time) + $(cluster_failure_period_limit) ))
 }
 
 cluster_failure_beginning_time_is_set() {
@@ -205,7 +205,7 @@ cluster_failure_beginning_time_set() {
 
 cluster_failure_beginning_time_record() {
   if ! cluster_failure_beginning_time_is_set; then
-    cluster_failure_beginning_time_set "$(current_time)"
+    cluster_failure_beginning_time_set "$(_current_time)"
   fi
 }
 
