@@ -464,6 +464,7 @@ member_restore_from_local_snapshot() {
   _run_as_root rkt run \
       --insecure-options=image \
       --set-env ETCDCTL_API=3 \
+      --dns=host \
       --net=host \
       --volume $(member_snapshots_dir_name),kind=host,source="$(member_host_snapshots_dir_path)" \
       --mount volume="$(member_snapshots_dir_name)",target=/"$(member_snapshots_dir_name)" \
@@ -727,6 +728,7 @@ member_etcdctl() {
   _run_as_root rkt run ${rkt_opts[*]} \
     --insecure-options=image \
     --set-env ETCDCTL_API=3 \
+    --dns=host \
     --net=host \
     --volume "$(member_snapshots_dir_name)",kind=host,source="$(member_host_snapshots_dir_path)" \
     --mount volume="$(member_snapshots_dir_name)",target=/"$(member_snapshots_dir_name)" \
