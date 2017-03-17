@@ -47,6 +47,7 @@ save it in S3
 * docker
 * systemd
 * bash 3+
+* jq
 
 ## Configuration
 
@@ -87,6 +88,10 @@ export AWS_ACCESS_KEY_ID=<YOUR KEY>
 export AWS_SECRET_ACCESS_KY=<YOUR KEY>
 
 echo \
+  ETCD_CLUSTER_FAILURE_PERIOD_LIMIT=1000 \
+  ETCD_MEMBER_FAILURE_PERIOD_LIMIT=1000 \
+  TESTER_WORK_DIR=$(pwd)/tester \
+  AWS_DEFAULT_REGION=<YOUR AWS REGION> \
   ETCDADM_CLUSTER_SNAPSHOTS_S3_URI=s3://kuokakubeawstest/snapshots \
   ETCDADM_MEMBER__COUNT=3 \
   ETCD_INITIAL_CLUSTER=etcd0=http://127.0.0.1:3080,etcd1=http://127.0.0.1:3180,etcd2=http://127.0.0.1:3280 \

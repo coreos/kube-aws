@@ -6,72 +6,70 @@ unset ETCDCTL_ENDPOINT
 
 export | grep ETCDCTL
 
+set -o nounset
+set -o errexit
+set -o pipefail
+IFS=$'\n\t'
+
 ETCD_WORK_DIR=${ETCD_WORK_DIR:-$(pwd)/work}
 
 if [ "${DEBUG:-}" == "yes" ]; then
   set -vx
 fi
 
-_info() {
-  echo "$0: info: ${FUNCNAME[1]}: $*" >&2
-}
-
-_error() {
-  echo "$0: error: ${FUNCNAME[1]}: $*" >&2
-}
+_info() { echo "$0: info: ${FUNCNAME[1]}: $*" >&2; }
+_error() { echo "$0: error: ${FUNCNAME[1]}: $*" >&2; }
 
 _panic() {
   echo "$0: panic: ${FUNCNAME[1]}: $*" >&2
   exit 1
 }
 
-_array_join() {
-  local r=""
-  for t in "${@}"; do
-    if [ "$r" != "" ]; then
-      r="$r \"$t\""
+_array_join() { printf '%q ' "${@}"; }
+_current_time() { date +%s; }
+
+_sudo=
+
+if [[ "$EUID" > 0 ]]; then
+  _sudo=sudo
+fi
+
+_run_as_root() { $_sudo "${@}"; }
+
+_default_env_from_cmd() {
+  local i=1
+  local max=3
+  while : ; do
+    if (( i > max )); then
+      _panic "failed to fetch a default value for ${1}. please retry or just specify it"
+      return 1
+    fi
+    local r
+    local status
+    set +e
+    if (( i == 1 )); then
+      echo "setting env $1 from \"${*:2}\". trial $i/$max" 1>&2
     else
-      r="\"$t\""
+      echo "trial $i/$max" 1>&2
+    fi
+    r=$(bash -o pipefail -c "${*:2}")
+    status=$?
+    set -e
+    if [ "$status" -eq 0 ]; then
+      echo "$r"
+      return 0
+    else
+      (( i+=1 ))
     fi
   done
-  echo "$r"
 }
 
-_current_time() {
-  date +%s
-}
+awscli_docker_image="${ETCDADM_AWSCLI_DOCKER_IMAGE:-quay.io/coreos/awscli}"
+awscli_rkt_image="docker://$awscli_docker_image"
+aws_region="${AWS_DEFAULT_REGION:-$(_default_env_from_cmd AWS_DEFAULT_REGION "curl --max-time 3 -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region")}"
 
-_run_as_root() {
-  local status
-  if [[ "$EUID" > 0 ]]; then
-    echo running command as root: "$(_array_join "$@")"
-    _array_join "${@}" | sudo bash
-  else
-    _array_join "${@}" | bash
-  fi
-  status=$?
-  return "$status"
-}
-
-config_awscli_docker_image() {
-  echo "${ETCDADM_AWSCLI_DOCKER_IMAGE:-quay.io/coreos/awscli}"
-}
-
-awscli_rkt_image() {
-  echo "docker://$(config_awscli_docker_image)"
-}
-
-config_aws_region() {
-  echo "${AWS_DEFAULT_REGION:-ap-northeast-1}"
-}
-
-config_aws_access_key_id() {
-  echo "${AWS_ACCESS_KEY_ID}"
-}
-
-config_aws_secret_access_key() {
-  echo "${AWS_SECRET_ACCESS_KEY}"
-}
+aws_access_key_id=${AWS_ACCESS_KEY_ID:-}
+aws_secret_access_key=${AWS_SECRET_ACCESS_KEY:-}
 
 config_etcd_initial_cluster() {
   echo "${ETCD_INITIAL_CLUSTER}"
@@ -81,13 +79,10 @@ config_etcd_endpoints() {
   echo "${ETCD_ENDPOINTS}"
 }
 
-config_etcd_version() {
-  echo "${ETCD_VERSION:-3.1.3}"
-}
+etcd_version=${ETCD_VERSION:-3.1.3}
+etcd_aci_url="https://github.com/coreos/etcd/releases/download/v$etcd_version/etcd-v$etcd_version-linux-amd64.aci"
 
-config_member_count() {
-  echo "${ETCDADM_MEMBER_COUNT:-3}"
-}
+member_count="${ETCDADM_MEMBER_COUNT:?missing required env}"
 
 config_member_index() {
   echo "${ETCDADM_MEMBER_INDEX}"
@@ -101,23 +96,15 @@ config_member_systemd_service_name() {
   echo "${ETCDADM_MEMBER_SYSTEMD_SERVICE_NAME:-etcd-member-$(config_member_index)}"
 }
 
-config_cluster_snapshots_s3_uri() {
-  echo "${ETCDADM_CLUSTER_SNAPSHOTS_S3_URI:?missing required env}"
-}
+cluster_snapshots_s3_uri="${ETCDADM_CLUSTER_SNAPSHOTS_S3_URI:?missing required env}"
 
 config_state_dir() {
   echo "${ETCDADM_STATE_FILES_DIR:-/var/run/coreos/$(member_name)-state}"
 }
 
-cluster_etcd_aci_url() {
-  local v
-  v=v$(config_etcd_version)
-  echo "https://github.com/coreos/etcd/releases/download/$v/etcd-$v-linux-amd64.aci"
-}
-
 cluster_member_indices() {
   i=0
-  until [ "$i" == "$(config_member_count)" ]; do
+  until [ "$i" == "$member_count" ]; do
     echo $i
     i=$((i + 1))
   done
@@ -133,7 +120,7 @@ cluster_is_unhealthy() {
   local healthy
   local quorum
   healthy=$(cluster_num_healthy_members)
-  quorum=$(cluster_majority)
+  quorum=$cluster_majority
   _info "quorum=$quorum healthy=$healthy"
   if (( healthy < quorum )); then
     _info 'cluster is unhealthy'
@@ -143,11 +130,7 @@ cluster_is_unhealthy() {
   return 1
 }
 
-cluster_majority() {
-  local m
-  m=$(( $(config_member_count) / 2 + 1 ))
-  echo ${m}
-}
+cluster_majority=$(( member_count / 2 + 1 ))
 
 cluster_num_running_nodes() {
   # TODO aws autoscaling describe-auto-scaling-group
@@ -161,6 +144,8 @@ cluster_num_running_nodes() {
     f=$(tester_num_running_nodes_file)
     if [ -f "${f}" ]; then
       n=$(cat "${f}")
+    else
+      _error "$f not found"
     fi
     echo "${n:-0}"
   fi
@@ -169,7 +154,7 @@ cluster_num_running_nodes() {
 cluster_num_healthy_members() {
   local i
   local n
-  n=$(config_member_count)
+  n=$member_count
   for i in $(cluster_member_indices); do
     if ! ETCDADM_MEMBER_INDEX=$i member_is_healthy; then
       n=$((n - 1))
@@ -230,7 +215,7 @@ cluster_check() {
 }
 
 member_next_index() {
-  echo $(( ($(config_member_index) + 1) % $(config_member_count) ))
+  echo $(( ($(config_member_index) + 1) % member_count ))
 }
 
 member_snapshots_dir_name() {
@@ -290,7 +275,7 @@ member_upload_snapshot() {
 }
 
 member_remote_snapshot_s3_uri() {
-  echo "$(config_cluster_snapshots_s3_uri)/snapshot.db"
+  echo "$cluster_snapshots_s3_uri/snapshot.db"
 }
 
 member_remote_snapshot_exists() {
@@ -339,7 +324,7 @@ _docker_awscli_command() {
   echo docker
   echo run
   printf "%s\n" "-e"
-  echo "AWS_DEFAULT_REGION=$(config_aws_region)"
+  echo "AWS_DEFAULT_REGION=$aws_region"
   echo "--net=host"
   echo "--volume"
   echo "${dir}:${dir}"
@@ -351,7 +336,7 @@ _docker_awscli_command() {
     printf "%s\n" "-e"
     echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:?}"
   fi
-  echo "$(config_awscli_docker_image)"
+  echo "$awscli_docker_image"
   echo "aws"
   for t in "${@}"; do
     echo "$t"
@@ -365,9 +350,9 @@ _rkt_aws() {
   dir=$(dirname "$(config_state_dir)")
   uuid_file=$(config_state_dir)/awscli.uuid
   cmd="rkt run \
-      --set-env AWS_DEFAULT_REGION=$(config_aws_region) \
-      --set-env AWS_ACCESS_KEY_ID=$(config_aws_access_key_id) \
-      --set-env AWS_SECRET_ACCESS_KEY=$(config_aws_secret_access_key) \
+      --set-env AWS_DEFAULT_REGION=$aws_region \
+      --set-env AWS_ACCESS_KEY_ID=$aws_access_key_id \
+      --set-env AWS_SECRET_ACCESS_KEY=$aws_secret_access_key \
       --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true \
       --mount volume=dns,target=/etc/resolv.conf \lib
       --volume=state,kind=host,source=${dir} \
@@ -510,7 +495,7 @@ member_restore_from_local_snapshot() {
       --volume data-dir,kind=empty \
       --mount volume=data-dir,target=/var/lib/etcd \
       --uuid-file-save="$uuid_file" \
-      "$(cluster_etcd_aci_url)" \
+      "$etcd_aci_url" \
       --exec etcdctl -- \
         --write-out simple \
         --endpoints "$(member_client_url)" snapshot restore \
@@ -619,6 +604,12 @@ member_was_replaced_but_not_started_yet() {
   [ "$status" == "replaced" ]
 }
 
+member_status_clear() {
+  local f
+  f=$(member_status_file)
+  rm -rf "$f"
+}
+
 member_status_set_replaced() {
   local f
   f=$(member_status_file)
@@ -639,7 +630,7 @@ member_reconfigure() {
   local healthy
   local quorum
   healthy=$(cluster_num_healthy_members)
-  quorum=$(cluster_majority)
+  quorum=$cluster_majority
 
   _info "observing cluster state: quorum=$quorum healthy=$healthy"
 
@@ -650,15 +641,16 @@ member_reconfigure() {
       # This member appeared to be "unstarted" in outputs of `etcdctl member list` against other etcd members
       #
       # It happens only when:
-      # (1) a cluster has successfully recovered from a snapshot and
-      # the snapshot contained the information about this member hence it is recognized to be "unstarted" by other members,
-      # instead of just being invisible from them.
-      # (2) this member is previously failed and then replaced member
-      # In this case, we don't want to recover from snapshot
       if member_was_replaced_but_not_started_yet; then
+        # (1) this member is previously failed and then replaced member
+        # In this case, we don't want to recover from snapshot
         _info 'cluster is already healthy but this member has not yet started after it is replaced due to a permanent failure'
       else
-        _info 'cluster is already healthy but still in bootstrap process. searching for a etcd snapshot to recover this member'
+        # (2) a cluster has successfully recovered from a snapshot and
+        # the snapshot contained the information about this member hence it is recognized to be "unstarted" by other members,
+        # instead of just being invisible from them.
+        # In other words, the cluster is still in process of a disaster recovery and this is the `N/2+1`th or later member.
+        _info 'cluster is already healthy but still in bootstrap process after the disaster recovery. searching for a etcd snapshot to recover this member'
         member_bootstrap
       fi
     elif member_is_failing_longer_than_limit; then
@@ -692,14 +684,10 @@ member_reconfigure() {
     local remaining_num
     local total_num
     running_num=$(cluster_num_running_nodes)
-    total_num=$(config_member_count)
-    if (( running_num < total_num )); then
-      remaining_num=$(( quorum - running_num + 1 ))
-    else
-      remaining_num=$(( quorum - healthy ))
-    fi
+    total_num=$member_count
+    remaining_num=$(( quorum - running_num + 1 ))
 
-    _info "${remaining_num} more members required until the quorum is met"
+    _info "${remaining_num} more nodes are required until the quorum is met"
 
     if (( remaining_num >= 2 )); then
       member_set_unit_type simple
@@ -714,7 +702,7 @@ member_reconfigure() {
       _info "all the nodes for etcd members are running but cluster has been unhealthy for a while, which means cluster is now in disaster recovery process. searching for a etcd snapshot to recover this member"
       member_bootstrap
     else
-      _info "all the nodes are present but cluster is still unhealthy, which means cluster failed to bootstrap. keep retrying a while"
+      _info "all the nodes are present but cluster is still unhealthy, which means the initial bootstrap is still in progress. keep retrying a while"
       _systemctl_daemon_reload
     fi
   fi
@@ -786,7 +774,7 @@ member_data_dir() {
 
 member_etcdctl() {
   local uuid_file
-  local rkt_opts=()
+  local rkt_opts=(--insecure-options=image)
 
   uuid_file="$(config_state_dir)/etcdctl-$BASHPID.uuid"
 
@@ -801,7 +789,6 @@ member_etcdctl() {
   fi
 
   _run_as_root rkt run ${rkt_opts[*]} \
-    --insecure-options=image \
     --set-env ETCDCTL_API=3 \
     --dns=host \
     --net=host \
@@ -810,7 +797,7 @@ member_etcdctl() {
     --volume data-dir,kind=host,source="$(member_data_dir)" \
     --mount volume=data-dir,target=/var/lib/etcd \
     --uuid-file-save="$uuid_file" \
-    "$(cluster_etcd_aci_url)" \
+    "$etcd_aci_url" \
     --exec etcdctl -- --endpoints "$(member_client_url)" ${*}
   _run_as_root rkt rm --uuid-file "$uuid_file"
   rm "$uuid_file"
@@ -962,7 +949,7 @@ EOS
             EnvironmentFile=-$(member_env_file)
 
             [Service]
-            Environment="ETCD_IMAGE_TAG=v$(config_etcd_version)"
+            Environment="ETCD_IMAGE_TAG=v$etcd_version"
             Environment="ETCD_NAME=${name}"
             Environment="ETCD_ADVERTISE_CLIENT_URLS=${client_url}"
             Environment="ETCD_INITIAL_ADVERTISE_PEER_URLS=${peer_url}"
@@ -985,12 +972,31 @@ EOS
 "
 }
 
+tester_bind_status_updater_systemd_unit() {
+  tester_log binding a status updater service to the etcd service
+  local drop_in_file=$(tester_member_systemd_drop_in_path 60-status-updater)
+  _run_as_root bash -c "cat > ${drop_in_file} << EOS
+[Unit]
+BindsTo=$(tester_member_status_updater_systemd_unit_name)
+Before=$(tester_member_status_updater_systemd_unit_name)
+EOS
+"
+}
+
 tester_member_configurator_systemd_unit_name() {
   echo $(config_member_systemd_service_name)-configurator.service
 }
 
 tester_member_configurator_systemd_unit_path() {
   echo /etc/systemd/system/$(tester_member_configurator_systemd_unit_name)
+}
+
+tester_member_status_updater_systemd_unit_name() {
+  echo $(config_member_systemd_service_name)-status-updater.service
+}
+
+tester_member_status_updater_systemd_unit_path() {
+  echo /etc/systemd/system/$(tester_member_status_updater_systemd_unit_name)
 }
 
 tester_log() {
@@ -1011,7 +1017,7 @@ tester_set_num_running_nodes() {
 }
 
 tester_work_dir() {
-  echo $(pwd)/tester
+  echo ${TESTER_WORK_DIR:?missing required env}
 }
 
 tester_cloud_config_file() {
@@ -1065,16 +1071,54 @@ RemainAfterExit=yes
 #Type=simple
 #Restart=on-failure
 RestartSec=5
-Environment=AWS_ACCESS_KEY_ID=$(config_aws_access_key_id)
-Environment=AWS_SECRET_ACCESS_KEY=$(config_aws_secret_access_key)
+Environment=AWS_ACCESS_KEY_ID=$aws_access_key_id
+Environment=AWS_SECRET_ACCESS_KEY=$aws_secret_access_key
+Environment=AWS_DEFAULT_REGION=$aws_region
+Environment=ETCD_CLUSTER_FAILURE_PERIOD_LIMIT=$(cluster_failure_period_limit)
+Environment=ETCD_MEMBER_FAILURE_PERIOD_LIMIT=$(member_failure_period_limit)
+Environment=TESTER_WORK_DIR=$(tester_work_dir)
 Environment=ETCD_INITIAL_CLUSTER=$(config_etcd_initial_cluster)
 Environment=ETCD_ENDPOINTS=$(config_etcd_endpoints)
 Environment=ETCD_DATA_DIR=$(member_data_dir)
-Environment=ETCDADM_MEMBER_COUNT=$(config_member_count)
+Environment=ETCDADM_MEMBER_COUNT=$member_count
 Environment=ETCDADM_MEMBER_INDEX=$(config_member_index)
 Environment=ETCDADM_STATE_FILES_DIR=$(config_state_dir)
-Environment=ETCDADM_CLUSTER_SNAPSHOTS_S3_URI=$(config_cluster_snapshots_s3_uri)
+Environment=ETCDADM_CLUSTER_SNAPSHOTS_S3_URI=$cluster_snapshots_s3_uri
 ExecStart=$(pwd)/etcdadm reconfigure
+EOS
+"
+}
+
+tester_create_status_updater_systemd_unit() {
+  local unit_file
+  unit_file=$(tester_member_status_updater_systemd_unit_path)
+  tester_log creating a status updater service for the etcd service
+  _run_as_root bash -c "cat > ${unit_file} << EOS
+[Unit]
+Description=etcdadm update status
+BindsTo=$(config_member_systemd_unit_name)
+After=$(config_member_systemd_unit_name)
+Wants=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+RestartSec=5
+Environment=AWS_ACCESS_KEY_ID=$aws_access_key_id
+Environment=AWS_SECRET_ACCESS_KEY=$aws_secret_access_key
+Environment=AWS_DEFAULT_REGION=$aws_region
+Environment=ETCD_CLUSTER_FAILURE_PERIOD_LIMIT=$(cluster_failure_period_limit)
+Environment=ETCD_MEMBER_FAILURE_PERIOD_LIMIT=$(member_failure_period_limit)
+Environment=TESTER_WORK_DIR=$(tester_work_dir)
+Environment=ETCD_INITIAL_CLUSTER=$(config_etcd_initial_cluster)
+Environment=ETCD_ENDPOINTS=$(config_etcd_endpoints)
+Environment=ETCD_DATA_DIR=$(member_data_dir)
+Environment=ETCDADM_MEMBER_COUNT=$member_count
+Environment=ETCDADM_MEMBER_INDEX=$(config_member_index)
+Environment=ETCDADM_STATE_FILES_DIR=$(config_state_dir)
+Environment=ETCDADM_CLUSTER_SNAPSHOTS_S3_URI=$cluster_snapshots_s3_uri
+ExecStart=$(pwd)/etcdadm member_status_set_started
+TimeoutStartSec=120
 EOS
 "
 }
@@ -1105,23 +1149,29 @@ EOS
 [Unit]
 Description=etcd health check
 Wants=network.target
+Wants=$(config_member_systemd_unit_name)
+After=$(config_member_systemd_unit_name)
 
 [Service]
 Type=simple
-Environment=AWS_ACCESS_KEY_ID=$(config_aws_access_key_id)
-Environment=AWS_SECRET_ACCESS_KEY=$(config_aws_secret_access_key)
+Environment=AWS_ACCESS_KEY_ID=$aws_access_key_id
+Environment=AWS_SECRET_ACCESS_KEY=$aws_secret_access_key
+Environment=AWS_DEFAULT_REGION=$aws_region
+Environment=ETCD_CLUSTER_FAILURE_PERIOD_LIMIT=$(cluster_failure_period_limit)
+Environment=ETCD_MEMBER_FAILURE_PERIOD_LIMIT=$(member_failure_period_limit)
+Environment=TESTER_WORK_DIR=$(tester_work_dir)
 Environment=ETCD_INITIAL_CLUSTER=$(config_etcd_initial_cluster)
 Environment=ETCD_ENDPOINTS=$(config_etcd_endpoints)
 Environment=ETCD_DATA_DIR=$(member_data_dir)
-Environment=ETCDADM_MEMBER_COUNT=$(config_member_count)
+Environment=ETCDADM_MEMBER_COUNT=$member_count
 Environment=ETCDADM_MEMBER_INDEX=$(config_member_index)
 Environment=ETCDADM_STATE_FILES_DIR=$(config_state_dir)
-Environment=ETCDADM_CLUSTER_SNAPSHOTS_S3_URI=$(config_cluster_snapshots_s3_uri)
+Environment=ETCDADM_CLUSTER_SNAPSHOTS_S3_URI=$cluster_snapshots_s3_uri
 ExecStart=$(pwd)/etcdadm check
 EOS
 "
   _run_as_root systemctl daemon-reload
-  _run_as_root systemctl restart ${name}.service
+  _run_as_root systemctl stop ${name}.service
   _run_as_root systemctl restart ${name}.timer
 }
 
@@ -1151,25 +1201,31 @@ EOS
 [Unit]
 Description=etcd snapshot
 Wants=network.target
+Wants=$(config_member_systemd_unit_name)
+After=$(config_member_systemd_unit_name)
 
 [Service]
 Type=simple
-Environment=AWS_ACCESS_KEY_ID=$(config_aws_access_key_id)
-Environment=AWS_SECRET_ACCESS_KEY=$(config_aws_secret_access_key)
+Environment=AWS_ACCESS_KEY_ID=$aws_access_key_id
+Environment=AWS_SECRET_ACCESS_KEY=$aws_secret_access_key
+Environment=AWS_DEFAULT_REGION=$aws_region
+Environment=ETCD_CLUSTER_FAILURE_PERIOD_LIMIT=$(cluster_failure_period_limit)
+Environment=ETCD_MEMBER_FAILURE_PERIOD_LIMIT=$(member_failure_period_limit)
+Environment=TESTER_WORK_DIR=$(tester_work_dir)
 Environment=ETCD_INITIAL_CLUSTER=$(config_etcd_initial_cluster)
 Environment=ETCD_ENDPOINTS=$(config_etcd_endpoints)
 Environment=ETCD_DATA_DIR=$(member_data_dir)
-Environment=ETCDADM_MEMBER_COUNT=$(config_member_count)
+Environment=ETCDADM_MEMBER_COUNT=$member_count
 Environment=ETCDADM_MEMBER_INDEX=$(config_member_index)
 Environment=ETCDADM_STATE_FILES_DIR=$(config_state_dir)
-Environment=ETCDADM_CLUSTER_SNAPSHOTS_S3_URI=$(config_cluster_snapshots_s3_uri)
+Environment=ETCDADM_CLUSTER_SNAPSHOTS_S3_URI=$cluster_snapshots_s3_uri
 Restart=no
-ExecStartPre=systemctl is-active $(config_member_systemd_unit_name)
+ExecStartPre=/usr/bin/systemctl is-active $(config_member_systemd_unit_name)
 ExecStart=$(pwd)/etcdadm save
 EOS
 "
   _run_as_root systemctl daemon-reload
-  _run_as_root systemctl restart ${name}.service
+  _run_as_root systemctl stop ${name}.service
   _run_as_root systemctl restart ${name}.timer
 }
 
@@ -1291,9 +1347,11 @@ tester_wait_until_ready() {
   until [ "$(tester_member_is_ready)" == "yes" ]; do
     sleep 1
   done
+  tester_log testing v2 api...
   until tester_put_v2 /ready yes; do
     sleep 1
   done
+  tester_log testing v3 api...
   until tester_put_v3 /ready yes; do
     sleep 1
   done
@@ -1323,8 +1381,11 @@ tester_bootstrap_cluster() {
       tester_systemd_ensure_stopped $(config_member_systemd_service_name)-check.timer
       tester_systemd_ensure_stopped $(config_member_systemd_service_name)-snapshot.timer
 
+      sleep 3
+
       tester_remove_data_dir
       tester_remove_state_dir
+      member_status_clear
       tester_clean_local_snapshots
       tester_clean_remote_snapshots
 
@@ -1344,8 +1405,10 @@ tester_bootstrap_cluster() {
 
   tester_each_member tester_create_checker_systemd_unit
   tester_each_member tester_create_configurator_systemd_unit
+  tester_each_member tester_create_status_updater_systemd_unit
   tester_each_member tester_create_snapshot_systemd_unit
   tester_each_member tester_bind_configurator_systemd_unit
+  tester_each_member tester_bind_status_updater_systemd_unit
   _run_as_root systemctl daemon-reload
 
   tester_each_member tester_simulate_node_startup
@@ -1368,6 +1431,10 @@ tester_run_all_tests() {
     setup() {
       tester_systemd_ensure_stopped $(config_member_systemd_service_name)-check.timer
       tester_systemd_ensure_stopped $(config_member_systemd_service_name)-snapshot.timer
+      sleep 3
+      tester_clean_local_snapshots
+      tester_clean_remote_snapshots
+      sudo mkdir -p $(member_host_snapshots_dir_path)
     }
     ETCDADM_MEMBER_INDEX=$i setup
   done
@@ -1548,11 +1615,6 @@ main() {
       ;;
   esac
 }
-
-set -o nounset
-set -o errexit
-set -o pipefail
-IFS=$'\n\t'
 
 main "$@"
 
