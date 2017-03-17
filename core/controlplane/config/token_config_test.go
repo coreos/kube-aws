@@ -57,7 +57,7 @@ func TestReadOrCreateCompactEmptyAuthTokens(t *testing.T) {
 			}
 
 			if len(created.Contents) > 0 {
-				t.Errorf("compacted auth tokens expected to be an empty string, but was %s : %v", created)
+				t.Errorf("compacted auth tokens expected to be an empty string, but was %s", created.Contents)
 			}
 
 			// This depends on TestDummyEncryptService which ensures dummy encrypt service to produce different ciphertext for each encryption
