@@ -204,7 +204,9 @@ You can now customize your cluster by editing asset files. Any changes to these 
 
 * **credentials/**
 
-  This directory contains both encryped and **unencrypted** TLS assets and access tokens (an empty file by default) for your cluster, along with a pre-configured `kubeconfig` file which provides access to your cluster api via kubectl.
+  This directory contains both encryped and **unencrypted** TLS assets for your cluster, along with a pre-configured `kubeconfig` file which provides access to your cluster api via kubectl.
+
+  You can also specify additional access tokens in `tokens.csv` as shown in the [official docs](https://kubernetes.io/docs/admin/authentication/#static-token-file).
 
 [mount-disks]: https://coreos.com/os/docs/latest/mounting-storage.html
 [insecure-registry]: https://coreos.com/os/docs/latest/registry-authentication.html#using-a-registry-without-ssl-configured
