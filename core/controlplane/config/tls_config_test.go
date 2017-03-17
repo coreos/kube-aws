@@ -125,7 +125,7 @@ func TestReadOrCreateCompactTLSAssets(t *testing.T) {
 			}
 
 			// This depends on TestDummyEncryptService which ensures dummy encrypt service to produce different ciphertext for each encryption
-			// created == read means that encrypted assets were loaded from cached files named *.pem.enc, instead of re-encryptiong raw tls assets named *.pem files
+			// created == read means that encrypted assets were loaded from cached files named *.pem.enc, instead of re-encrypting raw tls assets named *.pem files
 			// TODO Use some kind of mocking framework for tests like this
 			read, err := ReadOrCreateCompactTLSAssets(dir, kmsConfig)
 
