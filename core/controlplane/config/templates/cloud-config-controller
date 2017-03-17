@@ -976,7 +976,7 @@ write_files:
             readOnly: true
           {{if .AuthTokensConfig.HasTokens}}
           - mountPath: /etc/kubernetes/auth
-            name: kubernetes-auth
+            name: auth-kubernetes
             readOnly: true
           {{end}}
           {{if .Experimental.Authentication.Webhook.Enabled}}
@@ -994,7 +994,7 @@ write_files:
         {{if .AuthTokensConfig.HasTokens}}
         - hostPath:
             path: /etc/kubernetes/auth
-          name: kubernetes-auth
+          name: auth-kubernetes
         {{end}}
         {{if .Experimental.Authentication.Webhook.Enabled}}
         - hostPath:
