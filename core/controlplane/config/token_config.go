@@ -33,7 +33,7 @@ type CompactAuthTokens struct {
 	Contents string
 }
 
-func (c *Cluster) NewAuthTokenFile() *RawAuthTokens {
+func (c *Cluster) NewAuthTokens() *RawAuthTokens {
 	// Uses an empty file as the default auth token file
 	return &RawAuthTokens{AuthTokens{
 		Contents: make([]byte, 0),

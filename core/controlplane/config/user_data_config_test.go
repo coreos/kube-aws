@@ -81,7 +81,7 @@ func TestCloudConfigTemplating(t *testing.T) {
 	cfg.TLSConfig = compactAssets
 
 	// Auth tokens
-	authTokens := cluster.NewAuthTokenFile()
+	authTokens := cluster.NewAuthTokens()
 
 	encryptedAuthTokens, err := authTokens.Encrypt(cfg.KMSKeyARN, &dummyEncryptService{})
 	if err != nil {
