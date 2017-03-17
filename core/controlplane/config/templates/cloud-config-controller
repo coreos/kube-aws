@@ -974,11 +974,16 @@ write_files:
           - mountPath: /etc/ssl/certs
             name: ssl-certs-host
             readOnly: true
+          {{if .AuthTokensConfig.HasTokens}}
+          - mountPath: /etc/kubernetes/auth
+            name: kubernetes-auth
+            readOnly: true
+          {{end}}
           {{if .Experimental.Authentication.Webhook.Enabled}}
           - mountPath: /etc/kubernetes/webhooks
             name: kubernetes-webhooks
             readOnly: true
-          {{ end }}
+          {{end}}
         volumes:
         - hostPath:
             path: /etc/kubernetes/ssl
@@ -986,6 +991,11 @@ write_files:
         - hostPath:
             path: /usr/share/ca-certificates
           name: ssl-certs-host
+        {{if .AuthTokensConfig.HasTokens}}
+        - hostPath:
+            path: /etc/kubernetes/auth
+          name: kubernetes-auth
+        {{end}}
         {{if .Experimental.Authentication.Webhook.Enabled}}
         - hostPath:
             path: /etc/kubernetes/webhooks
