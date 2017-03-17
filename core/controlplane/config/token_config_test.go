@@ -25,10 +25,17 @@ func genAuthTokens(t *testing.T) *RawAuthTokens {
 // The default token file is empty, and since encryption/compaction only
 // happens if the token file is not empty, we need a way to create a sample
 // token file in order to cover both scenarios
-func writeSampleAuthTokenFile(dir string, t *testing.T) {
+func writeSampleValidAuthTokenFile(dir string, t *testing.T) {
 	err := ioutil.WriteFile(fmt.Sprintf("%s/tokens.csv", dir), []byte("token,user,1,group"), 0600)
 	if err != nil {
-		t.Errorf("failed to create sample auth tokens files: %v", err)
+		t.Errorf("failed to create sample valid auth tokens files: %v", err)
+	}
+}
+
+func writeSampleInvalidAuthTokenFile(dir string, t *testing.T) {
+	err := ioutil.WriteFile(fmt.Sprintf("%s/tokens.csv", dir), []byte("# invalid token record"), 0600)
+	if err != nil {
+		t.Errorf("failed to create sample invalid auth tokens files: %v", err)
 	}
 }
 
@@ -104,7 +111,7 @@ func TestReadOrCreateEmptyUnEcryptedCompactAuthTokens(t *testing.T) {
 	})
 }
 
-func TestReadOrCreateCompactNonEmptyAuthTokens(t *testing.T) {
+func TestReadOrCreateCompactNonEmptyValidAuthTokens(t *testing.T) {
 	helper.WithDummyCredentials(func(dir string) {
 		kmsConfig := KMSConfig{
 			KMSKeyARN:      "keyarn",
@@ -112,7 +119,7 @@ func TestReadOrCreateCompactNonEmptyAuthTokens(t *testing.T) {
 			EncryptService: &dummyEncryptService{},
 		}
 
-		writeSampleAuthTokenFile(dir, t)
+		writeSampleValidAuthTokenFile(dir, t)
 
 		// See https://github.com/coreos/kube-aws/issues/107
 		t.Run("CachedToPreventUnnecessaryNodeReplacement", func(t *testing.T) {
@@ -171,29 +178,30 @@ func TestReadOrCreateCompactNonEmptyAuthTokens(t *testing.T) {
 	})
 }
 
-func TestReadOrCreateNonEmptyUnEcryptedCompactAuthTokens(t *testing.T) {
+func TestReadOrCreateCompactNonEmptyInvalidAuthTokens(t *testing.T) {
 	helper.WithDummyCredentials(func(dir string) {
-		writeSampleAuthTokenFile(dir, t)
+		kmsConfig := KMSConfig{
+			KMSKeyARN:      "keyarn",
+			Region:         model.RegionForName("us-west-1"),
+			EncryptService: &dummyEncryptService{},
+		}
 
-		t.Run("CachedToPreventUnnecessaryNodeReplacementOnUnencrypted", func(t *testing.T) {
-			created, err := ReadOrCreateUnecryptedCompactAuthTokens(dir)
+		writeSampleInvalidAuthTokenFile(dir, t)
+		_, err := ReadOrCreateCompactAuthTokens(dir, kmsConfig)
 
-			if err != nil {
-				t.Errorf("failed to read or update compact auth tokens in %s : %v", dir, err)
-			}
+		if err == nil {
+			t.Errorf("expected invalid token file to return an error, but it didn't")
+		}
+	})
+}
 
-			read, err := ReadOrCreateUnecryptedCompactAuthTokens(dir)
+func TestReadOrCreateNonEmptyIncvalidUnEcryptedCompactAuthTokens(t *testing.T) {
+	helper.WithDummyCredentials(func(dir string) {
+		writeSampleInvalidAuthTokenFile(dir, t)
+		_, err := ReadOrCreateUnecryptedCompactAuthTokens(dir)
 
-			if err != nil {
-				t.Errorf("failed to read or update compact auth tokens in %s : %v", dir, err)
-			}
-
-			if !reflect.DeepEqual(created, read) {
-				t.Errorf(`failed to cache unencrypted auth tokens.
- 	unencrypted auth tokens must not change after their first creation but they did change:
- 	created = %v
- 	read = %v`, created, read)
-			}
-		})
+		if err == nil {
+			t.Errorf("expected invalid token file to return an error, but it didn't")
+		}
 	})
 }

@@ -1,6 +1,8 @@
 package config
 
 import (
+	"bytes"
+	"encoding/csv"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -40,11 +42,34 @@ func (c *Cluster) NewAuthTokens() *RawAuthTokens {
 	}}
 }
 
+func validateAuthTokens(authTokens []byte) error {
+	if len(authTokens) > 0 {
+		csvReader := csv.NewReader(bytes.NewReader(authTokens))
+
+		records, err := csvReader.ReadAll()
+		if err != nil {
+			return err
+		}
+
+		for _, line := range records {
+			columns := len(line)
+			if columns < 3 {
+				return fmt.Errorf("auth token record must have at least 3 columns, but has %d: '%v'", columns, line)
+			}
+		}
+	}
+
+	return nil
+}
+
 func ReadRawAuthTokens(dirname string) (*RawAuthTokens, error) {
 	authTokensPath := filepath.Join(dirname, "tokens.csv")
 	authTokens, err := ioutil.ReadFile(authTokensPath)
-
 	if err != nil {
+		return nil, err
+	}
+
+	if err = validateAuthTokens(authTokens); err != nil {
 		return nil, err
 	}
 
