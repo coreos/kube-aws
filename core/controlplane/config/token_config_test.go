@@ -23,8 +23,8 @@ func genAuthTokens(t *testing.T) *RawAuthTokens {
 }
 
 // The default token file is empty, and since encryption/compaction only
-// happens if the token file is not empty, we create a sample token file before
-// proceeding with the tests
+// happens if the token file is not empty, we need a way to create a sample
+// token file in order to cover both scenarios
 func writeSampleAuthTokenFile(dir string, t *testing.T) {
 	err := ioutil.WriteFile(fmt.Sprintf("%s/tokens.csv", dir), []byte("token,user,1,group"), 0600)
 	if err != nil {
