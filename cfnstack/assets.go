@@ -2,6 +2,7 @@ package cfnstack
 
 import (
 	"fmt"
+	"github.com/coreos/kube-aws/model"
 	"path/filepath"
 	"strings"
 )
@@ -100,10 +101,11 @@ func (b *assetsBuilderImpl) Build() Assets {
 	}
 }
 
-func NewAssetsBuilder(stackName string, s3URI string) AssetsBuilder {
+func NewAssetsBuilder(stackName string, s3URI string, region model.Region) AssetsBuilder {
 	return &assetsBuilderImpl{
 		locProvider: AssetLocationProvider{
 			s3URI:     s3URI,
+			region:    region,
 			stackName: stackName,
 		},
 		assets: map[AssetID]Asset{},
@@ -117,6 +119,7 @@ type Asset struct {
 
 type AssetLocationProvider struct {
 	s3URI     string
+	region    model.Region
 	stackName string
 }
 
@@ -125,15 +128,17 @@ type AssetLocation struct {
 	Key    string
 	Bucket string
 	Path   string
+	Region model.Region
 }
 
 func (l AssetLocation) URL() string {
-	return fmt.Sprintf("https://s3.amazonaws.com/%s/%s", l.Bucket, l.Key)
+	return fmt.Sprintf("%s/%s/%s", l.Region.S3Endpoint(), l.Bucket, l.Key)
 }
 
-func newAssetLocationProvider(stackName string, s3URI string) AssetLocationProvider {
+func newAssetLocationProvider(stackName string, s3URI string, region model.Region) AssetLocationProvider {
 	return AssetLocationProvider{
 		s3URI:     s3URI,
+		region:    region,
 		stackName: stackName,
 	}
 }
@@ -164,5 +169,6 @@ func (p AssetLocationProvider) locationFor(filename string) (*AssetLocation, err
 		Key:    key,
 		Bucket: uri.Bucket(),
 		Path:   filepath.Join(relativePathComponents...),
+		Region: p.region,
 	}, nil
 }

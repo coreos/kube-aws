@@ -15,12 +15,55 @@ import (
 var _ time.Duration
 var _ bytes.Buffer
 
-func ExampleApplicationDiscoveryService_CreateTags() {
-	sess, err := session.NewSession()
+func ExampleApplicationDiscoveryService_AssociateConfigurationItemsToApplication() {
+	sess := session.Must(session.NewSession())
+
+	svc := applicationdiscoveryservice.New(sess)
+
+	params := &applicationdiscoveryservice.AssociateConfigurationItemsToApplicationInput{
+		ApplicationConfigurationId: aws.String("ApplicationId"), // Required
+		ConfigurationIds: []*string{ // Required
+			aws.String("ConfigurationId"), // Required
+			// More values...
+		},
+	}
+	resp, err := svc.AssociateConfigurationItemsToApplication(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleApplicationDiscoveryService_CreateApplication() {
+	sess := session.Must(session.NewSession())
+
+	svc := applicationdiscoveryservice.New(sess)
+
+	params := &applicationdiscoveryservice.CreateApplicationInput{
+		Name:        aws.String("String"), // Required
+		Description: aws.String("String"),
+	}
+	resp, err := svc.CreateApplication(params)
+
+	if err != nil {
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
+		return
+	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleApplicationDiscoveryService_CreateTags() {
+	sess := session.Must(session.NewSession())
 
 	svc := applicationdiscoveryservice.New(sess)
 
@@ -50,12 +93,32 @@ func ExampleApplicationDiscoveryService_CreateTags() {
 	fmt.Println(resp)
 }
 
-func ExampleApplicationDiscoveryService_DeleteTags() {
-	sess, err := session.NewSession()
+func ExampleApplicationDiscoveryService_DeleteApplications() {
+	sess := session.Must(session.NewSession())
+
+	svc := applicationdiscoveryservice.New(sess)
+
+	params := &applicationdiscoveryservice.DeleteApplicationsInput{
+		ConfigurationIds: []*string{ // Required
+			aws.String("ApplicationId"), // Required
+			// More values...
+		},
+	}
+	resp, err := svc.DeleteApplications(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleApplicationDiscoveryService_DeleteTags() {
+	sess := session.Must(session.NewSession())
 
 	svc := applicationdiscoveryservice.New(sess)
 
@@ -86,17 +149,24 @@ func ExampleApplicationDiscoveryService_DeleteTags() {
 }
 
 func ExampleApplicationDiscoveryService_DescribeAgents() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := applicationdiscoveryservice.New(sess)
 
 	params := &applicationdiscoveryservice.DescribeAgentsInput{
 		AgentIds: []*string{
 			aws.String("AgentId"), // Required
+			// More values...
+		},
+		Filters: []*applicationdiscoveryservice.Filter{
+			{ // Required
+				Condition: aws.String("Condition"), // Required
+				Name:      aws.String("String"),    // Required
+				Values: []*string{ // Required
+					aws.String("FilterValue"), // Required
+					// More values...
+				},
+			},
 			// More values...
 		},
 		MaxResults: aws.Int64(1),
@@ -116,11 +186,7 @@ func ExampleApplicationDiscoveryService_DescribeAgents() {
 }
 
 func ExampleApplicationDiscoveryService_DescribeConfigurations() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := applicationdiscoveryservice.New(sess)
 
@@ -144,11 +210,7 @@ func ExampleApplicationDiscoveryService_DescribeConfigurations() {
 }
 
 func ExampleApplicationDiscoveryService_DescribeExportConfigurations() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := applicationdiscoveryservice.New(sess)
 
@@ -174,11 +236,7 @@ func ExampleApplicationDiscoveryService_DescribeExportConfigurations() {
 }
 
 func ExampleApplicationDiscoveryService_DescribeTags() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := applicationdiscoveryservice.New(sess)
 
@@ -209,12 +267,33 @@ func ExampleApplicationDiscoveryService_DescribeTags() {
 	fmt.Println(resp)
 }
 
-func ExampleApplicationDiscoveryService_ExportConfigurations() {
-	sess, err := session.NewSession()
+func ExampleApplicationDiscoveryService_DisassociateConfigurationItemsFromApplication() {
+	sess := session.Must(session.NewSession())
+
+	svc := applicationdiscoveryservice.New(sess)
+
+	params := &applicationdiscoveryservice.DisassociateConfigurationItemsFromApplicationInput{
+		ApplicationConfigurationId: aws.String("ApplicationId"), // Required
+		ConfigurationIds: []*string{ // Required
+			aws.String("ConfigurationId"), // Required
+			// More values...
+		},
+	}
+	resp, err := svc.DisassociateConfigurationItemsFromApplication(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleApplicationDiscoveryService_ExportConfigurations() {
+	sess := session.Must(session.NewSession())
 
 	svc := applicationdiscoveryservice.New(sess)
 
@@ -232,12 +311,27 @@ func ExampleApplicationDiscoveryService_ExportConfigurations() {
 	fmt.Println(resp)
 }
 
-func ExampleApplicationDiscoveryService_ListConfigurations() {
-	sess, err := session.NewSession()
+func ExampleApplicationDiscoveryService_GetDiscoverySummary() {
+	sess := session.Must(session.NewSession())
+
+	svc := applicationdiscoveryservice.New(sess)
+
+	var params *applicationdiscoveryservice.GetDiscoverySummaryInput
+	resp, err := svc.GetDiscoverySummary(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleApplicationDiscoveryService_ListConfigurations() {
+	sess := session.Must(session.NewSession())
 
 	svc := applicationdiscoveryservice.New(sess)
 
@@ -256,6 +350,13 @@ func ExampleApplicationDiscoveryService_ListConfigurations() {
 		},
 		MaxResults: aws.Int64(1),
 		NextToken:  aws.String("NextToken"),
+		OrderBy: []*applicationdiscoveryservice.OrderByElement{
+			{ // Required
+				FieldName: aws.String("String"), // Required
+				SortOrder: aws.String("orderString"),
+			},
+			// More values...
+		},
 	}
 	resp, err := svc.ListConfigurations(params)
 
@@ -270,12 +371,36 @@ func ExampleApplicationDiscoveryService_ListConfigurations() {
 	fmt.Println(resp)
 }
 
-func ExampleApplicationDiscoveryService_StartDataCollectionByAgentIds() {
-	sess, err := session.NewSession()
+func ExampleApplicationDiscoveryService_ListServerNeighbors() {
+	sess := session.Must(session.NewSession())
+
+	svc := applicationdiscoveryservice.New(sess)
+
+	params := &applicationdiscoveryservice.ListServerNeighborsInput{
+		ConfigurationId: aws.String("ConfigurationId"), // Required
+		MaxResults:      aws.Int64(1),
+		NeighborConfigurationIds: []*string{
+			aws.String("ConfigurationId"), // Required
+			// More values...
+		},
+		NextToken:             aws.String("String"),
+		PortInformationNeeded: aws.Bool(true),
+	}
+	resp, err := svc.ListServerNeighbors(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleApplicationDiscoveryService_StartDataCollectionByAgentIds() {
+	sess := session.Must(session.NewSession())
 
 	svc := applicationdiscoveryservice.New(sess)
 
@@ -299,11 +424,7 @@ func ExampleApplicationDiscoveryService_StartDataCollectionByAgentIds() {
 }
 
 func ExampleApplicationDiscoveryService_StopDataCollectionByAgentIds() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := applicationdiscoveryservice.New(sess)
 
@@ -314,6 +435,29 @@ func ExampleApplicationDiscoveryService_StopDataCollectionByAgentIds() {
 		},
 	}
 	resp, err := svc.StopDataCollectionByAgentIds(params)
+
+	if err != nil {
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
+		return
+	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleApplicationDiscoveryService_UpdateApplication() {
+	sess := session.Must(session.NewSession())
+
+	svc := applicationdiscoveryservice.New(sess)
+
+	params := &applicationdiscoveryservice.UpdateApplicationInput{
+		ConfigurationId: aws.String("ApplicationId"), // Required
+		Description:     aws.String("String"),
+		Name:            aws.String("String"),
+	}
+	resp, err := svc.UpdateApplication(params)
 
 	if err != nil {
 		// Print the error, cast err to awserr.Error to get the Code and

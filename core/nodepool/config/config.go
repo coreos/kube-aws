@@ -64,13 +64,20 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 		return nil, fmt.Errorf("failed to generate config : %v", err)
 	}
 
-	compactAssets, err := cfg.ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, cfg.KMSConfig{
-		Region:         stackConfig.ComputedConfig.Region,
-		KMSKeyARN:      c.KMSKeyARN,
-		EncryptService: c.providedEncryptService,
-	})
+	if stackConfig.ManageCertificates {
+		if stackConfig.ComputedConfig.TLSAssetsEncryptionEnabled() {
+			compactAssets, _ := cfg.ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, cfg.KMSConfig{
+				Region:         stackConfig.ComputedConfig.Region,
+				KMSKeyARN:      c.KMSKeyARN,
+				EncryptService: c.providedEncryptService,
+			})
 
-	stackConfig.ComputedConfig.TLSConfig = compactAssets
+			stackConfig.ComputedConfig.TLSConfig = compactAssets
+		} else {
+			rawAssets, _ := cfg.ReadOrCreateUnecryptedCompactTLSAssets(opts.TLSAssetsDir)
+			stackConfig.ComputedConfig.TLSConfig = rawAssets
+		}
+	}
 
 	if stackConfig.UserDataWorker, err = userdatatemplate.GetString(opts.WorkerTmplFile, stackConfig.ComputedConfig); err != nil {
 		return nil, fmt.Errorf("failed to render worker cloud config: %v", err)
@@ -189,7 +196,7 @@ func (c ProvidedConfig) Config() (*ComputedConfig, error) {
 
 	if c.AmiId == "" {
 		var err error
-		if config.AMI, err = amiregistry.GetAMI(config.Region, config.ReleaseChannel); err != nil {
+		if config.AMI, err = amiregistry.GetAMI(config.Region.String(), config.ReleaseChannel); err != nil {
 			return nil, fmt.Errorf("failed getting AMI for config: %v", err)
 		}
 	} else {

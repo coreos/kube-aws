@@ -37,6 +37,7 @@ const opActivateGateway = "ActivateGateway"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ActivateGateway
 func (c *StorageGateway) ActivateGatewayRequest(input *ActivateGatewayInput) (req *request.Request, output *ActivateGatewayOutput) {
 	op := &request.Operation{
 		Name:       opActivateGateway,
@@ -48,9 +49,8 @@ func (c *StorageGateway) ActivateGatewayRequest(input *ActivateGatewayInput) (re
 		input = &ActivateGatewayInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ActivateGatewayOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -74,14 +74,15 @@ func (c *StorageGateway) ActivateGatewayRequest(input *ActivateGatewayInput) (re
 // API operation ActivateGateway for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ActivateGateway
 func (c *StorageGateway) ActivateGateway(input *ActivateGatewayInput) (*ActivateGatewayOutput, error) {
 	req, out := c.ActivateGatewayRequest(input)
 	err := req.Send()
@@ -114,6 +115,7 @@ const opAddCache = "AddCache"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddCache
 func (c *StorageGateway) AddCacheRequest(input *AddCacheInput) (req *request.Request, output *AddCacheOutput) {
 	op := &request.Operation{
 		Name:       opAddCache,
@@ -125,9 +127,8 @@ func (c *StorageGateway) AddCacheRequest(input *AddCacheInput) (req *request.Req
 		input = &AddCacheInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &AddCacheOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -149,14 +150,15 @@ func (c *StorageGateway) AddCacheRequest(input *AddCacheInput) (req *request.Req
 // API operation AddCache for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddCache
 func (c *StorageGateway) AddCache(input *AddCacheInput) (*AddCacheOutput, error) {
 	req, out := c.AddCacheRequest(input)
 	err := req.Send()
@@ -189,6 +191,7 @@ const opAddTagsToResource = "AddTagsToResource"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddTagsToResource
 func (c *StorageGateway) AddTagsToResourceRequest(input *AddTagsToResourceInput) (req *request.Request, output *AddTagsToResourceOutput) {
 	op := &request.Operation{
 		Name:       opAddTagsToResource,
@@ -200,9 +203,8 @@ func (c *StorageGateway) AddTagsToResourceRequest(input *AddTagsToResourceInput)
 		input = &AddTagsToResourceInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &AddTagsToResourceOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -214,13 +216,13 @@ func (c *StorageGateway) AddTagsToResourceRequest(input *AddTagsToResourceInput)
 // tag consists of a key and a value, which you define. You can add tags to
 // the following AWS Storage Gateway resources:
 //
-//   Storage gateways of all types
+//    * Storage gateways of all types
 //
-//     Storage Volumes
+//    * Storage Volumes
 //
-//     Virtual Tapes
+//    * Virtual Tapes
 //
-//   You can create a maximum of 10 tags for each resource. Virtual tapes and
+// You can create a maximum of 10 tags for each resource. Virtual tapes and
 // storage volumes that are recovered to a new gateway maintain their tags.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
@@ -231,14 +233,15 @@ func (c *StorageGateway) AddTagsToResourceRequest(input *AddTagsToResourceInput)
 // API operation AddTagsToResource for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddTagsToResource
 func (c *StorageGateway) AddTagsToResource(input *AddTagsToResourceInput) (*AddTagsToResourceOutput, error) {
 	req, out := c.AddTagsToResourceRequest(input)
 	err := req.Send()
@@ -271,6 +274,7 @@ const opAddUploadBuffer = "AddUploadBuffer"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddUploadBuffer
 func (c *StorageGateway) AddUploadBufferRequest(input *AddUploadBufferInput) (req *request.Request, output *AddUploadBufferOutput) {
 	op := &request.Operation{
 		Name:       opAddUploadBuffer,
@@ -282,9 +286,8 @@ func (c *StorageGateway) AddUploadBufferRequest(input *AddUploadBufferInput) (re
 		input = &AddUploadBufferInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &AddUploadBufferOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -306,14 +309,15 @@ func (c *StorageGateway) AddUploadBufferRequest(input *AddUploadBufferInput) (re
 // API operation AddUploadBuffer for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddUploadBuffer
 func (c *StorageGateway) AddUploadBuffer(input *AddUploadBufferInput) (*AddUploadBufferOutput, error) {
 	req, out := c.AddUploadBufferRequest(input)
 	err := req.Send()
@@ -346,6 +350,7 @@ const opAddWorkingStorage = "AddWorkingStorage"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddWorkingStorage
 func (c *StorageGateway) AddWorkingStorageRequest(input *AddWorkingStorageInput) (req *request.Request, output *AddWorkingStorageOutput) {
 	op := &request.Operation{
 		Name:       opAddWorkingStorage,
@@ -357,9 +362,8 @@ func (c *StorageGateway) AddWorkingStorageRequest(input *AddWorkingStorageInput)
 		input = &AddWorkingStorageInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &AddWorkingStorageOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -370,10 +374,10 @@ func (c *StorageGateway) AddWorkingStorageRequest(input *AddWorkingStorageInput)
 // This operation is deprecated in cached-volumes API version 20120630. Use
 // AddUploadBuffer instead.
 //
-//  Working storage is also referred to as upload buffer. You can also use
-// the AddUploadBuffer operation to add upload buffer to a stored-volume gateway.
+// Working storage is also referred to as upload buffer. You can also use the
+// AddUploadBuffer operation to add upload buffer to a stored-volume gateway.
 //
-//  In the request, you specify the gateway Amazon Resource Name (ARN) to which
+// In the request, you specify the gateway Amazon Resource Name (ARN) to which
 // you want to add working storage, and one or more disk IDs that you want to
 // configure as working storage.
 //
@@ -385,14 +389,15 @@ func (c *StorageGateway) AddWorkingStorageRequest(input *AddWorkingStorageInput)
 // API operation AddWorkingStorage for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddWorkingStorage
 func (c *StorageGateway) AddWorkingStorage(input *AddWorkingStorageInput) (*AddWorkingStorageOutput, error) {
 	req, out := c.AddWorkingStorageRequest(input)
 	err := req.Send()
@@ -425,6 +430,7 @@ const opCancelArchival = "CancelArchival"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CancelArchival
 func (c *StorageGateway) CancelArchivalRequest(input *CancelArchivalInput) (req *request.Request, output *CancelArchivalOutput) {
 	op := &request.Operation{
 		Name:       opCancelArchival,
@@ -436,9 +442,8 @@ func (c *StorageGateway) CancelArchivalRequest(input *CancelArchivalInput) (req 
 		input = &CancelArchivalInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &CancelArchivalOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -455,14 +460,15 @@ func (c *StorageGateway) CancelArchivalRequest(input *CancelArchivalInput) (req 
 // API operation CancelArchival for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CancelArchival
 func (c *StorageGateway) CancelArchival(input *CancelArchivalInput) (*CancelArchivalOutput, error) {
 	req, out := c.CancelArchivalRequest(input)
 	err := req.Send()
@@ -495,6 +501,7 @@ const opCancelRetrieval = "CancelRetrieval"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CancelRetrieval
 func (c *StorageGateway) CancelRetrievalRequest(input *CancelRetrievalInput) (req *request.Request, output *CancelRetrievalOutput) {
 	op := &request.Operation{
 		Name:       opCancelRetrieval,
@@ -506,9 +513,8 @@ func (c *StorageGateway) CancelRetrievalRequest(input *CancelRetrievalInput) (re
 		input = &CancelRetrievalInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &CancelRetrievalOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -526,14 +532,15 @@ func (c *StorageGateway) CancelRetrievalRequest(input *CancelRetrievalInput) (re
 // API operation CancelRetrieval for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CancelRetrieval
 func (c *StorageGateway) CancelRetrieval(input *CancelRetrievalInput) (*CancelRetrievalOutput, error) {
 	req, out := c.CancelRetrievalRequest(input)
 	err := req.Send()
@@ -566,6 +573,7 @@ const opCreateCachediSCSIVolume = "CreateCachediSCSIVolume"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateCachediSCSIVolume
 func (c *StorageGateway) CreateCachediSCSIVolumeRequest(input *CreateCachediSCSIVolumeInput) (req *request.Request, output *CreateCachediSCSIVolumeOutput) {
 	op := &request.Operation{
 		Name:       opCreateCachediSCSIVolume,
@@ -577,9 +585,8 @@ func (c *StorageGateway) CreateCachediSCSIVolumeRequest(input *CreateCachediSCSI
 		input = &CreateCachediSCSIVolumeInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &CreateCachediSCSIVolumeOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -591,12 +598,17 @@ func (c *StorageGateway) CreateCachediSCSIVolumeRequest(input *CreateCachediSCSI
 // Cache storage must be allocated to the gateway before you can create a cached
 // volume. Use the AddCache operation to add cache storage to a gateway.
 //
-//  In the request, you must specify the gateway, size of the volume in bytes,
+// In the request, you must specify the gateway, size of the volume in bytes,
 // the iSCSI target name, an IP address on which to expose the target, and a
 // unique client token. In response, AWS Storage Gateway creates the volume
-// and returns information about it such as the volume Amazon Resource Name
-// (ARN), its size, and the iSCSI target ARN that initiators can use to connect
-// to the volume target.
+// and returns information about it. This information includes the volume Amazon
+// Resource Name (ARN), its size, and the iSCSI target ARN that initiators can
+// use to connect to the volume target.
+//
+// Optionally, you can provide the ARN for an existing volume as the SourceVolumeARN
+// for this cached volume, which creates an exact copy of the existing volume’s
+// latest recovery point. The VolumeSizeInBytes value must be equal to or larger
+// than the size of the copied volume, in bytes.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -606,16 +618,89 @@ func (c *StorageGateway) CreateCachediSCSIVolumeRequest(input *CreateCachediSCSI
 // API operation CreateCachediSCSIVolume for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateCachediSCSIVolume
 func (c *StorageGateway) CreateCachediSCSIVolume(input *CreateCachediSCSIVolumeInput) (*CreateCachediSCSIVolumeOutput, error) {
 	req, out := c.CreateCachediSCSIVolumeRequest(input)
+	err := req.Send()
+	return out, err
+}
+
+const opCreateNFSFileShare = "CreateNFSFileShare"
+
+// CreateNFSFileShareRequest generates a "aws/request.Request" representing the
+// client's request for the CreateNFSFileShare operation. The "output" return
+// value can be used to capture response data after the request's "Send" method
+// is called.
+//
+// See CreateNFSFileShare for usage and error information.
+//
+// Creating a request object using this method should be used when you want to inject
+// custom logic into the request's lifecycle using a custom handler, or if you want to
+// access properties on the request object before or after sending the request. If
+// you just want the service response, call the CreateNFSFileShare method directly
+// instead.
+//
+// Note: You must call the "Send" method on the returned request object in order
+// to execute the request.
+//
+//    // Example sending a request using the CreateNFSFileShareRequest method.
+//    req, resp := client.CreateNFSFileShareRequest(params)
+//
+//    err := req.Send()
+//    if err == nil { // resp is now filled
+//        fmt.Println(resp)
+//    }
+//
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateNFSFileShare
+func (c *StorageGateway) CreateNFSFileShareRequest(input *CreateNFSFileShareInput) (req *request.Request, output *CreateNFSFileShareOutput) {
+	op := &request.Operation{
+		Name:       opCreateNFSFileShare,
+		HTTPMethod: "POST",
+		HTTPPath:   "/",
+	}
+
+	if input == nil {
+		input = &CreateNFSFileShareInput{}
+	}
+
+	output = &CreateNFSFileShareOutput{}
+	req = c.newRequest(op, input, output)
+	return
+}
+
+// CreateNFSFileShare API operation for AWS Storage Gateway.
+//
+// Creates a file share on an existing file gateway. In Storage Gateway, a file
+// share is a file system mount point backed by Amazon S3 cloud storage. Storage
+// Gateway exposes file shares using a Network File System (NFS) interface.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for AWS Storage Gateway's
+// API operation CreateNFSFileShare for usage and error information.
+//
+// Returned Error Codes:
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
+//   An exception occurred because an invalid gateway request was issued to the
+//   service. For more information, see the error and message fields.
+//
+//   * ErrCodeInternalServerError "InternalServerError"
+//   An internal server error has occurred during the request. For more information,
+//   see the error and message fields.
+//
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateNFSFileShare
+func (c *StorageGateway) CreateNFSFileShare(input *CreateNFSFileShareInput) (*CreateNFSFileShareOutput, error) {
+	req, out := c.CreateNFSFileShareRequest(input)
 	err := req.Send()
 	return out, err
 }
@@ -646,6 +731,7 @@ const opCreateSnapshot = "CreateSnapshot"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateSnapshot
 func (c *StorageGateway) CreateSnapshotRequest(input *CreateSnapshotInput) (req *request.Request, output *CreateSnapshotOutput) {
 	op := &request.Operation{
 		Name:       opCreateSnapshot,
@@ -657,9 +743,8 @@ func (c *StorageGateway) CreateSnapshotRequest(input *CreateSnapshotInput) (req 
 		input = &CreateSnapshotInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &CreateSnapshotOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -683,12 +768,11 @@ func (c *StorageGateway) CreateSnapshotRequest(input *CreateSnapshotInput) (req 
 // ID to check the snapshot progress or later use it when you want to create
 // a volume from a snapshot.
 //
-// To list or delete a snapshot, you must use the Amazon EC2 API. For more
-// information, see DescribeSnapshots or DeleteSnapshot in the EC2 API reference
-// (http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_Operations.html).
+// To list or delete a snapshot, you must use the Amazon EC2 API. For more information,
+// see DescribeSnapshots or DeleteSnapshot in the EC2 API reference (http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_Operations.html).
 //
-//   Volume and snapshot IDs are changing to a longer length ID format. For
-// more information, see the important note on the Welcome (http://docs.aws.amazon.com/storagegateway/latest/APIReference/Welcome.html)
+// Volume and snapshot IDs are changing to a longer length ID format. For more
+// information, see the important note on the Welcome (http://docs.aws.amazon.com/storagegateway/latest/APIReference/Welcome.html)
 // page.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
@@ -699,14 +783,19 @@ func (c *StorageGateway) CreateSnapshotRequest(input *CreateSnapshotInput) (req 
 // API operation CreateSnapshot for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+//   * ErrCodeServiceUnavailableError "ServiceUnavailableError"
+//   An internal server error has occurred because the service is unavailable.
+//   For more information, see the error and message fields.
+//
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateSnapshot
 func (c *StorageGateway) CreateSnapshot(input *CreateSnapshotInput) (*CreateSnapshotOutput, error) {
 	req, out := c.CreateSnapshotRequest(input)
 	err := req.Send()
@@ -739,6 +828,7 @@ const opCreateSnapshotFromVolumeRecoveryPoint = "CreateSnapshotFromVolumeRecover
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateSnapshotFromVolumeRecoveryPoint
 func (c *StorageGateway) CreateSnapshotFromVolumeRecoveryPointRequest(input *CreateSnapshotFromVolumeRecoveryPointInput) (req *request.Request, output *CreateSnapshotFromVolumeRecoveryPointOutput) {
 	op := &request.Operation{
 		Name:       opCreateSnapshotFromVolumeRecoveryPoint,
@@ -750,9 +840,8 @@ func (c *StorageGateway) CreateSnapshotFromVolumeRecoveryPointRequest(input *Cre
 		input = &CreateSnapshotFromVolumeRecoveryPointInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &CreateSnapshotFromVolumeRecoveryPointOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -773,8 +862,8 @@ func (c *StorageGateway) CreateSnapshotFromVolumeRecoveryPointRequest(input *Cre
 // can use this snapshot ID to check the snapshot progress or later use it when
 // you want to create a volume from a snapshot.
 //
-//  To list or delete a snapshot, you must use the Amazon EC2 API. For more
-// information, in Amazon Elastic Compute Cloud API Reference.
+// To list or delete a snapshot, you must use the Amazon EC2 API. For more information,
+// in Amazon Elastic Compute Cloud API Reference.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -784,14 +873,19 @@ func (c *StorageGateway) CreateSnapshotFromVolumeRecoveryPointRequest(input *Cre
 // API operation CreateSnapshotFromVolumeRecoveryPoint for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+//   * ErrCodeServiceUnavailableError "ServiceUnavailableError"
+//   An internal server error has occurred because the service is unavailable.
+//   For more information, see the error and message fields.
+//
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateSnapshotFromVolumeRecoveryPoint
 func (c *StorageGateway) CreateSnapshotFromVolumeRecoveryPoint(input *CreateSnapshotFromVolumeRecoveryPointInput) (*CreateSnapshotFromVolumeRecoveryPointOutput, error) {
 	req, out := c.CreateSnapshotFromVolumeRecoveryPointRequest(input)
 	err := req.Send()
@@ -824,6 +918,7 @@ const opCreateStorediSCSIVolume = "CreateStorediSCSIVolume"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateStorediSCSIVolume
 func (c *StorageGateway) CreateStorediSCSIVolumeRequest(input *CreateStorediSCSIVolumeInput) (req *request.Request, output *CreateStorediSCSIVolumeOutput) {
 	op := &request.Operation{
 		Name:       opCreateStorediSCSIVolume,
@@ -835,9 +930,8 @@ func (c *StorageGateway) CreateStorediSCSIVolumeRequest(input *CreateStorediSCSI
 		input = &CreateStorediSCSIVolumeInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &CreateStorediSCSIVolumeOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -851,9 +945,9 @@ func (c *StorageGateway) CreateStorediSCSIVolumeRequest(input *CreateStorediSCSI
 // snapshot, or create an empty volume. If you choose to create an empty gateway
 // volume, then any existing data on the disk is erased.
 //
-// In the request you must specify the gateway and the disk information on
-// which you are creating the volume. In response, AWS Storage Gateway creates
-// the volume and returns volume information such as the volume Amazon Resource
+// In the request you must specify the gateway and the disk information on which
+// you are creating the volume. In response, AWS Storage Gateway creates the
+// volume and returns volume information such as the volume Amazon Resource
 // Name (ARN), its size, and the iSCSI target ARN that initiators can use to
 // connect to the volume target.
 //
@@ -865,14 +959,15 @@ func (c *StorageGateway) CreateStorediSCSIVolumeRequest(input *CreateStorediSCSI
 // API operation CreateStorediSCSIVolume for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateStorediSCSIVolume
 func (c *StorageGateway) CreateStorediSCSIVolume(input *CreateStorediSCSIVolumeInput) (*CreateStorediSCSIVolumeOutput, error) {
 	req, out := c.CreateStorediSCSIVolumeRequest(input)
 	err := req.Send()
@@ -905,6 +1000,7 @@ const opCreateTapeWithBarcode = "CreateTapeWithBarcode"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateTapeWithBarcode
 func (c *StorageGateway) CreateTapeWithBarcodeRequest(input *CreateTapeWithBarcodeInput) (req *request.Request, output *CreateTapeWithBarcodeOutput) {
 	op := &request.Operation{
 		Name:       opCreateTapeWithBarcode,
@@ -916,9 +1012,8 @@ func (c *StorageGateway) CreateTapeWithBarcodeRequest(input *CreateTapeWithBarco
 		input = &CreateTapeWithBarcodeInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &CreateTapeWithBarcodeOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -938,14 +1033,15 @@ func (c *StorageGateway) CreateTapeWithBarcodeRequest(input *CreateTapeWithBarco
 // API operation CreateTapeWithBarcode for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateTapeWithBarcode
 func (c *StorageGateway) CreateTapeWithBarcode(input *CreateTapeWithBarcodeInput) (*CreateTapeWithBarcodeOutput, error) {
 	req, out := c.CreateTapeWithBarcodeRequest(input)
 	err := req.Send()
@@ -978,6 +1074,7 @@ const opCreateTapes = "CreateTapes"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateTapes
 func (c *StorageGateway) CreateTapesRequest(input *CreateTapesInput) (req *request.Request, output *CreateTapesOutput) {
 	op := &request.Operation{
 		Name:       opCreateTapes,
@@ -989,9 +1086,8 @@ func (c *StorageGateway) CreateTapesRequest(input *CreateTapesInput) (req *reque
 		input = &CreateTapesInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &CreateTapesOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1011,14 +1107,15 @@ func (c *StorageGateway) CreateTapesRequest(input *CreateTapesInput) (req *reque
 // API operation CreateTapes for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateTapes
 func (c *StorageGateway) CreateTapes(input *CreateTapesInput) (*CreateTapesOutput, error) {
 	req, out := c.CreateTapesRequest(input)
 	err := req.Send()
@@ -1051,6 +1148,7 @@ const opDeleteBandwidthRateLimit = "DeleteBandwidthRateLimit"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteBandwidthRateLimit
 func (c *StorageGateway) DeleteBandwidthRateLimitRequest(input *DeleteBandwidthRateLimitInput) (req *request.Request, output *DeleteBandwidthRateLimitOutput) {
 	op := &request.Operation{
 		Name:       opDeleteBandwidthRateLimit,
@@ -1062,9 +1160,8 @@ func (c *StorageGateway) DeleteBandwidthRateLimitRequest(input *DeleteBandwidthR
 		input = &DeleteBandwidthRateLimitInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DeleteBandwidthRateLimitOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1084,14 +1181,15 @@ func (c *StorageGateway) DeleteBandwidthRateLimitRequest(input *DeleteBandwidthR
 // API operation DeleteBandwidthRateLimit for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteBandwidthRateLimit
 func (c *StorageGateway) DeleteBandwidthRateLimit(input *DeleteBandwidthRateLimitInput) (*DeleteBandwidthRateLimitOutput, error) {
 	req, out := c.DeleteBandwidthRateLimitRequest(input)
 	err := req.Send()
@@ -1124,6 +1222,7 @@ const opDeleteChapCredentials = "DeleteChapCredentials"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteChapCredentials
 func (c *StorageGateway) DeleteChapCredentialsRequest(input *DeleteChapCredentialsInput) (req *request.Request, output *DeleteChapCredentialsOutput) {
 	op := &request.Operation{
 		Name:       opDeleteChapCredentials,
@@ -1135,9 +1234,8 @@ func (c *StorageGateway) DeleteChapCredentialsRequest(input *DeleteChapCredentia
 		input = &DeleteChapCredentialsInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DeleteChapCredentialsOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1154,16 +1252,87 @@ func (c *StorageGateway) DeleteChapCredentialsRequest(input *DeleteChapCredentia
 // API operation DeleteChapCredentials for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteChapCredentials
 func (c *StorageGateway) DeleteChapCredentials(input *DeleteChapCredentialsInput) (*DeleteChapCredentialsOutput, error) {
 	req, out := c.DeleteChapCredentialsRequest(input)
+	err := req.Send()
+	return out, err
+}
+
+const opDeleteFileShare = "DeleteFileShare"
+
+// DeleteFileShareRequest generates a "aws/request.Request" representing the
+// client's request for the DeleteFileShare operation. The "output" return
+// value can be used to capture response data after the request's "Send" method
+// is called.
+//
+// See DeleteFileShare for usage and error information.
+//
+// Creating a request object using this method should be used when you want to inject
+// custom logic into the request's lifecycle using a custom handler, or if you want to
+// access properties on the request object before or after sending the request. If
+// you just want the service response, call the DeleteFileShare method directly
+// instead.
+//
+// Note: You must call the "Send" method on the returned request object in order
+// to execute the request.
+//
+//    // Example sending a request using the DeleteFileShareRequest method.
+//    req, resp := client.DeleteFileShareRequest(params)
+//
+//    err := req.Send()
+//    if err == nil { // resp is now filled
+//        fmt.Println(resp)
+//    }
+//
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteFileShare
+func (c *StorageGateway) DeleteFileShareRequest(input *DeleteFileShareInput) (req *request.Request, output *DeleteFileShareOutput) {
+	op := &request.Operation{
+		Name:       opDeleteFileShare,
+		HTTPMethod: "POST",
+		HTTPPath:   "/",
+	}
+
+	if input == nil {
+		input = &DeleteFileShareInput{}
+	}
+
+	output = &DeleteFileShareOutput{}
+	req = c.newRequest(op, input, output)
+	return
+}
+
+// DeleteFileShare API operation for AWS Storage Gateway.
+//
+// Deletes a file share from a file gateway.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for AWS Storage Gateway's
+// API operation DeleteFileShare for usage and error information.
+//
+// Returned Error Codes:
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
+//   An exception occurred because an invalid gateway request was issued to the
+//   service. For more information, see the error and message fields.
+//
+//   * ErrCodeInternalServerError "InternalServerError"
+//   An internal server error has occurred during the request. For more information,
+//   see the error and message fields.
+//
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteFileShare
+func (c *StorageGateway) DeleteFileShare(input *DeleteFileShareInput) (*DeleteFileShareOutput, error) {
+	req, out := c.DeleteFileShareRequest(input)
 	err := req.Send()
 	return out, err
 }
@@ -1194,6 +1363,7 @@ const opDeleteGateway = "DeleteGateway"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteGateway
 func (c *StorageGateway) DeleteGatewayRequest(input *DeleteGatewayInput) (req *request.Request, output *DeleteGatewayOutput) {
 	op := &request.Operation{
 		Name:       opDeleteGateway,
@@ -1205,9 +1375,8 @@ func (c *StorageGateway) DeleteGatewayRequest(input *DeleteGatewayInput) (req *r
 		input = &DeleteGatewayInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DeleteGatewayOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1223,7 +1392,7 @@ func (c *StorageGateway) DeleteGatewayRequest(input *DeleteGatewayInput) (req *r
 // pending snapshots will not complete. After you delete a gateway, your next
 // step is to remove it from your environment.
 //
-//  You no longer pay software charges after the gateway is deleted; however,
+// You no longer pay software charges after the gateway is deleted; however,
 // your existing Amazon EBS snapshots persist and you will continue to be billed
 // for these snapshots. You can choose to remove all remaining Amazon EBS snapshots
 // by canceling your Amazon EC2 subscription.  If you prefer not to cancel your
@@ -1238,14 +1407,15 @@ func (c *StorageGateway) DeleteGatewayRequest(input *DeleteGatewayInput) (req *r
 // API operation DeleteGateway for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteGateway
 func (c *StorageGateway) DeleteGateway(input *DeleteGatewayInput) (*DeleteGatewayOutput, error) {
 	req, out := c.DeleteGatewayRequest(input)
 	err := req.Send()
@@ -1278,6 +1448,7 @@ const opDeleteSnapshotSchedule = "DeleteSnapshotSchedule"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteSnapshotSchedule
 func (c *StorageGateway) DeleteSnapshotScheduleRequest(input *DeleteSnapshotScheduleInput) (req *request.Request, output *DeleteSnapshotScheduleOutput) {
 	op := &request.Operation{
 		Name:       opDeleteSnapshotSchedule,
@@ -1289,9 +1460,8 @@ func (c *StorageGateway) DeleteSnapshotScheduleRequest(input *DeleteSnapshotSche
 		input = &DeleteSnapshotScheduleInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DeleteSnapshotScheduleOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1299,13 +1469,13 @@ func (c *StorageGateway) DeleteSnapshotScheduleRequest(input *DeleteSnapshotSche
 //
 // Deletes a snapshot of a volume.
 //
-// You can take snapshots of your gateway volumes on a scheduled or ad hoc
-// basis. This API action enables you to delete a snapshot schedule for a volume.
-// For more information, see Working with Snapshots (http://docs.aws.amazon.com/storagegateway/latest/userguide/WorkingWithSnapshots.html).
+// You can take snapshots of your gateway volumes on a scheduled or ad hoc basis.
+// This API action enables you to delete a snapshot schedule for a volume. For
+// more information, see Working with Snapshots (http://docs.aws.amazon.com/storagegateway/latest/userguide/WorkingWithSnapshots.html).
 // In the DeleteSnapshotSchedule request, you identify the volume by providing
 // its Amazon Resource Name (ARN).
 //
-//  To list or delete a snapshot, you must use the Amazon EC2 API. in Amazon
+// To list or delete a snapshot, you must use the Amazon EC2 API. in Amazon
 // Elastic Compute Cloud API Reference.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
@@ -1316,14 +1486,15 @@ func (c *StorageGateway) DeleteSnapshotScheduleRequest(input *DeleteSnapshotSche
 // API operation DeleteSnapshotSchedule for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteSnapshotSchedule
 func (c *StorageGateway) DeleteSnapshotSchedule(input *DeleteSnapshotScheduleInput) (*DeleteSnapshotScheduleOutput, error) {
 	req, out := c.DeleteSnapshotScheduleRequest(input)
 	err := req.Send()
@@ -1356,6 +1527,7 @@ const opDeleteTape = "DeleteTape"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteTape
 func (c *StorageGateway) DeleteTapeRequest(input *DeleteTapeInput) (req *request.Request, output *DeleteTapeOutput) {
 	op := &request.Operation{
 		Name:       opDeleteTape,
@@ -1367,9 +1539,8 @@ func (c *StorageGateway) DeleteTapeRequest(input *DeleteTapeInput) (req *request
 		input = &DeleteTapeInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DeleteTapeOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1385,14 +1556,15 @@ func (c *StorageGateway) DeleteTapeRequest(input *DeleteTapeInput) (req *request
 // API operation DeleteTape for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteTape
 func (c *StorageGateway) DeleteTape(input *DeleteTapeInput) (*DeleteTapeOutput, error) {
 	req, out := c.DeleteTapeRequest(input)
 	err := req.Send()
@@ -1425,6 +1597,7 @@ const opDeleteTapeArchive = "DeleteTapeArchive"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteTapeArchive
 func (c *StorageGateway) DeleteTapeArchiveRequest(input *DeleteTapeArchiveInput) (req *request.Request, output *DeleteTapeArchiveOutput) {
 	op := &request.Operation{
 		Name:       opDeleteTapeArchive,
@@ -1436,9 +1609,8 @@ func (c *StorageGateway) DeleteTapeArchiveRequest(input *DeleteTapeArchiveInput)
 		input = &DeleteTapeArchiveInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DeleteTapeArchiveOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1454,14 +1626,15 @@ func (c *StorageGateway) DeleteTapeArchiveRequest(input *DeleteTapeArchiveInput)
 // API operation DeleteTapeArchive for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteTapeArchive
 func (c *StorageGateway) DeleteTapeArchive(input *DeleteTapeArchiveInput) (*DeleteTapeArchiveOutput, error) {
 	req, out := c.DeleteTapeArchiveRequest(input)
 	err := req.Send()
@@ -1494,6 +1667,7 @@ const opDeleteVolume = "DeleteVolume"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteVolume
 func (c *StorageGateway) DeleteVolumeRequest(input *DeleteVolumeInput) (req *request.Request, output *DeleteVolumeOutput) {
 	op := &request.Operation{
 		Name:       opDeleteVolume,
@@ -1505,9 +1679,8 @@ func (c *StorageGateway) DeleteVolumeRequest(input *DeleteVolumeInput) (req *req
 		input = &DeleteVolumeInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DeleteVolumeOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1536,14 +1709,15 @@ func (c *StorageGateway) DeleteVolumeRequest(input *DeleteVolumeInput) (req *req
 // API operation DeleteVolume for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteVolume
 func (c *StorageGateway) DeleteVolume(input *DeleteVolumeInput) (*DeleteVolumeOutput, error) {
 	req, out := c.DeleteVolumeRequest(input)
 	err := req.Send()
@@ -1576,6 +1750,7 @@ const opDescribeBandwidthRateLimit = "DescribeBandwidthRateLimit"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeBandwidthRateLimit
 func (c *StorageGateway) DescribeBandwidthRateLimitRequest(input *DescribeBandwidthRateLimitInput) (req *request.Request, output *DescribeBandwidthRateLimitOutput) {
 	op := &request.Operation{
 		Name:       opDescribeBandwidthRateLimit,
@@ -1587,9 +1762,8 @@ func (c *StorageGateway) DescribeBandwidthRateLimitRequest(input *DescribeBandwi
 		input = &DescribeBandwidthRateLimitInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeBandwidthRateLimitOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1611,14 +1785,15 @@ func (c *StorageGateway) DescribeBandwidthRateLimitRequest(input *DescribeBandwi
 // API operation DescribeBandwidthRateLimit for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeBandwidthRateLimit
 func (c *StorageGateway) DescribeBandwidthRateLimit(input *DescribeBandwidthRateLimitInput) (*DescribeBandwidthRateLimitOutput, error) {
 	req, out := c.DescribeBandwidthRateLimitRequest(input)
 	err := req.Send()
@@ -1651,6 +1826,7 @@ const opDescribeCache = "DescribeCache"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeCache
 func (c *StorageGateway) DescribeCacheRequest(input *DescribeCacheInput) (req *request.Request, output *DescribeCacheOutput) {
 	op := &request.Operation{
 		Name:       opDescribeCache,
@@ -1662,9 +1838,8 @@ func (c *StorageGateway) DescribeCacheRequest(input *DescribeCacheInput) (req *r
 		input = &DescribeCacheInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeCacheOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1684,14 +1859,15 @@ func (c *StorageGateway) DescribeCacheRequest(input *DescribeCacheInput) (req *r
 // API operation DescribeCache for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeCache
 func (c *StorageGateway) DescribeCache(input *DescribeCacheInput) (*DescribeCacheOutput, error) {
 	req, out := c.DescribeCacheRequest(input)
 	err := req.Send()
@@ -1724,6 +1900,7 @@ const opDescribeCachediSCSIVolumes = "DescribeCachediSCSIVolumes"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeCachediSCSIVolumes
 func (c *StorageGateway) DescribeCachediSCSIVolumesRequest(input *DescribeCachediSCSIVolumesInput) (req *request.Request, output *DescribeCachediSCSIVolumesOutput) {
 	op := &request.Operation{
 		Name:       opDescribeCachediSCSIVolumes,
@@ -1735,9 +1912,8 @@ func (c *StorageGateway) DescribeCachediSCSIVolumesRequest(input *DescribeCached
 		input = &DescribeCachediSCSIVolumesInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeCachediSCSIVolumesOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1746,9 +1922,9 @@ func (c *StorageGateway) DescribeCachediSCSIVolumesRequest(input *DescribeCached
 // Returns a description of the gateway volumes specified in the request. This
 // operation is supported only for the gateway-cached volume architecture.
 //
-// The list of gateway volumes in the request must be from one gateway. In
-// the response Amazon Storage Gateway returns volume information sorted by
-// volume Amazon Resource Name (ARN).
+// The list of gateway volumes in the request must be from one gateway. In the
+// response Amazon Storage Gateway returns volume information sorted by volume
+// Amazon Resource Name (ARN).
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -1758,14 +1934,15 @@ func (c *StorageGateway) DescribeCachediSCSIVolumesRequest(input *DescribeCached
 // API operation DescribeCachediSCSIVolumes for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeCachediSCSIVolumes
 func (c *StorageGateway) DescribeCachediSCSIVolumes(input *DescribeCachediSCSIVolumesInput) (*DescribeCachediSCSIVolumesOutput, error) {
 	req, out := c.DescribeCachediSCSIVolumesRequest(input)
 	err := req.Send()
@@ -1798,6 +1975,7 @@ const opDescribeChapCredentials = "DescribeChapCredentials"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeChapCredentials
 func (c *StorageGateway) DescribeChapCredentialsRequest(input *DescribeChapCredentialsInput) (req *request.Request, output *DescribeChapCredentialsOutput) {
 	op := &request.Operation{
 		Name:       opDescribeChapCredentials,
@@ -1809,9 +1987,8 @@ func (c *StorageGateway) DescribeChapCredentialsRequest(input *DescribeChapCrede
 		input = &DescribeChapCredentialsInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeChapCredentialsOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1828,14 +2005,15 @@ func (c *StorageGateway) DescribeChapCredentialsRequest(input *DescribeChapCrede
 // API operation DescribeChapCredentials for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeChapCredentials
 func (c *StorageGateway) DescribeChapCredentials(input *DescribeChapCredentialsInput) (*DescribeChapCredentialsOutput, error) {
 	req, out := c.DescribeChapCredentialsRequest(input)
 	err := req.Send()
@@ -1868,6 +2046,7 @@ const opDescribeGatewayInformation = "DescribeGatewayInformation"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeGatewayInformation
 func (c *StorageGateway) DescribeGatewayInformationRequest(input *DescribeGatewayInformationInput) (req *request.Request, output *DescribeGatewayInformationOutput) {
 	op := &request.Operation{
 		Name:       opDescribeGatewayInformation,
@@ -1879,9 +2058,8 @@ func (c *StorageGateway) DescribeGatewayInformationRequest(input *DescribeGatewa
 		input = &DescribeGatewayInformationInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeGatewayInformationOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1900,14 +2078,15 @@ func (c *StorageGateway) DescribeGatewayInformationRequest(input *DescribeGatewa
 // API operation DescribeGatewayInformation for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeGatewayInformation
 func (c *StorageGateway) DescribeGatewayInformation(input *DescribeGatewayInformationInput) (*DescribeGatewayInformationOutput, error) {
 	req, out := c.DescribeGatewayInformationRequest(input)
 	err := req.Send()
@@ -1940,6 +2119,7 @@ const opDescribeMaintenanceStartTime = "DescribeMaintenanceStartTime"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeMaintenanceStartTime
 func (c *StorageGateway) DescribeMaintenanceStartTimeRequest(input *DescribeMaintenanceStartTimeInput) (req *request.Request, output *DescribeMaintenanceStartTimeOutput) {
 	op := &request.Operation{
 		Name:       opDescribeMaintenanceStartTime,
@@ -1951,9 +2131,8 @@ func (c *StorageGateway) DescribeMaintenanceStartTimeRequest(input *DescribeMain
 		input = &DescribeMaintenanceStartTimeInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeMaintenanceStartTimeOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1970,16 +2149,87 @@ func (c *StorageGateway) DescribeMaintenanceStartTimeRequest(input *DescribeMain
 // API operation DescribeMaintenanceStartTime for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeMaintenanceStartTime
 func (c *StorageGateway) DescribeMaintenanceStartTime(input *DescribeMaintenanceStartTimeInput) (*DescribeMaintenanceStartTimeOutput, error) {
 	req, out := c.DescribeMaintenanceStartTimeRequest(input)
+	err := req.Send()
+	return out, err
+}
+
+const opDescribeNFSFileShares = "DescribeNFSFileShares"
+
+// DescribeNFSFileSharesRequest generates a "aws/request.Request" representing the
+// client's request for the DescribeNFSFileShares operation. The "output" return
+// value can be used to capture response data after the request's "Send" method
+// is called.
+//
+// See DescribeNFSFileShares for usage and error information.
+//
+// Creating a request object using this method should be used when you want to inject
+// custom logic into the request's lifecycle using a custom handler, or if you want to
+// access properties on the request object before or after sending the request. If
+// you just want the service response, call the DescribeNFSFileShares method directly
+// instead.
+//
+// Note: You must call the "Send" method on the returned request object in order
+// to execute the request.
+//
+//    // Example sending a request using the DescribeNFSFileSharesRequest method.
+//    req, resp := client.DescribeNFSFileSharesRequest(params)
+//
+//    err := req.Send()
+//    if err == nil { // resp is now filled
+//        fmt.Println(resp)
+//    }
+//
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeNFSFileShares
+func (c *StorageGateway) DescribeNFSFileSharesRequest(input *DescribeNFSFileSharesInput) (req *request.Request, output *DescribeNFSFileSharesOutput) {
+	op := &request.Operation{
+		Name:       opDescribeNFSFileShares,
+		HTTPMethod: "POST",
+		HTTPPath:   "/",
+	}
+
+	if input == nil {
+		input = &DescribeNFSFileSharesInput{}
+	}
+
+	output = &DescribeNFSFileSharesOutput{}
+	req = c.newRequest(op, input, output)
+	return
+}
+
+// DescribeNFSFileShares API operation for AWS Storage Gateway.
+//
+// Gets a description for one or more file shares from a file gateway.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for AWS Storage Gateway's
+// API operation DescribeNFSFileShares for usage and error information.
+//
+// Returned Error Codes:
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
+//   An exception occurred because an invalid gateway request was issued to the
+//   service. For more information, see the error and message fields.
+//
+//   * ErrCodeInternalServerError "InternalServerError"
+//   An internal server error has occurred during the request. For more information,
+//   see the error and message fields.
+//
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeNFSFileShares
+func (c *StorageGateway) DescribeNFSFileShares(input *DescribeNFSFileSharesInput) (*DescribeNFSFileSharesOutput, error) {
+	req, out := c.DescribeNFSFileSharesRequest(input)
 	err := req.Send()
 	return out, err
 }
@@ -2010,6 +2260,7 @@ const opDescribeSnapshotSchedule = "DescribeSnapshotSchedule"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeSnapshotSchedule
 func (c *StorageGateway) DescribeSnapshotScheduleRequest(input *DescribeSnapshotScheduleInput) (req *request.Request, output *DescribeSnapshotScheduleOutput) {
 	op := &request.Operation{
 		Name:       opDescribeSnapshotSchedule,
@@ -2021,9 +2272,8 @@ func (c *StorageGateway) DescribeSnapshotScheduleRequest(input *DescribeSnapshot
 		input = &DescribeSnapshotScheduleInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeSnapshotScheduleOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -2041,14 +2291,15 @@ func (c *StorageGateway) DescribeSnapshotScheduleRequest(input *DescribeSnapshot
 // API operation DescribeSnapshotSchedule for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeSnapshotSchedule
 func (c *StorageGateway) DescribeSnapshotSchedule(input *DescribeSnapshotScheduleInput) (*DescribeSnapshotScheduleOutput, error) {
 	req, out := c.DescribeSnapshotScheduleRequest(input)
 	err := req.Send()
@@ -2081,6 +2332,7 @@ const opDescribeStorediSCSIVolumes = "DescribeStorediSCSIVolumes"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeStorediSCSIVolumes
 func (c *StorageGateway) DescribeStorediSCSIVolumesRequest(input *DescribeStorediSCSIVolumesInput) (req *request.Request, output *DescribeStorediSCSIVolumesOutput) {
 	op := &request.Operation{
 		Name:       opDescribeStorediSCSIVolumes,
@@ -2092,9 +2344,8 @@ func (c *StorageGateway) DescribeStorediSCSIVolumesRequest(input *DescribeStored
 		input = &DescribeStorediSCSIVolumesInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeStorediSCSIVolumesOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -2113,14 +2364,15 @@ func (c *StorageGateway) DescribeStorediSCSIVolumesRequest(input *DescribeStored
 // API operation DescribeStorediSCSIVolumes for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeStorediSCSIVolumes
 func (c *StorageGateway) DescribeStorediSCSIVolumes(input *DescribeStorediSCSIVolumesInput) (*DescribeStorediSCSIVolumesOutput, error) {
 	req, out := c.DescribeStorediSCSIVolumesRequest(input)
 	err := req.Send()
@@ -2153,6 +2405,7 @@ const opDescribeTapeArchives = "DescribeTapeArchives"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeTapeArchives
 func (c *StorageGateway) DescribeTapeArchivesRequest(input *DescribeTapeArchivesInput) (req *request.Request, output *DescribeTapeArchivesOutput) {
 	op := &request.Operation{
 		Name:       opDescribeTapeArchives,
@@ -2170,9 +2423,8 @@ func (c *StorageGateway) DescribeTapeArchivesRequest(input *DescribeTapeArchives
 		input = &DescribeTapeArchivesInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeTapeArchivesOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -2192,14 +2444,15 @@ func (c *StorageGateway) DescribeTapeArchivesRequest(input *DescribeTapeArchives
 // API operation DescribeTapeArchives for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeTapeArchives
 func (c *StorageGateway) DescribeTapeArchives(input *DescribeTapeArchivesInput) (*DescribeTapeArchivesOutput, error) {
 	req, out := c.DescribeTapeArchivesRequest(input)
 	err := req.Send()
@@ -2257,6 +2510,7 @@ const opDescribeTapeRecoveryPoints = "DescribeTapeRecoveryPoints"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeTapeRecoveryPoints
 func (c *StorageGateway) DescribeTapeRecoveryPointsRequest(input *DescribeTapeRecoveryPointsInput) (req *request.Request, output *DescribeTapeRecoveryPointsOutput) {
 	op := &request.Operation{
 		Name:       opDescribeTapeRecoveryPoints,
@@ -2274,9 +2528,8 @@ func (c *StorageGateway) DescribeTapeRecoveryPointsRequest(input *DescribeTapeRe
 		input = &DescribeTapeRecoveryPointsInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeTapeRecoveryPointsOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -2285,8 +2538,8 @@ func (c *StorageGateway) DescribeTapeRecoveryPointsRequest(input *DescribeTapeRe
 // Returns a list of virtual tape recovery points that are available for the
 // specified gateway-VTL.
 //
-// A recovery point is a point-in-time view of a virtual tape at which all
-// the data on the virtual tape is consistent. If your gateway crashes, virtual
+// A recovery point is a point-in-time view of a virtual tape at which all the
+// data on the virtual tape is consistent. If your gateway crashes, virtual
 // tapes that have recovery points can be recovered to a new gateway.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
@@ -2297,14 +2550,15 @@ func (c *StorageGateway) DescribeTapeRecoveryPointsRequest(input *DescribeTapeRe
 // API operation DescribeTapeRecoveryPoints for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeTapeRecoveryPoints
 func (c *StorageGateway) DescribeTapeRecoveryPoints(input *DescribeTapeRecoveryPointsInput) (*DescribeTapeRecoveryPointsOutput, error) {
 	req, out := c.DescribeTapeRecoveryPointsRequest(input)
 	err := req.Send()
@@ -2362,6 +2616,7 @@ const opDescribeTapes = "DescribeTapes"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeTapes
 func (c *StorageGateway) DescribeTapesRequest(input *DescribeTapesInput) (req *request.Request, output *DescribeTapesOutput) {
 	op := &request.Operation{
 		Name:       opDescribeTapes,
@@ -2379,9 +2634,8 @@ func (c *StorageGateway) DescribeTapesRequest(input *DescribeTapesInput) (req *r
 		input = &DescribeTapesInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeTapesOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -2399,14 +2653,15 @@ func (c *StorageGateway) DescribeTapesRequest(input *DescribeTapesInput) (req *r
 // API operation DescribeTapes for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeTapes
 func (c *StorageGateway) DescribeTapes(input *DescribeTapesInput) (*DescribeTapesOutput, error) {
 	req, out := c.DescribeTapesRequest(input)
 	err := req.Send()
@@ -2464,6 +2719,7 @@ const opDescribeUploadBuffer = "DescribeUploadBuffer"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeUploadBuffer
 func (c *StorageGateway) DescribeUploadBufferRequest(input *DescribeUploadBufferInput) (req *request.Request, output *DescribeUploadBufferOutput) {
 	op := &request.Operation{
 		Name:       opDescribeUploadBuffer,
@@ -2475,9 +2731,8 @@ func (c *StorageGateway) DescribeUploadBufferRequest(input *DescribeUploadBuffer
 		input = &DescribeUploadBufferInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeUploadBufferOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -2497,14 +2752,15 @@ func (c *StorageGateway) DescribeUploadBufferRequest(input *DescribeUploadBuffer
 // API operation DescribeUploadBuffer for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeUploadBuffer
 func (c *StorageGateway) DescribeUploadBuffer(input *DescribeUploadBufferInput) (*DescribeUploadBufferOutput, error) {
 	req, out := c.DescribeUploadBufferRequest(input)
 	err := req.Send()
@@ -2537,6 +2793,7 @@ const opDescribeVTLDevices = "DescribeVTLDevices"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeVTLDevices
 func (c *StorageGateway) DescribeVTLDevicesRequest(input *DescribeVTLDevicesInput) (req *request.Request, output *DescribeVTLDevicesOutput) {
 	op := &request.Operation{
 		Name:       opDescribeVTLDevices,
@@ -2554,9 +2811,8 @@ func (c *StorageGateway) DescribeVTLDevicesRequest(input *DescribeVTLDevicesInpu
 		input = &DescribeVTLDevicesInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeVTLDevicesOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -2575,14 +2831,15 @@ func (c *StorageGateway) DescribeVTLDevicesRequest(input *DescribeVTLDevicesInpu
 // API operation DescribeVTLDevices for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeVTLDevices
 func (c *StorageGateway) DescribeVTLDevices(input *DescribeVTLDevicesInput) (*DescribeVTLDevicesOutput, error) {
 	req, out := c.DescribeVTLDevicesRequest(input)
 	err := req.Send()
@@ -2640,6 +2897,7 @@ const opDescribeWorkingStorage = "DescribeWorkingStorage"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeWorkingStorage
 func (c *StorageGateway) DescribeWorkingStorageRequest(input *DescribeWorkingStorageInput) (req *request.Request, output *DescribeWorkingStorageOutput) {
 	op := &request.Operation{
 		Name:       opDescribeWorkingStorage,
@@ -2651,9 +2909,8 @@ func (c *StorageGateway) DescribeWorkingStorageRequest(input *DescribeWorkingSto
 		input = &DescribeWorkingStorageInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeWorkingStorageOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -2664,12 +2921,11 @@ func (c *StorageGateway) DescribeWorkingStorageRequest(input *DescribeWorkingSto
 // is deprecated in cached-volumes API version (20120630). Use DescribeUploadBuffer
 // instead.
 //
-//  Working storage is also referred to as upload buffer. You can also use
-// the DescribeUploadBuffer operation to add upload buffer to a stored-volume
-// gateway.
+// Working storage is also referred to as upload buffer. You can also use the
+// DescribeUploadBuffer operation to add upload buffer to a stored-volume gateway.
 //
-//  The response includes disk IDs that are configured as working storage,
-// and it includes the amount of working storage allocated and used.
+// The response includes disk IDs that are configured as working storage, and
+// it includes the amount of working storage allocated and used.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -2679,14 +2935,15 @@ func (c *StorageGateway) DescribeWorkingStorageRequest(input *DescribeWorkingSto
 // API operation DescribeWorkingStorage for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeWorkingStorage
 func (c *StorageGateway) DescribeWorkingStorage(input *DescribeWorkingStorageInput) (*DescribeWorkingStorageOutput, error) {
 	req, out := c.DescribeWorkingStorageRequest(input)
 	err := req.Send()
@@ -2719,6 +2976,7 @@ const opDisableGateway = "DisableGateway"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DisableGateway
 func (c *StorageGateway) DisableGatewayRequest(input *DisableGatewayInput) (req *request.Request, output *DisableGatewayOutput) {
 	op := &request.Operation{
 		Name:       opDisableGateway,
@@ -2730,9 +2988,8 @@ func (c *StorageGateway) DisableGatewayRequest(input *DisableGatewayInput) (req 
 		input = &DisableGatewayInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DisableGatewayOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -2754,16 +3011,88 @@ func (c *StorageGateway) DisableGatewayRequest(input *DisableGatewayInput) (req 
 // API operation DisableGateway for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DisableGateway
 func (c *StorageGateway) DisableGateway(input *DisableGatewayInput) (*DisableGatewayOutput, error) {
 	req, out := c.DisableGatewayRequest(input)
+	err := req.Send()
+	return out, err
+}
+
+const opListFileShares = "ListFileShares"
+
+// ListFileSharesRequest generates a "aws/request.Request" representing the
+// client's request for the ListFileShares operation. The "output" return
+// value can be used to capture response data after the request's "Send" method
+// is called.
+//
+// See ListFileShares for usage and error information.
+//
+// Creating a request object using this method should be used when you want to inject
+// custom logic into the request's lifecycle using a custom handler, or if you want to
+// access properties on the request object before or after sending the request. If
+// you just want the service response, call the ListFileShares method directly
+// instead.
+//
+// Note: You must call the "Send" method on the returned request object in order
+// to execute the request.
+//
+//    // Example sending a request using the ListFileSharesRequest method.
+//    req, resp := client.ListFileSharesRequest(params)
+//
+//    err := req.Send()
+//    if err == nil { // resp is now filled
+//        fmt.Println(resp)
+//    }
+//
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListFileShares
+func (c *StorageGateway) ListFileSharesRequest(input *ListFileSharesInput) (req *request.Request, output *ListFileSharesOutput) {
+	op := &request.Operation{
+		Name:       opListFileShares,
+		HTTPMethod: "POST",
+		HTTPPath:   "/",
+	}
+
+	if input == nil {
+		input = &ListFileSharesInput{}
+	}
+
+	output = &ListFileSharesOutput{}
+	req = c.newRequest(op, input, output)
+	return
+}
+
+// ListFileShares API operation for AWS Storage Gateway.
+//
+// Gets a list of the file shares for a specific file gateway, or the list of
+// file shares that belong to the calling user account.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for AWS Storage Gateway's
+// API operation ListFileShares for usage and error information.
+//
+// Returned Error Codes:
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
+//   An exception occurred because an invalid gateway request was issued to the
+//   service. For more information, see the error and message fields.
+//
+//   * ErrCodeInternalServerError "InternalServerError"
+//   An internal server error has occurred during the request. For more information,
+//   see the error and message fields.
+//
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListFileShares
+func (c *StorageGateway) ListFileShares(input *ListFileSharesInput) (*ListFileSharesOutput, error) {
+	req, out := c.ListFileSharesRequest(input)
 	err := req.Send()
 	return out, err
 }
@@ -2794,6 +3123,7 @@ const opListGateways = "ListGateways"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListGateways
 func (c *StorageGateway) ListGatewaysRequest(input *ListGatewaysInput) (req *request.Request, output *ListGatewaysOutput) {
 	op := &request.Operation{
 		Name:       opListGateways,
@@ -2811,9 +3141,8 @@ func (c *StorageGateway) ListGatewaysRequest(input *ListGatewaysInput) (req *req
 		input = &ListGatewaysInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ListGatewaysOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -2826,10 +3155,10 @@ func (c *StorageGateway) ListGatewaysRequest(input *ListGatewaysInput) (req *req
 // supports pagination that allows you to optionally reduce the number of gateways
 // returned in a response.
 //
-// If you have more gateways than are returned in a response (that is, the
-// response returns only a truncated list of your gateways), the response contains
-// a marker that you can specify in your next request to fetch the next page
-// of gateways.
+// If you have more gateways than are returned in a response (that is, the response
+// returns only a truncated list of your gateways), the response contains a
+// marker that you can specify in your next request to fetch the next page of
+// gateways.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -2839,14 +3168,15 @@ func (c *StorageGateway) ListGatewaysRequest(input *ListGatewaysInput) (req *req
 // API operation ListGateways for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListGateways
 func (c *StorageGateway) ListGateways(input *ListGatewaysInput) (*ListGatewaysOutput, error) {
 	req, out := c.ListGatewaysRequest(input)
 	err := req.Send()
@@ -2904,6 +3234,7 @@ const opListLocalDisks = "ListLocalDisks"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListLocalDisks
 func (c *StorageGateway) ListLocalDisksRequest(input *ListLocalDisksInput) (req *request.Request, output *ListLocalDisksOutput) {
 	op := &request.Operation{
 		Name:       opListLocalDisks,
@@ -2915,9 +3246,8 @@ func (c *StorageGateway) ListLocalDisksRequest(input *ListLocalDisksInput) (req 
 		input = &ListLocalDisksInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ListLocalDisksOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -2942,14 +3272,15 @@ func (c *StorageGateway) ListLocalDisksRequest(input *ListLocalDisksInput) (req 
 // API operation ListLocalDisks for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListLocalDisks
 func (c *StorageGateway) ListLocalDisks(input *ListLocalDisksInput) (*ListLocalDisksOutput, error) {
 	req, out := c.ListLocalDisksRequest(input)
 	err := req.Send()
@@ -2982,6 +3313,7 @@ const opListTagsForResource = "ListTagsForResource"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListTagsForResource
 func (c *StorageGateway) ListTagsForResourceRequest(input *ListTagsForResourceInput) (req *request.Request, output *ListTagsForResourceOutput) {
 	op := &request.Operation{
 		Name:       opListTagsForResource,
@@ -2993,9 +3325,8 @@ func (c *StorageGateway) ListTagsForResourceRequest(input *ListTagsForResourceIn
 		input = &ListTagsForResourceInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ListTagsForResourceOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -3011,14 +3342,15 @@ func (c *StorageGateway) ListTagsForResourceRequest(input *ListTagsForResourceIn
 // API operation ListTagsForResource for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListTagsForResource
 func (c *StorageGateway) ListTagsForResource(input *ListTagsForResourceInput) (*ListTagsForResourceOutput, error) {
 	req, out := c.ListTagsForResourceRequest(input)
 	err := req.Send()
@@ -3051,6 +3383,7 @@ const opListTapes = "ListTapes"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListTapes
 func (c *StorageGateway) ListTapesRequest(input *ListTapesInput) (req *request.Request, output *ListTapesOutput) {
 	op := &request.Operation{
 		Name:       opListTapes,
@@ -3062,9 +3395,8 @@ func (c *StorageGateway) ListTapesRequest(input *ListTapesInput) (req *request.R
 		input = &ListTapesInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ListTapesOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -3075,12 +3407,11 @@ func (c *StorageGateway) ListTapesRequest(input *ListTapesInput) (req *request.R
 // Amazon Resource Names (ARNs). If you don't specify a tape ARN, the operation
 // lists all virtual tapes in both your VTL and VTS.
 //
-// This operation supports pagination. By default, the operation returns a
-// maximum of up to 100 tapes. You can optionally specify the Limit parameter
-// in the body to limit the number of tapes in the response. If the number of
-// tapes returned in the response is truncated, the response includes a Marker
-// element that you can use in your subsequent request to retrieve the next
-// set of tapes.
+// This operation supports pagination. By default, the operation returns a maximum
+// of up to 100 tapes. You can optionally specify the Limit parameter in the
+// body to limit the number of tapes in the response. If the number of tapes
+// returned in the response is truncated, the response includes a Marker element
+// that you can use in your subsequent request to retrieve the next set of tapes.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -3090,14 +3421,15 @@ func (c *StorageGateway) ListTapesRequest(input *ListTapesInput) (req *request.R
 // API operation ListTapes for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListTapes
 func (c *StorageGateway) ListTapes(input *ListTapesInput) (*ListTapesOutput, error) {
 	req, out := c.ListTapesRequest(input)
 	err := req.Send()
@@ -3130,6 +3462,7 @@ const opListVolumeInitiators = "ListVolumeInitiators"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListVolumeInitiators
 func (c *StorageGateway) ListVolumeInitiatorsRequest(input *ListVolumeInitiatorsInput) (req *request.Request, output *ListVolumeInitiatorsOutput) {
 	op := &request.Operation{
 		Name:       opListVolumeInitiators,
@@ -3141,9 +3474,8 @@ func (c *StorageGateway) ListVolumeInitiatorsRequest(input *ListVolumeInitiators
 		input = &ListVolumeInitiatorsInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ListVolumeInitiatorsOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -3160,14 +3492,15 @@ func (c *StorageGateway) ListVolumeInitiatorsRequest(input *ListVolumeInitiators
 // API operation ListVolumeInitiators for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListVolumeInitiators
 func (c *StorageGateway) ListVolumeInitiators(input *ListVolumeInitiatorsInput) (*ListVolumeInitiatorsOutput, error) {
 	req, out := c.ListVolumeInitiatorsRequest(input)
 	err := req.Send()
@@ -3200,6 +3533,7 @@ const opListVolumeRecoveryPoints = "ListVolumeRecoveryPoints"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListVolumeRecoveryPoints
 func (c *StorageGateway) ListVolumeRecoveryPointsRequest(input *ListVolumeRecoveryPointsInput) (req *request.Request, output *ListVolumeRecoveryPointsOutput) {
 	op := &request.Operation{
 		Name:       opListVolumeRecoveryPoints,
@@ -3211,9 +3545,8 @@ func (c *StorageGateway) ListVolumeRecoveryPointsRequest(input *ListVolumeRecove
 		input = &ListVolumeRecoveryPointsInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ListVolumeRecoveryPointsOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -3235,14 +3568,15 @@ func (c *StorageGateway) ListVolumeRecoveryPointsRequest(input *ListVolumeRecove
 // API operation ListVolumeRecoveryPoints for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListVolumeRecoveryPoints
 func (c *StorageGateway) ListVolumeRecoveryPoints(input *ListVolumeRecoveryPointsInput) (*ListVolumeRecoveryPointsOutput, error) {
 	req, out := c.ListVolumeRecoveryPointsRequest(input)
 	err := req.Send()
@@ -3275,6 +3609,7 @@ const opListVolumes = "ListVolumes"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListVolumes
 func (c *StorageGateway) ListVolumesRequest(input *ListVolumesInput) (req *request.Request, output *ListVolumesOutput) {
 	op := &request.Operation{
 		Name:       opListVolumes,
@@ -3292,9 +3627,8 @@ func (c *StorageGateway) ListVolumesRequest(input *ListVolumesInput) (req *reque
 		input = &ListVolumesInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ListVolumesOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -3302,7 +3636,8 @@ func (c *StorageGateway) ListVolumesRequest(input *ListVolumesInput) (req *reque
 //
 // Lists the iSCSI stored volumes of a gateway. Results are sorted by volume
 // ARN. The response includes only the volume ARNs. If you want additional volume
-// information, use the DescribeStorediSCSIVolumes API.
+// information, use the DescribeStorediSCSIVolumes or the DescribeCachediSCSIVolumes
+// API.
 //
 // The operation supports pagination. By default, the operation returns a maximum
 // of up to 100 volumes. You can optionally specify the Limit field in the body
@@ -3319,14 +3654,15 @@ func (c *StorageGateway) ListVolumesRequest(input *ListVolumesInput) (req *reque
 // API operation ListVolumes for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListVolumes
 func (c *StorageGateway) ListVolumes(input *ListVolumesInput) (*ListVolumesOutput, error) {
 	req, out := c.ListVolumesRequest(input)
 	err := req.Send()
@@ -3384,6 +3720,7 @@ const opRemoveTagsFromResource = "RemoveTagsFromResource"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/RemoveTagsFromResource
 func (c *StorageGateway) RemoveTagsFromResourceRequest(input *RemoveTagsFromResourceInput) (req *request.Request, output *RemoveTagsFromResourceOutput) {
 	op := &request.Operation{
 		Name:       opRemoveTagsFromResource,
@@ -3395,9 +3732,8 @@ func (c *StorageGateway) RemoveTagsFromResourceRequest(input *RemoveTagsFromReso
 		input = &RemoveTagsFromResourceInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &RemoveTagsFromResourceOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -3413,14 +3749,15 @@ func (c *StorageGateway) RemoveTagsFromResourceRequest(input *RemoveTagsFromReso
 // API operation RemoveTagsFromResource for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/RemoveTagsFromResource
 func (c *StorageGateway) RemoveTagsFromResource(input *RemoveTagsFromResourceInput) (*RemoveTagsFromResourceOutput, error) {
 	req, out := c.RemoveTagsFromResourceRequest(input)
 	err := req.Send()
@@ -3453,6 +3790,7 @@ const opResetCache = "ResetCache"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ResetCache
 func (c *StorageGateway) ResetCacheRequest(input *ResetCacheInput) (req *request.Request, output *ResetCacheOutput) {
 	op := &request.Operation{
 		Name:       opResetCache,
@@ -3464,9 +3802,8 @@ func (c *StorageGateway) ResetCacheRequest(input *ResetCacheInput) (req *request
 		input = &ResetCacheInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ResetCacheOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -3479,7 +3816,7 @@ func (c *StorageGateway) ResetCacheRequest(input *ResetCacheInput) (req *request
 // or removed from the gateway. When a cache is reset, the gateway loses its
 // cache storage. At this point you can reconfigure the disks as cache disks.
 //
-//  If the cache disk you are resetting contains data that has not been uploaded
+// If the cache disk you are resetting contains data that has not been uploaded
 // to Amazon S3 yet, that data can be lost. After you reset cache disks, there
 // will be no configured cache disks left in the gateway, so you must configure
 // at least one new cache disk for your gateway to function properly.
@@ -3492,14 +3829,15 @@ func (c *StorageGateway) ResetCacheRequest(input *ResetCacheInput) (req *request
 // API operation ResetCache for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ResetCache
 func (c *StorageGateway) ResetCache(input *ResetCacheInput) (*ResetCacheOutput, error) {
 	req, out := c.ResetCacheRequest(input)
 	err := req.Send()
@@ -3532,6 +3870,7 @@ const opRetrieveTapeArchive = "RetrieveTapeArchive"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/RetrieveTapeArchive
 func (c *StorageGateway) RetrieveTapeArchiveRequest(input *RetrieveTapeArchiveInput) (req *request.Request, output *RetrieveTapeArchiveOutput) {
 	op := &request.Operation{
 		Name:       opRetrieveTapeArchive,
@@ -3543,9 +3882,8 @@ func (c *StorageGateway) RetrieveTapeArchiveRequest(input *RetrieveTapeArchiveIn
 		input = &RetrieveTapeArchiveInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &RetrieveTapeArchiveOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -3568,14 +3906,15 @@ func (c *StorageGateway) RetrieveTapeArchiveRequest(input *RetrieveTapeArchiveIn
 // API operation RetrieveTapeArchive for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/RetrieveTapeArchive
 func (c *StorageGateway) RetrieveTapeArchive(input *RetrieveTapeArchiveInput) (*RetrieveTapeArchiveOutput, error) {
 	req, out := c.RetrieveTapeArchiveRequest(input)
 	err := req.Send()
@@ -3608,6 +3947,7 @@ const opRetrieveTapeRecoveryPoint = "RetrieveTapeRecoveryPoint"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/RetrieveTapeRecoveryPoint
 func (c *StorageGateway) RetrieveTapeRecoveryPointRequest(input *RetrieveTapeRecoveryPointInput) (req *request.Request, output *RetrieveTapeRecoveryPointOutput) {
 	op := &request.Operation{
 		Name:       opRetrieveTapeRecoveryPoint,
@@ -3619,9 +3959,8 @@ func (c *StorageGateway) RetrieveTapeRecoveryPointRequest(input *RetrieveTapeRec
 		input = &RetrieveTapeRecoveryPointInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &RetrieveTapeRecoveryPointOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -3629,9 +3968,9 @@ func (c *StorageGateway) RetrieveTapeRecoveryPointRequest(input *RetrieveTapeRec
 //
 // Retrieves the recovery point for the specified virtual tape.
 //
-// A recovery point is a point in time view of a virtual tape at which all
-// the data on the tape is consistent. If your gateway crashes, virtual tapes
-// that have recovery points can be recovered to a new gateway.
+// A recovery point is a point in time view of a virtual tape at which all the
+// data on the tape is consistent. If your gateway crashes, virtual tapes that
+// have recovery points can be recovered to a new gateway.
 //
 // The virtual tape can be retrieved to only one gateway. The retrieved tape
 // is read-only. The virtual tape can be retrieved to only a gateway-VTL. There
@@ -3645,14 +3984,15 @@ func (c *StorageGateway) RetrieveTapeRecoveryPointRequest(input *RetrieveTapeRec
 // API operation RetrieveTapeRecoveryPoint for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/RetrieveTapeRecoveryPoint
 func (c *StorageGateway) RetrieveTapeRecoveryPoint(input *RetrieveTapeRecoveryPointInput) (*RetrieveTapeRecoveryPointOutput, error) {
 	req, out := c.RetrieveTapeRecoveryPointRequest(input)
 	err := req.Send()
@@ -3685,6 +4025,7 @@ const opSetLocalConsolePassword = "SetLocalConsolePassword"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/SetLocalConsolePassword
 func (c *StorageGateway) SetLocalConsolePasswordRequest(input *SetLocalConsolePasswordInput) (req *request.Request, output *SetLocalConsolePasswordOutput) {
 	op := &request.Operation{
 		Name:       opSetLocalConsolePassword,
@@ -3696,9 +4037,8 @@ func (c *StorageGateway) SetLocalConsolePasswordRequest(input *SetLocalConsolePa
 		input = &SetLocalConsolePasswordInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &SetLocalConsolePasswordOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -3717,14 +4057,15 @@ func (c *StorageGateway) SetLocalConsolePasswordRequest(input *SetLocalConsolePa
 // API operation SetLocalConsolePassword for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/SetLocalConsolePassword
 func (c *StorageGateway) SetLocalConsolePassword(input *SetLocalConsolePasswordInput) (*SetLocalConsolePasswordOutput, error) {
 	req, out := c.SetLocalConsolePasswordRequest(input)
 	err := req.Send()
@@ -3757,6 +4098,7 @@ const opShutdownGateway = "ShutdownGateway"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ShutdownGateway
 func (c *StorageGateway) ShutdownGatewayRequest(input *ShutdownGatewayInput) (req *request.Request, output *ShutdownGatewayOutput) {
 	op := &request.Operation{
 		Name:       opShutdownGateway,
@@ -3768,9 +4110,8 @@ func (c *StorageGateway) ShutdownGatewayRequest(input *ShutdownGatewayInput) (re
 		input = &ShutdownGatewayInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ShutdownGatewayOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -3785,7 +4126,7 @@ func (c *StorageGateway) ShutdownGatewayRequest(input *ShutdownGatewayInput) (re
 // If you want to shut down the VM, it is recommended that you first shut down
 // the gateway component in the VM to avoid unpredictable conditions.
 //
-//  After the gateway is shutdown, you cannot call any other API except StartGateway,
+// After the gateway is shutdown, you cannot call any other API except StartGateway,
 // DescribeGatewayInformation, and ListGateways. For more information, see ActivateGateway.
 // Your applications cannot read from or write to the gateway's storage volumes,
 // and there are no snapshots taken.
@@ -3795,9 +4136,8 @@ func (c *StorageGateway) ShutdownGatewayRequest(input *ShutdownGatewayInput) (re
 // You can call the DescribeGatewayInformation API to check the status. For
 // more information, see ActivateGateway.
 //
-//  If do not intend to use the gateway again, you must delete the gateway
-// (using DeleteGateway) to no longer pay software charges associated with the
-// gateway.
+// If do not intend to use the gateway again, you must delete the gateway (using
+// DeleteGateway) to no longer pay software charges associated with the gateway.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -3807,14 +4147,15 @@ func (c *StorageGateway) ShutdownGatewayRequest(input *ShutdownGatewayInput) (re
 // API operation ShutdownGateway for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ShutdownGateway
 func (c *StorageGateway) ShutdownGateway(input *ShutdownGatewayInput) (*ShutdownGatewayOutput, error) {
 	req, out := c.ShutdownGatewayRequest(input)
 	err := req.Send()
@@ -3847,6 +4188,7 @@ const opStartGateway = "StartGateway"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/StartGateway
 func (c *StorageGateway) StartGatewayRequest(input *StartGatewayInput) (req *request.Request, output *StartGatewayOutput) {
 	op := &request.Operation{
 		Name:       opStartGateway,
@@ -3858,9 +4200,8 @@ func (c *StorageGateway) StartGatewayRequest(input *StartGatewayInput) (req *req
 		input = &StartGatewayInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &StartGatewayOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -3876,7 +4217,7 @@ func (c *StorageGateway) StartGatewayRequest(input *StartGatewayInput) (req *req
 // call DescribeGatewayInformation and check the status before making any additional
 // API calls. For more information, see ActivateGateway.
 //
-//  To specify which gateway to start, use the Amazon Resource Name (ARN) of
+// To specify which gateway to start, use the Amazon Resource Name (ARN) of
 // the gateway in your request.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
@@ -3887,14 +4228,15 @@ func (c *StorageGateway) StartGatewayRequest(input *StartGatewayInput) (req *req
 // API operation StartGateway for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/StartGateway
 func (c *StorageGateway) StartGateway(input *StartGatewayInput) (*StartGatewayOutput, error) {
 	req, out := c.StartGatewayRequest(input)
 	err := req.Send()
@@ -3927,6 +4269,7 @@ const opUpdateBandwidthRateLimit = "UpdateBandwidthRateLimit"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateBandwidthRateLimit
 func (c *StorageGateway) UpdateBandwidthRateLimitRequest(input *UpdateBandwidthRateLimitInput) (req *request.Request, output *UpdateBandwidthRateLimitOutput) {
 	op := &request.Operation{
 		Name:       opUpdateBandwidthRateLimit,
@@ -3938,9 +4281,8 @@ func (c *StorageGateway) UpdateBandwidthRateLimitRequest(input *UpdateBandwidthR
 		input = &UpdateBandwidthRateLimitInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &UpdateBandwidthRateLimitOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -3950,9 +4292,9 @@ func (c *StorageGateway) UpdateBandwidthRateLimitRequest(input *UpdateBandwidthR
 // and download bandwidth rate limit or specify only one of the two. If you
 // don't set a bandwidth rate limit, the existing rate limit remains.
 //
-// By default, a gateway's bandwidth rate limits are not set. If you don't
-// set any limit, the gateway does not have any limitations on its bandwidth
-// usage and could potentially use the maximum available bandwidth.
+// By default, a gateway's bandwidth rate limits are not set. If you don't set
+// any limit, the gateway does not have any limitations on its bandwidth usage
+// and could potentially use the maximum available bandwidth.
 //
 // To specify which gateway to update, use the Amazon Resource Name (ARN) of
 // the gateway in your request.
@@ -3965,14 +4307,15 @@ func (c *StorageGateway) UpdateBandwidthRateLimitRequest(input *UpdateBandwidthR
 // API operation UpdateBandwidthRateLimit for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateBandwidthRateLimit
 func (c *StorageGateway) UpdateBandwidthRateLimit(input *UpdateBandwidthRateLimitInput) (*UpdateBandwidthRateLimitOutput, error) {
 	req, out := c.UpdateBandwidthRateLimitRequest(input)
 	err := req.Send()
@@ -4005,6 +4348,7 @@ const opUpdateChapCredentials = "UpdateChapCredentials"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateChapCredentials
 func (c *StorageGateway) UpdateChapCredentialsRequest(input *UpdateChapCredentialsInput) (req *request.Request, output *UpdateChapCredentialsOutput) {
 	op := &request.Operation{
 		Name:       opUpdateChapCredentials,
@@ -4016,9 +4360,8 @@ func (c *StorageGateway) UpdateChapCredentialsRequest(input *UpdateChapCredentia
 		input = &UpdateChapCredentialsInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &UpdateChapCredentialsOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -4028,7 +4371,7 @@ func (c *StorageGateway) UpdateChapCredentialsRequest(input *UpdateChapCredentia
 // for a specified iSCSI target. By default, a gateway does not have CHAP enabled;
 // however, for added security, you might use it.
 //
-//  When you update CHAP credentials, all existing connections on the target
+// When you update CHAP credentials, all existing connections on the target
 // are closed and initiators must reconnect with the new credentials.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
@@ -4039,14 +4382,15 @@ func (c *StorageGateway) UpdateChapCredentialsRequest(input *UpdateChapCredentia
 // API operation UpdateChapCredentials for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateChapCredentials
 func (c *StorageGateway) UpdateChapCredentials(input *UpdateChapCredentialsInput) (*UpdateChapCredentialsOutput, error) {
 	req, out := c.UpdateChapCredentialsRequest(input)
 	err := req.Send()
@@ -4079,6 +4423,7 @@ const opUpdateGatewayInformation = "UpdateGatewayInformation"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateGatewayInformation
 func (c *StorageGateway) UpdateGatewayInformationRequest(input *UpdateGatewayInformationInput) (req *request.Request, output *UpdateGatewayInformationOutput) {
 	op := &request.Operation{
 		Name:       opUpdateGatewayInformation,
@@ -4090,9 +4435,8 @@ func (c *StorageGateway) UpdateGatewayInformationRequest(input *UpdateGatewayInf
 		input = &UpdateGatewayInformationInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &UpdateGatewayInformationOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -4114,14 +4458,15 @@ func (c *StorageGateway) UpdateGatewayInformationRequest(input *UpdateGatewayInf
 // API operation UpdateGatewayInformation for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateGatewayInformation
 func (c *StorageGateway) UpdateGatewayInformation(input *UpdateGatewayInformationInput) (*UpdateGatewayInformationOutput, error) {
 	req, out := c.UpdateGatewayInformationRequest(input)
 	err := req.Send()
@@ -4154,6 +4499,7 @@ const opUpdateGatewaySoftwareNow = "UpdateGatewaySoftwareNow"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateGatewaySoftwareNow
 func (c *StorageGateway) UpdateGatewaySoftwareNowRequest(input *UpdateGatewaySoftwareNowInput) (req *request.Request, output *UpdateGatewaySoftwareNowOutput) {
 	op := &request.Operation{
 		Name:       opUpdateGatewaySoftwareNow,
@@ -4165,9 +4511,8 @@ func (c *StorageGateway) UpdateGatewaySoftwareNowRequest(input *UpdateGatewaySof
 		input = &UpdateGatewaySoftwareNowInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &UpdateGatewaySoftwareNowOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -4181,7 +4526,7 @@ func (c *StorageGateway) UpdateGatewaySoftwareNowRequest(input *UpdateGatewaySof
 // DescribeGatewayInformation to verify the gateway is in the STATE_RUNNING
 // state.
 //
-//  A software update forces a system restart of your gateway. You can minimize
+// A software update forces a system restart of your gateway. You can minimize
 // the chance of any disruption to your applications by increasing your iSCSI
 // Initiators' timeouts. For more information about increasing iSCSI Initiator
 // timeouts for Windows and Linux, see Customizing Your Windows iSCSI Settings
@@ -4197,14 +4542,15 @@ func (c *StorageGateway) UpdateGatewaySoftwareNowRequest(input *UpdateGatewaySof
 // API operation UpdateGatewaySoftwareNow for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateGatewaySoftwareNow
 func (c *StorageGateway) UpdateGatewaySoftwareNow(input *UpdateGatewaySoftwareNowInput) (*UpdateGatewaySoftwareNowOutput, error) {
 	req, out := c.UpdateGatewaySoftwareNowRequest(input)
 	err := req.Send()
@@ -4237,6 +4583,7 @@ const opUpdateMaintenanceStartTime = "UpdateMaintenanceStartTime"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateMaintenanceStartTime
 func (c *StorageGateway) UpdateMaintenanceStartTimeRequest(input *UpdateMaintenanceStartTimeInput) (req *request.Request, output *UpdateMaintenanceStartTimeOutput) {
 	op := &request.Operation{
 		Name:       opUpdateMaintenanceStartTime,
@@ -4248,9 +4595,8 @@ func (c *StorageGateway) UpdateMaintenanceStartTimeRequest(input *UpdateMaintena
 		input = &UpdateMaintenanceStartTimeInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &UpdateMaintenanceStartTimeOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -4268,16 +4614,90 @@ func (c *StorageGateway) UpdateMaintenanceStartTimeRequest(input *UpdateMaintena
 // API operation UpdateMaintenanceStartTime for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateMaintenanceStartTime
 func (c *StorageGateway) UpdateMaintenanceStartTime(input *UpdateMaintenanceStartTimeInput) (*UpdateMaintenanceStartTimeOutput, error) {
 	req, out := c.UpdateMaintenanceStartTimeRequest(input)
+	err := req.Send()
+	return out, err
+}
+
+const opUpdateNFSFileShare = "UpdateNFSFileShare"
+
+// UpdateNFSFileShareRequest generates a "aws/request.Request" representing the
+// client's request for the UpdateNFSFileShare operation. The "output" return
+// value can be used to capture response data after the request's "Send" method
+// is called.
+//
+// See UpdateNFSFileShare for usage and error information.
+//
+// Creating a request object using this method should be used when you want to inject
+// custom logic into the request's lifecycle using a custom handler, or if you want to
+// access properties on the request object before or after sending the request. If
+// you just want the service response, call the UpdateNFSFileShare method directly
+// instead.
+//
+// Note: You must call the "Send" method on the returned request object in order
+// to execute the request.
+//
+//    // Example sending a request using the UpdateNFSFileShareRequest method.
+//    req, resp := client.UpdateNFSFileShareRequest(params)
+//
+//    err := req.Send()
+//    if err == nil { // resp is now filled
+//        fmt.Println(resp)
+//    }
+//
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateNFSFileShare
+func (c *StorageGateway) UpdateNFSFileShareRequest(input *UpdateNFSFileShareInput) (req *request.Request, output *UpdateNFSFileShareOutput) {
+	op := &request.Operation{
+		Name:       opUpdateNFSFileShare,
+		HTTPMethod: "POST",
+		HTTPPath:   "/",
+	}
+
+	if input == nil {
+		input = &UpdateNFSFileShareInput{}
+	}
+
+	output = &UpdateNFSFileShareOutput{}
+	req = c.newRequest(op, input, output)
+	return
+}
+
+// UpdateNFSFileShare API operation for AWS Storage Gateway.
+//
+// Updates a file share.
+//
+// To leave a file share field unchanged, set the corresponding input field
+// to null.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for AWS Storage Gateway's
+// API operation UpdateNFSFileShare for usage and error information.
+//
+// Returned Error Codes:
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
+//   An exception occurred because an invalid gateway request was issued to the
+//   service. For more information, see the error and message fields.
+//
+//   * ErrCodeInternalServerError "InternalServerError"
+//   An internal server error has occurred during the request. For more information,
+//   see the error and message fields.
+//
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateNFSFileShare
+func (c *StorageGateway) UpdateNFSFileShare(input *UpdateNFSFileShareInput) (*UpdateNFSFileShareOutput, error) {
+	req, out := c.UpdateNFSFileShareRequest(input)
 	err := req.Send()
 	return out, err
 }
@@ -4308,6 +4728,7 @@ const opUpdateSnapshotSchedule = "UpdateSnapshotSchedule"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateSnapshotSchedule
 func (c *StorageGateway) UpdateSnapshotScheduleRequest(input *UpdateSnapshotScheduleInput) (req *request.Request, output *UpdateSnapshotScheduleOutput) {
 	op := &request.Operation{
 		Name:       opUpdateSnapshotSchedule,
@@ -4319,9 +4740,8 @@ func (c *StorageGateway) UpdateSnapshotScheduleRequest(input *UpdateSnapshotSche
 		input = &UpdateSnapshotScheduleInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &UpdateSnapshotScheduleOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -4345,14 +4765,15 @@ func (c *StorageGateway) UpdateSnapshotScheduleRequest(input *UpdateSnapshotSche
 // API operation UpdateSnapshotSchedule for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateSnapshotSchedule
 func (c *StorageGateway) UpdateSnapshotSchedule(input *UpdateSnapshotScheduleInput) (*UpdateSnapshotScheduleOutput, error) {
 	req, out := c.UpdateSnapshotScheduleRequest(input)
 	err := req.Send()
@@ -4385,6 +4806,7 @@ const opUpdateVTLDeviceType = "UpdateVTLDeviceType"
 //        fmt.Println(resp)
 //    }
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateVTLDeviceType
 func (c *StorageGateway) UpdateVTLDeviceTypeRequest(input *UpdateVTLDeviceTypeInput) (req *request.Request, output *UpdateVTLDeviceTypeOutput) {
 	op := &request.Operation{
 		Name:       opUpdateVTLDeviceType,
@@ -4396,9 +4818,8 @@ func (c *StorageGateway) UpdateVTLDeviceTypeRequest(input *UpdateVTLDeviceTypeIn
 		input = &UpdateVTLDeviceTypeInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &UpdateVTLDeviceTypeOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -4417,14 +4838,15 @@ func (c *StorageGateway) UpdateVTLDeviceTypeRequest(input *UpdateVTLDeviceTypeIn
 // API operation UpdateVTLDeviceType for usage and error information.
 //
 // Returned Error Codes:
-//   * InvalidGatewayRequestException
+//   * ErrCodeInvalidGatewayRequestException "InvalidGatewayRequestException"
 //   An exception occurred because an invalid gateway request was issued to the
 //   service. For more information, see the error and message fields.
 //
-//   * InternalServerError
+//   * ErrCodeInternalServerError "InternalServerError"
 //   An internal server error has occurred during the request. For more information,
 //   see the error and message fields.
 //
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateVTLDeviceType
 func (c *StorageGateway) UpdateVTLDeviceType(input *UpdateVTLDeviceTypeInput) (*UpdateVTLDeviceTypeOutput, error) {
 	req, out := c.UpdateVTLDeviceTypeRequest(input)
 	err := req.Send()
@@ -4433,19 +4855,20 @@ func (c *StorageGateway) UpdateVTLDeviceType(input *UpdateVTLDeviceTypeInput) (*
 
 // A JSON object containing one or more of the following fields:
 //
-//    ActivateGatewayInput$ActivationKey
+//    * ActivateGatewayInput$ActivationKey
 //
-//    ActivateGatewayInput$GatewayName
+//    * ActivateGatewayInput$GatewayName
 //
-//    ActivateGatewayInput$GatewayRegion
+//    * ActivateGatewayInput$GatewayRegion
 //
-//    ActivateGatewayInput$GatewayTimezone
+//    * ActivateGatewayInput$GatewayTimezone
 //
-//    ActivateGatewayInput$GatewayType
+//    * ActivateGatewayInput$GatewayType
 //
-//    ActivateGatewayInput$TapeDriveType
+//    * ActivateGatewayInput$TapeDriveType
 //
-//    ActivateGatewayInput$MediumChangerType
+//    * ActivateGatewayInput$MediumChangerType
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ActivateGatewayInput
 type ActivateGatewayInput struct {
 	_ struct{} `type:"structure"`
 
@@ -4471,7 +4894,7 @@ type ActivateGatewayInput struct {
 	// and endpoints for AWS Storage Gateway, see Regions and Endpoints (http://docs.aws.amazon.com/general/latest/gr/rande.html#sg_region)
 	// in the Amazon Web Services Glossary.
 	//
-	//  Valid Values: "us-east-1", "us-west-1", "us-west-2", "eu-west-1", "eu-central-1",
+	// Valid Values: "us-east-1", "us-west-1", "us-west-2", "eu-west-1", "eu-central-1",
 	// "ap-northeast-1", "ap-northeast-2", "ap-southeast-1", "ap-southeast-2", "sa-east-1"
 	//
 	// GatewayRegion is a required field
@@ -4492,13 +4915,13 @@ type ActivateGatewayInput struct {
 	// The value that indicates the type of medium changer to use for gateway-VTL.
 	// This field is optional.
 	//
-	//  Valid Values: "STK-L700", "AWS-Gateway-VTL"
+	// Valid Values: "STK-L700", "AWS-Gateway-VTL"
 	MediumChangerType *string `min:"2" type:"string"`
 
 	// The value that indicates the type of tape drive to use for gateway-VTL. This
 	// field is optional.
 	//
-	//  Valid Values: "IBM-ULT3580-TD5"
+	// Valid Values: "IBM-ULT3580-TD5"
 	TapeDriveType *string `min:"2" type:"string"`
 }
 
@@ -4555,6 +4978,48 @@ func (s *ActivateGatewayInput) Validate() error {
 	return nil
 }
 
+// SetActivationKey sets the ActivationKey field's value.
+func (s *ActivateGatewayInput) SetActivationKey(v string) *ActivateGatewayInput {
+	s.ActivationKey = &v
+	return s
+}
+
+// SetGatewayName sets the GatewayName field's value.
+func (s *ActivateGatewayInput) SetGatewayName(v string) *ActivateGatewayInput {
+	s.GatewayName = &v
+	return s
+}
+
+// SetGatewayRegion sets the GatewayRegion field's value.
+func (s *ActivateGatewayInput) SetGatewayRegion(v string) *ActivateGatewayInput {
+	s.GatewayRegion = &v
+	return s
+}
+
+// SetGatewayTimezone sets the GatewayTimezone field's value.
+func (s *ActivateGatewayInput) SetGatewayTimezone(v string) *ActivateGatewayInput {
+	s.GatewayTimezone = &v
+	return s
+}
+
+// SetGatewayType sets the GatewayType field's value.
+func (s *ActivateGatewayInput) SetGatewayType(v string) *ActivateGatewayInput {
+	s.GatewayType = &v
+	return s
+}
+
+// SetMediumChangerType sets the MediumChangerType field's value.
+func (s *ActivateGatewayInput) SetMediumChangerType(v string) *ActivateGatewayInput {
+	s.MediumChangerType = &v
+	return s
+}
+
+// SetTapeDriveType sets the TapeDriveType field's value.
+func (s *ActivateGatewayInput) SetTapeDriveType(v string) *ActivateGatewayInput {
+	s.TapeDriveType = &v
+	return s
+}
+
 // AWS Storage Gateway returns the Amazon Resource Name (ARN) of the activated
 // gateway. It is a string made of information such as your account, gateway
 // name, and region. This ARN is used to reference the gateway in other API
@@ -4563,6 +5028,7 @@ func (s *ActivateGatewayInput) Validate() error {
 // For gateways activated prior to September 02, 2015 the gateway ARN contains
 // the gateway name rather than the gateway id. Changing the name of the gateway
 // has no effect on the gateway ARN.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ActivateGatewayOutput
 type ActivateGatewayOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -4581,6 +5047,13 @@ func (s ActivateGatewayOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *ActivateGatewayOutput) SetGatewayARN(v string) *ActivateGatewayOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddCacheInput
 type AddCacheInput struct {
 	_ struct{} `type:"structure"`
 
@@ -4623,6 +5096,19 @@ func (s *AddCacheInput) Validate() error {
 	return nil
 }
 
+// SetDiskIds sets the DiskIds field's value.
+func (s *AddCacheInput) SetDiskIds(v []*string) *AddCacheInput {
+	s.DiskIds = v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *AddCacheInput) SetGatewayARN(v string) *AddCacheInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddCacheOutput
 type AddCacheOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -4641,7 +5127,14 @@ func (s AddCacheOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *AddCacheOutput) SetGatewayARN(v string) *AddCacheOutput {
+	s.GatewayARN = &v
+	return s
+}
+
 // AddTagsToResourceInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddTagsToResourceInput
 type AddTagsToResourceInput struct {
 	_ struct{} `type:"structure"`
 
@@ -4653,7 +5146,7 @@ type AddTagsToResourceInput struct {
 	// The key-value pair that represents the tag you want to add to the resource.
 	// The value can be an empty string.
 	//
-	//  Valid characters for key and value are letters, spaces, and numbers representable
+	// Valid characters for key and value are letters, spaces, and numbers representable
 	// in UTF-8 format, and the following special characters: + - = . _ : / @.
 	//
 	// Tags is a required field
@@ -4699,7 +5192,20 @@ func (s *AddTagsToResourceInput) Validate() error {
 	return nil
 }
 
+// SetResourceARN sets the ResourceARN field's value.
+func (s *AddTagsToResourceInput) SetResourceARN(v string) *AddTagsToResourceInput {
+	s.ResourceARN = &v
+	return s
+}
+
+// SetTags sets the Tags field's value.
+func (s *AddTagsToResourceInput) SetTags(v []*Tag) *AddTagsToResourceInput {
+	s.Tags = v
+	return s
+}
+
 // AddTagsToResourceOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddTagsToResourceOutput
 type AddTagsToResourceOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -4717,6 +5223,13 @@ func (s AddTagsToResourceOutput) GoString() string {
 	return s.String()
 }
 
+// SetResourceARN sets the ResourceARN field's value.
+func (s *AddTagsToResourceOutput) SetResourceARN(v string) *AddTagsToResourceOutput {
+	s.ResourceARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddUploadBufferInput
 type AddUploadBufferInput struct {
 	_ struct{} `type:"structure"`
 
@@ -4759,6 +5272,19 @@ func (s *AddUploadBufferInput) Validate() error {
 	return nil
 }
 
+// SetDiskIds sets the DiskIds field's value.
+func (s *AddUploadBufferInput) SetDiskIds(v []*string) *AddUploadBufferInput {
+	s.DiskIds = v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *AddUploadBufferInput) SetGatewayARN(v string) *AddUploadBufferInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddUploadBufferOutput
 type AddUploadBufferOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -4777,9 +5303,16 @@ func (s AddUploadBufferOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *AddUploadBufferOutput) SetGatewayARN(v string) *AddUploadBufferOutput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing one or more of the following fields:
 //
-//    AddWorkingStorageInput$DiskIds
+//    * AddWorkingStorageInput$DiskIds
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddWorkingStorageInput
 type AddWorkingStorageInput struct {
 	_ struct{} `type:"structure"`
 
@@ -4826,8 +5359,21 @@ func (s *AddWorkingStorageInput) Validate() error {
 	return nil
 }
 
+// SetDiskIds sets the DiskIds field's value.
+func (s *AddWorkingStorageInput) SetDiskIds(v []*string) *AddWorkingStorageInput {
+	s.DiskIds = v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *AddWorkingStorageInput) SetGatewayARN(v string) *AddWorkingStorageInput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing the of the gateway for which working storage was
 // configured.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/AddWorkingStorageOutput
 type AddWorkingStorageOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -4846,24 +5392,45 @@ func (s AddWorkingStorageOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *AddWorkingStorageOutput) SetGatewayARN(v string) *AddWorkingStorageOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// Describes an iSCSI cached volume.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CachediSCSIVolume
 type CachediSCSIVolume struct {
 	_ struct{} `type:"structure"`
 
+	CreatedDate *time.Time `type:"timestamp" timestampFormat:"unix"`
+
+	// If the cached volume was created from a snapshot, this field contains the
+	// snapshot ID used, e.g. snap-78e22663. Otherwise, this field is not included.
 	SourceSnapshotId *string `type:"string"`
 
+	// The Amazon Resource Name (ARN) of the storage volume.
 	VolumeARN *string `min:"50" type:"string"`
 
+	// The unique identifier of the volume, e.g. vol-AE4B946D.
 	VolumeId *string `min:"12" type:"string"`
 
+	// Represents the percentage complete if the volume is restoring or bootstrapping
+	// that represents the percent of data transferred. This field does not appear
+	// in the response if the cached volume is not restoring or bootstrapping.
 	VolumeProgress *float64 `type:"double"`
 
+	// The size of the volume in bytes.
 	VolumeSizeInBytes *int64 `type:"long"`
 
+	// One of the VolumeStatus values that indicates the state of the storage volume.
 	VolumeStatus *string `min:"3" type:"string"`
 
+	// One of the VolumeType enumeration values that describes the type of the volume.
 	VolumeType *string `min:"3" type:"string"`
 
-	// Lists iSCSI information about a volume.
+	// An VolumeiSCSIAttributes object that represents a collection of iSCSI attributes
+	// for one stored volume.
 	VolumeiSCSIAttributes *VolumeiSCSIAttributes `type:"structure"`
 }
 
@@ -4877,7 +5444,62 @@ func (s CachediSCSIVolume) GoString() string {
 	return s.String()
 }
 
+// SetCreatedDate sets the CreatedDate field's value.
+func (s *CachediSCSIVolume) SetCreatedDate(v time.Time) *CachediSCSIVolume {
+	s.CreatedDate = &v
+	return s
+}
+
+// SetSourceSnapshotId sets the SourceSnapshotId field's value.
+func (s *CachediSCSIVolume) SetSourceSnapshotId(v string) *CachediSCSIVolume {
+	s.SourceSnapshotId = &v
+	return s
+}
+
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *CachediSCSIVolume) SetVolumeARN(v string) *CachediSCSIVolume {
+	s.VolumeARN = &v
+	return s
+}
+
+// SetVolumeId sets the VolumeId field's value.
+func (s *CachediSCSIVolume) SetVolumeId(v string) *CachediSCSIVolume {
+	s.VolumeId = &v
+	return s
+}
+
+// SetVolumeProgress sets the VolumeProgress field's value.
+func (s *CachediSCSIVolume) SetVolumeProgress(v float64) *CachediSCSIVolume {
+	s.VolumeProgress = &v
+	return s
+}
+
+// SetVolumeSizeInBytes sets the VolumeSizeInBytes field's value.
+func (s *CachediSCSIVolume) SetVolumeSizeInBytes(v int64) *CachediSCSIVolume {
+	s.VolumeSizeInBytes = &v
+	return s
+}
+
+// SetVolumeStatus sets the VolumeStatus field's value.
+func (s *CachediSCSIVolume) SetVolumeStatus(v string) *CachediSCSIVolume {
+	s.VolumeStatus = &v
+	return s
+}
+
+// SetVolumeType sets the VolumeType field's value.
+func (s *CachediSCSIVolume) SetVolumeType(v string) *CachediSCSIVolume {
+	s.VolumeType = &v
+	return s
+}
+
+// SetVolumeiSCSIAttributes sets the VolumeiSCSIAttributes field's value.
+func (s *CachediSCSIVolume) SetVolumeiSCSIAttributes(v *VolumeiSCSIAttributes) *CachediSCSIVolume {
+	s.VolumeiSCSIAttributes = v
+	return s
+}
+
 // CancelArchivalInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CancelArchivalInput
 type CancelArchivalInput struct {
 	_ struct{} `type:"structure"`
 
@@ -4926,7 +5548,20 @@ func (s *CancelArchivalInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *CancelArchivalInput) SetGatewayARN(v string) *CancelArchivalInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetTapeARN sets the TapeARN field's value.
+func (s *CancelArchivalInput) SetTapeARN(v string) *CancelArchivalInput {
+	s.TapeARN = &v
+	return s
+}
+
 // CancelArchivalOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CancelArchivalOutput
 type CancelArchivalOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -4945,7 +5580,14 @@ func (s CancelArchivalOutput) GoString() string {
 	return s.String()
 }
 
+// SetTapeARN sets the TapeARN field's value.
+func (s *CancelArchivalOutput) SetTapeARN(v string) *CancelArchivalOutput {
+	s.TapeARN = &v
+	return s
+}
+
 // CancelRetrievalInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CancelRetrievalInput
 type CancelRetrievalInput struct {
 	_ struct{} `type:"structure"`
 
@@ -4994,7 +5636,20 @@ func (s *CancelRetrievalInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *CancelRetrievalInput) SetGatewayARN(v string) *CancelRetrievalInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetTapeARN sets the TapeARN field's value.
+func (s *CancelRetrievalInput) SetTapeARN(v string) *CancelRetrievalInput {
+	s.TapeARN = &v
+	return s
+}
+
 // CancelRetrievalOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CancelRetrievalOutput
 type CancelRetrievalOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -5013,8 +5668,15 @@ func (s CancelRetrievalOutput) GoString() string {
 	return s.String()
 }
 
+// SetTapeARN sets the TapeARN field's value.
+func (s *CancelRetrievalOutput) SetTapeARN(v string) *CancelRetrievalOutput {
+	s.TapeARN = &v
+	return s
+}
+
 // Describes Challenge-Handshake Authentication Protocol (CHAP) information
 // that supports authentication between your gateway and iSCSI initiators.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ChapInfo
 type ChapInfo struct {
 	_ struct{} `type:"structure"`
 
@@ -5031,7 +5693,7 @@ type ChapInfo struct {
 
 	// The Amazon Resource Name (ARN) of the volume.
 	//
-	//  Valid Values: 50 to 500 lowercase letters, numbers, periods (.), and hyphens
+	// Valid Values: 50 to 500 lowercase letters, numbers, periods (.), and hyphens
 	// (-).
 	TargetARN *string `min:"50" type:"string"`
 }
@@ -5046,6 +5708,31 @@ func (s ChapInfo) GoString() string {
 	return s.String()
 }
 
+// SetInitiatorName sets the InitiatorName field's value.
+func (s *ChapInfo) SetInitiatorName(v string) *ChapInfo {
+	s.InitiatorName = &v
+	return s
+}
+
+// SetSecretToAuthenticateInitiator sets the SecretToAuthenticateInitiator field's value.
+func (s *ChapInfo) SetSecretToAuthenticateInitiator(v string) *ChapInfo {
+	s.SecretToAuthenticateInitiator = &v
+	return s
+}
+
+// SetSecretToAuthenticateTarget sets the SecretToAuthenticateTarget field's value.
+func (s *ChapInfo) SetSecretToAuthenticateTarget(v string) *ChapInfo {
+	s.SecretToAuthenticateTarget = &v
+	return s
+}
+
+// SetTargetARN sets the TargetARN field's value.
+func (s *ChapInfo) SetTargetARN(v string) *ChapInfo {
+	s.TargetARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateCachediSCSIVolumeInput
 type CreateCachediSCSIVolumeInput struct {
 	_ struct{} `type:"structure"`
 
@@ -5062,6 +5749,12 @@ type CreateCachediSCSIVolumeInput struct {
 	NetworkInterfaceId *string `type:"string" required:"true"`
 
 	SnapshotId *string `type:"string"`
+
+	// The ARN for an existing volume. Specifying this ARN makes the new volume
+	// into an exact copy of the specified existing volume's latest recovery point.
+	// The VolumeSizeInBytes value for this new volume must be equal to or larger
+	// than the size of the existing volume, in bytes.
+	SourceVolumeARN *string `min:"50" type:"string"`
 
 	// TargetName is a required field
 	TargetName *string `min:"1" type:"string" required:"true"`
@@ -5098,6 +5791,9 @@ func (s *CreateCachediSCSIVolumeInput) Validate() error {
 	if s.NetworkInterfaceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("NetworkInterfaceId"))
 	}
+	if s.SourceVolumeARN != nil && len(*s.SourceVolumeARN) < 50 {
+		invalidParams.Add(request.NewErrParamMinLen("SourceVolumeARN", 50))
+	}
 	if s.TargetName == nil {
 		invalidParams.Add(request.NewErrParamRequired("TargetName"))
 	}
@@ -5114,6 +5810,49 @@ func (s *CreateCachediSCSIVolumeInput) Validate() error {
 	return nil
 }
 
+// SetClientToken sets the ClientToken field's value.
+func (s *CreateCachediSCSIVolumeInput) SetClientToken(v string) *CreateCachediSCSIVolumeInput {
+	s.ClientToken = &v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *CreateCachediSCSIVolumeInput) SetGatewayARN(v string) *CreateCachediSCSIVolumeInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetNetworkInterfaceId sets the NetworkInterfaceId field's value.
+func (s *CreateCachediSCSIVolumeInput) SetNetworkInterfaceId(v string) *CreateCachediSCSIVolumeInput {
+	s.NetworkInterfaceId = &v
+	return s
+}
+
+// SetSnapshotId sets the SnapshotId field's value.
+func (s *CreateCachediSCSIVolumeInput) SetSnapshotId(v string) *CreateCachediSCSIVolumeInput {
+	s.SnapshotId = &v
+	return s
+}
+
+// SetSourceVolumeARN sets the SourceVolumeARN field's value.
+func (s *CreateCachediSCSIVolumeInput) SetSourceVolumeARN(v string) *CreateCachediSCSIVolumeInput {
+	s.SourceVolumeARN = &v
+	return s
+}
+
+// SetTargetName sets the TargetName field's value.
+func (s *CreateCachediSCSIVolumeInput) SetTargetName(v string) *CreateCachediSCSIVolumeInput {
+	s.TargetName = &v
+	return s
+}
+
+// SetVolumeSizeInBytes sets the VolumeSizeInBytes field's value.
+func (s *CreateCachediSCSIVolumeInput) SetVolumeSizeInBytes(v int64) *CreateCachediSCSIVolumeInput {
+	s.VolumeSizeInBytes = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateCachediSCSIVolumeOutput
 type CreateCachediSCSIVolumeOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -5132,6 +5871,205 @@ func (s CreateCachediSCSIVolumeOutput) GoString() string {
 	return s.String()
 }
 
+// SetTargetARN sets the TargetARN field's value.
+func (s *CreateCachediSCSIVolumeOutput) SetTargetARN(v string) *CreateCachediSCSIVolumeOutput {
+	s.TargetARN = &v
+	return s
+}
+
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *CreateCachediSCSIVolumeOutput) SetVolumeARN(v string) *CreateCachediSCSIVolumeOutput {
+	s.VolumeARN = &v
+	return s
+}
+
+// CreateNFSFileShareInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateNFSFileShareInput
+type CreateNFSFileShareInput struct {
+	_ struct{} `type:"structure"`
+
+	// The list of clients that are allowed to access the file gateway. The list
+	// must contain either valid IP addresses or valid CIDR blocks.
+	ClientList []*string `min:"1" type:"list"`
+
+	// A unique string value that you supply that is used by file gateway to ensure
+	// idempotent file share creation.
+	//
+	// ClientToken is a required field
+	ClientToken *string `min:"5" type:"string" required:"true"`
+
+	// The default storage class for objects put into an Amazon S3 bucket by file
+	// gateway. Possible values are S3_STANDARD or S3_STANDARD_IA. If this field
+	// is not populated, the default value S3_STANDARD is used. Optional.
+	DefaultStorageClass *string `min:"5" type:"string"`
+
+	// The Amazon Resource Name (ARN) of the file gateway on which you want to create
+	// a file share.
+	//
+	// GatewayARN is a required field
+	GatewayARN *string `min:"50" type:"string" required:"true"`
+
+	// True to use Amazon S3 server side encryption with your own AWS KMS key, or
+	// false to use a key managed by Amazon S3. Optional.
+	KMSEncrypted *bool `type:"boolean"`
+
+	// The KMS key used for Amazon S3 server side encryption. This value can only
+	// be set when KmsEncrypted is true. Optional.
+	KMSKey *string `min:"20" type:"string"`
+
+	// The ARN of the backend storage used for storing file data.
+	//
+	// LocationARN is a required field
+	LocationARN *string `min:"16" type:"string" required:"true"`
+
+	// File share default values. Optional.
+	NFSFileShareDefaults *NFSFileShareDefaults `type:"structure"`
+
+	// The ARN of the AWS Identity and Access Management (IAM) role that a file
+	// gateway assumes when it accesses the underlying storage.
+	//
+	// Role is a required field
+	Role *string `min:"20" type:"string" required:"true"`
+}
+
+// String returns the string representation
+func (s CreateNFSFileShareInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s CreateNFSFileShareInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *CreateNFSFileShareInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "CreateNFSFileShareInput"}
+	if s.ClientList != nil && len(s.ClientList) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ClientList", 1))
+	}
+	if s.ClientToken == nil {
+		invalidParams.Add(request.NewErrParamRequired("ClientToken"))
+	}
+	if s.ClientToken != nil && len(*s.ClientToken) < 5 {
+		invalidParams.Add(request.NewErrParamMinLen("ClientToken", 5))
+	}
+	if s.DefaultStorageClass != nil && len(*s.DefaultStorageClass) < 5 {
+		invalidParams.Add(request.NewErrParamMinLen("DefaultStorageClass", 5))
+	}
+	if s.GatewayARN == nil {
+		invalidParams.Add(request.NewErrParamRequired("GatewayARN"))
+	}
+	if s.GatewayARN != nil && len(*s.GatewayARN) < 50 {
+		invalidParams.Add(request.NewErrParamMinLen("GatewayARN", 50))
+	}
+	if s.KMSKey != nil && len(*s.KMSKey) < 20 {
+		invalidParams.Add(request.NewErrParamMinLen("KMSKey", 20))
+	}
+	if s.LocationARN == nil {
+		invalidParams.Add(request.NewErrParamRequired("LocationARN"))
+	}
+	if s.LocationARN != nil && len(*s.LocationARN) < 16 {
+		invalidParams.Add(request.NewErrParamMinLen("LocationARN", 16))
+	}
+	if s.Role == nil {
+		invalidParams.Add(request.NewErrParamRequired("Role"))
+	}
+	if s.Role != nil && len(*s.Role) < 20 {
+		invalidParams.Add(request.NewErrParamMinLen("Role", 20))
+	}
+	if s.NFSFileShareDefaults != nil {
+		if err := s.NFSFileShareDefaults.Validate(); err != nil {
+			invalidParams.AddNested("NFSFileShareDefaults", err.(request.ErrInvalidParams))
+		}
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetClientList sets the ClientList field's value.
+func (s *CreateNFSFileShareInput) SetClientList(v []*string) *CreateNFSFileShareInput {
+	s.ClientList = v
+	return s
+}
+
+// SetClientToken sets the ClientToken field's value.
+func (s *CreateNFSFileShareInput) SetClientToken(v string) *CreateNFSFileShareInput {
+	s.ClientToken = &v
+	return s
+}
+
+// SetDefaultStorageClass sets the DefaultStorageClass field's value.
+func (s *CreateNFSFileShareInput) SetDefaultStorageClass(v string) *CreateNFSFileShareInput {
+	s.DefaultStorageClass = &v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *CreateNFSFileShareInput) SetGatewayARN(v string) *CreateNFSFileShareInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetKMSEncrypted sets the KMSEncrypted field's value.
+func (s *CreateNFSFileShareInput) SetKMSEncrypted(v bool) *CreateNFSFileShareInput {
+	s.KMSEncrypted = &v
+	return s
+}
+
+// SetKMSKey sets the KMSKey field's value.
+func (s *CreateNFSFileShareInput) SetKMSKey(v string) *CreateNFSFileShareInput {
+	s.KMSKey = &v
+	return s
+}
+
+// SetLocationARN sets the LocationARN field's value.
+func (s *CreateNFSFileShareInput) SetLocationARN(v string) *CreateNFSFileShareInput {
+	s.LocationARN = &v
+	return s
+}
+
+// SetNFSFileShareDefaults sets the NFSFileShareDefaults field's value.
+func (s *CreateNFSFileShareInput) SetNFSFileShareDefaults(v *NFSFileShareDefaults) *CreateNFSFileShareInput {
+	s.NFSFileShareDefaults = v
+	return s
+}
+
+// SetRole sets the Role field's value.
+func (s *CreateNFSFileShareInput) SetRole(v string) *CreateNFSFileShareInput {
+	s.Role = &v
+	return s
+}
+
+// CreateNFSFileShareOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateNFSFileShareOutput
+type CreateNFSFileShareOutput struct {
+	_ struct{} `type:"structure"`
+
+	// The Amazon Resource Name (ARN) of the newly created file share.
+	FileShareARN *string `min:"50" type:"string"`
+}
+
+// String returns the string representation
+func (s CreateNFSFileShareOutput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s CreateNFSFileShareOutput) GoString() string {
+	return s.String()
+}
+
+// SetFileShareARN sets the FileShareARN field's value.
+func (s *CreateNFSFileShareOutput) SetFileShareARN(v string) *CreateNFSFileShareOutput {
+	s.FileShareARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateSnapshotFromVolumeRecoveryPointInput
 type CreateSnapshotFromVolumeRecoveryPointInput struct {
 	_ struct{} `type:"structure"`
 
@@ -5174,6 +6112,19 @@ func (s *CreateSnapshotFromVolumeRecoveryPointInput) Validate() error {
 	return nil
 }
 
+// SetSnapshotDescription sets the SnapshotDescription field's value.
+func (s *CreateSnapshotFromVolumeRecoveryPointInput) SetSnapshotDescription(v string) *CreateSnapshotFromVolumeRecoveryPointInput {
+	s.SnapshotDescription = &v
+	return s
+}
+
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *CreateSnapshotFromVolumeRecoveryPointInput) SetVolumeARN(v string) *CreateSnapshotFromVolumeRecoveryPointInput {
+	s.VolumeARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateSnapshotFromVolumeRecoveryPointOutput
 type CreateSnapshotFromVolumeRecoveryPointOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -5194,11 +6145,30 @@ func (s CreateSnapshotFromVolumeRecoveryPointOutput) GoString() string {
 	return s.String()
 }
 
+// SetSnapshotId sets the SnapshotId field's value.
+func (s *CreateSnapshotFromVolumeRecoveryPointOutput) SetSnapshotId(v string) *CreateSnapshotFromVolumeRecoveryPointOutput {
+	s.SnapshotId = &v
+	return s
+}
+
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *CreateSnapshotFromVolumeRecoveryPointOutput) SetVolumeARN(v string) *CreateSnapshotFromVolumeRecoveryPointOutput {
+	s.VolumeARN = &v
+	return s
+}
+
+// SetVolumeRecoveryPointTime sets the VolumeRecoveryPointTime field's value.
+func (s *CreateSnapshotFromVolumeRecoveryPointOutput) SetVolumeRecoveryPointTime(v string) *CreateSnapshotFromVolumeRecoveryPointOutput {
+	s.VolumeRecoveryPointTime = &v
+	return s
+}
+
 // A JSON object containing one or more of the following fields:
 //
-//    CreateSnapshotInput$SnapshotDescription
+//    * CreateSnapshotInput$SnapshotDescription
 //
-//    CreateSnapshotInput$VolumeARN
+//    * CreateSnapshotInput$VolumeARN
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateSnapshotInput
 type CreateSnapshotInput struct {
 	_ struct{} `type:"structure"`
 
@@ -5248,7 +6218,20 @@ func (s *CreateSnapshotInput) Validate() error {
 	return nil
 }
 
+// SetSnapshotDescription sets the SnapshotDescription field's value.
+func (s *CreateSnapshotInput) SetSnapshotDescription(v string) *CreateSnapshotInput {
+	s.SnapshotDescription = &v
+	return s
+}
+
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *CreateSnapshotInput) SetVolumeARN(v string) *CreateSnapshotInput {
+	s.VolumeARN = &v
+	return s
+}
+
 // A JSON object containing the following fields:
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateSnapshotOutput
 type CreateSnapshotOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -5271,17 +6254,30 @@ func (s CreateSnapshotOutput) GoString() string {
 	return s.String()
 }
 
+// SetSnapshotId sets the SnapshotId field's value.
+func (s *CreateSnapshotOutput) SetSnapshotId(v string) *CreateSnapshotOutput {
+	s.SnapshotId = &v
+	return s
+}
+
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *CreateSnapshotOutput) SetVolumeARN(v string) *CreateSnapshotOutput {
+	s.VolumeARN = &v
+	return s
+}
+
 // A JSON object containing one or more of the following fields:
 //
-//    CreateStorediSCSIVolumeInput$DiskId
+//    * CreateStorediSCSIVolumeInput$DiskId
 //
-//    CreateStorediSCSIVolumeInput$NetworkInterfaceId
+//    * CreateStorediSCSIVolumeInput$NetworkInterfaceId
 //
-//    CreateStorediSCSIVolumeInput$PreserveExistingData
+//    * CreateStorediSCSIVolumeInput$PreserveExistingData
 //
-//    CreateStorediSCSIVolumeInput$SnapshotId
+//    * CreateStorediSCSIVolumeInput$SnapshotId
 //
-//    CreateStorediSCSIVolumeInput$TargetName
+//    * CreateStorediSCSIVolumeInput$TargetName
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateStorediSCSIVolumeInput
 type CreateStorediSCSIVolumeInput struct {
 	_ struct{} `type:"structure"`
 
@@ -5302,7 +6298,7 @@ type CreateStorediSCSIVolumeInput struct {
 	// Only IPv4 addresses are accepted. Use DescribeGatewayInformation to get a
 	// list of the network interfaces available on a gateway.
 	//
-	//  Valid Values: A valid IP address.
+	// Valid Values: A valid IP address.
 	//
 	// NetworkInterfaceId is a required field
 	NetworkInterfaceId *string `type:"string" required:"true"`
@@ -5310,7 +6306,7 @@ type CreateStorediSCSIVolumeInput struct {
 	// Specify this field as true if you want to preserve the data on the local
 	// disk. Otherwise, specifying this field as false creates an empty volume.
 	//
-	//  Valid Values: true, false
+	// Valid Values: true, false
 	//
 	// PreserveExistingData is a required field
 	PreserveExistingData *bool `type:"boolean" required:"true"`
@@ -5375,7 +6371,44 @@ func (s *CreateStorediSCSIVolumeInput) Validate() error {
 	return nil
 }
 
+// SetDiskId sets the DiskId field's value.
+func (s *CreateStorediSCSIVolumeInput) SetDiskId(v string) *CreateStorediSCSIVolumeInput {
+	s.DiskId = &v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *CreateStorediSCSIVolumeInput) SetGatewayARN(v string) *CreateStorediSCSIVolumeInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetNetworkInterfaceId sets the NetworkInterfaceId field's value.
+func (s *CreateStorediSCSIVolumeInput) SetNetworkInterfaceId(v string) *CreateStorediSCSIVolumeInput {
+	s.NetworkInterfaceId = &v
+	return s
+}
+
+// SetPreserveExistingData sets the PreserveExistingData field's value.
+func (s *CreateStorediSCSIVolumeInput) SetPreserveExistingData(v bool) *CreateStorediSCSIVolumeInput {
+	s.PreserveExistingData = &v
+	return s
+}
+
+// SetSnapshotId sets the SnapshotId field's value.
+func (s *CreateStorediSCSIVolumeInput) SetSnapshotId(v string) *CreateStorediSCSIVolumeInput {
+	s.SnapshotId = &v
+	return s
+}
+
+// SetTargetName sets the TargetName field's value.
+func (s *CreateStorediSCSIVolumeInput) SetTargetName(v string) *CreateStorediSCSIVolumeInput {
+	s.TargetName = &v
+	return s
+}
+
 // A JSON object containing the following fields:
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateStorediSCSIVolumeOutput
 type CreateStorediSCSIVolumeOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -5400,7 +6433,26 @@ func (s CreateStorediSCSIVolumeOutput) GoString() string {
 	return s.String()
 }
 
+// SetTargetARN sets the TargetARN field's value.
+func (s *CreateStorediSCSIVolumeOutput) SetTargetARN(v string) *CreateStorediSCSIVolumeOutput {
+	s.TargetARN = &v
+	return s
+}
+
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *CreateStorediSCSIVolumeOutput) SetVolumeARN(v string) *CreateStorediSCSIVolumeOutput {
+	s.VolumeARN = &v
+	return s
+}
+
+// SetVolumeSizeInBytes sets the VolumeSizeInBytes field's value.
+func (s *CreateStorediSCSIVolumeOutput) SetVolumeSizeInBytes(v int64) *CreateStorediSCSIVolumeOutput {
+	s.VolumeSizeInBytes = &v
+	return s
+}
+
 // CreateTapeWithBarcodeInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateTapeWithBarcodeInput
 type CreateTapeWithBarcodeInput struct {
 	_ struct{} `type:"structure"`
 
@@ -5459,7 +6511,26 @@ func (s *CreateTapeWithBarcodeInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *CreateTapeWithBarcodeInput) SetGatewayARN(v string) *CreateTapeWithBarcodeInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetTapeBarcode sets the TapeBarcode field's value.
+func (s *CreateTapeWithBarcodeInput) SetTapeBarcode(v string) *CreateTapeWithBarcodeInput {
+	s.TapeBarcode = &v
+	return s
+}
+
+// SetTapeSizeInBytes sets the TapeSizeInBytes field's value.
+func (s *CreateTapeWithBarcodeInput) SetTapeSizeInBytes(v int64) *CreateTapeWithBarcodeInput {
+	s.TapeSizeInBytes = &v
+	return s
+}
+
 // CreateTapeOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateTapeWithBarcodeOutput
 type CreateTapeWithBarcodeOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -5478,7 +6549,14 @@ func (s CreateTapeWithBarcodeOutput) GoString() string {
 	return s.String()
 }
 
+// SetTapeARN sets the TapeARN field's value.
+func (s *CreateTapeWithBarcodeOutput) SetTapeARN(v string) *CreateTapeWithBarcodeOutput {
+	s.TapeARN = &v
+	return s
+}
+
 // CreateTapesInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateTapesInput
 type CreateTapesInput struct {
 	_ struct{} `type:"structure"`
 
@@ -5566,7 +6644,38 @@ func (s *CreateTapesInput) Validate() error {
 	return nil
 }
 
+// SetClientToken sets the ClientToken field's value.
+func (s *CreateTapesInput) SetClientToken(v string) *CreateTapesInput {
+	s.ClientToken = &v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *CreateTapesInput) SetGatewayARN(v string) *CreateTapesInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetNumTapesToCreate sets the NumTapesToCreate field's value.
+func (s *CreateTapesInput) SetNumTapesToCreate(v int64) *CreateTapesInput {
+	s.NumTapesToCreate = &v
+	return s
+}
+
+// SetTapeBarcodePrefix sets the TapeBarcodePrefix field's value.
+func (s *CreateTapesInput) SetTapeBarcodePrefix(v string) *CreateTapesInput {
+	s.TapeBarcodePrefix = &v
+	return s
+}
+
+// SetTapeSizeInBytes sets the TapeSizeInBytes field's value.
+func (s *CreateTapesInput) SetTapeSizeInBytes(v int64) *CreateTapesInput {
+	s.TapeSizeInBytes = &v
+	return s
+}
+
 // CreateTapeOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/CreateTapesOutput
 type CreateTapesOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -5585,9 +6694,24 @@ func (s CreateTapesOutput) GoString() string {
 	return s.String()
 }
 
+// SetTapeARNs sets the TapeARNs field's value.
+func (s *CreateTapesOutput) SetTapeARNs(v []*string) *CreateTapesOutput {
+	s.TapeARNs = v
+	return s
+}
+
+// A JSON object containing the following fields:
+//
+//    * DeleteBandwidthRateLimitInput$BandwidthType
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteBandwidthRateLimitInput
 type DeleteBandwidthRateLimitInput struct {
 	_ struct{} `type:"structure"`
 
+	// One of the BandwidthType values that indicates the gateway bandwidth rate
+	// limit to delete.
+	//
+	// Valid Values: Upload, Download, All.
+	//
 	// BandwidthType is a required field
 	BandwidthType *string `min:"3" type:"string" required:"true"`
 
@@ -5630,8 +6754,21 @@ func (s *DeleteBandwidthRateLimitInput) Validate() error {
 	return nil
 }
 
+// SetBandwidthType sets the BandwidthType field's value.
+func (s *DeleteBandwidthRateLimitInput) SetBandwidthType(v string) *DeleteBandwidthRateLimitInput {
+	s.BandwidthType = &v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DeleteBandwidthRateLimitInput) SetGatewayARN(v string) *DeleteBandwidthRateLimitInput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing the of the gateway whose bandwidth rate information
 // was deleted.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteBandwidthRateLimitOutput
 type DeleteBandwidthRateLimitOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -5650,11 +6787,18 @@ func (s DeleteBandwidthRateLimitOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DeleteBandwidthRateLimitOutput) SetGatewayARN(v string) *DeleteBandwidthRateLimitOutput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing one or more of the following fields:
 //
-//    DeleteChapCredentialsInput$InitiatorName
+//    * DeleteChapCredentialsInput$InitiatorName
 //
-//    DeleteChapCredentialsInput$TargetARN
+//    * DeleteChapCredentialsInput$TargetARN
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteChapCredentialsInput
 type DeleteChapCredentialsInput struct {
 	_ struct{} `type:"structure"`
 
@@ -5702,7 +6846,20 @@ func (s *DeleteChapCredentialsInput) Validate() error {
 	return nil
 }
 
+// SetInitiatorName sets the InitiatorName field's value.
+func (s *DeleteChapCredentialsInput) SetInitiatorName(v string) *DeleteChapCredentialsInput {
+	s.InitiatorName = &v
+	return s
+}
+
+// SetTargetARN sets the TargetARN field's value.
+func (s *DeleteChapCredentialsInput) SetTargetARN(v string) *DeleteChapCredentialsInput {
+	s.TargetARN = &v
+	return s
+}
+
 // A JSON object containing the following fields:
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteChapCredentialsOutput
 type DeleteChapCredentialsOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -5723,7 +6880,88 @@ func (s DeleteChapCredentialsOutput) GoString() string {
 	return s.String()
 }
 
+// SetInitiatorName sets the InitiatorName field's value.
+func (s *DeleteChapCredentialsOutput) SetInitiatorName(v string) *DeleteChapCredentialsOutput {
+	s.InitiatorName = &v
+	return s
+}
+
+// SetTargetARN sets the TargetARN field's value.
+func (s *DeleteChapCredentialsOutput) SetTargetARN(v string) *DeleteChapCredentialsOutput {
+	s.TargetARN = &v
+	return s
+}
+
+// DeleteFileShareInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteFileShareInput
+type DeleteFileShareInput struct {
+	_ struct{} `type:"structure"`
+
+	// The Amazon Resource Name (ARN) of the file share to be deleted.
+	//
+	// FileShareARN is a required field
+	FileShareARN *string `min:"50" type:"string" required:"true"`
+}
+
+// String returns the string representation
+func (s DeleteFileShareInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s DeleteFileShareInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *DeleteFileShareInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "DeleteFileShareInput"}
+	if s.FileShareARN == nil {
+		invalidParams.Add(request.NewErrParamRequired("FileShareARN"))
+	}
+	if s.FileShareARN != nil && len(*s.FileShareARN) < 50 {
+		invalidParams.Add(request.NewErrParamMinLen("FileShareARN", 50))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetFileShareARN sets the FileShareARN field's value.
+func (s *DeleteFileShareInput) SetFileShareARN(v string) *DeleteFileShareInput {
+	s.FileShareARN = &v
+	return s
+}
+
+// DeleteFileShareOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteFileShareOutput
+type DeleteFileShareOutput struct {
+	_ struct{} `type:"structure"`
+
+	// The Amazon Resource Name (ARN) of the deleted file share.
+	FileShareARN *string `min:"50" type:"string"`
+}
+
+// String returns the string representation
+func (s DeleteFileShareOutput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s DeleteFileShareOutput) GoString() string {
+	return s.String()
+}
+
+// SetFileShareARN sets the FileShareARN field's value.
+func (s *DeleteFileShareOutput) SetFileShareARN(v string) *DeleteFileShareOutput {
+	s.FileShareARN = &v
+	return s
+}
+
 // A JSON object containing the id of the gateway to delete.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteGatewayInput
 type DeleteGatewayInput struct {
 	_ struct{} `type:"structure"`
 
@@ -5760,7 +6998,14 @@ func (s *DeleteGatewayInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DeleteGatewayInput) SetGatewayARN(v string) *DeleteGatewayInput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing the id of the deleted gateway.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteGatewayOutput
 type DeleteGatewayOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -5779,6 +7024,13 @@ func (s DeleteGatewayOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DeleteGatewayOutput) SetGatewayARN(v string) *DeleteGatewayOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteSnapshotScheduleInput
 type DeleteSnapshotScheduleInput struct {
 	_ struct{} `type:"structure"`
 
@@ -5812,6 +7064,13 @@ func (s *DeleteSnapshotScheduleInput) Validate() error {
 	return nil
 }
 
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *DeleteSnapshotScheduleInput) SetVolumeARN(v string) *DeleteSnapshotScheduleInput {
+	s.VolumeARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteSnapshotScheduleOutput
 type DeleteSnapshotScheduleOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -5828,7 +7087,14 @@ func (s DeleteSnapshotScheduleOutput) GoString() string {
 	return s.String()
 }
 
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *DeleteSnapshotScheduleOutput) SetVolumeARN(v string) *DeleteSnapshotScheduleOutput {
+	s.VolumeARN = &v
+	return s
+}
+
 // DeleteTapeArchiveInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteTapeArchiveInput
 type DeleteTapeArchiveInput struct {
 	_ struct{} `type:"structure"`
 
@@ -5865,7 +7131,14 @@ func (s *DeleteTapeArchiveInput) Validate() error {
 	return nil
 }
 
+// SetTapeARN sets the TapeARN field's value.
+func (s *DeleteTapeArchiveInput) SetTapeARN(v string) *DeleteTapeArchiveInput {
+	s.TapeARN = &v
+	return s
+}
+
 // DeleteTapeArchiveOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteTapeArchiveOutput
 type DeleteTapeArchiveOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -5884,7 +7157,14 @@ func (s DeleteTapeArchiveOutput) GoString() string {
 	return s.String()
 }
 
+// SetTapeARN sets the TapeARN field's value.
+func (s *DeleteTapeArchiveOutput) SetTapeARN(v string) *DeleteTapeArchiveOutput {
+	s.TapeARN = &v
+	return s
+}
+
 // DeleteTapeInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteTapeInput
 type DeleteTapeInput struct {
 	_ struct{} `type:"structure"`
 
@@ -5933,7 +7213,20 @@ func (s *DeleteTapeInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DeleteTapeInput) SetGatewayARN(v string) *DeleteTapeInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetTapeARN sets the TapeARN field's value.
+func (s *DeleteTapeInput) SetTapeARN(v string) *DeleteTapeInput {
+	s.TapeARN = &v
+	return s
+}
+
 // DeleteTapeOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteTapeOutput
 type DeleteTapeOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -5951,7 +7244,14 @@ func (s DeleteTapeOutput) GoString() string {
 	return s.String()
 }
 
+// SetTapeARN sets the TapeARN field's value.
+func (s *DeleteTapeOutput) SetTapeARN(v string) *DeleteTapeOutput {
+	s.TapeARN = &v
+	return s
+}
+
 // A JSON object containing the DeleteVolumeInput$VolumeARN to delete.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteVolumeInput
 type DeleteVolumeInput struct {
 	_ struct{} `type:"structure"`
 
@@ -5988,7 +7288,14 @@ func (s *DeleteVolumeInput) Validate() error {
 	return nil
 }
 
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *DeleteVolumeInput) SetVolumeARN(v string) *DeleteVolumeInput {
+	s.VolumeARN = &v
+	return s
+}
+
 // A JSON object containing the of the storage volume that was deleted
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeleteVolumeOutput
 type DeleteVolumeOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -6007,7 +7314,14 @@ func (s DeleteVolumeOutput) GoString() string {
 	return s.String()
 }
 
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *DeleteVolumeOutput) SetVolumeARN(v string) *DeleteVolumeOutput {
+	s.VolumeARN = &v
+	return s
+}
+
 // A JSON object containing the of the gateway.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeBandwidthRateLimitInput
 type DescribeBandwidthRateLimitInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6044,7 +7358,14 @@ func (s *DescribeBandwidthRateLimitInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeBandwidthRateLimitInput) SetGatewayARN(v string) *DescribeBandwidthRateLimitInput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing the following fields:
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeBandwidthRateLimitOutput
 type DescribeBandwidthRateLimitOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -6071,6 +7392,25 @@ func (s DescribeBandwidthRateLimitOutput) GoString() string {
 	return s.String()
 }
 
+// SetAverageDownloadRateLimitInBitsPerSec sets the AverageDownloadRateLimitInBitsPerSec field's value.
+func (s *DescribeBandwidthRateLimitOutput) SetAverageDownloadRateLimitInBitsPerSec(v int64) *DescribeBandwidthRateLimitOutput {
+	s.AverageDownloadRateLimitInBitsPerSec = &v
+	return s
+}
+
+// SetAverageUploadRateLimitInBitsPerSec sets the AverageUploadRateLimitInBitsPerSec field's value.
+func (s *DescribeBandwidthRateLimitOutput) SetAverageUploadRateLimitInBitsPerSec(v int64) *DescribeBandwidthRateLimitOutput {
+	s.AverageUploadRateLimitInBitsPerSec = &v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeBandwidthRateLimitOutput) SetGatewayARN(v string) *DescribeBandwidthRateLimitOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeCacheInput
 type DescribeCacheInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6107,6 +7447,13 @@ func (s *DescribeCacheInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeCacheInput) SetGatewayARN(v string) *DescribeCacheInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeCacheOutput
 type DescribeCacheOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -6137,6 +7484,49 @@ func (s DescribeCacheOutput) GoString() string {
 	return s.String()
 }
 
+// SetCacheAllocatedInBytes sets the CacheAllocatedInBytes field's value.
+func (s *DescribeCacheOutput) SetCacheAllocatedInBytes(v int64) *DescribeCacheOutput {
+	s.CacheAllocatedInBytes = &v
+	return s
+}
+
+// SetCacheDirtyPercentage sets the CacheDirtyPercentage field's value.
+func (s *DescribeCacheOutput) SetCacheDirtyPercentage(v float64) *DescribeCacheOutput {
+	s.CacheDirtyPercentage = &v
+	return s
+}
+
+// SetCacheHitPercentage sets the CacheHitPercentage field's value.
+func (s *DescribeCacheOutput) SetCacheHitPercentage(v float64) *DescribeCacheOutput {
+	s.CacheHitPercentage = &v
+	return s
+}
+
+// SetCacheMissPercentage sets the CacheMissPercentage field's value.
+func (s *DescribeCacheOutput) SetCacheMissPercentage(v float64) *DescribeCacheOutput {
+	s.CacheMissPercentage = &v
+	return s
+}
+
+// SetCacheUsedPercentage sets the CacheUsedPercentage field's value.
+func (s *DescribeCacheOutput) SetCacheUsedPercentage(v float64) *DescribeCacheOutput {
+	s.CacheUsedPercentage = &v
+	return s
+}
+
+// SetDiskIds sets the DiskIds field's value.
+func (s *DescribeCacheOutput) SetDiskIds(v []*string) *DescribeCacheOutput {
+	s.DiskIds = v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeCacheOutput) SetGatewayARN(v string) *DescribeCacheOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeCachediSCSIVolumesInput
 type DescribeCachediSCSIVolumesInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6167,7 +7557,14 @@ func (s *DescribeCachediSCSIVolumesInput) Validate() error {
 	return nil
 }
 
+// SetVolumeARNs sets the VolumeARNs field's value.
+func (s *DescribeCachediSCSIVolumesInput) SetVolumeARNs(v []*string) *DescribeCachediSCSIVolumesInput {
+	s.VolumeARNs = v
+	return s
+}
+
 // A JSON object containing the following fields:
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeCachediSCSIVolumesOutput
 type DescribeCachediSCSIVolumesOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -6186,8 +7583,15 @@ func (s DescribeCachediSCSIVolumesOutput) GoString() string {
 	return s.String()
 }
 
+// SetCachediSCSIVolumes sets the CachediSCSIVolumes field's value.
+func (s *DescribeCachediSCSIVolumesOutput) SetCachediSCSIVolumes(v []*CachediSCSIVolume) *DescribeCachediSCSIVolumesOutput {
+	s.CachediSCSIVolumes = v
+	return s
+}
+
 // A JSON object containing the Amazon Resource Name (ARN) of the iSCSI volume
 // target.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeChapCredentialsInput
 type DescribeChapCredentialsInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6224,7 +7628,14 @@ func (s *DescribeChapCredentialsInput) Validate() error {
 	return nil
 }
 
+// SetTargetARN sets the TargetARN field's value.
+func (s *DescribeChapCredentialsInput) SetTargetARN(v string) *DescribeChapCredentialsInput {
+	s.TargetARN = &v
+	return s
+}
+
 // A JSON object containing a .
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeChapCredentialsOutput
 type DescribeChapCredentialsOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -6233,16 +7644,16 @@ type DescribeChapCredentialsOutput struct {
 	// pair. If no CHAP credentials are set, an empty array is returned. CHAP credential
 	// information is provided in a JSON object with the following fields:
 	//
-	//    InitiatorName: The iSCSI initiator that connects to the target.
+	//    * InitiatorName: The iSCSI initiator that connects to the target.
 	//
-	//    SecretToAuthenticateInitiator: The secret key that the initiator (for
-	// example, the Windows client) must provide to participate in mutual CHAP with
-	// the target.
+	//    * SecretToAuthenticateInitiator: The secret key that the initiator (for
+	//    example, the Windows client) must provide to participate in mutual CHAP
+	//    with the target.
 	//
-	//    SecretToAuthenticateTarget: The secret key that the target must provide
-	// to participate in mutual CHAP with the initiator (e.g. Windows client).
+	//    * SecretToAuthenticateTarget: The secret key that the target must provide
+	//    to participate in mutual CHAP with the initiator (e.g. Windows client).
 	//
-	//    TargetARN: The Amazon Resource Name (ARN) of the storage volume.
+	//    * TargetARN: The Amazon Resource Name (ARN) of the storage volume.
 	ChapCredentials []*ChapInfo `type:"list"`
 }
 
@@ -6256,7 +7667,14 @@ func (s DescribeChapCredentialsOutput) GoString() string {
 	return s.String()
 }
 
+// SetChapCredentials sets the ChapCredentials field's value.
+func (s *DescribeChapCredentialsOutput) SetChapCredentials(v []*ChapInfo) *DescribeChapCredentialsOutput {
+	s.ChapCredentials = v
+	return s
+}
+
 // A JSON object containing the id of the gateway.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeGatewayInformationInput
 type DescribeGatewayInformationInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6293,7 +7711,14 @@ func (s *DescribeGatewayInformationInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeGatewayInformationInput) SetGatewayARN(v string) *DescribeGatewayInformationInput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing the following fields:
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeGatewayInformationOutput
 type DescribeGatewayInformationOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -6343,7 +7768,62 @@ func (s DescribeGatewayInformationOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeGatewayInformationOutput) SetGatewayARN(v string) *DescribeGatewayInformationOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetGatewayId sets the GatewayId field's value.
+func (s *DescribeGatewayInformationOutput) SetGatewayId(v string) *DescribeGatewayInformationOutput {
+	s.GatewayId = &v
+	return s
+}
+
+// SetGatewayName sets the GatewayName field's value.
+func (s *DescribeGatewayInformationOutput) SetGatewayName(v string) *DescribeGatewayInformationOutput {
+	s.GatewayName = &v
+	return s
+}
+
+// SetGatewayNetworkInterfaces sets the GatewayNetworkInterfaces field's value.
+func (s *DescribeGatewayInformationOutput) SetGatewayNetworkInterfaces(v []*NetworkInterface) *DescribeGatewayInformationOutput {
+	s.GatewayNetworkInterfaces = v
+	return s
+}
+
+// SetGatewayState sets the GatewayState field's value.
+func (s *DescribeGatewayInformationOutput) SetGatewayState(v string) *DescribeGatewayInformationOutput {
+	s.GatewayState = &v
+	return s
+}
+
+// SetGatewayTimezone sets the GatewayTimezone field's value.
+func (s *DescribeGatewayInformationOutput) SetGatewayTimezone(v string) *DescribeGatewayInformationOutput {
+	s.GatewayTimezone = &v
+	return s
+}
+
+// SetGatewayType sets the GatewayType field's value.
+func (s *DescribeGatewayInformationOutput) SetGatewayType(v string) *DescribeGatewayInformationOutput {
+	s.GatewayType = &v
+	return s
+}
+
+// SetLastSoftwareUpdate sets the LastSoftwareUpdate field's value.
+func (s *DescribeGatewayInformationOutput) SetLastSoftwareUpdate(v string) *DescribeGatewayInformationOutput {
+	s.LastSoftwareUpdate = &v
+	return s
+}
+
+// SetNextUpdateAvailabilityDate sets the NextUpdateAvailabilityDate field's value.
+func (s *DescribeGatewayInformationOutput) SetNextUpdateAvailabilityDate(v string) *DescribeGatewayInformationOutput {
+	s.NextUpdateAvailabilityDate = &v
+	return s
+}
+
 // A JSON object containing the of the gateway.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeMaintenanceStartTimeInput
 type DescribeMaintenanceStartTimeInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6380,17 +7860,42 @@ func (s *DescribeMaintenanceStartTimeInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeMaintenanceStartTimeInput) SetGatewayARN(v string) *DescribeMaintenanceStartTimeInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// A JSON object containing the following fields:
+//
+//    * DescribeMaintenanceStartTimeOutput$DayOfWeek
+//
+//    * DescribeMaintenanceStartTimeOutput$HourOfDay
+//
+//    * DescribeMaintenanceStartTimeOutput$MinuteOfHour
+//
+//    * DescribeMaintenanceStartTimeOutput$Timezone
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeMaintenanceStartTimeOutput
 type DescribeMaintenanceStartTimeOutput struct {
 	_ struct{} `type:"structure"`
 
+	// An ordinal number between 0 and 6 that represents the day of the week, where
+	// 0 represents Sunday and 6 represents Saturday. The day of week is in the
+	// time zone of the gateway.
 	DayOfWeek *int64 `type:"integer"`
 
 	// The Amazon Resource Name (ARN) of the gateway. Use the ListGateways operation
 	// to return a list of gateways for your account and region.
 	GatewayARN *string `min:"50" type:"string"`
 
+	// The hour component of the maintenance start time represented as hh, where
+	// hh is the hour (0 to 23). The hour of the day is in the time zone of the
+	// gateway.
 	HourOfDay *int64 `type:"integer"`
 
+	// The minute component of the maintenance start time represented as mm, where
+	// mm is the minute (0 to 59). The minute of the hour is in the time zone of
+	// the gateway.
 	MinuteOfHour *int64 `type:"integer"`
 
 	Timezone *string `min:"3" type:"string"`
@@ -6406,8 +7911,108 @@ func (s DescribeMaintenanceStartTimeOutput) GoString() string {
 	return s.String()
 }
 
+// SetDayOfWeek sets the DayOfWeek field's value.
+func (s *DescribeMaintenanceStartTimeOutput) SetDayOfWeek(v int64) *DescribeMaintenanceStartTimeOutput {
+	s.DayOfWeek = &v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeMaintenanceStartTimeOutput) SetGatewayARN(v string) *DescribeMaintenanceStartTimeOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetHourOfDay sets the HourOfDay field's value.
+func (s *DescribeMaintenanceStartTimeOutput) SetHourOfDay(v int64) *DescribeMaintenanceStartTimeOutput {
+	s.HourOfDay = &v
+	return s
+}
+
+// SetMinuteOfHour sets the MinuteOfHour field's value.
+func (s *DescribeMaintenanceStartTimeOutput) SetMinuteOfHour(v int64) *DescribeMaintenanceStartTimeOutput {
+	s.MinuteOfHour = &v
+	return s
+}
+
+// SetTimezone sets the Timezone field's value.
+func (s *DescribeMaintenanceStartTimeOutput) SetTimezone(v string) *DescribeMaintenanceStartTimeOutput {
+	s.Timezone = &v
+	return s
+}
+
+// DescribeNFSFileSharesInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeNFSFileSharesInput
+type DescribeNFSFileSharesInput struct {
+	_ struct{} `type:"structure"`
+
+	// An array containing the Amazon Resource Name (ARN) of each file share to
+	// be described.
+	//
+	// FileShareARNList is a required field
+	FileShareARNList []*string `min:"1" type:"list" required:"true"`
+}
+
+// String returns the string representation
+func (s DescribeNFSFileSharesInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s DescribeNFSFileSharesInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *DescribeNFSFileSharesInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "DescribeNFSFileSharesInput"}
+	if s.FileShareARNList == nil {
+		invalidParams.Add(request.NewErrParamRequired("FileShareARNList"))
+	}
+	if s.FileShareARNList != nil && len(s.FileShareARNList) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("FileShareARNList", 1))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetFileShareARNList sets the FileShareARNList field's value.
+func (s *DescribeNFSFileSharesInput) SetFileShareARNList(v []*string) *DescribeNFSFileSharesInput {
+	s.FileShareARNList = v
+	return s
+}
+
+// DescribeNFSFileSharesOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeNFSFileSharesOutput
+type DescribeNFSFileSharesOutput struct {
+	_ struct{} `type:"structure"`
+
+	// An array containing a description for each requested file share.
+	NFSFileShareInfoList []*NFSFileShareInfo `type:"list"`
+}
+
+// String returns the string representation
+func (s DescribeNFSFileSharesOutput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s DescribeNFSFileSharesOutput) GoString() string {
+	return s.String()
+}
+
+// SetNFSFileShareInfoList sets the NFSFileShareInfoList field's value.
+func (s *DescribeNFSFileSharesOutput) SetNFSFileShareInfoList(v []*NFSFileShareInfo) *DescribeNFSFileSharesOutput {
+	s.NFSFileShareInfoList = v
+	return s
+}
+
 // A JSON object containing the DescribeSnapshotScheduleInput$VolumeARN of the
 // volume.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeSnapshotScheduleInput
 type DescribeSnapshotScheduleInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6444,6 +8049,13 @@ func (s *DescribeSnapshotScheduleInput) Validate() error {
 	return nil
 }
 
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *DescribeSnapshotScheduleInput) SetVolumeARN(v string) *DescribeSnapshotScheduleInput {
+	s.VolumeARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeSnapshotScheduleOutput
 type DescribeSnapshotScheduleOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -6468,7 +8080,38 @@ func (s DescribeSnapshotScheduleOutput) GoString() string {
 	return s.String()
 }
 
+// SetDescription sets the Description field's value.
+func (s *DescribeSnapshotScheduleOutput) SetDescription(v string) *DescribeSnapshotScheduleOutput {
+	s.Description = &v
+	return s
+}
+
+// SetRecurrenceInHours sets the RecurrenceInHours field's value.
+func (s *DescribeSnapshotScheduleOutput) SetRecurrenceInHours(v int64) *DescribeSnapshotScheduleOutput {
+	s.RecurrenceInHours = &v
+	return s
+}
+
+// SetStartAt sets the StartAt field's value.
+func (s *DescribeSnapshotScheduleOutput) SetStartAt(v int64) *DescribeSnapshotScheduleOutput {
+	s.StartAt = &v
+	return s
+}
+
+// SetTimezone sets the Timezone field's value.
+func (s *DescribeSnapshotScheduleOutput) SetTimezone(v string) *DescribeSnapshotScheduleOutput {
+	s.Timezone = &v
+	return s
+}
+
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *DescribeSnapshotScheduleOutput) SetVolumeARN(v string) *DescribeSnapshotScheduleOutput {
+	s.VolumeARN = &v
+	return s
+}
+
 // A JSON object containing a list of DescribeStorediSCSIVolumesInput$VolumeARNs.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeStorediSCSIVolumesInput
 type DescribeStorediSCSIVolumesInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6503,6 +8146,13 @@ func (s *DescribeStorediSCSIVolumesInput) Validate() error {
 	return nil
 }
 
+// SetVolumeARNs sets the VolumeARNs field's value.
+func (s *DescribeStorediSCSIVolumesInput) SetVolumeARNs(v []*string) *DescribeStorediSCSIVolumesInput {
+	s.VolumeARNs = v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeStorediSCSIVolumesOutput
 type DescribeStorediSCSIVolumesOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -6519,7 +8169,14 @@ func (s DescribeStorediSCSIVolumesOutput) GoString() string {
 	return s.String()
 }
 
+// SetStorediSCSIVolumes sets the StorediSCSIVolumes field's value.
+func (s *DescribeStorediSCSIVolumesOutput) SetStorediSCSIVolumes(v []*StorediSCSIVolume) *DescribeStorediSCSIVolumesOutput {
+	s.StorediSCSIVolumes = v
+	return s
+}
+
 // DescribeTapeArchivesInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeTapeArchivesInput
 type DescribeTapeArchivesInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6562,7 +8219,26 @@ func (s *DescribeTapeArchivesInput) Validate() error {
 	return nil
 }
 
+// SetLimit sets the Limit field's value.
+func (s *DescribeTapeArchivesInput) SetLimit(v int64) *DescribeTapeArchivesInput {
+	s.Limit = &v
+	return s
+}
+
+// SetMarker sets the Marker field's value.
+func (s *DescribeTapeArchivesInput) SetMarker(v string) *DescribeTapeArchivesInput {
+	s.Marker = &v
+	return s
+}
+
+// SetTapeARNs sets the TapeARNs field's value.
+func (s *DescribeTapeArchivesInput) SetTapeARNs(v []*string) *DescribeTapeArchivesInput {
+	s.TapeARNs = v
+	return s
+}
+
 // DescribeTapeArchivesOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeTapeArchivesOutput
 type DescribeTapeArchivesOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -6590,7 +8266,20 @@ func (s DescribeTapeArchivesOutput) GoString() string {
 	return s.String()
 }
 
+// SetMarker sets the Marker field's value.
+func (s *DescribeTapeArchivesOutput) SetMarker(v string) *DescribeTapeArchivesOutput {
+	s.Marker = &v
+	return s
+}
+
+// SetTapeArchives sets the TapeArchives field's value.
+func (s *DescribeTapeArchivesOutput) SetTapeArchives(v []*TapeArchive) *DescribeTapeArchivesOutput {
+	s.TapeArchives = v
+	return s
+}
+
 // DescribeTapeRecoveryPointsInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeTapeRecoveryPointsInput
 type DescribeTapeRecoveryPointsInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6641,7 +8330,26 @@ func (s *DescribeTapeRecoveryPointsInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeTapeRecoveryPointsInput) SetGatewayARN(v string) *DescribeTapeRecoveryPointsInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetLimit sets the Limit field's value.
+func (s *DescribeTapeRecoveryPointsInput) SetLimit(v int64) *DescribeTapeRecoveryPointsInput {
+	s.Limit = &v
+	return s
+}
+
+// SetMarker sets the Marker field's value.
+func (s *DescribeTapeRecoveryPointsInput) SetMarker(v string) *DescribeTapeRecoveryPointsInput {
+	s.Marker = &v
+	return s
+}
+
 // DescribeTapeRecoveryPointsOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeTapeRecoveryPointsOutput
 type DescribeTapeRecoveryPointsOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -6671,7 +8379,26 @@ func (s DescribeTapeRecoveryPointsOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeTapeRecoveryPointsOutput) SetGatewayARN(v string) *DescribeTapeRecoveryPointsOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetMarker sets the Marker field's value.
+func (s *DescribeTapeRecoveryPointsOutput) SetMarker(v string) *DescribeTapeRecoveryPointsOutput {
+	s.Marker = &v
+	return s
+}
+
+// SetTapeRecoveryPointInfos sets the TapeRecoveryPointInfos field's value.
+func (s *DescribeTapeRecoveryPointsOutput) SetTapeRecoveryPointInfos(v []*TapeRecoveryPointInfo) *DescribeTapeRecoveryPointsOutput {
+	s.TapeRecoveryPointInfos = v
+	return s
+}
+
 // DescribeTapesInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeTapesInput
 type DescribeTapesInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6732,15 +8459,40 @@ func (s *DescribeTapesInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeTapesInput) SetGatewayARN(v string) *DescribeTapesInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetLimit sets the Limit field's value.
+func (s *DescribeTapesInput) SetLimit(v int64) *DescribeTapesInput {
+	s.Limit = &v
+	return s
+}
+
+// SetMarker sets the Marker field's value.
+func (s *DescribeTapesInput) SetMarker(v string) *DescribeTapesInput {
+	s.Marker = &v
+	return s
+}
+
+// SetTapeARNs sets the TapeARNs field's value.
+func (s *DescribeTapesInput) SetTapeARNs(v []*string) *DescribeTapesInput {
+	s.TapeARNs = v
+	return s
+}
+
 // DescribeTapesOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeTapesOutput
 type DescribeTapesOutput struct {
 	_ struct{} `type:"structure"`
 
 	// An opaque string which can be used as part of a subsequent DescribeTapes
 	// call to retrieve the next page of results.
 	//
-	// If a response does not contain a marker, then there are no more results
-	// to be retrieved.
+	// If a response does not contain a marker, then there are no more results to
+	// be retrieved.
 	Marker *string `min:"1" type:"string"`
 
 	// An array of virtual tape descriptions.
@@ -6757,6 +8509,19 @@ func (s DescribeTapesOutput) GoString() string {
 	return s.String()
 }
 
+// SetMarker sets the Marker field's value.
+func (s *DescribeTapesOutput) SetMarker(v string) *DescribeTapesOutput {
+	s.Marker = &v
+	return s
+}
+
+// SetTapes sets the Tapes field's value.
+func (s *DescribeTapesOutput) SetTapes(v []*Tape) *DescribeTapesOutput {
+	s.Tapes = v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeUploadBufferInput
 type DescribeUploadBufferInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6793,6 +8558,13 @@ func (s *DescribeUploadBufferInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeUploadBufferInput) SetGatewayARN(v string) *DescribeUploadBufferInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeUploadBufferOutput
 type DescribeUploadBufferOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -6817,7 +8589,32 @@ func (s DescribeUploadBufferOutput) GoString() string {
 	return s.String()
 }
 
+// SetDiskIds sets the DiskIds field's value.
+func (s *DescribeUploadBufferOutput) SetDiskIds(v []*string) *DescribeUploadBufferOutput {
+	s.DiskIds = v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeUploadBufferOutput) SetGatewayARN(v string) *DescribeUploadBufferOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetUploadBufferAllocatedInBytes sets the UploadBufferAllocatedInBytes field's value.
+func (s *DescribeUploadBufferOutput) SetUploadBufferAllocatedInBytes(v int64) *DescribeUploadBufferOutput {
+	s.UploadBufferAllocatedInBytes = &v
+	return s
+}
+
+// SetUploadBufferUsedInBytes sets the UploadBufferUsedInBytes field's value.
+func (s *DescribeUploadBufferOutput) SetUploadBufferUsedInBytes(v int64) *DescribeUploadBufferOutput {
+	s.UploadBufferUsedInBytes = &v
+	return s
+}
+
 // DescribeVTLDevicesInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeVTLDevicesInput
 type DescribeVTLDevicesInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6876,7 +8673,32 @@ func (s *DescribeVTLDevicesInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeVTLDevicesInput) SetGatewayARN(v string) *DescribeVTLDevicesInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetLimit sets the Limit field's value.
+func (s *DescribeVTLDevicesInput) SetLimit(v int64) *DescribeVTLDevicesInput {
+	s.Limit = &v
+	return s
+}
+
+// SetMarker sets the Marker field's value.
+func (s *DescribeVTLDevicesInput) SetMarker(v string) *DescribeVTLDevicesInput {
+	s.Marker = &v
+	return s
+}
+
+// SetVTLDeviceARNs sets the VTLDeviceARNs field's value.
+func (s *DescribeVTLDevicesInput) SetVTLDeviceARNs(v []*string) *DescribeVTLDevicesInput {
+	s.VTLDeviceARNs = v
+	return s
+}
+
 // DescribeVTLDevicesOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeVTLDevicesOutput
 type DescribeVTLDevicesOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -6905,7 +8727,26 @@ func (s DescribeVTLDevicesOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeVTLDevicesOutput) SetGatewayARN(v string) *DescribeVTLDevicesOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetMarker sets the Marker field's value.
+func (s *DescribeVTLDevicesOutput) SetMarker(v string) *DescribeVTLDevicesOutput {
+	s.Marker = &v
+	return s
+}
+
+// SetVTLDevices sets the VTLDevices field's value.
+func (s *DescribeVTLDevicesOutput) SetVTLDevices(v []*VTLDevice) *DescribeVTLDevicesOutput {
+	s.VTLDevices = v
+	return s
+}
+
 // A JSON object containing the of the gateway.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeWorkingStorageInput
 type DescribeWorkingStorageInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6942,7 +8783,14 @@ func (s *DescribeWorkingStorageInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeWorkingStorageInput) SetGatewayARN(v string) *DescribeWorkingStorageInput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing the following fields:
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DescribeWorkingStorageOutput
 type DescribeWorkingStorageOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -6975,7 +8823,32 @@ func (s DescribeWorkingStorageOutput) GoString() string {
 	return s.String()
 }
 
+// SetDiskIds sets the DiskIds field's value.
+func (s *DescribeWorkingStorageOutput) SetDiskIds(v []*string) *DescribeWorkingStorageOutput {
+	s.DiskIds = v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DescribeWorkingStorageOutput) SetGatewayARN(v string) *DescribeWorkingStorageOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetWorkingStorageAllocatedInBytes sets the WorkingStorageAllocatedInBytes field's value.
+func (s *DescribeWorkingStorageOutput) SetWorkingStorageAllocatedInBytes(v int64) *DescribeWorkingStorageOutput {
+	s.WorkingStorageAllocatedInBytes = &v
+	return s
+}
+
+// SetWorkingStorageUsedInBytes sets the WorkingStorageUsedInBytes field's value.
+func (s *DescribeWorkingStorageOutput) SetWorkingStorageUsedInBytes(v int64) *DescribeWorkingStorageOutput {
+	s.WorkingStorageUsedInBytes = &v
+	return s
+}
+
 // Lists iSCSI information about a VTL device.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DeviceiSCSIAttributes
 type DeviceiSCSIAttributes struct {
 	_ struct{} `type:"structure"`
 
@@ -7003,7 +8876,32 @@ func (s DeviceiSCSIAttributes) GoString() string {
 	return s.String()
 }
 
+// SetChapEnabled sets the ChapEnabled field's value.
+func (s *DeviceiSCSIAttributes) SetChapEnabled(v bool) *DeviceiSCSIAttributes {
+	s.ChapEnabled = &v
+	return s
+}
+
+// SetNetworkInterfaceId sets the NetworkInterfaceId field's value.
+func (s *DeviceiSCSIAttributes) SetNetworkInterfaceId(v string) *DeviceiSCSIAttributes {
+	s.NetworkInterfaceId = &v
+	return s
+}
+
+// SetNetworkInterfacePort sets the NetworkInterfacePort field's value.
+func (s *DeviceiSCSIAttributes) SetNetworkInterfacePort(v int64) *DeviceiSCSIAttributes {
+	s.NetworkInterfacePort = &v
+	return s
+}
+
+// SetTargetARN sets the TargetARN field's value.
+func (s *DeviceiSCSIAttributes) SetTargetARN(v string) *DeviceiSCSIAttributes {
+	s.TargetARN = &v
+	return s
+}
+
 // DisableGatewayInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DisableGatewayInput
 type DisableGatewayInput struct {
 	_ struct{} `type:"structure"`
 
@@ -7040,7 +8938,14 @@ func (s *DisableGatewayInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DisableGatewayInput) SetGatewayARN(v string) *DisableGatewayInput {
+	s.GatewayARN = &v
+	return s
+}
+
 // DisableGatewayOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/DisableGatewayOutput
 type DisableGatewayOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -7058,6 +8963,13 @@ func (s DisableGatewayOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *DisableGatewayOutput) SetGatewayARN(v string) *DisableGatewayOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/Disk
 type Disk struct {
 	_ struct{} `type:"structure"`
 
@@ -7086,9 +8998,52 @@ func (s Disk) GoString() string {
 	return s.String()
 }
 
+// SetDiskAllocationResource sets the DiskAllocationResource field's value.
+func (s *Disk) SetDiskAllocationResource(v string) *Disk {
+	s.DiskAllocationResource = &v
+	return s
+}
+
+// SetDiskAllocationType sets the DiskAllocationType field's value.
+func (s *Disk) SetDiskAllocationType(v string) *Disk {
+	s.DiskAllocationType = &v
+	return s
+}
+
+// SetDiskId sets the DiskId field's value.
+func (s *Disk) SetDiskId(v string) *Disk {
+	s.DiskId = &v
+	return s
+}
+
+// SetDiskNode sets the DiskNode field's value.
+func (s *Disk) SetDiskNode(v string) *Disk {
+	s.DiskNode = &v
+	return s
+}
+
+// SetDiskPath sets the DiskPath field's value.
+func (s *Disk) SetDiskPath(v string) *Disk {
+	s.DiskPath = &v
+	return s
+}
+
+// SetDiskSizeInBytes sets the DiskSizeInBytes field's value.
+func (s *Disk) SetDiskSizeInBytes(v int64) *Disk {
+	s.DiskSizeInBytes = &v
+	return s
+}
+
+// SetDiskStatus sets the DiskStatus field's value.
+func (s *Disk) SetDiskStatus(v string) *Disk {
+	s.DiskStatus = &v
+	return s
+}
+
 // Provides additional information about an error that was returned by the service
 // as an or. See the errorCode and errorDetails members for more information
 // about the error.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/StorageGatewayError
 type Error struct {
 	_ struct{} `type:"structure"`
 
@@ -7109,7 +9064,74 @@ func (s Error) GoString() string {
 	return s.String()
 }
 
+// SetErrorCode sets the ErrorCode field's value.
+func (s *Error) SetErrorCode(v string) *Error {
+	s.ErrorCode = &v
+	return s
+}
+
+// SetErrorDetails sets the ErrorDetails field's value.
+func (s *Error) SetErrorDetails(v map[string]*string) *Error {
+	s.ErrorDetails = v
+	return s
+}
+
+// Describes a file share.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/FileShareInfo
+type FileShareInfo struct {
+	_ struct{} `type:"structure"`
+
+	// The Amazon Resource Name (ARN) of the file share.
+	FileShareARN *string `min:"50" type:"string"`
+
+	// The ID of the file share.
+	FileShareId *string `min:"12" type:"string"`
+
+	// The status of the file share. Possible values are CREATING, UPDATING, AVAILABLE
+	// and DELETING.
+	FileShareStatus *string `min:"3" type:"string"`
+
+	// The Amazon Resource Name (ARN) of the gateway. Use the ListGateways operation
+	// to return a list of gateways for your account and region.
+	GatewayARN *string `min:"50" type:"string"`
+}
+
+// String returns the string representation
+func (s FileShareInfo) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s FileShareInfo) GoString() string {
+	return s.String()
+}
+
+// SetFileShareARN sets the FileShareARN field's value.
+func (s *FileShareInfo) SetFileShareARN(v string) *FileShareInfo {
+	s.FileShareARN = &v
+	return s
+}
+
+// SetFileShareId sets the FileShareId field's value.
+func (s *FileShareInfo) SetFileShareId(v string) *FileShareInfo {
+	s.FileShareId = &v
+	return s
+}
+
+// SetFileShareStatus sets the FileShareStatus field's value.
+func (s *FileShareInfo) SetFileShareStatus(v string) *FileShareInfo {
+	s.FileShareStatus = &v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *FileShareInfo) SetGatewayARN(v string) *FileShareInfo {
+	s.GatewayARN = &v
+	return s
+}
+
 // Describes a gateway object.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/GatewayInfo
 type GatewayInfo struct {
 	_ struct{} `type:"structure"`
 
@@ -7144,11 +9166,154 @@ func (s GatewayInfo) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *GatewayInfo) SetGatewayARN(v string) *GatewayInfo {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetGatewayId sets the GatewayId field's value.
+func (s *GatewayInfo) SetGatewayId(v string) *GatewayInfo {
+	s.GatewayId = &v
+	return s
+}
+
+// SetGatewayName sets the GatewayName field's value.
+func (s *GatewayInfo) SetGatewayName(v string) *GatewayInfo {
+	s.GatewayName = &v
+	return s
+}
+
+// SetGatewayOperationalState sets the GatewayOperationalState field's value.
+func (s *GatewayInfo) SetGatewayOperationalState(v string) *GatewayInfo {
+	s.GatewayOperationalState = &v
+	return s
+}
+
+// SetGatewayType sets the GatewayType field's value.
+func (s *GatewayInfo) SetGatewayType(v string) *GatewayInfo {
+	s.GatewayType = &v
+	return s
+}
+
+// ListFileShareInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListFileSharesInput
+type ListFileSharesInput struct {
+	_ struct{} `type:"structure"`
+
+	// The Amazon resource Name (ARN) of the gateway whose file shares you want
+	// to list. If this field is not present, all file shares under your account
+	// are listed.
+	GatewayARN *string `min:"50" type:"string"`
+
+	// The maximum number of file shares to return in the response. The value must
+	// be an integer with a value greater than zero. Optional.
+	Limit *int64 `min:"1" type:"integer"`
+
+	// Opaque pagination token returned from a previous ListFileShares operation.
+	// If present, Marker specifies where to continue the list from after a previous
+	// call to ListFileShares. Optional.
+	Marker *string `min:"1" type:"string"`
+}
+
+// String returns the string representation
+func (s ListFileSharesInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s ListFileSharesInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *ListFileSharesInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "ListFileSharesInput"}
+	if s.GatewayARN != nil && len(*s.GatewayARN) < 50 {
+		invalidParams.Add(request.NewErrParamMinLen("GatewayARN", 50))
+	}
+	if s.Limit != nil && *s.Limit < 1 {
+		invalidParams.Add(request.NewErrParamMinValue("Limit", 1))
+	}
+	if s.Marker != nil && len(*s.Marker) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("Marker", 1))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *ListFileSharesInput) SetGatewayARN(v string) *ListFileSharesInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetLimit sets the Limit field's value.
+func (s *ListFileSharesInput) SetLimit(v int64) *ListFileSharesInput {
+	s.Limit = &v
+	return s
+}
+
+// SetMarker sets the Marker field's value.
+func (s *ListFileSharesInput) SetMarker(v string) *ListFileSharesInput {
+	s.Marker = &v
+	return s
+}
+
+// ListFileShareOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListFileSharesOutput
+type ListFileSharesOutput struct {
+	_ struct{} `type:"structure"`
+
+	// An array of information about the file gateway's file shares.
+	FileShareInfoList []*FileShareInfo `type:"list"`
+
+	// If the request includes Marker, the response returns that value in this field.
+	Marker *string `min:"1" type:"string"`
+
+	// If a value is present, there are more file shares to return. In a subsequent
+	// request, use NextMarker as the value for Marker to retrieve the next set
+	// of file shares.
+	NextMarker *string `min:"1" type:"string"`
+}
+
+// String returns the string representation
+func (s ListFileSharesOutput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s ListFileSharesOutput) GoString() string {
+	return s.String()
+}
+
+// SetFileShareInfoList sets the FileShareInfoList field's value.
+func (s *ListFileSharesOutput) SetFileShareInfoList(v []*FileShareInfo) *ListFileSharesOutput {
+	s.FileShareInfoList = v
+	return s
+}
+
+// SetMarker sets the Marker field's value.
+func (s *ListFileSharesOutput) SetMarker(v string) *ListFileSharesOutput {
+	s.Marker = &v
+	return s
+}
+
+// SetNextMarker sets the NextMarker field's value.
+func (s *ListFileSharesOutput) SetNextMarker(v string) *ListFileSharesOutput {
+	s.NextMarker = &v
+	return s
+}
+
 // A JSON object containing zero or more of the following fields:
 //
-//    ListGatewaysInput$Limit
+//    * ListGatewaysInput$Limit
 //
-//    ListGatewaysInput$Marker
+//    * ListGatewaysInput$Marker
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListGatewaysInput
 type ListGatewaysInput struct {
 	_ struct{} `type:"structure"`
 
@@ -7187,6 +9352,19 @@ func (s *ListGatewaysInput) Validate() error {
 	return nil
 }
 
+// SetLimit sets the Limit field's value.
+func (s *ListGatewaysInput) SetLimit(v int64) *ListGatewaysInput {
+	s.Limit = &v
+	return s
+}
+
+// SetMarker sets the Marker field's value.
+func (s *ListGatewaysInput) SetMarker(v string) *ListGatewaysInput {
+	s.Marker = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListGatewaysOutput
 type ListGatewaysOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -7205,7 +9383,20 @@ func (s ListGatewaysOutput) GoString() string {
 	return s.String()
 }
 
+// SetGateways sets the Gateways field's value.
+func (s *ListGatewaysOutput) SetGateways(v []*GatewayInfo) *ListGatewaysOutput {
+	s.Gateways = v
+	return s
+}
+
+// SetMarker sets the Marker field's value.
+func (s *ListGatewaysOutput) SetMarker(v string) *ListGatewaysOutput {
+	s.Marker = &v
+	return s
+}
+
 // A JSON object containing the of the gateway.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListLocalDisksInput
 type ListLocalDisksInput struct {
 	_ struct{} `type:"structure"`
 
@@ -7242,6 +9433,13 @@ func (s *ListLocalDisksInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *ListLocalDisksInput) SetGatewayARN(v string) *ListLocalDisksInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListLocalDisksOutput
 type ListLocalDisksOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -7262,7 +9460,20 @@ func (s ListLocalDisksOutput) GoString() string {
 	return s.String()
 }
 
+// SetDisks sets the Disks field's value.
+func (s *ListLocalDisksOutput) SetDisks(v []*Disk) *ListLocalDisksOutput {
+	s.Disks = v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *ListLocalDisksOutput) SetGatewayARN(v string) *ListLocalDisksOutput {
+	s.GatewayARN = &v
+	return s
+}
+
 // ListTagsForResourceInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListTagsForResourceInput
 type ListTagsForResourceInput struct {
 	_ struct{} `type:"structure"`
 
@@ -7313,7 +9524,26 @@ func (s *ListTagsForResourceInput) Validate() error {
 	return nil
 }
 
+// SetLimit sets the Limit field's value.
+func (s *ListTagsForResourceInput) SetLimit(v int64) *ListTagsForResourceInput {
+	s.Limit = &v
+	return s
+}
+
+// SetMarker sets the Marker field's value.
+func (s *ListTagsForResourceInput) SetMarker(v string) *ListTagsForResourceInput {
+	s.Marker = &v
+	return s
+}
+
+// SetResourceARN sets the ResourceARN field's value.
+func (s *ListTagsForResourceInput) SetResourceARN(v string) *ListTagsForResourceInput {
+	s.ResourceARN = &v
+	return s
+}
+
 // ListTagsForResourceOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListTagsForResourceOutput
 type ListTagsForResourceOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -7339,13 +9569,32 @@ func (s ListTagsForResourceOutput) GoString() string {
 	return s.String()
 }
 
+// SetMarker sets the Marker field's value.
+func (s *ListTagsForResourceOutput) SetMarker(v string) *ListTagsForResourceOutput {
+	s.Marker = &v
+	return s
+}
+
+// SetResourceARN sets the ResourceARN field's value.
+func (s *ListTagsForResourceOutput) SetResourceARN(v string) *ListTagsForResourceOutput {
+	s.ResourceARN = &v
+	return s
+}
+
+// SetTags sets the Tags field's value.
+func (s *ListTagsForResourceOutput) SetTags(v []*Tag) *ListTagsForResourceOutput {
+	s.Tags = v
+	return s
+}
+
 // A JSON object that contains one or more of the following fields:
 //
-//    ListTapesInput$Limit
+//    * ListTapesInput$Limit
 //
-//    ListTapesInput$Marker
+//    * ListTapesInput$Marker
 //
-//    ListTapesInput$TapeARNs
+//    * ListTapesInput$TapeARNs
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListTapesInput
 type ListTapesInput struct {
 	_ struct{} `type:"structure"`
 
@@ -7388,11 +9637,30 @@ func (s *ListTapesInput) Validate() error {
 	return nil
 }
 
+// SetLimit sets the Limit field's value.
+func (s *ListTapesInput) SetLimit(v int64) *ListTapesInput {
+	s.Limit = &v
+	return s
+}
+
+// SetMarker sets the Marker field's value.
+func (s *ListTapesInput) SetMarker(v string) *ListTapesInput {
+	s.Marker = &v
+	return s
+}
+
+// SetTapeARNs sets the TapeARNs field's value.
+func (s *ListTapesInput) SetTapeARNs(v []*string) *ListTapesInput {
+	s.TapeARNs = v
+	return s
+}
+
 // A JSON object containing the following fields:
 //
-//    ListTapesOutput$Marker
+//    * ListTapesOutput$Marker
 //
-//    ListTapesOutput$VolumeInfos
+//    * ListTapesOutput$VolumeInfos
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListTapesOutput
 type ListTapesOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -7418,7 +9686,20 @@ func (s ListTapesOutput) GoString() string {
 	return s.String()
 }
 
+// SetMarker sets the Marker field's value.
+func (s *ListTapesOutput) SetMarker(v string) *ListTapesOutput {
+	s.Marker = &v
+	return s
+}
+
+// SetTapeInfos sets the TapeInfos field's value.
+func (s *ListTapesOutput) SetTapeInfos(v []*TapeInfo) *ListTapesOutput {
+	s.TapeInfos = v
+	return s
+}
+
 // ListVolumeInitiatorsInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListVolumeInitiatorsInput
 type ListVolumeInitiatorsInput struct {
 	_ struct{} `type:"structure"`
 
@@ -7455,7 +9736,14 @@ func (s *ListVolumeInitiatorsInput) Validate() error {
 	return nil
 }
 
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *ListVolumeInitiatorsInput) SetVolumeARN(v string) *ListVolumeInitiatorsInput {
+	s.VolumeARN = &v
+	return s
+}
+
 // ListVolumeInitiatorsOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListVolumeInitiatorsOutput
 type ListVolumeInitiatorsOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -7474,6 +9762,13 @@ func (s ListVolumeInitiatorsOutput) GoString() string {
 	return s.String()
 }
 
+// SetInitiators sets the Initiators field's value.
+func (s *ListVolumeInitiatorsOutput) SetInitiators(v []*string) *ListVolumeInitiatorsOutput {
+	s.Initiators = v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListVolumeRecoveryPointsInput
 type ListVolumeRecoveryPointsInput struct {
 	_ struct{} `type:"structure"`
 
@@ -7510,6 +9805,13 @@ func (s *ListVolumeRecoveryPointsInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *ListVolumeRecoveryPointsInput) SetGatewayARN(v string) *ListVolumeRecoveryPointsInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListVolumeRecoveryPointsOutput
 type ListVolumeRecoveryPointsOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -7530,11 +9832,24 @@ func (s ListVolumeRecoveryPointsOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *ListVolumeRecoveryPointsOutput) SetGatewayARN(v string) *ListVolumeRecoveryPointsOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetVolumeRecoveryPointInfos sets the VolumeRecoveryPointInfos field's value.
+func (s *ListVolumeRecoveryPointsOutput) SetVolumeRecoveryPointInfos(v []*VolumeRecoveryPointInfo) *ListVolumeRecoveryPointsOutput {
+	s.VolumeRecoveryPointInfos = v
+	return s
+}
+
 // A JSON object that contains one or more of the following fields:
 //
-//    ListVolumesInput$Limit
+//    * ListVolumesInput$Limit
 //
-//    ListVolumesInput$Marker
+//    * ListVolumesInput$Marker
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListVolumesInput
 type ListVolumesInput struct {
 	_ struct{} `type:"structure"`
 
@@ -7581,6 +9896,25 @@ func (s *ListVolumesInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *ListVolumesInput) SetGatewayARN(v string) *ListVolumesInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetLimit sets the Limit field's value.
+func (s *ListVolumesInput) SetLimit(v int64) *ListVolumesInput {
+	s.Limit = &v
+	return s
+}
+
+// SetMarker sets the Marker field's value.
+func (s *ListVolumesInput) SetMarker(v string) *ListVolumesInput {
+	s.Marker = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ListVolumesOutput
 type ListVolumesOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -7603,7 +9937,237 @@ func (s ListVolumesOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *ListVolumesOutput) SetGatewayARN(v string) *ListVolumesOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetMarker sets the Marker field's value.
+func (s *ListVolumesOutput) SetMarker(v string) *ListVolumesOutput {
+	s.Marker = &v
+	return s
+}
+
+// SetVolumeInfos sets the VolumeInfos field's value.
+func (s *ListVolumesOutput) SetVolumeInfos(v []*VolumeInfo) *ListVolumesOutput {
+	s.VolumeInfos = v
+	return s
+}
+
+// Describes file share default values. Files and folders stored as Amazon S3
+// objects in S3 buckets don't, by default, have Unix file permissions assigned
+// to them. Upon discovery in an S3 bucket by Storage Gateway, the S3 objects
+// that represent files and folders are assigned these default Unix permissions.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/NFSFileShareDefaults
+type NFSFileShareDefaults struct {
+	_ struct{} `type:"structure"`
+
+	// The Unix directory mode in the form "nnnn". For example, "0666" represents
+	// the default access mode for all directories inside the file share. The default
+	// value is 0777.
+	DirectoryMode *string `min:"1" type:"string"`
+
+	// The Unix file mode in the form "nnnn". For example, "0666" represents the
+	// default file mode inside the file share. The default value is 0666.
+	FileMode *string `min:"1" type:"string"`
+
+	// The default group ID for the file share (unless the files have another group
+	// ID specified). The default value is nfsnobody.
+	GroupId *int64 `type:"long"`
+
+	// The default owner ID for files in the file share (unless the files have another
+	// owner ID specified). The default value is nfsnobody.
+	OwnerId *int64 `type:"long"`
+}
+
+// String returns the string representation
+func (s NFSFileShareDefaults) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s NFSFileShareDefaults) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *NFSFileShareDefaults) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "NFSFileShareDefaults"}
+	if s.DirectoryMode != nil && len(*s.DirectoryMode) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DirectoryMode", 1))
+	}
+	if s.FileMode != nil && len(*s.FileMode) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("FileMode", 1))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetDirectoryMode sets the DirectoryMode field's value.
+func (s *NFSFileShareDefaults) SetDirectoryMode(v string) *NFSFileShareDefaults {
+	s.DirectoryMode = &v
+	return s
+}
+
+// SetFileMode sets the FileMode field's value.
+func (s *NFSFileShareDefaults) SetFileMode(v string) *NFSFileShareDefaults {
+	s.FileMode = &v
+	return s
+}
+
+// SetGroupId sets the GroupId field's value.
+func (s *NFSFileShareDefaults) SetGroupId(v int64) *NFSFileShareDefaults {
+	s.GroupId = &v
+	return s
+}
+
+// SetOwnerId sets the OwnerId field's value.
+func (s *NFSFileShareDefaults) SetOwnerId(v int64) *NFSFileShareDefaults {
+	s.OwnerId = &v
+	return s
+}
+
+// The Unix file permissions and ownership information assigned, by default,
+// to native S3 objects when Storage Gateway discovers them in S3 buckets.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/NFSFileShareInfo
+type NFSFileShareInfo struct {
+	_ struct{} `type:"structure"`
+
+	// The list of clients that are allowed to access the file gateway. The list
+	// must contain either valid IP addresses or valid CIDR blocks.
+	ClientList []*string `min:"1" type:"list"`
+
+	// The default storage class for objects put into an Amazon S3 bucket by file
+	// gateway. Possible values are S3_STANDARD or S3_STANDARD_IA. If this field
+	// is not populated, the default value S3_STANDARD is used. Optional.
+	DefaultStorageClass *string `min:"5" type:"string"`
+
+	// The Amazon Resource Name (ARN) of the file share.
+	FileShareARN *string `min:"50" type:"string"`
+
+	// The ID of the file share.
+	FileShareId *string `min:"12" type:"string"`
+
+	// The status of the file share. Possible values are CREATING, UPDATING, AVAILABLE
+	// and DELETING.
+	FileShareStatus *string `min:"3" type:"string"`
+
+	// The Amazon Resource Name (ARN) of the gateway. Use the ListGateways operation
+	// to return a list of gateways for your account and region.
+	GatewayARN *string `min:"50" type:"string"`
+
+	// True to use Amazon S3 server side encryption with your own KMS key, or false
+	// to use a key managed by Amazon S3. Optional.
+	KMSEncrypted *bool `type:"boolean"`
+
+	// The ARN of the KMS key used for Amazon S3 server side encryption.
+	KMSKey *string `min:"20" type:"string"`
+
+	// The ARN of the backend storage used for storing file data.
+	LocationARN *string `min:"16" type:"string"`
+
+	// Describes file share default values. Files and folders stored as Amazon S3
+	// objects in S3 buckets don't, by default, have Unix file permissions assigned
+	// to them. Upon discovery in an S3 bucket by Storage Gateway, the S3 objects
+	// that represent files and folders are assigned these default Unix permissions.
+	NFSFileShareDefaults *NFSFileShareDefaults `type:"structure"`
+
+	// The file share path used by the NFS client to identify the mount point.
+	Path *string `type:"string"`
+
+	// The ARN of the IAM role that file gateway assumes when it accesses the underlying
+	// storage.
+	Role *string `min:"20" type:"string"`
+}
+
+// String returns the string representation
+func (s NFSFileShareInfo) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s NFSFileShareInfo) GoString() string {
+	return s.String()
+}
+
+// SetClientList sets the ClientList field's value.
+func (s *NFSFileShareInfo) SetClientList(v []*string) *NFSFileShareInfo {
+	s.ClientList = v
+	return s
+}
+
+// SetDefaultStorageClass sets the DefaultStorageClass field's value.
+func (s *NFSFileShareInfo) SetDefaultStorageClass(v string) *NFSFileShareInfo {
+	s.DefaultStorageClass = &v
+	return s
+}
+
+// SetFileShareARN sets the FileShareARN field's value.
+func (s *NFSFileShareInfo) SetFileShareARN(v string) *NFSFileShareInfo {
+	s.FileShareARN = &v
+	return s
+}
+
+// SetFileShareId sets the FileShareId field's value.
+func (s *NFSFileShareInfo) SetFileShareId(v string) *NFSFileShareInfo {
+	s.FileShareId = &v
+	return s
+}
+
+// SetFileShareStatus sets the FileShareStatus field's value.
+func (s *NFSFileShareInfo) SetFileShareStatus(v string) *NFSFileShareInfo {
+	s.FileShareStatus = &v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *NFSFileShareInfo) SetGatewayARN(v string) *NFSFileShareInfo {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetKMSEncrypted sets the KMSEncrypted field's value.
+func (s *NFSFileShareInfo) SetKMSEncrypted(v bool) *NFSFileShareInfo {
+	s.KMSEncrypted = &v
+	return s
+}
+
+// SetKMSKey sets the KMSKey field's value.
+func (s *NFSFileShareInfo) SetKMSKey(v string) *NFSFileShareInfo {
+	s.KMSKey = &v
+	return s
+}
+
+// SetLocationARN sets the LocationARN field's value.
+func (s *NFSFileShareInfo) SetLocationARN(v string) *NFSFileShareInfo {
+	s.LocationARN = &v
+	return s
+}
+
+// SetNFSFileShareDefaults sets the NFSFileShareDefaults field's value.
+func (s *NFSFileShareInfo) SetNFSFileShareDefaults(v *NFSFileShareDefaults) *NFSFileShareInfo {
+	s.NFSFileShareDefaults = v
+	return s
+}
+
+// SetPath sets the Path field's value.
+func (s *NFSFileShareInfo) SetPath(v string) *NFSFileShareInfo {
+	s.Path = &v
+	return s
+}
+
+// SetRole sets the Role field's value.
+func (s *NFSFileShareInfo) SetRole(v string) *NFSFileShareInfo {
+	s.Role = &v
+	return s
+}
+
 // Describes a gateway's network interface.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/NetworkInterface
 type NetworkInterface struct {
 	_ struct{} `type:"structure"`
 
@@ -7630,7 +10194,26 @@ func (s NetworkInterface) GoString() string {
 	return s.String()
 }
 
+// SetIpv4Address sets the Ipv4Address field's value.
+func (s *NetworkInterface) SetIpv4Address(v string) *NetworkInterface {
+	s.Ipv4Address = &v
+	return s
+}
+
+// SetIpv6Address sets the Ipv6Address field's value.
+func (s *NetworkInterface) SetIpv6Address(v string) *NetworkInterface {
+	s.Ipv6Address = &v
+	return s
+}
+
+// SetMacAddress sets the MacAddress field's value.
+func (s *NetworkInterface) SetMacAddress(v string) *NetworkInterface {
+	s.MacAddress = &v
+	return s
+}
+
 // RemoveTagsFromResourceInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/RemoveTagsFromResourceInput
 type RemoveTagsFromResourceInput struct {
 	_ struct{} `type:"structure"`
 
@@ -7676,7 +10259,20 @@ func (s *RemoveTagsFromResourceInput) Validate() error {
 	return nil
 }
 
+// SetResourceARN sets the ResourceARN field's value.
+func (s *RemoveTagsFromResourceInput) SetResourceARN(v string) *RemoveTagsFromResourceInput {
+	s.ResourceARN = &v
+	return s
+}
+
+// SetTagKeys sets the TagKeys field's value.
+func (s *RemoveTagsFromResourceInput) SetTagKeys(v []*string) *RemoveTagsFromResourceInput {
+	s.TagKeys = v
+	return s
+}
+
 // RemoveTagsFromResourceOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/RemoveTagsFromResourceOutput
 type RemoveTagsFromResourceOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -7695,6 +10291,13 @@ func (s RemoveTagsFromResourceOutput) GoString() string {
 	return s.String()
 }
 
+// SetResourceARN sets the ResourceARN field's value.
+func (s *RemoveTagsFromResourceOutput) SetResourceARN(v string) *RemoveTagsFromResourceOutput {
+	s.ResourceARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ResetCacheInput
 type ResetCacheInput struct {
 	_ struct{} `type:"structure"`
 
@@ -7731,6 +10334,13 @@ func (s *ResetCacheInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *ResetCacheInput) SetGatewayARN(v string) *ResetCacheInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ResetCacheOutput
 type ResetCacheOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -7749,7 +10359,14 @@ func (s ResetCacheOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *ResetCacheOutput) SetGatewayARN(v string) *ResetCacheOutput {
+	s.GatewayARN = &v
+	return s
+}
+
 // RetrieveTapeArchiveInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/RetrieveTapeArchiveInput
 type RetrieveTapeArchiveInput struct {
 	_ struct{} `type:"structure"`
 
@@ -7757,8 +10374,8 @@ type RetrieveTapeArchiveInput struct {
 	// tape to. Use the ListGateways operation to return a list of gateways for
 	// your account and region.
 	//
-	// You retrieve archived virtual tapes to only one gateway and the gateway
-	// must be a gateway-VTL.
+	// You retrieve archived virtual tapes to only one gateway and the gateway must
+	// be a gateway-VTL.
 	//
 	// GatewayARN is a required field
 	GatewayARN *string `min:"50" type:"string" required:"true"`
@@ -7802,7 +10419,20 @@ func (s *RetrieveTapeArchiveInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *RetrieveTapeArchiveInput) SetGatewayARN(v string) *RetrieveTapeArchiveInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetTapeARN sets the TapeARN field's value.
+func (s *RetrieveTapeArchiveInput) SetTapeARN(v string) *RetrieveTapeArchiveInput {
+	s.TapeARN = &v
+	return s
+}
+
 // RetrieveTapeArchiveOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/RetrieveTapeArchiveOutput
 type RetrieveTapeArchiveOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -7820,7 +10450,14 @@ func (s RetrieveTapeArchiveOutput) GoString() string {
 	return s.String()
 }
 
+// SetTapeARN sets the TapeARN field's value.
+func (s *RetrieveTapeArchiveOutput) SetTapeARN(v string) *RetrieveTapeArchiveOutput {
+	s.TapeARN = &v
+	return s
+}
+
 // RetrieveTapeRecoveryPointInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/RetrieveTapeRecoveryPointInput
 type RetrieveTapeRecoveryPointInput struct {
 	_ struct{} `type:"structure"`
 
@@ -7869,7 +10506,20 @@ func (s *RetrieveTapeRecoveryPointInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *RetrieveTapeRecoveryPointInput) SetGatewayARN(v string) *RetrieveTapeRecoveryPointInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetTapeARN sets the TapeARN field's value.
+func (s *RetrieveTapeRecoveryPointInput) SetTapeARN(v string) *RetrieveTapeRecoveryPointInput {
+	s.TapeARN = &v
+	return s
+}
+
 // RetrieveTapeRecoveryPointOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/RetrieveTapeRecoveryPointOutput
 type RetrieveTapeRecoveryPointOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -7888,7 +10538,14 @@ func (s RetrieveTapeRecoveryPointOutput) GoString() string {
 	return s.String()
 }
 
+// SetTapeARN sets the TapeARN field's value.
+func (s *RetrieveTapeRecoveryPointOutput) SetTapeARN(v string) *RetrieveTapeRecoveryPointOutput {
+	s.TapeARN = &v
+	return s
+}
+
 // SetLocalConsolePasswordInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/SetLocalConsolePasswordInput
 type SetLocalConsolePasswordInput struct {
 	_ struct{} `type:"structure"`
 
@@ -7936,6 +10593,19 @@ func (s *SetLocalConsolePasswordInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *SetLocalConsolePasswordInput) SetGatewayARN(v string) *SetLocalConsolePasswordInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetLocalConsolePassword sets the LocalConsolePassword field's value.
+func (s *SetLocalConsolePasswordInput) SetLocalConsolePassword(v string) *SetLocalConsolePasswordInput {
+	s.LocalConsolePassword = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/SetLocalConsolePasswordOutput
 type SetLocalConsolePasswordOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -7954,7 +10624,14 @@ func (s SetLocalConsolePasswordOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *SetLocalConsolePasswordOutput) SetGatewayARN(v string) *SetLocalConsolePasswordOutput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing the of the gateway to shut down.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ShutdownGatewayInput
 type ShutdownGatewayInput struct {
 	_ struct{} `type:"structure"`
 
@@ -7991,7 +10668,14 @@ func (s *ShutdownGatewayInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *ShutdownGatewayInput) SetGatewayARN(v string) *ShutdownGatewayInput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing the of the gateway that was shut down.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/ShutdownGatewayOutput
 type ShutdownGatewayOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -8010,7 +10694,14 @@ func (s ShutdownGatewayOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *ShutdownGatewayOutput) SetGatewayARN(v string) *ShutdownGatewayOutput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing the of the gateway to start.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/StartGatewayInput
 type StartGatewayInput struct {
 	_ struct{} `type:"structure"`
 
@@ -8047,7 +10738,14 @@ func (s *StartGatewayInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *StartGatewayInput) SetGatewayARN(v string) *StartGatewayInput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing the of the gateway that was restarted.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/StartGatewayOutput
 type StartGatewayOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -8066,28 +10764,55 @@ func (s StartGatewayOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *StartGatewayOutput) SetGatewayARN(v string) *StartGatewayOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// Describes an iSCSI stored volume.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/StorediSCSIVolume
 type StorediSCSIVolume struct {
 	_ struct{} `type:"structure"`
 
+	CreatedDate *time.Time `type:"timestamp" timestampFormat:"unix"`
+
+	// Indicates if when the stored volume was created, existing data on the underlying
+	// local disk was preserved.
+	//
+	// Valid Values: true, false
 	PreservedExistingData *bool `type:"boolean"`
 
+	// If the stored volume was created from a snapshot, this field contains the
+	// snapshot ID used, e.g. snap-78e22663. Otherwise, this field is not included.
 	SourceSnapshotId *string `type:"string"`
 
+	// The Amazon Resource Name (ARN) of the storage volume.
 	VolumeARN *string `min:"50" type:"string"`
 
+	// The ID of the local disk that was specified in the CreateStorediSCSIVolume
+	// operation.
 	VolumeDiskId *string `min:"1" type:"string"`
 
+	// The unique identifier of the volume, e.g. vol-AE4B946D.
 	VolumeId *string `min:"12" type:"string"`
 
+	// Represents the percentage complete if the volume is restoring or bootstrapping
+	// that represents the percent of data transferred. This field does not appear
+	// in the response if the stored volume is not restoring or bootstrapping.
 	VolumeProgress *float64 `type:"double"`
 
+	// The size of the volume in bytes.
 	VolumeSizeInBytes *int64 `type:"long"`
 
+	// One of the VolumeStatus values that indicates the state of the storage volume.
 	VolumeStatus *string `min:"3" type:"string"`
 
+	// One of the VolumeType enumeration values describing the type of the volume.
 	VolumeType *string `min:"3" type:"string"`
 
-	// Lists iSCSI information about a volume.
+	// An VolumeiSCSIAttributes object that represents a collection of iSCSI attributes
+	// for one stored volume.
 	VolumeiSCSIAttributes *VolumeiSCSIAttributes `type:"structure"`
 }
 
@@ -8101,6 +10826,73 @@ func (s StorediSCSIVolume) GoString() string {
 	return s.String()
 }
 
+// SetCreatedDate sets the CreatedDate field's value.
+func (s *StorediSCSIVolume) SetCreatedDate(v time.Time) *StorediSCSIVolume {
+	s.CreatedDate = &v
+	return s
+}
+
+// SetPreservedExistingData sets the PreservedExistingData field's value.
+func (s *StorediSCSIVolume) SetPreservedExistingData(v bool) *StorediSCSIVolume {
+	s.PreservedExistingData = &v
+	return s
+}
+
+// SetSourceSnapshotId sets the SourceSnapshotId field's value.
+func (s *StorediSCSIVolume) SetSourceSnapshotId(v string) *StorediSCSIVolume {
+	s.SourceSnapshotId = &v
+	return s
+}
+
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *StorediSCSIVolume) SetVolumeARN(v string) *StorediSCSIVolume {
+	s.VolumeARN = &v
+	return s
+}
+
+// SetVolumeDiskId sets the VolumeDiskId field's value.
+func (s *StorediSCSIVolume) SetVolumeDiskId(v string) *StorediSCSIVolume {
+	s.VolumeDiskId = &v
+	return s
+}
+
+// SetVolumeId sets the VolumeId field's value.
+func (s *StorediSCSIVolume) SetVolumeId(v string) *StorediSCSIVolume {
+	s.VolumeId = &v
+	return s
+}
+
+// SetVolumeProgress sets the VolumeProgress field's value.
+func (s *StorediSCSIVolume) SetVolumeProgress(v float64) *StorediSCSIVolume {
+	s.VolumeProgress = &v
+	return s
+}
+
+// SetVolumeSizeInBytes sets the VolumeSizeInBytes field's value.
+func (s *StorediSCSIVolume) SetVolumeSizeInBytes(v int64) *StorediSCSIVolume {
+	s.VolumeSizeInBytes = &v
+	return s
+}
+
+// SetVolumeStatus sets the VolumeStatus field's value.
+func (s *StorediSCSIVolume) SetVolumeStatus(v string) *StorediSCSIVolume {
+	s.VolumeStatus = &v
+	return s
+}
+
+// SetVolumeType sets the VolumeType field's value.
+func (s *StorediSCSIVolume) SetVolumeType(v string) *StorediSCSIVolume {
+	s.VolumeType = &v
+	return s
+}
+
+// SetVolumeiSCSIAttributes sets the VolumeiSCSIAttributes field's value.
+func (s *StorediSCSIVolume) SetVolumeiSCSIAttributes(v *VolumeiSCSIAttributes) *StorediSCSIVolume {
+	s.VolumeiSCSIAttributes = v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/Tag
 type Tag struct {
 	_ struct{} `type:"structure"`
 
@@ -8140,7 +10932,20 @@ func (s *Tag) Validate() error {
 	return nil
 }
 
+// SetKey sets the Key field's value.
+func (s *Tag) SetKey(v string) *Tag {
+	s.Key = &v
+	return s
+}
+
+// SetValue sets the Value field's value.
+func (s *Tag) SetValue(v string) *Tag {
+	s.Value = &v
+	return s
+}
+
 // Describes a virtual tape object.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/Tape
 type Tape struct {
 	_ struct{} `type:"structure"`
 
@@ -8155,6 +10960,8 @@ type Tape struct {
 
 	// The barcode that identifies a specific virtual tape.
 	TapeBarcode *string `min:"7" type:"string"`
+
+	TapeCreatedDate *time.Time `type:"timestamp" timestampFormat:"unix"`
 
 	// The size, in bytes, of the virtual tape.
 	TapeSizeInBytes *int64 `type:"long"`
@@ -8177,7 +10984,50 @@ func (s Tape) GoString() string {
 	return s.String()
 }
 
+// SetProgress sets the Progress field's value.
+func (s *Tape) SetProgress(v float64) *Tape {
+	s.Progress = &v
+	return s
+}
+
+// SetTapeARN sets the TapeARN field's value.
+func (s *Tape) SetTapeARN(v string) *Tape {
+	s.TapeARN = &v
+	return s
+}
+
+// SetTapeBarcode sets the TapeBarcode field's value.
+func (s *Tape) SetTapeBarcode(v string) *Tape {
+	s.TapeBarcode = &v
+	return s
+}
+
+// SetTapeCreatedDate sets the TapeCreatedDate field's value.
+func (s *Tape) SetTapeCreatedDate(v time.Time) *Tape {
+	s.TapeCreatedDate = &v
+	return s
+}
+
+// SetTapeSizeInBytes sets the TapeSizeInBytes field's value.
+func (s *Tape) SetTapeSizeInBytes(v int64) *Tape {
+	s.TapeSizeInBytes = &v
+	return s
+}
+
+// SetTapeStatus sets the TapeStatus field's value.
+func (s *Tape) SetTapeStatus(v string) *Tape {
+	s.TapeStatus = &v
+	return s
+}
+
+// SetVTLDevice sets the VTLDevice field's value.
+func (s *Tape) SetVTLDevice(v string) *Tape {
+	s.VTLDevice = &v
+	return s
+}
+
 // Represents a virtual tape that is archived in the virtual tape shelf (VTS).
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/TapeArchive
 type TapeArchive struct {
 	_ struct{} `type:"structure"`
 
@@ -8199,6 +11049,8 @@ type TapeArchive struct {
 	// The barcode that identifies the archived virtual tape.
 	TapeBarcode *string `min:"7" type:"string"`
 
+	TapeCreatedDate *time.Time `type:"timestamp" timestampFormat:"unix"`
+
 	// The size, in bytes, of the archived virtual tape.
 	TapeSizeInBytes *int64 `type:"long"`
 
@@ -8216,7 +11068,50 @@ func (s TapeArchive) GoString() string {
 	return s.String()
 }
 
+// SetCompletionTime sets the CompletionTime field's value.
+func (s *TapeArchive) SetCompletionTime(v time.Time) *TapeArchive {
+	s.CompletionTime = &v
+	return s
+}
+
+// SetRetrievedTo sets the RetrievedTo field's value.
+func (s *TapeArchive) SetRetrievedTo(v string) *TapeArchive {
+	s.RetrievedTo = &v
+	return s
+}
+
+// SetTapeARN sets the TapeARN field's value.
+func (s *TapeArchive) SetTapeARN(v string) *TapeArchive {
+	s.TapeARN = &v
+	return s
+}
+
+// SetTapeBarcode sets the TapeBarcode field's value.
+func (s *TapeArchive) SetTapeBarcode(v string) *TapeArchive {
+	s.TapeBarcode = &v
+	return s
+}
+
+// SetTapeCreatedDate sets the TapeCreatedDate field's value.
+func (s *TapeArchive) SetTapeCreatedDate(v time.Time) *TapeArchive {
+	s.TapeCreatedDate = &v
+	return s
+}
+
+// SetTapeSizeInBytes sets the TapeSizeInBytes field's value.
+func (s *TapeArchive) SetTapeSizeInBytes(v int64) *TapeArchive {
+	s.TapeSizeInBytes = &v
+	return s
+}
+
+// SetTapeStatus sets the TapeStatus field's value.
+func (s *TapeArchive) SetTapeStatus(v string) *TapeArchive {
+	s.TapeStatus = &v
+	return s
+}
+
 // Describes a virtual tape.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/TapeInfo
 type TapeInfo struct {
 	_ struct{} `type:"structure"`
 
@@ -8247,7 +11142,38 @@ func (s TapeInfo) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *TapeInfo) SetGatewayARN(v string) *TapeInfo {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetTapeARN sets the TapeARN field's value.
+func (s *TapeInfo) SetTapeARN(v string) *TapeInfo {
+	s.TapeARN = &v
+	return s
+}
+
+// SetTapeBarcode sets the TapeBarcode field's value.
+func (s *TapeInfo) SetTapeBarcode(v string) *TapeInfo {
+	s.TapeBarcode = &v
+	return s
+}
+
+// SetTapeSizeInBytes sets the TapeSizeInBytes field's value.
+func (s *TapeInfo) SetTapeSizeInBytes(v int64) *TapeInfo {
+	s.TapeSizeInBytes = &v
+	return s
+}
+
+// SetTapeStatus sets the TapeStatus field's value.
+func (s *TapeInfo) SetTapeStatus(v string) *TapeInfo {
+	s.TapeStatus = &v
+	return s
+}
+
 // Describes a recovery point.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/TapeRecoveryPointInfo
 type TapeRecoveryPointInfo struct {
 	_ struct{} `type:"structure"`
 
@@ -8277,11 +11203,36 @@ func (s TapeRecoveryPointInfo) GoString() string {
 	return s.String()
 }
 
+// SetTapeARN sets the TapeARN field's value.
+func (s *TapeRecoveryPointInfo) SetTapeARN(v string) *TapeRecoveryPointInfo {
+	s.TapeARN = &v
+	return s
+}
+
+// SetTapeRecoveryPointTime sets the TapeRecoveryPointTime field's value.
+func (s *TapeRecoveryPointInfo) SetTapeRecoveryPointTime(v time.Time) *TapeRecoveryPointInfo {
+	s.TapeRecoveryPointTime = &v
+	return s
+}
+
+// SetTapeSizeInBytes sets the TapeSizeInBytes field's value.
+func (s *TapeRecoveryPointInfo) SetTapeSizeInBytes(v int64) *TapeRecoveryPointInfo {
+	s.TapeSizeInBytes = &v
+	return s
+}
+
+// SetTapeStatus sets the TapeStatus field's value.
+func (s *TapeRecoveryPointInfo) SetTapeStatus(v string) *TapeRecoveryPointInfo {
+	s.TapeStatus = &v
+	return s
+}
+
 // A JSON object containing one or more of the following fields:
 //
-//    UpdateBandwidthRateLimitInput$AverageDownloadRateLimitInBitsPerSec
+//    * UpdateBandwidthRateLimitInput$AverageDownloadRateLimitInBitsPerSec
 //
-//    UpdateBandwidthRateLimitInput$AverageUploadRateLimitInBitsPerSec
+//    * UpdateBandwidthRateLimitInput$AverageUploadRateLimitInBitsPerSec
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateBandwidthRateLimitInput
 type UpdateBandwidthRateLimitInput struct {
 	_ struct{} `type:"structure"`
 
@@ -8330,8 +11281,27 @@ func (s *UpdateBandwidthRateLimitInput) Validate() error {
 	return nil
 }
 
+// SetAverageDownloadRateLimitInBitsPerSec sets the AverageDownloadRateLimitInBitsPerSec field's value.
+func (s *UpdateBandwidthRateLimitInput) SetAverageDownloadRateLimitInBitsPerSec(v int64) *UpdateBandwidthRateLimitInput {
+	s.AverageDownloadRateLimitInBitsPerSec = &v
+	return s
+}
+
+// SetAverageUploadRateLimitInBitsPerSec sets the AverageUploadRateLimitInBitsPerSec field's value.
+func (s *UpdateBandwidthRateLimitInput) SetAverageUploadRateLimitInBitsPerSec(v int64) *UpdateBandwidthRateLimitInput {
+	s.AverageUploadRateLimitInBitsPerSec = &v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *UpdateBandwidthRateLimitInput) SetGatewayARN(v string) *UpdateBandwidthRateLimitInput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing the of the gateway whose throttle information was
 // updated.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateBandwidthRateLimitOutput
 type UpdateBandwidthRateLimitOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -8350,15 +11320,22 @@ func (s UpdateBandwidthRateLimitOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *UpdateBandwidthRateLimitOutput) SetGatewayARN(v string) *UpdateBandwidthRateLimitOutput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing one or more of the following fields:
 //
-//    UpdateChapCredentialsInput$InitiatorName
+//    * UpdateChapCredentialsInput$InitiatorName
 //
-//    UpdateChapCredentialsInput$SecretToAuthenticateInitiator
+//    * UpdateChapCredentialsInput$SecretToAuthenticateInitiator
 //
-//    UpdateChapCredentialsInput$SecretToAuthenticateTarget
+//    * UpdateChapCredentialsInput$SecretToAuthenticateTarget
 //
-//    UpdateChapCredentialsInput$TargetARN
+//    * UpdateChapCredentialsInput$TargetARN
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateChapCredentialsInput
 type UpdateChapCredentialsInput struct {
 	_ struct{} `type:"structure"`
 
@@ -8431,7 +11408,32 @@ func (s *UpdateChapCredentialsInput) Validate() error {
 	return nil
 }
 
+// SetInitiatorName sets the InitiatorName field's value.
+func (s *UpdateChapCredentialsInput) SetInitiatorName(v string) *UpdateChapCredentialsInput {
+	s.InitiatorName = &v
+	return s
+}
+
+// SetSecretToAuthenticateInitiator sets the SecretToAuthenticateInitiator field's value.
+func (s *UpdateChapCredentialsInput) SetSecretToAuthenticateInitiator(v string) *UpdateChapCredentialsInput {
+	s.SecretToAuthenticateInitiator = &v
+	return s
+}
+
+// SetSecretToAuthenticateTarget sets the SecretToAuthenticateTarget field's value.
+func (s *UpdateChapCredentialsInput) SetSecretToAuthenticateTarget(v string) *UpdateChapCredentialsInput {
+	s.SecretToAuthenticateTarget = &v
+	return s
+}
+
+// SetTargetARN sets the TargetARN field's value.
+func (s *UpdateChapCredentialsInput) SetTargetARN(v string) *UpdateChapCredentialsInput {
+	s.TargetARN = &v
+	return s
+}
+
 // A JSON object containing the following fields:
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateChapCredentialsOutput
 type UpdateChapCredentialsOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -8454,6 +11456,19 @@ func (s UpdateChapCredentialsOutput) GoString() string {
 	return s.String()
 }
 
+// SetInitiatorName sets the InitiatorName field's value.
+func (s *UpdateChapCredentialsOutput) SetInitiatorName(v string) *UpdateChapCredentialsOutput {
+	s.InitiatorName = &v
+	return s
+}
+
+// SetTargetARN sets the TargetARN field's value.
+func (s *UpdateChapCredentialsOutput) SetTargetARN(v string) *UpdateChapCredentialsOutput {
+	s.TargetARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateGatewayInformationInput
 type UpdateGatewayInformationInput struct {
 	_ struct{} `type:"structure"`
 
@@ -8501,7 +11516,26 @@ func (s *UpdateGatewayInformationInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *UpdateGatewayInformationInput) SetGatewayARN(v string) *UpdateGatewayInformationInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetGatewayName sets the GatewayName field's value.
+func (s *UpdateGatewayInformationInput) SetGatewayName(v string) *UpdateGatewayInformationInput {
+	s.GatewayName = &v
+	return s
+}
+
+// SetGatewayTimezone sets the GatewayTimezone field's value.
+func (s *UpdateGatewayInformationInput) SetGatewayTimezone(v string) *UpdateGatewayInformationInput {
+	s.GatewayTimezone = &v
+	return s
+}
+
 // A JSON object containing the ARN of the gateway that was updated.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateGatewayInformationOutput
 type UpdateGatewayInformationOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -8522,7 +11556,20 @@ func (s UpdateGatewayInformationOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *UpdateGatewayInformationOutput) SetGatewayARN(v string) *UpdateGatewayInformationOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetGatewayName sets the GatewayName field's value.
+func (s *UpdateGatewayInformationOutput) SetGatewayName(v string) *UpdateGatewayInformationOutput {
+	s.GatewayName = &v
+	return s
+}
+
 // A JSON object containing the of the gateway to update.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateGatewaySoftwareNowInput
 type UpdateGatewaySoftwareNowInput struct {
 	_ struct{} `type:"structure"`
 
@@ -8559,7 +11606,14 @@ func (s *UpdateGatewaySoftwareNowInput) Validate() error {
 	return nil
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *UpdateGatewaySoftwareNowInput) SetGatewayARN(v string) *UpdateGatewaySoftwareNowInput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing the of the gateway that was updated.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateGatewaySoftwareNowOutput
 type UpdateGatewaySoftwareNowOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -8578,17 +11632,25 @@ func (s UpdateGatewaySoftwareNowOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *UpdateGatewaySoftwareNowOutput) SetGatewayARN(v string) *UpdateGatewaySoftwareNowOutput {
+	s.GatewayARN = &v
+	return s
+}
+
 // A JSON object containing the following fields:
 //
-//    UpdateMaintenanceStartTimeInput$DayOfWeek
+//    * UpdateMaintenanceStartTimeInput$DayOfWeek
 //
-//    UpdateMaintenanceStartTimeInput$HourOfDay
+//    * UpdateMaintenanceStartTimeInput$HourOfDay
 //
-//    UpdateMaintenanceStartTimeInput$MinuteOfHour
+//    * UpdateMaintenanceStartTimeInput$MinuteOfHour
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateMaintenanceStartTimeInput
 type UpdateMaintenanceStartTimeInput struct {
 	_ struct{} `type:"structure"`
 
-	// The maintenance start time day of the week.
+	// The maintenance start time day of the week represented as an ordinal number
+	// from 0 to 6, where 0 represents Sunday and 6 Saturday.
 	//
 	// DayOfWeek is a required field
 	DayOfWeek *int64 `type:"integer" required:"true"`
@@ -8649,8 +11711,33 @@ func (s *UpdateMaintenanceStartTimeInput) Validate() error {
 	return nil
 }
 
+// SetDayOfWeek sets the DayOfWeek field's value.
+func (s *UpdateMaintenanceStartTimeInput) SetDayOfWeek(v int64) *UpdateMaintenanceStartTimeInput {
+	s.DayOfWeek = &v
+	return s
+}
+
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *UpdateMaintenanceStartTimeInput) SetGatewayARN(v string) *UpdateMaintenanceStartTimeInput {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetHourOfDay sets the HourOfDay field's value.
+func (s *UpdateMaintenanceStartTimeInput) SetHourOfDay(v int64) *UpdateMaintenanceStartTimeInput {
+	s.HourOfDay = &v
+	return s
+}
+
+// SetMinuteOfHour sets the MinuteOfHour field's value.
+func (s *UpdateMaintenanceStartTimeInput) SetMinuteOfHour(v int64) *UpdateMaintenanceStartTimeInput {
+	s.MinuteOfHour = &v
+	return s
+}
+
 // A JSON object containing the of the gateway whose maintenance start time
 // is updated.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateMaintenanceStartTimeOutput
 type UpdateMaintenanceStartTimeOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -8669,15 +11756,154 @@ func (s UpdateMaintenanceStartTimeOutput) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *UpdateMaintenanceStartTimeOutput) SetGatewayARN(v string) *UpdateMaintenanceStartTimeOutput {
+	s.GatewayARN = &v
+	return s
+}
+
+// UpdateNFSFileShareInput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateNFSFileShareInput
+type UpdateNFSFileShareInput struct {
+	_ struct{} `type:"structure"`
+
+	// The list of clients that are allowed to access the file gateway. The list
+	// must contain either valid IP addresses or valid CIDR blocks.
+	ClientList []*string `min:"1" type:"list"`
+
+	// The default storage class for objects put into an Amazon S3 bucket by a file
+	// gateway. Possible values are S3_STANDARD or S3_STANDARD_IA. If this field
+	// is not populated, the default value S3_STANDARD is used. Optional.
+	DefaultStorageClass *string `min:"5" type:"string"`
+
+	// The Amazon Resource Name (ARN) of the file share to be updated.
+	//
+	// FileShareARN is a required field
+	FileShareARN *string `min:"50" type:"string" required:"true"`
+
+	// True to use Amazon S3 server side encryption with your own AWS KMS key, or
+	// false to use a key managed by Amazon S3. Optional.
+	KMSEncrypted *bool `type:"boolean"`
+
+	// The KMS key used for Amazon S3 server side encryption. This value can only
+	// be set when KmsEncrypted is true. Optional.
+	KMSKey *string `min:"20" type:"string"`
+
+	// The default values for the file share. Optional.
+	NFSFileShareDefaults *NFSFileShareDefaults `type:"structure"`
+}
+
+// String returns the string representation
+func (s UpdateNFSFileShareInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s UpdateNFSFileShareInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *UpdateNFSFileShareInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "UpdateNFSFileShareInput"}
+	if s.ClientList != nil && len(s.ClientList) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ClientList", 1))
+	}
+	if s.DefaultStorageClass != nil && len(*s.DefaultStorageClass) < 5 {
+		invalidParams.Add(request.NewErrParamMinLen("DefaultStorageClass", 5))
+	}
+	if s.FileShareARN == nil {
+		invalidParams.Add(request.NewErrParamRequired("FileShareARN"))
+	}
+	if s.FileShareARN != nil && len(*s.FileShareARN) < 50 {
+		invalidParams.Add(request.NewErrParamMinLen("FileShareARN", 50))
+	}
+	if s.KMSKey != nil && len(*s.KMSKey) < 20 {
+		invalidParams.Add(request.NewErrParamMinLen("KMSKey", 20))
+	}
+	if s.NFSFileShareDefaults != nil {
+		if err := s.NFSFileShareDefaults.Validate(); err != nil {
+			invalidParams.AddNested("NFSFileShareDefaults", err.(request.ErrInvalidParams))
+		}
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetClientList sets the ClientList field's value.
+func (s *UpdateNFSFileShareInput) SetClientList(v []*string) *UpdateNFSFileShareInput {
+	s.ClientList = v
+	return s
+}
+
+// SetDefaultStorageClass sets the DefaultStorageClass field's value.
+func (s *UpdateNFSFileShareInput) SetDefaultStorageClass(v string) *UpdateNFSFileShareInput {
+	s.DefaultStorageClass = &v
+	return s
+}
+
+// SetFileShareARN sets the FileShareARN field's value.
+func (s *UpdateNFSFileShareInput) SetFileShareARN(v string) *UpdateNFSFileShareInput {
+	s.FileShareARN = &v
+	return s
+}
+
+// SetKMSEncrypted sets the KMSEncrypted field's value.
+func (s *UpdateNFSFileShareInput) SetKMSEncrypted(v bool) *UpdateNFSFileShareInput {
+	s.KMSEncrypted = &v
+	return s
+}
+
+// SetKMSKey sets the KMSKey field's value.
+func (s *UpdateNFSFileShareInput) SetKMSKey(v string) *UpdateNFSFileShareInput {
+	s.KMSKey = &v
+	return s
+}
+
+// SetNFSFileShareDefaults sets the NFSFileShareDefaults field's value.
+func (s *UpdateNFSFileShareInput) SetNFSFileShareDefaults(v *NFSFileShareDefaults) *UpdateNFSFileShareInput {
+	s.NFSFileShareDefaults = v
+	return s
+}
+
+// UpdateNFSFileShareOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateNFSFileShareOutput
+type UpdateNFSFileShareOutput struct {
+	_ struct{} `type:"structure"`
+
+	// The Amazon Resource Name (ARN) of the updated file share.
+	FileShareARN *string `min:"50" type:"string"`
+}
+
+// String returns the string representation
+func (s UpdateNFSFileShareOutput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s UpdateNFSFileShareOutput) GoString() string {
+	return s.String()
+}
+
+// SetFileShareARN sets the FileShareARN field's value.
+func (s *UpdateNFSFileShareOutput) SetFileShareARN(v string) *UpdateNFSFileShareOutput {
+	s.FileShareARN = &v
+	return s
+}
+
 // A JSON object containing one or more of the following fields:
 //
-//    UpdateSnapshotScheduleInput$Description
+//    * UpdateSnapshotScheduleInput$Description
 //
-//    UpdateSnapshotScheduleInput$RecurrenceInHours
+//    * UpdateSnapshotScheduleInput$RecurrenceInHours
 //
-//    UpdateSnapshotScheduleInput$StartAt
+//    * UpdateSnapshotScheduleInput$StartAt
 //
-//    UpdateSnapshotScheduleInput$VolumeARN
+//    * UpdateSnapshotScheduleInput$VolumeARN
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateSnapshotScheduleInput
 type UpdateSnapshotScheduleInput struct {
 	_ struct{} `type:"structure"`
 
@@ -8741,7 +11967,32 @@ func (s *UpdateSnapshotScheduleInput) Validate() error {
 	return nil
 }
 
+// SetDescription sets the Description field's value.
+func (s *UpdateSnapshotScheduleInput) SetDescription(v string) *UpdateSnapshotScheduleInput {
+	s.Description = &v
+	return s
+}
+
+// SetRecurrenceInHours sets the RecurrenceInHours field's value.
+func (s *UpdateSnapshotScheduleInput) SetRecurrenceInHours(v int64) *UpdateSnapshotScheduleInput {
+	s.RecurrenceInHours = &v
+	return s
+}
+
+// SetStartAt sets the StartAt field's value.
+func (s *UpdateSnapshotScheduleInput) SetStartAt(v int64) *UpdateSnapshotScheduleInput {
+	s.StartAt = &v
+	return s
+}
+
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *UpdateSnapshotScheduleInput) SetVolumeARN(v string) *UpdateSnapshotScheduleInput {
+	s.VolumeARN = &v
+	return s
+}
+
 // A JSON object containing the of the updated storage volume.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateSnapshotScheduleOutput
 type UpdateSnapshotScheduleOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -8758,12 +12009,19 @@ func (s UpdateSnapshotScheduleOutput) GoString() string {
 	return s.String()
 }
 
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *UpdateSnapshotScheduleOutput) SetVolumeARN(v string) *UpdateSnapshotScheduleOutput {
+	s.VolumeARN = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateVTLDeviceTypeInput
 type UpdateVTLDeviceTypeInput struct {
 	_ struct{} `type:"structure"`
 
 	// The type of medium changer you want to select.
 	//
-	//  Valid Values: "STK-L700", "AWS-Gateway-VTL"
+	// Valid Values: "STK-L700", "AWS-Gateway-VTL"
 	//
 	// DeviceType is a required field
 	DeviceType *string `min:"2" type:"string" required:"true"`
@@ -8806,7 +12064,20 @@ func (s *UpdateVTLDeviceTypeInput) Validate() error {
 	return nil
 }
 
+// SetDeviceType sets the DeviceType field's value.
+func (s *UpdateVTLDeviceTypeInput) SetDeviceType(v string) *UpdateVTLDeviceTypeInput {
+	s.DeviceType = &v
+	return s
+}
+
+// SetVTLDeviceARN sets the VTLDeviceARN field's value.
+func (s *UpdateVTLDeviceTypeInput) SetVTLDeviceARN(v string) *UpdateVTLDeviceTypeInput {
+	s.VTLDeviceARN = &v
+	return s
+}
+
 // UpdateVTLDeviceTypeOutput
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/UpdateVTLDeviceTypeOutput
 type UpdateVTLDeviceTypeOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -8824,7 +12095,14 @@ func (s UpdateVTLDeviceTypeOutput) GoString() string {
 	return s.String()
 }
 
+// SetVTLDeviceARN sets the VTLDeviceARN field's value.
+func (s *UpdateVTLDeviceTypeOutput) SetVTLDeviceARN(v string) *UpdateVTLDeviceTypeOutput {
+	s.VTLDeviceARN = &v
+	return s
+}
+
 // Represents a device object associated with a gateway-VTL.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/VTLDevice
 type VTLDevice struct {
 	_ struct{} `type:"structure"`
 
@@ -8852,7 +12130,38 @@ func (s VTLDevice) GoString() string {
 	return s.String()
 }
 
+// SetDeviceiSCSIAttributes sets the DeviceiSCSIAttributes field's value.
+func (s *VTLDevice) SetDeviceiSCSIAttributes(v *DeviceiSCSIAttributes) *VTLDevice {
+	s.DeviceiSCSIAttributes = v
+	return s
+}
+
+// SetVTLDeviceARN sets the VTLDeviceARN field's value.
+func (s *VTLDevice) SetVTLDeviceARN(v string) *VTLDevice {
+	s.VTLDeviceARN = &v
+	return s
+}
+
+// SetVTLDeviceProductIdentifier sets the VTLDeviceProductIdentifier field's value.
+func (s *VTLDevice) SetVTLDeviceProductIdentifier(v string) *VTLDevice {
+	s.VTLDeviceProductIdentifier = &v
+	return s
+}
+
+// SetVTLDeviceType sets the VTLDeviceType field's value.
+func (s *VTLDevice) SetVTLDeviceType(v string) *VTLDevice {
+	s.VTLDeviceType = &v
+	return s
+}
+
+// SetVTLDeviceVendor sets the VTLDeviceVendor field's value.
+func (s *VTLDevice) SetVTLDeviceVendor(v string) *VTLDevice {
+	s.VTLDeviceVendor = &v
+	return s
+}
+
 // Describes a storage volume object.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/VolumeInfo
 type VolumeInfo struct {
 	_ struct{} `type:"structure"`
 
@@ -8864,27 +12173,27 @@ type VolumeInfo struct {
 	// becomes part of the gateway Amazon Resource Name (ARN), which you use as
 	// input for other operations.
 	//
-	//  Valid Values: 50 to 500 lowercase letters, numbers, periods (.), and hyphens
+	// Valid Values: 50 to 500 lowercase letters, numbers, periods (.), and hyphens
 	// (-).
 	GatewayId *string `min:"12" type:"string"`
 
 	// The Amazon Resource Name (ARN) for the storage volume. For example, the following
 	// is a valid ARN:
 	//
-	//  arn:aws:storagegateway:us-east-1:111122223333:gateway/sgw-12A3456B/volume/vol-1122AABB
+	// arn:aws:storagegateway:us-east-1:111122223333:gateway/sgw-12A3456B/volume/vol-1122AABB
 	//
-	//  Valid Values: 50 to 500 lowercase letters, numbers, periods (.), and hyphens
+	// Valid Values: 50 to 500 lowercase letters, numbers, periods (.), and hyphens
 	// (-).
 	VolumeARN *string `min:"50" type:"string"`
 
 	// The unique identifier assigned to the volume. This ID becomes part of the
 	// volume Amazon Resource Name (ARN), which you use as input for other operations.
 	//
-	//  Valid Values: 50 to 500 lowercase letters, numbers, periods (.), and hyphens
+	// Valid Values: 50 to 500 lowercase letters, numbers, periods (.), and hyphens
 	// (-).
 	VolumeId *string `min:"12" type:"string"`
 
-	// The size, in bytes, of the volume.
+	// The size of the volume in bytes.
 	//
 	// Valid Values: 50 to 500 lowercase letters, numbers, periods (.), and hyphens
 	// (-).
@@ -8903,6 +12212,43 @@ func (s VolumeInfo) GoString() string {
 	return s.String()
 }
 
+// SetGatewayARN sets the GatewayARN field's value.
+func (s *VolumeInfo) SetGatewayARN(v string) *VolumeInfo {
+	s.GatewayARN = &v
+	return s
+}
+
+// SetGatewayId sets the GatewayId field's value.
+func (s *VolumeInfo) SetGatewayId(v string) *VolumeInfo {
+	s.GatewayId = &v
+	return s
+}
+
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *VolumeInfo) SetVolumeARN(v string) *VolumeInfo {
+	s.VolumeARN = &v
+	return s
+}
+
+// SetVolumeId sets the VolumeId field's value.
+func (s *VolumeInfo) SetVolumeId(v string) *VolumeInfo {
+	s.VolumeId = &v
+	return s
+}
+
+// SetVolumeSizeInBytes sets the VolumeSizeInBytes field's value.
+func (s *VolumeInfo) SetVolumeSizeInBytes(v int64) *VolumeInfo {
+	s.VolumeSizeInBytes = &v
+	return s
+}
+
+// SetVolumeType sets the VolumeType field's value.
+func (s *VolumeInfo) SetVolumeType(v string) *VolumeInfo {
+	s.VolumeType = &v
+	return s
+}
+
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/VolumeRecoveryPointInfo
 type VolumeRecoveryPointInfo struct {
 	_ struct{} `type:"structure"`
 
@@ -8925,7 +12271,32 @@ func (s VolumeRecoveryPointInfo) GoString() string {
 	return s.String()
 }
 
+// SetVolumeARN sets the VolumeARN field's value.
+func (s *VolumeRecoveryPointInfo) SetVolumeARN(v string) *VolumeRecoveryPointInfo {
+	s.VolumeARN = &v
+	return s
+}
+
+// SetVolumeRecoveryPointTime sets the VolumeRecoveryPointTime field's value.
+func (s *VolumeRecoveryPointInfo) SetVolumeRecoveryPointTime(v string) *VolumeRecoveryPointInfo {
+	s.VolumeRecoveryPointTime = &v
+	return s
+}
+
+// SetVolumeSizeInBytes sets the VolumeSizeInBytes field's value.
+func (s *VolumeRecoveryPointInfo) SetVolumeSizeInBytes(v int64) *VolumeRecoveryPointInfo {
+	s.VolumeSizeInBytes = &v
+	return s
+}
+
+// SetVolumeUsageInBytes sets the VolumeUsageInBytes field's value.
+func (s *VolumeRecoveryPointInfo) SetVolumeUsageInBytes(v int64) *VolumeRecoveryPointInfo {
+	s.VolumeUsageInBytes = &v
+	return s
+}
+
 // Lists iSCSI information about a volume.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/storagegateway-2013-06-30/VolumeiSCSIAttributes
 type VolumeiSCSIAttributes struct {
 	_ struct{} `type:"structure"`
 
@@ -8953,6 +12324,36 @@ func (s VolumeiSCSIAttributes) String() string {
 // GoString returns the string representation
 func (s VolumeiSCSIAttributes) GoString() string {
 	return s.String()
+}
+
+// SetChapEnabled sets the ChapEnabled field's value.
+func (s *VolumeiSCSIAttributes) SetChapEnabled(v bool) *VolumeiSCSIAttributes {
+	s.ChapEnabled = &v
+	return s
+}
+
+// SetLunNumber sets the LunNumber field's value.
+func (s *VolumeiSCSIAttributes) SetLunNumber(v int64) *VolumeiSCSIAttributes {
+	s.LunNumber = &v
+	return s
+}
+
+// SetNetworkInterfaceId sets the NetworkInterfaceId field's value.
+func (s *VolumeiSCSIAttributes) SetNetworkInterfaceId(v string) *VolumeiSCSIAttributes {
+	s.NetworkInterfaceId = &v
+	return s
+}
+
+// SetNetworkInterfacePort sets the NetworkInterfacePort field's value.
+func (s *VolumeiSCSIAttributes) SetNetworkInterfacePort(v int64) *VolumeiSCSIAttributes {
+	s.NetworkInterfacePort = &v
+	return s
+}
+
+// SetTargetARN sets the TargetARN field's value.
+func (s *VolumeiSCSIAttributes) SetTargetARN(v string) *VolumeiSCSIAttributes {
+	s.TargetARN = &v
+	return s
 }
 
 const (

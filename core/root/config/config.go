@@ -39,6 +39,8 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 	if err := yaml.Unmarshal(data, c); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
 	}
+	c.HyperkubeImage.Tag = c.K8sVer
+
 	cpCluser := &c.Cluster
 	if err := cpCluser.Load(); err != nil {
 		return nil, err

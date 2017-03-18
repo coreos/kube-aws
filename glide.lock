@@ -1,8 +1,8 @@
 hash: c867da102c81c3ad5b5b7e9016f1b020fe22311da8f3532b65a0a2832f0b0b3c
-updated: 2016-10-20T15:12:14.214670168+09:00
+updated: 2017-03-12T18:50:39.127225917+01:00
 imports:
 - name: github.com/aws/aws-sdk-go
-  version: 1a651d9028d1203f4a0ba9fee91b207536cd4ca2
+  version: 819b71cf8430e434c1eee7e7e8b0f2b8870be899
   subpackages:
   - aws
   - aws/awserr
@@ -16,10 +16,10 @@ imports:
   - aws/credentials/stscreds
   - aws/defaults
   - aws/ec2metadata
+  - aws/endpoints
   - aws/request
   - aws/session
   - aws/signer/v4
-  - private/endpoints
   - private/protocol
   - private/protocol/ec2query
   - private/protocol/json/jsonutil
@@ -35,6 +35,7 @@ imports:
   - service/elb
   - service/kms
   - service/route53
+  - service/s3
   - service/sts
 - name: github.com/coreos/coreos-cloudinit
   version: 3c68e2e67d2ea077e2b79383c0ad313770c62ca2

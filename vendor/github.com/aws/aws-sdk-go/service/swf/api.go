@@ -38,7 +38,6 @@ const opCountClosedWorkflowExecutions = "CountClosedWorkflowExecutions"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) CountClosedWorkflowExecutionsRequest(input *CountClosedWorkflowExecutionsInput) (req *request.Request, output *WorkflowExecutionCount) {
 	op := &request.Operation{
 		Name:       opCountClosedWorkflowExecutions,
@@ -50,9 +49,8 @@ func (c *SWF) CountClosedWorkflowExecutionsRequest(input *CountClosedWorkflowExe
 		input = &CountClosedWorkflowExecutionsInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &WorkflowExecutionCount{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -62,18 +60,22 @@ func (c *SWF) CountClosedWorkflowExecutionsRequest(input *CountClosedWorkflowExe
 // that meet the specified filtering criteria.
 //
 // This operation is eventually consistent. The results are best effort and
-// may not exactly reflect recent updates and changes. Access Control
+// may not exactly reflect recent updates and changes.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the following parameters by using a Condition element
-// with the appropriate keys.  tagFilter.tag: String constraint. The key is
-// swf:tagFilter.tag. typeFilter.name: String constraint. The key is swf:typeFilter.name.
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the following parameters by using a Condition element with
+//    the appropriate keys. tagFilter.tag: String constraint. The key is swf:tagFilter.tag.
+//
+// typeFilter.name: String constraint. The key is swf:typeFilter.name.
 // typeFilter.version: String constraint. The key is swf:typeFilter.version.
-//    If the caller does not have sufficient permissions to invoke the action,
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -87,12 +89,12 @@ func (c *SWF) CountClosedWorkflowExecutionsRequest(input *CountClosedWorkflowExe
 // API operation CountClosedWorkflowExecutions for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -127,7 +129,6 @@ const opCountOpenWorkflowExecutions = "CountOpenWorkflowExecutions"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) CountOpenWorkflowExecutionsRequest(input *CountOpenWorkflowExecutionsInput) (req *request.Request, output *WorkflowExecutionCount) {
 	op := &request.Operation{
 		Name:       opCountOpenWorkflowExecutions,
@@ -139,9 +140,8 @@ func (c *SWF) CountOpenWorkflowExecutionsRequest(input *CountOpenWorkflowExecuti
 		input = &CountOpenWorkflowExecutionsInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &WorkflowExecutionCount{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -151,18 +151,22 @@ func (c *SWF) CountOpenWorkflowExecutionsRequest(input *CountOpenWorkflowExecuti
 // meet the specified filtering criteria.
 //
 // This operation is eventually consistent. The results are best effort and
-// may not exactly reflect recent updates and changes. Access Control
+// may not exactly reflect recent updates and changes.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the following parameters by using a Condition element
-// with the appropriate keys.  tagFilter.tag: String constraint. The key is
-// swf:tagFilter.tag. typeFilter.name: String constraint. The key is swf:typeFilter.name.
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the following parameters by using a Condition element with
+//    the appropriate keys. tagFilter.tag: String constraint. The key is swf:tagFilter.tag.
+//
+// typeFilter.name: String constraint. The key is swf:typeFilter.name.
 // typeFilter.version: String constraint. The key is swf:typeFilter.version.
-//    If the caller does not have sufficient permissions to invoke the action,
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -176,12 +180,12 @@ func (c *SWF) CountOpenWorkflowExecutionsRequest(input *CountOpenWorkflowExecuti
 // API operation CountOpenWorkflowExecutions for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -216,7 +220,6 @@ const opCountPendingActivityTasks = "CountPendingActivityTasks"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) CountPendingActivityTasksRequest(input *CountPendingActivityTasksInput) (req *request.Request, output *PendingTaskCount) {
 	op := &request.Operation{
 		Name:       opCountPendingActivityTasks,
@@ -228,9 +231,8 @@ func (c *SWF) CountPendingActivityTasksRequest(input *CountPendingActivityTasksI
 		input = &CountPendingActivityTasksInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &PendingTaskCount{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -246,15 +248,18 @@ func (c *SWF) CountPendingActivityTasksRequest(input *CountPendingActivityTasksI
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the taskList.name parameter by using a Condition element
-// with the swf:taskList.name key to allow the action to access only certain
-// task lists.  If the caller does not have sufficient permissions to invoke
-// the action, or the parameter values fall outside the specified constraints,
-// the action fails. The associated event attribute's cause parameter will be
-// set to OPERATION_NOT_PERMITTED. For details and example IAM policies, see
-// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the taskList.name parameter by using a Condition element with
+//    the swf:taskList.name key to allow the action to access only certain task
+//    lists.
+// If the caller does not have sufficient permissions to invoke the action,
+// or the parameter values fall outside the specified constraints, the action
+// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
+// For details and example IAM policies, see Using IAM to Manage Access to Amazon
+// SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -264,12 +269,12 @@ func (c *SWF) CountPendingActivityTasksRequest(input *CountPendingActivityTasksI
 // API operation CountPendingActivityTasks for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -304,7 +309,6 @@ const opCountPendingDecisionTasks = "CountPendingDecisionTasks"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) CountPendingDecisionTasksRequest(input *CountPendingDecisionTasksInput) (req *request.Request, output *PendingTaskCount) {
 	op := &request.Operation{
 		Name:       opCountPendingDecisionTasks,
@@ -316,9 +320,8 @@ func (c *SWF) CountPendingDecisionTasksRequest(input *CountPendingDecisionTasksI
 		input = &CountPendingDecisionTasksInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &PendingTaskCount{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -334,15 +337,18 @@ func (c *SWF) CountPendingDecisionTasksRequest(input *CountPendingDecisionTasksI
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the taskList.name parameter by using a Condition element
-// with the swf:taskList.name key to allow the action to access only certain
-// task lists.  If the caller does not have sufficient permissions to invoke
-// the action, or the parameter values fall outside the specified constraints,
-// the action fails. The associated event attribute's cause parameter will be
-// set to OPERATION_NOT_PERMITTED. For details and example IAM policies, see
-// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the taskList.name parameter by using a Condition element with
+//    the swf:taskList.name key to allow the action to access only certain task
+//    lists.
+// If the caller does not have sufficient permissions to invoke the action,
+// or the parameter values fall outside the specified constraints, the action
+// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
+// For details and example IAM policies, see Using IAM to Manage Access to Amazon
+// SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -352,12 +358,12 @@ func (c *SWF) CountPendingDecisionTasksRequest(input *CountPendingDecisionTasksI
 // API operation CountPendingDecisionTasks for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -392,7 +398,6 @@ const opDeprecateActivityType = "DeprecateActivityType"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) DeprecateActivityTypeRequest(input *DeprecateActivityTypeInput) (req *request.Request, output *DeprecateActivityTypeOutput) {
 	op := &request.Operation{
 		Name:       opDeprecateActivityType,
@@ -404,11 +409,10 @@ func (c *SWF) DeprecateActivityTypeRequest(input *DeprecateActivityTypeInput) (r
 		input = &DeprecateActivityTypeInput{}
 	}
 
+	output = &DeprecateActivityTypeOutput{}
 	req = c.newRequest(op, input, output)
 	req.Handlers.Unmarshal.Remove(jsonrpc.UnmarshalHandler)
 	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
-	output = &DeprecateActivityTypeOutput{}
-	req.Data = output
 	return
 }
 
@@ -419,21 +423,25 @@ func (c *SWF) DeprecateActivityTypeRequest(input *DeprecateActivityTypeInput) (r
 // were scheduled before the type was deprecated will continue to run.
 //
 // This operation is eventually consistent. The results are best effort and
-// may not exactly reflect recent updates and changes. Access Control
+// may not exactly reflect recent updates and changes.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the following parameters by using a Condition element
-// with the appropriate keys.  activityType.name: String constraint. The key
-// is swf:activityType.name. activityType.version: String constraint. The key
-// is swf:activityType.version.    If the caller does not have sufficient permissions
-// to invoke the action, or the parameter values fall outside the specified
-// constraints, the action fails. The associated event attribute's cause parameter
-// will be set to OPERATION_NOT_PERMITTED. For details and example IAM policies,
-// see Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the following parameters by using a Condition element with
+//    the appropriate keys. activityType.name: String constraint. The key is
+//    swf:activityType.name.
+// activityType.version: String constraint. The key is swf:activityType.version.
+//
+// If the caller does not have sufficient permissions to invoke the action,
+// or the parameter values fall outside the specified constraints, the action
+// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
+// For details and example IAM policies, see Using IAM to Manage Access to Amazon
+// SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -443,15 +451,15 @@ func (c *SWF) DeprecateActivityTypeRequest(input *DeprecateActivityTypeInput) (r
 // API operation DeprecateActivityType for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * TypeDeprecatedFault
+//   * ErrCodeTypeDeprecatedFault "TypeDeprecatedFault"
 //   Returned when the specified activity or workflow type was already deprecated.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -486,7 +494,6 @@ const opDeprecateDomain = "DeprecateDomain"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) DeprecateDomainRequest(input *DeprecateDomainInput) (req *request.Request, output *DeprecateDomainOutput) {
 	op := &request.Operation{
 		Name:       opDeprecateDomain,
@@ -498,11 +505,10 @@ func (c *SWF) DeprecateDomainRequest(input *DeprecateDomainInput) (req *request.
 		input = &DeprecateDomainInput{}
 	}
 
+	output = &DeprecateDomainOutput{}
 	req = c.newRequest(op, input, output)
 	req.Handlers.Unmarshal.Remove(jsonrpc.UnmarshalHandler)
 	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
-	output = &DeprecateDomainOutput{}
-	req.Data = output
 	return
 }
 
@@ -516,15 +522,18 @@ func (c *SWF) DeprecateDomainRequest(input *DeprecateDomainInput) (req *request.
 // to run.
 //
 // This operation is eventually consistent. The results are best effort and
-// may not exactly reflect recent updates and changes. Access Control
+// may not exactly reflect recent updates and changes.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -538,15 +547,15 @@ func (c *SWF) DeprecateDomainRequest(input *DeprecateDomainInput) (req *request.
 // API operation DeprecateDomain for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * DomainDeprecatedFault
+//   * ErrCodeDomainDeprecatedFault "DomainDeprecatedFault"
 //   Returned when the specified domain has been deprecated.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -581,7 +590,6 @@ const opDeprecateWorkflowType = "DeprecateWorkflowType"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) DeprecateWorkflowTypeRequest(input *DeprecateWorkflowTypeInput) (req *request.Request, output *DeprecateWorkflowTypeOutput) {
 	op := &request.Operation{
 		Name:       opDeprecateWorkflowType,
@@ -593,11 +601,10 @@ func (c *SWF) DeprecateWorkflowTypeRequest(input *DeprecateWorkflowTypeInput) (r
 		input = &DeprecateWorkflowTypeInput{}
 	}
 
+	output = &DeprecateWorkflowTypeOutput{}
 	req = c.newRequest(op, input, output)
 	req.Handlers.Unmarshal.Remove(jsonrpc.UnmarshalHandler)
 	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
-	output = &DeprecateWorkflowTypeOutput{}
-	req.Data = output
 	return
 }
 
@@ -609,21 +616,25 @@ func (c *SWF) DeprecateWorkflowTypeRequest(input *DeprecateWorkflowTypeInput) (r
 // type may still be used when calling visibility actions.
 //
 // This operation is eventually consistent. The results are best effort and
-// may not exactly reflect recent updates and changes. Access Control
+// may not exactly reflect recent updates and changes.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the following parameters by using a Condition element
-// with the appropriate keys.  workflowType.name: String constraint. The key
-// is swf:workflowType.name. workflowType.version: String constraint. The key
-// is swf:workflowType.version.    If the caller does not have sufficient permissions
-// to invoke the action, or the parameter values fall outside the specified
-// constraints, the action fails. The associated event attribute's cause parameter
-// will be set to OPERATION_NOT_PERMITTED. For details and example IAM policies,
-// see Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the following parameters by using a Condition element with
+//    the appropriate keys. workflowType.name: String constraint. The key is
+//    swf:workflowType.name.
+// workflowType.version: String constraint. The key is swf:workflowType.version.
+//
+// If the caller does not have sufficient permissions to invoke the action,
+// or the parameter values fall outside the specified constraints, the action
+// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
+// For details and example IAM policies, see Using IAM to Manage Access to Amazon
+// SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -633,15 +644,15 @@ func (c *SWF) DeprecateWorkflowTypeRequest(input *DeprecateWorkflowTypeInput) (r
 // API operation DeprecateWorkflowType for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * TypeDeprecatedFault
+//   * ErrCodeTypeDeprecatedFault "TypeDeprecatedFault"
 //   Returned when the specified activity or workflow type was already deprecated.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -676,7 +687,6 @@ const opDescribeActivityType = "DescribeActivityType"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) DescribeActivityTypeRequest(input *DescribeActivityTypeInput) (req *request.Request, output *DescribeActivityTypeOutput) {
 	op := &request.Operation{
 		Name:       opDescribeActivityType,
@@ -688,9 +698,8 @@ func (c *SWF) DescribeActivityTypeRequest(input *DescribeActivityTypeInput) (req
 		input = &DescribeActivityTypeInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeActivityTypeOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -705,16 +714,20 @@ func (c *SWF) DescribeActivityTypeRequest(input *DescribeActivityTypeInput) (req
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the following parameters by using a Condition element
-// with the appropriate keys.  activityType.name: String constraint. The key
-// is swf:activityType.name. activityType.version: String constraint. The key
-// is swf:activityType.version.    If the caller does not have sufficient permissions
-// to invoke the action, or the parameter values fall outside the specified
-// constraints, the action fails. The associated event attribute's cause parameter
-// will be set to OPERATION_NOT_PERMITTED. For details and example IAM policies,
-// see Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the following parameters by using a Condition element with
+//    the appropriate keys. activityType.name: String constraint. The key is
+//    swf:activityType.name.
+// activityType.version: String constraint. The key is swf:activityType.version.
+//
+// If the caller does not have sufficient permissions to invoke the action,
+// or the parameter values fall outside the specified constraints, the action
+// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
+// For details and example IAM policies, see Using IAM to Manage Access to Amazon
+// SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -724,12 +737,12 @@ func (c *SWF) DescribeActivityTypeRequest(input *DescribeActivityTypeInput) (req
 // API operation DescribeActivityType for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -764,7 +777,6 @@ const opDescribeDomain = "DescribeDomain"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) DescribeDomainRequest(input *DescribeDomainInput) (req *request.Request, output *DescribeDomainOutput) {
 	op := &request.Operation{
 		Name:       opDescribeDomain,
@@ -776,9 +788,8 @@ func (c *SWF) DescribeDomainRequest(input *DescribeDomainInput) (req *request.Re
 		input = &DescribeDomainInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeDomainOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -792,10 +803,13 @@ func (c *SWF) DescribeDomainRequest(input *DescribeDomainInput) (req *request.Re
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -809,12 +823,12 @@ func (c *SWF) DescribeDomainRequest(input *DescribeDomainInput) (req *request.Re
 // API operation DescribeDomain for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -849,7 +863,6 @@ const opDescribeWorkflowExecution = "DescribeWorkflowExecution"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) DescribeWorkflowExecutionRequest(input *DescribeWorkflowExecutionInput) (req *request.Request, output *DescribeWorkflowExecutionOutput) {
 	op := &request.Operation{
 		Name:       opDescribeWorkflowExecution,
@@ -861,9 +874,8 @@ func (c *SWF) DescribeWorkflowExecutionRequest(input *DescribeWorkflowExecutionI
 		input = &DescribeWorkflowExecutionInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeWorkflowExecutionOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -873,15 +885,18 @@ func (c *SWF) DescribeWorkflowExecutionRequest(input *DescribeWorkflowExecutionI
 // type and some statistics.
 //
 // This operation is eventually consistent. The results are best effort and
-// may not exactly reflect recent updates and changes. Access Control
+// may not exactly reflect recent updates and changes.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -895,12 +910,12 @@ func (c *SWF) DescribeWorkflowExecutionRequest(input *DescribeWorkflowExecutionI
 // API operation DescribeWorkflowExecution for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -935,7 +950,6 @@ const opDescribeWorkflowType = "DescribeWorkflowType"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) DescribeWorkflowTypeRequest(input *DescribeWorkflowTypeInput) (req *request.Request, output *DescribeWorkflowTypeOutput) {
 	op := &request.Operation{
 		Name:       opDescribeWorkflowType,
@@ -947,9 +961,8 @@ func (c *SWF) DescribeWorkflowTypeRequest(input *DescribeWorkflowTypeInput) (req
 		input = &DescribeWorkflowTypeInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &DescribeWorkflowTypeOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -964,16 +977,20 @@ func (c *SWF) DescribeWorkflowTypeRequest(input *DescribeWorkflowTypeInput) (req
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the following parameters by using a Condition element
-// with the appropriate keys.  workflowType.name: String constraint. The key
-// is swf:workflowType.name. workflowType.version: String constraint. The key
-// is swf:workflowType.version.    If the caller does not have sufficient permissions
-// to invoke the action, or the parameter values fall outside the specified
-// constraints, the action fails. The associated event attribute's cause parameter
-// will be set to OPERATION_NOT_PERMITTED. For details and example IAM policies,
-// see Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the following parameters by using a Condition element with
+//    the appropriate keys. workflowType.name: String constraint. The key is
+//    swf:workflowType.name.
+// workflowType.version: String constraint. The key is swf:workflowType.version.
+//
+// If the caller does not have sufficient permissions to invoke the action,
+// or the parameter values fall outside the specified constraints, the action
+// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
+// For details and example IAM policies, see Using IAM to Manage Access to Amazon
+// SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -983,12 +1000,12 @@ func (c *SWF) DescribeWorkflowTypeRequest(input *DescribeWorkflowTypeInput) (req
 // API operation DescribeWorkflowType for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -1023,7 +1040,6 @@ const opGetWorkflowExecutionHistory = "GetWorkflowExecutionHistory"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) GetWorkflowExecutionHistoryRequest(input *GetWorkflowExecutionHistoryInput) (req *request.Request, output *GetWorkflowExecutionHistoryOutput) {
 	op := &request.Operation{
 		Name:       opGetWorkflowExecutionHistory,
@@ -1041,9 +1057,8 @@ func (c *SWF) GetWorkflowExecutionHistoryRequest(input *GetWorkflowExecutionHist
 		input = &GetWorkflowExecutionHistoryInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &GetWorkflowExecutionHistoryOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1054,15 +1069,18 @@ func (c *SWF) GetWorkflowExecutionHistoryRequest(input *GetWorkflowExecutionHist
 // again using the nextPageToken returned by the initial call.
 //
 // This operation is eventually consistent. The results are best effort and
-// may not exactly reflect recent updates and changes. Access Control
+// may not exactly reflect recent updates and changes.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -1076,12 +1094,12 @@ func (c *SWF) GetWorkflowExecutionHistoryRequest(input *GetWorkflowExecutionHist
 // API operation GetWorkflowExecutionHistory for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -1141,7 +1159,6 @@ const opListActivityTypes = "ListActivityTypes"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) ListActivityTypesRequest(input *ListActivityTypesInput) (req *request.Request, output *ListActivityTypesOutput) {
 	op := &request.Operation{
 		Name:       opListActivityTypes,
@@ -1159,9 +1176,8 @@ func (c *SWF) ListActivityTypesRequest(input *ListActivityTypesInput) (req *requ
 		input = &ListActivityTypesInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ListActivityTypesOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1178,10 +1194,13 @@ func (c *SWF) ListActivityTypesRequest(input *ListActivityTypesInput) (req *requ
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -1195,11 +1214,11 @@ func (c *SWF) ListActivityTypesRequest(input *ListActivityTypesInput) (req *requ
 // API operation ListActivityTypes for usage and error information.
 //
 // Returned Error Codes:
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
@@ -1260,7 +1279,6 @@ const opListClosedWorkflowExecutions = "ListClosedWorkflowExecutions"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) ListClosedWorkflowExecutionsRequest(input *ListClosedWorkflowExecutionsInput) (req *request.Request, output *WorkflowExecutionInfos) {
 	op := &request.Operation{
 		Name:       opListClosedWorkflowExecutions,
@@ -1278,9 +1296,8 @@ func (c *SWF) ListClosedWorkflowExecutionsRequest(input *ListClosedWorkflowExecu
 		input = &ListClosedWorkflowExecutionsInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &WorkflowExecutionInfos{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1292,18 +1309,22 @@ func (c *SWF) ListClosedWorkflowExecutionsRequest(input *ListClosedWorkflowExecu
 // returned by the initial call.
 //
 // This operation is eventually consistent. The results are best effort and
-// may not exactly reflect recent updates and changes. Access Control
+// may not exactly reflect recent updates and changes.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the following parameters by using a Condition element
-// with the appropriate keys.  tagFilter.tag: String constraint. The key is
-// swf:tagFilter.tag. typeFilter.name: String constraint. The key is swf:typeFilter.name.
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the following parameters by using a Condition element with
+//    the appropriate keys. tagFilter.tag: String constraint. The key is swf:tagFilter.tag.
+//
+// typeFilter.name: String constraint. The key is swf:typeFilter.name.
 // typeFilter.version: String constraint. The key is swf:typeFilter.version.
-//    If the caller does not have sufficient permissions to invoke the action,
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -1317,12 +1338,12 @@ func (c *SWF) ListClosedWorkflowExecutionsRequest(input *ListClosedWorkflowExecu
 // API operation ListClosedWorkflowExecutions for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -1382,7 +1403,6 @@ const opListDomains = "ListDomains"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) ListDomainsRequest(input *ListDomainsInput) (req *request.Request, output *ListDomainsOutput) {
 	op := &request.Operation{
 		Name:       opListDomains,
@@ -1400,9 +1420,8 @@ func (c *SWF) ListDomainsRequest(input *ListDomainsInput) (req *request.Request,
 		input = &ListDomainsInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ListDomainsOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1412,21 +1431,24 @@ func (c *SWF) ListDomainsRequest(input *ListDomainsInput) (req *request.Request,
 // split into multiple pages. To retrieve subsequent pages, make the call again
 // using the nextPageToken returned by the initial call.
 //
-//  This operation is eventually consistent. The results are best effort and
-// may not exactly reflect recent updates and changes. Access Control
+// This operation is eventually consistent. The results are best effort and
+// may not exactly reflect recent updates and changes.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. The element must be set to arn:aws:swf::AccountID:domain/*,
-// where AccountID is the account ID, with no dashes. Use an Action element
-// to allow or deny permission to call this action. You cannot use an IAM policy
-// to constrain this action's parameters.  If the caller does not have sufficient
-// permissions to invoke the action, or the parameter values fall outside the
-// specified constraints, the action fails. The associated event attribute's
-// cause parameter will be set to OPERATION_NOT_PERMITTED. For details and example
-// IAM policies, see Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains. The element must be set to arn:aws:swf::AccountID:domain/*,
+//    where AccountID is the account ID, with no dashes.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
+// or the parameter values fall outside the specified constraints, the action
+// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
+// For details and example IAM policies, see Using IAM to Manage Access to Amazon
+// SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -1436,7 +1458,7 @@ func (c *SWF) ListDomainsRequest(input *ListDomainsInput) (req *request.Request,
 // API operation ListDomains for usage and error information.
 //
 // Returned Error Codes:
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -1496,7 +1518,6 @@ const opListOpenWorkflowExecutions = "ListOpenWorkflowExecutions"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) ListOpenWorkflowExecutionsRequest(input *ListOpenWorkflowExecutionsInput) (req *request.Request, output *WorkflowExecutionInfos) {
 	op := &request.Operation{
 		Name:       opListOpenWorkflowExecutions,
@@ -1514,9 +1535,8 @@ func (c *SWF) ListOpenWorkflowExecutionsRequest(input *ListOpenWorkflowExecution
 		input = &ListOpenWorkflowExecutionsInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &WorkflowExecutionInfos{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1527,19 +1547,23 @@ func (c *SWF) ListOpenWorkflowExecutionsRequest(input *ListOpenWorkflowExecution
 // retrieve subsequent pages, make the call again using the nextPageToken returned
 // by the initial call.
 //
-//  This operation is eventually consistent. The results are best effort and
-// may not exactly reflect recent updates and changes. Access Control
+// This operation is eventually consistent. The results are best effort and
+// may not exactly reflect recent updates and changes.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the following parameters by using a Condition element
-// with the appropriate keys.  tagFilter.tag: String constraint. The key is
-// swf:tagFilter.tag. typeFilter.name: String constraint. The key is swf:typeFilter.name.
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the following parameters by using a Condition element with
+//    the appropriate keys. tagFilter.tag: String constraint. The key is swf:tagFilter.tag.
+//
+// typeFilter.name: String constraint. The key is swf:typeFilter.name.
 // typeFilter.version: String constraint. The key is swf:typeFilter.version.
-//    If the caller does not have sufficient permissions to invoke the action,
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -1553,12 +1577,12 @@ func (c *SWF) ListOpenWorkflowExecutionsRequest(input *ListOpenWorkflowExecution
 // API operation ListOpenWorkflowExecutions for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -1618,7 +1642,6 @@ const opListWorkflowTypes = "ListWorkflowTypes"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) ListWorkflowTypesRequest(input *ListWorkflowTypesInput) (req *request.Request, output *ListWorkflowTypesOutput) {
 	op := &request.Operation{
 		Name:       opListWorkflowTypes,
@@ -1636,9 +1659,8 @@ func (c *SWF) ListWorkflowTypesRequest(input *ListWorkflowTypesInput) (req *requ
 		input = &ListWorkflowTypesInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &ListWorkflowTypesOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1653,10 +1675,13 @@ func (c *SWF) ListWorkflowTypesRequest(input *ListWorkflowTypesInput) (req *requ
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -1670,11 +1695,11 @@ func (c *SWF) ListWorkflowTypesRequest(input *ListWorkflowTypesInput) (req *requ
 // API operation ListWorkflowTypes for usage and error information.
 //
 // Returned Error Codes:
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
@@ -1735,7 +1760,6 @@ const opPollForActivityTask = "PollForActivityTask"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) PollForActivityTaskRequest(input *PollForActivityTaskInput) (req *request.Request, output *PollForActivityTaskOutput) {
 	op := &request.Operation{
 		Name:       opPollForActivityTask,
@@ -1747,9 +1771,8 @@ func (c *SWF) PollForActivityTaskRequest(input *PollForActivityTaskInput) (req *
 		input = &PollForActivityTaskInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &PollForActivityTaskOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1765,21 +1788,23 @@ func (c *SWF) PollForActivityTaskRequest(input *PollForActivityTaskInput) (req *
 // use its type to identify and process it correctly.
 //
 // Workers should set their client side socket timeout to at least 70 seconds
-// (10 seconds higher than the maximum time service may hold the poll request).
-// Access Control
+// (10 seconds higher than the maximum time service may hold the poll request).Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the taskList.name parameter by using a Condition element
-// with the swf:taskList.name key to allow the action to access only certain
-// task lists.  If the caller does not have sufficient permissions to invoke
-// the action, or the parameter values fall outside the specified constraints,
-// the action fails. The associated event attribute's cause parameter will be
-// set to OPERATION_NOT_PERMITTED. For details and example IAM policies, see
-// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the taskList.name parameter by using a Condition element with
+//    the swf:taskList.name key to allow the action to access only certain task
+//    lists.
+// If the caller does not have sufficient permissions to invoke the action,
+// or the parameter values fall outside the specified constraints, the action
+// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
+// For details and example IAM policies, see Using IAM to Manage Access to Amazon
+// SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -1789,16 +1814,16 @@ func (c *SWF) PollForActivityTaskRequest(input *PollForActivityTaskInput) (req *
 // API operation PollForActivityTask for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
-//   * LimitExceededFault
+//   * ErrCodeLimitExceededFault "LimitExceededFault"
 //   Returned by any operation if a system imposed limitation has been reached.
 //   To address this fault you should either clean up unused resources or increase
 //   the limit by contacting AWS.
@@ -1834,7 +1859,6 @@ const opPollForDecisionTask = "PollForDecisionTask"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) PollForDecisionTaskRequest(input *PollForDecisionTaskInput) (req *request.Request, output *PollForDecisionTaskOutput) {
 	op := &request.Operation{
 		Name:       opPollForDecisionTask,
@@ -1852,9 +1876,8 @@ func (c *SWF) PollForDecisionTaskRequest(input *PollForDecisionTaskInput) (req *
 		input = &PollForDecisionTaskInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &PollForDecisionTaskOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -1873,26 +1896,28 @@ func (c *SWF) PollForDecisionTaskRequest(input *PollForDecisionTaskInput) (req *
 // a DecisionTask is returned, but that the value of taskToken is an empty string.
 //
 // Deciders should set their client-side socket timeout to at least 70 seconds
-// (10 seconds higher than the timeout). Because the number of workflow history
-// events for a single workflow execution might be very large, the result returned
-// might be split up across a number of pages. To retrieve subsequent pages,
-// make additional calls to PollForDecisionTask using the nextPageToken returned
-// by the initial call. Note that you do not call GetWorkflowExecutionHistory
-// with this nextPageToken. Instead, call PollForDecisionTask again. Access
-// Control
+// (10 seconds higher than the timeout).Because the number of workflow history events for a single workflow execution
+// might be very large, the result returned might be split up across a number
+// of pages. To retrieve subsequent pages, make additional calls to PollForDecisionTask
+// using the nextPageToken returned by the initial call. Note that you do not
+// call GetWorkflowExecutionHistory with this nextPageToken. Instead, call PollForDecisionTask
+// again.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the taskList.name parameter by using a Condition element
-// with the swf:taskList.name key to allow the action to access only certain
-// task lists.  If the caller does not have sufficient permissions to invoke
-// the action, or the parameter values fall outside the specified constraints,
-// the action fails. The associated event attribute's cause parameter will be
-// set to OPERATION_NOT_PERMITTED. For details and example IAM policies, see
-// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the taskList.name parameter by using a Condition element with
+//    the swf:taskList.name key to allow the action to access only certain task
+//    lists.
+// If the caller does not have sufficient permissions to invoke the action,
+// or the parameter values fall outside the specified constraints, the action
+// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
+// For details and example IAM policies, see Using IAM to Manage Access to Amazon
+// SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -1902,16 +1927,16 @@ func (c *SWF) PollForDecisionTaskRequest(input *PollForDecisionTaskInput) (req *
 // API operation PollForDecisionTask for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
-//   * LimitExceededFault
+//   * ErrCodeLimitExceededFault "LimitExceededFault"
 //   Returned by any operation if a system imposed limitation has been reached.
 //   To address this fault you should either clean up unused resources or increase
 //   the limit by contacting AWS.
@@ -1972,7 +1997,6 @@ const opRecordActivityTaskHeartbeat = "RecordActivityTaskHeartbeat"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) RecordActivityTaskHeartbeatRequest(input *RecordActivityTaskHeartbeatInput) (req *request.Request, output *RecordActivityTaskHeartbeatOutput) {
 	op := &request.Operation{
 		Name:       opRecordActivityTaskHeartbeat,
@@ -1984,9 +2008,8 @@ func (c *SWF) RecordActivityTaskHeartbeatRequest(input *RecordActivityTaskHeartb
 		input = &RecordActivityTaskHeartbeatInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &RecordActivityTaskHeartbeatOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -2008,22 +2031,23 @@ func (c *SWF) RecordActivityTaskHeartbeatRequest(input *RecordActivityTaskHeartb
 // contain a ActivityTaskTimedOut event that contains the information from the
 // last heartbeat generated by the activity worker.
 //
-// The taskStartToCloseTimeout of an activity type is the maximum duration
-// of an activity task, regardless of the number of RecordActivityTaskHeartbeat
-// requests received. The taskStartToCloseTimeout is also specified in RegisterActivityType.
-// This operation is only useful for long-lived activities to report liveliness
-// of the task and to determine if a cancellation is being attempted.  If the
-// cancelRequested flag returns true, a cancellation is being attempted. If
-// the worker can cancel the activity, it should respond with RespondActivityTaskCanceled.
-// Otherwise, it should ignore the cancellation request. Access Control
+// The taskStartToCloseTimeout of an activity type is the maximum duration of
+// an activity task, regardless of the number of RecordActivityTaskHeartbeat
+// requests received. The taskStartToCloseTimeout is also specified in RegisterActivityType.This operation is only useful for long-lived activities to report liveliness
+// of the task and to determine if a cancellation is being attempted. If the cancelRequested flag returns true, a cancellation is being attempted.
+// If the worker can cancel the activity, it should respond with RespondActivityTaskCanceled.
+// Otherwise, it should ignore the cancellation request.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -2037,12 +2061,12 @@ func (c *SWF) RecordActivityTaskHeartbeatRequest(input *RecordActivityTaskHeartb
 // API operation RecordActivityTaskHeartbeat for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -2077,7 +2101,6 @@ const opRegisterActivityType = "RegisterActivityType"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) RegisterActivityTypeRequest(input *RegisterActivityTypeInput) (req *request.Request, output *RegisterActivityTypeOutput) {
 	op := &request.Operation{
 		Name:       opRegisterActivityType,
@@ -2089,11 +2112,10 @@ func (c *SWF) RegisterActivityTypeRequest(input *RegisterActivityTypeInput) (req
 		input = &RegisterActivityTypeInput{}
 	}
 
+	output = &RegisterActivityTypeOutput{}
 	req = c.newRequest(op, input, output)
 	req.Handlers.Unmarshal.Remove(jsonrpc.UnmarshalHandler)
 	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
-	output = &RegisterActivityTypeOutput{}
-	req.Data = output
 	return
 }
 
@@ -2102,22 +2124,26 @@ func (c *SWF) RegisterActivityTypeRequest(input *RegisterActivityTypeInput) (req
 // Registers a new activity type along with its configuration settings in the
 // specified domain.
 //
-// A TypeAlreadyExists fault is returned if the type already exists in the
-// domain. You cannot change any configuration settings of the type after its
-// registration, and it must be registered as a new version. Access Control
+// A TypeAlreadyExists fault is returned if the type already exists in the domain.
+// You cannot change any configuration settings of the type after its registration,
+// and it must be registered as a new version.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the following parameters by using a Condition element
-// with the appropriate keys.   defaultTaskList.name: String constraint. The
-// key is swf:defaultTaskList.name.  name: String constraint. The key is swf:name.
-//  version: String constraint. The key is swf:version.    If the caller does
-// not have sufficient permissions to invoke the action, or the parameter values
-// fall outside the specified constraints, the action fails. The associated
-// event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the following parameters by using a Condition element with
+//    the appropriate keys. defaultTaskList.name: String constraint. The key
+//    is swf:defaultTaskList.name.
+// name: String constraint. The key is swf:name.
+// version: String constraint. The key is swf:version.
+//
+// If the caller does not have sufficient permissions to invoke the action,
+// or the parameter values fall outside the specified constraints, the action
+// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
 // SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 //
@@ -2129,23 +2155,23 @@ func (c *SWF) RegisterActivityTypeRequest(input *RegisterActivityTypeInput) (req
 // API operation RegisterActivityType for usage and error information.
 //
 // Returned Error Codes:
-//   * TypeAlreadyExistsFault
+//   * ErrCodeTypeAlreadyExistsFault "TypeAlreadyExistsFault"
 //   Returned if the type already exists in the specified domain. You will get
 //   this fault even if the existing type is in deprecated status. You can specify
 //   another version if the intent is to create a new distinct version of the
 //   type.
 //
-//   * LimitExceededFault
+//   * ErrCodeLimitExceededFault "LimitExceededFault"
 //   Returned by any operation if a system imposed limitation has been reached.
 //   To address this fault you should either clean up unused resources or increase
 //   the limit by contacting AWS.
 //
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -2180,7 +2206,6 @@ const opRegisterDomain = "RegisterDomain"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) RegisterDomainRequest(input *RegisterDomainInput) (req *request.Request, output *RegisterDomainOutput) {
 	op := &request.Operation{
 		Name:       opRegisterDomain,
@@ -2192,11 +2217,10 @@ func (c *SWF) RegisterDomainRequest(input *RegisterDomainInput) (req *request.Re
 		input = &RegisterDomainInput{}
 	}
 
+	output = &RegisterDomainOutput{}
 	req = c.newRequest(op, input, output)
 	req.Handlers.Unmarshal.Remove(jsonrpc.UnmarshalHandler)
 	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
-	output = &RegisterDomainOutput{}
-	req.Data = output
 	return
 }
 
@@ -2209,13 +2233,16 @@ func (c *SWF) RegisterDomainRequest(input *RegisterDomainInput) (req *request.Re
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  You cannot use an IAM policy to control domain access for this action.
-// The name of the domain being registered is available as the resource of this
-// action. Use an Action element to allow or deny permission to call this action.
-// You cannot use an IAM policy to constrain this action's parameters.  If the
-// caller does not have sufficient permissions to invoke the action, or the
-// parameter values fall outside the specified constraints, the action fails.
-// The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
+//    * You cannot use an IAM policy to control domain access for this action.
+//    The name of the domain being registered is available as the resource of
+//    this action.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
+// or the parameter values fall outside the specified constraints, the action
+// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
 // SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 //
@@ -2227,16 +2254,16 @@ func (c *SWF) RegisterDomainRequest(input *RegisterDomainInput) (req *request.Re
 // API operation RegisterDomain for usage and error information.
 //
 // Returned Error Codes:
-//   * DomainAlreadyExistsFault
+//   * ErrCodeDomainAlreadyExistsFault "DomainAlreadyExistsFault"
 //   Returned if the specified domain already exists. You will get this fault
 //   even if the existing domain is in deprecated status.
 //
-//   * LimitExceededFault
+//   * ErrCodeLimitExceededFault "LimitExceededFault"
 //   Returned by any operation if a system imposed limitation has been reached.
 //   To address this fault you should either clean up unused resources or increase
 //   the limit by contacting AWS.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -2271,7 +2298,6 @@ const opRegisterWorkflowType = "RegisterWorkflowType"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) RegisterWorkflowTypeRequest(input *RegisterWorkflowTypeInput) (req *request.Request, output *RegisterWorkflowTypeOutput) {
 	op := &request.Operation{
 		Name:       opRegisterWorkflowType,
@@ -2283,11 +2309,10 @@ func (c *SWF) RegisterWorkflowTypeRequest(input *RegisterWorkflowTypeInput) (req
 		input = &RegisterWorkflowTypeInput{}
 	}
 
+	output = &RegisterWorkflowTypeOutput{}
 	req = c.newRequest(op, input, output)
 	req.Handlers.Unmarshal.Remove(jsonrpc.UnmarshalHandler)
 	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
-	output = &RegisterWorkflowTypeOutput{}
-	req.Data = output
 	return
 }
 
@@ -2299,22 +2324,26 @@ func (c *SWF) RegisterWorkflowTypeRequest(input *RegisterWorkflowTypeInput) (req
 // The retention period for the workflow history is set by the RegisterDomain
 // action.
 //
-// If the type already exists, then a TypeAlreadyExists fault is returned.
-// You cannot change the configuration settings of a workflow type once it is
-// registered and it must be registered as a new version. Access Control
+// If the type already exists, then a TypeAlreadyExists fault is returned. You
+// cannot change the configuration settings of a workflow type once it is registered
+// and it must be registered as a new version.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the following parameters by using a Condition element
-// with the appropriate keys.   defaultTaskList.name: String constraint. The
-// key is swf:defaultTaskList.name.  name: String constraint. The key is swf:name.
-//  version: String constraint. The key is swf:version.    If the caller does
-// not have sufficient permissions to invoke the action, or the parameter values
-// fall outside the specified constraints, the action fails. The associated
-// event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the following parameters by using a Condition element with
+//    the appropriate keys. defaultTaskList.name: String constraint. The key
+//    is swf:defaultTaskList.name.
+// name: String constraint. The key is swf:name.
+// version: String constraint. The key is swf:version.
+//
+// If the caller does not have sufficient permissions to invoke the action,
+// or the parameter values fall outside the specified constraints, the action
+// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
 // SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 //
@@ -2326,23 +2355,23 @@ func (c *SWF) RegisterWorkflowTypeRequest(input *RegisterWorkflowTypeInput) (req
 // API operation RegisterWorkflowType for usage and error information.
 //
 // Returned Error Codes:
-//   * TypeAlreadyExistsFault
+//   * ErrCodeTypeAlreadyExistsFault "TypeAlreadyExistsFault"
 //   Returned if the type already exists in the specified domain. You will get
 //   this fault even if the existing type is in deprecated status. You can specify
 //   another version if the intent is to create a new distinct version of the
 //   type.
 //
-//   * LimitExceededFault
+//   * ErrCodeLimitExceededFault "LimitExceededFault"
 //   Returned by any operation if a system imposed limitation has been reached.
 //   To address this fault you should either clean up unused resources or increase
 //   the limit by contacting AWS.
 //
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -2377,7 +2406,6 @@ const opRequestCancelWorkflowExecution = "RequestCancelWorkflowExecution"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) RequestCancelWorkflowExecutionRequest(input *RequestCancelWorkflowExecutionInput) (req *request.Request, output *RequestCancelWorkflowExecutionOutput) {
 	op := &request.Operation{
 		Name:       opRequestCancelWorkflowExecution,
@@ -2389,11 +2417,10 @@ func (c *SWF) RequestCancelWorkflowExecutionRequest(input *RequestCancelWorkflow
 		input = &RequestCancelWorkflowExecutionInput{}
 	}
 
+	output = &RequestCancelWorkflowExecutionOutput{}
 	req = c.newRequest(op, input, output)
 	req.Handlers.Unmarshal.Remove(jsonrpc.UnmarshalHandler)
 	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
-	output = &RequestCancelWorkflowExecutionOutput{}
-	req.Data = output
 	return
 }
 
@@ -2407,17 +2434,19 @@ func (c *SWF) RequestCancelWorkflowExecutionRequest(input *RequestCancelWorkflow
 //
 // If the runId is not specified, the WorkflowExecutionCancelRequested event
 // is recorded in the history of the current open workflow execution with the
-// specified workflowId in the domain. Because this action allows the workflow
-// to properly clean up and gracefully close, it should be used instead of TerminateWorkflowExecution
-// when possible. Access Control
+// specified workflowId in the domain.Because this action allows the workflow to properly clean up and gracefully
+// close, it should be used instead of TerminateWorkflowExecution when possible.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -2431,12 +2460,12 @@ func (c *SWF) RequestCancelWorkflowExecutionRequest(input *RequestCancelWorkflow
 // API operation RequestCancelWorkflowExecution for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -2471,7 +2500,6 @@ const opRespondActivityTaskCanceled = "RespondActivityTaskCanceled"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) RespondActivityTaskCanceledRequest(input *RespondActivityTaskCanceledInput) (req *request.Request, output *RespondActivityTaskCanceledOutput) {
 	op := &request.Operation{
 		Name:       opRespondActivityTaskCanceled,
@@ -2483,11 +2511,10 @@ func (c *SWF) RespondActivityTaskCanceledRequest(input *RespondActivityTaskCance
 		input = &RespondActivityTaskCanceledInput{}
 	}
 
+	output = &RespondActivityTaskCanceledOutput{}
 	req = c.newRequest(op, input, output)
 	req.Handlers.Unmarshal.Remove(jsonrpc.UnmarshalHandler)
 	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
-	output = &RespondActivityTaskCanceledOutput{}
-	req.Data = output
 	return
 }
 
@@ -2501,8 +2528,7 @@ func (c *SWF) RespondActivityTaskCanceledRequest(input *RespondActivityTaskCance
 // to the workflow history.
 //
 // Only use this operation if the canceled flag of a RecordActivityTaskHeartbeat
-// request returns true and if the activity can be safely undone or abandoned.
-// A task is considered open from the time that it is scheduled until it is
+// request returns true and if the activity can be safely undone or abandoned.A task is considered open from the time that it is scheduled until it is
 // closed. Therefore a task is reported as open while a worker is processing
 // it. A task is closed after it has been specified in a call to RespondActivityTaskCompleted,
 // RespondActivityTaskCanceled, RespondActivityTaskFailed, or the task has timed
@@ -2513,10 +2539,13 @@ func (c *SWF) RespondActivityTaskCanceledRequest(input *RespondActivityTaskCance
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -2530,12 +2559,12 @@ func (c *SWF) RespondActivityTaskCanceledRequest(input *RespondActivityTaskCance
 // API operation RespondActivityTaskCanceled for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -2570,7 +2599,6 @@ const opRespondActivityTaskCompleted = "RespondActivityTaskCompleted"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) RespondActivityTaskCompletedRequest(input *RespondActivityTaskCompletedInput) (req *request.Request, output *RespondActivityTaskCompletedOutput) {
 	op := &request.Operation{
 		Name:       opRespondActivityTaskCompleted,
@@ -2582,11 +2610,10 @@ func (c *SWF) RespondActivityTaskCompletedRequest(input *RespondActivityTaskComp
 		input = &RespondActivityTaskCompletedInput{}
 	}
 
+	output = &RespondActivityTaskCompletedOutput{}
 	req = c.newRequest(op, input, output)
 	req.Handlers.Unmarshal.Remove(jsonrpc.UnmarshalHandler)
 	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
-	output = &RespondActivityTaskCompletedOutput{}
-	req.Data = output
 	return
 }
 
@@ -2596,24 +2623,27 @@ func (c *SWF) RespondActivityTaskCompletedRequest(input *RespondActivityTaskComp
 // taskToken completed successfully with a result (if provided). The result
 // appears in the ActivityTaskCompleted event in the workflow history.
 //
-//  If the requested task does not complete successfully, use RespondActivityTaskFailed
+// If the requested task does not complete successfully, use RespondActivityTaskFailed
 // instead. If the worker finds that the task is canceled through the canceled
 // flag returned by RecordActivityTaskHeartbeat, it should cancel the task,
-// clean up and then call RespondActivityTaskCanceled. A task is considered
-// open from the time that it is scheduled until it is closed. Therefore a task
-// is reported as open while a worker is processing it. A task is closed after
-// it has been specified in a call to RespondActivityTaskCompleted, RespondActivityTaskCanceled,
-// RespondActivityTaskFailed, or the task has timed out (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dg-basic.html#swf-dev-timeout-types).
+// clean up and then call RespondActivityTaskCanceled.A task is considered open from the time that it is scheduled until it is
+// closed. Therefore a task is reported as open while a worker is processing
+// it. A task is closed after it has been specified in a call to RespondActivityTaskCompleted,
+// RespondActivityTaskCanceled, RespondActivityTaskFailed, or the task has timed
+// out (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dg-basic.html#swf-dev-timeout-types).
 //
 // Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -2627,12 +2657,12 @@ func (c *SWF) RespondActivityTaskCompletedRequest(input *RespondActivityTaskComp
 // API operation RespondActivityTaskCompleted for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -2667,7 +2697,6 @@ const opRespondActivityTaskFailed = "RespondActivityTaskFailed"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) RespondActivityTaskFailedRequest(input *RespondActivityTaskFailedInput) (req *request.Request, output *RespondActivityTaskFailedOutput) {
 	op := &request.Operation{
 		Name:       opRespondActivityTaskFailed,
@@ -2679,11 +2708,10 @@ func (c *SWF) RespondActivityTaskFailedRequest(input *RespondActivityTaskFailedI
 		input = &RespondActivityTaskFailedInput{}
 	}
 
+	output = &RespondActivityTaskFailedOutput{}
 	req = c.newRequest(op, input, output)
 	req.Handlers.Unmarshal.Remove(jsonrpc.UnmarshalHandler)
 	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
-	output = &RespondActivityTaskFailedOutput{}
-	req.Data = output
 	return
 }
 
@@ -2704,10 +2732,13 @@ func (c *SWF) RespondActivityTaskFailedRequest(input *RespondActivityTaskFailedI
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -2721,12 +2752,12 @@ func (c *SWF) RespondActivityTaskFailedRequest(input *RespondActivityTaskFailedI
 // API operation RespondActivityTaskFailed for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -2761,7 +2792,6 @@ const opRespondDecisionTaskCompleted = "RespondDecisionTaskCompleted"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) RespondDecisionTaskCompletedRequest(input *RespondDecisionTaskCompletedInput) (req *request.Request, output *RespondDecisionTaskCompletedOutput) {
 	op := &request.Operation{
 		Name:       opRespondDecisionTaskCompleted,
@@ -2773,11 +2803,10 @@ func (c *SWF) RespondDecisionTaskCompletedRequest(input *RespondDecisionTaskComp
 		input = &RespondDecisionTaskCompletedInput{}
 	}
 
+	output = &RespondDecisionTaskCompletedOutput{}
 	req = c.newRequest(op, input, output)
 	req.Handlers.Unmarshal.Remove(jsonrpc.UnmarshalHandler)
 	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
-	output = &RespondDecisionTaskCompletedOutput{}
-	req.Data = output
 	return
 }
 
@@ -2792,8 +2821,8 @@ func (c *SWF) RespondDecisionTaskCompletedRequest(input *RespondDecisionTaskComp
 //
 // Access Control
 //
-// If an IAM policy grants permission to use RespondDecisionTaskCompleted,
-// it can express permissions for the list of decisions in the decisions parameter.
+// If an IAM policy grants permission to use RespondDecisionTaskCompleted, it
+// can express permissions for the list of decisions in the decisions parameter.
 // Each of the decisions has one or more parameters, much like a regular API
 // call. To allow for policies to be as readable as possible, you can express
 // permissions on decisions as if they were actual API calls, including applying
@@ -2808,12 +2837,12 @@ func (c *SWF) RespondDecisionTaskCompletedRequest(input *RespondDecisionTaskComp
 // API operation RespondDecisionTaskCompleted for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -2848,7 +2877,6 @@ const opSignalWorkflowExecution = "SignalWorkflowExecution"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) SignalWorkflowExecutionRequest(input *SignalWorkflowExecutionInput) (req *request.Request, output *SignalWorkflowExecutionOutput) {
 	op := &request.Operation{
 		Name:       opSignalWorkflowExecution,
@@ -2860,11 +2888,10 @@ func (c *SWF) SignalWorkflowExecutionRequest(input *SignalWorkflowExecutionInput
 		input = &SignalWorkflowExecutionInput{}
 	}
 
+	output = &SignalWorkflowExecutionOutput{}
 	req = c.newRequest(op, input, output)
 	req.Handlers.Unmarshal.Remove(jsonrpc.UnmarshalHandler)
 	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
-	output = &SignalWorkflowExecutionOutput{}
-	req.Data = output
 	return
 }
 
@@ -2875,18 +2902,20 @@ func (c *SWF) SignalWorkflowExecutionRequest(input *SignalWorkflowExecutionInput
 // given domain, workflowId and runId. The event is recorded with the specified
 // user defined signalName and input (if provided).
 //
-//  If a runId is not specified, then the WorkflowExecutionSignaled event is
+// If a runId is not specified, then the WorkflowExecutionSignaled event is
 // recorded in the history of the current open workflow with the matching workflowId
-// in the domain.  If the specified workflow execution is not open, this method
-// fails with UnknownResource. Access Control
+// in the domain.If the specified workflow execution is not open, this method fails with UnknownResource.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -2900,12 +2929,12 @@ func (c *SWF) SignalWorkflowExecutionRequest(input *SignalWorkflowExecutionInput
 // API operation SignalWorkflowExecution for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -2940,7 +2969,6 @@ const opStartWorkflowExecution = "StartWorkflowExecution"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) StartWorkflowExecutionRequest(input *StartWorkflowExecutionInput) (req *request.Request, output *StartWorkflowExecutionOutput) {
 	op := &request.Operation{
 		Name:       opStartWorkflowExecution,
@@ -2952,9 +2980,8 @@ func (c *SWF) StartWorkflowExecutionRequest(input *StartWorkflowExecutionInput) 
 		input = &StartWorkflowExecutionInput{}
 	}
 
-	req = c.newRequest(op, input, output)
 	output = &StartWorkflowExecutionOutput{}
-	req.Data = output
+	req = c.newRequest(op, input, output)
 	return
 }
 
@@ -2970,20 +2997,26 @@ func (c *SWF) StartWorkflowExecutionRequest(input *StartWorkflowExecutionInput) 
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the following parameters by using a Condition element
-// with the appropriate keys.   tagList.member.0: The key is swf:tagList.member.0.
-//  tagList.member.1: The key is swf:tagList.member.1.  tagList.member.2: The
-// key is swf:tagList.member.2.  tagList.member.3: The key is swf:tagList.member.3.
-//  tagList.member.4: The key is swf:tagList.member.4. taskList: String constraint.
-// The key is swf:taskList.name. workflowType.name: String constraint. The key
-// is swf:workflowType.name. workflowType.version: String constraint. The key
-// is swf:workflowType.version.    If the caller does not have sufficient permissions
-// to invoke the action, or the parameter values fall outside the specified
-// constraints, the action fails. The associated event attribute's cause parameter
-// will be set to OPERATION_NOT_PERMITTED. For details and example IAM policies,
-// see Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the following parameters by using a Condition element with
+//    the appropriate keys. tagList.member.0: The key is swf:tagList.member.0.
+//
+// tagList.member.1: The key is swf:tagList.member.1.
+// tagList.member.2: The key is swf:tagList.member.2.
+// tagList.member.3: The key is swf:tagList.member.3.
+// tagList.member.4: The key is swf:tagList.member.4.
+// taskList: String constraint. The key is swf:taskList.name.
+// workflowType.name: String constraint. The key is swf:workflowType.name.
+// workflowType.version: String constraint. The key is swf:workflowType.version.
+//
+// If the caller does not have sufficient permissions to invoke the action,
+// or the parameter values fall outside the specified constraints, the action
+// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
+// For details and example IAM policies, see Using IAM to Manage Access to Amazon
+// SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -2993,29 +3026,28 @@ func (c *SWF) StartWorkflowExecutionRequest(input *StartWorkflowExecutionInput) 
 // API operation StartWorkflowExecution for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * TypeDeprecatedFault
+//   * ErrCodeTypeDeprecatedFault "TypeDeprecatedFault"
 //   Returned when the specified activity or workflow type was already deprecated.
 //
-//   * WorkflowExecutionAlreadyStartedFault
+//   * ErrCodeWorkflowExecutionAlreadyStartedFault "WorkflowExecutionAlreadyStartedFault"
 //   Returned by StartWorkflowExecution when an open execution with the same workflowId
 //   is already running in the specified domain.
 //
-//   * LimitExceededFault
+//   * ErrCodeLimitExceededFault "LimitExceededFault"
 //   Returned by any operation if a system imposed limitation has been reached.
 //   To address this fault you should either clean up unused resources or increase
 //   the limit by contacting AWS.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
-//   * DefaultUndefinedFault
-
+//   * ErrCodeDefaultUndefinedFault "DefaultUndefinedFault"
 //
 func (c *SWF) StartWorkflowExecution(input *StartWorkflowExecutionInput) (*StartWorkflowExecutionOutput, error) {
 	req, out := c.StartWorkflowExecutionRequest(input)
@@ -3048,7 +3080,6 @@ const opTerminateWorkflowExecution = "TerminateWorkflowExecution"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-//
 func (c *SWF) TerminateWorkflowExecutionRequest(input *TerminateWorkflowExecutionInput) (req *request.Request, output *TerminateWorkflowExecutionOutput) {
 	op := &request.Operation{
 		Name:       opTerminateWorkflowExecution,
@@ -3060,11 +3091,10 @@ func (c *SWF) TerminateWorkflowExecutionRequest(input *TerminateWorkflowExecutio
 		input = &TerminateWorkflowExecutionInput{}
 	}
 
+	output = &TerminateWorkflowExecutionOutput{}
 	req = c.newRequest(op, input, output)
 	req.Handlers.Unmarshal.Remove(jsonrpc.UnmarshalHandler)
 	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
-	output = &TerminateWorkflowExecutionOutput{}
-	req.Data = output
 	return
 }
 
@@ -3076,20 +3106,22 @@ func (c *SWF) TerminateWorkflowExecutionRequest(input *TerminateWorkflowExecutio
 // execution, is applied to any open child workflow executions of this workflow
 // execution.
 //
-//  If the identified workflow execution was in progress, it is terminated
-// immediately.  If a runId is not specified, then the WorkflowExecutionTerminated
-// event is recorded in the history of the current open workflow with the matching
-// workflowId in the domain.  You should consider using RequestCancelWorkflowExecution
-// action instead because it allows the workflow to gracefully close while TerminateWorkflowExecution
-// does not. Access Control
+// If the identified workflow execution was in progress, it is terminated immediately.If a runId is not specified, then the WorkflowExecutionTerminated event is
+// recorded in the history of the current open workflow with the matching workflowId
+// in the domain.You should consider using RequestCancelWorkflowExecution action instead because
+// it allows the workflow to gracefully close while TerminateWorkflowExecution
+// does not.Access Control
 //
 // You can use IAM policies to control this action's access to Amazon SWF resources
 // as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -3103,12 +3135,12 @@ func (c *SWF) TerminateWorkflowExecutionRequest(input *TerminateWorkflowExecutio
 // API operation TerminateWorkflowExecution for usage and error information.
 //
 // Returned Error Codes:
-//   * UnknownResourceFault
+//   * ErrCodeUnknownResourceFault "UnknownResourceFault"
 //   Returned when the named resource cannot be found with in the scope of this
 //   operation (region or domain). This could happen if the named resource was
 //   never created or is no longer available for this operation.
 //
-//   * OperationNotPermittedFault
+//   * ErrCodeOperationNotPermittedFault "OperationNotPermittedFault"
 //   Returned when the caller does not have sufficient permissions to invoke the
 //   action.
 //
@@ -3144,6 +3176,18 @@ func (s ActivityTaskCancelRequestedEventAttributes) String() string {
 // GoString returns the string representation
 func (s ActivityTaskCancelRequestedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetActivityId sets the ActivityId field's value.
+func (s *ActivityTaskCancelRequestedEventAttributes) SetActivityId(v string) *ActivityTaskCancelRequestedEventAttributes {
+	s.ActivityId = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *ActivityTaskCancelRequestedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *ActivityTaskCancelRequestedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
 }
 
 // Provides details of the ActivityTaskCanceled event.
@@ -3183,6 +3227,30 @@ func (s ActivityTaskCanceledEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetDetails sets the Details field's value.
+func (s *ActivityTaskCanceledEventAttributes) SetDetails(v string) *ActivityTaskCanceledEventAttributes {
+	s.Details = &v
+	return s
+}
+
+// SetLatestCancelRequestedEventId sets the LatestCancelRequestedEventId field's value.
+func (s *ActivityTaskCanceledEventAttributes) SetLatestCancelRequestedEventId(v int64) *ActivityTaskCanceledEventAttributes {
+	s.LatestCancelRequestedEventId = &v
+	return s
+}
+
+// SetScheduledEventId sets the ScheduledEventId field's value.
+func (s *ActivityTaskCanceledEventAttributes) SetScheduledEventId(v int64) *ActivityTaskCanceledEventAttributes {
+	s.ScheduledEventId = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *ActivityTaskCanceledEventAttributes) SetStartedEventId(v int64) *ActivityTaskCanceledEventAttributes {
+	s.StartedEventId = &v
+	return s
+}
+
 // Provides details of the ActivityTaskCompleted event.
 type ActivityTaskCompletedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -3213,6 +3281,24 @@ func (s ActivityTaskCompletedEventAttributes) String() string {
 // GoString returns the string representation
 func (s ActivityTaskCompletedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetResult sets the Result field's value.
+func (s *ActivityTaskCompletedEventAttributes) SetResult(v string) *ActivityTaskCompletedEventAttributes {
+	s.Result = &v
+	return s
+}
+
+// SetScheduledEventId sets the ScheduledEventId field's value.
+func (s *ActivityTaskCompletedEventAttributes) SetScheduledEventId(v int64) *ActivityTaskCompletedEventAttributes {
+	s.ScheduledEventId = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *ActivityTaskCompletedEventAttributes) SetStartedEventId(v int64) *ActivityTaskCompletedEventAttributes {
+	s.StartedEventId = &v
+	return s
 }
 
 // Provides details of the ActivityTaskFailed event.
@@ -3248,6 +3334,30 @@ func (s ActivityTaskFailedEventAttributes) String() string {
 // GoString returns the string representation
 func (s ActivityTaskFailedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetDetails sets the Details field's value.
+func (s *ActivityTaskFailedEventAttributes) SetDetails(v string) *ActivityTaskFailedEventAttributes {
+	s.Details = &v
+	return s
+}
+
+// SetReason sets the Reason field's value.
+func (s *ActivityTaskFailedEventAttributes) SetReason(v string) *ActivityTaskFailedEventAttributes {
+	s.Reason = &v
+	return s
+}
+
+// SetScheduledEventId sets the ScheduledEventId field's value.
+func (s *ActivityTaskFailedEventAttributes) SetScheduledEventId(v int64) *ActivityTaskFailedEventAttributes {
+	s.ScheduledEventId = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *ActivityTaskFailedEventAttributes) SetStartedEventId(v int64) *ActivityTaskFailedEventAttributes {
+	s.StartedEventId = &v
+	return s
 }
 
 // Provides details of the ActivityTaskScheduled event.
@@ -3323,6 +3433,72 @@ func (s ActivityTaskScheduledEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetActivityId sets the ActivityId field's value.
+func (s *ActivityTaskScheduledEventAttributes) SetActivityId(v string) *ActivityTaskScheduledEventAttributes {
+	s.ActivityId = &v
+	return s
+}
+
+// SetActivityType sets the ActivityType field's value.
+func (s *ActivityTaskScheduledEventAttributes) SetActivityType(v *ActivityType) *ActivityTaskScheduledEventAttributes {
+	s.ActivityType = v
+	return s
+}
+
+// SetControl sets the Control field's value.
+func (s *ActivityTaskScheduledEventAttributes) SetControl(v string) *ActivityTaskScheduledEventAttributes {
+	s.Control = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *ActivityTaskScheduledEventAttributes) SetDecisionTaskCompletedEventId(v int64) *ActivityTaskScheduledEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetHeartbeatTimeout sets the HeartbeatTimeout field's value.
+func (s *ActivityTaskScheduledEventAttributes) SetHeartbeatTimeout(v string) *ActivityTaskScheduledEventAttributes {
+	s.HeartbeatTimeout = &v
+	return s
+}
+
+// SetInput sets the Input field's value.
+func (s *ActivityTaskScheduledEventAttributes) SetInput(v string) *ActivityTaskScheduledEventAttributes {
+	s.Input = &v
+	return s
+}
+
+// SetScheduleToCloseTimeout sets the ScheduleToCloseTimeout field's value.
+func (s *ActivityTaskScheduledEventAttributes) SetScheduleToCloseTimeout(v string) *ActivityTaskScheduledEventAttributes {
+	s.ScheduleToCloseTimeout = &v
+	return s
+}
+
+// SetScheduleToStartTimeout sets the ScheduleToStartTimeout field's value.
+func (s *ActivityTaskScheduledEventAttributes) SetScheduleToStartTimeout(v string) *ActivityTaskScheduledEventAttributes {
+	s.ScheduleToStartTimeout = &v
+	return s
+}
+
+// SetStartToCloseTimeout sets the StartToCloseTimeout field's value.
+func (s *ActivityTaskScheduledEventAttributes) SetStartToCloseTimeout(v string) *ActivityTaskScheduledEventAttributes {
+	s.StartToCloseTimeout = &v
+	return s
+}
+
+// SetTaskList sets the TaskList field's value.
+func (s *ActivityTaskScheduledEventAttributes) SetTaskList(v *TaskList) *ActivityTaskScheduledEventAttributes {
+	s.TaskList = v
+	return s
+}
+
+// SetTaskPriority sets the TaskPriority field's value.
+func (s *ActivityTaskScheduledEventAttributes) SetTaskPriority(v string) *ActivityTaskScheduledEventAttributes {
+	s.TaskPriority = &v
+	return s
+}
+
 // Provides details of the ActivityTaskStarted event.
 type ActivityTaskStartedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -3347,6 +3523,18 @@ func (s ActivityTaskStartedEventAttributes) String() string {
 // GoString returns the string representation
 func (s ActivityTaskStartedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetIdentity sets the Identity field's value.
+func (s *ActivityTaskStartedEventAttributes) SetIdentity(v string) *ActivityTaskStartedEventAttributes {
+	s.Identity = &v
+	return s
+}
+
+// SetScheduledEventId sets the ScheduledEventId field's value.
+func (s *ActivityTaskStartedEventAttributes) SetScheduledEventId(v int64) *ActivityTaskStartedEventAttributes {
+	s.ScheduledEventId = &v
+	return s
 }
 
 // Provides details of the ActivityTaskTimedOut event.
@@ -3387,14 +3575,38 @@ func (s ActivityTaskTimedOutEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetDetails sets the Details field's value.
+func (s *ActivityTaskTimedOutEventAttributes) SetDetails(v string) *ActivityTaskTimedOutEventAttributes {
+	s.Details = &v
+	return s
+}
+
+// SetScheduledEventId sets the ScheduledEventId field's value.
+func (s *ActivityTaskTimedOutEventAttributes) SetScheduledEventId(v int64) *ActivityTaskTimedOutEventAttributes {
+	s.ScheduledEventId = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *ActivityTaskTimedOutEventAttributes) SetStartedEventId(v int64) *ActivityTaskTimedOutEventAttributes {
+	s.StartedEventId = &v
+	return s
+}
+
+// SetTimeoutType sets the TimeoutType field's value.
+func (s *ActivityTaskTimedOutEventAttributes) SetTimeoutType(v string) *ActivityTaskTimedOutEventAttributes {
+	s.TimeoutType = &v
+	return s
+}
+
 // Represents an activity type.
 type ActivityType struct {
 	_ struct{} `type:"structure"`
 
 	// The name of this activity.
 	//
-	// The combination of activity type name and version must be unique within
-	// a domain.
+	// The combination of activity type name and version must be unique within a
+	// domain.
 	//
 	// Name is a required field
 	Name *string `locationName:"name" min:"1" type:"string" required:"true"`
@@ -3438,6 +3650,18 @@ func (s *ActivityType) Validate() error {
 		return invalidParams
 	}
 	return nil
+}
+
+// SetName sets the Name field's value.
+func (s *ActivityType) SetName(v string) *ActivityType {
+	s.Name = &v
+	return s
+}
+
+// SetVersion sets the Version field's value.
+func (s *ActivityType) SetVersion(v string) *ActivityType {
+	s.Version = &v
+	return s
 }
 
 // Configuration settings registered with the activity type.
@@ -3512,6 +3736,42 @@ func (s ActivityTypeConfiguration) GoString() string {
 	return s.String()
 }
 
+// SetDefaultTaskHeartbeatTimeout sets the DefaultTaskHeartbeatTimeout field's value.
+func (s *ActivityTypeConfiguration) SetDefaultTaskHeartbeatTimeout(v string) *ActivityTypeConfiguration {
+	s.DefaultTaskHeartbeatTimeout = &v
+	return s
+}
+
+// SetDefaultTaskList sets the DefaultTaskList field's value.
+func (s *ActivityTypeConfiguration) SetDefaultTaskList(v *TaskList) *ActivityTypeConfiguration {
+	s.DefaultTaskList = v
+	return s
+}
+
+// SetDefaultTaskPriority sets the DefaultTaskPriority field's value.
+func (s *ActivityTypeConfiguration) SetDefaultTaskPriority(v string) *ActivityTypeConfiguration {
+	s.DefaultTaskPriority = &v
+	return s
+}
+
+// SetDefaultTaskScheduleToCloseTimeout sets the DefaultTaskScheduleToCloseTimeout field's value.
+func (s *ActivityTypeConfiguration) SetDefaultTaskScheduleToCloseTimeout(v string) *ActivityTypeConfiguration {
+	s.DefaultTaskScheduleToCloseTimeout = &v
+	return s
+}
+
+// SetDefaultTaskScheduleToStartTimeout sets the DefaultTaskScheduleToStartTimeout field's value.
+func (s *ActivityTypeConfiguration) SetDefaultTaskScheduleToStartTimeout(v string) *ActivityTypeConfiguration {
+	s.DefaultTaskScheduleToStartTimeout = &v
+	return s
+}
+
+// SetDefaultTaskStartToCloseTimeout sets the DefaultTaskStartToCloseTimeout field's value.
+func (s *ActivityTypeConfiguration) SetDefaultTaskStartToCloseTimeout(v string) *ActivityTypeConfiguration {
+	s.DefaultTaskStartToCloseTimeout = &v
+	return s
+}
+
 // Detailed information about an activity type.
 type ActivityTypeInfo struct {
 	_ struct{} `type:"structure"`
@@ -3548,6 +3808,36 @@ func (s ActivityTypeInfo) GoString() string {
 	return s.String()
 }
 
+// SetActivityType sets the ActivityType field's value.
+func (s *ActivityTypeInfo) SetActivityType(v *ActivityType) *ActivityTypeInfo {
+	s.ActivityType = v
+	return s
+}
+
+// SetCreationDate sets the CreationDate field's value.
+func (s *ActivityTypeInfo) SetCreationDate(v time.Time) *ActivityTypeInfo {
+	s.CreationDate = &v
+	return s
+}
+
+// SetDeprecationDate sets the DeprecationDate field's value.
+func (s *ActivityTypeInfo) SetDeprecationDate(v time.Time) *ActivityTypeInfo {
+	s.DeprecationDate = &v
+	return s
+}
+
+// SetDescription sets the Description field's value.
+func (s *ActivityTypeInfo) SetDescription(v string) *ActivityTypeInfo {
+	s.Description = &v
+	return s
+}
+
+// SetStatus sets the Status field's value.
+func (s *ActivityTypeInfo) SetStatus(v string) *ActivityTypeInfo {
+	s.Status = &v
+	return s
+}
+
 // Provides details of the CancelTimer decision.
 //
 // Access Control
@@ -3555,10 +3845,13 @@ func (s ActivityTypeInfo) GoString() string {
 // You can use IAM policies to control this decision's access to Amazon SWF
 // resources as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -3598,6 +3891,12 @@ func (s *CancelTimerDecisionAttributes) Validate() error {
 	return nil
 }
 
+// SetTimerId sets the TimerId field's value.
+func (s *CancelTimerDecisionAttributes) SetTimerId(v string) *CancelTimerDecisionAttributes {
+	s.TimerId = &v
+	return s
+}
+
 // Provides details of the CancelTimerFailed event.
 type CancelTimerFailedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -3605,8 +3904,8 @@ type CancelTimerFailedEventAttributes struct {
 	// The cause of the failure. This information is generated by the system and
 	// can be useful for diagnostic purposes.
 	//
-	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because
-	// it lacked sufficient permissions. For details and example IAM policies, see
+	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because it
+	// lacked sufficient permissions. For details and example IAM policies, see
 	// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 	//
 	// Cause is a required field
@@ -3636,6 +3935,24 @@ func (s CancelTimerFailedEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetCause sets the Cause field's value.
+func (s *CancelTimerFailedEventAttributes) SetCause(v string) *CancelTimerFailedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *CancelTimerFailedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *CancelTimerFailedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetTimerId sets the TimerId field's value.
+func (s *CancelTimerFailedEventAttributes) SetTimerId(v string) *CancelTimerFailedEventAttributes {
+	s.TimerId = &v
+	return s
+}
+
 // Provides details of the CancelWorkflowExecution decision.
 //
 // Access Control
@@ -3643,10 +3960,13 @@ func (s CancelTimerFailedEventAttributes) GoString() string {
 // You can use IAM policies to control this decision's access to Amazon SWF
 // resources as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -3668,6 +3988,12 @@ func (s CancelWorkflowExecutionDecisionAttributes) GoString() string {
 	return s.String()
 }
 
+// SetDetails sets the Details field's value.
+func (s *CancelWorkflowExecutionDecisionAttributes) SetDetails(v string) *CancelWorkflowExecutionDecisionAttributes {
+	s.Details = &v
+	return s
+}
+
 // Provides details of the CancelWorkflowExecutionFailed event.
 type CancelWorkflowExecutionFailedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -3675,8 +4001,8 @@ type CancelWorkflowExecutionFailedEventAttributes struct {
 	// The cause of the failure. This information is generated by the system and
 	// can be useful for diagnostic purposes.
 	//
-	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because
-	// it lacked sufficient permissions. For details and example IAM policies, see
+	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because it
+	// lacked sufficient permissions. For details and example IAM policies, see
 	// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 	//
 	// Cause is a required field
@@ -3699,6 +4025,18 @@ func (s CancelWorkflowExecutionFailedEventAttributes) String() string {
 // GoString returns the string representation
 func (s CancelWorkflowExecutionFailedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetCause sets the Cause field's value.
+func (s *CancelWorkflowExecutionFailedEventAttributes) SetCause(v string) *CancelWorkflowExecutionFailedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *CancelWorkflowExecutionFailedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *CancelWorkflowExecutionFailedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
 }
 
 // Provide details of the ChildWorkflowExecutionCanceled event.
@@ -3744,6 +4082,36 @@ func (s ChildWorkflowExecutionCanceledEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetDetails sets the Details field's value.
+func (s *ChildWorkflowExecutionCanceledEventAttributes) SetDetails(v string) *ChildWorkflowExecutionCanceledEventAttributes {
+	s.Details = &v
+	return s
+}
+
+// SetInitiatedEventId sets the InitiatedEventId field's value.
+func (s *ChildWorkflowExecutionCanceledEventAttributes) SetInitiatedEventId(v int64) *ChildWorkflowExecutionCanceledEventAttributes {
+	s.InitiatedEventId = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *ChildWorkflowExecutionCanceledEventAttributes) SetStartedEventId(v int64) *ChildWorkflowExecutionCanceledEventAttributes {
+	s.StartedEventId = &v
+	return s
+}
+
+// SetWorkflowExecution sets the WorkflowExecution field's value.
+func (s *ChildWorkflowExecutionCanceledEventAttributes) SetWorkflowExecution(v *WorkflowExecution) *ChildWorkflowExecutionCanceledEventAttributes {
+	s.WorkflowExecution = v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *ChildWorkflowExecutionCanceledEventAttributes) SetWorkflowType(v *WorkflowType) *ChildWorkflowExecutionCanceledEventAttributes {
+	s.WorkflowType = v
+	return s
+}
+
 // Provides details of the ChildWorkflowExecutionCompleted event.
 type ChildWorkflowExecutionCompletedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -3785,6 +4153,36 @@ func (s ChildWorkflowExecutionCompletedEventAttributes) String() string {
 // GoString returns the string representation
 func (s ChildWorkflowExecutionCompletedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetInitiatedEventId sets the InitiatedEventId field's value.
+func (s *ChildWorkflowExecutionCompletedEventAttributes) SetInitiatedEventId(v int64) *ChildWorkflowExecutionCompletedEventAttributes {
+	s.InitiatedEventId = &v
+	return s
+}
+
+// SetResult sets the Result field's value.
+func (s *ChildWorkflowExecutionCompletedEventAttributes) SetResult(v string) *ChildWorkflowExecutionCompletedEventAttributes {
+	s.Result = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *ChildWorkflowExecutionCompletedEventAttributes) SetStartedEventId(v int64) *ChildWorkflowExecutionCompletedEventAttributes {
+	s.StartedEventId = &v
+	return s
+}
+
+// SetWorkflowExecution sets the WorkflowExecution field's value.
+func (s *ChildWorkflowExecutionCompletedEventAttributes) SetWorkflowExecution(v *WorkflowExecution) *ChildWorkflowExecutionCompletedEventAttributes {
+	s.WorkflowExecution = v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *ChildWorkflowExecutionCompletedEventAttributes) SetWorkflowType(v *WorkflowType) *ChildWorkflowExecutionCompletedEventAttributes {
+	s.WorkflowType = v
+	return s
 }
 
 // Provides details of the ChildWorkflowExecutionFailed event.
@@ -3833,6 +4231,42 @@ func (s ChildWorkflowExecutionFailedEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetDetails sets the Details field's value.
+func (s *ChildWorkflowExecutionFailedEventAttributes) SetDetails(v string) *ChildWorkflowExecutionFailedEventAttributes {
+	s.Details = &v
+	return s
+}
+
+// SetInitiatedEventId sets the InitiatedEventId field's value.
+func (s *ChildWorkflowExecutionFailedEventAttributes) SetInitiatedEventId(v int64) *ChildWorkflowExecutionFailedEventAttributes {
+	s.InitiatedEventId = &v
+	return s
+}
+
+// SetReason sets the Reason field's value.
+func (s *ChildWorkflowExecutionFailedEventAttributes) SetReason(v string) *ChildWorkflowExecutionFailedEventAttributes {
+	s.Reason = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *ChildWorkflowExecutionFailedEventAttributes) SetStartedEventId(v int64) *ChildWorkflowExecutionFailedEventAttributes {
+	s.StartedEventId = &v
+	return s
+}
+
+// SetWorkflowExecution sets the WorkflowExecution field's value.
+func (s *ChildWorkflowExecutionFailedEventAttributes) SetWorkflowExecution(v *WorkflowExecution) *ChildWorkflowExecutionFailedEventAttributes {
+	s.WorkflowExecution = v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *ChildWorkflowExecutionFailedEventAttributes) SetWorkflowType(v *WorkflowType) *ChildWorkflowExecutionFailedEventAttributes {
+	s.WorkflowType = v
+	return s
+}
+
 // Provides details of the ChildWorkflowExecutionStarted event.
 type ChildWorkflowExecutionStartedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -3864,6 +4298,24 @@ func (s ChildWorkflowExecutionStartedEventAttributes) String() string {
 // GoString returns the string representation
 func (s ChildWorkflowExecutionStartedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetInitiatedEventId sets the InitiatedEventId field's value.
+func (s *ChildWorkflowExecutionStartedEventAttributes) SetInitiatedEventId(v int64) *ChildWorkflowExecutionStartedEventAttributes {
+	s.InitiatedEventId = &v
+	return s
+}
+
+// SetWorkflowExecution sets the WorkflowExecution field's value.
+func (s *ChildWorkflowExecutionStartedEventAttributes) SetWorkflowExecution(v *WorkflowExecution) *ChildWorkflowExecutionStartedEventAttributes {
+	s.WorkflowExecution = v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *ChildWorkflowExecutionStartedEventAttributes) SetWorkflowType(v *WorkflowType) *ChildWorkflowExecutionStartedEventAttributes {
+	s.WorkflowType = v
+	return s
 }
 
 // Provides details of the ChildWorkflowExecutionTerminated event.
@@ -3904,6 +4356,30 @@ func (s ChildWorkflowExecutionTerminatedEventAttributes) String() string {
 // GoString returns the string representation
 func (s ChildWorkflowExecutionTerminatedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetInitiatedEventId sets the InitiatedEventId field's value.
+func (s *ChildWorkflowExecutionTerminatedEventAttributes) SetInitiatedEventId(v int64) *ChildWorkflowExecutionTerminatedEventAttributes {
+	s.InitiatedEventId = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *ChildWorkflowExecutionTerminatedEventAttributes) SetStartedEventId(v int64) *ChildWorkflowExecutionTerminatedEventAttributes {
+	s.StartedEventId = &v
+	return s
+}
+
+// SetWorkflowExecution sets the WorkflowExecution field's value.
+func (s *ChildWorkflowExecutionTerminatedEventAttributes) SetWorkflowExecution(v *WorkflowExecution) *ChildWorkflowExecutionTerminatedEventAttributes {
+	s.WorkflowExecution = v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *ChildWorkflowExecutionTerminatedEventAttributes) SetWorkflowType(v *WorkflowType) *ChildWorkflowExecutionTerminatedEventAttributes {
+	s.WorkflowType = v
+	return s
 }
 
 // Provides details of the ChildWorkflowExecutionTimedOut event.
@@ -3952,6 +4428,36 @@ func (s ChildWorkflowExecutionTimedOutEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetInitiatedEventId sets the InitiatedEventId field's value.
+func (s *ChildWorkflowExecutionTimedOutEventAttributes) SetInitiatedEventId(v int64) *ChildWorkflowExecutionTimedOutEventAttributes {
+	s.InitiatedEventId = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *ChildWorkflowExecutionTimedOutEventAttributes) SetStartedEventId(v int64) *ChildWorkflowExecutionTimedOutEventAttributes {
+	s.StartedEventId = &v
+	return s
+}
+
+// SetTimeoutType sets the TimeoutType field's value.
+func (s *ChildWorkflowExecutionTimedOutEventAttributes) SetTimeoutType(v string) *ChildWorkflowExecutionTimedOutEventAttributes {
+	s.TimeoutType = &v
+	return s
+}
+
+// SetWorkflowExecution sets the WorkflowExecution field's value.
+func (s *ChildWorkflowExecutionTimedOutEventAttributes) SetWorkflowExecution(v *WorkflowExecution) *ChildWorkflowExecutionTimedOutEventAttributes {
+	s.WorkflowExecution = v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *ChildWorkflowExecutionTimedOutEventAttributes) SetWorkflowType(v *WorkflowType) *ChildWorkflowExecutionTimedOutEventAttributes {
+	s.WorkflowType = v
+	return s
+}
+
 // Used to filter the closed workflow executions in visibility APIs by their
 // close status.
 type CloseStatusFilter struct {
@@ -3987,6 +4493,12 @@ func (s *CloseStatusFilter) Validate() error {
 	return nil
 }
 
+// SetStatus sets the Status field's value.
+func (s *CloseStatusFilter) SetStatus(v string) *CloseStatusFilter {
+	s.Status = &v
+	return s
+}
+
 // Provides details of the CompleteWorkflowExecution decision.
 //
 // Access Control
@@ -3994,10 +4506,13 @@ func (s *CloseStatusFilter) Validate() error {
 // You can use IAM policies to control this decision's access to Amazon SWF
 // resources as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -4020,6 +4535,12 @@ func (s CompleteWorkflowExecutionDecisionAttributes) GoString() string {
 	return s.String()
 }
 
+// SetResult sets the Result field's value.
+func (s *CompleteWorkflowExecutionDecisionAttributes) SetResult(v string) *CompleteWorkflowExecutionDecisionAttributes {
+	s.Result = &v
+	return s
+}
+
 // Provides details of the CompleteWorkflowExecutionFailed event.
 type CompleteWorkflowExecutionFailedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -4027,8 +4548,8 @@ type CompleteWorkflowExecutionFailedEventAttributes struct {
 	// The cause of the failure. This information is generated by the system and
 	// can be useful for diagnostic purposes.
 	//
-	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because
-	// it lacked sufficient permissions. For details and example IAM policies, see
+	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because it
+	// lacked sufficient permissions. For details and example IAM policies, see
 	// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 	//
 	// Cause is a required field
@@ -4053,6 +4574,18 @@ func (s CompleteWorkflowExecutionFailedEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetCause sets the Cause field's value.
+func (s *CompleteWorkflowExecutionFailedEventAttributes) SetCause(v string) *CompleteWorkflowExecutionFailedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *CompleteWorkflowExecutionFailedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *CompleteWorkflowExecutionFailedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
 // Provides details of the ContinueAsNewWorkflowExecution decision.
 //
 // Access Control
@@ -4060,15 +4593,19 @@ func (s CompleteWorkflowExecutionFailedEventAttributes) GoString() string {
 // You can use IAM policies to control this decision's access to Amazon SWF
 // resources as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the following parameters by using a Condition element
-// with the appropriate keys.   tag: Optional.. A tag used to identify the workflow
-// execution taskList: String constraint. The key is swf:taskList.name. workflowType.version:
-// String constraint. The key is swf:workflowType.version.    If the caller
-// does not have sufficient permissions to invoke the action, or the parameter
-// values fall outside the specified constraints, the action fails. The associated
-// event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the following parameters by using a Condition element with
+//    the appropriate keys. tag: Optional.. A tag used to identify the workflow
+//    execution
+// taskList: String constraint. The key is swf:taskList.name.
+// workflowType.version: String constraint. The key is swf:workflowType.version.
+//
+// If the caller does not have sufficient permissions to invoke the action,
+// or the parameter values fall outside the specified constraints, the action
+// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
 // SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 type ContinueAsNewWorkflowExecutionDecisionAttributes struct {
@@ -4081,15 +4618,17 @@ type ContinueAsNewWorkflowExecutionDecisionAttributes struct {
 	//
 	// The supported child policies are:
 	//
-	//  TERMINATE: the child executions will be terminated. REQUEST_CANCEL: a request
-	// to cancel will be attempted for each child execution by recording a WorkflowExecutionCancelRequested
-	// event in its history. It is up to the decider to take appropriate actions
-	// when it receives an execution history with this event. ABANDON: no action
-	// will be taken. The child executions will continue to run.  A child policy
-	// for this workflow execution must be specified either as a default for the
-	// workflow type or through this parameter. If neither this parameter is set
-	// nor a default child policy was specified at registration time then a fault
-	// will be returned.
+	//    * TERMINATE: the child executions will be terminated.
+	//    * REQUEST_CANCEL: a request to cancel will be attempted for each child
+	//    execution by recording a WorkflowExecutionCancelRequested event in its
+	//    history. It is up to the decider to take appropriate actions when it receives
+	//    an execution history with this event.
+	//    * ABANDON: no action will be taken. The child executions will continue
+	//    to run.
+	// A child policy for this workflow execution must be specified either as a
+	// default for the workflow type or through this parameter. If neither this
+	// parameter is set nor a default child policy was specified at registration
+	// time then a fault will be returned.
 	ChildPolicy *string `locationName:"childPolicy" type:"string" enum:"ChildPolicy"`
 
 	// If set, specifies the total duration for this workflow execution. This overrides
@@ -4099,10 +4638,10 @@ type ContinueAsNewWorkflowExecutionDecisionAttributes struct {
 	// The duration is specified in seconds; an integer greater than or equal to
 	// 0. The value "NONE" can be used to specify unlimited duration.
 	//
-	// An execution start-to-close timeout for this workflow execution must be
-	// specified either as a default for the workflow type or through this field.
-	// If neither this field is set nor a default execution start-to-close timeout
-	// was specified at registration time then a fault will be returned.
+	// An execution start-to-close timeout for this workflow execution must be specified
+	// either as a default for the workflow type or through this field. If neither
+	// this field is set nor a default execution start-to-close timeout was specified
+	// at registration time then a fault will be returned.
 	ExecutionStartToCloseTimeout *string `locationName:"executionStartToCloseTimeout" type:"string"`
 
 	// The input provided to the new workflow execution.
@@ -4110,9 +4649,9 @@ type ContinueAsNewWorkflowExecutionDecisionAttributes struct {
 
 	// The ARN of an IAM role that authorizes Amazon SWF to invoke AWS Lambda functions.
 	//
-	// In order for this workflow execution to invoke AWS Lambda functions, an
-	// appropriate IAM role must be specified either as a default for the workflow
-	// type or through this field.
+	// In order for this workflow execution to invoke AWS Lambda functions, an appropriate
+	// IAM role must be specified either as a default for the workflow type or through
+	// this field.
 	LambdaRole *string `locationName:"lambdaRole" min:"1" type:"string"`
 
 	// The list of tags to associate with the new workflow execution. A maximum
@@ -4182,6 +4721,60 @@ func (s *ContinueAsNewWorkflowExecutionDecisionAttributes) Validate() error {
 	return nil
 }
 
+// SetChildPolicy sets the ChildPolicy field's value.
+func (s *ContinueAsNewWorkflowExecutionDecisionAttributes) SetChildPolicy(v string) *ContinueAsNewWorkflowExecutionDecisionAttributes {
+	s.ChildPolicy = &v
+	return s
+}
+
+// SetExecutionStartToCloseTimeout sets the ExecutionStartToCloseTimeout field's value.
+func (s *ContinueAsNewWorkflowExecutionDecisionAttributes) SetExecutionStartToCloseTimeout(v string) *ContinueAsNewWorkflowExecutionDecisionAttributes {
+	s.ExecutionStartToCloseTimeout = &v
+	return s
+}
+
+// SetInput sets the Input field's value.
+func (s *ContinueAsNewWorkflowExecutionDecisionAttributes) SetInput(v string) *ContinueAsNewWorkflowExecutionDecisionAttributes {
+	s.Input = &v
+	return s
+}
+
+// SetLambdaRole sets the LambdaRole field's value.
+func (s *ContinueAsNewWorkflowExecutionDecisionAttributes) SetLambdaRole(v string) *ContinueAsNewWorkflowExecutionDecisionAttributes {
+	s.LambdaRole = &v
+	return s
+}
+
+// SetTagList sets the TagList field's value.
+func (s *ContinueAsNewWorkflowExecutionDecisionAttributes) SetTagList(v []*string) *ContinueAsNewWorkflowExecutionDecisionAttributes {
+	s.TagList = v
+	return s
+}
+
+// SetTaskList sets the TaskList field's value.
+func (s *ContinueAsNewWorkflowExecutionDecisionAttributes) SetTaskList(v *TaskList) *ContinueAsNewWorkflowExecutionDecisionAttributes {
+	s.TaskList = v
+	return s
+}
+
+// SetTaskPriority sets the TaskPriority field's value.
+func (s *ContinueAsNewWorkflowExecutionDecisionAttributes) SetTaskPriority(v string) *ContinueAsNewWorkflowExecutionDecisionAttributes {
+	s.TaskPriority = &v
+	return s
+}
+
+// SetTaskStartToCloseTimeout sets the TaskStartToCloseTimeout field's value.
+func (s *ContinueAsNewWorkflowExecutionDecisionAttributes) SetTaskStartToCloseTimeout(v string) *ContinueAsNewWorkflowExecutionDecisionAttributes {
+	s.TaskStartToCloseTimeout = &v
+	return s
+}
+
+// SetWorkflowTypeVersion sets the WorkflowTypeVersion field's value.
+func (s *ContinueAsNewWorkflowExecutionDecisionAttributes) SetWorkflowTypeVersion(v string) *ContinueAsNewWorkflowExecutionDecisionAttributes {
+	s.WorkflowTypeVersion = &v
+	return s
+}
+
 // Provides details of the ContinueAsNewWorkflowExecutionFailed event.
 type ContinueAsNewWorkflowExecutionFailedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -4189,8 +4782,8 @@ type ContinueAsNewWorkflowExecutionFailedEventAttributes struct {
 	// The cause of the failure. This information is generated by the system and
 	// can be useful for diagnostic purposes.
 	//
-	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because
-	// it lacked sufficient permissions. For details and example IAM policies, see
+	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because it
+	// lacked sufficient permissions. For details and example IAM policies, see
 	// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 	//
 	// Cause is a required field
@@ -4213,6 +4806,18 @@ func (s ContinueAsNewWorkflowExecutionFailedEventAttributes) String() string {
 // GoString returns the string representation
 func (s ContinueAsNewWorkflowExecutionFailedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetCause sets the Cause field's value.
+func (s *ContinueAsNewWorkflowExecutionFailedEventAttributes) SetCause(v string) *ContinueAsNewWorkflowExecutionFailedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *ContinueAsNewWorkflowExecutionFailedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *ContinueAsNewWorkflowExecutionFailedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
 }
 
 type CountClosedWorkflowExecutionsInput struct {
@@ -4321,6 +4926,48 @@ func (s *CountClosedWorkflowExecutionsInput) Validate() error {
 	return nil
 }
 
+// SetCloseStatusFilter sets the CloseStatusFilter field's value.
+func (s *CountClosedWorkflowExecutionsInput) SetCloseStatusFilter(v *CloseStatusFilter) *CountClosedWorkflowExecutionsInput {
+	s.CloseStatusFilter = v
+	return s
+}
+
+// SetCloseTimeFilter sets the CloseTimeFilter field's value.
+func (s *CountClosedWorkflowExecutionsInput) SetCloseTimeFilter(v *ExecutionTimeFilter) *CountClosedWorkflowExecutionsInput {
+	s.CloseTimeFilter = v
+	return s
+}
+
+// SetDomain sets the Domain field's value.
+func (s *CountClosedWorkflowExecutionsInput) SetDomain(v string) *CountClosedWorkflowExecutionsInput {
+	s.Domain = &v
+	return s
+}
+
+// SetExecutionFilter sets the ExecutionFilter field's value.
+func (s *CountClosedWorkflowExecutionsInput) SetExecutionFilter(v *WorkflowExecutionFilter) *CountClosedWorkflowExecutionsInput {
+	s.ExecutionFilter = v
+	return s
+}
+
+// SetStartTimeFilter sets the StartTimeFilter field's value.
+func (s *CountClosedWorkflowExecutionsInput) SetStartTimeFilter(v *ExecutionTimeFilter) *CountClosedWorkflowExecutionsInput {
+	s.StartTimeFilter = v
+	return s
+}
+
+// SetTagFilter sets the TagFilter field's value.
+func (s *CountClosedWorkflowExecutionsInput) SetTagFilter(v *TagFilter) *CountClosedWorkflowExecutionsInput {
+	s.TagFilter = v
+	return s
+}
+
+// SetTypeFilter sets the TypeFilter field's value.
+func (s *CountClosedWorkflowExecutionsInput) SetTypeFilter(v *WorkflowTypeFilter) *CountClosedWorkflowExecutionsInput {
+	s.TypeFilter = v
+	return s
+}
+
 type CountOpenWorkflowExecutionsInput struct {
 	_ struct{} `type:"structure"`
 
@@ -4405,6 +5052,36 @@ func (s *CountOpenWorkflowExecutionsInput) Validate() error {
 	return nil
 }
 
+// SetDomain sets the Domain field's value.
+func (s *CountOpenWorkflowExecutionsInput) SetDomain(v string) *CountOpenWorkflowExecutionsInput {
+	s.Domain = &v
+	return s
+}
+
+// SetExecutionFilter sets the ExecutionFilter field's value.
+func (s *CountOpenWorkflowExecutionsInput) SetExecutionFilter(v *WorkflowExecutionFilter) *CountOpenWorkflowExecutionsInput {
+	s.ExecutionFilter = v
+	return s
+}
+
+// SetStartTimeFilter sets the StartTimeFilter field's value.
+func (s *CountOpenWorkflowExecutionsInput) SetStartTimeFilter(v *ExecutionTimeFilter) *CountOpenWorkflowExecutionsInput {
+	s.StartTimeFilter = v
+	return s
+}
+
+// SetTagFilter sets the TagFilter field's value.
+func (s *CountOpenWorkflowExecutionsInput) SetTagFilter(v *TagFilter) *CountOpenWorkflowExecutionsInput {
+	s.TagFilter = v
+	return s
+}
+
+// SetTypeFilter sets the TypeFilter field's value.
+func (s *CountOpenWorkflowExecutionsInput) SetTypeFilter(v *WorkflowTypeFilter) *CountOpenWorkflowExecutionsInput {
+	s.TypeFilter = v
+	return s
+}
+
 type CountPendingActivityTasksInput struct {
 	_ struct{} `type:"structure"`
 
@@ -4451,6 +5128,18 @@ func (s *CountPendingActivityTasksInput) Validate() error {
 		return invalidParams
 	}
 	return nil
+}
+
+// SetDomain sets the Domain field's value.
+func (s *CountPendingActivityTasksInput) SetDomain(v string) *CountPendingActivityTasksInput {
+	s.Domain = &v
+	return s
+}
+
+// SetTaskList sets the TaskList field's value.
+func (s *CountPendingActivityTasksInput) SetTaskList(v *TaskList) *CountPendingActivityTasksInput {
+	s.TaskList = v
+	return s
 }
 
 type CountPendingDecisionTasksInput struct {
@@ -4501,38 +5190,58 @@ func (s *CountPendingDecisionTasksInput) Validate() error {
 	return nil
 }
 
+// SetDomain sets the Domain field's value.
+func (s *CountPendingDecisionTasksInput) SetDomain(v string) *CountPendingDecisionTasksInput {
+	s.Domain = &v
+	return s
+}
+
+// SetTaskList sets the TaskList field's value.
+func (s *CountPendingDecisionTasksInput) SetTaskList(v *TaskList) *CountPendingDecisionTasksInput {
+	s.TaskList = v
+	return s
+}
+
 // Specifies a decision made by the decider. A decision can be one of these
 // types:
 //
-//   CancelTimer: cancels a previously started timer and records a TimerCanceled
-// event in the history.  CancelWorkflowExecution: closes the workflow execution
-// and records a WorkflowExecutionCanceled event in the history.  CompleteWorkflowExecution:
-// closes the workflow execution and records a WorkflowExecutionCompleted event
-// in the history .  ContinueAsNewWorkflowExecution: closes the workflow execution
-// and starts a new workflow execution of the same type using the same workflow
-// ID and a unique run ID. A WorkflowExecutionContinuedAsNew event is recorded
-// in the history.  FailWorkflowExecution: closes the workflow execution and
-// records a WorkflowExecutionFailed event in the history.  RecordMarker: records
-// a MarkerRecorded event in the history. Markers can be used for adding custom
-// information in the history for instance to let deciders know that they do
-// not need to look at the history beyond the marker event.  RequestCancelActivityTask:
-// attempts to cancel a previously scheduled activity task. If the activity
-// task was scheduled but has not been assigned to a worker, then it will be
-// canceled. If the activity task was already assigned to a worker, then the
-// worker will be informed that cancellation has been requested in the response
-// to RecordActivityTaskHeartbeat.  RequestCancelExternalWorkflowExecution:
-// requests that a request be made to cancel the specified external workflow
-// execution and records a RequestCancelExternalWorkflowExecutionInitiated event
-// in the history.  ScheduleActivityTask: schedules an activity task.  ScheduleLambdaFunction:
-// schedules a AWS Lambda function.  SignalExternalWorkflowExecution: requests
-// a signal to be delivered to the specified external workflow execution and
-// records a SignalExternalWorkflowExecutionInitiated event in the history.
-//  StartChildWorkflowExecution: requests that a child workflow execution be
-// started and records a StartChildWorkflowExecutionInitiated event in the history.
-// The child workflow execution is a separate workflow execution with its own
-// history.  StartTimer: starts a timer for this workflow execution and records
-// a TimerStarted event in the history. This timer will fire after the specified
-// delay and record a TimerFired event.  Access Control
+//    * CancelTimer: cancels a previously started timer and records a TimerCanceled
+//    event in the history.
+//    * CancelWorkflowExecution: closes the workflow execution and records a
+//    WorkflowExecutionCanceled event in the history.
+//    * CompleteWorkflowExecution: closes the workflow execution and records
+//    a WorkflowExecutionCompleted event in the history .
+//    * ContinueAsNewWorkflowExecution: closes the workflow execution and starts
+//    a new workflow execution of the same type using the same workflow ID and
+//    a unique run ID. A WorkflowExecutionContinuedAsNew event is recorded in
+//    the history.
+//    * FailWorkflowExecution: closes the workflow execution and records a WorkflowExecutionFailed
+//    event in the history.
+//    * RecordMarker: records a MarkerRecorded event in the history. Markers
+//    can be used for adding custom information in the history for instance
+//    to let deciders know that they do not need to look at the history beyond
+//    the marker event.
+//    * RequestCancelActivityTask: attempts to cancel a previously scheduled
+//    activity task. If the activity task was scheduled but has not been assigned
+//    to a worker, then it will be canceled. If the activity task was already
+//    assigned to a worker, then the worker will be informed that cancellation
+//    has been requested in the response to RecordActivityTaskHeartbeat.
+//    * RequestCancelExternalWorkflowExecution: requests that a request be made
+//    to cancel the specified external workflow execution and records a RequestCancelExternalWorkflowExecutionInitiated
+//    event in the history.
+//    * ScheduleActivityTask: schedules an activity task.
+//    * ScheduleLambdaFunction: schedules a AWS Lambda function.
+//    * SignalExternalWorkflowExecution: requests a signal to be delivered to
+//    the specified external workflow execution and records a SignalExternalWorkflowExecutionInitiated
+//    event in the history.
+//    * StartChildWorkflowExecution: requests that a child workflow execution
+//    be started and records a StartChildWorkflowExecutionInitiated event in
+//    the history. The child workflow execution is a separate workflow execution
+//    with its own history.
+//    * StartTimer: starts a timer for this workflow execution and records a
+//    TimerStarted event in the history. This timer will fire after the specified
+//    delay and record a TimerFired event.
+// Access Control
 //
 // If you grant permission to use RespondDecisionTaskCompleted, you can use
 // IAM policies to express permissions for the list of decisions returned by
@@ -4545,45 +5254,57 @@ func (s *CountPendingDecisionTasksInput) Validate() error {
 //
 // Decisions can fail for several reasons
 //
-//  The ordering of decisions should follow a logical flow. Some decisions
-// might not make sense in the current context of the workflow execution and
-// will therefore fail. A limit on your account was reached. The decision lacks
-// sufficient permissions.  One of the following events might be added to the
-// history to indicate an error. The event attribute's cause parameter indicates
-// the cause. If cause is set to OPERATION_NOT_PERMITTED, the decision failed
-// because it lacked sufficient permissions. For details and example IAM policies,
-// see Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
+//    * The ordering of decisions should follow a logical flow. Some decisions
+//    might not make sense in the current context of the workflow execution
+//    and will therefore fail.
+//    * A limit on your account was reached.
+//    * The decision lacks sufficient permissions.
+// One of the following events might be added to the history to indicate an
+// error. The event attribute's cause parameter indicates the cause. If cause
+// is set to OPERATION_NOT_PERMITTED, the decision failed because it lacked
+// sufficient permissions. For details and example IAM policies, see Using IAM
+// to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 //
-//   ScheduleActivityTaskFailed: a ScheduleActivityTask decision failed. This
-// could happen if the activity type specified in the decision is not registered,
-// is in a deprecated state, or the decision is not properly configured.  ScheduleLambdaFunctionFailed:
-// a ScheduleLambdaFunctionFailed decision failed. This could happen if the
-// AWS Lambda function specified in the decision does not exist, or the AWS
-// Lambda service's limits are exceeded.  RequestCancelActivityTaskFailed: a
-// RequestCancelActivityTask decision failed. This could happen if there is
-// no open activity task with the specified activityId.  StartTimerFailed: a
-// StartTimer decision failed. This could happen if there is another open timer
-// with the same timerId.  CancelTimerFailed: a CancelTimer decision failed.
-// This could happen if there is no open timer with the specified timerId.
-// StartChildWorkflowExecutionFailed: a StartChildWorkflowExecution decision
-// failed. This could happen if the workflow type specified is not registered,
-// is deprecated, or the decision is not properly configured.  SignalExternalWorkflowExecutionFailed:
-// a SignalExternalWorkflowExecution decision failed. This could happen if the
-// workflowID specified in the decision was incorrect.  RequestCancelExternalWorkflowExecutionFailed:
-// a RequestCancelExternalWorkflowExecution decision failed. This could happen
-// if the workflowID specified in the decision was incorrect.  CancelWorkflowExecutionFailed:
-// a CancelWorkflowExecution decision failed. This could happen if there is
-// an unhandled decision task pending in the workflow execution.  CompleteWorkflowExecutionFailed:
-// a CompleteWorkflowExecution decision failed. This could happen if there is
-// an unhandled decision task pending in the workflow execution.  ContinueAsNewWorkflowExecutionFailed:
-// a ContinueAsNewWorkflowExecution decision failed. This could happen if there
-// is an unhandled decision task pending in the workflow execution or the ContinueAsNewWorkflowExecution
-// decision was not configured correctly.  FailWorkflowExecutionFailed: a FailWorkflowExecution
-// decision failed. This could happen if there is an unhandled decision task
-// pending in the workflow execution.  The preceding error events might occur
-// due to an error in the decider logic, which might put the workflow execution
-// in an unstable state The cause field in the event structure for the error
-// event indicates the cause of the error.
+//    * ScheduleActivityTaskFailed: a ScheduleActivityTask decision failed.
+//    This could happen if the activity type specified in the decision is not
+//    registered, is in a deprecated state, or the decision is not properly
+//    configured.
+//    * ScheduleLambdaFunctionFailed: a ScheduleLambdaFunctionFailed decision
+//    failed. This could happen if the AWS Lambda function specified in the
+//    decision does not exist, or the AWS Lambda service's limits are exceeded.
+//
+//    * RequestCancelActivityTaskFailed: a RequestCancelActivityTask decision
+//    failed. This could happen if there is no open activity task with the specified
+//    activityId.
+//    * StartTimerFailed: a StartTimer decision failed. This could happen if
+//    there is another open timer with the same timerId.
+//    * CancelTimerFailed: a CancelTimer decision failed. This could happen
+//    if there is no open timer with the specified timerId.
+//    * StartChildWorkflowExecutionFailed: a StartChildWorkflowExecution decision
+//    failed. This could happen if the workflow type specified is not registered,
+//    is deprecated, or the decision is not properly configured.
+//    * SignalExternalWorkflowExecutionFailed: a SignalExternalWorkflowExecution
+//    decision failed. This could happen if the workflowID specified in the
+//    decision was incorrect.
+//    * RequestCancelExternalWorkflowExecutionFailed: a RequestCancelExternalWorkflowExecution
+//    decision failed. This could happen if the workflowID specified in the
+//    decision was incorrect.
+//    * CancelWorkflowExecutionFailed: a CancelWorkflowExecution decision failed.
+//    This could happen if there is an unhandled decision task pending in the
+//    workflow execution.
+//    * CompleteWorkflowExecutionFailed: a CompleteWorkflowExecution decision
+//    failed. This could happen if there is an unhandled decision task pending
+//    in the workflow execution.
+//    * ContinueAsNewWorkflowExecutionFailed: a ContinueAsNewWorkflowExecution
+//    decision failed. This could happen if there is an unhandled decision task
+//    pending in the workflow execution or the ContinueAsNewWorkflowExecution
+//    decision was not configured correctly.
+//    * FailWorkflowExecutionFailed: a FailWorkflowExecution decision failed.
+//    This could happen if there is an unhandled decision task pending in the
+//    workflow execution.
+// The preceding error events might occur due to an error in the decider logic,
+// which might put the workflow execution in an unstable state The cause field
+// in the event structure for the error event indicates the cause of the error.
 //
 // A workflow execution may be closed by the decider by returning one of the
 // following decisions when completing a decision task: CompleteWorkflowExecution,
@@ -4596,18 +5317,25 @@ func (s *CountPendingDecisionTasksInput) Validate() error {
 // RespondDecisionTaskCompleted without any decisions. This would result in
 // another decision task with these new events included in the history. The
 // decider should handle the new events and may decide to close the workflow
-// execution. How to code a decision
+// execution.How to code a decision
 //
 // You code a decision by first setting the decision type field to one of the
 // above decision values, and then set the corresponding attributes field shown
 // below:
 //
-//   ScheduleActivityTaskDecisionAttributes   ScheduleLambdaFunctionDecisionAttributes
-//   RequestCancelActivityTaskDecisionAttributes   CompleteWorkflowExecutionDecisionAttributes
-//   FailWorkflowExecutionDecisionAttributes   CancelWorkflowExecutionDecisionAttributes
-//   ContinueAsNewWorkflowExecutionDecisionAttributes   RecordMarkerDecisionAttributes
-//   StartTimerDecisionAttributes   CancelTimerDecisionAttributes   SignalExternalWorkflowExecutionDecisionAttributes
-//   RequestCancelExternalWorkflowExecutionDecisionAttributes   StartChildWorkflowExecutionDecisionAttributes
+//    * ScheduleActivityTaskDecisionAttributes
+//    * ScheduleLambdaFunctionDecisionAttributes
+//    * RequestCancelActivityTaskDecisionAttributes
+//    * CompleteWorkflowExecutionDecisionAttributes
+//    * FailWorkflowExecutionDecisionAttributes
+//    * CancelWorkflowExecutionDecisionAttributes
+//    * ContinueAsNewWorkflowExecutionDecisionAttributes
+//    * RecordMarkerDecisionAttributes
+//    * StartTimerDecisionAttributes
+//    * CancelTimerDecisionAttributes
+//    * SignalExternalWorkflowExecutionDecisionAttributes
+//    * RequestCancelExternalWorkflowExecutionDecisionAttributes
+//    * StartChildWorkflowExecutionDecisionAttributes
 type Decision struct {
 	_ struct{} `type:"structure"`
 
@@ -4659,13 +5387,18 @@ type Decision struct {
 	// You can use IAM policies to control this decision's access to Amazon SWF
 	// resources as follows:
 	//
-	//  Use a Resource element with the domain name to limit the action to only
-	// specified domains. Use an Action element to allow or deny permission to call
-	// this action. Constrain the following parameters by using a Condition element
-	// with the appropriate keys.  activityType.name: String constraint. The key
-	// is swf:activityType.name. activityType.version: String constraint. The key
-	// is swf:activityType.version. taskList: String constraint. The key is swf:taskList.name.
-	//    If the caller does not have sufficient permissions to invoke the action,
+	//    * Use a Resource element with the domain name to limit the action to only
+	//    specified domains.
+	//    * Use an Action element to allow or deny permission to call this action.
+	//
+	//    * Constrain the following parameters by using a Condition element with
+	//    the appropriate keys. activityType.name: String constraint. The key is
+	//    swf:activityType.name.
+	// activityType.version: String constraint. The key is swf:activityType.version.
+	//
+	// taskList: String constraint. The key is swf:taskList.name.
+	//
+	// If the caller does not have sufficient permissions to invoke the action,
 	// or the parameter values fall outside the specified constraints, the action
 	// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 	// For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -4758,6 +5491,90 @@ func (s *Decision) Validate() error {
 	return nil
 }
 
+// SetCancelTimerDecisionAttributes sets the CancelTimerDecisionAttributes field's value.
+func (s *Decision) SetCancelTimerDecisionAttributes(v *CancelTimerDecisionAttributes) *Decision {
+	s.CancelTimerDecisionAttributes = v
+	return s
+}
+
+// SetCancelWorkflowExecutionDecisionAttributes sets the CancelWorkflowExecutionDecisionAttributes field's value.
+func (s *Decision) SetCancelWorkflowExecutionDecisionAttributes(v *CancelWorkflowExecutionDecisionAttributes) *Decision {
+	s.CancelWorkflowExecutionDecisionAttributes = v
+	return s
+}
+
+// SetCompleteWorkflowExecutionDecisionAttributes sets the CompleteWorkflowExecutionDecisionAttributes field's value.
+func (s *Decision) SetCompleteWorkflowExecutionDecisionAttributes(v *CompleteWorkflowExecutionDecisionAttributes) *Decision {
+	s.CompleteWorkflowExecutionDecisionAttributes = v
+	return s
+}
+
+// SetContinueAsNewWorkflowExecutionDecisionAttributes sets the ContinueAsNewWorkflowExecutionDecisionAttributes field's value.
+func (s *Decision) SetContinueAsNewWorkflowExecutionDecisionAttributes(v *ContinueAsNewWorkflowExecutionDecisionAttributes) *Decision {
+	s.ContinueAsNewWorkflowExecutionDecisionAttributes = v
+	return s
+}
+
+// SetDecisionType sets the DecisionType field's value.
+func (s *Decision) SetDecisionType(v string) *Decision {
+	s.DecisionType = &v
+	return s
+}
+
+// SetFailWorkflowExecutionDecisionAttributes sets the FailWorkflowExecutionDecisionAttributes field's value.
+func (s *Decision) SetFailWorkflowExecutionDecisionAttributes(v *FailWorkflowExecutionDecisionAttributes) *Decision {
+	s.FailWorkflowExecutionDecisionAttributes = v
+	return s
+}
+
+// SetRecordMarkerDecisionAttributes sets the RecordMarkerDecisionAttributes field's value.
+func (s *Decision) SetRecordMarkerDecisionAttributes(v *RecordMarkerDecisionAttributes) *Decision {
+	s.RecordMarkerDecisionAttributes = v
+	return s
+}
+
+// SetRequestCancelActivityTaskDecisionAttributes sets the RequestCancelActivityTaskDecisionAttributes field's value.
+func (s *Decision) SetRequestCancelActivityTaskDecisionAttributes(v *RequestCancelActivityTaskDecisionAttributes) *Decision {
+	s.RequestCancelActivityTaskDecisionAttributes = v
+	return s
+}
+
+// SetRequestCancelExternalWorkflowExecutionDecisionAttributes sets the RequestCancelExternalWorkflowExecutionDecisionAttributes field's value.
+func (s *Decision) SetRequestCancelExternalWorkflowExecutionDecisionAttributes(v *RequestCancelExternalWorkflowExecutionDecisionAttributes) *Decision {
+	s.RequestCancelExternalWorkflowExecutionDecisionAttributes = v
+	return s
+}
+
+// SetScheduleActivityTaskDecisionAttributes sets the ScheduleActivityTaskDecisionAttributes field's value.
+func (s *Decision) SetScheduleActivityTaskDecisionAttributes(v *ScheduleActivityTaskDecisionAttributes) *Decision {
+	s.ScheduleActivityTaskDecisionAttributes = v
+	return s
+}
+
+// SetScheduleLambdaFunctionDecisionAttributes sets the ScheduleLambdaFunctionDecisionAttributes field's value.
+func (s *Decision) SetScheduleLambdaFunctionDecisionAttributes(v *ScheduleLambdaFunctionDecisionAttributes) *Decision {
+	s.ScheduleLambdaFunctionDecisionAttributes = v
+	return s
+}
+
+// SetSignalExternalWorkflowExecutionDecisionAttributes sets the SignalExternalWorkflowExecutionDecisionAttributes field's value.
+func (s *Decision) SetSignalExternalWorkflowExecutionDecisionAttributes(v *SignalExternalWorkflowExecutionDecisionAttributes) *Decision {
+	s.SignalExternalWorkflowExecutionDecisionAttributes = v
+	return s
+}
+
+// SetStartChildWorkflowExecutionDecisionAttributes sets the StartChildWorkflowExecutionDecisionAttributes field's value.
+func (s *Decision) SetStartChildWorkflowExecutionDecisionAttributes(v *StartChildWorkflowExecutionDecisionAttributes) *Decision {
+	s.StartChildWorkflowExecutionDecisionAttributes = v
+	return s
+}
+
+// SetStartTimerDecisionAttributes sets the StartTimerDecisionAttributes field's value.
+func (s *Decision) SetStartTimerDecisionAttributes(v *StartTimerDecisionAttributes) *Decision {
+	s.StartTimerDecisionAttributes = v
+	return s
+}
+
 // Provides details of the DecisionTaskCompleted event.
 type DecisionTaskCompletedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -4788,6 +5605,24 @@ func (s DecisionTaskCompletedEventAttributes) String() string {
 // GoString returns the string representation
 func (s DecisionTaskCompletedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetExecutionContext sets the ExecutionContext field's value.
+func (s *DecisionTaskCompletedEventAttributes) SetExecutionContext(v string) *DecisionTaskCompletedEventAttributes {
+	s.ExecutionContext = &v
+	return s
+}
+
+// SetScheduledEventId sets the ScheduledEventId field's value.
+func (s *DecisionTaskCompletedEventAttributes) SetScheduledEventId(v int64) *DecisionTaskCompletedEventAttributes {
+	s.ScheduledEventId = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *DecisionTaskCompletedEventAttributes) SetStartedEventId(v int64) *DecisionTaskCompletedEventAttributes {
+	s.StartedEventId = &v
+	return s
 }
 
 // Provides details about the DecisionTaskScheduled event.
@@ -4827,6 +5662,24 @@ func (s DecisionTaskScheduledEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetStartToCloseTimeout sets the StartToCloseTimeout field's value.
+func (s *DecisionTaskScheduledEventAttributes) SetStartToCloseTimeout(v string) *DecisionTaskScheduledEventAttributes {
+	s.StartToCloseTimeout = &v
+	return s
+}
+
+// SetTaskList sets the TaskList field's value.
+func (s *DecisionTaskScheduledEventAttributes) SetTaskList(v *TaskList) *DecisionTaskScheduledEventAttributes {
+	s.TaskList = v
+	return s
+}
+
+// SetTaskPriority sets the TaskPriority field's value.
+func (s *DecisionTaskScheduledEventAttributes) SetTaskPriority(v string) *DecisionTaskScheduledEventAttributes {
+	s.TaskPriority = &v
+	return s
+}
+
 // Provides details of the DecisionTaskStarted event.
 type DecisionTaskStartedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -4851,6 +5704,18 @@ func (s DecisionTaskStartedEventAttributes) String() string {
 // GoString returns the string representation
 func (s DecisionTaskStartedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetIdentity sets the Identity field's value.
+func (s *DecisionTaskStartedEventAttributes) SetIdentity(v string) *DecisionTaskStartedEventAttributes {
+	s.Identity = &v
+	return s
+}
+
+// SetScheduledEventId sets the ScheduledEventId field's value.
+func (s *DecisionTaskStartedEventAttributes) SetScheduledEventId(v int64) *DecisionTaskStartedEventAttributes {
+	s.ScheduledEventId = &v
+	return s
 }
 
 // Provides details of the DecisionTaskTimedOut event.
@@ -4885,6 +5750,24 @@ func (s DecisionTaskTimedOutEventAttributes) String() string {
 // GoString returns the string representation
 func (s DecisionTaskTimedOutEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetScheduledEventId sets the ScheduledEventId field's value.
+func (s *DecisionTaskTimedOutEventAttributes) SetScheduledEventId(v int64) *DecisionTaskTimedOutEventAttributes {
+	s.ScheduledEventId = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *DecisionTaskTimedOutEventAttributes) SetStartedEventId(v int64) *DecisionTaskTimedOutEventAttributes {
+	s.StartedEventId = &v
+	return s
+}
+
+// SetTimeoutType sets the TimeoutType field's value.
+func (s *DecisionTaskTimedOutEventAttributes) SetTimeoutType(v string) *DecisionTaskTimedOutEventAttributes {
+	s.TimeoutType = &v
+	return s
 }
 
 type DeprecateActivityTypeInput struct {
@@ -4935,6 +5818,18 @@ func (s *DeprecateActivityTypeInput) Validate() error {
 	return nil
 }
 
+// SetActivityType sets the ActivityType field's value.
+func (s *DeprecateActivityTypeInput) SetActivityType(v *ActivityType) *DeprecateActivityTypeInput {
+	s.ActivityType = v
+	return s
+}
+
+// SetDomain sets the Domain field's value.
+func (s *DeprecateActivityTypeInput) SetDomain(v string) *DeprecateActivityTypeInput {
+	s.Domain = &v
+	return s
+}
+
 type DeprecateActivityTypeOutput struct {
 	_ struct{} `type:"structure"`
 }
@@ -4982,6 +5877,12 @@ func (s *DeprecateDomainInput) Validate() error {
 		return invalidParams
 	}
 	return nil
+}
+
+// SetName sets the Name field's value.
+func (s *DeprecateDomainInput) SetName(v string) *DeprecateDomainInput {
+	s.Name = &v
+	return s
 }
 
 type DeprecateDomainOutput struct {
@@ -5044,6 +5945,18 @@ func (s *DeprecateWorkflowTypeInput) Validate() error {
 		return invalidParams
 	}
 	return nil
+}
+
+// SetDomain sets the Domain field's value.
+func (s *DeprecateWorkflowTypeInput) SetDomain(v string) *DeprecateWorkflowTypeInput {
+	s.Domain = &v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *DeprecateWorkflowTypeInput) SetWorkflowType(v *WorkflowType) *DeprecateWorkflowTypeInput {
+	s.WorkflowType = v
+	return s
 }
 
 type DeprecateWorkflowTypeOutput struct {
@@ -5109,6 +6022,18 @@ func (s *DescribeActivityTypeInput) Validate() error {
 	return nil
 }
 
+// SetActivityType sets the ActivityType field's value.
+func (s *DescribeActivityTypeInput) SetActivityType(v *ActivityType) *DescribeActivityTypeInput {
+	s.ActivityType = v
+	return s
+}
+
+// SetDomain sets the Domain field's value.
+func (s *DescribeActivityTypeInput) SetDomain(v string) *DescribeActivityTypeInput {
+	s.Domain = &v
+	return s
+}
+
 // Detailed information about an activity type.
 type DescribeActivityTypeOutput struct {
 	_ struct{} `type:"structure"`
@@ -5123,10 +6048,11 @@ type DescribeActivityTypeOutput struct {
 	// The status of activity type (returned in the ActivityTypeInfo structure)
 	// can be one of the following.
 	//
-	//   REGISTERED: The type is registered and available. Workers supporting this
-	// type should be running.   DEPRECATED: The type was deprecated using DeprecateActivityType,
-	// but is still in use. You should keep workers supporting this type running.
-	// You cannot create new tasks of this type.
+	//    * REGISTERED: The type is registered and available. Workers supporting
+	//    this type should be running.
+	//    * DEPRECATED: The type was deprecated using DeprecateActivityType, but
+	//    is still in use. You should keep workers supporting this type running.
+	//    You cannot create new tasks of this type.
 	//
 	// TypeInfo is a required field
 	TypeInfo *ActivityTypeInfo `locationName:"typeInfo" type:"structure" required:"true"`
@@ -5140,6 +6066,18 @@ func (s DescribeActivityTypeOutput) String() string {
 // GoString returns the string representation
 func (s DescribeActivityTypeOutput) GoString() string {
 	return s.String()
+}
+
+// SetConfiguration sets the Configuration field's value.
+func (s *DescribeActivityTypeOutput) SetConfiguration(v *ActivityTypeConfiguration) *DescribeActivityTypeOutput {
+	s.Configuration = v
+	return s
+}
+
+// SetTypeInfo sets the TypeInfo field's value.
+func (s *DescribeActivityTypeOutput) SetTypeInfo(v *ActivityTypeInfo) *DescribeActivityTypeOutput {
+	s.TypeInfo = v
+	return s
 }
 
 type DescribeDomainInput struct {
@@ -5177,6 +6115,12 @@ func (s *DescribeDomainInput) Validate() error {
 	return nil
 }
 
+// SetName sets the Name field's value.
+func (s *DescribeDomainInput) SetName(v string) *DescribeDomainInput {
+	s.Name = &v
+	return s
+}
+
 // Contains details of a domain.
 type DescribeDomainOutput struct {
 	_ struct{} `type:"structure"`
@@ -5200,6 +6144,18 @@ func (s DescribeDomainOutput) String() string {
 // GoString returns the string representation
 func (s DescribeDomainOutput) GoString() string {
 	return s.String()
+}
+
+// SetConfiguration sets the Configuration field's value.
+func (s *DescribeDomainOutput) SetConfiguration(v *DomainConfiguration) *DescribeDomainOutput {
+	s.Configuration = v
+	return s
+}
+
+// SetDomainInfo sets the DomainInfo field's value.
+func (s *DescribeDomainOutput) SetDomainInfo(v *DomainInfo) *DescribeDomainOutput {
+	s.DomainInfo = v
+	return s
 }
 
 type DescribeWorkflowExecutionInput struct {
@@ -5250,6 +6206,18 @@ func (s *DescribeWorkflowExecutionInput) Validate() error {
 	return nil
 }
 
+// SetDomain sets the Domain field's value.
+func (s *DescribeWorkflowExecutionInput) SetDomain(v string) *DescribeWorkflowExecutionInput {
+	s.Domain = &v
+	return s
+}
+
+// SetExecution sets the Execution field's value.
+func (s *DescribeWorkflowExecutionInput) SetExecution(v *WorkflowExecution) *DescribeWorkflowExecutionInput {
+	s.Execution = v
+	return s
+}
+
 // Contains details about a workflow execution.
 type DescribeWorkflowExecutionOutput struct {
 	_ struct{} `type:"structure"`
@@ -5290,6 +6258,36 @@ func (s DescribeWorkflowExecutionOutput) String() string {
 // GoString returns the string representation
 func (s DescribeWorkflowExecutionOutput) GoString() string {
 	return s.String()
+}
+
+// SetExecutionConfiguration sets the ExecutionConfiguration field's value.
+func (s *DescribeWorkflowExecutionOutput) SetExecutionConfiguration(v *WorkflowExecutionConfiguration) *DescribeWorkflowExecutionOutput {
+	s.ExecutionConfiguration = v
+	return s
+}
+
+// SetExecutionInfo sets the ExecutionInfo field's value.
+func (s *DescribeWorkflowExecutionOutput) SetExecutionInfo(v *WorkflowExecutionInfo) *DescribeWorkflowExecutionOutput {
+	s.ExecutionInfo = v
+	return s
+}
+
+// SetLatestActivityTaskTimestamp sets the LatestActivityTaskTimestamp field's value.
+func (s *DescribeWorkflowExecutionOutput) SetLatestActivityTaskTimestamp(v time.Time) *DescribeWorkflowExecutionOutput {
+	s.LatestActivityTaskTimestamp = &v
+	return s
+}
+
+// SetLatestExecutionContext sets the LatestExecutionContext field's value.
+func (s *DescribeWorkflowExecutionOutput) SetLatestExecutionContext(v string) *DescribeWorkflowExecutionOutput {
+	s.LatestExecutionContext = &v
+	return s
+}
+
+// SetOpenCounts sets the OpenCounts field's value.
+func (s *DescribeWorkflowExecutionOutput) SetOpenCounts(v *WorkflowExecutionOpenCounts) *DescribeWorkflowExecutionOutput {
+	s.OpenCounts = v
+	return s
 }
 
 type DescribeWorkflowTypeInput struct {
@@ -5340,6 +6338,18 @@ func (s *DescribeWorkflowTypeInput) Validate() error {
 	return nil
 }
 
+// SetDomain sets the Domain field's value.
+func (s *DescribeWorkflowTypeInput) SetDomain(v string) *DescribeWorkflowTypeInput {
+	s.Domain = &v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *DescribeWorkflowTypeInput) SetWorkflowType(v *WorkflowType) *DescribeWorkflowTypeInput {
+	s.WorkflowType = v
+	return s
+}
+
 // Contains details about a workflow type.
 type DescribeWorkflowTypeOutput struct {
 	_ struct{} `type:"structure"`
@@ -5354,10 +6364,11 @@ type DescribeWorkflowTypeOutput struct {
 	// The status of the workflow type (returned in the WorkflowTypeInfo structure)
 	// can be one of the following.
 	//
-	//   REGISTERED: The type is registered and available. Workers supporting this
-	// type should be running.  DEPRECATED: The type was deprecated using DeprecateWorkflowType,
-	// but is still in use. You should keep workers supporting this type running.
-	// You cannot create new workflow executions of this type.
+	//    * REGISTERED: The type is registered and available. Workers supporting
+	//    this type should be running.
+	//    * DEPRECATED: The type was deprecated using DeprecateWorkflowType, but
+	//    is still in use. You should keep workers supporting this type running.
+	//    You cannot create new workflow executions of this type.
 	//
 	// TypeInfo is a required field
 	TypeInfo *WorkflowTypeInfo `locationName:"typeInfo" type:"structure" required:"true"`
@@ -5371,6 +6382,18 @@ func (s DescribeWorkflowTypeOutput) String() string {
 // GoString returns the string representation
 func (s DescribeWorkflowTypeOutput) GoString() string {
 	return s.String()
+}
+
+// SetConfiguration sets the Configuration field's value.
+func (s *DescribeWorkflowTypeOutput) SetConfiguration(v *WorkflowTypeConfiguration) *DescribeWorkflowTypeOutput {
+	s.Configuration = v
+	return s
+}
+
+// SetTypeInfo sets the TypeInfo field's value.
+func (s *DescribeWorkflowTypeOutput) SetTypeInfo(v *WorkflowTypeInfo) *DescribeWorkflowTypeOutput {
+	s.TypeInfo = v
+	return s
 }
 
 // Contains the configuration settings of a domain.
@@ -5393,6 +6416,12 @@ func (s DomainConfiguration) GoString() string {
 	return s.String()
 }
 
+// SetWorkflowExecutionRetentionPeriodInDays sets the WorkflowExecutionRetentionPeriodInDays field's value.
+func (s *DomainConfiguration) SetWorkflowExecutionRetentionPeriodInDays(v string) *DomainConfiguration {
+	s.WorkflowExecutionRetentionPeriodInDays = &v
+	return s
+}
+
 // Contains general information about a domain.
 type DomainInfo struct {
 	_ struct{} `type:"structure"`
@@ -5407,10 +6436,12 @@ type DomainInfo struct {
 
 	// The status of the domain:
 	//
-	//   REGISTERED: The domain is properly registered and available. You can use
-	// this domain for registering types and creating new workflow executions.
-	//  DEPRECATED: The domain was deprecated using DeprecateDomain, but is still
-	// in use. You should not create new workflow executions in this domain.
+	//    * REGISTERED: The domain is properly registered and available. You can
+	//    use this domain for registering types and creating new workflow executions.
+	//
+	//    * DEPRECATED: The domain was deprecated using DeprecateDomain, but is
+	//    still in use. You should not create new workflow executions in this domain.
+	//
 	//
 	// Status is a required field
 	Status *string `locationName:"status" type:"string" required:"true" enum:"RegistrationStatus"`
@@ -5424,6 +6455,24 @@ func (s DomainInfo) String() string {
 // GoString returns the string representation
 func (s DomainInfo) GoString() string {
 	return s.String()
+}
+
+// SetDescription sets the Description field's value.
+func (s *DomainInfo) SetDescription(v string) *DomainInfo {
+	s.Description = &v
+	return s
+}
+
+// SetName sets the Name field's value.
+func (s *DomainInfo) SetName(v string) *DomainInfo {
+	s.Name = &v
+	return s
+}
+
+// SetStatus sets the Status field's value.
+func (s *DomainInfo) SetStatus(v string) *DomainInfo {
+	s.Status = &v
+	return s
 }
 
 // Used to filter the workflow executions in visibility APIs by various time-based
@@ -5466,6 +6515,18 @@ func (s *ExecutionTimeFilter) Validate() error {
 	return nil
 }
 
+// SetLatestDate sets the LatestDate field's value.
+func (s *ExecutionTimeFilter) SetLatestDate(v time.Time) *ExecutionTimeFilter {
+	s.LatestDate = &v
+	return s
+}
+
+// SetOldestDate sets the OldestDate field's value.
+func (s *ExecutionTimeFilter) SetOldestDate(v time.Time) *ExecutionTimeFilter {
+	s.OldestDate = &v
+	return s
+}
+
 // Provides details of the ExternalWorkflowExecutionCancelRequested event.
 type ExternalWorkflowExecutionCancelRequestedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -5492,6 +6553,18 @@ func (s ExternalWorkflowExecutionCancelRequestedEventAttributes) String() string
 // GoString returns the string representation
 func (s ExternalWorkflowExecutionCancelRequestedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetInitiatedEventId sets the InitiatedEventId field's value.
+func (s *ExternalWorkflowExecutionCancelRequestedEventAttributes) SetInitiatedEventId(v int64) *ExternalWorkflowExecutionCancelRequestedEventAttributes {
+	s.InitiatedEventId = &v
+	return s
+}
+
+// SetWorkflowExecution sets the WorkflowExecution field's value.
+func (s *ExternalWorkflowExecutionCancelRequestedEventAttributes) SetWorkflowExecution(v *WorkflowExecution) *ExternalWorkflowExecutionCancelRequestedEventAttributes {
+	s.WorkflowExecution = v
+	return s
 }
 
 // Provides details of the ExternalWorkflowExecutionSignaled event.
@@ -5522,6 +6595,18 @@ func (s ExternalWorkflowExecutionSignaledEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetInitiatedEventId sets the InitiatedEventId field's value.
+func (s *ExternalWorkflowExecutionSignaledEventAttributes) SetInitiatedEventId(v int64) *ExternalWorkflowExecutionSignaledEventAttributes {
+	s.InitiatedEventId = &v
+	return s
+}
+
+// SetWorkflowExecution sets the WorkflowExecution field's value.
+func (s *ExternalWorkflowExecutionSignaledEventAttributes) SetWorkflowExecution(v *WorkflowExecution) *ExternalWorkflowExecutionSignaledEventAttributes {
+	s.WorkflowExecution = v
+	return s
+}
+
 // Provides details of the FailWorkflowExecution decision.
 //
 // Access Control
@@ -5529,10 +6614,13 @@ func (s ExternalWorkflowExecutionSignaledEventAttributes) GoString() string {
 // You can use IAM policies to control this decision's access to Amazon SWF
 // resources as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -5557,6 +6645,18 @@ func (s FailWorkflowExecutionDecisionAttributes) GoString() string {
 	return s.String()
 }
 
+// SetDetails sets the Details field's value.
+func (s *FailWorkflowExecutionDecisionAttributes) SetDetails(v string) *FailWorkflowExecutionDecisionAttributes {
+	s.Details = &v
+	return s
+}
+
+// SetReason sets the Reason field's value.
+func (s *FailWorkflowExecutionDecisionAttributes) SetReason(v string) *FailWorkflowExecutionDecisionAttributes {
+	s.Reason = &v
+	return s
+}
+
 // Provides details of the FailWorkflowExecutionFailed event.
 type FailWorkflowExecutionFailedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -5564,8 +6664,8 @@ type FailWorkflowExecutionFailedEventAttributes struct {
 	// The cause of the failure. This information is generated by the system and
 	// can be useful for diagnostic purposes.
 	//
-	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because
-	// it lacked sufficient permissions. For details and example IAM policies, see
+	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because it
+	// lacked sufficient permissions. For details and example IAM policies, see
 	// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 	//
 	// Cause is a required field
@@ -5588,6 +6688,18 @@ func (s FailWorkflowExecutionFailedEventAttributes) String() string {
 // GoString returns the string representation
 func (s FailWorkflowExecutionFailedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetCause sets the Cause field's value.
+func (s *FailWorkflowExecutionFailedEventAttributes) SetCause(v string) *FailWorkflowExecutionFailedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *FailWorkflowExecutionFailedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *FailWorkflowExecutionFailedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
 }
 
 type GetWorkflowExecutionHistoryInput struct {
@@ -5659,6 +6771,36 @@ func (s *GetWorkflowExecutionHistoryInput) Validate() error {
 	return nil
 }
 
+// SetDomain sets the Domain field's value.
+func (s *GetWorkflowExecutionHistoryInput) SetDomain(v string) *GetWorkflowExecutionHistoryInput {
+	s.Domain = &v
+	return s
+}
+
+// SetExecution sets the Execution field's value.
+func (s *GetWorkflowExecutionHistoryInput) SetExecution(v *WorkflowExecution) *GetWorkflowExecutionHistoryInput {
+	s.Execution = v
+	return s
+}
+
+// SetMaximumPageSize sets the MaximumPageSize field's value.
+func (s *GetWorkflowExecutionHistoryInput) SetMaximumPageSize(v int64) *GetWorkflowExecutionHistoryInput {
+	s.MaximumPageSize = &v
+	return s
+}
+
+// SetNextPageToken sets the NextPageToken field's value.
+func (s *GetWorkflowExecutionHistoryInput) SetNextPageToken(v string) *GetWorkflowExecutionHistoryInput {
+	s.NextPageToken = &v
+	return s
+}
+
+// SetReverseOrder sets the ReverseOrder field's value.
+func (s *GetWorkflowExecutionHistoryInput) SetReverseOrder(v bool) *GetWorkflowExecutionHistoryInput {
+	s.ReverseOrder = &v
+	return s
+}
+
 // Paginated representation of a workflow history for a workflow execution.
 // This is the up to date, complete and authoritative record of the events related
 // to all tasks and events in the life of the workflow execution.
@@ -5689,75 +6831,123 @@ func (s GetWorkflowExecutionHistoryOutput) GoString() string {
 	return s.String()
 }
 
+// SetEvents sets the Events field's value.
+func (s *GetWorkflowExecutionHistoryOutput) SetEvents(v []*HistoryEvent) *GetWorkflowExecutionHistoryOutput {
+	s.Events = v
+	return s
+}
+
+// SetNextPageToken sets the NextPageToken field's value.
+func (s *GetWorkflowExecutionHistoryOutput) SetNextPageToken(v string) *GetWorkflowExecutionHistoryOutput {
+	s.NextPageToken = &v
+	return s
+}
+
 // Event within a workflow execution. A history event can be one of these types:
 //
-//   WorkflowExecutionStarted: The workflow execution was started.  WorkflowExecutionCompleted:
-// The workflow execution was closed due to successful completion.  WorkflowExecutionFailed:
-// The workflow execution closed due to a failure.  WorkflowExecutionTimedOut:
-// The workflow execution was closed because a time out was exceeded.  WorkflowExecutionCanceled:
-// The workflow execution was successfully canceled and closed.  WorkflowExecutionTerminated:
-// The workflow execution was terminated.  WorkflowExecutionContinuedAsNew:
-// The workflow execution was closed and a new execution of the same type was
-// created with the same workflowId.  WorkflowExecutionCancelRequested: A request
-// to cancel this workflow execution was made.  DecisionTaskScheduled: A decision
-// task was scheduled for the workflow execution.  DecisionTaskStarted: The
-// decision task was dispatched to a decider.  DecisionTaskCompleted: The decider
-// successfully completed a decision task by calling RespondDecisionTaskCompleted.
-//  DecisionTaskTimedOut: The decision task timed out.  ActivityTaskScheduled:
-// An activity task was scheduled for execution.  ScheduleActivityTaskFailed:
-// Failed to process ScheduleActivityTask decision. This happens when the decision
-// is not configured properly, for example the activity type specified is not
-// registered.  ActivityTaskStarted: The scheduled activity task was dispatched
-// to a worker.  ActivityTaskCompleted: An activity worker successfully completed
-// an activity task by calling RespondActivityTaskCompleted.  ActivityTaskFailed:
-// An activity worker failed an activity task by calling RespondActivityTaskFailed.
-//  ActivityTaskTimedOut: The activity task timed out.  ActivityTaskCanceled:
-// The activity task was successfully canceled.  ActivityTaskCancelRequested:
-// A RequestCancelActivityTask decision was received by the system.  RequestCancelActivityTaskFailed:
-// Failed to process RequestCancelActivityTask decision. This happens when the
-// decision is not configured properly.  WorkflowExecutionSignaled: An external
-// signal was received for the workflow execution.  MarkerRecorded: A marker
-// was recorded in the workflow history as the result of a RecordMarker decision.
-//  TimerStarted: A timer was started for the workflow execution due to a StartTimer
-// decision.  StartTimerFailed: Failed to process StartTimer decision. This
-// happens when the decision is not configured properly, for example a timer
-// already exists with the specified timer ID.  TimerFired: A timer, previously
-// started for this workflow execution, fired.  TimerCanceled: A timer, previously
-// started for this workflow execution, was successfully canceled.  CancelTimerFailed:
-// Failed to process CancelTimer decision. This happens when the decision is
-// not configured properly, for example no timer exists with the specified timer
-// ID.  StartChildWorkflowExecutionInitiated: A request was made to start a
-// child workflow execution.  StartChildWorkflowExecutionFailed: Failed to process
-// StartChildWorkflowExecution decision. This happens when the decision is not
-// configured properly, for example the workflow type specified is not registered.
-//  ChildWorkflowExecutionStarted: A child workflow execution was successfully
-// started.  ChildWorkflowExecutionCompleted: A child workflow execution, started
-// by this workflow execution, completed successfully and was closed.  ChildWorkflowExecutionFailed:
-// A child workflow execution, started by this workflow execution, failed to
-// complete successfully and was closed.  ChildWorkflowExecutionTimedOut: A
-// child workflow execution, started by this workflow execution, timed out and
-// was closed.  ChildWorkflowExecutionCanceled: A child workflow execution,
-// started by this workflow execution, was canceled and closed.  ChildWorkflowExecutionTerminated:
-// A child workflow execution, started by this workflow execution, was terminated.
-//  SignalExternalWorkflowExecutionInitiated: A request to signal an external
-// workflow was made.  ExternalWorkflowExecutionSignaled: A signal, requested
-// by this workflow execution, was successfully delivered to the target external
-// workflow execution.  SignalExternalWorkflowExecutionFailed: The request to
-// signal an external workflow execution failed.  RequestCancelExternalWorkflowExecutionInitiated:
-// A request was made to request the cancellation of an external workflow execution.
-//  ExternalWorkflowExecutionCancelRequested: Request to cancel an external
-// workflow execution was successfully delivered to the target execution.  RequestCancelExternalWorkflowExecutionFailed:
-// Request to cancel an external workflow execution failed.  LambdaFunctionScheduled:
-// An AWS Lambda function was scheduled for execution.  LambdaFunctionStarted:
-// The scheduled function was invoked in the AWS Lambda service.  LambdaFunctionCompleted:
-// The AWS Lambda function successfully completed.  LambdaFunctionFailed: The
-// AWS Lambda function execution failed.  LambdaFunctionTimedOut: The AWS Lambda
-// function execution timed out.  ScheduleLambdaFunctionFailed: Failed to process
-// ScheduleLambdaFunction decision. This happens when the workflow execution
-// does not have the proper IAM role attached to invoke AWS Lambda functions.
-//  StartLambdaFunctionFailed: Failed to invoke the scheduled function in the
-// AWS Lambda service. This happens when the AWS Lambda service is not available
-// in the current region, or received too many requests.
+//    * WorkflowExecutionStarted: The workflow execution was started.
+//    * WorkflowExecutionCompleted: The workflow execution was closed due to
+//    successful completion.
+//    * WorkflowExecutionFailed: The workflow execution closed due to a failure.
+//
+//    * WorkflowExecutionTimedOut: The workflow execution was closed because
+//    a time out was exceeded.
+//    * WorkflowExecutionCanceled: The workflow execution was successfully canceled
+//    and closed.
+//    * WorkflowExecutionTerminated: The workflow execution was terminated.
+//
+//    * WorkflowExecutionContinuedAsNew: The workflow execution was closed and
+//    a new execution of the same type was created with the same workflowId.
+//
+//    * WorkflowExecutionCancelRequested: A request to cancel this workflow
+//    execution was made.
+//    * DecisionTaskScheduled: A decision task was scheduled for the workflow
+//    execution.
+//    * DecisionTaskStarted: The decision task was dispatched to a decider.
+//
+//    * DecisionTaskCompleted: The decider successfully completed a decision
+//    task by calling RespondDecisionTaskCompleted.
+//    * DecisionTaskTimedOut: The decision task timed out.
+//    * ActivityTaskScheduled: An activity task was scheduled for execution.
+//
+//    * ScheduleActivityTaskFailed: Failed to process ScheduleActivityTask decision.
+//    This happens when the decision is not configured properly, for example
+//    the activity type specified is not registered.
+//    * ActivityTaskStarted: The scheduled activity task was dispatched to a
+//    worker.
+//    * ActivityTaskCompleted: An activity worker successfully completed an
+//    activity task by calling RespondActivityTaskCompleted.
+//    * ActivityTaskFailed: An activity worker failed an activity task by calling
+//    RespondActivityTaskFailed.
+//    * ActivityTaskTimedOut: The activity task timed out.
+//    * ActivityTaskCanceled: The activity task was successfully canceled.
+//    * ActivityTaskCancelRequested: A RequestCancelActivityTask decision was
+//    received by the system.
+//    * RequestCancelActivityTaskFailed: Failed to process RequestCancelActivityTask
+//    decision. This happens when the decision is not configured properly.
+//    * WorkflowExecutionSignaled: An external signal was received for the workflow
+//    execution.
+//    * MarkerRecorded: A marker was recorded in the workflow history as the
+//    result of a RecordMarker decision.
+//    * TimerStarted: A timer was started for the workflow execution due to
+//    a StartTimer decision.
+//    * StartTimerFailed: Failed to process StartTimer decision. This happens
+//    when the decision is not configured properly, for example a timer already
+//    exists with the specified timer ID.
+//    * TimerFired: A timer, previously started for this workflow execution,
+//    fired.
+//    * TimerCanceled: A timer, previously started for this workflow execution,
+//    was successfully canceled.
+//    * CancelTimerFailed: Failed to process CancelTimer decision. This happens
+//    when the decision is not configured properly, for example no timer exists
+//    with the specified timer ID.
+//    * StartChildWorkflowExecutionInitiated: A request was made to start a
+//    child workflow execution.
+//    * StartChildWorkflowExecutionFailed: Failed to process StartChildWorkflowExecution
+//    decision. This happens when the decision is not configured properly, for
+//    example the workflow type specified is not registered.
+//    * ChildWorkflowExecutionStarted: A child workflow execution was successfully
+//    started.
+//    * ChildWorkflowExecutionCompleted: A child workflow execution, started
+//    by this workflow execution, completed successfully and was closed.
+//    * ChildWorkflowExecutionFailed: A child workflow execution, started by
+//    this workflow execution, failed to complete successfully and was closed.
+//
+//    * ChildWorkflowExecutionTimedOut: A child workflow execution, started
+//    by this workflow execution, timed out and was closed.
+//    * ChildWorkflowExecutionCanceled: A child workflow execution, started
+//    by this workflow execution, was canceled and closed.
+//    * ChildWorkflowExecutionTerminated: A child workflow execution, started
+//    by this workflow execution, was terminated.
+//    * SignalExternalWorkflowExecutionInitiated: A request to signal an external
+//    workflow was made.
+//    * ExternalWorkflowExecutionSignaled: A signal, requested by this workflow
+//    execution, was successfully delivered to the target external workflow
+//    execution.
+//    * SignalExternalWorkflowExecutionFailed: The request to signal an external
+//    workflow execution failed.
+//    * RequestCancelExternalWorkflowExecutionInitiated: A request was made
+//    to request the cancellation of an external workflow execution.
+//    * ExternalWorkflowExecutionCancelRequested: Request to cancel an external
+//    workflow execution was successfully delivered to the target execution.
+//
+//    * RequestCancelExternalWorkflowExecutionFailed: Request to cancel an external
+//    workflow execution failed.
+//    * LambdaFunctionScheduled: An AWS Lambda function was scheduled for execution.
+//
+//    * LambdaFunctionStarted: The scheduled function was invoked in the AWS
+//    Lambda service.
+//    * LambdaFunctionCompleted: The AWS Lambda function successfully completed.
+//
+//    * LambdaFunctionFailed: The AWS Lambda function execution failed.
+//    * LambdaFunctionTimedOut: The AWS Lambda function execution timed out.
+//
+//    * ScheduleLambdaFunctionFailed: Failed to process ScheduleLambdaFunction
+//    decision. This happens when the workflow execution does not have the proper
+//    IAM role attached to invoke AWS Lambda functions.
+//    * StartLambdaFunctionFailed: Failed to invoke the scheduled function in
+//    the AWS Lambda service. This happens when the AWS Lambda service is not
+//    available in the current region, or received too many requests.
 type HistoryEvent struct {
 	_ struct{} `type:"structure"`
 
@@ -6034,6 +7224,348 @@ func (s HistoryEvent) GoString() string {
 	return s.String()
 }
 
+// SetActivityTaskCancelRequestedEventAttributes sets the ActivityTaskCancelRequestedEventAttributes field's value.
+func (s *HistoryEvent) SetActivityTaskCancelRequestedEventAttributes(v *ActivityTaskCancelRequestedEventAttributes) *HistoryEvent {
+	s.ActivityTaskCancelRequestedEventAttributes = v
+	return s
+}
+
+// SetActivityTaskCanceledEventAttributes sets the ActivityTaskCanceledEventAttributes field's value.
+func (s *HistoryEvent) SetActivityTaskCanceledEventAttributes(v *ActivityTaskCanceledEventAttributes) *HistoryEvent {
+	s.ActivityTaskCanceledEventAttributes = v
+	return s
+}
+
+// SetActivityTaskCompletedEventAttributes sets the ActivityTaskCompletedEventAttributes field's value.
+func (s *HistoryEvent) SetActivityTaskCompletedEventAttributes(v *ActivityTaskCompletedEventAttributes) *HistoryEvent {
+	s.ActivityTaskCompletedEventAttributes = v
+	return s
+}
+
+// SetActivityTaskFailedEventAttributes sets the ActivityTaskFailedEventAttributes field's value.
+func (s *HistoryEvent) SetActivityTaskFailedEventAttributes(v *ActivityTaskFailedEventAttributes) *HistoryEvent {
+	s.ActivityTaskFailedEventAttributes = v
+	return s
+}
+
+// SetActivityTaskScheduledEventAttributes sets the ActivityTaskScheduledEventAttributes field's value.
+func (s *HistoryEvent) SetActivityTaskScheduledEventAttributes(v *ActivityTaskScheduledEventAttributes) *HistoryEvent {
+	s.ActivityTaskScheduledEventAttributes = v
+	return s
+}
+
+// SetActivityTaskStartedEventAttributes sets the ActivityTaskStartedEventAttributes field's value.
+func (s *HistoryEvent) SetActivityTaskStartedEventAttributes(v *ActivityTaskStartedEventAttributes) *HistoryEvent {
+	s.ActivityTaskStartedEventAttributes = v
+	return s
+}
+
+// SetActivityTaskTimedOutEventAttributes sets the ActivityTaskTimedOutEventAttributes field's value.
+func (s *HistoryEvent) SetActivityTaskTimedOutEventAttributes(v *ActivityTaskTimedOutEventAttributes) *HistoryEvent {
+	s.ActivityTaskTimedOutEventAttributes = v
+	return s
+}
+
+// SetCancelTimerFailedEventAttributes sets the CancelTimerFailedEventAttributes field's value.
+func (s *HistoryEvent) SetCancelTimerFailedEventAttributes(v *CancelTimerFailedEventAttributes) *HistoryEvent {
+	s.CancelTimerFailedEventAttributes = v
+	return s
+}
+
+// SetCancelWorkflowExecutionFailedEventAttributes sets the CancelWorkflowExecutionFailedEventAttributes field's value.
+func (s *HistoryEvent) SetCancelWorkflowExecutionFailedEventAttributes(v *CancelWorkflowExecutionFailedEventAttributes) *HistoryEvent {
+	s.CancelWorkflowExecutionFailedEventAttributes = v
+	return s
+}
+
+// SetChildWorkflowExecutionCanceledEventAttributes sets the ChildWorkflowExecutionCanceledEventAttributes field's value.
+func (s *HistoryEvent) SetChildWorkflowExecutionCanceledEventAttributes(v *ChildWorkflowExecutionCanceledEventAttributes) *HistoryEvent {
+	s.ChildWorkflowExecutionCanceledEventAttributes = v
+	return s
+}
+
+// SetChildWorkflowExecutionCompletedEventAttributes sets the ChildWorkflowExecutionCompletedEventAttributes field's value.
+func (s *HistoryEvent) SetChildWorkflowExecutionCompletedEventAttributes(v *ChildWorkflowExecutionCompletedEventAttributes) *HistoryEvent {
+	s.ChildWorkflowExecutionCompletedEventAttributes = v
+	return s
+}
+
+// SetChildWorkflowExecutionFailedEventAttributes sets the ChildWorkflowExecutionFailedEventAttributes field's value.
+func (s *HistoryEvent) SetChildWorkflowExecutionFailedEventAttributes(v *ChildWorkflowExecutionFailedEventAttributes) *HistoryEvent {
+	s.ChildWorkflowExecutionFailedEventAttributes = v
+	return s
+}
+
+// SetChildWorkflowExecutionStartedEventAttributes sets the ChildWorkflowExecutionStartedEventAttributes field's value.
+func (s *HistoryEvent) SetChildWorkflowExecutionStartedEventAttributes(v *ChildWorkflowExecutionStartedEventAttributes) *HistoryEvent {
+	s.ChildWorkflowExecutionStartedEventAttributes = v
+	return s
+}
+
+// SetChildWorkflowExecutionTerminatedEventAttributes sets the ChildWorkflowExecutionTerminatedEventAttributes field's value.
+func (s *HistoryEvent) SetChildWorkflowExecutionTerminatedEventAttributes(v *ChildWorkflowExecutionTerminatedEventAttributes) *HistoryEvent {
+	s.ChildWorkflowExecutionTerminatedEventAttributes = v
+	return s
+}
+
+// SetChildWorkflowExecutionTimedOutEventAttributes sets the ChildWorkflowExecutionTimedOutEventAttributes field's value.
+func (s *HistoryEvent) SetChildWorkflowExecutionTimedOutEventAttributes(v *ChildWorkflowExecutionTimedOutEventAttributes) *HistoryEvent {
+	s.ChildWorkflowExecutionTimedOutEventAttributes = v
+	return s
+}
+
+// SetCompleteWorkflowExecutionFailedEventAttributes sets the CompleteWorkflowExecutionFailedEventAttributes field's value.
+func (s *HistoryEvent) SetCompleteWorkflowExecutionFailedEventAttributes(v *CompleteWorkflowExecutionFailedEventAttributes) *HistoryEvent {
+	s.CompleteWorkflowExecutionFailedEventAttributes = v
+	return s
+}
+
+// SetContinueAsNewWorkflowExecutionFailedEventAttributes sets the ContinueAsNewWorkflowExecutionFailedEventAttributes field's value.
+func (s *HistoryEvent) SetContinueAsNewWorkflowExecutionFailedEventAttributes(v *ContinueAsNewWorkflowExecutionFailedEventAttributes) *HistoryEvent {
+	s.ContinueAsNewWorkflowExecutionFailedEventAttributes = v
+	return s
+}
+
+// SetDecisionTaskCompletedEventAttributes sets the DecisionTaskCompletedEventAttributes field's value.
+func (s *HistoryEvent) SetDecisionTaskCompletedEventAttributes(v *DecisionTaskCompletedEventAttributes) *HistoryEvent {
+	s.DecisionTaskCompletedEventAttributes = v
+	return s
+}
+
+// SetDecisionTaskScheduledEventAttributes sets the DecisionTaskScheduledEventAttributes field's value.
+func (s *HistoryEvent) SetDecisionTaskScheduledEventAttributes(v *DecisionTaskScheduledEventAttributes) *HistoryEvent {
+	s.DecisionTaskScheduledEventAttributes = v
+	return s
+}
+
+// SetDecisionTaskStartedEventAttributes sets the DecisionTaskStartedEventAttributes field's value.
+func (s *HistoryEvent) SetDecisionTaskStartedEventAttributes(v *DecisionTaskStartedEventAttributes) *HistoryEvent {
+	s.DecisionTaskStartedEventAttributes = v
+	return s
+}
+
+// SetDecisionTaskTimedOutEventAttributes sets the DecisionTaskTimedOutEventAttributes field's value.
+func (s *HistoryEvent) SetDecisionTaskTimedOutEventAttributes(v *DecisionTaskTimedOutEventAttributes) *HistoryEvent {
+	s.DecisionTaskTimedOutEventAttributes = v
+	return s
+}
+
+// SetEventId sets the EventId field's value.
+func (s *HistoryEvent) SetEventId(v int64) *HistoryEvent {
+	s.EventId = &v
+	return s
+}
+
+// SetEventTimestamp sets the EventTimestamp field's value.
+func (s *HistoryEvent) SetEventTimestamp(v time.Time) *HistoryEvent {
+	s.EventTimestamp = &v
+	return s
+}
+
+// SetEventType sets the EventType field's value.
+func (s *HistoryEvent) SetEventType(v string) *HistoryEvent {
+	s.EventType = &v
+	return s
+}
+
+// SetExternalWorkflowExecutionCancelRequestedEventAttributes sets the ExternalWorkflowExecutionCancelRequestedEventAttributes field's value.
+func (s *HistoryEvent) SetExternalWorkflowExecutionCancelRequestedEventAttributes(v *ExternalWorkflowExecutionCancelRequestedEventAttributes) *HistoryEvent {
+	s.ExternalWorkflowExecutionCancelRequestedEventAttributes = v
+	return s
+}
+
+// SetExternalWorkflowExecutionSignaledEventAttributes sets the ExternalWorkflowExecutionSignaledEventAttributes field's value.
+func (s *HistoryEvent) SetExternalWorkflowExecutionSignaledEventAttributes(v *ExternalWorkflowExecutionSignaledEventAttributes) *HistoryEvent {
+	s.ExternalWorkflowExecutionSignaledEventAttributes = v
+	return s
+}
+
+// SetFailWorkflowExecutionFailedEventAttributes sets the FailWorkflowExecutionFailedEventAttributes field's value.
+func (s *HistoryEvent) SetFailWorkflowExecutionFailedEventAttributes(v *FailWorkflowExecutionFailedEventAttributes) *HistoryEvent {
+	s.FailWorkflowExecutionFailedEventAttributes = v
+	return s
+}
+
+// SetLambdaFunctionCompletedEventAttributes sets the LambdaFunctionCompletedEventAttributes field's value.
+func (s *HistoryEvent) SetLambdaFunctionCompletedEventAttributes(v *LambdaFunctionCompletedEventAttributes) *HistoryEvent {
+	s.LambdaFunctionCompletedEventAttributes = v
+	return s
+}
+
+// SetLambdaFunctionFailedEventAttributes sets the LambdaFunctionFailedEventAttributes field's value.
+func (s *HistoryEvent) SetLambdaFunctionFailedEventAttributes(v *LambdaFunctionFailedEventAttributes) *HistoryEvent {
+	s.LambdaFunctionFailedEventAttributes = v
+	return s
+}
+
+// SetLambdaFunctionScheduledEventAttributes sets the LambdaFunctionScheduledEventAttributes field's value.
+func (s *HistoryEvent) SetLambdaFunctionScheduledEventAttributes(v *LambdaFunctionScheduledEventAttributes) *HistoryEvent {
+	s.LambdaFunctionScheduledEventAttributes = v
+	return s
+}
+
+// SetLambdaFunctionStartedEventAttributes sets the LambdaFunctionStartedEventAttributes field's value.
+func (s *HistoryEvent) SetLambdaFunctionStartedEventAttributes(v *LambdaFunctionStartedEventAttributes) *HistoryEvent {
+	s.LambdaFunctionStartedEventAttributes = v
+	return s
+}
+
+// SetLambdaFunctionTimedOutEventAttributes sets the LambdaFunctionTimedOutEventAttributes field's value.
+func (s *HistoryEvent) SetLambdaFunctionTimedOutEventAttributes(v *LambdaFunctionTimedOutEventAttributes) *HistoryEvent {
+	s.LambdaFunctionTimedOutEventAttributes = v
+	return s
+}
+
+// SetMarkerRecordedEventAttributes sets the MarkerRecordedEventAttributes field's value.
+func (s *HistoryEvent) SetMarkerRecordedEventAttributes(v *MarkerRecordedEventAttributes) *HistoryEvent {
+	s.MarkerRecordedEventAttributes = v
+	return s
+}
+
+// SetRecordMarkerFailedEventAttributes sets the RecordMarkerFailedEventAttributes field's value.
+func (s *HistoryEvent) SetRecordMarkerFailedEventAttributes(v *RecordMarkerFailedEventAttributes) *HistoryEvent {
+	s.RecordMarkerFailedEventAttributes = v
+	return s
+}
+
+// SetRequestCancelActivityTaskFailedEventAttributes sets the RequestCancelActivityTaskFailedEventAttributes field's value.
+func (s *HistoryEvent) SetRequestCancelActivityTaskFailedEventAttributes(v *RequestCancelActivityTaskFailedEventAttributes) *HistoryEvent {
+	s.RequestCancelActivityTaskFailedEventAttributes = v
+	return s
+}
+
+// SetRequestCancelExternalWorkflowExecutionFailedEventAttributes sets the RequestCancelExternalWorkflowExecutionFailedEventAttributes field's value.
+func (s *HistoryEvent) SetRequestCancelExternalWorkflowExecutionFailedEventAttributes(v *RequestCancelExternalWorkflowExecutionFailedEventAttributes) *HistoryEvent {
+	s.RequestCancelExternalWorkflowExecutionFailedEventAttributes = v
+	return s
+}
+
+// SetRequestCancelExternalWorkflowExecutionInitiatedEventAttributes sets the RequestCancelExternalWorkflowExecutionInitiatedEventAttributes field's value.
+func (s *HistoryEvent) SetRequestCancelExternalWorkflowExecutionInitiatedEventAttributes(v *RequestCancelExternalWorkflowExecutionInitiatedEventAttributes) *HistoryEvent {
+	s.RequestCancelExternalWorkflowExecutionInitiatedEventAttributes = v
+	return s
+}
+
+// SetScheduleActivityTaskFailedEventAttributes sets the ScheduleActivityTaskFailedEventAttributes field's value.
+func (s *HistoryEvent) SetScheduleActivityTaskFailedEventAttributes(v *ScheduleActivityTaskFailedEventAttributes) *HistoryEvent {
+	s.ScheduleActivityTaskFailedEventAttributes = v
+	return s
+}
+
+// SetScheduleLambdaFunctionFailedEventAttributes sets the ScheduleLambdaFunctionFailedEventAttributes field's value.
+func (s *HistoryEvent) SetScheduleLambdaFunctionFailedEventAttributes(v *ScheduleLambdaFunctionFailedEventAttributes) *HistoryEvent {
+	s.ScheduleLambdaFunctionFailedEventAttributes = v
+	return s
+}
+
+// SetSignalExternalWorkflowExecutionFailedEventAttributes sets the SignalExternalWorkflowExecutionFailedEventAttributes field's value.
+func (s *HistoryEvent) SetSignalExternalWorkflowExecutionFailedEventAttributes(v *SignalExternalWorkflowExecutionFailedEventAttributes) *HistoryEvent {
+	s.SignalExternalWorkflowExecutionFailedEventAttributes = v
+	return s
+}
+
+// SetSignalExternalWorkflowExecutionInitiatedEventAttributes sets the SignalExternalWorkflowExecutionInitiatedEventAttributes field's value.
+func (s *HistoryEvent) SetSignalExternalWorkflowExecutionInitiatedEventAttributes(v *SignalExternalWorkflowExecutionInitiatedEventAttributes) *HistoryEvent {
+	s.SignalExternalWorkflowExecutionInitiatedEventAttributes = v
+	return s
+}
+
+// SetStartChildWorkflowExecutionFailedEventAttributes sets the StartChildWorkflowExecutionFailedEventAttributes field's value.
+func (s *HistoryEvent) SetStartChildWorkflowExecutionFailedEventAttributes(v *StartChildWorkflowExecutionFailedEventAttributes) *HistoryEvent {
+	s.StartChildWorkflowExecutionFailedEventAttributes = v
+	return s
+}
+
+// SetStartChildWorkflowExecutionInitiatedEventAttributes sets the StartChildWorkflowExecutionInitiatedEventAttributes field's value.
+func (s *HistoryEvent) SetStartChildWorkflowExecutionInitiatedEventAttributes(v *StartChildWorkflowExecutionInitiatedEventAttributes) *HistoryEvent {
+	s.StartChildWorkflowExecutionInitiatedEventAttributes = v
+	return s
+}
+
+// SetStartLambdaFunctionFailedEventAttributes sets the StartLambdaFunctionFailedEventAttributes field's value.
+func (s *HistoryEvent) SetStartLambdaFunctionFailedEventAttributes(v *StartLambdaFunctionFailedEventAttributes) *HistoryEvent {
+	s.StartLambdaFunctionFailedEventAttributes = v
+	return s
+}
+
+// SetStartTimerFailedEventAttributes sets the StartTimerFailedEventAttributes field's value.
+func (s *HistoryEvent) SetStartTimerFailedEventAttributes(v *StartTimerFailedEventAttributes) *HistoryEvent {
+	s.StartTimerFailedEventAttributes = v
+	return s
+}
+
+// SetTimerCanceledEventAttributes sets the TimerCanceledEventAttributes field's value.
+func (s *HistoryEvent) SetTimerCanceledEventAttributes(v *TimerCanceledEventAttributes) *HistoryEvent {
+	s.TimerCanceledEventAttributes = v
+	return s
+}
+
+// SetTimerFiredEventAttributes sets the TimerFiredEventAttributes field's value.
+func (s *HistoryEvent) SetTimerFiredEventAttributes(v *TimerFiredEventAttributes) *HistoryEvent {
+	s.TimerFiredEventAttributes = v
+	return s
+}
+
+// SetTimerStartedEventAttributes sets the TimerStartedEventAttributes field's value.
+func (s *HistoryEvent) SetTimerStartedEventAttributes(v *TimerStartedEventAttributes) *HistoryEvent {
+	s.TimerStartedEventAttributes = v
+	return s
+}
+
+// SetWorkflowExecutionCancelRequestedEventAttributes sets the WorkflowExecutionCancelRequestedEventAttributes field's value.
+func (s *HistoryEvent) SetWorkflowExecutionCancelRequestedEventAttributes(v *WorkflowExecutionCancelRequestedEventAttributes) *HistoryEvent {
+	s.WorkflowExecutionCancelRequestedEventAttributes = v
+	return s
+}
+
+// SetWorkflowExecutionCanceledEventAttributes sets the WorkflowExecutionCanceledEventAttributes field's value.
+func (s *HistoryEvent) SetWorkflowExecutionCanceledEventAttributes(v *WorkflowExecutionCanceledEventAttributes) *HistoryEvent {
+	s.WorkflowExecutionCanceledEventAttributes = v
+	return s
+}
+
+// SetWorkflowExecutionCompletedEventAttributes sets the WorkflowExecutionCompletedEventAttributes field's value.
+func (s *HistoryEvent) SetWorkflowExecutionCompletedEventAttributes(v *WorkflowExecutionCompletedEventAttributes) *HistoryEvent {
+	s.WorkflowExecutionCompletedEventAttributes = v
+	return s
+}
+
+// SetWorkflowExecutionContinuedAsNewEventAttributes sets the WorkflowExecutionContinuedAsNewEventAttributes field's value.
+func (s *HistoryEvent) SetWorkflowExecutionContinuedAsNewEventAttributes(v *WorkflowExecutionContinuedAsNewEventAttributes) *HistoryEvent {
+	s.WorkflowExecutionContinuedAsNewEventAttributes = v
+	return s
+}
+
+// SetWorkflowExecutionFailedEventAttributes sets the WorkflowExecutionFailedEventAttributes field's value.
+func (s *HistoryEvent) SetWorkflowExecutionFailedEventAttributes(v *WorkflowExecutionFailedEventAttributes) *HistoryEvent {
+	s.WorkflowExecutionFailedEventAttributes = v
+	return s
+}
+
+// SetWorkflowExecutionSignaledEventAttributes sets the WorkflowExecutionSignaledEventAttributes field's value.
+func (s *HistoryEvent) SetWorkflowExecutionSignaledEventAttributes(v *WorkflowExecutionSignaledEventAttributes) *HistoryEvent {
+	s.WorkflowExecutionSignaledEventAttributes = v
+	return s
+}
+
+// SetWorkflowExecutionStartedEventAttributes sets the WorkflowExecutionStartedEventAttributes field's value.
+func (s *HistoryEvent) SetWorkflowExecutionStartedEventAttributes(v *WorkflowExecutionStartedEventAttributes) *HistoryEvent {
+	s.WorkflowExecutionStartedEventAttributes = v
+	return s
+}
+
+// SetWorkflowExecutionTerminatedEventAttributes sets the WorkflowExecutionTerminatedEventAttributes field's value.
+func (s *HistoryEvent) SetWorkflowExecutionTerminatedEventAttributes(v *WorkflowExecutionTerminatedEventAttributes) *HistoryEvent {
+	s.WorkflowExecutionTerminatedEventAttributes = v
+	return s
+}
+
+// SetWorkflowExecutionTimedOutEventAttributes sets the WorkflowExecutionTimedOutEventAttributes field's value.
+func (s *HistoryEvent) SetWorkflowExecutionTimedOutEventAttributes(v *WorkflowExecutionTimedOutEventAttributes) *HistoryEvent {
+	s.WorkflowExecutionTimedOutEventAttributes = v
+	return s
+}
+
 // Provides details for the LambdaFunctionCompleted event.
 type LambdaFunctionCompletedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -6062,6 +7594,24 @@ func (s LambdaFunctionCompletedEventAttributes) String() string {
 // GoString returns the string representation
 func (s LambdaFunctionCompletedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetResult sets the Result field's value.
+func (s *LambdaFunctionCompletedEventAttributes) SetResult(v string) *LambdaFunctionCompletedEventAttributes {
+	s.Result = &v
+	return s
+}
+
+// SetScheduledEventId sets the ScheduledEventId field's value.
+func (s *LambdaFunctionCompletedEventAttributes) SetScheduledEventId(v int64) *LambdaFunctionCompletedEventAttributes {
+	s.ScheduledEventId = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *LambdaFunctionCompletedEventAttributes) SetStartedEventId(v int64) *LambdaFunctionCompletedEventAttributes {
+	s.StartedEventId = &v
+	return s
 }
 
 // Provides details for the LambdaFunctionFailed event.
@@ -6095,6 +7645,30 @@ func (s LambdaFunctionFailedEventAttributes) String() string {
 // GoString returns the string representation
 func (s LambdaFunctionFailedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetDetails sets the Details field's value.
+func (s *LambdaFunctionFailedEventAttributes) SetDetails(v string) *LambdaFunctionFailedEventAttributes {
+	s.Details = &v
+	return s
+}
+
+// SetReason sets the Reason field's value.
+func (s *LambdaFunctionFailedEventAttributes) SetReason(v string) *LambdaFunctionFailedEventAttributes {
+	s.Reason = &v
+	return s
+}
+
+// SetScheduledEventId sets the ScheduledEventId field's value.
+func (s *LambdaFunctionFailedEventAttributes) SetScheduledEventId(v int64) *LambdaFunctionFailedEventAttributes {
+	s.ScheduledEventId = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *LambdaFunctionFailedEventAttributes) SetStartedEventId(v int64) *LambdaFunctionFailedEventAttributes {
+	s.StartedEventId = &v
+	return s
 }
 
 // Provides details for the LambdaFunctionScheduled event.
@@ -6137,6 +7711,36 @@ func (s LambdaFunctionScheduledEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *LambdaFunctionScheduledEventAttributes) SetDecisionTaskCompletedEventId(v int64) *LambdaFunctionScheduledEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetId sets the Id field's value.
+func (s *LambdaFunctionScheduledEventAttributes) SetId(v string) *LambdaFunctionScheduledEventAttributes {
+	s.Id = &v
+	return s
+}
+
+// SetInput sets the Input field's value.
+func (s *LambdaFunctionScheduledEventAttributes) SetInput(v string) *LambdaFunctionScheduledEventAttributes {
+	s.Input = &v
+	return s
+}
+
+// SetName sets the Name field's value.
+func (s *LambdaFunctionScheduledEventAttributes) SetName(v string) *LambdaFunctionScheduledEventAttributes {
+	s.Name = &v
+	return s
+}
+
+// SetStartToCloseTimeout sets the StartToCloseTimeout field's value.
+func (s *LambdaFunctionScheduledEventAttributes) SetStartToCloseTimeout(v string) *LambdaFunctionScheduledEventAttributes {
+	s.StartToCloseTimeout = &v
+	return s
+}
+
 // Provides details for the LambdaFunctionStarted event.
 type LambdaFunctionStartedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -6157,6 +7761,12 @@ func (s LambdaFunctionStartedEventAttributes) String() string {
 // GoString returns the string representation
 func (s LambdaFunctionStartedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetScheduledEventId sets the ScheduledEventId field's value.
+func (s *LambdaFunctionStartedEventAttributes) SetScheduledEventId(v int64) *LambdaFunctionStartedEventAttributes {
+	s.ScheduledEventId = &v
+	return s
 }
 
 // Provides details for the LambdaFunctionTimedOut event.
@@ -6187,6 +7797,24 @@ func (s LambdaFunctionTimedOutEventAttributes) String() string {
 // GoString returns the string representation
 func (s LambdaFunctionTimedOutEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetScheduledEventId sets the ScheduledEventId field's value.
+func (s *LambdaFunctionTimedOutEventAttributes) SetScheduledEventId(v int64) *LambdaFunctionTimedOutEventAttributes {
+	s.ScheduledEventId = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *LambdaFunctionTimedOutEventAttributes) SetStartedEventId(v int64) *LambdaFunctionTimedOutEventAttributes {
+	s.StartedEventId = &v
+	return s
+}
+
+// SetTimeoutType sets the TimeoutType field's value.
+func (s *LambdaFunctionTimedOutEventAttributes) SetTimeoutType(v string) *LambdaFunctionTimedOutEventAttributes {
+	s.TimeoutType = &v
+	return s
 }
 
 type ListActivityTypesInput struct {
@@ -6259,6 +7887,42 @@ func (s *ListActivityTypesInput) Validate() error {
 	return nil
 }
 
+// SetDomain sets the Domain field's value.
+func (s *ListActivityTypesInput) SetDomain(v string) *ListActivityTypesInput {
+	s.Domain = &v
+	return s
+}
+
+// SetMaximumPageSize sets the MaximumPageSize field's value.
+func (s *ListActivityTypesInput) SetMaximumPageSize(v int64) *ListActivityTypesInput {
+	s.MaximumPageSize = &v
+	return s
+}
+
+// SetName sets the Name field's value.
+func (s *ListActivityTypesInput) SetName(v string) *ListActivityTypesInput {
+	s.Name = &v
+	return s
+}
+
+// SetNextPageToken sets the NextPageToken field's value.
+func (s *ListActivityTypesInput) SetNextPageToken(v string) *ListActivityTypesInput {
+	s.NextPageToken = &v
+	return s
+}
+
+// SetRegistrationStatus sets the RegistrationStatus field's value.
+func (s *ListActivityTypesInput) SetRegistrationStatus(v string) *ListActivityTypesInput {
+	s.RegistrationStatus = &v
+	return s
+}
+
+// SetReverseOrder sets the ReverseOrder field's value.
+func (s *ListActivityTypesInput) SetReverseOrder(v bool) *ListActivityTypesInput {
+	s.ReverseOrder = &v
+	return s
+}
+
 // Contains a paginated list of activity type information structures.
 type ListActivityTypesOutput struct {
 	_ struct{} `type:"structure"`
@@ -6285,6 +7949,18 @@ func (s ListActivityTypesOutput) String() string {
 // GoString returns the string representation
 func (s ListActivityTypesOutput) GoString() string {
 	return s.String()
+}
+
+// SetNextPageToken sets the NextPageToken field's value.
+func (s *ListActivityTypesOutput) SetNextPageToken(v string) *ListActivityTypesOutput {
+	s.NextPageToken = &v
+	return s
+}
+
+// SetTypeInfos sets the TypeInfos field's value.
+func (s *ListActivityTypesOutput) SetTypeInfos(v []*ActivityTypeInfo) *ListActivityTypesOutput {
+	s.TypeInfos = v
+	return s
 }
 
 type ListClosedWorkflowExecutionsInput struct {
@@ -6418,6 +8094,66 @@ func (s *ListClosedWorkflowExecutionsInput) Validate() error {
 	return nil
 }
 
+// SetCloseStatusFilter sets the CloseStatusFilter field's value.
+func (s *ListClosedWorkflowExecutionsInput) SetCloseStatusFilter(v *CloseStatusFilter) *ListClosedWorkflowExecutionsInput {
+	s.CloseStatusFilter = v
+	return s
+}
+
+// SetCloseTimeFilter sets the CloseTimeFilter field's value.
+func (s *ListClosedWorkflowExecutionsInput) SetCloseTimeFilter(v *ExecutionTimeFilter) *ListClosedWorkflowExecutionsInput {
+	s.CloseTimeFilter = v
+	return s
+}
+
+// SetDomain sets the Domain field's value.
+func (s *ListClosedWorkflowExecutionsInput) SetDomain(v string) *ListClosedWorkflowExecutionsInput {
+	s.Domain = &v
+	return s
+}
+
+// SetExecutionFilter sets the ExecutionFilter field's value.
+func (s *ListClosedWorkflowExecutionsInput) SetExecutionFilter(v *WorkflowExecutionFilter) *ListClosedWorkflowExecutionsInput {
+	s.ExecutionFilter = v
+	return s
+}
+
+// SetMaximumPageSize sets the MaximumPageSize field's value.
+func (s *ListClosedWorkflowExecutionsInput) SetMaximumPageSize(v int64) *ListClosedWorkflowExecutionsInput {
+	s.MaximumPageSize = &v
+	return s
+}
+
+// SetNextPageToken sets the NextPageToken field's value.
+func (s *ListClosedWorkflowExecutionsInput) SetNextPageToken(v string) *ListClosedWorkflowExecutionsInput {
+	s.NextPageToken = &v
+	return s
+}
+
+// SetReverseOrder sets the ReverseOrder field's value.
+func (s *ListClosedWorkflowExecutionsInput) SetReverseOrder(v bool) *ListClosedWorkflowExecutionsInput {
+	s.ReverseOrder = &v
+	return s
+}
+
+// SetStartTimeFilter sets the StartTimeFilter field's value.
+func (s *ListClosedWorkflowExecutionsInput) SetStartTimeFilter(v *ExecutionTimeFilter) *ListClosedWorkflowExecutionsInput {
+	s.StartTimeFilter = v
+	return s
+}
+
+// SetTagFilter sets the TagFilter field's value.
+func (s *ListClosedWorkflowExecutionsInput) SetTagFilter(v *TagFilter) *ListClosedWorkflowExecutionsInput {
+	s.TagFilter = v
+	return s
+}
+
+// SetTypeFilter sets the TypeFilter field's value.
+func (s *ListClosedWorkflowExecutionsInput) SetTypeFilter(v *WorkflowTypeFilter) *ListClosedWorkflowExecutionsInput {
+	s.TypeFilter = v
+	return s
+}
+
 type ListDomainsInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6471,6 +8207,30 @@ func (s *ListDomainsInput) Validate() error {
 	return nil
 }
 
+// SetMaximumPageSize sets the MaximumPageSize field's value.
+func (s *ListDomainsInput) SetMaximumPageSize(v int64) *ListDomainsInput {
+	s.MaximumPageSize = &v
+	return s
+}
+
+// SetNextPageToken sets the NextPageToken field's value.
+func (s *ListDomainsInput) SetNextPageToken(v string) *ListDomainsInput {
+	s.NextPageToken = &v
+	return s
+}
+
+// SetRegistrationStatus sets the RegistrationStatus field's value.
+func (s *ListDomainsInput) SetRegistrationStatus(v string) *ListDomainsInput {
+	s.RegistrationStatus = &v
+	return s
+}
+
+// SetReverseOrder sets the ReverseOrder field's value.
+func (s *ListDomainsInput) SetReverseOrder(v bool) *ListDomainsInput {
+	s.ReverseOrder = &v
+	return s
+}
+
 // Contains a paginated collection of DomainInfo structures.
 type ListDomainsOutput struct {
 	_ struct{} `type:"structure"`
@@ -6497,6 +8257,18 @@ func (s ListDomainsOutput) String() string {
 // GoString returns the string representation
 func (s ListDomainsOutput) GoString() string {
 	return s.String()
+}
+
+// SetDomainInfos sets the DomainInfos field's value.
+func (s *ListDomainsOutput) SetDomainInfos(v []*DomainInfo) *ListDomainsOutput {
+	s.DomainInfos = v
+	return s
+}
+
+// SetNextPageToken sets the NextPageToken field's value.
+func (s *ListDomainsOutput) SetNextPageToken(v string) *ListDomainsOutput {
+	s.NextPageToken = &v
+	return s
 }
 
 type ListOpenWorkflowExecutionsInput struct {
@@ -6603,6 +8375,54 @@ func (s *ListOpenWorkflowExecutionsInput) Validate() error {
 	return nil
 }
 
+// SetDomain sets the Domain field's value.
+func (s *ListOpenWorkflowExecutionsInput) SetDomain(v string) *ListOpenWorkflowExecutionsInput {
+	s.Domain = &v
+	return s
+}
+
+// SetExecutionFilter sets the ExecutionFilter field's value.
+func (s *ListOpenWorkflowExecutionsInput) SetExecutionFilter(v *WorkflowExecutionFilter) *ListOpenWorkflowExecutionsInput {
+	s.ExecutionFilter = v
+	return s
+}
+
+// SetMaximumPageSize sets the MaximumPageSize field's value.
+func (s *ListOpenWorkflowExecutionsInput) SetMaximumPageSize(v int64) *ListOpenWorkflowExecutionsInput {
+	s.MaximumPageSize = &v
+	return s
+}
+
+// SetNextPageToken sets the NextPageToken field's value.
+func (s *ListOpenWorkflowExecutionsInput) SetNextPageToken(v string) *ListOpenWorkflowExecutionsInput {
+	s.NextPageToken = &v
+	return s
+}
+
+// SetReverseOrder sets the ReverseOrder field's value.
+func (s *ListOpenWorkflowExecutionsInput) SetReverseOrder(v bool) *ListOpenWorkflowExecutionsInput {
+	s.ReverseOrder = &v
+	return s
+}
+
+// SetStartTimeFilter sets the StartTimeFilter field's value.
+func (s *ListOpenWorkflowExecutionsInput) SetStartTimeFilter(v *ExecutionTimeFilter) *ListOpenWorkflowExecutionsInput {
+	s.StartTimeFilter = v
+	return s
+}
+
+// SetTagFilter sets the TagFilter field's value.
+func (s *ListOpenWorkflowExecutionsInput) SetTagFilter(v *TagFilter) *ListOpenWorkflowExecutionsInput {
+	s.TagFilter = v
+	return s
+}
+
+// SetTypeFilter sets the TypeFilter field's value.
+func (s *ListOpenWorkflowExecutionsInput) SetTypeFilter(v *WorkflowTypeFilter) *ListOpenWorkflowExecutionsInput {
+	s.TypeFilter = v
+	return s
+}
+
 type ListWorkflowTypesInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6674,6 +8494,42 @@ func (s *ListWorkflowTypesInput) Validate() error {
 	return nil
 }
 
+// SetDomain sets the Domain field's value.
+func (s *ListWorkflowTypesInput) SetDomain(v string) *ListWorkflowTypesInput {
+	s.Domain = &v
+	return s
+}
+
+// SetMaximumPageSize sets the MaximumPageSize field's value.
+func (s *ListWorkflowTypesInput) SetMaximumPageSize(v int64) *ListWorkflowTypesInput {
+	s.MaximumPageSize = &v
+	return s
+}
+
+// SetName sets the Name field's value.
+func (s *ListWorkflowTypesInput) SetName(v string) *ListWorkflowTypesInput {
+	s.Name = &v
+	return s
+}
+
+// SetNextPageToken sets the NextPageToken field's value.
+func (s *ListWorkflowTypesInput) SetNextPageToken(v string) *ListWorkflowTypesInput {
+	s.NextPageToken = &v
+	return s
+}
+
+// SetRegistrationStatus sets the RegistrationStatus field's value.
+func (s *ListWorkflowTypesInput) SetRegistrationStatus(v string) *ListWorkflowTypesInput {
+	s.RegistrationStatus = &v
+	return s
+}
+
+// SetReverseOrder sets the ReverseOrder field's value.
+func (s *ListWorkflowTypesInput) SetReverseOrder(v bool) *ListWorkflowTypesInput {
+	s.ReverseOrder = &v
+	return s
+}
+
 // Contains a paginated list of information structures about workflow types.
 type ListWorkflowTypesOutput struct {
 	_ struct{} `type:"structure"`
@@ -6700,6 +8556,18 @@ func (s ListWorkflowTypesOutput) String() string {
 // GoString returns the string representation
 func (s ListWorkflowTypesOutput) GoString() string {
 	return s.String()
+}
+
+// SetNextPageToken sets the NextPageToken field's value.
+func (s *ListWorkflowTypesOutput) SetNextPageToken(v string) *ListWorkflowTypesOutput {
+	s.NextPageToken = &v
+	return s
+}
+
+// SetTypeInfos sets the TypeInfos field's value.
+func (s *ListWorkflowTypesOutput) SetTypeInfos(v []*WorkflowTypeInfo) *ListWorkflowTypesOutput {
+	s.TypeInfos = v
+	return s
 }
 
 // Provides details of the MarkerRecorded event.
@@ -6733,6 +8601,24 @@ func (s MarkerRecordedEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *MarkerRecordedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *MarkerRecordedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetDetails sets the Details field's value.
+func (s *MarkerRecordedEventAttributes) SetDetails(v string) *MarkerRecordedEventAttributes {
+	s.Details = &v
+	return s
+}
+
+// SetMarkerName sets the MarkerName field's value.
+func (s *MarkerRecordedEventAttributes) SetMarkerName(v string) *MarkerRecordedEventAttributes {
+	s.MarkerName = &v
+	return s
+}
+
 // Contains the count of tasks in a task list.
 type PendingTaskCount struct {
 	_ struct{} `type:"structure"`
@@ -6757,6 +8643,18 @@ func (s PendingTaskCount) GoString() string {
 	return s.String()
 }
 
+// SetCount sets the Count field's value.
+func (s *PendingTaskCount) SetCount(v int64) *PendingTaskCount {
+	s.Count = &v
+	return s
+}
+
+// SetTruncated sets the Truncated field's value.
+func (s *PendingTaskCount) SetTruncated(v bool) *PendingTaskCount {
+	s.Truncated = &v
+	return s
+}
+
 type PollForActivityTaskInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6772,10 +8670,9 @@ type PollForActivityTaskInput struct {
 
 	// Specifies the task list to poll for activity tasks.
 	//
-	// The specified string must not start or end with whitespace. It must not
-	// contain a : (colon), / (slash), | (vertical bar), or any control characters
-	// (\u0000-\u001f | \u007f - \u009f). Also, it must not contain the literal
-	// string quotarnquot.
+	// The specified string must not start or end with whitespace. It must not contain
+	// a : (colon), / (slash), | (vertical bar), or any control characters (\u0000-\u001f
+	// | \u007f - \u009f). Also, it must not contain the literal string quotarnquot.
 	//
 	// TaskList is a required field
 	TaskList *TaskList `locationName:"taskList" type:"structure" required:"true"`
@@ -6813,6 +8710,24 @@ func (s *PollForActivityTaskInput) Validate() error {
 		return invalidParams
 	}
 	return nil
+}
+
+// SetDomain sets the Domain field's value.
+func (s *PollForActivityTaskInput) SetDomain(v string) *PollForActivityTaskInput {
+	s.Domain = &v
+	return s
+}
+
+// SetIdentity sets the Identity field's value.
+func (s *PollForActivityTaskInput) SetIdentity(v string) *PollForActivityTaskInput {
+	s.Identity = &v
+	return s
+}
+
+// SetTaskList sets the TaskList field's value.
+func (s *PollForActivityTaskInput) SetTaskList(v *TaskList) *PollForActivityTaskInput {
+	s.TaskList = v
+	return s
 }
 
 // Unit of work sent to an activity worker.
@@ -6861,6 +8776,42 @@ func (s PollForActivityTaskOutput) GoString() string {
 	return s.String()
 }
 
+// SetActivityId sets the ActivityId field's value.
+func (s *PollForActivityTaskOutput) SetActivityId(v string) *PollForActivityTaskOutput {
+	s.ActivityId = &v
+	return s
+}
+
+// SetActivityType sets the ActivityType field's value.
+func (s *PollForActivityTaskOutput) SetActivityType(v *ActivityType) *PollForActivityTaskOutput {
+	s.ActivityType = v
+	return s
+}
+
+// SetInput sets the Input field's value.
+func (s *PollForActivityTaskOutput) SetInput(v string) *PollForActivityTaskOutput {
+	s.Input = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *PollForActivityTaskOutput) SetStartedEventId(v int64) *PollForActivityTaskOutput {
+	s.StartedEventId = &v
+	return s
+}
+
+// SetTaskToken sets the TaskToken field's value.
+func (s *PollForActivityTaskOutput) SetTaskToken(v string) *PollForActivityTaskOutput {
+	s.TaskToken = &v
+	return s
+}
+
+// SetWorkflowExecution sets the WorkflowExecution field's value.
+func (s *PollForActivityTaskOutput) SetWorkflowExecution(v *WorkflowExecution) *PollForActivityTaskOutput {
+	s.WorkflowExecution = v
+	return s
+}
+
 type PollForDecisionTaskInput struct {
 	_ struct{} `type:"structure"`
 
@@ -6893,7 +8844,7 @@ type PollForDecisionTaskInput struct {
 	// The nextPageToken returned by this action cannot be used with GetWorkflowExecutionHistory
 	// to get the next page. You must call PollForDecisionTask again (with the nextPageToken)
 	// to retrieve the next page of history records. Calling PollForDecisionTask
-	// with a nextPageToken will not return a new decision task..
+	// with a nextPageToken will not return a new decision task.
 	NextPageToken *string `locationName:"nextPageToken" type:"string"`
 
 	// When set to true, returns the events in reverse order. By default the results
@@ -6902,10 +8853,9 @@ type PollForDecisionTaskInput struct {
 
 	// Specifies the task list to poll for decision tasks.
 	//
-	// The specified string must not start or end with whitespace. It must not
-	// contain a : (colon), / (slash), | (vertical bar), or any control characters
-	// (\u0000-\u001f | \u007f - \u009f). Also, it must not contain the literal
-	// string quotarnquot.
+	// The specified string must not start or end with whitespace. It must not contain
+	// a : (colon), / (slash), | (vertical bar), or any control characters (\u0000-\u001f
+	// | \u007f - \u009f). Also, it must not contain the literal string quotarnquot.
 	//
 	// TaskList is a required field
 	TaskList *TaskList `locationName:"taskList" type:"structure" required:"true"`
@@ -6943,6 +8893,42 @@ func (s *PollForDecisionTaskInput) Validate() error {
 		return invalidParams
 	}
 	return nil
+}
+
+// SetDomain sets the Domain field's value.
+func (s *PollForDecisionTaskInput) SetDomain(v string) *PollForDecisionTaskInput {
+	s.Domain = &v
+	return s
+}
+
+// SetIdentity sets the Identity field's value.
+func (s *PollForDecisionTaskInput) SetIdentity(v string) *PollForDecisionTaskInput {
+	s.Identity = &v
+	return s
+}
+
+// SetMaximumPageSize sets the MaximumPageSize field's value.
+func (s *PollForDecisionTaskInput) SetMaximumPageSize(v int64) *PollForDecisionTaskInput {
+	s.MaximumPageSize = &v
+	return s
+}
+
+// SetNextPageToken sets the NextPageToken field's value.
+func (s *PollForDecisionTaskInput) SetNextPageToken(v string) *PollForDecisionTaskInput {
+	s.NextPageToken = &v
+	return s
+}
+
+// SetReverseOrder sets the ReverseOrder field's value.
+func (s *PollForDecisionTaskInput) SetReverseOrder(v bool) *PollForDecisionTaskInput {
+	s.ReverseOrder = &v
+	return s
+}
+
+// SetTaskList sets the TaskList field's value.
+func (s *PollForDecisionTaskInput) SetTaskList(v *TaskList) *PollForDecisionTaskInput {
+	s.TaskList = v
+	return s
 }
 
 // A structure that represents a decision task. Decision tasks are sent to deciders
@@ -7003,6 +8989,48 @@ func (s PollForDecisionTaskOutput) GoString() string {
 	return s.String()
 }
 
+// SetEvents sets the Events field's value.
+func (s *PollForDecisionTaskOutput) SetEvents(v []*HistoryEvent) *PollForDecisionTaskOutput {
+	s.Events = v
+	return s
+}
+
+// SetNextPageToken sets the NextPageToken field's value.
+func (s *PollForDecisionTaskOutput) SetNextPageToken(v string) *PollForDecisionTaskOutput {
+	s.NextPageToken = &v
+	return s
+}
+
+// SetPreviousStartedEventId sets the PreviousStartedEventId field's value.
+func (s *PollForDecisionTaskOutput) SetPreviousStartedEventId(v int64) *PollForDecisionTaskOutput {
+	s.PreviousStartedEventId = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *PollForDecisionTaskOutput) SetStartedEventId(v int64) *PollForDecisionTaskOutput {
+	s.StartedEventId = &v
+	return s
+}
+
+// SetTaskToken sets the TaskToken field's value.
+func (s *PollForDecisionTaskOutput) SetTaskToken(v string) *PollForDecisionTaskOutput {
+	s.TaskToken = &v
+	return s
+}
+
+// SetWorkflowExecution sets the WorkflowExecution field's value.
+func (s *PollForDecisionTaskOutput) SetWorkflowExecution(v *WorkflowExecution) *PollForDecisionTaskOutput {
+	s.WorkflowExecution = v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *PollForDecisionTaskOutput) SetWorkflowType(v *WorkflowType) *PollForDecisionTaskOutput {
+	s.WorkflowType = v
+	return s
+}
+
 type RecordActivityTaskHeartbeatInput struct {
 	_ struct{} `type:"structure"`
 
@@ -7011,7 +9039,7 @@ type RecordActivityTaskHeartbeatInput struct {
 
 	// The taskToken of the ActivityTask.
 	//
-	//  taskToken is generated by the service and should be treated as an opaque
+	// taskToken is generated by the service and should be treated as an opaque
 	// value. If the task is passed to another process, its taskToken must also
 	// be passed. This enables it to provide its progress and respond with results.
 	//
@@ -7045,6 +9073,18 @@ func (s *RecordActivityTaskHeartbeatInput) Validate() error {
 	return nil
 }
 
+// SetDetails sets the Details field's value.
+func (s *RecordActivityTaskHeartbeatInput) SetDetails(v string) *RecordActivityTaskHeartbeatInput {
+	s.Details = &v
+	return s
+}
+
+// SetTaskToken sets the TaskToken field's value.
+func (s *RecordActivityTaskHeartbeatInput) SetTaskToken(v string) *RecordActivityTaskHeartbeatInput {
+	s.TaskToken = &v
+	return s
+}
+
 // Status information about an activity task.
 type RecordActivityTaskHeartbeatOutput struct {
 	_ struct{} `type:"structure"`
@@ -7065,6 +9105,12 @@ func (s RecordActivityTaskHeartbeatOutput) GoString() string {
 	return s.String()
 }
 
+// SetCancelRequested sets the CancelRequested field's value.
+func (s *RecordActivityTaskHeartbeatOutput) SetCancelRequested(v bool) *RecordActivityTaskHeartbeatOutput {
+	s.CancelRequested = &v
+	return s
+}
+
 // Provides details of the RecordMarker decision.
 //
 // Access Control
@@ -7072,10 +9118,13 @@ func (s RecordActivityTaskHeartbeatOutput) GoString() string {
 // You can use IAM policies to control this decision's access to Amazon SWF
 // resources as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -7118,6 +9167,18 @@ func (s *RecordMarkerDecisionAttributes) Validate() error {
 	return nil
 }
 
+// SetDetails sets the Details field's value.
+func (s *RecordMarkerDecisionAttributes) SetDetails(v string) *RecordMarkerDecisionAttributes {
+	s.Details = &v
+	return s
+}
+
+// SetMarkerName sets the MarkerName field's value.
+func (s *RecordMarkerDecisionAttributes) SetMarkerName(v string) *RecordMarkerDecisionAttributes {
+	s.MarkerName = &v
+	return s
+}
+
 // Provides details of the RecordMarkerFailed event.
 type RecordMarkerFailedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -7125,8 +9186,8 @@ type RecordMarkerFailedEventAttributes struct {
 	// The cause of the failure. This information is generated by the system and
 	// can be useful for diagnostic purposes.
 	//
-	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because
-	// it lacked sufficient permissions. For details and example IAM policies, see
+	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because it
+	// lacked sufficient permissions. For details and example IAM policies, see
 	// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 	//
 	// Cause is a required field
@@ -7154,6 +9215,24 @@ func (s RecordMarkerFailedEventAttributes) String() string {
 // GoString returns the string representation
 func (s RecordMarkerFailedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetCause sets the Cause field's value.
+func (s *RecordMarkerFailedEventAttributes) SetCause(v string) *RecordMarkerFailedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *RecordMarkerFailedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *RecordMarkerFailedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetMarkerName sets the MarkerName field's value.
+func (s *RecordMarkerFailedEventAttributes) SetMarkerName(v string) *RecordMarkerFailedEventAttributes {
+	s.MarkerName = &v
+	return s
 }
 
 type RegisterActivityTypeInput struct {
@@ -7221,10 +9300,9 @@ type RegisterActivityTypeInput struct {
 
 	// The name of the activity type within the domain.
 	//
-	// The specified string must not start or end with whitespace. It must not
-	// contain a : (colon), / (slash), | (vertical bar), or any control characters
-	// (\u0000-\u001f | \u007f - \u009f). Also, it must not contain the literal
-	// string quotarnquot.
+	// The specified string must not start or end with whitespace. It must not contain
+	// a : (colon), / (slash), | (vertical bar), or any control characters (\u0000-\u001f
+	// | \u007f - \u009f). Also, it must not contain the literal string quotarnquot.
 	//
 	// Name is a required field
 	Name *string `locationName:"name" min:"1" type:"string" required:"true"`
@@ -7232,10 +9310,9 @@ type RegisterActivityTypeInput struct {
 	// The version of the activity type.
 	//
 	// The activity type consists of the name and version, the combination of which
-	// must be unique within the domain. The specified string must not start or
-	// end with whitespace. It must not contain a : (colon), / (slash), | (vertical
-	// bar), or any control characters (\u0000-\u001f | \u007f - \u009f). Also,
-	// it must not contain the literal string quotarnquot.
+	// must be unique within the domain.The specified string must not start or end with whitespace. It must not contain
+	// a : (colon), / (slash), | (vertical bar), or any control characters (\u0000-\u001f
+	// | \u007f - \u009f). Also, it must not contain the literal string quotarnquot.
 	//
 	// Version is a required field
 	Version *string `locationName:"version" min:"1" type:"string" required:"true"`
@@ -7284,6 +9361,66 @@ func (s *RegisterActivityTypeInput) Validate() error {
 	return nil
 }
 
+// SetDefaultTaskHeartbeatTimeout sets the DefaultTaskHeartbeatTimeout field's value.
+func (s *RegisterActivityTypeInput) SetDefaultTaskHeartbeatTimeout(v string) *RegisterActivityTypeInput {
+	s.DefaultTaskHeartbeatTimeout = &v
+	return s
+}
+
+// SetDefaultTaskList sets the DefaultTaskList field's value.
+func (s *RegisterActivityTypeInput) SetDefaultTaskList(v *TaskList) *RegisterActivityTypeInput {
+	s.DefaultTaskList = v
+	return s
+}
+
+// SetDefaultTaskPriority sets the DefaultTaskPriority field's value.
+func (s *RegisterActivityTypeInput) SetDefaultTaskPriority(v string) *RegisterActivityTypeInput {
+	s.DefaultTaskPriority = &v
+	return s
+}
+
+// SetDefaultTaskScheduleToCloseTimeout sets the DefaultTaskScheduleToCloseTimeout field's value.
+func (s *RegisterActivityTypeInput) SetDefaultTaskScheduleToCloseTimeout(v string) *RegisterActivityTypeInput {
+	s.DefaultTaskScheduleToCloseTimeout = &v
+	return s
+}
+
+// SetDefaultTaskScheduleToStartTimeout sets the DefaultTaskScheduleToStartTimeout field's value.
+func (s *RegisterActivityTypeInput) SetDefaultTaskScheduleToStartTimeout(v string) *RegisterActivityTypeInput {
+	s.DefaultTaskScheduleToStartTimeout = &v
+	return s
+}
+
+// SetDefaultTaskStartToCloseTimeout sets the DefaultTaskStartToCloseTimeout field's value.
+func (s *RegisterActivityTypeInput) SetDefaultTaskStartToCloseTimeout(v string) *RegisterActivityTypeInput {
+	s.DefaultTaskStartToCloseTimeout = &v
+	return s
+}
+
+// SetDescription sets the Description field's value.
+func (s *RegisterActivityTypeInput) SetDescription(v string) *RegisterActivityTypeInput {
+	s.Description = &v
+	return s
+}
+
+// SetDomain sets the Domain field's value.
+func (s *RegisterActivityTypeInput) SetDomain(v string) *RegisterActivityTypeInput {
+	s.Domain = &v
+	return s
+}
+
+// SetName sets the Name field's value.
+func (s *RegisterActivityTypeInput) SetName(v string) *RegisterActivityTypeInput {
+	s.Name = &v
+	return s
+}
+
+// SetVersion sets the Version field's value.
+func (s *RegisterActivityTypeInput) SetVersion(v string) *RegisterActivityTypeInput {
+	s.Version = &v
+	return s
+}
+
 type RegisterActivityTypeOutput struct {
 	_ struct{} `type:"structure"`
 }
@@ -7307,10 +9444,9 @@ type RegisterDomainInput struct {
 	// Name of the domain to register. The name must be unique in the region that
 	// the domain is registered in.
 	//
-	// The specified string must not start or end with whitespace. It must not
-	// contain a : (colon), / (slash), | (vertical bar), or any control characters
-	// (\u0000-\u001f | \u007f - \u009f). Also, it must not contain the literal
-	// string quotarnquot.
+	// The specified string must not start or end with whitespace. It must not contain
+	// a : (colon), / (slash), | (vertical bar), or any control characters (\u0000-\u001f
+	// | \u007f - \u009f). Also, it must not contain the literal string quotarnquot.
 	//
 	// Name is a required field
 	Name *string `locationName:"name" min:"1" type:"string" required:"true"`
@@ -7363,6 +9499,24 @@ func (s *RegisterDomainInput) Validate() error {
 	return nil
 }
 
+// SetDescription sets the Description field's value.
+func (s *RegisterDomainInput) SetDescription(v string) *RegisterDomainInput {
+	s.Description = &v
+	return s
+}
+
+// SetName sets the Name field's value.
+func (s *RegisterDomainInput) SetName(v string) *RegisterDomainInput {
+	s.Name = &v
+	return s
+}
+
+// SetWorkflowExecutionRetentionPeriodInDays sets the WorkflowExecutionRetentionPeriodInDays field's value.
+func (s *RegisterDomainInput) SetWorkflowExecutionRetentionPeriodInDays(v string) *RegisterDomainInput {
+	s.WorkflowExecutionRetentionPeriodInDays = &v
+	return s
+}
+
 type RegisterDomainOutput struct {
 	_ struct{} `type:"structure"`
 }
@@ -7388,11 +9542,13 @@ type RegisterWorkflowTypeInput struct {
 	//
 	// The supported child policies are:
 	//
-	//  TERMINATE: the child executions will be terminated. REQUEST_CANCEL: a request
-	// to cancel will be attempted for each child execution by recording a WorkflowExecutionCancelRequested
-	// event in its history. It is up to the decider to take appropriate actions
-	// when it receives an execution history with this event. ABANDON: no action
-	// will be taken. The child executions will continue to run.
+	//    * TERMINATE: the child executions will be terminated.
+	//    * REQUEST_CANCEL: a request to cancel will be attempted for each child
+	//    execution by recording a WorkflowExecutionCancelRequested event in its
+	//    history. It is up to the decider to take appropriate actions when it receives
+	//    an execution history with this event.
+	//    * ABANDON: no action will be taken. The child executions will continue
+	//    to run.
 	DefaultChildPolicy *string `locationName:"defaultChildPolicy" type:"string" enum:"ChildPolicy"`
 
 	// If set, specifies the default maximum duration for executions of this workflow
@@ -7409,9 +9565,9 @@ type RegisterWorkflowTypeInput struct {
 	// The ARN of the default IAM role to use when a workflow execution of this
 	// type invokes AWS Lambda functions.
 	//
-	// This default can be overridden when starting a workflow execution using
-	// the StartWorkflowExecution action or the StartChildWorkflowExecution and
-	// ContinueAsNewWorkflowExecution decision.
+	// This default can be overridden when starting a workflow execution using the
+	// StartWorkflowExecution action or the StartChildWorkflowExecution and ContinueAsNewWorkflowExecution
+	// decision.
 	DefaultLambdaRole *string `locationName:"defaultLambdaRole" min:"1" type:"string"`
 
 	// If set, specifies the default task list to use for scheduling decision tasks
@@ -7449,10 +9605,9 @@ type RegisterWorkflowTypeInput struct {
 
 	// The name of the workflow type.
 	//
-	// The specified string must not start or end with whitespace. It must not
-	// contain a : (colon), / (slash), | (vertical bar), or any control characters
-	// (\u0000-\u001f | \u007f - \u009f). Also, it must not contain the literal
-	// string quotarnquot.
+	// The specified string must not start or end with whitespace. It must not contain
+	// a : (colon), / (slash), | (vertical bar), or any control characters (\u0000-\u001f
+	// | \u007f - \u009f). Also, it must not contain the literal string quotarnquot.
 	//
 	// Name is a required field
 	Name *string `locationName:"name" min:"1" type:"string" required:"true"`
@@ -7461,10 +9616,9 @@ type RegisterWorkflowTypeInput struct {
 	//
 	// The workflow type consists of the name and version, the combination of which
 	// must be unique within the domain. To get a list of all currently registered
-	// workflow types, use the ListWorkflowTypes action. The specified string must
-	// not start or end with whitespace. It must not contain a : (colon), / (slash),
-	// | (vertical bar), or any control characters (\u0000-\u001f | \u007f - \u009f).
-	// Also, it must not contain the literal string quotarnquot.
+	// workflow types, use the ListWorkflowTypes action.The specified string must not start or end with whitespace. It must not contain
+	// a : (colon), / (slash), | (vertical bar), or any control characters (\u0000-\u001f
+	// | \u007f - \u009f). Also, it must not contain the literal string quotarnquot.
 	//
 	// Version is a required field
 	Version *string `locationName:"version" min:"1" type:"string" required:"true"`
@@ -7516,6 +9670,66 @@ func (s *RegisterWorkflowTypeInput) Validate() error {
 	return nil
 }
 
+// SetDefaultChildPolicy sets the DefaultChildPolicy field's value.
+func (s *RegisterWorkflowTypeInput) SetDefaultChildPolicy(v string) *RegisterWorkflowTypeInput {
+	s.DefaultChildPolicy = &v
+	return s
+}
+
+// SetDefaultExecutionStartToCloseTimeout sets the DefaultExecutionStartToCloseTimeout field's value.
+func (s *RegisterWorkflowTypeInput) SetDefaultExecutionStartToCloseTimeout(v string) *RegisterWorkflowTypeInput {
+	s.DefaultExecutionStartToCloseTimeout = &v
+	return s
+}
+
+// SetDefaultLambdaRole sets the DefaultLambdaRole field's value.
+func (s *RegisterWorkflowTypeInput) SetDefaultLambdaRole(v string) *RegisterWorkflowTypeInput {
+	s.DefaultLambdaRole = &v
+	return s
+}
+
+// SetDefaultTaskList sets the DefaultTaskList field's value.
+func (s *RegisterWorkflowTypeInput) SetDefaultTaskList(v *TaskList) *RegisterWorkflowTypeInput {
+	s.DefaultTaskList = v
+	return s
+}
+
+// SetDefaultTaskPriority sets the DefaultTaskPriority field's value.
+func (s *RegisterWorkflowTypeInput) SetDefaultTaskPriority(v string) *RegisterWorkflowTypeInput {
+	s.DefaultTaskPriority = &v
+	return s
+}
+
+// SetDefaultTaskStartToCloseTimeout sets the DefaultTaskStartToCloseTimeout field's value.
+func (s *RegisterWorkflowTypeInput) SetDefaultTaskStartToCloseTimeout(v string) *RegisterWorkflowTypeInput {
+	s.DefaultTaskStartToCloseTimeout = &v
+	return s
+}
+
+// SetDescription sets the Description field's value.
+func (s *RegisterWorkflowTypeInput) SetDescription(v string) *RegisterWorkflowTypeInput {
+	s.Description = &v
+	return s
+}
+
+// SetDomain sets the Domain field's value.
+func (s *RegisterWorkflowTypeInput) SetDomain(v string) *RegisterWorkflowTypeInput {
+	s.Domain = &v
+	return s
+}
+
+// SetName sets the Name field's value.
+func (s *RegisterWorkflowTypeInput) SetName(v string) *RegisterWorkflowTypeInput {
+	s.Name = &v
+	return s
+}
+
+// SetVersion sets the Version field's value.
+func (s *RegisterWorkflowTypeInput) SetVersion(v string) *RegisterWorkflowTypeInput {
+	s.Version = &v
+	return s
+}
+
 type RegisterWorkflowTypeOutput struct {
 	_ struct{} `type:"structure"`
 }
@@ -7537,10 +9751,13 @@ func (s RegisterWorkflowTypeOutput) GoString() string {
 // You can use IAM policies to control this decision's access to Amazon SWF
 // resources as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -7580,6 +9797,12 @@ func (s *RequestCancelActivityTaskDecisionAttributes) Validate() error {
 	return nil
 }
 
+// SetActivityId sets the ActivityId field's value.
+func (s *RequestCancelActivityTaskDecisionAttributes) SetActivityId(v string) *RequestCancelActivityTaskDecisionAttributes {
+	s.ActivityId = &v
+	return s
+}
+
 // Provides details of the RequestCancelActivityTaskFailed event.
 type RequestCancelActivityTaskFailedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -7592,8 +9815,8 @@ type RequestCancelActivityTaskFailedEventAttributes struct {
 	// The cause of the failure. This information is generated by the system and
 	// can be useful for diagnostic purposes.
 	//
-	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because
-	// it lacked sufficient permissions. For details and example IAM policies, see
+	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because it
+	// lacked sufficient permissions. For details and example IAM policies, see
 	// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 	//
 	// Cause is a required field
@@ -7618,6 +9841,24 @@ func (s RequestCancelActivityTaskFailedEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetActivityId sets the ActivityId field's value.
+func (s *RequestCancelActivityTaskFailedEventAttributes) SetActivityId(v string) *RequestCancelActivityTaskFailedEventAttributes {
+	s.ActivityId = &v
+	return s
+}
+
+// SetCause sets the Cause field's value.
+func (s *RequestCancelActivityTaskFailedEventAttributes) SetCause(v string) *RequestCancelActivityTaskFailedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *RequestCancelActivityTaskFailedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *RequestCancelActivityTaskFailedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
 // Provides details of the RequestCancelExternalWorkflowExecution decision.
 //
 // Access Control
@@ -7625,10 +9866,13 @@ func (s RequestCancelActivityTaskFailedEventAttributes) GoString() string {
 // You can use IAM policies to control this decision's access to Amazon SWF
 // resources as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -7675,6 +9919,24 @@ func (s *RequestCancelExternalWorkflowExecutionDecisionAttributes) Validate() er
 	return nil
 }
 
+// SetControl sets the Control field's value.
+func (s *RequestCancelExternalWorkflowExecutionDecisionAttributes) SetControl(v string) *RequestCancelExternalWorkflowExecutionDecisionAttributes {
+	s.Control = &v
+	return s
+}
+
+// SetRunId sets the RunId field's value.
+func (s *RequestCancelExternalWorkflowExecutionDecisionAttributes) SetRunId(v string) *RequestCancelExternalWorkflowExecutionDecisionAttributes {
+	s.RunId = &v
+	return s
+}
+
+// SetWorkflowId sets the WorkflowId field's value.
+func (s *RequestCancelExternalWorkflowExecutionDecisionAttributes) SetWorkflowId(v string) *RequestCancelExternalWorkflowExecutionDecisionAttributes {
+	s.WorkflowId = &v
+	return s
+}
+
 // Provides details of the RequestCancelExternalWorkflowExecutionFailed event.
 type RequestCancelExternalWorkflowExecutionFailedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -7682,8 +9944,8 @@ type RequestCancelExternalWorkflowExecutionFailedEventAttributes struct {
 	// The cause of the failure. This information is generated by the system and
 	// can be useful for diagnostic purposes.
 	//
-	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because
-	// it lacked sufficient permissions. For details and example IAM policies, see
+	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because it
+	// lacked sufficient permissions. For details and example IAM policies, see
 	// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 	//
 	// Cause is a required field
@@ -7727,6 +9989,42 @@ func (s RequestCancelExternalWorkflowExecutionFailedEventAttributes) GoString() 
 	return s.String()
 }
 
+// SetCause sets the Cause field's value.
+func (s *RequestCancelExternalWorkflowExecutionFailedEventAttributes) SetCause(v string) *RequestCancelExternalWorkflowExecutionFailedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetControl sets the Control field's value.
+func (s *RequestCancelExternalWorkflowExecutionFailedEventAttributes) SetControl(v string) *RequestCancelExternalWorkflowExecutionFailedEventAttributes {
+	s.Control = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *RequestCancelExternalWorkflowExecutionFailedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *RequestCancelExternalWorkflowExecutionFailedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetInitiatedEventId sets the InitiatedEventId field's value.
+func (s *RequestCancelExternalWorkflowExecutionFailedEventAttributes) SetInitiatedEventId(v int64) *RequestCancelExternalWorkflowExecutionFailedEventAttributes {
+	s.InitiatedEventId = &v
+	return s
+}
+
+// SetRunId sets the RunId field's value.
+func (s *RequestCancelExternalWorkflowExecutionFailedEventAttributes) SetRunId(v string) *RequestCancelExternalWorkflowExecutionFailedEventAttributes {
+	s.RunId = &v
+	return s
+}
+
+// SetWorkflowId sets the WorkflowId field's value.
+func (s *RequestCancelExternalWorkflowExecutionFailedEventAttributes) SetWorkflowId(v string) *RequestCancelExternalWorkflowExecutionFailedEventAttributes {
+	s.WorkflowId = &v
+	return s
+}
+
 // Provides details of the RequestCancelExternalWorkflowExecutionInitiated event.
 type RequestCancelExternalWorkflowExecutionInitiatedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -7760,6 +10058,30 @@ func (s RequestCancelExternalWorkflowExecutionInitiatedEventAttributes) String()
 // GoString returns the string representation
 func (s RequestCancelExternalWorkflowExecutionInitiatedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetControl sets the Control field's value.
+func (s *RequestCancelExternalWorkflowExecutionInitiatedEventAttributes) SetControl(v string) *RequestCancelExternalWorkflowExecutionInitiatedEventAttributes {
+	s.Control = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *RequestCancelExternalWorkflowExecutionInitiatedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *RequestCancelExternalWorkflowExecutionInitiatedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetRunId sets the RunId field's value.
+func (s *RequestCancelExternalWorkflowExecutionInitiatedEventAttributes) SetRunId(v string) *RequestCancelExternalWorkflowExecutionInitiatedEventAttributes {
+	s.RunId = &v
+	return s
+}
+
+// SetWorkflowId sets the WorkflowId field's value.
+func (s *RequestCancelExternalWorkflowExecutionInitiatedEventAttributes) SetWorkflowId(v string) *RequestCancelExternalWorkflowExecutionInitiatedEventAttributes {
+	s.WorkflowId = &v
+	return s
 }
 
 type RequestCancelWorkflowExecutionInput struct {
@@ -7809,6 +10131,24 @@ func (s *RequestCancelWorkflowExecutionInput) Validate() error {
 		return invalidParams
 	}
 	return nil
+}
+
+// SetDomain sets the Domain field's value.
+func (s *RequestCancelWorkflowExecutionInput) SetDomain(v string) *RequestCancelWorkflowExecutionInput {
+	s.Domain = &v
+	return s
+}
+
+// SetRunId sets the RunId field's value.
+func (s *RequestCancelWorkflowExecutionInput) SetRunId(v string) *RequestCancelWorkflowExecutionInput {
+	s.RunId = &v
+	return s
+}
+
+// SetWorkflowId sets the WorkflowId field's value.
+func (s *RequestCancelWorkflowExecutionInput) SetWorkflowId(v string) *RequestCancelWorkflowExecutionInput {
+	s.WorkflowId = &v
+	return s
 }
 
 type RequestCancelWorkflowExecutionOutput struct {
@@ -7867,6 +10207,18 @@ func (s *RespondActivityTaskCanceledInput) Validate() error {
 	return nil
 }
 
+// SetDetails sets the Details field's value.
+func (s *RespondActivityTaskCanceledInput) SetDetails(v string) *RespondActivityTaskCanceledInput {
+	s.Details = &v
+	return s
+}
+
+// SetTaskToken sets the TaskToken field's value.
+func (s *RespondActivityTaskCanceledInput) SetTaskToken(v string) *RespondActivityTaskCanceledInput {
+	s.TaskToken = &v
+	return s
+}
+
 type RespondActivityTaskCanceledOutput struct {
 	_ struct{} `type:"structure"`
 }
@@ -7890,7 +10242,7 @@ type RespondActivityTaskCompletedInput struct {
 
 	// The taskToken of the ActivityTask.
 	//
-	//  taskToken is generated by the service and should be treated as an opaque
+	// taskToken is generated by the service and should be treated as an opaque
 	// value. If the task is passed to another process, its taskToken must also
 	// be passed. This enables it to provide its progress and respond with results.
 	//
@@ -7924,6 +10276,18 @@ func (s *RespondActivityTaskCompletedInput) Validate() error {
 	return nil
 }
 
+// SetResult sets the Result field's value.
+func (s *RespondActivityTaskCompletedInput) SetResult(v string) *RespondActivityTaskCompletedInput {
+	s.Result = &v
+	return s
+}
+
+// SetTaskToken sets the TaskToken field's value.
+func (s *RespondActivityTaskCompletedInput) SetTaskToken(v string) *RespondActivityTaskCompletedInput {
+	s.TaskToken = &v
+	return s
+}
+
 type RespondActivityTaskCompletedOutput struct {
 	_ struct{} `type:"structure"`
 }
@@ -7949,7 +10313,7 @@ type RespondActivityTaskFailedInput struct {
 
 	// The taskToken of the ActivityTask.
 	//
-	//  taskToken is generated by the service and should be treated as an opaque
+	// taskToken is generated by the service and should be treated as an opaque
 	// value. If the task is passed to another process, its taskToken must also
 	// be passed. This enables it to provide its progress and respond with results.
 	//
@@ -7981,6 +10345,24 @@ func (s *RespondActivityTaskFailedInput) Validate() error {
 		return invalidParams
 	}
 	return nil
+}
+
+// SetDetails sets the Details field's value.
+func (s *RespondActivityTaskFailedInput) SetDetails(v string) *RespondActivityTaskFailedInput {
+	s.Details = &v
+	return s
+}
+
+// SetReason sets the Reason field's value.
+func (s *RespondActivityTaskFailedInput) SetReason(v string) *RespondActivityTaskFailedInput {
+	s.Reason = &v
+	return s
+}
+
+// SetTaskToken sets the TaskToken field's value.
+func (s *RespondActivityTaskFailedInput) SetTaskToken(v string) *RespondActivityTaskFailedInput {
+	s.TaskToken = &v
+	return s
 }
 
 type RespondActivityTaskFailedOutput struct {
@@ -8053,6 +10435,24 @@ func (s *RespondDecisionTaskCompletedInput) Validate() error {
 	return nil
 }
 
+// SetDecisions sets the Decisions field's value.
+func (s *RespondDecisionTaskCompletedInput) SetDecisions(v []*Decision) *RespondDecisionTaskCompletedInput {
+	s.Decisions = v
+	return s
+}
+
+// SetExecutionContext sets the ExecutionContext field's value.
+func (s *RespondDecisionTaskCompletedInput) SetExecutionContext(v string) *RespondDecisionTaskCompletedInput {
+	s.ExecutionContext = &v
+	return s
+}
+
+// SetTaskToken sets the TaskToken field's value.
+func (s *RespondDecisionTaskCompletedInput) SetTaskToken(v string) *RespondDecisionTaskCompletedInput {
+	s.TaskToken = &v
+	return s
+}
+
 type RespondDecisionTaskCompletedOutput struct {
 	_ struct{} `type:"structure"`
 }
@@ -8074,13 +10474,18 @@ func (s RespondDecisionTaskCompletedOutput) GoString() string {
 // You can use IAM policies to control this decision's access to Amazon SWF
 // resources as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the following parameters by using a Condition element
-// with the appropriate keys.  activityType.name: String constraint. The key
-// is swf:activityType.name. activityType.version: String constraint. The key
-// is swf:activityType.version. taskList: String constraint. The key is swf:taskList.name.
-//    If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the following parameters by using a Condition element with
+//    the appropriate keys. activityType.name: String constraint. The key is
+//    swf:activityType.name.
+// activityType.version: String constraint. The key is swf:activityType.version.
+//
+// taskList: String constraint. The key is swf:taskList.name.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -8090,10 +10495,9 @@ type ScheduleActivityTaskDecisionAttributes struct {
 
 	// Required. The activityId of the activity task.
 	//
-	// The specified string must not start or end with whitespace. It must not
-	// contain a : (colon), / (slash), | (vertical bar), or any control characters
-	// (\u0000-\u001f | \u007f - \u009f). Also, it must not contain the literal
-	// string quotarnquot.
+	// The specified string must not start or end with whitespace. It must not contain
+	// a : (colon), / (slash), | (vertical bar), or any control characters (\u0000-\u001f
+	// | \u007f - \u009f). Also, it must not contain the literal string quotarnquot.
 	//
 	// ActivityId is a required field
 	ActivityId *string `locationName:"activityId" min:"1" type:"string" required:"true"`
@@ -8165,10 +10569,9 @@ type ScheduleActivityTaskDecisionAttributes struct {
 	// A task list for this activity task must be specified either as a default
 	// for the activity type or through this field. If neither this field is set
 	// nor a default task list was specified at registration time then a fault will
-	// be returned. The specified string must not start or end with whitespace.
-	// It must not contain a : (colon), / (slash), | (vertical bar), or any control
-	// characters (\u0000-\u001f | \u007f - \u009f). Also, it must not contain the
-	// literal string quotarnquot.
+	// be returned.The specified string must not start or end with whitespace. It must not contain
+	// a : (colon), / (slash), | (vertical bar), or any control characters (\u0000-\u001f
+	// | \u007f - \u009f). Also, it must not contain the literal string quotarnquot.
 	TaskList *TaskList `locationName:"taskList" type:"structure"`
 
 	// Optional. If set, specifies the priority with which the activity task is
@@ -8222,6 +10625,66 @@ func (s *ScheduleActivityTaskDecisionAttributes) Validate() error {
 	return nil
 }
 
+// SetActivityId sets the ActivityId field's value.
+func (s *ScheduleActivityTaskDecisionAttributes) SetActivityId(v string) *ScheduleActivityTaskDecisionAttributes {
+	s.ActivityId = &v
+	return s
+}
+
+// SetActivityType sets the ActivityType field's value.
+func (s *ScheduleActivityTaskDecisionAttributes) SetActivityType(v *ActivityType) *ScheduleActivityTaskDecisionAttributes {
+	s.ActivityType = v
+	return s
+}
+
+// SetControl sets the Control field's value.
+func (s *ScheduleActivityTaskDecisionAttributes) SetControl(v string) *ScheduleActivityTaskDecisionAttributes {
+	s.Control = &v
+	return s
+}
+
+// SetHeartbeatTimeout sets the HeartbeatTimeout field's value.
+func (s *ScheduleActivityTaskDecisionAttributes) SetHeartbeatTimeout(v string) *ScheduleActivityTaskDecisionAttributes {
+	s.HeartbeatTimeout = &v
+	return s
+}
+
+// SetInput sets the Input field's value.
+func (s *ScheduleActivityTaskDecisionAttributes) SetInput(v string) *ScheduleActivityTaskDecisionAttributes {
+	s.Input = &v
+	return s
+}
+
+// SetScheduleToCloseTimeout sets the ScheduleToCloseTimeout field's value.
+func (s *ScheduleActivityTaskDecisionAttributes) SetScheduleToCloseTimeout(v string) *ScheduleActivityTaskDecisionAttributes {
+	s.ScheduleToCloseTimeout = &v
+	return s
+}
+
+// SetScheduleToStartTimeout sets the ScheduleToStartTimeout field's value.
+func (s *ScheduleActivityTaskDecisionAttributes) SetScheduleToStartTimeout(v string) *ScheduleActivityTaskDecisionAttributes {
+	s.ScheduleToStartTimeout = &v
+	return s
+}
+
+// SetStartToCloseTimeout sets the StartToCloseTimeout field's value.
+func (s *ScheduleActivityTaskDecisionAttributes) SetStartToCloseTimeout(v string) *ScheduleActivityTaskDecisionAttributes {
+	s.StartToCloseTimeout = &v
+	return s
+}
+
+// SetTaskList sets the TaskList field's value.
+func (s *ScheduleActivityTaskDecisionAttributes) SetTaskList(v *TaskList) *ScheduleActivityTaskDecisionAttributes {
+	s.TaskList = v
+	return s
+}
+
+// SetTaskPriority sets the TaskPriority field's value.
+func (s *ScheduleActivityTaskDecisionAttributes) SetTaskPriority(v string) *ScheduleActivityTaskDecisionAttributes {
+	s.TaskPriority = &v
+	return s
+}
+
 // Provides details of the ScheduleActivityTaskFailed event.
 type ScheduleActivityTaskFailedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -8239,8 +10702,8 @@ type ScheduleActivityTaskFailedEventAttributes struct {
 	// The cause of the failure. This information is generated by the system and
 	// can be useful for diagnostic purposes.
 	//
-	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because
-	// it lacked sufficient permissions. For details and example IAM policies, see
+	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because it
+	// lacked sufficient permissions. For details and example IAM policies, see
 	// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 	//
 	// Cause is a required field
@@ -8265,6 +10728,30 @@ func (s ScheduleActivityTaskFailedEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetActivityId sets the ActivityId field's value.
+func (s *ScheduleActivityTaskFailedEventAttributes) SetActivityId(v string) *ScheduleActivityTaskFailedEventAttributes {
+	s.ActivityId = &v
+	return s
+}
+
+// SetActivityType sets the ActivityType field's value.
+func (s *ScheduleActivityTaskFailedEventAttributes) SetActivityType(v *ActivityType) *ScheduleActivityTaskFailedEventAttributes {
+	s.ActivityType = v
+	return s
+}
+
+// SetCause sets the Cause field's value.
+func (s *ScheduleActivityTaskFailedEventAttributes) SetCause(v string) *ScheduleActivityTaskFailedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *ScheduleActivityTaskFailedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *ScheduleActivityTaskFailedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
 // Provides details of the ScheduleLambdaFunction decision.
 //
 // Access Control
@@ -8272,13 +10759,18 @@ func (s ScheduleActivityTaskFailedEventAttributes) GoString() string {
 // You can use IAM policies to control this decision's access to Amazon SWF
 // resources as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the following parameters by using a Condition element
-// with the appropriate keys.  activityType.name: String constraint. The key
-// is swf:activityType.name. activityType.version: String constraint. The key
-// is swf:activityType.version. taskList: String constraint. The key is swf:taskList.name.
-//    If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the following parameters by using a Condition element with
+//    the appropriate keys. activityType.name: String constraint. The key is
+//    swf:activityType.name.
+// activityType.version: String constraint. The key is swf:activityType.version.
+//
+// taskList: String constraint. The key is swf:taskList.name.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -8288,10 +10780,9 @@ type ScheduleLambdaFunctionDecisionAttributes struct {
 
 	// Required. The SWF id of the AWS Lambda task.
 	//
-	// The specified string must not start or end with whitespace. It must not
-	// contain a : (colon), / (slash), | (vertical bar), or any control characters
-	// (\u0000-\u001f | \u007f - \u009f). Also, it must not contain the literal
-	// string quotarnquot.
+	// The specified string must not start or end with whitespace. It must not contain
+	// a : (colon), / (slash), | (vertical bar), or any control characters (\u0000-\u001f
+	// | \u007f - \u009f). Also, it must not contain the literal string quotarnquot.
 	//
 	// Id is a required field
 	Id *string `locationName:"id" min:"1" type:"string" required:"true"`
@@ -8343,6 +10834,30 @@ func (s *ScheduleLambdaFunctionDecisionAttributes) Validate() error {
 	return nil
 }
 
+// SetId sets the Id field's value.
+func (s *ScheduleLambdaFunctionDecisionAttributes) SetId(v string) *ScheduleLambdaFunctionDecisionAttributes {
+	s.Id = &v
+	return s
+}
+
+// SetInput sets the Input field's value.
+func (s *ScheduleLambdaFunctionDecisionAttributes) SetInput(v string) *ScheduleLambdaFunctionDecisionAttributes {
+	s.Input = &v
+	return s
+}
+
+// SetName sets the Name field's value.
+func (s *ScheduleLambdaFunctionDecisionAttributes) SetName(v string) *ScheduleLambdaFunctionDecisionAttributes {
+	s.Name = &v
+	return s
+}
+
+// SetStartToCloseTimeout sets the StartToCloseTimeout field's value.
+func (s *ScheduleLambdaFunctionDecisionAttributes) SetStartToCloseTimeout(v string) *ScheduleLambdaFunctionDecisionAttributes {
+	s.StartToCloseTimeout = &v
+	return s
+}
+
 // Provides details for the ScheduleLambdaFunctionFailed event.
 type ScheduleLambdaFunctionFailedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -8350,8 +10865,8 @@ type ScheduleLambdaFunctionFailedEventAttributes struct {
 	// The cause of the failure. This information is generated by the system and
 	// can be useful for diagnostic purposes.
 	//
-	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because
-	// it lacked sufficient permissions. For details and example IAM policies, see
+	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because it
+	// lacked sufficient permissions. For details and example IAM policies, see
 	// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 	//
 	// Cause is a required field
@@ -8386,6 +10901,30 @@ func (s ScheduleLambdaFunctionFailedEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetCause sets the Cause field's value.
+func (s *ScheduleLambdaFunctionFailedEventAttributes) SetCause(v string) *ScheduleLambdaFunctionFailedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *ScheduleLambdaFunctionFailedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *ScheduleLambdaFunctionFailedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetId sets the Id field's value.
+func (s *ScheduleLambdaFunctionFailedEventAttributes) SetId(v string) *ScheduleLambdaFunctionFailedEventAttributes {
+	s.Id = &v
+	return s
+}
+
+// SetName sets the Name field's value.
+func (s *ScheduleLambdaFunctionFailedEventAttributes) SetName(v string) *ScheduleLambdaFunctionFailedEventAttributes {
+	s.Name = &v
+	return s
+}
+
 // Provides details of the SignalExternalWorkflowExecution decision.
 //
 // Access Control
@@ -8393,10 +10932,13 @@ func (s ScheduleLambdaFunctionFailedEventAttributes) GoString() string {
 // You can use IAM policies to control this decision's access to Amazon SWF
 // resources as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -8459,6 +11001,36 @@ func (s *SignalExternalWorkflowExecutionDecisionAttributes) Validate() error {
 	return nil
 }
 
+// SetControl sets the Control field's value.
+func (s *SignalExternalWorkflowExecutionDecisionAttributes) SetControl(v string) *SignalExternalWorkflowExecutionDecisionAttributes {
+	s.Control = &v
+	return s
+}
+
+// SetInput sets the Input field's value.
+func (s *SignalExternalWorkflowExecutionDecisionAttributes) SetInput(v string) *SignalExternalWorkflowExecutionDecisionAttributes {
+	s.Input = &v
+	return s
+}
+
+// SetRunId sets the RunId field's value.
+func (s *SignalExternalWorkflowExecutionDecisionAttributes) SetRunId(v string) *SignalExternalWorkflowExecutionDecisionAttributes {
+	s.RunId = &v
+	return s
+}
+
+// SetSignalName sets the SignalName field's value.
+func (s *SignalExternalWorkflowExecutionDecisionAttributes) SetSignalName(v string) *SignalExternalWorkflowExecutionDecisionAttributes {
+	s.SignalName = &v
+	return s
+}
+
+// SetWorkflowId sets the WorkflowId field's value.
+func (s *SignalExternalWorkflowExecutionDecisionAttributes) SetWorkflowId(v string) *SignalExternalWorkflowExecutionDecisionAttributes {
+	s.WorkflowId = &v
+	return s
+}
+
 // Provides details of the SignalExternalWorkflowExecutionFailed event.
 type SignalExternalWorkflowExecutionFailedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -8466,8 +11038,8 @@ type SignalExternalWorkflowExecutionFailedEventAttributes struct {
 	// The cause of the failure. This information is generated by the system and
 	// can be useful for diagnostic purposes.
 	//
-	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because
-	// it lacked sufficient permissions. For details and example IAM policies, see
+	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because it
+	// lacked sufficient permissions. For details and example IAM policies, see
 	// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 	//
 	// Cause is a required field
@@ -8512,6 +11084,42 @@ func (s SignalExternalWorkflowExecutionFailedEventAttributes) GoString() string 
 	return s.String()
 }
 
+// SetCause sets the Cause field's value.
+func (s *SignalExternalWorkflowExecutionFailedEventAttributes) SetCause(v string) *SignalExternalWorkflowExecutionFailedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetControl sets the Control field's value.
+func (s *SignalExternalWorkflowExecutionFailedEventAttributes) SetControl(v string) *SignalExternalWorkflowExecutionFailedEventAttributes {
+	s.Control = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *SignalExternalWorkflowExecutionFailedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *SignalExternalWorkflowExecutionFailedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetInitiatedEventId sets the InitiatedEventId field's value.
+func (s *SignalExternalWorkflowExecutionFailedEventAttributes) SetInitiatedEventId(v int64) *SignalExternalWorkflowExecutionFailedEventAttributes {
+	s.InitiatedEventId = &v
+	return s
+}
+
+// SetRunId sets the RunId field's value.
+func (s *SignalExternalWorkflowExecutionFailedEventAttributes) SetRunId(v string) *SignalExternalWorkflowExecutionFailedEventAttributes {
+	s.RunId = &v
+	return s
+}
+
+// SetWorkflowId sets the WorkflowId field's value.
+func (s *SignalExternalWorkflowExecutionFailedEventAttributes) SetWorkflowId(v string) *SignalExternalWorkflowExecutionFailedEventAttributes {
+	s.WorkflowId = &v
+	return s
+}
+
 // Provides details of the SignalExternalWorkflowExecutionInitiated event.
 type SignalExternalWorkflowExecutionInitiatedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -8553,6 +11161,42 @@ func (s SignalExternalWorkflowExecutionInitiatedEventAttributes) String() string
 // GoString returns the string representation
 func (s SignalExternalWorkflowExecutionInitiatedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetControl sets the Control field's value.
+func (s *SignalExternalWorkflowExecutionInitiatedEventAttributes) SetControl(v string) *SignalExternalWorkflowExecutionInitiatedEventAttributes {
+	s.Control = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *SignalExternalWorkflowExecutionInitiatedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *SignalExternalWorkflowExecutionInitiatedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetInput sets the Input field's value.
+func (s *SignalExternalWorkflowExecutionInitiatedEventAttributes) SetInput(v string) *SignalExternalWorkflowExecutionInitiatedEventAttributes {
+	s.Input = &v
+	return s
+}
+
+// SetRunId sets the RunId field's value.
+func (s *SignalExternalWorkflowExecutionInitiatedEventAttributes) SetRunId(v string) *SignalExternalWorkflowExecutionInitiatedEventAttributes {
+	s.RunId = &v
+	return s
+}
+
+// SetSignalName sets the SignalName field's value.
+func (s *SignalExternalWorkflowExecutionInitiatedEventAttributes) SetSignalName(v string) *SignalExternalWorkflowExecutionInitiatedEventAttributes {
+	s.SignalName = &v
+	return s
+}
+
+// SetWorkflowId sets the WorkflowId field's value.
+func (s *SignalExternalWorkflowExecutionInitiatedEventAttributes) SetWorkflowId(v string) *SignalExternalWorkflowExecutionInitiatedEventAttributes {
+	s.WorkflowId = &v
+	return s
 }
 
 type SignalWorkflowExecutionInput struct {
@@ -8619,6 +11263,36 @@ func (s *SignalWorkflowExecutionInput) Validate() error {
 	return nil
 }
 
+// SetDomain sets the Domain field's value.
+func (s *SignalWorkflowExecutionInput) SetDomain(v string) *SignalWorkflowExecutionInput {
+	s.Domain = &v
+	return s
+}
+
+// SetInput sets the Input field's value.
+func (s *SignalWorkflowExecutionInput) SetInput(v string) *SignalWorkflowExecutionInput {
+	s.Input = &v
+	return s
+}
+
+// SetRunId sets the RunId field's value.
+func (s *SignalWorkflowExecutionInput) SetRunId(v string) *SignalWorkflowExecutionInput {
+	s.RunId = &v
+	return s
+}
+
+// SetSignalName sets the SignalName field's value.
+func (s *SignalWorkflowExecutionInput) SetSignalName(v string) *SignalWorkflowExecutionInput {
+	s.SignalName = &v
+	return s
+}
+
+// SetWorkflowId sets the WorkflowId field's value.
+func (s *SignalWorkflowExecutionInput) SetWorkflowId(v string) *SignalWorkflowExecutionInput {
+	s.WorkflowId = &v
+	return s
+}
+
 type SignalWorkflowExecutionOutput struct {
 	_ struct{} `type:"structure"`
 }
@@ -8640,18 +11314,22 @@ func (s SignalWorkflowExecutionOutput) GoString() string {
 // You can use IAM policies to control this decision's access to Amazon SWF
 // resources as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. Constrain the following parameters by using a Condition element
-// with the appropriate keys.   tagList.member.N: The key is "swf:tagList.N"
-// where N is the tag number from 0 to 4, inclusive. taskList: String constraint.
-// The key is swf:taskList.name. workflowType.name: String constraint. The key
-// is swf:workflowType.name. workflowType.version: String constraint. The key
-// is swf:workflowType.version.    If the caller does not have sufficient permissions
-// to invoke the action, or the parameter values fall outside the specified
-// constraints, the action fails. The associated event attribute's cause parameter
-// will be set to OPERATION_NOT_PERMITTED. For details and example IAM policies,
-// see Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * Constrain the following parameters by using a Condition element with
+//    the appropriate keys. tagList.member.N: The key is "swf:tagList.N" where
+//    N is the tag number from 0 to 4, inclusive.
+// taskList: String constraint. The key is swf:taskList.name.
+// workflowType.name: String constraint. The key is swf:workflowType.name.
+// workflowType.version: String constraint. The key is swf:workflowType.version.
+//
+// If the caller does not have sufficient permissions to invoke the action,
+// or the parameter values fall outside the specified constraints, the action
+// fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
+// For details and example IAM policies, see Using IAM to Manage Access to Amazon
+// SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 type StartChildWorkflowExecutionDecisionAttributes struct {
 	_ struct{} `type:"structure"`
 
@@ -8662,15 +11340,17 @@ type StartChildWorkflowExecutionDecisionAttributes struct {
 	//
 	// The supported child policies are:
 	//
-	//  TERMINATE: the child executions will be terminated. REQUEST_CANCEL: a request
-	// to cancel will be attempted for each child execution by recording a WorkflowExecutionCancelRequested
-	// event in its history. It is up to the decider to take appropriate actions
-	// when it receives an execution history with this event. ABANDON: no action
-	// will be taken. The child executions will continue to run.  A child policy
-	// for this workflow execution must be specified either as a default for the
-	// workflow type or through this parameter. If neither this parameter is set
-	// nor a default child policy was specified at registration time then a fault
-	// will be returned.
+	//    * TERMINATE: the child executions will be terminated.
+	//    * REQUEST_CANCEL: a request to cancel will be attempted for each child
+	//    execution by recording a WorkflowExecutionCancelRequested event in its
+	//    history. It is up to the decider to take appropriate actions when it receives
+	//    an execution history with this event.
+	//    * ABANDON: no action will be taken. The child executions will continue
+	//    to run.
+	// A child policy for this workflow execution must be specified either as a
+	// default for the workflow type or through this parameter. If neither this
+	// parameter is set nor a default child policy was specified at registration
+	// time then a fault will be returned.
 	ChildPolicy *string `locationName:"childPolicy" type:"string" enum:"ChildPolicy"`
 
 	// Optional. Data attached to the event that can be used by the decider in subsequent
@@ -8683,10 +11363,10 @@ type StartChildWorkflowExecutionDecisionAttributes struct {
 	// The duration is specified in seconds; an integer greater than or equal to
 	// 0. The value "NONE" can be used to specify unlimited duration.
 	//
-	// An execution start-to-close timeout for this workflow execution must be
-	// specified either as a default for the workflow type or through this parameter.
-	// If neither this parameter is set nor a default execution start-to-close timeout
-	// was specified at registration time then a fault will be returned.
+	// An execution start-to-close timeout for this workflow execution must be specified
+	// either as a default for the workflow type or through this parameter. If neither
+	// this parameter is set nor a default execution start-to-close timeout was
+	// specified at registration time then a fault will be returned.
 	ExecutionStartToCloseTimeout *string `locationName:"executionStartToCloseTimeout" type:"string"`
 
 	// The input to be provided to the workflow execution.
@@ -8694,9 +11374,9 @@ type StartChildWorkflowExecutionDecisionAttributes struct {
 
 	// The ARN of an IAM role that authorizes Amazon SWF to invoke AWS Lambda functions.
 	//
-	// In order for this workflow execution to invoke AWS Lambda functions, an
-	// appropriate IAM role must be specified either as a default for the workflow
-	// type or through this field.
+	// In order for this workflow execution to invoke AWS Lambda functions, an appropriate
+	// IAM role must be specified either as a default for the workflow type or through
+	// this field.
 	LambdaRole *string `locationName:"lambdaRole" min:"1" type:"string"`
 
 	// The list of tags to associate with the child workflow execution. A maximum
@@ -8711,10 +11391,9 @@ type StartChildWorkflowExecutionDecisionAttributes struct {
 	// A task list for this workflow execution must be specified either as a default
 	// for the workflow type or through this parameter. If neither this parameter
 	// is set nor a default task list was specified at registration time then a
-	// fault will be returned. The specified string must not start or end with whitespace.
-	// It must not contain a : (colon), / (slash), | (vertical bar), or any control
-	// characters (\u0000-\u001f | \u007f - \u009f). Also, it must not contain the
-	// literal string quotarnquot.
+	// fault will be returned.The specified string must not start or end with whitespace. It must not contain
+	// a : (colon), / (slash), | (vertical bar), or any control characters (\u0000-\u001f
+	// | \u007f - \u009f). Also, it must not contain the literal string quotarnquot.
 	TaskList *TaskList `locationName:"taskList" type:"structure"`
 
 	// Optional. A task priority that, if set, specifies the priority for a decision
@@ -8743,10 +11422,9 @@ type StartChildWorkflowExecutionDecisionAttributes struct {
 
 	// Required. The workflowId of the workflow execution.
 	//
-	// The specified string must not start or end with whitespace. It must not
-	// contain a : (colon), / (slash), | (vertical bar), or any control characters
-	// (\u0000-\u001f | \u007f - \u009f). Also, it must not contain the literal
-	// string quotarnquot.
+	// The specified string must not start or end with whitespace. It must not contain
+	// a : (colon), / (slash), | (vertical bar), or any control characters (\u0000-\u001f
+	// | \u007f - \u009f). Also, it must not contain the literal string quotarnquot.
 	//
 	// WorkflowId is a required field
 	WorkflowId *string `locationName:"workflowId" min:"1" type:"string" required:"true"`
@@ -8799,6 +11477,72 @@ func (s *StartChildWorkflowExecutionDecisionAttributes) Validate() error {
 	return nil
 }
 
+// SetChildPolicy sets the ChildPolicy field's value.
+func (s *StartChildWorkflowExecutionDecisionAttributes) SetChildPolicy(v string) *StartChildWorkflowExecutionDecisionAttributes {
+	s.ChildPolicy = &v
+	return s
+}
+
+// SetControl sets the Control field's value.
+func (s *StartChildWorkflowExecutionDecisionAttributes) SetControl(v string) *StartChildWorkflowExecutionDecisionAttributes {
+	s.Control = &v
+	return s
+}
+
+// SetExecutionStartToCloseTimeout sets the ExecutionStartToCloseTimeout field's value.
+func (s *StartChildWorkflowExecutionDecisionAttributes) SetExecutionStartToCloseTimeout(v string) *StartChildWorkflowExecutionDecisionAttributes {
+	s.ExecutionStartToCloseTimeout = &v
+	return s
+}
+
+// SetInput sets the Input field's value.
+func (s *StartChildWorkflowExecutionDecisionAttributes) SetInput(v string) *StartChildWorkflowExecutionDecisionAttributes {
+	s.Input = &v
+	return s
+}
+
+// SetLambdaRole sets the LambdaRole field's value.
+func (s *StartChildWorkflowExecutionDecisionAttributes) SetLambdaRole(v string) *StartChildWorkflowExecutionDecisionAttributes {
+	s.LambdaRole = &v
+	return s
+}
+
+// SetTagList sets the TagList field's value.
+func (s *StartChildWorkflowExecutionDecisionAttributes) SetTagList(v []*string) *StartChildWorkflowExecutionDecisionAttributes {
+	s.TagList = v
+	return s
+}
+
+// SetTaskList sets the TaskList field's value.
+func (s *StartChildWorkflowExecutionDecisionAttributes) SetTaskList(v *TaskList) *StartChildWorkflowExecutionDecisionAttributes {
+	s.TaskList = v
+	return s
+}
+
+// SetTaskPriority sets the TaskPriority field's value.
+func (s *StartChildWorkflowExecutionDecisionAttributes) SetTaskPriority(v string) *StartChildWorkflowExecutionDecisionAttributes {
+	s.TaskPriority = &v
+	return s
+}
+
+// SetTaskStartToCloseTimeout sets the TaskStartToCloseTimeout field's value.
+func (s *StartChildWorkflowExecutionDecisionAttributes) SetTaskStartToCloseTimeout(v string) *StartChildWorkflowExecutionDecisionAttributes {
+	s.TaskStartToCloseTimeout = &v
+	return s
+}
+
+// SetWorkflowId sets the WorkflowId field's value.
+func (s *StartChildWorkflowExecutionDecisionAttributes) SetWorkflowId(v string) *StartChildWorkflowExecutionDecisionAttributes {
+	s.WorkflowId = &v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *StartChildWorkflowExecutionDecisionAttributes) SetWorkflowType(v *WorkflowType) *StartChildWorkflowExecutionDecisionAttributes {
+	s.WorkflowType = v
+	return s
+}
+
 // Provides details of the StartChildWorkflowExecutionFailed event.
 type StartChildWorkflowExecutionFailedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -8806,8 +11550,8 @@ type StartChildWorkflowExecutionFailedEventAttributes struct {
 	// The cause of the failure. This information is generated by the system and
 	// can be useful for diagnostic purposes.
 	//
-	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because
-	// it lacked sufficient permissions. For details and example IAM policies, see
+	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because it
+	// lacked sufficient permissions. For details and example IAM policies, see
 	// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 	//
 	// Cause is a required field
@@ -8853,6 +11597,42 @@ func (s StartChildWorkflowExecutionFailedEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetCause sets the Cause field's value.
+func (s *StartChildWorkflowExecutionFailedEventAttributes) SetCause(v string) *StartChildWorkflowExecutionFailedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetControl sets the Control field's value.
+func (s *StartChildWorkflowExecutionFailedEventAttributes) SetControl(v string) *StartChildWorkflowExecutionFailedEventAttributes {
+	s.Control = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *StartChildWorkflowExecutionFailedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *StartChildWorkflowExecutionFailedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetInitiatedEventId sets the InitiatedEventId field's value.
+func (s *StartChildWorkflowExecutionFailedEventAttributes) SetInitiatedEventId(v int64) *StartChildWorkflowExecutionFailedEventAttributes {
+	s.InitiatedEventId = &v
+	return s
+}
+
+// SetWorkflowId sets the WorkflowId field's value.
+func (s *StartChildWorkflowExecutionFailedEventAttributes) SetWorkflowId(v string) *StartChildWorkflowExecutionFailedEventAttributes {
+	s.WorkflowId = &v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *StartChildWorkflowExecutionFailedEventAttributes) SetWorkflowType(v *WorkflowType) *StartChildWorkflowExecutionFailedEventAttributes {
+	s.WorkflowType = v
+	return s
+}
+
 // Provides details of the StartChildWorkflowExecutionInitiated event.
 type StartChildWorkflowExecutionInitiatedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -8863,11 +11643,13 @@ type StartChildWorkflowExecutionInitiatedEventAttributes struct {
 	//
 	// The supported child policies are:
 	//
-	//  TERMINATE: the child executions will be terminated. REQUEST_CANCEL: a request
-	// to cancel will be attempted for each child execution by recording a WorkflowExecutionCancelRequested
-	// event in its history. It is up to the decider to take appropriate actions
-	// when it receives an execution history with this event. ABANDON: no action
-	// will be taken. The child executions will continue to run.
+	//    * TERMINATE: the child executions will be terminated.
+	//    * REQUEST_CANCEL: a request to cancel will be attempted for each child
+	//    execution by recording a WorkflowExecutionCancelRequested event in its
+	//    history. It is up to the decider to take appropriate actions when it receives
+	//    an execution history with this event.
+	//    * ABANDON: no action will be taken. The child executions will continue
+	//    to run.
 	//
 	// ChildPolicy is a required field
 	ChildPolicy *string `locationName:"childPolicy" type:"string" required:"true" enum:"ChildPolicy"`
@@ -8944,6 +11726,78 @@ func (s StartChildWorkflowExecutionInitiatedEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetChildPolicy sets the ChildPolicy field's value.
+func (s *StartChildWorkflowExecutionInitiatedEventAttributes) SetChildPolicy(v string) *StartChildWorkflowExecutionInitiatedEventAttributes {
+	s.ChildPolicy = &v
+	return s
+}
+
+// SetControl sets the Control field's value.
+func (s *StartChildWorkflowExecutionInitiatedEventAttributes) SetControl(v string) *StartChildWorkflowExecutionInitiatedEventAttributes {
+	s.Control = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *StartChildWorkflowExecutionInitiatedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *StartChildWorkflowExecutionInitiatedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetExecutionStartToCloseTimeout sets the ExecutionStartToCloseTimeout field's value.
+func (s *StartChildWorkflowExecutionInitiatedEventAttributes) SetExecutionStartToCloseTimeout(v string) *StartChildWorkflowExecutionInitiatedEventAttributes {
+	s.ExecutionStartToCloseTimeout = &v
+	return s
+}
+
+// SetInput sets the Input field's value.
+func (s *StartChildWorkflowExecutionInitiatedEventAttributes) SetInput(v string) *StartChildWorkflowExecutionInitiatedEventAttributes {
+	s.Input = &v
+	return s
+}
+
+// SetLambdaRole sets the LambdaRole field's value.
+func (s *StartChildWorkflowExecutionInitiatedEventAttributes) SetLambdaRole(v string) *StartChildWorkflowExecutionInitiatedEventAttributes {
+	s.LambdaRole = &v
+	return s
+}
+
+// SetTagList sets the TagList field's value.
+func (s *StartChildWorkflowExecutionInitiatedEventAttributes) SetTagList(v []*string) *StartChildWorkflowExecutionInitiatedEventAttributes {
+	s.TagList = v
+	return s
+}
+
+// SetTaskList sets the TaskList field's value.
+func (s *StartChildWorkflowExecutionInitiatedEventAttributes) SetTaskList(v *TaskList) *StartChildWorkflowExecutionInitiatedEventAttributes {
+	s.TaskList = v
+	return s
+}
+
+// SetTaskPriority sets the TaskPriority field's value.
+func (s *StartChildWorkflowExecutionInitiatedEventAttributes) SetTaskPriority(v string) *StartChildWorkflowExecutionInitiatedEventAttributes {
+	s.TaskPriority = &v
+	return s
+}
+
+// SetTaskStartToCloseTimeout sets the TaskStartToCloseTimeout field's value.
+func (s *StartChildWorkflowExecutionInitiatedEventAttributes) SetTaskStartToCloseTimeout(v string) *StartChildWorkflowExecutionInitiatedEventAttributes {
+	s.TaskStartToCloseTimeout = &v
+	return s
+}
+
+// SetWorkflowId sets the WorkflowId field's value.
+func (s *StartChildWorkflowExecutionInitiatedEventAttributes) SetWorkflowId(v string) *StartChildWorkflowExecutionInitiatedEventAttributes {
+	s.WorkflowId = &v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *StartChildWorkflowExecutionInitiatedEventAttributes) SetWorkflowType(v *WorkflowType) *StartChildWorkflowExecutionInitiatedEventAttributes {
+	s.WorkflowType = v
+	return s
+}
+
 // Provides details for the StartLambdaFunctionFailed event.
 type StartLambdaFunctionFailedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -8951,8 +11805,8 @@ type StartLambdaFunctionFailedEventAttributes struct {
 	// The cause of the failure. This information is generated by the system and
 	// can be useful for diagnostic purposes.
 	//
-	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because
-	// it lacked sufficient permissions. For details and example IAM policies, see
+	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because it
+	// lacked sufficient permissions. For details and example IAM policies, see
 	// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 	Cause *string `locationName:"cause" type:"string" enum:"StartLambdaFunctionFailedCause"`
 
@@ -8975,6 +11829,24 @@ func (s StartLambdaFunctionFailedEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetCause sets the Cause field's value.
+func (s *StartLambdaFunctionFailedEventAttributes) SetCause(v string) *StartLambdaFunctionFailedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetMessage sets the Message field's value.
+func (s *StartLambdaFunctionFailedEventAttributes) SetMessage(v string) *StartLambdaFunctionFailedEventAttributes {
+	s.Message = &v
+	return s
+}
+
+// SetScheduledEventId sets the ScheduledEventId field's value.
+func (s *StartLambdaFunctionFailedEventAttributes) SetScheduledEventId(v int64) *StartLambdaFunctionFailedEventAttributes {
+	s.ScheduledEventId = &v
+	return s
+}
+
 // Provides details of the StartTimer decision.
 //
 // Access Control
@@ -8982,10 +11854,13 @@ func (s StartLambdaFunctionFailedEventAttributes) GoString() string {
 // You can use IAM policies to control this decision's access to Amazon SWF
 // resources as follows:
 //
-//  Use a Resource element with the domain name to limit the action to only
-// specified domains. Use an Action element to allow or deny permission to call
-// this action. You cannot use an IAM policy to constrain this action's parameters.
-//  If the caller does not have sufficient permissions to invoke the action,
+//    * Use a Resource element with the domain name to limit the action to only
+//    specified domains.
+//    * Use an Action element to allow or deny permission to call this action.
+//
+//    * You cannot use an IAM policy to constrain this action's parameters.
+//
+// If the caller does not have sufficient permissions to invoke the action,
 // or the parameter values fall outside the specified constraints, the action
 // fails. The associated event attribute's cause parameter will be set to OPERATION_NOT_PERMITTED.
 // For details and example IAM policies, see Using IAM to Manage Access to Amazon
@@ -9007,10 +11882,9 @@ type StartTimerDecisionAttributes struct {
 
 	// Required. The unique ID of the timer.
 	//
-	// The specified string must not start or end with whitespace. It must not
-	// contain a : (colon), / (slash), | (vertical bar), or any control characters
-	// (\u0000-\u001f | \u007f - \u009f). Also, it must not contain the literal
-	// string quotarnquot.
+	// The specified string must not start or end with whitespace. It must not contain
+	// a : (colon), / (slash), | (vertical bar), or any control characters (\u0000-\u001f
+	// | \u007f - \u009f). Also, it must not contain the literal string quotarnquot.
 	//
 	// TimerId is a required field
 	TimerId *string `locationName:"timerId" min:"1" type:"string" required:"true"`
@@ -9048,6 +11922,24 @@ func (s *StartTimerDecisionAttributes) Validate() error {
 	return nil
 }
 
+// SetControl sets the Control field's value.
+func (s *StartTimerDecisionAttributes) SetControl(v string) *StartTimerDecisionAttributes {
+	s.Control = &v
+	return s
+}
+
+// SetStartToFireTimeout sets the StartToFireTimeout field's value.
+func (s *StartTimerDecisionAttributes) SetStartToFireTimeout(v string) *StartTimerDecisionAttributes {
+	s.StartToFireTimeout = &v
+	return s
+}
+
+// SetTimerId sets the TimerId field's value.
+func (s *StartTimerDecisionAttributes) SetTimerId(v string) *StartTimerDecisionAttributes {
+	s.TimerId = &v
+	return s
+}
+
 // Provides details of the StartTimerFailed event.
 type StartTimerFailedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -9055,8 +11947,8 @@ type StartTimerFailedEventAttributes struct {
 	// The cause of the failure. This information is generated by the system and
 	// can be useful for diagnostic purposes.
 	//
-	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because
-	// it lacked sufficient permissions. For details and example IAM policies, see
+	// If cause is set to OPERATION_NOT_PERMITTED, the decision failed because it
+	// lacked sufficient permissions. For details and example IAM policies, see
 	// Using IAM to Manage Access to Amazon SWF Workflows (http://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-dev-iam.html).
 	//
 	// Cause is a required field
@@ -9086,6 +11978,24 @@ func (s StartTimerFailedEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetCause sets the Cause field's value.
+func (s *StartTimerFailedEventAttributes) SetCause(v string) *StartTimerFailedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *StartTimerFailedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *StartTimerFailedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetTimerId sets the TimerId field's value.
+func (s *StartTimerFailedEventAttributes) SetTimerId(v string) *StartTimerFailedEventAttributes {
+	s.TimerId = &v
+	return s
+}
+
 type StartWorkflowExecutionInput struct {
 	_ struct{} `type:"structure"`
 
@@ -9096,15 +12006,17 @@ type StartWorkflowExecutionInput struct {
 	//
 	// The supported child policies are:
 	//
-	//  TERMINATE: the child executions will be terminated. REQUEST_CANCEL: a request
-	// to cancel will be attempted for each child execution by recording a WorkflowExecutionCancelRequested
-	// event in its history. It is up to the decider to take appropriate actions
-	// when it receives an execution history with this event. ABANDON: no action
-	// will be taken. The child executions will continue to run.  A child policy
-	// for this workflow execution must be specified either as a default for the
-	// workflow type or through this parameter. If neither this parameter is set
-	// nor a default child policy was specified at registration time then a fault
-	// will be returned.
+	//    * TERMINATE: the child executions will be terminated.
+	//    * REQUEST_CANCEL: a request to cancel will be attempted for each child
+	//    execution by recording a WorkflowExecutionCancelRequested event in its
+	//    history. It is up to the decider to take appropriate actions when it receives
+	//    an execution history with this event.
+	//    * ABANDON: no action will be taken. The child executions will continue
+	//    to run.
+	// A child policy for this workflow execution must be specified either as a
+	// default for the workflow type or through this parameter. If neither this
+	// parameter is set nor a default child policy was specified at registration
+	// time then a fault will be returned.
 	ChildPolicy *string `locationName:"childPolicy" type:"string" enum:"ChildPolicy"`
 
 	// The name of the domain in which the workflow execution is created.
@@ -9121,7 +12033,7 @@ type StartWorkflowExecutionInput struct {
 	// value of "NONE" for this timeout; there is a one-year max limit on the time
 	// that a workflow execution can run.
 	//
-	//  An execution start-to-close timeout must be specified either through this
+	// An execution start-to-close timeout must be specified either through this
 	// parameter or as a default when the workflow type is registered. If neither
 	// this parameter nor a default execution start-to-close timeout is specified,
 	// a fault is returned.
@@ -9134,9 +12046,9 @@ type StartWorkflowExecutionInput struct {
 
 	// The ARN of an IAM role that authorizes Amazon SWF to invoke AWS Lambda functions.
 	//
-	// In order for this workflow execution to invoke AWS Lambda functions, an
-	// appropriate IAM role must be specified either as a default for the workflow
-	// type or through this field.
+	// In order for this workflow execution to invoke AWS Lambda functions, an appropriate
+	// IAM role must be specified either as a default for the workflow type or through
+	// this field.
 	LambdaRole *string `locationName:"lambdaRole" min:"1" type:"string"`
 
 	// The list of tags to associate with the workflow execution. You can specify
@@ -9152,10 +12064,9 @@ type StartWorkflowExecutionInput struct {
 	// A task list for this workflow execution must be specified either as a default
 	// for the workflow type or through this parameter. If neither this parameter
 	// is set nor a default task list was specified at registration time then a
-	// fault will be returned. The specified string must not start or end with whitespace.
-	// It must not contain a : (colon), / (slash), | (vertical bar), or any control
-	// characters (\u0000-\u001f | \u007f - \u009f). Also, it must not contain the
-	// literal string quotarnquot.
+	// fault will be returned.The specified string must not start or end with whitespace. It must not contain
+	// a : (colon), / (slash), | (vertical bar), or any control characters (\u0000-\u001f
+	// | \u007f - \u009f). Also, it must not contain the literal string quotarnquot.
 	TaskList *TaskList `locationName:"taskList" type:"structure"`
 
 	// The task priority to use for this workflow execution. This will override
@@ -9189,10 +12100,9 @@ type StartWorkflowExecutionInput struct {
 	// of a previous execution. You cannot have two open workflow executions with
 	// the same workflowId at the same time.
 	//
-	// The specified string must not start or end with whitespace. It must not
-	// contain a : (colon), / (slash), | (vertical bar), or any control characters
-	// (\u0000-\u001f | \u007f - \u009f). Also, it must not contain the literal
-	// string quotarnquot.
+	// The specified string must not start or end with whitespace. It must not contain
+	// a : (colon), / (slash), | (vertical bar), or any control characters (\u0000-\u001f
+	// | \u007f - \u009f). Also, it must not contain the literal string quotarnquot.
 	//
 	// WorkflowId is a required field
 	WorkflowId *string `locationName:"workflowId" min:"1" type:"string" required:"true"`
@@ -9251,6 +12161,72 @@ func (s *StartWorkflowExecutionInput) Validate() error {
 	return nil
 }
 
+// SetChildPolicy sets the ChildPolicy field's value.
+func (s *StartWorkflowExecutionInput) SetChildPolicy(v string) *StartWorkflowExecutionInput {
+	s.ChildPolicy = &v
+	return s
+}
+
+// SetDomain sets the Domain field's value.
+func (s *StartWorkflowExecutionInput) SetDomain(v string) *StartWorkflowExecutionInput {
+	s.Domain = &v
+	return s
+}
+
+// SetExecutionStartToCloseTimeout sets the ExecutionStartToCloseTimeout field's value.
+func (s *StartWorkflowExecutionInput) SetExecutionStartToCloseTimeout(v string) *StartWorkflowExecutionInput {
+	s.ExecutionStartToCloseTimeout = &v
+	return s
+}
+
+// SetInput sets the Input field's value.
+func (s *StartWorkflowExecutionInput) SetInput(v string) *StartWorkflowExecutionInput {
+	s.Input = &v
+	return s
+}
+
+// SetLambdaRole sets the LambdaRole field's value.
+func (s *StartWorkflowExecutionInput) SetLambdaRole(v string) *StartWorkflowExecutionInput {
+	s.LambdaRole = &v
+	return s
+}
+
+// SetTagList sets the TagList field's value.
+func (s *StartWorkflowExecutionInput) SetTagList(v []*string) *StartWorkflowExecutionInput {
+	s.TagList = v
+	return s
+}
+
+// SetTaskList sets the TaskList field's value.
+func (s *StartWorkflowExecutionInput) SetTaskList(v *TaskList) *StartWorkflowExecutionInput {
+	s.TaskList = v
+	return s
+}
+
+// SetTaskPriority sets the TaskPriority field's value.
+func (s *StartWorkflowExecutionInput) SetTaskPriority(v string) *StartWorkflowExecutionInput {
+	s.TaskPriority = &v
+	return s
+}
+
+// SetTaskStartToCloseTimeout sets the TaskStartToCloseTimeout field's value.
+func (s *StartWorkflowExecutionInput) SetTaskStartToCloseTimeout(v string) *StartWorkflowExecutionInput {
+	s.TaskStartToCloseTimeout = &v
+	return s
+}
+
+// SetWorkflowId sets the WorkflowId field's value.
+func (s *StartWorkflowExecutionInput) SetWorkflowId(v string) *StartWorkflowExecutionInput {
+	s.WorkflowId = &v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *StartWorkflowExecutionInput) SetWorkflowType(v *WorkflowType) *StartWorkflowExecutionInput {
+	s.WorkflowType = v
+	return s
+}
+
 // Specifies the runId of a workflow execution.
 type StartWorkflowExecutionOutput struct {
 	_ struct{} `type:"structure"`
@@ -9268,6 +12244,12 @@ func (s StartWorkflowExecutionOutput) String() string {
 // GoString returns the string representation
 func (s StartWorkflowExecutionOutput) GoString() string {
 	return s.String()
+}
+
+// SetRunId sets the RunId field's value.
+func (s *StartWorkflowExecutionOutput) SetRunId(v string) *StartWorkflowExecutionOutput {
+	s.RunId = &v
+	return s
 }
 
 // Used to filter the workflow executions in visibility APIs based on a tag.
@@ -9307,6 +12289,12 @@ func (s *TagFilter) Validate() error {
 	return nil
 }
 
+// SetTag sets the Tag field's value.
+func (s *TagFilter) SetTag(v string) *TagFilter {
+	s.Tag = &v
+	return s
+}
+
 // Represents a task list.
 type TaskList struct {
 	_ struct{} `type:"structure"`
@@ -9343,6 +12331,12 @@ func (s *TaskList) Validate() error {
 	return nil
 }
 
+// SetName sets the Name field's value.
+func (s *TaskList) SetName(v string) *TaskList {
+	s.Name = &v
+	return s
+}
+
 type TerminateWorkflowExecutionInput struct {
 	_ struct{} `type:"structure"`
 
@@ -9353,15 +12347,17 @@ type TerminateWorkflowExecutionInput struct {
 	//
 	// The supported child policies are:
 	//
-	//  TERMINATE: the child executions will be terminated. REQUEST_CANCEL: a request
-	// to cancel will be attempted for each child execution by recording a WorkflowExecutionCancelRequested
-	// event in its history. It is up to the decider to take appropriate actions
-	// when it receives an execution history with this event. ABANDON: no action
-	// will be taken. The child executions will continue to run.  A child policy
-	// for this workflow execution must be specified either as a default for the
-	// workflow type or through this parameter. If neither this parameter is set
-	// nor a default child policy was specified at registration time then a fault
-	// will be returned.
+	//    * TERMINATE: the child executions will be terminated.
+	//    * REQUEST_CANCEL: a request to cancel will be attempted for each child
+	//    execution by recording a WorkflowExecutionCancelRequested event in its
+	//    history. It is up to the decider to take appropriate actions when it receives
+	//    an execution history with this event.
+	//    * ABANDON: no action will be taken. The child executions will continue
+	//    to run.
+	// A child policy for this workflow execution must be specified either as a
+	// default for the workflow type or through this parameter. If neither this
+	// parameter is set nor a default child policy was specified at registration
+	// time then a fault will be returned.
 	ChildPolicy *string `locationName:"childPolicy" type:"string" enum:"ChildPolicy"`
 
 	// Optional. Details for terminating the workflow execution.
@@ -9416,6 +12412,42 @@ func (s *TerminateWorkflowExecutionInput) Validate() error {
 	return nil
 }
 
+// SetChildPolicy sets the ChildPolicy field's value.
+func (s *TerminateWorkflowExecutionInput) SetChildPolicy(v string) *TerminateWorkflowExecutionInput {
+	s.ChildPolicy = &v
+	return s
+}
+
+// SetDetails sets the Details field's value.
+func (s *TerminateWorkflowExecutionInput) SetDetails(v string) *TerminateWorkflowExecutionInput {
+	s.Details = &v
+	return s
+}
+
+// SetDomain sets the Domain field's value.
+func (s *TerminateWorkflowExecutionInput) SetDomain(v string) *TerminateWorkflowExecutionInput {
+	s.Domain = &v
+	return s
+}
+
+// SetReason sets the Reason field's value.
+func (s *TerminateWorkflowExecutionInput) SetReason(v string) *TerminateWorkflowExecutionInput {
+	s.Reason = &v
+	return s
+}
+
+// SetRunId sets the RunId field's value.
+func (s *TerminateWorkflowExecutionInput) SetRunId(v string) *TerminateWorkflowExecutionInput {
+	s.RunId = &v
+	return s
+}
+
+// SetWorkflowId sets the WorkflowId field's value.
+func (s *TerminateWorkflowExecutionInput) SetWorkflowId(v string) *TerminateWorkflowExecutionInput {
+	s.WorkflowId = &v
+	return s
+}
+
 type TerminateWorkflowExecutionOutput struct {
 	_ struct{} `type:"structure"`
 }
@@ -9465,6 +12497,24 @@ func (s TimerCanceledEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *TimerCanceledEventAttributes) SetDecisionTaskCompletedEventId(v int64) *TimerCanceledEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *TimerCanceledEventAttributes) SetStartedEventId(v int64) *TimerCanceledEventAttributes {
+	s.StartedEventId = &v
+	return s
+}
+
+// SetTimerId sets the TimerId field's value.
+func (s *TimerCanceledEventAttributes) SetTimerId(v string) *TimerCanceledEventAttributes {
+	s.TimerId = &v
+	return s
+}
+
 // Provides details of the TimerFired event.
 type TimerFiredEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -9490,6 +12540,18 @@ func (s TimerFiredEventAttributes) String() string {
 // GoString returns the string representation
 func (s TimerFiredEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetStartedEventId sets the StartedEventId field's value.
+func (s *TimerFiredEventAttributes) SetStartedEventId(v int64) *TimerFiredEventAttributes {
+	s.StartedEventId = &v
+	return s
+}
+
+// SetTimerId sets the TimerId field's value.
+func (s *TimerFiredEventAttributes) SetTimerId(v string) *TimerFiredEventAttributes {
+	s.TimerId = &v
+	return s
 }
 
 // Provides details of the TimerStarted event.
@@ -9530,6 +12592,30 @@ func (s TimerStartedEventAttributes) String() string {
 // GoString returns the string representation
 func (s TimerStartedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetControl sets the Control field's value.
+func (s *TimerStartedEventAttributes) SetControl(v string) *TimerStartedEventAttributes {
+	s.Control = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *TimerStartedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *TimerStartedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetStartToFireTimeout sets the StartToFireTimeout field's value.
+func (s *TimerStartedEventAttributes) SetStartToFireTimeout(v string) *TimerStartedEventAttributes {
+	s.StartToFireTimeout = &v
+	return s
+}
+
+// SetTimerId sets the TimerId field's value.
+func (s *TimerStartedEventAttributes) SetTimerId(v string) *TimerStartedEventAttributes {
+	s.TimerId = &v
+	return s
 }
 
 // Represents a workflow execution.
@@ -9579,6 +12665,18 @@ func (s *WorkflowExecution) Validate() error {
 	return nil
 }
 
+// SetRunId sets the RunId field's value.
+func (s *WorkflowExecution) SetRunId(v string) *WorkflowExecution {
+	s.RunId = &v
+	return s
+}
+
+// SetWorkflowId sets the WorkflowId field's value.
+func (s *WorkflowExecution) SetWorkflowId(v string) *WorkflowExecution {
+	s.WorkflowId = &v
+	return s
+}
+
 // Provides details of the WorkflowExecutionCancelRequested event.
 type WorkflowExecutionCancelRequestedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -9609,6 +12707,24 @@ func (s WorkflowExecutionCancelRequestedEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetCause sets the Cause field's value.
+func (s *WorkflowExecutionCancelRequestedEventAttributes) SetCause(v string) *WorkflowExecutionCancelRequestedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetExternalInitiatedEventId sets the ExternalInitiatedEventId field's value.
+func (s *WorkflowExecutionCancelRequestedEventAttributes) SetExternalInitiatedEventId(v int64) *WorkflowExecutionCancelRequestedEventAttributes {
+	s.ExternalInitiatedEventId = &v
+	return s
+}
+
+// SetExternalWorkflowExecution sets the ExternalWorkflowExecution field's value.
+func (s *WorkflowExecutionCancelRequestedEventAttributes) SetExternalWorkflowExecution(v *WorkflowExecution) *WorkflowExecutionCancelRequestedEventAttributes {
+	s.ExternalWorkflowExecution = v
+	return s
+}
+
 // Provides details of the WorkflowExecutionCanceled event.
 type WorkflowExecutionCanceledEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -9633,6 +12749,18 @@ func (s WorkflowExecutionCanceledEventAttributes) String() string {
 // GoString returns the string representation
 func (s WorkflowExecutionCanceledEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *WorkflowExecutionCanceledEventAttributes) SetDecisionTaskCompletedEventId(v int64) *WorkflowExecutionCanceledEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetDetails sets the Details field's value.
+func (s *WorkflowExecutionCanceledEventAttributes) SetDetails(v string) *WorkflowExecutionCanceledEventAttributes {
+	s.Details = &v
+	return s
 }
 
 // Provides details of the WorkflowExecutionCompleted event.
@@ -9661,6 +12789,18 @@ func (s WorkflowExecutionCompletedEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *WorkflowExecutionCompletedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *WorkflowExecutionCompletedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetResult sets the Result field's value.
+func (s *WorkflowExecutionCompletedEventAttributes) SetResult(v string) *WorkflowExecutionCompletedEventAttributes {
+	s.Result = &v
+	return s
+}
+
 // The configuration settings for a workflow execution including timeout values,
 // tasklist etc. These configuration settings are determined from the defaults
 // specified when registering the workflow type and those specified when starting
@@ -9674,11 +12814,13 @@ type WorkflowExecutionConfiguration struct {
 	//
 	// The supported child policies are:
 	//
-	//  TERMINATE: the child executions will be terminated. REQUEST_CANCEL: a request
-	// to cancel will be attempted for each child execution by recording a WorkflowExecutionCancelRequested
-	// event in its history. It is up to the decider to take appropriate actions
-	// when it receives an execution history with this event. ABANDON: no action
-	// will be taken. The child executions will continue to run.
+	//    * TERMINATE: the child executions will be terminated.
+	//    * REQUEST_CANCEL: a request to cancel will be attempted for each child
+	//    execution by recording a WorkflowExecutionCancelRequested event in its
+	//    history. It is up to the decider to take appropriate actions when it receives
+	//    an execution history with this event.
+	//    * ABANDON: no action will be taken. The child executions will continue
+	//    to run.
 	//
 	// ChildPolicy is a required field
 	ChildPolicy *string `locationName:"childPolicy" type:"string" required:"true" enum:"ChildPolicy"`
@@ -9727,6 +12869,42 @@ func (s WorkflowExecutionConfiguration) GoString() string {
 	return s.String()
 }
 
+// SetChildPolicy sets the ChildPolicy field's value.
+func (s *WorkflowExecutionConfiguration) SetChildPolicy(v string) *WorkflowExecutionConfiguration {
+	s.ChildPolicy = &v
+	return s
+}
+
+// SetExecutionStartToCloseTimeout sets the ExecutionStartToCloseTimeout field's value.
+func (s *WorkflowExecutionConfiguration) SetExecutionStartToCloseTimeout(v string) *WorkflowExecutionConfiguration {
+	s.ExecutionStartToCloseTimeout = &v
+	return s
+}
+
+// SetLambdaRole sets the LambdaRole field's value.
+func (s *WorkflowExecutionConfiguration) SetLambdaRole(v string) *WorkflowExecutionConfiguration {
+	s.LambdaRole = &v
+	return s
+}
+
+// SetTaskList sets the TaskList field's value.
+func (s *WorkflowExecutionConfiguration) SetTaskList(v *TaskList) *WorkflowExecutionConfiguration {
+	s.TaskList = v
+	return s
+}
+
+// SetTaskPriority sets the TaskPriority field's value.
+func (s *WorkflowExecutionConfiguration) SetTaskPriority(v string) *WorkflowExecutionConfiguration {
+	s.TaskPriority = &v
+	return s
+}
+
+// SetTaskStartToCloseTimeout sets the TaskStartToCloseTimeout field's value.
+func (s *WorkflowExecutionConfiguration) SetTaskStartToCloseTimeout(v string) *WorkflowExecutionConfiguration {
+	s.TaskStartToCloseTimeout = &v
+	return s
+}
+
 // Provides details of the WorkflowExecutionContinuedAsNew event.
 type WorkflowExecutionContinuedAsNewEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -9737,11 +12915,13 @@ type WorkflowExecutionContinuedAsNewEventAttributes struct {
 	//
 	// The supported child policies are:
 	//
-	//  TERMINATE: the child executions will be terminated. REQUEST_CANCEL: a request
-	// to cancel will be attempted for each child execution by recording a WorkflowExecutionCancelRequested
-	// event in its history. It is up to the decider to take appropriate actions
-	// when it receives an execution history with this event. ABANDON: no action
-	// will be taken. The child executions will continue to run.
+	//    * TERMINATE: the child executions will be terminated.
+	//    * REQUEST_CANCEL: a request to cancel will be attempted for each child
+	//    execution by recording a WorkflowExecutionCancelRequested event in its
+	//    history. It is up to the decider to take appropriate actions when it receives
+	//    an execution history with this event.
+	//    * ABANDON: no action will be taken. The child executions will continue
+	//    to run.
 	//
 	// ChildPolicy is a required field
 	ChildPolicy *string `locationName:"childPolicy" type:"string" required:"true" enum:"ChildPolicy"`
@@ -9804,6 +12984,72 @@ func (s WorkflowExecutionContinuedAsNewEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetChildPolicy sets the ChildPolicy field's value.
+func (s *WorkflowExecutionContinuedAsNewEventAttributes) SetChildPolicy(v string) *WorkflowExecutionContinuedAsNewEventAttributes {
+	s.ChildPolicy = &v
+	return s
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *WorkflowExecutionContinuedAsNewEventAttributes) SetDecisionTaskCompletedEventId(v int64) *WorkflowExecutionContinuedAsNewEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetExecutionStartToCloseTimeout sets the ExecutionStartToCloseTimeout field's value.
+func (s *WorkflowExecutionContinuedAsNewEventAttributes) SetExecutionStartToCloseTimeout(v string) *WorkflowExecutionContinuedAsNewEventAttributes {
+	s.ExecutionStartToCloseTimeout = &v
+	return s
+}
+
+// SetInput sets the Input field's value.
+func (s *WorkflowExecutionContinuedAsNewEventAttributes) SetInput(v string) *WorkflowExecutionContinuedAsNewEventAttributes {
+	s.Input = &v
+	return s
+}
+
+// SetLambdaRole sets the LambdaRole field's value.
+func (s *WorkflowExecutionContinuedAsNewEventAttributes) SetLambdaRole(v string) *WorkflowExecutionContinuedAsNewEventAttributes {
+	s.LambdaRole = &v
+	return s
+}
+
+// SetNewExecutionRunId sets the NewExecutionRunId field's value.
+func (s *WorkflowExecutionContinuedAsNewEventAttributes) SetNewExecutionRunId(v string) *WorkflowExecutionContinuedAsNewEventAttributes {
+	s.NewExecutionRunId = &v
+	return s
+}
+
+// SetTagList sets the TagList field's value.
+func (s *WorkflowExecutionContinuedAsNewEventAttributes) SetTagList(v []*string) *WorkflowExecutionContinuedAsNewEventAttributes {
+	s.TagList = v
+	return s
+}
+
+// SetTaskList sets the TaskList field's value.
+func (s *WorkflowExecutionContinuedAsNewEventAttributes) SetTaskList(v *TaskList) *WorkflowExecutionContinuedAsNewEventAttributes {
+	s.TaskList = v
+	return s
+}
+
+// SetTaskPriority sets the TaskPriority field's value.
+func (s *WorkflowExecutionContinuedAsNewEventAttributes) SetTaskPriority(v string) *WorkflowExecutionContinuedAsNewEventAttributes {
+	s.TaskPriority = &v
+	return s
+}
+
+// SetTaskStartToCloseTimeout sets the TaskStartToCloseTimeout field's value.
+func (s *WorkflowExecutionContinuedAsNewEventAttributes) SetTaskStartToCloseTimeout(v string) *WorkflowExecutionContinuedAsNewEventAttributes {
+	s.TaskStartToCloseTimeout = &v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *WorkflowExecutionContinuedAsNewEventAttributes) SetWorkflowType(v *WorkflowType) *WorkflowExecutionContinuedAsNewEventAttributes {
+	s.WorkflowType = v
+	return s
+}
+
 // Contains the count of workflow executions returned from CountOpenWorkflowExecutions
 // or CountClosedWorkflowExecutions
 type WorkflowExecutionCount struct {
@@ -9827,6 +13073,18 @@ func (s WorkflowExecutionCount) String() string {
 // GoString returns the string representation
 func (s WorkflowExecutionCount) GoString() string {
 	return s.String()
+}
+
+// SetCount sets the Count field's value.
+func (s *WorkflowExecutionCount) SetCount(v int64) *WorkflowExecutionCount {
+	s.Count = &v
+	return s
+}
+
+// SetTruncated sets the Truncated field's value.
+func (s *WorkflowExecutionCount) SetTruncated(v bool) *WorkflowExecutionCount {
+	s.Truncated = &v
+	return s
 }
 
 // Provides details of the WorkflowExecutionFailed event.
@@ -9856,6 +13114,24 @@ func (s WorkflowExecutionFailedEventAttributes) String() string {
 // GoString returns the string representation
 func (s WorkflowExecutionFailedEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetDecisionTaskCompletedEventId sets the DecisionTaskCompletedEventId field's value.
+func (s *WorkflowExecutionFailedEventAttributes) SetDecisionTaskCompletedEventId(v int64) *WorkflowExecutionFailedEventAttributes {
+	s.DecisionTaskCompletedEventId = &v
+	return s
+}
+
+// SetDetails sets the Details field's value.
+func (s *WorkflowExecutionFailedEventAttributes) SetDetails(v string) *WorkflowExecutionFailedEventAttributes {
+	s.Details = &v
+	return s
+}
+
+// SetReason sets the Reason field's value.
+func (s *WorkflowExecutionFailedEventAttributes) SetReason(v string) *WorkflowExecutionFailedEventAttributes {
+	s.Reason = &v
+	return s
 }
 
 // Used to filter the workflow executions in visibility APIs by their workflowId.
@@ -9894,6 +13170,12 @@ func (s *WorkflowExecutionFilter) Validate() error {
 	return nil
 }
 
+// SetWorkflowId sets the WorkflowId field's value.
+func (s *WorkflowExecutionFilter) SetWorkflowId(v string) *WorkflowExecutionFilter {
+	s.WorkflowId = &v
+	return s
+}
+
 // Contains information about a workflow execution.
 type WorkflowExecutionInfo struct {
 	_ struct{} `type:"structure"`
@@ -9904,13 +13186,16 @@ type WorkflowExecutionInfo struct {
 	// If the execution status is closed then this specifies how the execution was
 	// closed:
 	//
-	//   COMPLETED: the execution was successfully completed.  CANCELED: the execution
-	// was canceled.Cancellation allows the implementation to gracefully clean up
-	// before the execution is closed.  TERMINATED: the execution was force terminated.
-	//  FAILED: the execution failed to complete.  TIMED_OUT: the execution did
-	// not complete in the alloted time and was automatically timed out.  CONTINUED_AS_NEW:
-	// the execution is logically continued. This means the current execution was
-	// completed and a new execution was started to carry on the workflow.
+	//    * COMPLETED: the execution was successfully completed.
+	//    * CANCELED: the execution was canceled.Cancellation allows the implementation
+	//    to gracefully clean up before the execution is closed.
+	//    * TERMINATED: the execution was force terminated.
+	//    * FAILED: the execution failed to complete.
+	//    * TIMED_OUT: the execution did not complete in the alloted time and was
+	//    automatically timed out.
+	//    * CONTINUED_AS_NEW: the execution is logically continued. This means the
+	//    current execution was completed and a new execution was started to carry
+	//    on the workflow.
 	CloseStatus *string `locationName:"closeStatus" type:"string" enum:"CloseStatus"`
 
 	// The time when the workflow execution was closed. Set only if the execution
@@ -9957,6 +13242,60 @@ func (s WorkflowExecutionInfo) GoString() string {
 	return s.String()
 }
 
+// SetCancelRequested sets the CancelRequested field's value.
+func (s *WorkflowExecutionInfo) SetCancelRequested(v bool) *WorkflowExecutionInfo {
+	s.CancelRequested = &v
+	return s
+}
+
+// SetCloseStatus sets the CloseStatus field's value.
+func (s *WorkflowExecutionInfo) SetCloseStatus(v string) *WorkflowExecutionInfo {
+	s.CloseStatus = &v
+	return s
+}
+
+// SetCloseTimestamp sets the CloseTimestamp field's value.
+func (s *WorkflowExecutionInfo) SetCloseTimestamp(v time.Time) *WorkflowExecutionInfo {
+	s.CloseTimestamp = &v
+	return s
+}
+
+// SetExecution sets the Execution field's value.
+func (s *WorkflowExecutionInfo) SetExecution(v *WorkflowExecution) *WorkflowExecutionInfo {
+	s.Execution = v
+	return s
+}
+
+// SetExecutionStatus sets the ExecutionStatus field's value.
+func (s *WorkflowExecutionInfo) SetExecutionStatus(v string) *WorkflowExecutionInfo {
+	s.ExecutionStatus = &v
+	return s
+}
+
+// SetParent sets the Parent field's value.
+func (s *WorkflowExecutionInfo) SetParent(v *WorkflowExecution) *WorkflowExecutionInfo {
+	s.Parent = v
+	return s
+}
+
+// SetStartTimestamp sets the StartTimestamp field's value.
+func (s *WorkflowExecutionInfo) SetStartTimestamp(v time.Time) *WorkflowExecutionInfo {
+	s.StartTimestamp = &v
+	return s
+}
+
+// SetTagList sets the TagList field's value.
+func (s *WorkflowExecutionInfo) SetTagList(v []*string) *WorkflowExecutionInfo {
+	s.TagList = v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *WorkflowExecutionInfo) SetWorkflowType(v *WorkflowType) *WorkflowExecutionInfo {
+	s.WorkflowType = v
+	return s
+}
+
 // Contains a paginated list of information about workflow executions.
 type WorkflowExecutionInfos struct {
 	_ struct{} `type:"structure"`
@@ -9983,6 +13322,18 @@ func (s WorkflowExecutionInfos) String() string {
 // GoString returns the string representation
 func (s WorkflowExecutionInfos) GoString() string {
 	return s.String()
+}
+
+// SetExecutionInfos sets the ExecutionInfos field's value.
+func (s *WorkflowExecutionInfos) SetExecutionInfos(v []*WorkflowExecutionInfo) *WorkflowExecutionInfos {
+	s.ExecutionInfos = v
+	return s
+}
+
+// SetNextPageToken sets the NextPageToken field's value.
+func (s *WorkflowExecutionInfos) SetNextPageToken(v string) *WorkflowExecutionInfos {
+	s.NextPageToken = &v
+	return s
 }
 
 // Contains the counts of open tasks, child workflow executions and timers for
@@ -10026,6 +13377,36 @@ func (s WorkflowExecutionOpenCounts) GoString() string {
 	return s.String()
 }
 
+// SetOpenActivityTasks sets the OpenActivityTasks field's value.
+func (s *WorkflowExecutionOpenCounts) SetOpenActivityTasks(v int64) *WorkflowExecutionOpenCounts {
+	s.OpenActivityTasks = &v
+	return s
+}
+
+// SetOpenChildWorkflowExecutions sets the OpenChildWorkflowExecutions field's value.
+func (s *WorkflowExecutionOpenCounts) SetOpenChildWorkflowExecutions(v int64) *WorkflowExecutionOpenCounts {
+	s.OpenChildWorkflowExecutions = &v
+	return s
+}
+
+// SetOpenDecisionTasks sets the OpenDecisionTasks field's value.
+func (s *WorkflowExecutionOpenCounts) SetOpenDecisionTasks(v int64) *WorkflowExecutionOpenCounts {
+	s.OpenDecisionTasks = &v
+	return s
+}
+
+// SetOpenLambdaFunctions sets the OpenLambdaFunctions field's value.
+func (s *WorkflowExecutionOpenCounts) SetOpenLambdaFunctions(v int64) *WorkflowExecutionOpenCounts {
+	s.OpenLambdaFunctions = &v
+	return s
+}
+
+// SetOpenTimers sets the OpenTimers field's value.
+func (s *WorkflowExecutionOpenCounts) SetOpenTimers(v int64) *WorkflowExecutionOpenCounts {
+	s.OpenTimers = &v
+	return s
+}
+
 // Provides details of the WorkflowExecutionSignaled event.
 type WorkflowExecutionSignaledEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -10063,6 +13444,30 @@ func (s WorkflowExecutionSignaledEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetExternalInitiatedEventId sets the ExternalInitiatedEventId field's value.
+func (s *WorkflowExecutionSignaledEventAttributes) SetExternalInitiatedEventId(v int64) *WorkflowExecutionSignaledEventAttributes {
+	s.ExternalInitiatedEventId = &v
+	return s
+}
+
+// SetExternalWorkflowExecution sets the ExternalWorkflowExecution field's value.
+func (s *WorkflowExecutionSignaledEventAttributes) SetExternalWorkflowExecution(v *WorkflowExecution) *WorkflowExecutionSignaledEventAttributes {
+	s.ExternalWorkflowExecution = v
+	return s
+}
+
+// SetInput sets the Input field's value.
+func (s *WorkflowExecutionSignaledEventAttributes) SetInput(v string) *WorkflowExecutionSignaledEventAttributes {
+	s.Input = &v
+	return s
+}
+
+// SetSignalName sets the SignalName field's value.
+func (s *WorkflowExecutionSignaledEventAttributes) SetSignalName(v string) *WorkflowExecutionSignaledEventAttributes {
+	s.SignalName = &v
+	return s
+}
+
 // Provides details of WorkflowExecutionStarted event.
 type WorkflowExecutionStartedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -10073,11 +13478,13 @@ type WorkflowExecutionStartedEventAttributes struct {
 	//
 	// The supported child policies are:
 	//
-	//  TERMINATE: the child executions will be terminated. REQUEST_CANCEL: a request
-	// to cancel will be attempted for each child execution by recording a WorkflowExecutionCancelRequested
-	// event in its history. It is up to the decider to take appropriate actions
-	// when it receives an execution history with this event. ABANDON: no action
-	// will be taken. The child executions will continue to run.
+	//    * TERMINATE: the child executions will be terminated.
+	//    * REQUEST_CANCEL: a request to cancel will be attempted for each child
+	//    execution by recording a WorkflowExecutionCancelRequested event in its
+	//    history. It is up to the decider to take appropriate actions when it receives
+	//    an execution history with this event.
+	//    * ABANDON: no action will be taken. The child executions will continue
+	//    to run.
 	//
 	// ChildPolicy is a required field
 	ChildPolicy *string `locationName:"childPolicy" type:"string" required:"true" enum:"ChildPolicy"`
@@ -10145,6 +13552,78 @@ func (s WorkflowExecutionStartedEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetChildPolicy sets the ChildPolicy field's value.
+func (s *WorkflowExecutionStartedEventAttributes) SetChildPolicy(v string) *WorkflowExecutionStartedEventAttributes {
+	s.ChildPolicy = &v
+	return s
+}
+
+// SetContinuedExecutionRunId sets the ContinuedExecutionRunId field's value.
+func (s *WorkflowExecutionStartedEventAttributes) SetContinuedExecutionRunId(v string) *WorkflowExecutionStartedEventAttributes {
+	s.ContinuedExecutionRunId = &v
+	return s
+}
+
+// SetExecutionStartToCloseTimeout sets the ExecutionStartToCloseTimeout field's value.
+func (s *WorkflowExecutionStartedEventAttributes) SetExecutionStartToCloseTimeout(v string) *WorkflowExecutionStartedEventAttributes {
+	s.ExecutionStartToCloseTimeout = &v
+	return s
+}
+
+// SetInput sets the Input field's value.
+func (s *WorkflowExecutionStartedEventAttributes) SetInput(v string) *WorkflowExecutionStartedEventAttributes {
+	s.Input = &v
+	return s
+}
+
+// SetLambdaRole sets the LambdaRole field's value.
+func (s *WorkflowExecutionStartedEventAttributes) SetLambdaRole(v string) *WorkflowExecutionStartedEventAttributes {
+	s.LambdaRole = &v
+	return s
+}
+
+// SetParentInitiatedEventId sets the ParentInitiatedEventId field's value.
+func (s *WorkflowExecutionStartedEventAttributes) SetParentInitiatedEventId(v int64) *WorkflowExecutionStartedEventAttributes {
+	s.ParentInitiatedEventId = &v
+	return s
+}
+
+// SetParentWorkflowExecution sets the ParentWorkflowExecution field's value.
+func (s *WorkflowExecutionStartedEventAttributes) SetParentWorkflowExecution(v *WorkflowExecution) *WorkflowExecutionStartedEventAttributes {
+	s.ParentWorkflowExecution = v
+	return s
+}
+
+// SetTagList sets the TagList field's value.
+func (s *WorkflowExecutionStartedEventAttributes) SetTagList(v []*string) *WorkflowExecutionStartedEventAttributes {
+	s.TagList = v
+	return s
+}
+
+// SetTaskList sets the TaskList field's value.
+func (s *WorkflowExecutionStartedEventAttributes) SetTaskList(v *TaskList) *WorkflowExecutionStartedEventAttributes {
+	s.TaskList = v
+	return s
+}
+
+// SetTaskPriority sets the TaskPriority field's value.
+func (s *WorkflowExecutionStartedEventAttributes) SetTaskPriority(v string) *WorkflowExecutionStartedEventAttributes {
+	s.TaskPriority = &v
+	return s
+}
+
+// SetTaskStartToCloseTimeout sets the TaskStartToCloseTimeout field's value.
+func (s *WorkflowExecutionStartedEventAttributes) SetTaskStartToCloseTimeout(v string) *WorkflowExecutionStartedEventAttributes {
+	s.TaskStartToCloseTimeout = &v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *WorkflowExecutionStartedEventAttributes) SetWorkflowType(v *WorkflowType) *WorkflowExecutionStartedEventAttributes {
+	s.WorkflowType = v
+	return s
+}
+
 // Provides details of the WorkflowExecutionTerminated event.
 type WorkflowExecutionTerminatedEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -10158,11 +13637,13 @@ type WorkflowExecutionTerminatedEventAttributes struct {
 	//
 	// The supported child policies are:
 	//
-	//  TERMINATE: the child executions will be terminated. REQUEST_CANCEL: a request
-	// to cancel will be attempted for each child execution by recording a WorkflowExecutionCancelRequested
-	// event in its history. It is up to the decider to take appropriate actions
-	// when it receives an execution history with this event. ABANDON: no action
-	// will be taken. The child executions will continue to run.
+	//    * TERMINATE: the child executions will be terminated.
+	//    * REQUEST_CANCEL: a request to cancel will be attempted for each child
+	//    execution by recording a WorkflowExecutionCancelRequested event in its
+	//    history. It is up to the decider to take appropriate actions when it receives
+	//    an execution history with this event.
+	//    * ABANDON: no action will be taken. The child executions will continue
+	//    to run.
 	//
 	// ChildPolicy is a required field
 	ChildPolicy *string `locationName:"childPolicy" type:"string" required:"true" enum:"ChildPolicy"`
@@ -10184,6 +13665,30 @@ func (s WorkflowExecutionTerminatedEventAttributes) GoString() string {
 	return s.String()
 }
 
+// SetCause sets the Cause field's value.
+func (s *WorkflowExecutionTerminatedEventAttributes) SetCause(v string) *WorkflowExecutionTerminatedEventAttributes {
+	s.Cause = &v
+	return s
+}
+
+// SetChildPolicy sets the ChildPolicy field's value.
+func (s *WorkflowExecutionTerminatedEventAttributes) SetChildPolicy(v string) *WorkflowExecutionTerminatedEventAttributes {
+	s.ChildPolicy = &v
+	return s
+}
+
+// SetDetails sets the Details field's value.
+func (s *WorkflowExecutionTerminatedEventAttributes) SetDetails(v string) *WorkflowExecutionTerminatedEventAttributes {
+	s.Details = &v
+	return s
+}
+
+// SetReason sets the Reason field's value.
+func (s *WorkflowExecutionTerminatedEventAttributes) SetReason(v string) *WorkflowExecutionTerminatedEventAttributes {
+	s.Reason = &v
+	return s
+}
+
 // Provides details of the WorkflowExecutionTimedOut event.
 type WorkflowExecutionTimedOutEventAttributes struct {
 	_ struct{} `type:"structure"`
@@ -10192,11 +13697,13 @@ type WorkflowExecutionTimedOutEventAttributes struct {
 	//
 	// The supported child policies are:
 	//
-	//  TERMINATE: the child executions will be terminated. REQUEST_CANCEL: a request
-	// to cancel will be attempted for each child execution by recording a WorkflowExecutionCancelRequested
-	// event in its history. It is up to the decider to take appropriate actions
-	// when it receives an execution history with this event. ABANDON: no action
-	// will be taken. The child executions will continue to run.
+	//    * TERMINATE: the child executions will be terminated.
+	//    * REQUEST_CANCEL: a request to cancel will be attempted for each child
+	//    execution by recording a WorkflowExecutionCancelRequested event in its
+	//    history. It is up to the decider to take appropriate actions when it receives
+	//    an execution history with this event.
+	//    * ABANDON: no action will be taken. The child executions will continue
+	//    to run.
 	//
 	// ChildPolicy is a required field
 	ChildPolicy *string `locationName:"childPolicy" type:"string" required:"true" enum:"ChildPolicy"`
@@ -10215,6 +13722,18 @@ func (s WorkflowExecutionTimedOutEventAttributes) String() string {
 // GoString returns the string representation
 func (s WorkflowExecutionTimedOutEventAttributes) GoString() string {
 	return s.String()
+}
+
+// SetChildPolicy sets the ChildPolicy field's value.
+func (s *WorkflowExecutionTimedOutEventAttributes) SetChildPolicy(v string) *WorkflowExecutionTimedOutEventAttributes {
+	s.ChildPolicy = &v
+	return s
+}
+
+// SetTimeoutType sets the TimeoutType field's value.
+func (s *WorkflowExecutionTimedOutEventAttributes) SetTimeoutType(v string) *WorkflowExecutionTimedOutEventAttributes {
+	s.TimeoutType = &v
+	return s
 }
 
 // Represents a workflow type.
@@ -10270,6 +13789,18 @@ func (s *WorkflowType) Validate() error {
 	return nil
 }
 
+// SetName sets the Name field's value.
+func (s *WorkflowType) SetName(v string) *WorkflowType {
+	s.Name = &v
+	return s
+}
+
+// SetVersion sets the Version field's value.
+func (s *WorkflowType) SetVersion(v string) *WorkflowType {
+	s.Version = &v
+	return s
+}
+
 // The configuration settings of a workflow type.
 type WorkflowTypeConfiguration struct {
 	_ struct{} `type:"structure"`
@@ -10282,11 +13813,13 @@ type WorkflowTypeConfiguration struct {
 	//
 	// The supported child policies are:
 	//
-	//  TERMINATE: the child executions will be terminated. REQUEST_CANCEL: a request
-	// to cancel will be attempted for each child execution by recording a WorkflowExecutionCancelRequested
-	// event in its history. It is up to the decider to take appropriate actions
-	// when it receives an execution history with this event. ABANDON: no action
-	// will be taken. The child executions will continue to run.
+	//    * TERMINATE: the child executions will be terminated.
+	//    * REQUEST_CANCEL: a request to cancel will be attempted for each child
+	//    execution by recording a WorkflowExecutionCancelRequested event in its
+	//    history. It is up to the decider to take appropriate actions when it receives
+	//    an execution history with this event.
+	//    * ABANDON: no action will be taken. The child executions will continue
+	//    to run.
 	DefaultChildPolicy *string `locationName:"defaultChildPolicy" type:"string" enum:"ChildPolicy"`
 
 	// Optional. The default maximum duration, specified when registering the workflow
@@ -10344,6 +13877,42 @@ func (s WorkflowTypeConfiguration) GoString() string {
 	return s.String()
 }
 
+// SetDefaultChildPolicy sets the DefaultChildPolicy field's value.
+func (s *WorkflowTypeConfiguration) SetDefaultChildPolicy(v string) *WorkflowTypeConfiguration {
+	s.DefaultChildPolicy = &v
+	return s
+}
+
+// SetDefaultExecutionStartToCloseTimeout sets the DefaultExecutionStartToCloseTimeout field's value.
+func (s *WorkflowTypeConfiguration) SetDefaultExecutionStartToCloseTimeout(v string) *WorkflowTypeConfiguration {
+	s.DefaultExecutionStartToCloseTimeout = &v
+	return s
+}
+
+// SetDefaultLambdaRole sets the DefaultLambdaRole field's value.
+func (s *WorkflowTypeConfiguration) SetDefaultLambdaRole(v string) *WorkflowTypeConfiguration {
+	s.DefaultLambdaRole = &v
+	return s
+}
+
+// SetDefaultTaskList sets the DefaultTaskList field's value.
+func (s *WorkflowTypeConfiguration) SetDefaultTaskList(v *TaskList) *WorkflowTypeConfiguration {
+	s.DefaultTaskList = v
+	return s
+}
+
+// SetDefaultTaskPriority sets the DefaultTaskPriority field's value.
+func (s *WorkflowTypeConfiguration) SetDefaultTaskPriority(v string) *WorkflowTypeConfiguration {
+	s.DefaultTaskPriority = &v
+	return s
+}
+
+// SetDefaultTaskStartToCloseTimeout sets the DefaultTaskStartToCloseTimeout field's value.
+func (s *WorkflowTypeConfiguration) SetDefaultTaskStartToCloseTimeout(v string) *WorkflowTypeConfiguration {
+	s.DefaultTaskStartToCloseTimeout = &v
+	return s
+}
+
 // Used to filter workflow execution query results by type. Each parameter,
 // if specified, defines a rule that must be satisfied by each returned result.
 type WorkflowTypeFilter struct {
@@ -10384,6 +13953,18 @@ func (s *WorkflowTypeFilter) Validate() error {
 	return nil
 }
 
+// SetName sets the Name field's value.
+func (s *WorkflowTypeFilter) SetName(v string) *WorkflowTypeFilter {
+	s.Name = &v
+	return s
+}
+
+// SetVersion sets the Version field's value.
+func (s *WorkflowTypeFilter) SetVersion(v string) *WorkflowTypeFilter {
+	s.Version = &v
+	return s
+}
+
 // Contains information about a workflow type.
 type WorkflowTypeInfo struct {
 	_ struct{} `type:"structure"`
@@ -10419,6 +14000,36 @@ func (s WorkflowTypeInfo) String() string {
 // GoString returns the string representation
 func (s WorkflowTypeInfo) GoString() string {
 	return s.String()
+}
+
+// SetCreationDate sets the CreationDate field's value.
+func (s *WorkflowTypeInfo) SetCreationDate(v time.Time) *WorkflowTypeInfo {
+	s.CreationDate = &v
+	return s
+}
+
+// SetDeprecationDate sets the DeprecationDate field's value.
+func (s *WorkflowTypeInfo) SetDeprecationDate(v time.Time) *WorkflowTypeInfo {
+	s.DeprecationDate = &v
+	return s
+}
+
+// SetDescription sets the Description field's value.
+func (s *WorkflowTypeInfo) SetDescription(v string) *WorkflowTypeInfo {
+	s.Description = &v
+	return s
+}
+
+// SetStatus sets the Status field's value.
+func (s *WorkflowTypeInfo) SetStatus(v string) *WorkflowTypeInfo {
+	s.Status = &v
+	return s
+}
+
+// SetWorkflowType sets the WorkflowType field's value.
+func (s *WorkflowTypeInfo) SetWorkflowType(v *WorkflowType) *WorkflowTypeInfo {
+	s.WorkflowType = v
+	return s
 }
 
 const (

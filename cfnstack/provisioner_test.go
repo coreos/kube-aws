@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/coreos/kube-aws/model"
 	"testing"
 )
 
@@ -77,7 +78,7 @@ func TestUploadTemplateWithDirectory(t *testing.T) {
 		ExpectedBody:          body,
 	}
 
-	provisioner := NewProvisioner("test-cluster-name", map[string]string{}, s3URI, body, nil)
+	provisioner := NewProvisioner("test-cluster-name", map[string]string{}, s3URI, model.RegionForName("us-east-1"), body, nil)
 
 	suppliedURL, err := provisioner.uploadFile(s3Svc, body, "stack.json")
 
@@ -86,6 +87,31 @@ func TestUploadTemplateWithDirectory(t *testing.T) {
 	}
 
 	expectedURL := "https://s3.amazonaws.com/mybucket/mykey/test-cluster-name/stack.json"
+	if suppliedURL != expectedURL {
+		t.Errorf("supplied template url doesn't match expected one: expected=%s, supplied=%s", expectedURL, suppliedURL)
+	}
+}
+
+func TestUploadTemplateWithDirectoryOnChina(t *testing.T) {
+	body := "{}"
+	s3URI := "s3://mybucket/mykey"
+	s3Svc := dummyS3ObjectPutterService{
+		ExpectedBucket:        "mybucket",
+		ExpectedKey:           "mykey/test-cluster-name/stack.json",
+		ExpectedContentLength: 2,
+		ExpectedContentType:   "application/json",
+		ExpectedBody:          body,
+	}
+
+	provisioner := NewProvisioner("test-cluster-name", map[string]string{}, s3URI, model.RegionForName("cn-north-1"), body, nil)
+
+	suppliedURL, err := provisioner.uploadFile(s3Svc, body, "stack.json")
+
+	if err != nil {
+		t.Errorf("error uploading template: %v", err)
+	}
+
+	expectedURL := "https://s3.cn-north-1.amazonaws.com.cn/mybucket/mykey/test-cluster-name/stack.json"
 	if suppliedURL != expectedURL {
 		t.Errorf("supplied template url doesn't match expected one: expected=%s, supplied=%s", expectedURL, suppliedURL)
 	}
@@ -102,7 +128,7 @@ func TestUploadTemplateWithoutDirectory(t *testing.T) {
 		ExpectedBody:          body,
 	}
 
-	provisioner := NewProvisioner("test-cluster-name", map[string]string{}, s3URI, body, nil)
+	provisioner := NewProvisioner("test-cluster-name", map[string]string{}, s3URI, model.RegionForName("us-east-1"), body, nil)
 
 	suppliedURL, err := provisioner.uploadFile(s3Svc, body, "stack.json")
 
@@ -111,6 +137,31 @@ func TestUploadTemplateWithoutDirectory(t *testing.T) {
 	}
 
 	expectedURL := "https://s3.amazonaws.com/mybucket/test-cluster-name/stack.json"
+	if suppliedURL != expectedURL {
+		t.Errorf("supplied template url doesn't match expected one: expected=%s, supplied=%s", expectedURL, suppliedURL)
+	}
+}
+
+func TestUploadTemplateWithoutDirectoryOnChina(t *testing.T) {
+	body := "{}"
+	s3URI := "s3://mybucket"
+	s3Svc := dummyS3ObjectPutterService{
+		ExpectedBucket:        "mybucket",
+		ExpectedKey:           "test-cluster-name/stack.json",
+		ExpectedContentLength: 2,
+		ExpectedContentType:   "application/json",
+		ExpectedBody:          body,
+	}
+
+	provisioner := NewProvisioner("test-cluster-name", map[string]string{}, s3URI, model.RegionForName("cn-north-1"), body, nil)
+
+	suppliedURL, err := provisioner.uploadFile(s3Svc, body, "stack.json")
+
+	if err != nil {
+		t.Errorf("error uploading template: %v", err)
+	}
+
+	expectedURL := "https://s3.cn-north-1.amazonaws.com.cn/mybucket/test-cluster-name/stack.json"
 	if suppliedURL != expectedURL {
 		t.Errorf("supplied template url doesn't match expected one: expected=%s, supplied=%s", expectedURL, suppliedURL)
 	}

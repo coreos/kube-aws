@@ -45,7 +45,7 @@ import (
 //        // mock response/functionality
 //    }
 //
-//    TestMyFunc(t *testing.T) {
+//    func TestMyFunc(t *testing.T) {
 //        // Setup Test
 //        mockSvc := &mockCloudFormationClient{}
 //
@@ -134,6 +134,14 @@ type CloudFormationAPI interface {
 	ListChangeSetsRequest(*cloudformation.ListChangeSetsInput) (*request.Request, *cloudformation.ListChangeSetsOutput)
 
 	ListChangeSets(*cloudformation.ListChangeSetsInput) (*cloudformation.ListChangeSetsOutput, error)
+
+	ListExportsRequest(*cloudformation.ListExportsInput) (*request.Request, *cloudformation.ListExportsOutput)
+
+	ListExports(*cloudformation.ListExportsInput) (*cloudformation.ListExportsOutput, error)
+
+	ListImportsRequest(*cloudformation.ListImportsInput) (*request.Request, *cloudformation.ListImportsOutput)
+
+	ListImports(*cloudformation.ListImportsInput) (*cloudformation.ListImportsOutput, error)
 
 	ListStackResourcesRequest(*cloudformation.ListStackResourcesInput) (*request.Request, *cloudformation.ListStackResourcesOutput)
 

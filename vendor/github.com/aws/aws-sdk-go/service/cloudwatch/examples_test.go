@@ -16,11 +16,7 @@ var _ time.Duration
 var _ bytes.Buffer
 
 func ExampleCloudWatch_DeleteAlarms() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := cloudwatch.New(sess)
 
@@ -44,11 +40,7 @@ func ExampleCloudWatch_DeleteAlarms() {
 }
 
 func ExampleCloudWatch_DescribeAlarmHistory() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := cloudwatch.New(sess)
 
@@ -74,11 +66,7 @@ func ExampleCloudWatch_DescribeAlarmHistory() {
 }
 
 func ExampleCloudWatch_DescribeAlarms() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := cloudwatch.New(sess)
 
@@ -107,11 +95,7 @@ func ExampleCloudWatch_DescribeAlarms() {
 }
 
 func ExampleCloudWatch_DescribeAlarmsForMetric() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := cloudwatch.New(sess)
 
@@ -125,9 +109,10 @@ func ExampleCloudWatch_DescribeAlarmsForMetric() {
 			},
 			// More values...
 		},
-		Period:    aws.Int64(1),
-		Statistic: aws.String("Statistic"),
-		Unit:      aws.String("StandardUnit"),
+		ExtendedStatistic: aws.String("ExtendedStatistic"),
+		Period:            aws.Int64(1),
+		Statistic:         aws.String("Statistic"),
+		Unit:              aws.String("StandardUnit"),
 	}
 	resp, err := svc.DescribeAlarmsForMetric(params)
 
@@ -143,11 +128,7 @@ func ExampleCloudWatch_DescribeAlarmsForMetric() {
 }
 
 func ExampleCloudWatch_DisableAlarmActions() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := cloudwatch.New(sess)
 
@@ -171,11 +152,7 @@ func ExampleCloudWatch_DisableAlarmActions() {
 }
 
 func ExampleCloudWatch_EnableAlarmActions() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := cloudwatch.New(sess)
 
@@ -199,11 +176,7 @@ func ExampleCloudWatch_EnableAlarmActions() {
 }
 
 func ExampleCloudWatch_GetMetricStatistics() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := cloudwatch.New(sess)
 
@@ -213,15 +186,19 @@ func ExampleCloudWatch_GetMetricStatistics() {
 		Namespace:  aws.String("Namespace"),  // Required
 		Period:     aws.Int64(1),             // Required
 		StartTime:  aws.Time(time.Now()),     // Required
-		Statistics: []*string{ // Required
-			aws.String("Statistic"), // Required
-			// More values...
-		},
 		Dimensions: []*cloudwatch.Dimension{
 			{ // Required
 				Name:  aws.String("DimensionName"),  // Required
 				Value: aws.String("DimensionValue"), // Required
 			},
+			// More values...
+		},
+		ExtendedStatistics: []*string{
+			aws.String("ExtendedStatistic"), // Required
+			// More values...
+		},
+		Statistics: []*string{
+			aws.String("Statistic"), // Required
 			// More values...
 		},
 		Unit: aws.String("StandardUnit"),
@@ -240,11 +217,7 @@ func ExampleCloudWatch_GetMetricStatistics() {
 }
 
 func ExampleCloudWatch_ListMetrics() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := cloudwatch.New(sess)
 
@@ -274,11 +247,7 @@ func ExampleCloudWatch_ListMetrics() {
 }
 
 func ExampleCloudWatch_PutMetricAlarm() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := cloudwatch.New(sess)
 
@@ -289,7 +258,6 @@ func ExampleCloudWatch_PutMetricAlarm() {
 		MetricName:         aws.String("MetricName"),         // Required
 		Namespace:          aws.String("Namespace"),          // Required
 		Period:             aws.Int64(1),                     // Required
-		Statistic:          aws.String("Statistic"),          // Required
 		Threshold:          aws.Float64(1.0),                 // Required
 		ActionsEnabled:     aws.Bool(true),
 		AlarmActions: []*string{
@@ -304,6 +272,7 @@ func ExampleCloudWatch_PutMetricAlarm() {
 			},
 			// More values...
 		},
+		ExtendedStatistic: aws.String("ExtendedStatistic"),
 		InsufficientDataActions: []*string{
 			aws.String("ResourceName"), // Required
 			// More values...
@@ -312,7 +281,8 @@ func ExampleCloudWatch_PutMetricAlarm() {
 			aws.String("ResourceName"), // Required
 			// More values...
 		},
-		Unit: aws.String("StandardUnit"),
+		Statistic: aws.String("Statistic"),
+		Unit:      aws.String("StandardUnit"),
 	}
 	resp, err := svc.PutMetricAlarm(params)
 
@@ -328,11 +298,7 @@ func ExampleCloudWatch_PutMetricAlarm() {
 }
 
 func ExampleCloudWatch_PutMetricData() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := cloudwatch.New(sess)
 
@@ -375,11 +341,7 @@ func ExampleCloudWatch_PutMetricData() {
 }
 
 func ExampleCloudWatch_SetAlarmState() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := cloudwatch.New(sess)
 

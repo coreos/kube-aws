@@ -45,7 +45,7 @@ import (
 //        // mock response/functionality
 //    }
 //
-//    TestMyFunc(t *testing.T) {
+//    func TestMyFunc(t *testing.T) {
 //        // Setup Test
 //        mockSvc := &mockDirectConnectClient{}
 //
@@ -63,6 +63,10 @@ type DirectConnectAPI interface {
 
 	AllocateConnectionOnInterconnect(*directconnect.AllocateConnectionOnInterconnectInput) (*directconnect.Connection, error)
 
+	AllocateHostedConnectionRequest(*directconnect.AllocateHostedConnectionInput) (*request.Request, *directconnect.Connection)
+
+	AllocateHostedConnection(*directconnect.AllocateHostedConnectionInput) (*directconnect.Connection, error)
+
 	AllocatePrivateVirtualInterfaceRequest(*directconnect.AllocatePrivateVirtualInterfaceInput) (*request.Request, *directconnect.VirtualInterface)
 
 	AllocatePrivateVirtualInterface(*directconnect.AllocatePrivateVirtualInterfaceInput) (*directconnect.VirtualInterface, error)
@@ -70,6 +74,18 @@ type DirectConnectAPI interface {
 	AllocatePublicVirtualInterfaceRequest(*directconnect.AllocatePublicVirtualInterfaceInput) (*request.Request, *directconnect.VirtualInterface)
 
 	AllocatePublicVirtualInterface(*directconnect.AllocatePublicVirtualInterfaceInput) (*directconnect.VirtualInterface, error)
+
+	AssociateConnectionWithLagRequest(*directconnect.AssociateConnectionWithLagInput) (*request.Request, *directconnect.Connection)
+
+	AssociateConnectionWithLag(*directconnect.AssociateConnectionWithLagInput) (*directconnect.Connection, error)
+
+	AssociateHostedConnectionRequest(*directconnect.AssociateHostedConnectionInput) (*request.Request, *directconnect.Connection)
+
+	AssociateHostedConnection(*directconnect.AssociateHostedConnectionInput) (*directconnect.Connection, error)
+
+	AssociateVirtualInterfaceRequest(*directconnect.AssociateVirtualInterfaceInput) (*request.Request, *directconnect.VirtualInterface)
+
+	AssociateVirtualInterface(*directconnect.AssociateVirtualInterfaceInput) (*directconnect.VirtualInterface, error)
 
 	ConfirmConnectionRequest(*directconnect.ConfirmConnectionInput) (*request.Request, *directconnect.ConfirmConnectionOutput)
 
@@ -83,6 +99,10 @@ type DirectConnectAPI interface {
 
 	ConfirmPublicVirtualInterface(*directconnect.ConfirmPublicVirtualInterfaceInput) (*directconnect.ConfirmPublicVirtualInterfaceOutput, error)
 
+	CreateBGPPeerRequest(*directconnect.CreateBGPPeerInput) (*request.Request, *directconnect.CreateBGPPeerOutput)
+
+	CreateBGPPeer(*directconnect.CreateBGPPeerInput) (*directconnect.CreateBGPPeerOutput, error)
+
 	CreateConnectionRequest(*directconnect.CreateConnectionInput) (*request.Request, *directconnect.Connection)
 
 	CreateConnection(*directconnect.CreateConnectionInput) (*directconnect.Connection, error)
@@ -90,6 +110,10 @@ type DirectConnectAPI interface {
 	CreateInterconnectRequest(*directconnect.CreateInterconnectInput) (*request.Request, *directconnect.Interconnect)
 
 	CreateInterconnect(*directconnect.CreateInterconnectInput) (*directconnect.Interconnect, error)
+
+	CreateLagRequest(*directconnect.CreateLagInput) (*request.Request, *directconnect.Lag)
+
+	CreateLag(*directconnect.CreateLagInput) (*directconnect.Lag, error)
 
 	CreatePrivateVirtualInterfaceRequest(*directconnect.CreatePrivateVirtualInterfaceInput) (*request.Request, *directconnect.VirtualInterface)
 
@@ -99,6 +123,10 @@ type DirectConnectAPI interface {
 
 	CreatePublicVirtualInterface(*directconnect.CreatePublicVirtualInterfaceInput) (*directconnect.VirtualInterface, error)
 
+	DeleteBGPPeerRequest(*directconnect.DeleteBGPPeerInput) (*request.Request, *directconnect.DeleteBGPPeerOutput)
+
+	DeleteBGPPeer(*directconnect.DeleteBGPPeerInput) (*directconnect.DeleteBGPPeerOutput, error)
+
 	DeleteConnectionRequest(*directconnect.DeleteConnectionInput) (*request.Request, *directconnect.Connection)
 
 	DeleteConnection(*directconnect.DeleteConnectionInput) (*directconnect.Connection, error)
@@ -106,6 +134,10 @@ type DirectConnectAPI interface {
 	DeleteInterconnectRequest(*directconnect.DeleteInterconnectInput) (*request.Request, *directconnect.DeleteInterconnectOutput)
 
 	DeleteInterconnect(*directconnect.DeleteInterconnectInput) (*directconnect.DeleteInterconnectOutput, error)
+
+	DeleteLagRequest(*directconnect.DeleteLagInput) (*request.Request, *directconnect.Lag)
+
+	DeleteLag(*directconnect.DeleteLagInput) (*directconnect.Lag, error)
 
 	DeleteVirtualInterfaceRequest(*directconnect.DeleteVirtualInterfaceInput) (*request.Request, *directconnect.DeleteVirtualInterfaceOutput)
 
@@ -123,6 +155,10 @@ type DirectConnectAPI interface {
 
 	DescribeConnectionsOnInterconnect(*directconnect.DescribeConnectionsOnInterconnectInput) (*directconnect.Connections, error)
 
+	DescribeHostedConnectionsRequest(*directconnect.DescribeHostedConnectionsInput) (*request.Request, *directconnect.Connections)
+
+	DescribeHostedConnections(*directconnect.DescribeHostedConnectionsInput) (*directconnect.Connections, error)
+
 	DescribeInterconnectLoaRequest(*directconnect.DescribeInterconnectLoaInput) (*request.Request, *directconnect.DescribeInterconnectLoaOutput)
 
 	DescribeInterconnectLoa(*directconnect.DescribeInterconnectLoaInput) (*directconnect.DescribeInterconnectLoaOutput, error)
@@ -131,9 +167,21 @@ type DirectConnectAPI interface {
 
 	DescribeInterconnects(*directconnect.DescribeInterconnectsInput) (*directconnect.DescribeInterconnectsOutput, error)
 
+	DescribeLagsRequest(*directconnect.DescribeLagsInput) (*request.Request, *directconnect.DescribeLagsOutput)
+
+	DescribeLags(*directconnect.DescribeLagsInput) (*directconnect.DescribeLagsOutput, error)
+
+	DescribeLoaRequest(*directconnect.DescribeLoaInput) (*request.Request, *directconnect.Loa)
+
+	DescribeLoa(*directconnect.DescribeLoaInput) (*directconnect.Loa, error)
+
 	DescribeLocationsRequest(*directconnect.DescribeLocationsInput) (*request.Request, *directconnect.DescribeLocationsOutput)
 
 	DescribeLocations(*directconnect.DescribeLocationsInput) (*directconnect.DescribeLocationsOutput, error)
+
+	DescribeTagsRequest(*directconnect.DescribeTagsInput) (*request.Request, *directconnect.DescribeTagsOutput)
+
+	DescribeTags(*directconnect.DescribeTagsInput) (*directconnect.DescribeTagsOutput, error)
 
 	DescribeVirtualGatewaysRequest(*directconnect.DescribeVirtualGatewaysInput) (*request.Request, *directconnect.DescribeVirtualGatewaysOutput)
 
@@ -142,6 +190,22 @@ type DirectConnectAPI interface {
 	DescribeVirtualInterfacesRequest(*directconnect.DescribeVirtualInterfacesInput) (*request.Request, *directconnect.DescribeVirtualInterfacesOutput)
 
 	DescribeVirtualInterfaces(*directconnect.DescribeVirtualInterfacesInput) (*directconnect.DescribeVirtualInterfacesOutput, error)
+
+	DisassociateConnectionFromLagRequest(*directconnect.DisassociateConnectionFromLagInput) (*request.Request, *directconnect.Connection)
+
+	DisassociateConnectionFromLag(*directconnect.DisassociateConnectionFromLagInput) (*directconnect.Connection, error)
+
+	TagResourceRequest(*directconnect.TagResourceInput) (*request.Request, *directconnect.TagResourceOutput)
+
+	TagResource(*directconnect.TagResourceInput) (*directconnect.TagResourceOutput, error)
+
+	UntagResourceRequest(*directconnect.UntagResourceInput) (*request.Request, *directconnect.UntagResourceOutput)
+
+	UntagResource(*directconnect.UntagResourceInput) (*directconnect.UntagResourceOutput, error)
+
+	UpdateLagRequest(*directconnect.UpdateLagInput) (*request.Request, *directconnect.Lag)
+
+	UpdateLag(*directconnect.UpdateLagInput) (*directconnect.Lag, error)
 }
 
 var _ DirectConnectAPI = (*directconnect.DirectConnect)(nil)

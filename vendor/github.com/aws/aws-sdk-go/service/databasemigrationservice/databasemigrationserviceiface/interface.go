@@ -45,7 +45,7 @@ import (
 //        // mock response/functionality
 //    }
 //
-//    TestMyFunc(t *testing.T) {
+//    func TestMyFunc(t *testing.T) {
 //        // Setup Test
 //        mockSvc := &mockDatabaseMigrationServiceClient{}
 //
@@ -166,6 +166,10 @@ type DatabaseMigrationServiceAPI interface {
 	ModifyReplicationSubnetGroupRequest(*databasemigrationservice.ModifyReplicationSubnetGroupInput) (*request.Request, *databasemigrationservice.ModifyReplicationSubnetGroupOutput)
 
 	ModifyReplicationSubnetGroup(*databasemigrationservice.ModifyReplicationSubnetGroupInput) (*databasemigrationservice.ModifyReplicationSubnetGroupOutput, error)
+
+	ModifyReplicationTaskRequest(*databasemigrationservice.ModifyReplicationTaskInput) (*request.Request, *databasemigrationservice.ModifyReplicationTaskOutput)
+
+	ModifyReplicationTask(*databasemigrationservice.ModifyReplicationTaskInput) (*databasemigrationservice.ModifyReplicationTaskOutput, error)
 
 	RefreshSchemasRequest(*databasemigrationservice.RefreshSchemasInput) (*request.Request, *databasemigrationservice.RefreshSchemasOutput)
 

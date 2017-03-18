@@ -45,7 +45,7 @@ import (
 //        // mock response/functionality
 //    }
 //
-//    TestMyFunc(t *testing.T) {
+//    func TestMyFunc(t *testing.T) {
 //        // Setup Test
 //        mockSvc := &mockDynamoDBClient{}
 //
@@ -89,6 +89,10 @@ type DynamoDBAPI interface {
 
 	DescribeTable(*dynamodb.DescribeTableInput) (*dynamodb.DescribeTableOutput, error)
 
+	DescribeTimeToLiveRequest(*dynamodb.DescribeTimeToLiveInput) (*request.Request, *dynamodb.DescribeTimeToLiveOutput)
+
+	DescribeTimeToLive(*dynamodb.DescribeTimeToLiveInput) (*dynamodb.DescribeTimeToLiveOutput, error)
+
 	GetItemRequest(*dynamodb.GetItemInput) (*request.Request, *dynamodb.GetItemOutput)
 
 	GetItem(*dynamodb.GetItemInput) (*dynamodb.GetItemOutput, error)
@@ -98,6 +102,10 @@ type DynamoDBAPI interface {
 	ListTables(*dynamodb.ListTablesInput) (*dynamodb.ListTablesOutput, error)
 
 	ListTablesPages(*dynamodb.ListTablesInput, func(*dynamodb.ListTablesOutput, bool) bool) error
+
+	ListTagsOfResourceRequest(*dynamodb.ListTagsOfResourceInput) (*request.Request, *dynamodb.ListTagsOfResourceOutput)
+
+	ListTagsOfResource(*dynamodb.ListTagsOfResourceInput) (*dynamodb.ListTagsOfResourceOutput, error)
 
 	PutItemRequest(*dynamodb.PutItemInput) (*request.Request, *dynamodb.PutItemOutput)
 
@@ -115,6 +123,14 @@ type DynamoDBAPI interface {
 
 	ScanPages(*dynamodb.ScanInput, func(*dynamodb.ScanOutput, bool) bool) error
 
+	TagResourceRequest(*dynamodb.TagResourceInput) (*request.Request, *dynamodb.TagResourceOutput)
+
+	TagResource(*dynamodb.TagResourceInput) (*dynamodb.TagResourceOutput, error)
+
+	UntagResourceRequest(*dynamodb.UntagResourceInput) (*request.Request, *dynamodb.UntagResourceOutput)
+
+	UntagResource(*dynamodb.UntagResourceInput) (*dynamodb.UntagResourceOutput, error)
+
 	UpdateItemRequest(*dynamodb.UpdateItemInput) (*request.Request, *dynamodb.UpdateItemOutput)
 
 	UpdateItem(*dynamodb.UpdateItemInput) (*dynamodb.UpdateItemOutput, error)
@@ -122,6 +138,10 @@ type DynamoDBAPI interface {
 	UpdateTableRequest(*dynamodb.UpdateTableInput) (*request.Request, *dynamodb.UpdateTableOutput)
 
 	UpdateTable(*dynamodb.UpdateTableInput) (*dynamodb.UpdateTableOutput, error)
+
+	UpdateTimeToLiveRequest(*dynamodb.UpdateTimeToLiveInput) (*request.Request, *dynamodb.UpdateTimeToLiveOutput)
+
+	UpdateTimeToLive(*dynamodb.UpdateTimeToLiveInput) (*dynamodb.UpdateTimeToLiveOutput, error)
 
 	WaitUntilTableExists(*dynamodb.DescribeTableInput) error
 

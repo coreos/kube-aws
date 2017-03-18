@@ -28,16 +28,19 @@ coreos:
       drop-ins:
         - name: 20-etcd2-aws-cluster.conf
           content: |
+            {{- if .TLSAssetsEncryptionEnabled}}
             [Unit]
             Wants=decrypt-tls-assets.service cfn-etcd-environment.service
             After=decrypt-tls-assets.service cfn-etcd-environment.service
-
+            {{- end}}
             [Service]
             EnvironmentFile=-/etc/etcd-environment
 
             PermissionsStartOnly=true
             ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
+            {{- if .TLSAssetsEncryptionEnabled}}
             ExecStartPre=/usr/bin/systemctl is-active decrypt-tls-assets.service
+            {{- end}}
             ExecStartPre=/usr/bin/chown -R etcd:etcd /var/lib/etcd2
       enable: true
       command: start
@@ -73,6 +76,7 @@ coreos:
         [Install]
         RequiredBy=var-lib-etcd2.mount
 
+{{if .TLSAssetsEncryptionEnabled}}
     - name: decrypt-tls-assets.service
       enable: true
       content: |
@@ -91,7 +95,7 @@ coreos:
           --mount volume=dns,target=/etc/resolv.conf \
           --net=host \
           --trust-keys-from-https \
-          {{.AWSCliImageRepo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
             -ec \
             'echo decrypting tls assets; \
              shopt -s nullglob; \
@@ -109,6 +113,7 @@ coreos:
 
         [Install]
         RequiredBy=etcd2.service
+{{ end }}
 
 {{ if .WaitSignal.Enabled }}
     - name: cfn-signal.service
@@ -417,7 +422,7 @@ write_files:
            --set-env={{.EtcdIndexEnvVarName}}=${{.EtcdIndexEnvVarName}} \
            --net=host \
            --trust-keys-from-https \
-           {{.AWSCliImageRepo}}:{{.AWSCliTag}} --exec=/opt/bin/$1 -- $2
+           {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/opt/bin/$1 -- $2
 
            rkt rm --uuid-file=/var/run/coreos/$1.uuid || :
         }
@@ -479,7 +484,7 @@ write_files:
         --set-env={{.EtcdIndexEnvVarName}}=${{.EtcdIndexEnvVarName}} \
         --net=host \
         --trust-keys-from-https \
-        {{.AWSCliImageRepo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
           -vxec \
           '
            cfn-signal -e 0 --region {{.Region}} --resource {{.Etcd.LogicalName}}${{.EtcdIndexEnvVarName}} --stack ${{.StackNameEnvVarName}}
@@ -490,23 +495,23 @@ write_files:
 
 {{ if .ManageCertificates }}
 
-  - path: /etc/etcd2/ssl/ca.pem.enc
+  - path: /etc/etcd2/ssl/ca.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.CACert}}
 
-  - path: /etc/etcd2/ssl/etcd-key.pem.enc
+  - path: /etc/etcd2/ssl/etcd-key.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdKey}}
 
-  - path: /etc/etcd2/ssl/etcd.pem.enc
+  - path: /etc/etcd2/ssl/etcd.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdCert}}
 
-  - path: /etc/etcd2/ssl/etcd-client.pem.enc
+  - path: /etc/etcd2/ssl/etcd-client.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientCert}}
 
-  - path: /etc/etcd2/ssl/etcd-client-key.pem.enc
+  - path: /etc/etcd2/ssl/etcd-client-key.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientKey}}
 

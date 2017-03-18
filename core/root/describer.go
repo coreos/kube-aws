@@ -33,7 +33,7 @@ func ClusterDescriberFromFile(configPath string) (ClusterDescriber, error) {
 		return nil, err
 	}
 	awsConfig := aws.NewConfig().
-		WithRegion(config.Region).
+		WithRegion(config.Region.String()).
 		WithCredentialsChainVerboseErrors(true)
 
 	session, err := session.NewSession(awsConfig)

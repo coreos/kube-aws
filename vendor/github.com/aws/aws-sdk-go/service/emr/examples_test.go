@@ -15,12 +15,78 @@ import (
 var _ time.Duration
 var _ bytes.Buffer
 
-func ExampleEMR_AddInstanceGroups() {
-	sess, err := session.NewSession()
+func ExampleEMR_AddInstanceFleet() {
+	sess := session.Must(session.NewSession())
+
+	svc := emr.New(sess)
+
+	params := &emr.AddInstanceFleetInput{
+		ClusterId: aws.String("XmlStringMaxLen256"), // Required
+		InstanceFleet: &emr.InstanceFleetConfig{ // Required
+			InstanceFleetType: aws.String("InstanceFleetType"), // Required
+			InstanceTypeConfigs: []*emr.InstanceTypeConfig{
+				{ // Required
+					InstanceType: aws.String("InstanceType"), // Required
+					BidPrice:     aws.String("XmlStringMaxLen256"),
+					BidPriceAsPercentageOfOnDemandPrice: aws.Float64(1.0),
+					Configurations: []*emr.Configuration{
+						{ // Required
+							Classification: aws.String("String"),
+							Configurations: []*emr.Configuration{
+							// Recursive values...
+							},
+							Properties: map[string]*string{
+								"Key": aws.String("String"), // Required
+								// More values...
+							},
+						},
+						// More values...
+					},
+					EbsConfiguration: &emr.EbsConfiguration{
+						EbsBlockDeviceConfigs: []*emr.EbsBlockDeviceConfig{
+							{ // Required
+								VolumeSpecification: &emr.VolumeSpecification{ // Required
+									SizeInGB:   aws.Int64(1),         // Required
+									VolumeType: aws.String("String"), // Required
+									Iops:       aws.Int64(1),
+								},
+								VolumesPerInstance: aws.Int64(1),
+							},
+							// More values...
+						},
+						EbsOptimized: aws.Bool(true),
+					},
+					WeightedCapacity: aws.Int64(1),
+				},
+				// More values...
+			},
+			LaunchSpecifications: &emr.InstanceFleetProvisioningSpecifications{
+				SpotSpecification: &emr.SpotProvisioningSpecification{ // Required
+					TimeoutAction:          aws.String("SpotProvisioningTimeoutAction"), // Required
+					TimeoutDurationMinutes: aws.Int64(1),                                // Required
+					BlockDurationMinutes:   aws.Int64(1),
+				},
+			},
+			Name: aws.String("XmlStringMaxLen256"),
+			TargetOnDemandCapacity: aws.Int64(1),
+			TargetSpotCapacity:     aws.Int64(1),
+		},
+	}
+	resp, err := svc.AddInstanceFleet(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleEMR_AddInstanceGroups() {
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -30,7 +96,47 @@ func ExampleEMR_AddInstanceGroups() {
 				InstanceCount: aws.Int64(1),                   // Required
 				InstanceRole:  aws.String("InstanceRoleType"), // Required
 				InstanceType:  aws.String("InstanceType"),     // Required
-				BidPrice:      aws.String("XmlStringMaxLen256"),
+				AutoScalingPolicy: &emr.AutoScalingPolicy{
+					Constraints: &emr.ScalingConstraints{ // Required
+						MaxCapacity: aws.Int64(1), // Required
+						MinCapacity: aws.Int64(1), // Required
+					},
+					Rules: []*emr.ScalingRule{ // Required
+						{ // Required
+							Action: &emr.ScalingAction{ // Required
+								SimpleScalingPolicyConfiguration: &emr.SimpleScalingPolicyConfiguration{ // Required
+									ScalingAdjustment: aws.Int64(1), // Required
+									AdjustmentType:    aws.String("AdjustmentType"),
+									CoolDown:          aws.Int64(1),
+								},
+								Market: aws.String("MarketType"),
+							},
+							Name: aws.String("String"), // Required
+							Trigger: &emr.ScalingTrigger{ // Required
+								CloudWatchAlarmDefinition: &emr.CloudWatchAlarmDefinition{ // Required
+									ComparisonOperator: aws.String("ComparisonOperator"), // Required
+									MetricName:         aws.String("String"),             // Required
+									Period:             aws.Int64(1),                     // Required
+									Threshold:          aws.Float64(1.0),                 // Required
+									Dimensions: []*emr.MetricDimension{
+										{ // Required
+											Key:   aws.String("String"),
+											Value: aws.String("String"),
+										},
+										// More values...
+									},
+									EvaluationPeriods: aws.Int64(1),
+									Namespace:         aws.String("String"),
+									Statistic:         aws.String("Statistic"),
+									Unit:              aws.String("Unit"),
+								},
+							},
+							Description: aws.String("String"),
+						},
+						// More values...
+					},
+				},
+				BidPrice: aws.String("XmlStringMaxLen256"),
 				Configurations: []*emr.Configuration{
 					{ // Required
 						Classification: aws.String("String"),
@@ -79,11 +185,7 @@ func ExampleEMR_AddInstanceGroups() {
 }
 
 func ExampleEMR_AddJobFlowSteps() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -126,11 +228,7 @@ func ExampleEMR_AddJobFlowSteps() {
 }
 
 func ExampleEMR_AddTags() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -157,12 +255,33 @@ func ExampleEMR_AddTags() {
 	fmt.Println(resp)
 }
 
-func ExampleEMR_CreateSecurityConfiguration() {
-	sess, err := session.NewSession()
+func ExampleEMR_CancelSteps() {
+	sess := session.Must(session.NewSession())
+
+	svc := emr.New(sess)
+
+	params := &emr.CancelStepsInput{
+		ClusterId: aws.String("XmlStringMaxLen256"),
+		StepIds: []*string{
+			aws.String("XmlStringMaxLen256"), // Required
+			// More values...
+		},
+	}
+	resp, err := svc.CancelSteps(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleEMR_CreateSecurityConfiguration() {
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -184,11 +303,7 @@ func ExampleEMR_CreateSecurityConfiguration() {
 }
 
 func ExampleEMR_DeleteSecurityConfiguration() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -209,11 +324,7 @@ func ExampleEMR_DeleteSecurityConfiguration() {
 }
 
 func ExampleEMR_DescribeCluster() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -234,11 +345,7 @@ func ExampleEMR_DescribeCluster() {
 }
 
 func ExampleEMR_DescribeJobFlows() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -268,11 +375,7 @@ func ExampleEMR_DescribeJobFlows() {
 }
 
 func ExampleEMR_DescribeSecurityConfiguration() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -293,11 +396,7 @@ func ExampleEMR_DescribeSecurityConfiguration() {
 }
 
 func ExampleEMR_DescribeStep() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -319,11 +418,7 @@ func ExampleEMR_DescribeStep() {
 }
 
 func ExampleEMR_ListBootstrapActions() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -345,11 +440,7 @@ func ExampleEMR_ListBootstrapActions() {
 }
 
 func ExampleEMR_ListClusters() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -375,12 +466,30 @@ func ExampleEMR_ListClusters() {
 	fmt.Println(resp)
 }
 
-func ExampleEMR_ListInstanceGroups() {
-	sess, err := session.NewSession()
+func ExampleEMR_ListInstanceFleets() {
+	sess := session.Must(session.NewSession())
+
+	svc := emr.New(sess)
+
+	params := &emr.ListInstanceFleetsInput{
+		ClusterId: aws.String("ClusterId"), // Required
+		Marker:    aws.String("Marker"),
+	}
+	resp, err := svc.ListInstanceFleets(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleEMR_ListInstanceGroups() {
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -402,17 +511,15 @@ func ExampleEMR_ListInstanceGroups() {
 }
 
 func ExampleEMR_ListInstances() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
 	params := &emr.ListInstancesInput{
-		ClusterId:       aws.String("ClusterId"), // Required
-		InstanceGroupId: aws.String("InstanceGroupId"),
+		ClusterId:         aws.String("ClusterId"), // Required
+		InstanceFleetId:   aws.String("InstanceFleetId"),
+		InstanceFleetType: aws.String("InstanceFleetType"),
+		InstanceGroupId:   aws.String("InstanceGroupId"),
 		InstanceGroupTypes: []*string{
 			aws.String("InstanceGroupType"), // Required
 			// More values...
@@ -437,11 +544,7 @@ func ExampleEMR_ListInstances() {
 }
 
 func ExampleEMR_ListSecurityConfigurations() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -462,11 +565,7 @@ func ExampleEMR_ListSecurityConfigurations() {
 }
 
 func ExampleEMR_ListSteps() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -495,16 +594,39 @@ func ExampleEMR_ListSteps() {
 	fmt.Println(resp)
 }
 
-func ExampleEMR_ModifyInstanceGroups() {
-	sess, err := session.NewSession()
+func ExampleEMR_ModifyInstanceFleet() {
+	sess := session.Must(session.NewSession())
+
+	svc := emr.New(sess)
+
+	params := &emr.ModifyInstanceFleetInput{
+		ClusterId: aws.String("ClusterId"), // Required
+		InstanceFleet: &emr.InstanceFleetModifyConfig{ // Required
+			InstanceFleetId:        aws.String("InstanceFleetId"), // Required
+			TargetOnDemandCapacity: aws.Int64(1),
+			TargetSpotCapacity:     aws.Int64(1),
+		},
+	}
+	resp, err := svc.ModifyInstanceFleet(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleEMR_ModifyInstanceGroups() {
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
 	params := &emr.ModifyInstanceGroupsInput{
+		ClusterId: aws.String("ClusterId"),
 		InstanceGroups: []*emr.InstanceGroupModifyConfig{
 			{ // Required
 				InstanceGroupId: aws.String("XmlStringMaxLen256"), // Required
@@ -544,12 +666,92 @@ func ExampleEMR_ModifyInstanceGroups() {
 	fmt.Println(resp)
 }
 
-func ExampleEMR_RemoveTags() {
-	sess, err := session.NewSession()
+func ExampleEMR_PutAutoScalingPolicy() {
+	sess := session.Must(session.NewSession())
+
+	svc := emr.New(sess)
+
+	params := &emr.PutAutoScalingPolicyInput{
+		AutoScalingPolicy: &emr.AutoScalingPolicy{ // Required
+			Constraints: &emr.ScalingConstraints{ // Required
+				MaxCapacity: aws.Int64(1), // Required
+				MinCapacity: aws.Int64(1), // Required
+			},
+			Rules: []*emr.ScalingRule{ // Required
+				{ // Required
+					Action: &emr.ScalingAction{ // Required
+						SimpleScalingPolicyConfiguration: &emr.SimpleScalingPolicyConfiguration{ // Required
+							ScalingAdjustment: aws.Int64(1), // Required
+							AdjustmentType:    aws.String("AdjustmentType"),
+							CoolDown:          aws.Int64(1),
+						},
+						Market: aws.String("MarketType"),
+					},
+					Name: aws.String("String"), // Required
+					Trigger: &emr.ScalingTrigger{ // Required
+						CloudWatchAlarmDefinition: &emr.CloudWatchAlarmDefinition{ // Required
+							ComparisonOperator: aws.String("ComparisonOperator"), // Required
+							MetricName:         aws.String("String"),             // Required
+							Period:             aws.Int64(1),                     // Required
+							Threshold:          aws.Float64(1.0),                 // Required
+							Dimensions: []*emr.MetricDimension{
+								{ // Required
+									Key:   aws.String("String"),
+									Value: aws.String("String"),
+								},
+								// More values...
+							},
+							EvaluationPeriods: aws.Int64(1),
+							Namespace:         aws.String("String"),
+							Statistic:         aws.String("Statistic"),
+							Unit:              aws.String("Unit"),
+						},
+					},
+					Description: aws.String("String"),
+				},
+				// More values...
+			},
+		},
+		ClusterId:       aws.String("ClusterId"),       // Required
+		InstanceGroupId: aws.String("InstanceGroupId"), // Required
+	}
+	resp, err := svc.PutAutoScalingPolicy(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleEMR_RemoveAutoScalingPolicy() {
+	sess := session.Must(session.NewSession())
+
+	svc := emr.New(sess)
+
+	params := &emr.RemoveAutoScalingPolicyInput{
+		ClusterId:       aws.String("ClusterId"),       // Required
+		InstanceGroupId: aws.String("InstanceGroupId"), // Required
+	}
+	resp, err := svc.RemoveAutoScalingPolicy(params)
+
+	if err != nil {
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
+		return
+	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleEMR_RemoveTags() {
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -574,11 +776,7 @@ func ExampleEMR_RemoveTags() {
 }
 
 func ExampleEMR_RunJobFlow() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -592,18 +790,114 @@ func ExampleEMR_RunJobFlow() {
 				aws.String("XmlStringMaxLen256"), // Required
 				// More values...
 			},
-			Ec2KeyName:                    aws.String("XmlStringMaxLen256"),
-			Ec2SubnetId:                   aws.String("XmlStringMaxLen256"),
+			Ec2KeyName:  aws.String("XmlStringMaxLen256"),
+			Ec2SubnetId: aws.String("XmlStringMaxLen256"),
+			Ec2SubnetIds: []*string{
+				aws.String("XmlStringMaxLen256"), // Required
+				// More values...
+			},
 			EmrManagedMasterSecurityGroup: aws.String("XmlStringMaxLen256"),
 			EmrManagedSlaveSecurityGroup:  aws.String("XmlStringMaxLen256"),
 			HadoopVersion:                 aws.String("XmlStringMaxLen256"),
 			InstanceCount:                 aws.Int64(1),
+			InstanceFleets: []*emr.InstanceFleetConfig{
+				{ // Required
+					InstanceFleetType: aws.String("InstanceFleetType"), // Required
+					InstanceTypeConfigs: []*emr.InstanceTypeConfig{
+						{ // Required
+							InstanceType: aws.String("InstanceType"), // Required
+							BidPrice:     aws.String("XmlStringMaxLen256"),
+							BidPriceAsPercentageOfOnDemandPrice: aws.Float64(1.0),
+							Configurations: []*emr.Configuration{
+								{ // Required
+									Classification: aws.String("String"),
+									Configurations: []*emr.Configuration{
+									// Recursive values...
+									},
+									Properties: map[string]*string{
+										"Key": aws.String("String"), // Required
+										// More values...
+									},
+								},
+								// More values...
+							},
+							EbsConfiguration: &emr.EbsConfiguration{
+								EbsBlockDeviceConfigs: []*emr.EbsBlockDeviceConfig{
+									{ // Required
+										VolumeSpecification: &emr.VolumeSpecification{ // Required
+											SizeInGB:   aws.Int64(1),         // Required
+											VolumeType: aws.String("String"), // Required
+											Iops:       aws.Int64(1),
+										},
+										VolumesPerInstance: aws.Int64(1),
+									},
+									// More values...
+								},
+								EbsOptimized: aws.Bool(true),
+							},
+							WeightedCapacity: aws.Int64(1),
+						},
+						// More values...
+					},
+					LaunchSpecifications: &emr.InstanceFleetProvisioningSpecifications{
+						SpotSpecification: &emr.SpotProvisioningSpecification{ // Required
+							TimeoutAction:          aws.String("SpotProvisioningTimeoutAction"), // Required
+							TimeoutDurationMinutes: aws.Int64(1),                                // Required
+							BlockDurationMinutes:   aws.Int64(1),
+						},
+					},
+					Name: aws.String("XmlStringMaxLen256"),
+					TargetOnDemandCapacity: aws.Int64(1),
+					TargetSpotCapacity:     aws.Int64(1),
+				},
+				// More values...
+			},
 			InstanceGroups: []*emr.InstanceGroupConfig{
 				{ // Required
 					InstanceCount: aws.Int64(1),                   // Required
 					InstanceRole:  aws.String("InstanceRoleType"), // Required
 					InstanceType:  aws.String("InstanceType"),     // Required
-					BidPrice:      aws.String("XmlStringMaxLen256"),
+					AutoScalingPolicy: &emr.AutoScalingPolicy{
+						Constraints: &emr.ScalingConstraints{ // Required
+							MaxCapacity: aws.Int64(1), // Required
+							MinCapacity: aws.Int64(1), // Required
+						},
+						Rules: []*emr.ScalingRule{ // Required
+							{ // Required
+								Action: &emr.ScalingAction{ // Required
+									SimpleScalingPolicyConfiguration: &emr.SimpleScalingPolicyConfiguration{ // Required
+										ScalingAdjustment: aws.Int64(1), // Required
+										AdjustmentType:    aws.String("AdjustmentType"),
+										CoolDown:          aws.Int64(1),
+									},
+									Market: aws.String("MarketType"),
+								},
+								Name: aws.String("String"), // Required
+								Trigger: &emr.ScalingTrigger{ // Required
+									CloudWatchAlarmDefinition: &emr.CloudWatchAlarmDefinition{ // Required
+										ComparisonOperator: aws.String("ComparisonOperator"), // Required
+										MetricName:         aws.String("String"),             // Required
+										Period:             aws.Int64(1),                     // Required
+										Threshold:          aws.Float64(1.0),                 // Required
+										Dimensions: []*emr.MetricDimension{
+											{ // Required
+												Key:   aws.String("String"),
+												Value: aws.String("String"),
+											},
+											// More values...
+										},
+										EvaluationPeriods: aws.Int64(1),
+										Namespace:         aws.String("String"),
+										Statistic:         aws.String("Statistic"),
+										Unit:              aws.String("Unit"),
+									},
+								},
+								Description: aws.String("String"),
+							},
+							// More values...
+						},
+					},
+					BidPrice: aws.String("XmlStringMaxLen256"),
 					Configurations: []*emr.Configuration{
 						{ // Required
 							Classification: aws.String("String"),
@@ -639,7 +933,11 @@ func ExampleEMR_RunJobFlow() {
 			KeepJobFlowAliveWhenNoSteps: aws.Bool(true),
 			MasterInstanceType:          aws.String("InstanceType"),
 			Placement: &emr.PlacementType{
-				AvailabilityZone: aws.String("XmlString"), // Required
+				AvailabilityZone: aws.String("XmlString"),
+				AvailabilityZones: []*string{
+					aws.String("XmlStringMaxLen256"), // Required
+					// More values...
+				},
 			},
 			ServiceAccessSecurityGroup: aws.String("XmlStringMaxLen256"),
 			SlaveInstanceType:          aws.String("InstanceType"),
@@ -663,6 +961,7 @@ func ExampleEMR_RunJobFlow() {
 			},
 			// More values...
 		},
+		AutoScalingRole: aws.String("XmlString"),
 		BootstrapActions: []*emr.BootstrapActionConfig{
 			{ // Required
 				Name: aws.String("XmlStringMaxLen256"), // Required
@@ -702,6 +1001,7 @@ func ExampleEMR_RunJobFlow() {
 			// More values...
 		},
 		ReleaseLabel:          aws.String("XmlStringMaxLen256"),
+		ScaleDownBehavior:     aws.String("ScaleDownBehavior"),
 		SecurityConfiguration: aws.String("XmlString"),
 		ServiceRole:           aws.String("XmlString"),
 		Steps: []*emr.StepConfig{
@@ -753,11 +1053,7 @@ func ExampleEMR_RunJobFlow() {
 }
 
 func ExampleEMR_SetTerminationProtection() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -782,11 +1078,7 @@ func ExampleEMR_SetTerminationProtection() {
 }
 
 func ExampleEMR_SetVisibleToAllUsers() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 
@@ -811,11 +1103,7 @@ func ExampleEMR_SetVisibleToAllUsers() {
 }
 
 func ExampleEMR_TerminateJobFlows() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := emr.New(sess)
 

@@ -145,7 +145,7 @@
               "Effect": "Allow",
               "Principal": {
                 "Service": [
-                  "ec2.amazonaws.com{{if .IsChinaRegion}}.cn{{end}}"
+                  "ec2.{{.Region.PublicDomainName}}"
                 ]
               }
             }
@@ -175,7 +175,7 @@
 		  "Action": [
 			"s3:GetObject"
 		  ],
-		  "Resource": "arn:aws:s3:::{{$.UserDataControllerS3Path}}"
+		  "Resource": "arn:{{.Region.Partition}}:s3:::{{$.UserDataControllerS3Path}}"
 		},
                 {{if .WaitSignal.Enabled}}
                 {
@@ -183,7 +183,7 @@
                   "Effect": "Allow",
                   "Resource":
                     { "Fn::Join": [ "", [
-                      "arn:aws:cloudformation:",
+                      "arn:{{.Region.Partition}}:cloudformation:",
                       { "Ref": "AWS::Region" },
                       ":",
                       { "Ref": "AWS::AccountId" },
@@ -219,7 +219,7 @@
                   "Resource":"*"
                 },
                 {{end}}
-                {{if .ManageCertificates}}
+                {{if .TLSAssetsEncryptionEnabled}}
                 {
                   "Action" : "kms:Decrypt",
                   "Effect" : "Allow",
@@ -259,7 +259,7 @@
               "Effect": "Allow",
               "Principal": {
                 "Service": [
-                  "ec2.amazonaws.com{{if .IsChinaRegion}}.cn{{end}}"
+                  "ec2.{{.Region.PublicDomainName}}"
                 ]
               }
             }
@@ -270,7 +270,7 @@
         "Policies": [
           {
             "PolicyDocument": {
-              "Statement": [{{if .ManageCertificates}}
+              "Statement": [{{if .TLSAssetsEncryptionEnabled}}
                 {
                   "Action" : "kms:Decrypt",
                   "Effect" : "Allow",
@@ -330,7 +330,7 @@
                   "Action": [
                     "s3:GetObject"
                   ],
-                  "Resource": "arn:aws:s3:::{{$.UserDataEtcdS3Path}}"
+                  "Resource": "arn:{{.Region.Partition}}:s3:::{{$.UserDataEtcdS3Path}}"
                 }
               ],
               "Version": "2012-10-17"
@@ -573,7 +573,7 @@
           "   --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf  \\",
           "   --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false --mount volume=awsenv,target=/var/run/coreos \\",
           "   --trust-keys-from-https \\",
-          "   {{$.AWSCliImageRepo}}:{{$.AWSCliTag}} -- aws s3 --region $REGION  cp {{ $.S3URI }}/{{ $.StackName }}/$USERDATA_FILE /var/run/coreos/",
+          "   {{$.AWSCliImage.Options}}{{$.AWSCliImage.RktRepo}} --exec=aws -- s3 --region $REGION  cp {{ $.S3URI }}/{{ $.StackName }}/$USERDATA_FILE /var/run/coreos/",
           "exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE"
         ]]}}
       },
@@ -618,7 +618,7 @@
 		"   --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf  \\",
 		"   --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false --mount volume=awsenv,target=/var/run/coreos \\",
    		"   --trust-keys-from-https \\",
-		"   {{.AWSCliImageRepo}}:{{.AWSCliTag}} -- aws s3 --region $REGION  cp {{ .S3URI }}/{{ .StackName }}/$USERDATA_FILE /var/run/coreos/",
+		"   {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=aws -- s3 --region $REGION  cp {{ .S3URI }}/{{ .StackName }}/$USERDATA_FILE /var/run/coreos/",
 		"exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE"
 			]]}}
       },

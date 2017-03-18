@@ -16,11 +16,7 @@ var _ time.Duration
 var _ bytes.Buffer
 
 func ExampleIAM_AddClientIDToOpenIDConnectProvider() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -42,11 +38,7 @@ func ExampleIAM_AddClientIDToOpenIDConnectProvider() {
 }
 
 func ExampleIAM_AddRoleToInstanceProfile() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -68,11 +60,7 @@ func ExampleIAM_AddRoleToInstanceProfile() {
 }
 
 func ExampleIAM_AddUserToGroup() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -94,11 +82,7 @@ func ExampleIAM_AddUserToGroup() {
 }
 
 func ExampleIAM_AttachGroupPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -120,11 +104,7 @@ func ExampleIAM_AttachGroupPolicy() {
 }
 
 func ExampleIAM_AttachRolePolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -146,11 +126,7 @@ func ExampleIAM_AttachRolePolicy() {
 }
 
 func ExampleIAM_AttachUserPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -172,11 +148,7 @@ func ExampleIAM_AttachUserPolicy() {
 }
 
 func ExampleIAM_ChangePassword() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -198,11 +170,7 @@ func ExampleIAM_ChangePassword() {
 }
 
 func ExampleIAM_CreateAccessKey() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -223,11 +191,7 @@ func ExampleIAM_CreateAccessKey() {
 }
 
 func ExampleIAM_CreateAccountAlias() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -248,11 +212,7 @@ func ExampleIAM_CreateAccountAlias() {
 }
 
 func ExampleIAM_CreateGroup() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -274,11 +234,7 @@ func ExampleIAM_CreateGroup() {
 }
 
 func ExampleIAM_CreateInstanceProfile() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -300,11 +256,7 @@ func ExampleIAM_CreateInstanceProfile() {
 }
 
 func ExampleIAM_CreateLoginProfile() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -327,11 +279,7 @@ func ExampleIAM_CreateLoginProfile() {
 }
 
 func ExampleIAM_CreateOpenIDConnectProvider() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -360,11 +308,7 @@ func ExampleIAM_CreateOpenIDConnectProvider() {
 }
 
 func ExampleIAM_CreatePolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -388,11 +332,7 @@ func ExampleIAM_CreatePolicy() {
 }
 
 func ExampleIAM_CreatePolicyVersion() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -415,11 +355,7 @@ func ExampleIAM_CreatePolicyVersion() {
 }
 
 func ExampleIAM_CreateRole() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -442,11 +378,7 @@ func ExampleIAM_CreateRole() {
 }
 
 func ExampleIAM_CreateSAMLProvider() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -467,12 +399,30 @@ func ExampleIAM_CreateSAMLProvider() {
 	fmt.Println(resp)
 }
 
-func ExampleIAM_CreateUser() {
-	sess, err := session.NewSession()
+func ExampleIAM_CreateServiceSpecificCredential() {
+	sess := session.Must(session.NewSession())
+
+	svc := iam.New(sess)
+
+	params := &iam.CreateServiceSpecificCredentialInput{
+		ServiceName: aws.String("serviceName"),  // Required
+		UserName:    aws.String("userNameType"), // Required
+	}
+	resp, err := svc.CreateServiceSpecificCredential(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleIAM_CreateUser() {
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -494,11 +444,7 @@ func ExampleIAM_CreateUser() {
 }
 
 func ExampleIAM_CreateVirtualMFADevice() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -520,11 +466,7 @@ func ExampleIAM_CreateVirtualMFADevice() {
 }
 
 func ExampleIAM_DeactivateMFADevice() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -546,11 +488,7 @@ func ExampleIAM_DeactivateMFADevice() {
 }
 
 func ExampleIAM_DeleteAccessKey() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -572,11 +510,7 @@ func ExampleIAM_DeleteAccessKey() {
 }
 
 func ExampleIAM_DeleteAccountAlias() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -597,11 +531,7 @@ func ExampleIAM_DeleteAccountAlias() {
 }
 
 func ExampleIAM_DeleteAccountPasswordPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -620,11 +550,7 @@ func ExampleIAM_DeleteAccountPasswordPolicy() {
 }
 
 func ExampleIAM_DeleteGroup() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -645,11 +571,7 @@ func ExampleIAM_DeleteGroup() {
 }
 
 func ExampleIAM_DeleteGroupPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -671,11 +593,7 @@ func ExampleIAM_DeleteGroupPolicy() {
 }
 
 func ExampleIAM_DeleteInstanceProfile() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -696,11 +614,7 @@ func ExampleIAM_DeleteInstanceProfile() {
 }
 
 func ExampleIAM_DeleteLoginProfile() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -721,11 +635,7 @@ func ExampleIAM_DeleteLoginProfile() {
 }
 
 func ExampleIAM_DeleteOpenIDConnectProvider() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -746,11 +656,7 @@ func ExampleIAM_DeleteOpenIDConnectProvider() {
 }
 
 func ExampleIAM_DeletePolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -771,11 +677,7 @@ func ExampleIAM_DeletePolicy() {
 }
 
 func ExampleIAM_DeletePolicyVersion() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -797,11 +699,7 @@ func ExampleIAM_DeletePolicyVersion() {
 }
 
 func ExampleIAM_DeleteRole() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -822,11 +720,7 @@ func ExampleIAM_DeleteRole() {
 }
 
 func ExampleIAM_DeleteRolePolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -848,11 +742,7 @@ func ExampleIAM_DeleteRolePolicy() {
 }
 
 func ExampleIAM_DeleteSAMLProvider() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -873,11 +763,7 @@ func ExampleIAM_DeleteSAMLProvider() {
 }
 
 func ExampleIAM_DeleteSSHPublicKey() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -899,11 +785,7 @@ func ExampleIAM_DeleteSSHPublicKey() {
 }
 
 func ExampleIAM_DeleteServerCertificate() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -923,12 +805,30 @@ func ExampleIAM_DeleteServerCertificate() {
 	fmt.Println(resp)
 }
 
-func ExampleIAM_DeleteSigningCertificate() {
-	sess, err := session.NewSession()
+func ExampleIAM_DeleteServiceSpecificCredential() {
+	sess := session.Must(session.NewSession())
+
+	svc := iam.New(sess)
+
+	params := &iam.DeleteServiceSpecificCredentialInput{
+		ServiceSpecificCredentialId: aws.String("serviceSpecificCredentialId"), // Required
+		UserName:                    aws.String("userNameType"),
+	}
+	resp, err := svc.DeleteServiceSpecificCredential(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleIAM_DeleteSigningCertificate() {
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -950,11 +850,7 @@ func ExampleIAM_DeleteSigningCertificate() {
 }
 
 func ExampleIAM_DeleteUser() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -975,11 +871,7 @@ func ExampleIAM_DeleteUser() {
 }
 
 func ExampleIAM_DeleteUserPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1001,11 +893,7 @@ func ExampleIAM_DeleteUserPolicy() {
 }
 
 func ExampleIAM_DeleteVirtualMFADevice() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1026,11 +914,7 @@ func ExampleIAM_DeleteVirtualMFADevice() {
 }
 
 func ExampleIAM_DetachGroupPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1052,11 +936,7 @@ func ExampleIAM_DetachGroupPolicy() {
 }
 
 func ExampleIAM_DetachRolePolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1078,11 +958,7 @@ func ExampleIAM_DetachRolePolicy() {
 }
 
 func ExampleIAM_DetachUserPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1104,11 +980,7 @@ func ExampleIAM_DetachUserPolicy() {
 }
 
 func ExampleIAM_EnableMFADevice() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1132,11 +1004,7 @@ func ExampleIAM_EnableMFADevice() {
 }
 
 func ExampleIAM_GenerateCredentialReport() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1155,11 +1023,7 @@ func ExampleIAM_GenerateCredentialReport() {
 }
 
 func ExampleIAM_GetAccessKeyLastUsed() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1180,11 +1044,7 @@ func ExampleIAM_GetAccessKeyLastUsed() {
 }
 
 func ExampleIAM_GetAccountAuthorizationDetails() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1210,11 +1070,7 @@ func ExampleIAM_GetAccountAuthorizationDetails() {
 }
 
 func ExampleIAM_GetAccountPasswordPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1233,11 +1089,7 @@ func ExampleIAM_GetAccountPasswordPolicy() {
 }
 
 func ExampleIAM_GetAccountSummary() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1256,11 +1108,7 @@ func ExampleIAM_GetAccountSummary() {
 }
 
 func ExampleIAM_GetContextKeysForCustomPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1284,11 +1132,7 @@ func ExampleIAM_GetContextKeysForCustomPolicy() {
 }
 
 func ExampleIAM_GetContextKeysForPrincipalPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1313,11 +1157,7 @@ func ExampleIAM_GetContextKeysForPrincipalPolicy() {
 }
 
 func ExampleIAM_GetCredentialReport() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1336,11 +1176,7 @@ func ExampleIAM_GetCredentialReport() {
 }
 
 func ExampleIAM_GetGroup() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1363,11 +1199,7 @@ func ExampleIAM_GetGroup() {
 }
 
 func ExampleIAM_GetGroupPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1389,11 +1221,7 @@ func ExampleIAM_GetGroupPolicy() {
 }
 
 func ExampleIAM_GetInstanceProfile() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1414,11 +1242,7 @@ func ExampleIAM_GetInstanceProfile() {
 }
 
 func ExampleIAM_GetLoginProfile() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1439,11 +1263,7 @@ func ExampleIAM_GetLoginProfile() {
 }
 
 func ExampleIAM_GetOpenIDConnectProvider() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1464,11 +1284,7 @@ func ExampleIAM_GetOpenIDConnectProvider() {
 }
 
 func ExampleIAM_GetPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1489,11 +1305,7 @@ func ExampleIAM_GetPolicy() {
 }
 
 func ExampleIAM_GetPolicyVersion() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1515,11 +1327,7 @@ func ExampleIAM_GetPolicyVersion() {
 }
 
 func ExampleIAM_GetRole() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1540,11 +1348,7 @@ func ExampleIAM_GetRole() {
 }
 
 func ExampleIAM_GetRolePolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1566,11 +1370,7 @@ func ExampleIAM_GetRolePolicy() {
 }
 
 func ExampleIAM_GetSAMLProvider() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1591,11 +1391,7 @@ func ExampleIAM_GetSAMLProvider() {
 }
 
 func ExampleIAM_GetSSHPublicKey() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1618,11 +1414,7 @@ func ExampleIAM_GetSSHPublicKey() {
 }
 
 func ExampleIAM_GetServerCertificate() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1643,11 +1435,7 @@ func ExampleIAM_GetServerCertificate() {
 }
 
 func ExampleIAM_GetUser() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1668,11 +1456,7 @@ func ExampleIAM_GetUser() {
 }
 
 func ExampleIAM_GetUserPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1694,11 +1478,7 @@ func ExampleIAM_GetUserPolicy() {
 }
 
 func ExampleIAM_ListAccessKeys() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1721,11 +1501,7 @@ func ExampleIAM_ListAccessKeys() {
 }
 
 func ExampleIAM_ListAccountAliases() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1747,11 +1523,7 @@ func ExampleIAM_ListAccountAliases() {
 }
 
 func ExampleIAM_ListAttachedGroupPolicies() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1775,11 +1547,7 @@ func ExampleIAM_ListAttachedGroupPolicies() {
 }
 
 func ExampleIAM_ListAttachedRolePolicies() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1803,11 +1571,7 @@ func ExampleIAM_ListAttachedRolePolicies() {
 }
 
 func ExampleIAM_ListAttachedUserPolicies() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1831,11 +1595,7 @@ func ExampleIAM_ListAttachedUserPolicies() {
 }
 
 func ExampleIAM_ListEntitiesForPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1860,11 +1620,7 @@ func ExampleIAM_ListEntitiesForPolicy() {
 }
 
 func ExampleIAM_ListGroupPolicies() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1887,11 +1643,7 @@ func ExampleIAM_ListGroupPolicies() {
 }
 
 func ExampleIAM_ListGroups() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1914,11 +1666,7 @@ func ExampleIAM_ListGroups() {
 }
 
 func ExampleIAM_ListGroupsForUser() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1941,11 +1689,7 @@ func ExampleIAM_ListGroupsForUser() {
 }
 
 func ExampleIAM_ListInstanceProfiles() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1968,11 +1712,7 @@ func ExampleIAM_ListInstanceProfiles() {
 }
 
 func ExampleIAM_ListInstanceProfilesForRole() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -1995,11 +1735,7 @@ func ExampleIAM_ListInstanceProfilesForRole() {
 }
 
 func ExampleIAM_ListMFADevices() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2022,11 +1758,7 @@ func ExampleIAM_ListMFADevices() {
 }
 
 func ExampleIAM_ListOpenIDConnectProviders() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2045,11 +1777,7 @@ func ExampleIAM_ListOpenIDConnectProviders() {
 }
 
 func ExampleIAM_ListPolicies() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2074,11 +1802,7 @@ func ExampleIAM_ListPolicies() {
 }
 
 func ExampleIAM_ListPolicyVersions() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2101,11 +1825,7 @@ func ExampleIAM_ListPolicyVersions() {
 }
 
 func ExampleIAM_ListRolePolicies() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2128,11 +1848,7 @@ func ExampleIAM_ListRolePolicies() {
 }
 
 func ExampleIAM_ListRoles() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2155,11 +1871,7 @@ func ExampleIAM_ListRoles() {
 }
 
 func ExampleIAM_ListSAMLProviders() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2178,11 +1890,7 @@ func ExampleIAM_ListSAMLProviders() {
 }
 
 func ExampleIAM_ListSSHPublicKeys() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2205,11 +1913,7 @@ func ExampleIAM_ListSSHPublicKeys() {
 }
 
 func ExampleIAM_ListServerCertificates() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2231,12 +1935,30 @@ func ExampleIAM_ListServerCertificates() {
 	fmt.Println(resp)
 }
 
-func ExampleIAM_ListSigningCertificates() {
-	sess, err := session.NewSession()
+func ExampleIAM_ListServiceSpecificCredentials() {
+	sess := session.Must(session.NewSession())
+
+	svc := iam.New(sess)
+
+	params := &iam.ListServiceSpecificCredentialsInput{
+		ServiceName: aws.String("serviceName"),
+		UserName:    aws.String("userNameType"),
+	}
+	resp, err := svc.ListServiceSpecificCredentials(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleIAM_ListSigningCertificates() {
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2259,11 +1981,7 @@ func ExampleIAM_ListSigningCertificates() {
 }
 
 func ExampleIAM_ListUserPolicies() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2286,11 +2004,7 @@ func ExampleIAM_ListUserPolicies() {
 }
 
 func ExampleIAM_ListUsers() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2313,11 +2027,7 @@ func ExampleIAM_ListUsers() {
 }
 
 func ExampleIAM_ListVirtualMFADevices() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2340,11 +2050,7 @@ func ExampleIAM_ListVirtualMFADevices() {
 }
 
 func ExampleIAM_PutGroupPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2367,11 +2073,7 @@ func ExampleIAM_PutGroupPolicy() {
 }
 
 func ExampleIAM_PutRolePolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2394,11 +2096,7 @@ func ExampleIAM_PutRolePolicy() {
 }
 
 func ExampleIAM_PutUserPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2421,11 +2119,7 @@ func ExampleIAM_PutUserPolicy() {
 }
 
 func ExampleIAM_RemoveClientIDFromOpenIDConnectProvider() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2447,11 +2141,7 @@ func ExampleIAM_RemoveClientIDFromOpenIDConnectProvider() {
 }
 
 func ExampleIAM_RemoveRoleFromInstanceProfile() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2473,11 +2163,7 @@ func ExampleIAM_RemoveRoleFromInstanceProfile() {
 }
 
 func ExampleIAM_RemoveUserFromGroup() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2498,12 +2184,30 @@ func ExampleIAM_RemoveUserFromGroup() {
 	fmt.Println(resp)
 }
 
-func ExampleIAM_ResyncMFADevice() {
-	sess, err := session.NewSession()
+func ExampleIAM_ResetServiceSpecificCredential() {
+	sess := session.Must(session.NewSession())
+
+	svc := iam.New(sess)
+
+	params := &iam.ResetServiceSpecificCredentialInput{
+		ServiceSpecificCredentialId: aws.String("serviceSpecificCredentialId"), // Required
+		UserName:                    aws.String("userNameType"),
+	}
+	resp, err := svc.ResetServiceSpecificCredential(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleIAM_ResyncMFADevice() {
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2527,11 +2231,7 @@ func ExampleIAM_ResyncMFADevice() {
 }
 
 func ExampleIAM_SetDefaultPolicyVersion() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2553,11 +2253,7 @@ func ExampleIAM_SetDefaultPolicyVersion() {
 }
 
 func ExampleIAM_SimulateCustomPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2606,11 +2302,7 @@ func ExampleIAM_SimulateCustomPolicy() {
 }
 
 func ExampleIAM_SimulatePrincipalPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2660,11 +2352,7 @@ func ExampleIAM_SimulatePrincipalPolicy() {
 }
 
 func ExampleIAM_UpdateAccessKey() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2687,11 +2375,7 @@ func ExampleIAM_UpdateAccessKey() {
 }
 
 func ExampleIAM_UpdateAccountPasswordPolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2720,11 +2404,7 @@ func ExampleIAM_UpdateAccountPasswordPolicy() {
 }
 
 func ExampleIAM_UpdateAssumeRolePolicy() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2746,11 +2426,7 @@ func ExampleIAM_UpdateAssumeRolePolicy() {
 }
 
 func ExampleIAM_UpdateGroup() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2773,11 +2449,7 @@ func ExampleIAM_UpdateGroup() {
 }
 
 func ExampleIAM_UpdateLoginProfile() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2800,11 +2472,7 @@ func ExampleIAM_UpdateLoginProfile() {
 }
 
 func ExampleIAM_UpdateOpenIDConnectProviderThumbprint() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2829,11 +2497,7 @@ func ExampleIAM_UpdateOpenIDConnectProviderThumbprint() {
 }
 
 func ExampleIAM_UpdateSAMLProvider() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2855,11 +2519,7 @@ func ExampleIAM_UpdateSAMLProvider() {
 }
 
 func ExampleIAM_UpdateSSHPublicKey() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2882,11 +2542,7 @@ func ExampleIAM_UpdateSSHPublicKey() {
 }
 
 func ExampleIAM_UpdateServerCertificate() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2908,12 +2564,31 @@ func ExampleIAM_UpdateServerCertificate() {
 	fmt.Println(resp)
 }
 
-func ExampleIAM_UpdateSigningCertificate() {
-	sess, err := session.NewSession()
+func ExampleIAM_UpdateServiceSpecificCredential() {
+	sess := session.Must(session.NewSession())
+
+	svc := iam.New(sess)
+
+	params := &iam.UpdateServiceSpecificCredentialInput{
+		ServiceSpecificCredentialId: aws.String("serviceSpecificCredentialId"), // Required
+		Status:   aws.String("statusType"), // Required
+		UserName: aws.String("userNameType"),
+	}
+	resp, err := svc.UpdateServiceSpecificCredential(params)
+
 	if err != nil {
-		fmt.Println("failed to create session,", err)
+		// Print the error, cast err to awserr.Error to get the Code and
+		// Message from an error.
+		fmt.Println(err.Error())
 		return
 	}
+
+	// Pretty-print the response data.
+	fmt.Println(resp)
+}
+
+func ExampleIAM_UpdateSigningCertificate() {
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2936,11 +2611,7 @@ func ExampleIAM_UpdateSigningCertificate() {
 }
 
 func ExampleIAM_UpdateUser() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2963,11 +2634,7 @@ func ExampleIAM_UpdateUser() {
 }
 
 func ExampleIAM_UploadSSHPublicKey() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -2989,11 +2656,7 @@ func ExampleIAM_UploadSSHPublicKey() {
 }
 
 func ExampleIAM_UploadServerCertificate() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 
@@ -3018,11 +2681,7 @@ func ExampleIAM_UploadServerCertificate() {
 }
 
 func ExampleIAM_UploadSigningCertificate() {
-	sess, err := session.NewSession()
-	if err != nil {
-		fmt.Println("failed to create session,", err)
-		return
-	}
+	sess := session.Must(session.NewSession())
 
 	svc := iam.New(sess)
 

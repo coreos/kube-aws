@@ -85,7 +85,9 @@ coreos:
             EnvironmentFile=-/run/flannel/etcd-endpoints.opts
             ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
             ExecStartPre=/bin/sh -ec "echo FLANNELD_ETCD_ENDPOINTS=${ETCD_ENDPOINTS} >/run/flannel/etcd-endpoints.opts"
+            {{- if .TLSAssetsEncryptionEnabled}}
             ExecStartPre=/opt/bin/decrypt-tls-assets
+            {{- end}}
             Environment="ETCD_SSL_DIR=/etc/kubernetes/ssl"
             TimeoutStartSec=120
 
@@ -99,8 +101,8 @@ coreos:
         [Service]
         EnvironmentFile=-/etc/etcd-environment
         Environment=KUBELET_VERSION={{.K8sVer}}
-        Environment=KUBELET_ACI={{.HyperkubeImageRepo}}
-        Environment="RKT_OPTS=--volume dns,kind=host,source=/etc/resolv.conf \
+        Environment=KUBELET_ACI={{.HyperkubeImage.RktRepoWithoutTag}}
+        Environment="RKT_OPTS=--volume dns,kind=host,source=/etc/resolv.conf {{.HyperkubeImage.Options}}\
         --set-env=ETCD_CA_CERT_FILE=/etc/kubernetes/ssl/ca.pem \
         --set-env=ETCD_CERT_FILE=/etc/kubernetes/ssl/etcd-client.pem \
         --set-env=ETCD_KEY_FILE=/etc/kubernetes/ssl/etcd-client-key.pem \
@@ -201,7 +203,7 @@ coreos:
         --volume=kube,kind=host,source=/etc/kubernetes,readOnly=true \
         --mount=volume=kube,target=/etc/kubernetes \
         --net=host \
-        {{.HyperkubeImageRepo}}:{{.K8sVer}} \
+        {{.HyperkubeImage.RepoWithTag}} \
           --exec=/kubectl -- \
           --server=https://{{.ExternalDNSName}}:443 \
           --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
@@ -316,7 +318,7 @@ coreos:
         EnvironmentFile={{.StackNameEnvFileName}}
         ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl  --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null ; then break ; fi;  done"
         {{ if .UseCalico }}
-        ExecStartPre=/usr/bin/bash -c "until /usr/bin/docker run --net=host --pid=host --rm calico/ctl:v1.0.0 node status > /dev/null; do sleep 3; done && echo Calico running"        
+        ExecStartPre=/usr/bin/bash -c "until /usr/bin/docker run --net=host --pid=host --rm {{ .CalicoCtlImage.RepoWithTag }} node status > /dev/null; do sleep 3; done && echo Calico running"
         {{ end }}
         ExecStart=/opt/bin/cfn-signal
 {{end}}
@@ -339,13 +341,13 @@ coreos:
         ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment INSTANCE_ID=$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id)"
         ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment SECURITY_GROUPS=\"$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/security-groups | tr '\n' ',')\""
         ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment AUTOSCALINGGROUP=\"$(/usr/bin/docker run --rm --net=host \
-          {{.AWSCliImageRepo}}:{{.AWSCliTag}} aws \
+          {{.AWSCliImage.RepoWithTag}} aws \
           autoscaling describe-auto-scaling-instances \
           --instance-ids ${INSTANCE_ID} --region {{.Region}} \
           --query 'AutoScalingInstances[].AutoScalingGroupName' --output text)\""
         ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment \
           LAUNCHCONFIGURATION=\"$(/usr/bin/docker run --rm --net=host \
-          {{.AWSCliImageRepo}}:{{.AWSCliTag}} \
+          {{.AWSCliImage.RepoWithTag}} \
           aws autoscaling describe-auto-scaling-groups \
           --auto-scaling-group-name $AUTOSCALINGGROUP --region {{.Region}} \
           --query 'AutoScalingGroups[].LaunchConfigurationName' --output text)\""
@@ -406,7 +408,23 @@ ssh_authorized_keys:
   - {{$sshkey}}
   {{end}}
 {{end}}
+{{if .Region.IsChina}}
+    - name: pause-amd64.service
+      enable: true
+      command: start
+      runtime: true
+      content: |
+        [Unit]
+        Description=Pull and tag a mirror image for pause-amd64
+        After=docker.service
+        Wants=docker.service
 
+        [Service]
+        Restart=on-failure
+        RemainAfterExit=true
+        ExecStartPre=/usr/bin/docker pull {{.PauseImage.RepoWithTag}}
+        ExecStart=/usr/bin/docker tag {{.PauseImage.RepoWithTag}} gcr.io/google_containers/pause-amd64:3.0
+{{end}}
 write_files:
 {{if .AwsEnvironment.Enabled}}
   - path: /opt/bin/set-aws-environment
@@ -423,7 +441,7 @@ write_files:
         --uuid-file-save=/var/run/coreos/set-aws-environment.uuid \
         --net=host \
         --trust-keys-from-https \
-        {{.AWSCliImageRepo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
           -ec \
           '
             cfn-init -v -c "aws-environment" --region {{.Region}} --resource {{.LogicalName}} --stack '${{.StackNameEnvVarName}}'
@@ -444,7 +462,7 @@ write_files:
         --uuid-file-save=/var/run/coreos/cfn-signal.uuid \
         --net=host \
         --trust-keys-from-https \
-        {{.AWSCliImageRepo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
           -ec \
           '
             cfn-signal -e 0 --region {{.Region}} --resource {{.LogicalName}} --stack '${{.StackNameEnvVarName}}'
@@ -466,7 +484,7 @@ write_files:
         --uuid-file-save=/var/run/coreos/cfn-etcd-environment.uuid \
         --net=host \
         --trust-keys-from-https \
-        {{.AWSCliImageRepo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
           -ec \
           '
             cfn-init -v -c "etcd-client" --region {{.Region}} --resource {{.LogicalName}} --stack '${{.StackNameEnvVarName}}'
@@ -496,28 +514,29 @@ write_files:
 
 {{ if .ManageCertificates }}
 
-  - path: /etc/kubernetes/ssl/etcd-client.pem.enc
+  - path: /etc/kubernetes/ssl/etcd-client.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientCert}}
 
-  - path: /etc/kubernetes/ssl/etcd-client-key.pem.enc
+  - path: /etc/kubernetes/ssl/etcd-client-key.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientKey}}
 
-  - path: /etc/kubernetes/ssl/worker.pem.enc
+  - path: /etc/kubernetes/ssl/worker.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.WorkerCert}}
 
-  - path: /etc/kubernetes/ssl/worker-key.pem.enc
+  - path: /etc/kubernetes/ssl/worker-key.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.WorkerKey}}
 
-  - path: /etc/kubernetes/ssl/ca.pem.enc
+  - path: /etc/kubernetes/ssl/ca.pem{{if .TLSAssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.CACert}}
 
 {{ end }}
 
+{{ if .TLSAssetsEncryptionEnabled }}
   - path: /opt/bin/decrypt-tls-assets
     owner: root:root
     permissions: 0700
@@ -531,7 +550,7 @@ write_files:
         --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
         --net=host \
         --trust-keys-from-https \
-        {{.AWSCliImageRepo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
           -ec \
           'echo decrypting tls assets
            shopt -s nullglob
@@ -549,6 +568,7 @@ write_files:
            echo done.'
 
       rkt rm --uuid-file=/var/run/coreos/decrypt-tls-assets.uuid || :
+{{ end }}
 
 {{if .SpotFleet.Enabled}}
   - path: /opt/bin/tag-spot-instance
@@ -567,7 +587,7 @@ write_files:
         --net=host \
         --trust-keys-from-https \
         --insecure-options=ondisk \
-        {{.AWSCliImageRepo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
           -vxec \
           'echo tagging this spot instance
            instance_id="'$instance_id'"
@@ -595,7 +615,7 @@ write_files:
         --net=host \
         --trust-keys-from-https \
         --insecure-options=ondisk \
-        {{.AWSCliImageRepo}}:{{.AWSCliTag}} --exec=/bin/bash -- \
+        {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
           -vxec \
           'echo adding this spot instance to load balancers
            instance_id="'$instance_id'"
@@ -622,7 +642,7 @@ write_files:
       docker run --rm --net=host \
         -v /etc/kubernetes:/etc/kubernetes \
         -v /etc/resolv.conf:/etc/resolv.conf \
-        {{.HyperkubeImageRepo}}:{{.K8sVer}} /bin/bash \
+        {{.HyperkubeImage.RepoWithTag}} /bin/bash \
           -vxec \
           'echo "tainting this node."
            hostname="'${hostname}'"
@@ -650,7 +670,7 @@ write_files:
           hostNetwork: true
           containers:
           - name: kube-proxy
-            image: {{.HyperkubeImageRepo}}:{{.K8sVer}}
+            image: {{.HyperkubeImage.RepoWithTag}}
             command:
             - /hyperkube
             - proxy

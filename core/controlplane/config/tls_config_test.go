@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"github.com/coreos/kube-aws/model"
 	"github.com/coreos/kube-aws/test/helper"
 	"os"
 	"path/filepath"
@@ -111,7 +112,7 @@ func TestReadOrCreateCompactTLSAssets(t *testing.T) {
 	helper.WithDummyCredentials(func(dir string) {
 		kmsConfig := KMSConfig{
 			KMSKeyARN:      "keyarn",
-			Region:         "us-west-1",
+			Region:         model.RegionForName("us-west-1"),
 			EncryptService: &dummyEncryptService{},
 		}
 
@@ -211,6 +212,31 @@ func TestReadOrCreateCompactTLSAssets(t *testing.T) {
 	encrypted tls assets must change after regeneration but they didn't:
 	original = %v
 	regenerated = %v`, original, regenerated)
+			}
+		})
+	})
+}
+
+func TestReadOrCreateUnEcryptedCompactTLSAssets(t *testing.T) {
+	helper.WithDummyCredentials(func(dir string) {
+		t.Run("CachedToPreventUnnecessaryNodeReplacementOnUnencrypted", func(t *testing.T) {
+			created, err := ReadOrCreateUnecryptedCompactTLSAssets(dir)
+
+			if err != nil {
+				t.Errorf("failed to read or update compact tls assets in %s : %v", dir, err)
+			}
+
+			read, err := ReadOrCreateUnecryptedCompactTLSAssets(dir)
+
+			if err != nil {
+				t.Errorf("failed to read or update compact tls assets in %s : %v", dir, err)
+			}
+
+			if !reflect.DeepEqual(created, read) {
+				t.Errorf(`failed to cache unencrypted tls assets.
+ 	unencrypted tls assets must not change after their first creation but they did change:
+ 	created = %v
+ 	read = %v`, created, read)
 			}
 		})
 	})

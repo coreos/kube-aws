@@ -29,7 +29,6 @@ func init() {
 	RootCmd.AddCommand(cmdCalculator)
 	cmdCalculator.Flags().BoolVar(&calculatorOpts.awsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
 	cmdCalculator.Flags().StringVar(&calculatorOpts.s3URI, "s3-uri", "", "When your template is bigger than the cloudformation limit of 51200 bytes, upload the template to the specified location in S3. S3 location expressed as s3://<bucket>/path/to/dir")
-
 }
 
 func runCmdCalculator(cmd *cobra.Command, args []string) error {

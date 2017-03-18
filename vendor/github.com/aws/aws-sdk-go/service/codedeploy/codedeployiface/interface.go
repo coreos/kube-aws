@@ -45,7 +45,7 @@ import (
 //        // mock response/functionality
 //    }
 //
-//    TestMyFunc(t *testing.T) {
+//    func TestMyFunc(t *testing.T) {
 //        // Setup Test
 //        mockSvc := &mockCodeDeployClient{}
 //
@@ -86,6 +86,10 @@ type CodeDeployAPI interface {
 	BatchGetOnPremisesInstancesRequest(*codedeploy.BatchGetOnPremisesInstancesInput) (*request.Request, *codedeploy.BatchGetOnPremisesInstancesOutput)
 
 	BatchGetOnPremisesInstances(*codedeploy.BatchGetOnPremisesInstancesInput) (*codedeploy.BatchGetOnPremisesInstancesOutput, error)
+
+	ContinueDeploymentRequest(*codedeploy.ContinueDeploymentInput) (*request.Request, *codedeploy.ContinueDeploymentOutput)
+
+	ContinueDeployment(*codedeploy.ContinueDeploymentInput) (*codedeploy.ContinueDeploymentOutput, error)
 
 	CreateApplicationRequest(*codedeploy.CreateApplicationInput) (*request.Request, *codedeploy.CreateApplicationOutput)
 
@@ -198,6 +202,10 @@ type CodeDeployAPI interface {
 	RemoveTagsFromOnPremisesInstancesRequest(*codedeploy.RemoveTagsFromOnPremisesInstancesInput) (*request.Request, *codedeploy.RemoveTagsFromOnPremisesInstancesOutput)
 
 	RemoveTagsFromOnPremisesInstances(*codedeploy.RemoveTagsFromOnPremisesInstancesInput) (*codedeploy.RemoveTagsFromOnPremisesInstancesOutput, error)
+
+	SkipWaitTimeForInstanceTerminationRequest(*codedeploy.SkipWaitTimeForInstanceTerminationInput) (*request.Request, *codedeploy.SkipWaitTimeForInstanceTerminationOutput)
+
+	SkipWaitTimeForInstanceTermination(*codedeploy.SkipWaitTimeForInstanceTerminationInput) (*codedeploy.SkipWaitTimeForInstanceTerminationOutput, error)
 
 	StopDeploymentRequest(*codedeploy.StopDeploymentInput) (*request.Request, *codedeploy.StopDeploymentOutput)
 
