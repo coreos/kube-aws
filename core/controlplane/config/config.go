@@ -786,6 +786,7 @@ type Config struct {
 
 	EtcdNodes []derived.EtcdNode
 
+	// Encoded auth tokens
 	AuthTokensConfig *CompactAuthTokens
 
 	// Encoded TLS assets
