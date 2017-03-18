@@ -87,7 +87,7 @@ taints:
     value: bar
     effect: UnknownEffect
 `,
-			expectedErrorMessage: "Effect must be NoSchdule or PreferNoSchedule, but was UnknownEffect",
+			expectedErrorMessage: "Effect must be NoSchedule or PreferNoSchedule, but was UnknownEffect",
 		},
 		{
 			context: "WithVpcIdAndVPCCIDRSpecified",
