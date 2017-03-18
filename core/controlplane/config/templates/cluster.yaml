@@ -663,7 +663,7 @@ worker:
 # Heapster image repository to use.
 #heapsterImage:
 #  repo: gcr.io/google_containers/heapster
-#  tag: v1.2.0
+#  tag: v1.3.0
 #  rktPullDocker: false
 
 # Addon Resizer image repository to use.

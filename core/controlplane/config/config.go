@@ -103,7 +103,7 @@ func NewDefaultCluster() *Cluster {
 			KubeDnsMasqImage:            model.Image{Repo: "gcr.io/google_containers/kube-dnsmasq-amd64", Tag: "1.4", RktPullDocker: false},
 			DnsMasqMetricsImage:         model.Image{Repo: "gcr.io/google_containers/dnsmasq-metrics-amd64", Tag: "1.0", RktPullDocker: false},
 			ExecHealthzImage:            model.Image{Repo: "gcr.io/google_containers/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
-			HeapsterImage:               model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.2.0", RktPullDocker: false},
+			HeapsterImage:               model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.3.0", RktPullDocker: false},
 			AddonResizerImage:           model.Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "1.6", RktPullDocker: false},
 			KubeDashboardImage:          model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.5.1", RktPullDocker: false},
 			CalicoCtlImage:              model.Image{Repo: "calico/ctl", Tag: "v1.0.0", RktPullDocker: false},
