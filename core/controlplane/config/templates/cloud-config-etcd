@@ -1,7 +1,7 @@
 #cloud-config
 coreos:
   update:
-    reboot-strategy: etcd-lock
+    reboot-strategy: "off"
   units:
     - name: cfn-etcd-environment.service
       enable: true
