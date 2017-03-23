@@ -471,6 +471,12 @@ write_files:
           "http://127.0.0.1:8080/api/v1/namespaces/kube-system/services"
       done
 
+      {{- if .Addons.Rescheduler.Enabled }}
+      mfdir=/srv/kubernetes/manifests
+      post_yaml "@$mfdir/kube-rescheduler-de.yaml" \
+      "http://127.0.0.1:8080/apis/extensions/v1beta1/namespaces/kube-system/deployments"
+      {{- end }}
+
       {{if .Experimental.Plugins.Rbac.Enabled}}
       # k8s > 1.5 already have this clusterRole, so we accept http.code != 200
       mfdir=/srv/kubernetes/rbac
@@ -1080,10 +1086,10 @@ write_files:
             timeoutSeconds: 15
 
   {{- if .Addons.Rescheduler.Enabled }}
-  - path: /etc/kubernetes/manifests/kube-rescheduler.yaml
+  - path: /srv/kubernetes/manifests/kube-rescheduler-de.yaml
     content: |
-      apiVersion: v1
-      kind: Pod
+      apiVersion: extensions/v1beta1
+      kind: Deployment
       metadata:
         name: kube-rescheduler
         namespace: kube-system
@@ -1092,14 +1098,23 @@ write_files:
           kubernetes.io/cluster-service: "true"
           kubernetes.io/name: "Rescheduler"
       spec:
-        hostNetwork: true
-        containers:
-        - name: kube-rescheduler
-          image: {{ .KubeReschedulerImage.RepoWithTag }}
-          resources:
-            requests:
-              cpu: 10m
-              memory: 100Mi
+        # `replicas` should always be the default of 1, rescheduler crashes otherwise
+        template:
+          metadata:
+            labels:
+              k8s-app: kube-rescheduler
+            annotations:
+              scheduler.alpha.kubernetes.io/critical-pod: ''
+              scheduler.alpha.kubernetes.io/tolerations: '[{"key":"CriticalAddonsOnly", "operator":"Exists"}]'
+          spec:
+            hostNetwork: true
+            containers:
+            - name: kube-rescheduler
+              image: {{ .KubeReschedulerImage.RepoWithTag }}
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 100Mi
   {{- end }}
 
   - path: /srv/kubernetes/manifests/kube-dns-autoscaler-de.yaml
