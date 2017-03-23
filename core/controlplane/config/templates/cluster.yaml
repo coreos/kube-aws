@@ -715,7 +715,7 @@ worker:
 # kube rescheduler image repository to use.
 #kubeReschedulerImage:
 #  repo: gcr.io/google-containers/rescheduler
-#  tag: v0.3.0
+#  tag: v0.2.2
 #  rktPullDocker: false
 
 # DNS Masq metrics image repository to use.
