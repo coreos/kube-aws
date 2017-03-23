@@ -792,6 +792,7 @@ worker:
 # Addon features
 addons:
   # When enabled, Kubernetes rescheduler is deployed to the cluster controller(s)
+  # This feature is experimental currently so may not be production ready
   rescheduler:
     enabled: false
 
