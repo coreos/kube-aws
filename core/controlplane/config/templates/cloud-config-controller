@@ -1096,7 +1096,6 @@ write_files:
         containers:
         - name: kube-rescheduler
           image: {{ .KubeReschedulerImage.RepoWithTag }}
-          # TODO: Make resource requirements depend on the size of the cluster
           resources:
             requests:
               cpu: 10m
