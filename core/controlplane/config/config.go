@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"regexp"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
@@ -19,8 +21,6 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/model/derived"
 	"github.com/kubernetes-incubator/kube-aws/netutil"
 	yaml "gopkg.in/yaml.v2"
-	"regexp"
-	"sort"
 )
 
 const (
@@ -104,6 +104,7 @@ func NewDefaultCluster() *Cluster {
 			ClusterAutoscalerImage:      model.Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64", Tag: "1.0.0", RktPullDocker: false},
 			KubeDnsImage:                model.Image{Repo: "gcr.io/google_containers/kubedns-amd64", Tag: "1.9", RktPullDocker: false},
 			KubeDnsMasqImage:            model.Image{Repo: "gcr.io/google_containers/kube-dnsmasq-amd64", Tag: "1.4", RktPullDocker: false},
+			KubeReschedulerImage:        model.Image{Repo: "gcr.io/google-containers/rescheduler", Tag: "v0.2.2", RktPullDocker: false},
 			DnsMasqMetricsImage:         model.Image{Repo: "gcr.io/google_containers/dnsmasq-metrics-amd64", Tag: "1.0", RktPullDocker: false},
 			ExecHealthzImage:            model.Image{Repo: "gcr.io/google_containers/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
 			HeapsterImage:               model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.3.0", RktPullDocker: false},
@@ -366,6 +367,7 @@ type DeploymentSettings struct {
 	MapPublicIPs        bool              `yaml:"mapPublicIPs,omitempty"`
 	ElasticFileSystemID string            `yaml:"elasticFileSystemId,omitempty"`
 	SSHAuthorizedKeys   []string          `yaml:"sshAuthorizedKeys,omitempty"`
+	Addons              Addons            `yaml:"addons"`
 	Experimental        Experimental      `yaml:"experimental"`
 	ManageCertificates  bool              `yaml:"manageCertificates,omitempty"`
 	WaitSignal          WaitSignal        `yaml:"waitSignal"`
@@ -380,6 +382,7 @@ type DeploymentSettings struct {
 	ClusterAutoscalerImage      model.Image `yaml:"clusterAutoscalerImage,omitempty"`
 	KubeDnsImage                model.Image `yaml:"kubeDnsImage,omitempty"`
 	KubeDnsMasqImage            model.Image `yaml:"kubeDnsMasqImage,omitempty"`
+	KubeReschedulerImage        model.Image `yaml:"kubeReschedulerImage,omitempty"`
 	DnsMasqMetricsImage         model.Image `yaml:"dnsMasqMetricsImage,omitempty"`
 	ExecHealthzImage            model.Image `yaml:"execHealthzImage,omitempty"`
 	HeapsterImage               model.Image `yaml:"heapsterImage,omitempty"`
@@ -450,6 +453,14 @@ type Cluster struct {
 	HostedZoneID           string `yaml:"hostedZoneId,omitempty"`
 	ProvidedEncryptService EncryptService
 	CustomSettings         map[string]interface{} `yaml:"customSettings,omitempty"`
+}
+
+type Addons struct {
+	Rescheduler Rescheduler `yaml:"rescheduler"`
+}
+
+type Rescheduler struct {
+	Enabled bool `yaml:"enabled"`
 }
 
 type Experimental struct {
