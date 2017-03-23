@@ -156,10 +156,11 @@ func ReadOrEncryptAuthTokens(dirname string, encryptor CachedEncryptor) (*Encryp
 
 	// Auto-creates the auth token file, useful for those coming from previous versions of kube-aws
 	if _, err := os.Stat(authTokenPath); os.IsNotExist(err) {
-		_, err := os.OpenFile(authTokenPath, os.O_RDONLY|os.O_CREATE, 0600)
+		file, err := os.OpenFile(authTokenPath, os.O_RDONLY|os.O_CREATE, 0600)
 		if err != nil {
 			return nil, err
 		}
+		defer file.Close()
 	}
 
 	if _, err := ReadRawAuthTokens(dirname); err != nil {
