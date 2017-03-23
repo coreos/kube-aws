@@ -160,7 +160,7 @@ func ReadOrEncryptAuthTokens(dirname string, encryptor CachedEncryptor) (*Encryp
 		if err != nil {
 			return nil, err
 		}
-		defer file.Close()
+		file.Close()
 	}
 
 	if _, err := ReadRawAuthTokens(dirname); err != nil {
