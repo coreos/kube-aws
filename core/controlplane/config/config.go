@@ -367,7 +367,7 @@ type DeploymentSettings struct {
 	MapPublicIPs        bool              `yaml:"mapPublicIPs,omitempty"`
 	ElasticFileSystemID string            `yaml:"elasticFileSystemId,omitempty"`
 	SSHAuthorizedKeys   []string          `yaml:"sshAuthorizedKeys,omitempty"`
-	Addons              Addons            `yaml:"addons"`
+	Addons              model.Addons      `yaml:"addons"`
 	Experimental        Experimental      `yaml:"experimental"`
 	ManageCertificates  bool              `yaml:"manageCertificates,omitempty"`
 	WaitSignal          WaitSignal        `yaml:"waitSignal"`
@@ -453,14 +453,6 @@ type Cluster struct {
 	HostedZoneID           string `yaml:"hostedZoneId,omitempty"`
 	ProvidedEncryptService EncryptService
 	CustomSettings         map[string]interface{} `yaml:"customSettings,omitempty"`
-}
-
-type Addons struct {
-	Rescheduler Rescheduler `yaml:"rescheduler"`
-}
-
-type Rescheduler struct {
-	Enabled bool `yaml:"enabled"`
 }
 
 type Experimental struct {

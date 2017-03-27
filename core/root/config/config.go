@@ -5,11 +5,12 @@ package config
 
 import (
 	"fmt"
+	"io/ioutil"
+
 	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 )
 
 type UnmarshalledConfig struct {
@@ -88,8 +89,10 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 		{c.Etcd, "etcd"},
 		{c.Controller, "controller"},
 		{c.Controller.AutoScalingGroup, "controller.autoScalingGroup"},
-		{c.Controller.ClusterAutoscaler, "controller.ClusterAutoscaler"},
+		{c.Controller.ClusterAutoscaler, "controller.clusterAutoscaler"},
 		{c.Experimental, "experimental"},
+		{c.Addons, "addons"},
+		{c.Addons.Rescheduler, "addons.rescheduler"},
 	}); err != nil {
 		return nil, err
 	}

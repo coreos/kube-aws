@@ -2,16 +2,17 @@ package integration
 
 import (
 	"fmt"
+	"os"
+	"reflect"
+	"strings"
+	"testing"
+
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	controlplane_config "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root"
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/test/helper"
-	"os"
-	"reflect"
-	"strings"
-	"testing"
 )
 
 type ConfigTester func(c *config.Config, t *testing.T)
@@ -2817,6 +2818,23 @@ worker:
       baz: 1
 `,
 			expectedErrorMessage: "unknown keys found in worker.nodePools[0].clusterAutoscaler: baz",
+		},
+		{
+			context: "WithUnknownKeyInAddons",
+			configYaml: minimalValidConfigYaml + `
+addons:
+  blah: 5
+`,
+			expectedErrorMessage: "unknown keys found in addons: blah",
+		},
+		{
+			context: "WithUnknownKeyInReschedulerAddon",
+			configYaml: minimalValidConfigYaml + `
+addons:
+  rescheduler:
+    foo: yeah
+`,
+			expectedErrorMessage: "unknown keys found in addons.rescheduler: foo",
 		},
 		{
 			context: "WithTooLongControllerIAMRoleName",
