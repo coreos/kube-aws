@@ -103,6 +103,7 @@ type Cluster interface {
 	ValidateStack() (string, error)
 	ValidateTemplates() error
 	ValidateUserData() error
+	ControlPlane() *controlplane.Cluster
 }
 
 func ClusterFromFile(configPath string, opts options, awsDebug bool) (Cluster, error) {
@@ -170,6 +171,10 @@ type clusterImpl struct {
 	session      *session.Session
 }
 
+func (c clusterImpl) ControlPlane() *controlplane.Cluster {
+	return c.controlPlane
+}
+
 func (c clusterImpl) Create() error {
 	cfSvc := cloudformation.New(c.session)
 
@@ -182,7 +187,13 @@ func (c clusterImpl) Create() error {
 }
 
 func (c clusterImpl) Info() (*Info, error) {
-	describer := NewClusterDescriber(c.controlPlane.ClusterName, c.stackName(), c.session)
+	// TODO Cleaner way to obtain this dependency
+	cpConfig, err := c.controlPlane.Cluster.Config()
+	if err != nil {
+		return nil, err
+	}
+
+	describer := NewClusterDescriber(c.controlPlane.ClusterName, c.stackName(), cpConfig, c.session)
 	return describer.Info()
 }
 

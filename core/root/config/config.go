@@ -4,6 +4,7 @@ package config
 //go:generate gofmt -w templates.go
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 
@@ -20,6 +21,7 @@ type UnmarshalledConfig struct {
 }
 
 type WorkerConfig struct {
+	APIEndpointName   string                     `yaml:"apiEndpointName,omitempty"`
 	NodePools         []*nodepool.ProvidedConfig `yaml:"nodePools,omitempty"`
 	model.UnknownKeys `yaml:",inline"`
 }
@@ -66,7 +68,37 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 	}
 
 	nodePools := c.NodePools
+
+	anyNodePoolIsMissingAPIEndpointName := true
+	for _, np := range nodePools {
+		if np.APIEndpointName == "" {
+			anyNodePoolIsMissingAPIEndpointName = true
+			break
+		}
+	}
+
+	if len(cpConfig.APIEndpoints) > 1 && c.WorkerConfig.APIEndpointName == "" && anyNodePoolIsMissingAPIEndpointName {
+		return nil, errors.New("worker.apiEndpointName must not be empty when there're 2 or more API endpoints under the key `apiEndpoints` and one of worker.nodePools[] are missing apiEndpointName")
+	}
+
+	if c.WorkerConfig.APIEndpointName != "" {
+		if _, err := cpConfig.APIEndpoints.FindByName(c.APIEndpointName); err != nil {
+			return nil, fmt.Errorf("invalid value for worker.apiEndpointName: no API endpoint named \"%s\" found", c.APIEndpointName)
+		}
+	}
+
 	for i, np := range nodePools {
+		if np.APIEndpointName == "" {
+			if c.WorkerConfig.APIEndpointName == "" {
+				if len(cpConfig.APIEndpoints) > 1 {
+					return nil, errors.New("worker.apiEndpointName can be omitted only when there's only 1 api endpoint under apiEndpoints")
+				}
+				np.APIEndpointName = cpConfig.APIEndpoints.GetDefault().Name
+			} else {
+				np.APIEndpointName = c.WorkerConfig.APIEndpointName
+			}
+		}
+
 		if err := np.Load(cpConfig); err != nil {
 			return nil, fmt.Errorf("invalid node pool at index %d: %v", i, err)
 		}

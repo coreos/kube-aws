@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
+	cp "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 )
 
@@ -22,6 +23,7 @@ type ClusterDescriber interface {
 }
 
 type clusterDescriberImpl struct {
+	cpConfig    *cp.Config
 	session     *session.Session
 	clusterName string
 	stackName   string
@@ -41,13 +43,19 @@ func ClusterDescriberFromFile(configPath string) (ClusterDescriber, error) {
 		return nil, fmt.Errorf("failed to establish aws session: %v", err)
 	}
 
-	return NewClusterDescriber(config.ClusterName, config.ClusterName, session), nil
+	cpConfig, err := config.Config()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewClusterDescriber(config.ClusterName, config.ClusterName, cpConfig, session), nil
 }
 
-func NewClusterDescriber(clusterName string, stackName string, session *session.Session) ClusterDescriber {
+func NewClusterDescriber(clusterName string, stackName string, cpConfig *cp.Config, session *session.Session) ClusterDescriber {
 	return clusterDescriberImpl{
 		clusterName: clusterName,
 		stackName:   stackName,
+		cpConfig:    cpConfig,
 		session:     session,
 	}
 }
@@ -85,9 +93,13 @@ func (c clusterDescriberImpl) Info() (*Info, error) {
 			return nil, fmt.Errorf("found multiple load balancers with name %s: %v", cpStackName, resp)
 		}
 
-		cpDescriber := cluster.NewClusterDescriber(c.clusterName, cpStackName, c.session)
+		cpDescriber := cluster.NewClusterDescriber(c.clusterName, cpStackName, c.cpConfig.ManagedELBLogicalNames(), c.session)
 
 		cpInfo, err := cpDescriber.Info()
+
+		if err != nil {
+			return nil, fmt.Errorf("error describing stack %s: %v", cpStackName, err)
+		}
 
 		info.ControlPlane = cpInfo
 	}

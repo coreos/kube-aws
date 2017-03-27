@@ -13,34 +13,40 @@ type ClusterDescriber interface {
 }
 
 type clusterDescriberImpl struct {
-	session     *session.Session
-	clusterName string
-	stackName   string
+	clusterName             string
+	elbResourceLogicalNames []string
+	session                 *session.Session
+	stackName               string
 }
 
-func NewClusterDescriber(clusterName string, stackName string, session *session.Session) ClusterDescriber {
+func NewClusterDescriber(clusterName string, stackName string, elbResourceLogicalNames []string, session *session.Session) ClusterDescriber {
 	return clusterDescriberImpl{
-		clusterName: clusterName,
-		stackName:   stackName,
-		session:     session,
+		clusterName:             clusterName,
+		elbResourceLogicalNames: elbResourceLogicalNames,
+		stackName:               stackName,
+		session:                 session,
 	}
 }
 
 func (c clusterDescriberImpl) Info() (*Info, error) {
-	var elbName string
+	elbNameRefs := []*string{}
+	elbNames := []string{}
 	{
 		cfSvc := cloudformation.New(c.session)
-		resp, err := cfSvc.DescribeStackResource(
-			&cloudformation.DescribeStackResourceInput{
-				LogicalResourceId: aws.String("ElbAPIServer"),
-				StackName:         aws.String(c.stackName),
-			},
-		)
-		if err != nil {
-			errmsg := "unable to get public IP of controller instance:\n" + err.Error()
-			return nil, fmt.Errorf(errmsg)
+		for _, lb := range c.elbResourceLogicalNames {
+			resp, err := cfSvc.DescribeStackResource(
+				&cloudformation.DescribeStackResourceInput{
+					LogicalResourceId: aws.String(lb),
+					StackName:         aws.String(c.stackName),
+				},
+			)
+			if err != nil {
+				errmsg := "unable to get public IP of controller instance:\n" + err.Error()
+				return nil, fmt.Errorf(errmsg)
+			}
+			elbNameRefs = append(elbNameRefs, resp.StackResourceDetail.PhysicalResourceId)
+			elbNames = append(elbNames, *resp.StackResourceDetail.PhysicalResourceId)
 		}
-		elbName = *resp.StackResourceDetail.PhysicalResourceId
 	}
 
 	elbSvc := elb.New(c.session)
@@ -48,23 +54,23 @@ func (c clusterDescriberImpl) Info() (*Info, error) {
 	var info Info
 	{
 		resp, err := elbSvc.DescribeLoadBalancers(&elb.DescribeLoadBalancersInput{
-			LoadBalancerNames: []*string{
-				aws.String(elbName),
-			},
-			PageSize: aws.Int64(2),
+			LoadBalancerNames: elbNameRefs,
+			PageSize:          aws.Int64(2),
 		})
 		if err != nil {
-			return nil, fmt.Errorf("error describing load balancer %s: %v", elbName, err)
+			return nil, fmt.Errorf("error describing load balancers %v: %v", elbNames, err)
 		}
 		if len(resp.LoadBalancerDescriptions) == 0 {
-			return nil, fmt.Errorf("could not find a load balancer with name %s", elbName)
+			return nil, fmt.Errorf("could not find load balancers with names %v", elbNames)
 		}
-		if len(resp.LoadBalancerDescriptions) > 1 {
-			return nil, fmt.Errorf("found multiple load balancers with name %s: %v", elbName, resp)
+
+		dnsNames := []string{}
+		for _, d := range resp.LoadBalancerDescriptions {
+			dnsNames = append(dnsNames, *d.DNSName)
 		}
 
 		info.Name = c.clusterName
-		info.ControllerHost = *resp.LoadBalancerDescriptions[0].DNSName
+		info.ControllerHosts = dnsNames
 	}
 	return &info, nil
 }

@@ -89,6 +89,19 @@ region: "%s"
 	)
 }
 
+func (s kubeAwsSettings) mainClusterYamlWithoutExternalDNS() string {
+	return fmt.Sprintf(`clusterName: %s
+keyName: "%s"
+kmsKeyArn: "%s"
+region: "%s"
+`,
+		s.clusterName,
+		s.keyName,
+		s.kmsKeyArn,
+		s.region,
+	)
+}
+
 func (s kubeAwsSettings) minimumValidClusterYaml() string {
 	return s.mainClusterYaml() + fmt.Sprintf(`
 availabilityZone: %s

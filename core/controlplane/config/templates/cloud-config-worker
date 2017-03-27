@@ -233,7 +233,7 @@ coreos:
         --net=host \
         {{.HyperkubeImage.RepoWithTag}} \
           --exec=/kubectl -- \
-          --server=https://{{.ExternalDNSName}}:443 \
+          --server=https://{{.APIEndpoint.DNSName}}:443 \
           --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
           drain $(hostname) \
           --ignore-daemonsets \
@@ -396,7 +396,7 @@ coreos:
           -e LAUNCHCONFIGURATION=${LAUNCHCONFIGURATION} \
           {{.HyperkubeImage.RepoWithTag}} /bin/bash \
             -ec 'echo "placing labels and annotations with additional AWS parameters."; \
-             kctl="/kubectl --server=https://{{.ExternalDNSName}}:443 --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml"; \
+             kctl="/kubectl --server=https://{{.APIEndpoint.DNSName}}:443 --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml"; \
              kctl_label="$kctl label --overwrite nodes/$(hostname)"; \
              kctl_annotate="$kctl annotate --overwrite nodes/$(hostname)"; \
              $kctl_label kube-aws.coreos.com/autoscalinggroup=${AUTOSCALINGGROUP}; \
@@ -698,7 +698,7 @@ write_files:
           'echo "tainting this node."
            hostname="'${hostname}'"
            taints=({{range $i, $taint := .Experimental.Taints}}"{{$taint.String}}" {{end}})
-           kubectl="/kubectl --server=https://{{.ExternalDNSName}}:443 --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml"
+           kubectl="/kubectl --server=https://{{.APIEndpoint.DNSName}}:443 --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml"
            taint="$kubectl taint node --overwrite"
            for t in ${taints[@]}; do
              $taint "$hostname" "$t"

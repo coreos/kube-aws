@@ -33,6 +33,60 @@ externalDNSName: {{.ExternalDNSName}}
 # Either specify hostedZoneId or hostedZone, but not both
 #hostedZoneId: ""
 
+# Kubernetes API endpoints with each one has a DNS name and is with/without a managed/unmanaged ELB, Route 53 record set
+# CAUTION: `externalDNSName` must be omitted when there are one or more items under `apiEndpoints`
+#apiEndpoints:
+#  # The unique name of this API endpoint used to identify it inside CloudFormation stacks or
+#  # to be referenced from other parts of cluster.yaml
+#- name: template
+#
+#  # Specifies an existing load-balancer used for load-balancing controller nodes and serving this endpoint
+#  # Setting id requires all the other settings excluding `name` to be omitted because reusing an ELB implies that configuring other resources
+#  # like a Route 53 record set for the endpoint is now your responsibility!
+#  id: existing-elb
+#
+#  # Set to false when you want to disable creation of the record set for this api load balancer
+#  # Must be omitted when `id` is specified
+#  createRecordSet: true
+#
+#  # All the subnets assigned to this load-balancer. Specified only when this load balancer is not reused but managed one
+#  # Must be omitted when `id` is specified
+#  subnets:
+#  - name: managedPublic1
+#
+#  # Set to true so that the managed ELB becomes an `internal` one rather than `internet-facing` one
+#  # When set to true while subnets are omitted, one or more private subnets in the top-level `subnets` must exist
+#  # Must be omitted when `id` is specified
+#  private: true
+#
+#  # The Route 53 hosted zone is where the resulting Alias record is created for this endpoint
+#  # Must be omitted when `id` is specified
+#  hostedZone:
+#    id: hostedzone-abc
+#
+#  #
+#  # Common configuration #1: Unversioned, internet-facing API endpoint
+#  #
+#  - name: unversionedPublic
+#    dnsName: api.example.com
+#    loadBalancer:
+#      id: elb-abcdefg
+#
+#  #
+#  # Common configuration #2: Versioned, internet-facing API endpoint
+#  #
+#  - name: versionedPublic
+#    dnsName: v1api.example.com
+#    loadBalancer:
+#      hostedZone:
+#        id: hostedzone-abcedfg
+#
+#  #
+#  # Common configuration #3: Unmanaged endpoint a.k.a Extra DNS name added to the kube-apiserver TLS cert
+#  #
+#  - name: extra
+#    dnsName: youralias.example.com
+
 # Name of the SSH keypair already loaded into the AWS
 # account being used to deploy this cluster.
 keyName: {{.KeyName}}

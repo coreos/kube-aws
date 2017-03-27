@@ -145,13 +145,15 @@ func (c *Cluster) NewTLSAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certi
 
 	apiServerConfig := tlsutil.ServerCertConfig{
 		CommonName: "kube-apiserver",
-		DNSNames: []string{
-			"kubernetes",
-			"kubernetes.default",
-			"kubernetes.default.svc",
-			"kubernetes.default.svc.cluster.local",
-			c.ExternalDNSName,
-		},
+		DNSNames: append(
+			[]string{
+				"kubernetes",
+				"kubernetes.default",
+				"kubernetes.default.svc",
+				"kubernetes.default.svc.cluster.local",
+			},
+			c.ExternalDNSNames()...,
+		),
 		IPAddresses: []string{
 			kubernetesServiceIPAddr.String(),
 		},
