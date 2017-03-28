@@ -979,7 +979,15 @@ addons:
 #     # See https://github.com/kubernetes-incubator/kube-aws/issues/230 for more information.
 #     rbac:
 #       enabled: true
-#
+#   # This flag disables automatic security group rule management for ELBs.  
+#   # It requires that the user has setup a rule that allows inbound traffic on kubelet ports 
+#   # from the local VPC subnet so that load balancers can access it.
+#   # Disable setting a new security group rule for every ELB.
+#   disableSecurityGroupIngress: false
+#   # Set NodeMonitorGracePeriod <duration>.  Option on controller-manager (default 40s)
+#   # This is the amount of time which we allow running Node to be unresponsive before marking it unhealthy. 
+#   # Must be N times more than kubelet's nodeStatusUpdateFrequency.
+#   nodeMonitorGracePeriod: "40s"
 
 # AWS Tags for cloudformation stack resources
 #stackTags:

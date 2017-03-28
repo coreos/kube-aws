@@ -383,6 +383,14 @@ ssh_authorized_keys:
         WantedBy=install-kube-system.service
 {{end}}
 write_files:
+{{if .Experimental.DisableSecurityGroupIngress}}
+  - path: /etc/kubernetes/additional-configs/cloud.config
+    owner: root:root
+    permissions: 0644
+    content: |
+      [global]
+      DisableSecurityGroupIngress = true
+{{end}}
 {{if .Experimental.AwsEnvironment.Enabled}}
   - path: /opt/bin/set-aws-environment
     owner: root:root
@@ -1153,6 +1161,12 @@ write_files:
           {{ end }}
           - --root-ca-file=/etc/kubernetes/ssl/ca.pem
           - --cloud-provider=aws
+          {{if .Experimental.NodeMonitorGracePeriod}}
+          - --node-monitor-grace-period {{ .Experimental.NodeMonitorGracePeriod }}
+          {{end}}
+          {{if .Experimental.DisableSecurityGroupIngress}}
+          - --cloud-config=/etc/kubernetes/additional-configs/cloud.config
+          {{end}}
           resources:
             requests:
               cpu: 200m
@@ -1164,6 +1178,11 @@ write_files:
             initialDelaySeconds: 15
             timeoutSeconds: 15
           volumeMounts:
+          {{if .Experimental.DisableSecurityGroupIngress}}
+          - mountPath: /etc/kubernetes/additional-configs
+            name: additional-configs
+            readOnly: true
+          {{end}}
           - mountPath: /etc/kubernetes/ssl
             name: ssl-certs-kubernetes
             readOnly: true
@@ -1172,6 +1191,11 @@ write_files:
             readOnly: true
         hostNetwork: true
         volumes:
+        {{if .Experimental.DisableSecurityGroupIngress}}
+        - hostPath: 
+            path: /etc/kubernetes/additional-configs
+          name: additional-configs
+        {{end}}
         - hostPath:
             path: /etc/kubernetes/ssl
           name: ssl-certs-kubernetes
