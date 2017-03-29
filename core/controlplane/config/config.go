@@ -662,6 +662,7 @@ type Experimental struct {
 	Plugins                     Plugins                  `yaml:"plugins"`
 	DisableSecurityGroupIngress bool                     `yaml:"disableSecurityGroupIngress"`
 	NodeMonitorGracePeriod      string                   `yaml:"nodeMonitorGracePeriod"`
+	NodeStatusUpdateFrequency   string                   `yaml:"nodeStatusUpdateFrequency"`
 	Taints                      []Taint                  `yaml:"taints"`
 	model.UnknownKeys           `yaml:",inline"`
 }

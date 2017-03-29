@@ -1162,7 +1162,7 @@ write_files:
           - --root-ca-file=/etc/kubernetes/ssl/ca.pem
           - --cloud-provider=aws
           {{if .Experimental.NodeMonitorGracePeriod}}
-          - --node-monitor-grace-period {{ .Experimental.NodeMonitorGracePeriod }}
+          - --node-monitor-grace-period={{ .Experimental.NodeMonitorGracePeriod }}
           {{end}}
           {{if .Experimental.DisableSecurityGroupIngress}}
           - --cloud-config=/etc/kubernetes/additional-configs/cloud.config

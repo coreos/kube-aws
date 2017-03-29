@@ -989,6 +989,10 @@ addons:
 #   # This is the amount of time which we allow running Node to be unresponsive before marking it unhealthy. 
 #   # Must be N times more than kubelet's nodeStatusUpdateFrequency (default 10s).
 #   nodeMonitorGracePeriod: "40s"
+#   
+#   # Command line flag passed to kubelet. (default 10s)
+#   # Specifies how often kubelet posts node status to master. Note: be cautious when changing the constant, it must work with nodeMonitorGracePeriod in nodecontroller.
+#   nodeStatusUpdateFrequency: "10s"
 
 # AWS Tags for cloudformation stack resources
 #stackTags:
