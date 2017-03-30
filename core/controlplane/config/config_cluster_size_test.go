@@ -11,73 +11,73 @@ const disjointConfigError = "can only be specified without"
 const lessThanOrEqualError = "must be less than or equal to"
 
 func TestASGsAllDefaults(t *testing.T) {
-	checkControllerASG(nil, nil, nil, nil, 1, 1, 0, "", t)
+	checkControllerASGs(nil, nil, nil, nil, 1, 1, 0, "", t)
 }
 
 func TestASGsDefaultToMainCount(t *testing.T) {
 	configuredCount := 6
-	checkControllerASG(&configuredCount, nil, nil, nil, 6, 6, 5, "", t)
+	checkControllerASGs(&configuredCount, nil, nil, nil, 6, 6, 5, "", t)
 }
 
 func TestASGsInvalidMainCount(t *testing.T) {
 	configuredCount := -1
-	checkControllerASG(&configuredCount, nil, nil, nil, 0, 0, 0, zeroOrGreaterError, t)
+	checkControllerASGs(&configuredCount, nil, nil, nil, 0, 0, 0, zeroOrGreaterError, t)
 }
 
 func TestASGsOnlyMinConfigured(t *testing.T) {
 	configuredMin := 4
 	// we expect min cannot be configured without a max
-	checkControllerASG(nil, &configuredMin, nil, nil, 0, 0, 0, lessThanOrEqualError, t)
+	checkControllerASGs(nil, &configuredMin, nil, nil, 0, 0, 0, lessThanOrEqualError, t)
 }
 
 func TestASGsOnlyMaxConfigured(t *testing.T) {
 	configuredMax := 3
 	// we expect min to be equal to main count if only max specified
-	checkControllerASG(nil, nil, &configuredMax, nil, 1, 3, 1, "", t)
+	checkControllerASGs(nil, nil, &configuredMax, nil, 1, 3, 2, "", t)
 }
 
 func TestASGsMinMaxConfigured(t *testing.T) {
 	configuredMin := 2
 	configuredMax := 5
-	checkControllerASG(nil, &configuredMin, &configuredMax, nil, 2, 5, 1, "", t)
+	checkControllerASGs(nil, &configuredMin, &configuredMax, nil, 2, 5, 4, "", t)
 }
 
 func TestASGsInvalidMin(t *testing.T) {
 	configuredMin := -1
 	configuredMax := 5
-	checkControllerASG(nil, &configuredMin, &configuredMax, nil, 0, 0, 0, zeroOrGreaterError, t)
+	checkControllerASGs(nil, &configuredMin, &configuredMax, nil, 0, 0, 0, zeroOrGreaterError, t)
 }
 
 func TestASGsInvalidMax(t *testing.T) {
 	configuredMin := 1
 	configuredMax := -1
-	checkControllerASG(nil, &configuredMin, &configuredMax, nil, 0, 0, 0, zeroOrGreaterError, t)
+	checkControllerASGs(nil, &configuredMin, &configuredMax, nil, 0, 0, 0, zeroOrGreaterError, t)
 }
 
 func TestASGsMinConfiguredWithMainCount(t *testing.T) {
 	configuredCount := 2
 	configuredMin := 4
-	checkControllerASG(&configuredCount, &configuredMin, nil, nil, 0, 0, 0, disjointConfigError, t)
+	checkControllerASGs(&configuredCount, &configuredMin, nil, nil, 0, 0, 0, disjointConfigError, t)
 }
 
 func TestASGsMaxConfiguredWithMainCount(t *testing.T) {
 	configuredCount := 2
 	configuredMax := 4
-	checkControllerASG(&configuredCount, nil, &configuredMax, nil, 0, 0, 0, disjointConfigError, t)
+	checkControllerASGs(&configuredCount, nil, &configuredMax, nil, 0, 0, 0, disjointConfigError, t)
 }
 
 func TestASGsMinMaxConfiguredWithMainCount(t *testing.T) {
 	configuredCount := 2
 	configuredMin := 3
 	configuredMax := 4
-	checkControllerASG(&configuredCount, &configuredMin, &configuredMax, nil, 0, 0, 0, disjointConfigError, t)
+	checkControllerASGs(&configuredCount, &configuredMin, &configuredMax, nil, 0, 0, 0, disjointConfigError, t)
 }
 
 func TestASGsMinInServiceConfigured(t *testing.T) {
 	configuredMin := 5
 	configuredMax := 10
 	configuredMinInService := 7
-	checkControllerASG(nil, &configuredMin, &configuredMax, &configuredMinInService, 5, 10, 7, "", t)
+	checkControllerASGs(nil, &configuredMin, &configuredMax, &configuredMinInService, 5, 10, 7, "", t)
 }
 
 const testConfig = minimalConfigYaml + `
@@ -88,20 +88,53 @@ subnets:
     instanceCIDR: 10.0.2.0/24
 `
 
-func checkControllerASG(configuredCount *int, configuredMin *int, configuredMax *int, configuredMinInstances *int,
+func checkControllerASGs(configuredCount *int, configuredMin *int, configuredMax *int, configuredMinInstances *int,
 	expectedMin int, expectedMax int, expectedMinInstances int, expectedError string, t *testing.T) {
+	// Use deprecated keys
+	checkControllerASG(configuredCount, configuredMin, configuredMax, configuredMinInstances,
+		expectedMin, expectedMax, expectedMinInstances, expectedError, true, t)
+	// Don't use deprecated keys
+	checkControllerASG(configuredCount, configuredMin, configuredMax, configuredMinInstances,
+		expectedMin, expectedMax, expectedMinInstances, expectedError, false, t)
+}
+
+func checkControllerASG(configuredCount *int, configuredMin *int, configuredMax *int, configuredMinInstances *int,
+	expectedMin int, expectedMax int, expectedMinInstances int, expectedError string, useDeprecatedKey bool, t *testing.T) {
 	config := testConfig
-	if configuredCount != nil {
-		config += fmt.Sprintf("controllerCount: %d\n", *configuredCount)
+
+	if useDeprecatedKey {
+		if configuredCount != nil {
+			config += fmt.Sprintf("controllerCount: %d\n", *configuredCount)
+		}
+		asgConfig := buildASGConfig(configuredMin, configuredMax, configuredMinInstances)
+		if asgConfig != "" {
+			// empty `controller` traps go-yaml to override the whole Controller with a zero-value, which is not what we expect
+			config += "controller:\n" + asgConfig
+		}
+	} else {
+		countConfig := ""
+		if configuredCount != nil {
+			countConfig = fmt.Sprintf("  count: %d\n", *configuredCount)
+		}
+		asgConfig := buildASGConfig(configuredMin, configuredMax, configuredMinInstances)
+		concatConfig := countConfig + asgConfig
+		if concatConfig != "" {
+			// empty `controller` traps go-yaml to override the whole Controller with a zero-value, which is not what we expect
+			config += "controller:\n" + concatConfig
+		}
 	}
-	config += "controller:\n" + buildASGConfig(configuredMin, configuredMax, configuredMinInstances)
 
 	cluster, err := ClusterFromBytes([]byte(config))
 	if err != nil {
 		if expectedError == "" || !strings.Contains(err.Error(), expectedError) {
-			t.Errorf("Failed to validate cluster with controller config: %v", err)
+			t.Errorf("Failed to validate cluster with controller config %s: %v", config, err)
 		}
 	} else {
+		if expectedError != "" {
+			t.Errorf("expeced error \"%s\" not occured", expectedError)
+			t.FailNow()
+		}
+
 		config, err := cluster.Config()
 		if err != nil {
 			t.Errorf("Failed to create cluster config: %v", err)

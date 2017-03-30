@@ -204,9 +204,9 @@ func (c *ClusterRef) validateWorkerRootVolume(ec2Svc ec2CreateVolumeService) err
 	workerRootVolume := &ec2.CreateVolumeInput{
 		DryRun:           aws.Bool(true),
 		AvailabilityZone: aws.String(c.Subnets[0].AvailabilityZone),
-		Iops:             aws.Int64(int64(c.RootVolumeIOPS)),
-		Size:             aws.Int64(int64(c.RootVolumeSize)),
-		VolumeType:       aws.String(c.RootVolumeType),
+		Iops:             aws.Int64(int64(c.RootVolume.IOPS)),
+		Size:             aws.Int64(int64(c.RootVolume.Size)),
+		VolumeType:       aws.String(c.RootVolume.Type),
 	}
 
 	if _, err := ec2Svc.CreateVolume(workerRootVolume); err != nil {

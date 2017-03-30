@@ -14,11 +14,11 @@ import (
 
 type UnmarshalledConfig struct {
 	controlplane.Cluster `yaml:",inline"`
-	WorkerConfig         `yaml:"worker,omitempty"`
+	Worker               `yaml:"worker,omitempty"`
 	model.UnknownKeys    `yaml:",inline"`
 }
 
-type WorkerConfig struct {
+type Worker struct {
 	NodePools         []*nodepool.ProvidedConfig `yaml:"nodePools,omitempty"`
 	model.UnknownKeys `yaml:",inline"`
 }
@@ -41,7 +41,7 @@ type unknownKeyValidation struct {
 func newDefaultUnmarshalledConfig() *UnmarshalledConfig {
 	return &UnmarshalledConfig{
 		Cluster: *controlplane.NewDefaultCluster(),
-		WorkerConfig: WorkerConfig{
+		Worker: Worker{
 			NodePools: []*nodepool.ProvidedConfig{},
 		},
 	}
@@ -84,11 +84,14 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 
 	if err := failFastWhenUnknownKeysFound([]unknownKeyValidation{
 		{c, ""},
-		{c.WorkerConfig, "worker"},
+		{c.Worker, "worker"},
 		{c.Etcd, "etcd"},
+		{c.Etcd.RootVolume, "etcd.rootVolume"},
+		{c.Etcd.DataVolume, "etcd.dataVolume"},
 		{c.Controller, "controller"},
 		{c.Controller.AutoScalingGroup, "controller.autoScalingGroup"},
 		{c.Controller.ClusterAutoscaler, "controller.ClusterAutoscaler"},
+		{c.Controller.RootVolume, "controller.rootVolume"},
 		{c.Experimental, "experimental"},
 	}); err != nil {
 		return nil, err

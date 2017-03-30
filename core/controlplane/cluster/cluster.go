@@ -444,9 +444,9 @@ func (c *ClusterRef) validateControllerRootVolume(ec2Svc ec2Service) error {
 	controllerRootVolume := &ec2.CreateVolumeInput{
 		DryRun:           aws.Bool(true),
 		AvailabilityZone: aws.String(c.AvailabilityZones()[0]),
-		Iops:             aws.Int64(int64(c.ControllerRootVolumeIOPS)),
-		Size:             aws.Int64(int64(c.ControllerRootVolumeSize)),
-		VolumeType:       aws.String(c.ControllerRootVolumeType),
+		Iops:             aws.Int64(int64(c.Controller.RootVolume.IOPS)),
+		Size:             aws.Int64(int64(c.Controller.RootVolume.Size)),
+		VolumeType:       aws.String(c.Controller.RootVolume.Type),
 	}
 
 	if _, err := ec2Svc.CreateVolume(controllerRootVolume); err != nil {

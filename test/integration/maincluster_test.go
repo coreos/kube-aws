@@ -42,20 +42,26 @@ func TestMainClusterConfig(t *testing.T) {
 		subnet1.Name = "Subnet0"
 		expected := controlplane_config.EtcdSettings{
 			Etcd: model.Etcd{
+				EC2Instance: model.EC2Instance{
+					Count:        1,
+					InstanceType: "t2.medium",
+					Tenancy:      "default",
+					RootVolume: model.RootVolume{
+						Size: 30,
+						Type: "gp2",
+						IOPS: 0,
+					},
+				},
+				DataVolume: model.DataVolume{
+					Size:      30,
+					Type:      "gp2",
+					IOPS:      0,
+					Ephemeral: false,
+				},
 				Subnets: []model.Subnet{
 					subnet1,
 				},
 			},
-			EtcdCount:               1,
-			EtcdInstanceType:        "t2.medium",
-			EtcdRootVolumeSize:      30,
-			EtcdRootVolumeType:      "gp2",
-			EtcdRootVolumeIOPS:      0,
-			EtcdDataVolumeSize:      30,
-			EtcdDataVolumeType:      "gp2",
-			EtcdDataVolumeIOPS:      0,
-			EtcdDataVolumeEphemeral: false,
-			EtcdTenancy:             "default",
 		}
 		actual := c.EtcdSettings
 		if !reflect.DeepEqual(expected, actual) {
@@ -410,11 +416,13 @@ worker:
 		{
 			context: "WithEtcdDataVolumeEncrypted",
 			configYaml: minimalValidConfigYaml + `
-etcdDataVolumeEncrypted: true
+etcd:
+  dataVolume:
+    encrypted: true
 `,
 			assertConfig: []ConfigTester{
 				func(c *config.Config, t *testing.T) {
-					if !c.EtcdDataVolumeEncrypted {
+					if !c.Etcd.DataVolume.Encrypted {
 						t.Errorf("Etcd data volume should be encrypted but was not: %v", c.Etcd)
 					}
 				},
@@ -423,8 +431,9 @@ etcdDataVolumeEncrypted: true
 		{
 			context: "WithEtcdDataVolumeEncryptedKMSKeyARN",
 			configYaml: minimalValidConfigYaml + `
-etcdDataVolumeEncrypted: true
 etcd:
+  dataVolume:
+    encrypted: true
   kmsKeyArn: arn:aws:kms:eu-west-1:XXX:key/XXX
 `,
 			assertConfig: []ConfigTester{
@@ -432,6 +441,9 @@ etcd:
 					expected := "arn:aws:kms:eu-west-1:XXX:key/XXX"
 					if c.Etcd.KMSKeyARN() != expected {
 						t.Errorf("Etcd data volume KMS Key ARN didn't match : expected=%v actual=%v", expected, c.Etcd.KMSKeyARN())
+					}
+					if !c.Etcd.DataVolume.Encrypted {
+						t.Error("Etcd data volume should be encrypted but was not")
 					}
 				},
 			},
@@ -451,20 +463,26 @@ etcd:
 							Cluster: model.EtcdCluster{
 								MemberIdentityProvider: "eip",
 							},
+							EC2Instance: model.EC2Instance{
+								Count:        1,
+								InstanceType: "t2.medium",
+								Tenancy:      "default",
+								RootVolume: model.RootVolume{
+									Size: 30,
+									Type: "gp2",
+									IOPS: 0,
+								},
+							},
+							DataVolume: model.DataVolume{
+								Size:      30,
+								Type:      "gp2",
+								IOPS:      0,
+								Ephemeral: false,
+							},
 							Subnets: []model.Subnet{
 								subnet1,
 							},
 						},
-						EtcdCount:               1,
-						EtcdInstanceType:        "t2.medium",
-						EtcdRootVolumeSize:      30,
-						EtcdRootVolumeType:      "gp2",
-						EtcdRootVolumeIOPS:      0,
-						EtcdDataVolumeSize:      30,
-						EtcdDataVolumeType:      "gp2",
-						EtcdDataVolumeIOPS:      0,
-						EtcdDataVolumeEphemeral: false,
-						EtcdTenancy:             "default",
 					}
 					actual := c.EtcdSettings
 					if !reflect.DeepEqual(expected, actual) {
@@ -499,6 +517,22 @@ etcd:
 					subnet1.Name = "Subnet0"
 					expected := controlplane_config.EtcdSettings{
 						Etcd: model.Etcd{
+							EC2Instance: model.EC2Instance{
+								Count:        1,
+								InstanceType: "t2.medium",
+								RootVolume: model.RootVolume{
+									Size: 30,
+									Type: "gp2",
+									IOPS: 0,
+								},
+								Tenancy: "default",
+							},
+							DataVolume: model.DataVolume{
+								Size:      30,
+								Type:      "gp2",
+								IOPS:      0,
+								Ephemeral: false,
+							},
 							Cluster: model.EtcdCluster{
 								MemberIdentityProvider: "eni",
 							},
@@ -506,16 +540,6 @@ etcd:
 								subnet1,
 							},
 						},
-						EtcdCount:               1,
-						EtcdInstanceType:        "t2.medium",
-						EtcdRootVolumeSize:      30,
-						EtcdRootVolumeType:      "gp2",
-						EtcdRootVolumeIOPS:      0,
-						EtcdDataVolumeSize:      30,
-						EtcdDataVolumeType:      "gp2",
-						EtcdDataVolumeIOPS:      0,
-						EtcdDataVolumeEphemeral: false,
-						EtcdTenancy:             "default",
 					}
 					actual := c.EtcdSettings
 					if !reflect.DeepEqual(expected, actual) {
@@ -555,20 +579,25 @@ etcd:
 								MemberIdentityProvider: "eni",
 								InternalDomainName:     "internal.example.com",
 							},
-							Subnets: []model.Subnet{
+							EC2Instance: model.EC2Instance{
+								Count:        1,
+								InstanceType: "t2.medium",
+								RootVolume: model.RootVolume{
+									Size: 30,
+									Type: "gp2",
+									IOPS: 0,
+								},
+								Tenancy: "default",
+							},
+							DataVolume: model.DataVolume{
+								Size:      30,
+								Type:      "gp2",
+								IOPS:      0,
+								Ephemeral: false,
+							}, Subnets: []model.Subnet{
 								subnet1,
 							},
 						},
-						EtcdCount:               1,
-						EtcdInstanceType:        "t2.medium",
-						EtcdRootVolumeSize:      30,
-						EtcdRootVolumeType:      "gp2",
-						EtcdRootVolumeIOPS:      0,
-						EtcdDataVolumeSize:      30,
-						EtcdDataVolumeType:      "gp2",
-						EtcdDataVolumeIOPS:      0,
-						EtcdDataVolumeEphemeral: false,
-						EtcdTenancy:             "default",
 					}
 					actual := c.EtcdSettings
 					if !reflect.DeepEqual(expected, actual) {
@@ -612,6 +641,22 @@ etcd:
 								MemberIdentityProvider: "eni",
 								InternalDomainName:     "internal.example.com",
 							},
+							EC2Instance: model.EC2Instance{
+								Count:        1,
+								InstanceType: "t2.medium",
+								RootVolume: model.RootVolume{
+									Size: 30,
+									Type: "gp2",
+									IOPS: 0,
+								},
+								Tenancy: "default",
+							},
+							DataVolume: model.DataVolume{
+								Size:      30,
+								Type:      "gp2",
+								IOPS:      0,
+								Ephemeral: false,
+							},
 							Nodes: []model.EtcdNode{
 								model.EtcdNode{
 									FQDN: "etcd1a.internal.example.com",
@@ -627,16 +672,6 @@ etcd:
 								subnet1,
 							},
 						},
-						EtcdCount:               1,
-						EtcdInstanceType:        "t2.medium",
-						EtcdRootVolumeSize:      30,
-						EtcdRootVolumeType:      "gp2",
-						EtcdRootVolumeIOPS:      0,
-						EtcdDataVolumeSize:      30,
-						EtcdDataVolumeType:      "gp2",
-						EtcdDataVolumeIOPS:      0,
-						EtcdDataVolumeEphemeral: false,
-						EtcdTenancy:             "default",
 					}
 					actual := c.EtcdSettings
 					if !reflect.DeepEqual(expected, actual) {
@@ -680,6 +715,22 @@ etcd:
 								MemberIdentityProvider: "eni",
 								InternalDomainName:     "internal.example.com",
 							},
+							EC2Instance: model.EC2Instance{
+								Count:        1,
+								InstanceType: "t2.medium",
+								RootVolume: model.RootVolume{
+									Size: 30,
+									Type: "gp2",
+									IOPS: 0,
+								},
+								Tenancy: "default",
+							},
+							DataVolume: model.DataVolume{
+								Size:      30,
+								Type:      "gp2",
+								IOPS:      0,
+								Ephemeral: false,
+							},
 							Nodes: []model.EtcdNode{
 								model.EtcdNode{
 									Name: "etcd1a",
@@ -695,16 +746,6 @@ etcd:
 								subnet1,
 							},
 						},
-						EtcdCount:               1,
-						EtcdInstanceType:        "t2.medium",
-						EtcdRootVolumeSize:      30,
-						EtcdRootVolumeType:      "gp2",
-						EtcdRootVolumeIOPS:      0,
-						EtcdDataVolumeSize:      30,
-						EtcdDataVolumeType:      "gp2",
-						EtcdDataVolumeIOPS:      0,
-						EtcdDataVolumeEphemeral: false,
-						EtcdTenancy:             "default",
 					}
 					actual := c.EtcdSettings
 					if !reflect.DeepEqual(expected, actual) {
@@ -751,6 +792,22 @@ etcd:
 								MemberIdentityProvider: "eni",
 								InternalDomainName:     "internal.example.com",
 							},
+							EC2Instance: model.EC2Instance{
+								Count:        1,
+								InstanceType: "t2.medium",
+								RootVolume: model.RootVolume{
+									Size: 30,
+									Type: "gp2",
+									IOPS: 0,
+								},
+								Tenancy: "default",
+							},
+							DataVolume: model.DataVolume{
+								Size:      30,
+								Type:      "gp2",
+								IOPS:      0,
+								Ephemeral: false,
+							},
 							Nodes: []model.EtcdNode{
 								model.EtcdNode{
 									Name: "etcd1a",
@@ -766,16 +823,6 @@ etcd:
 								subnet1,
 							},
 						},
-						EtcdCount:               1,
-						EtcdInstanceType:        "t2.medium",
-						EtcdRootVolumeSize:      30,
-						EtcdRootVolumeType:      "gp2",
-						EtcdRootVolumeIOPS:      0,
-						EtcdDataVolumeSize:      30,
-						EtcdDataVolumeType:      "gp2",
-						EtcdDataVolumeIOPS:      0,
-						EtcdDataVolumeEphemeral: false,
-						EtcdTenancy:             "default",
 					}
 					actual := c.EtcdSettings
 					if !reflect.DeepEqual(expected, actual) {
@@ -822,6 +869,22 @@ etcd:
 								MemberIdentityProvider: "eni",
 								InternalDomainName:     "internal.example.com",
 							},
+							EC2Instance: model.EC2Instance{
+								Count:        1,
+								InstanceType: "t2.medium",
+								RootVolume: model.RootVolume{
+									Size: 30,
+									Type: "gp2",
+									IOPS: 0,
+								},
+								Tenancy: "default",
+							},
+							DataVolume: model.DataVolume{
+								Size:      30,
+								Type:      "gp2",
+								IOPS:      0,
+								Ephemeral: false,
+							},
 							Nodes: []model.EtcdNode{
 								model.EtcdNode{
 									Name: "etcd1a",
@@ -837,16 +900,6 @@ etcd:
 								subnet1,
 							},
 						},
-						EtcdCount:               1,
-						EtcdInstanceType:        "t2.medium",
-						EtcdRootVolumeSize:      30,
-						EtcdRootVolumeType:      "gp2",
-						EtcdRootVolumeIOPS:      0,
-						EtcdDataVolumeSize:      30,
-						EtcdDataVolumeType:      "gp2",
-						EtcdDataVolumeIOPS:      0,
-						EtcdDataVolumeEphemeral: false,
-						EtcdTenancy:             "default",
 					}
 					actual := c.EtcdSettings
 					if !reflect.DeepEqual(expected, actual) {
@@ -1256,13 +1309,13 @@ worker:
 				hasDefaultEtcdSettings,
 				hasDefaultExperimentalFeatures,
 				func(c *config.Config, t *testing.T) {
-					if *c.NodePools[0].Count != 1 {
+					if c.NodePools[0].Count != 1 {
 						t.Errorf("default worker count should be 1 but was: %d", c.NodePools[0].Count)
 					}
-					if *c.NodePools[1].Count != 2 {
+					if c.NodePools[1].Count != 2 {
 						t.Errorf("worker count should be set to 2 but was: %d", c.NodePools[1].Count)
 					}
-					if *c.NodePools[2].Count != 0 {
+					if c.NodePools[2].Count != 0 {
 						t.Errorf("worker count should be be set to 0 but was: %d", c.NodePools[2].Count)
 					}
 				},
@@ -2147,7 +2200,8 @@ worker:
         instanceType: c4.large
       - weightedCapacity: 2
         instanceType: c4.xlarge
-        rootVolumeSize: 100
+        rootVolume:
+          size: 100
 `,
 			assertConfig: []ConfigTester{
 				hasDefaultExperimentalFeatures,
@@ -2243,7 +2297,8 @@ worker:
         instanceType: c4.large
       - weightedCapacity: 2
         instanceType: c4.xlarge
-        rootVolumeIOPS: 500
+        rootVolume:
+          iops: 500
 `,
 			assertConfig: []ConfigTester{
 				hasDefaultExperimentalFeatures,
@@ -2305,16 +2360,24 @@ routeTableId: rtb-1a2b3c4d
 					}
 					expected := controlplane_config.EtcdSettings{
 						Etcd: model.Etcd{
+							EC2Instance: model.EC2Instance{
+								Count:        1,
+								InstanceType: "t2.medium",
+								RootVolume: model.RootVolume{
+									Size: 30,
+									Type: "gp2",
+									IOPS: 0,
+								},
+								Tenancy: "default",
+							},
+							DataVolume: model.DataVolume{
+								Size:      30,
+								Type:      "gp2",
+								IOPS:      0,
+								Ephemeral: false,
+							},
 							Subnets: subnets,
 						},
-						EtcdCount:               1,
-						EtcdInstanceType:        "t2.medium",
-						EtcdRootVolumeSize:      30,
-						EtcdRootVolumeType:      "gp2",
-						EtcdDataVolumeSize:      30,
-						EtcdDataVolumeType:      "gp2",
-						EtcdDataVolumeEphemeral: false,
-						EtcdTenancy:             "default",
 					}
 					actual := c.EtcdSettings
 					if !reflect.DeepEqual(expected, actual) {
@@ -2469,66 +2532,180 @@ worker:
 			context: "WithDedicatedInstanceTenancy",
 			configYaml: minimalValidConfigYaml + `
 workerTenancy: dedicated
-controllerTenancy: dedicated
-etcdTenancy: dedicated
+controller:
+  tenancy: dedicated
+etcd:
+  tenancy: dedicated
 `,
 			assertConfig: []ConfigTester{
 				func(c *config.Config, t *testing.T) {
-					if c.EtcdSettings.EtcdTenancy != "dedicated" {
-						t.Errorf("EtcdSettings.EtcdTenancy didn't match: expected=dedicated actual=%s", c.EtcdSettings.EtcdTenancy)
+					if c.Etcd.Tenancy != "dedicated" {
+						t.Errorf("Etcd.Tenancy didn't match: expected=dedicated actual=%s", c.Etcd.Tenancy)
 					}
 					if c.WorkerTenancy != "dedicated" {
 						t.Errorf("WorkerTenancy didn't match: expected=dedicated actual=%s", c.WorkerTenancy)
 					}
-					if c.ControllerTenancy != "dedicated" {
-						t.Errorf("ControllerTenancy didn't match: expected=dedicated actual=%s", c.ControllerTenancy)
+					if c.Controller.Tenancy != "dedicated" {
+						t.Errorf("Controller.Tenancy didn't match: expected=dedicated actual=%s", c.Controller.Tenancy)
 					}
 				},
 			},
 		},
 		{
-			context: "WithEtcdNodesWithCustomEBSVolumes",
+			context: "WithControllerNodesWithLegacyKeys",
+			configYaml: minimalValidConfigYaml + `
+vpcId: vpc-1a2b3c4d
+routeTableId: rtb-1a2b3c4d
+controllerCount: 2
+controllerCreateTimeout: PT10M
+controllerInstanceType: t2.large
+controllerRootVolumeSize: 101
+controllerRootVolumeType: io1
+controllerRootVolumeIOPS: 102
+controllerTenancy: dedicated
+`,
+			assertConfig: []ConfigTester{
+				hasDefaultExperimentalFeatures,
+				func(c *config.Config, t *testing.T) {
+					expected := model.EC2Instance{
+						Count:         2,
+						InstanceType:  "t2.large",
+						CreateTimeout: "PT10M",
+						RootVolume: model.RootVolume{
+							Size: 101,
+							Type: "io1",
+							IOPS: 102,
+						},
+						Tenancy: "dedicated",
+					}
+
+					actual := c.Controller.EC2Instance
+					if !reflect.DeepEqual(expected, actual) {
+						t.Errorf(
+							"Controller didn't match: expected=%v actual=%v",
+							expected,
+							actual,
+						)
+					}
+
+					if c.ControllerInstanceType() != "t2.large" {
+						t.Errorf("unexpected controller instance type: expected=t2.large, actual=%s", c.ControllerInstanceType())
+					}
+					if c.ControllerCreateTimeout() != "PT10M" {
+						t.Errorf("unexpected controller create timeout: expected=PT10M, actual=%s", c.ControllerCreateTimeout())
+					}
+					if c.ControllerCount() != 2 {
+						t.Errorf("unexpected controller count: expected=2, actual=%d", c.ControllerCount())
+					}
+					if c.ControllerRootVolumeSize() != 101 {
+						t.Errorf("unexpected controller root volume size: expected=101, actual=%d", c.ControllerRootVolumeSize())
+					}
+					if c.ControllerRootVolumeType() != "io1" {
+						t.Errorf("unexpected controller root volume type: expected=io1, actual=%s", c.ControllerRootVolumeType())
+					}
+					if c.ControllerRootVolumeIOPS() != 102 {
+						t.Errorf("unexpected controller root volume iops: expected=102, actual=%d", c.ControllerRootVolumeIOPS())
+					}
+					if c.ControllerTenancy() != "dedicated" {
+						t.Errorf("unexpected controller tenancy: expected=dedicated, actual=%s", c.ControllerTenancy())
+					}
+				},
+			},
+		},
+		{
+			context: "WithEtcdNodesWithLegacyKeys",
 			configYaml: minimalValidConfigYaml + `
 vpcId: vpc-1a2b3c4d
 routeTableId: rtb-1a2b3c4d
 etcdCount: 2
+etcdTenancy: dedicated
+etcdInstanceType: t2.large
 etcdRootVolumeSize: 101
 etcdRootVolumeType: io1
 etcdRootVolumeIOPS: 102
 etcdDataVolumeSize: 103
 etcdDataVolumeType: io1
 etcdDataVolumeIOPS: 104
+etcdDataVolumeEncrypted: true
 `,
 			assertConfig: []ConfigTester{
 				hasDefaultExperimentalFeatures,
 				func(c *config.Config, t *testing.T) {
+					//intp := func(v int) *int {
+					//	return &v
+					//}
+					//boolp := func(v bool) *bool {
+					//	return &v
+					//}
+					//strp := func(v string) *string {
+					//	return &v
+					//}
 					subnet1 := model.NewPublicSubnetWithPreconfiguredRouteTable("us-west-1c", "10.0.0.0/24", "rtb-1a2b3c4d")
 					subnet1.Name = "Subnet0"
 					subnets := []model.Subnet{
 						subnet1,
 					}
-					expected := controlplane_config.EtcdSettings{
-						Etcd: model.Etcd{
-							Subnets: subnets,
+					expected := model.Etcd{
+						EC2Instance: model.EC2Instance{
+							Count:        2,
+							InstanceType: "t2.large",
+							RootVolume: model.RootVolume{
+								Size: 101,
+								Type: "io1",
+								IOPS: 102,
+							},
+							Tenancy: "dedicated",
 						},
-						EtcdCount:               2,
-						EtcdInstanceType:        "t2.medium",
-						EtcdRootVolumeSize:      101,
-						EtcdRootVolumeType:      "io1",
-						EtcdRootVolumeIOPS:      102,
-						EtcdDataVolumeSize:      103,
-						EtcdDataVolumeType:      "io1",
-						EtcdDataVolumeIOPS:      104,
-						EtcdDataVolumeEphemeral: false,
-						EtcdTenancy:             "default",
+						DataVolume: model.DataVolume{
+							Size:      103,
+							Type:      "io1",
+							IOPS:      104,
+							Ephemeral: false,
+							Encrypted: true,
+						},
+						Subnets: subnets,
 					}
-					actual := c.EtcdSettings
+
+					actual := c.EtcdSettings.Etcd
 					if !reflect.DeepEqual(expected, actual) {
 						t.Errorf(
 							"EtcdSettings didn't match: expected=%v actual=%v",
 							expected,
 							actual,
 						)
+					}
+					if c.EtcdInstanceType() != "t2.large" {
+						t.Errorf("unexpected etcd instance type: expected=t2.large, actual=%s", c.EtcdInstanceType())
+					}
+					//if c.EtcdCreateTimeout() != "PT10M" {
+					//	t.Errorf("unexpected etcd create timeout: expected=PT10M, actual=%s", c.EtcdCreateTimeout())
+					//}
+					if c.EtcdCount() != 2 {
+						t.Errorf("unexpected etcd count: expected=2, actual=%d", c.EtcdCount())
+					}
+					if c.EtcdRootVolumeSize() != 101 {
+						t.Errorf("unexpected etcd root volume size: expected=101, actual=%d", c.EtcdRootVolumeSize())
+					}
+					if c.EtcdRootVolumeType() != "io1" {
+						t.Errorf("unexpected etcd root volume type: expected=io1, actual=%s", c.EtcdRootVolumeType())
+					}
+					if c.EtcdRootVolumeIOPS() != 102 {
+						t.Errorf("unexpected etcd root volume iops: expected=102, actual=%d", c.EtcdRootVolumeIOPS())
+					}
+					if c.EtcdDataVolumeSize() != 103 {
+						t.Errorf("unexpected etcd data volume size: expected=103, actual=%d", c.EtcdDataVolumeSize())
+					}
+					if c.EtcdDataVolumeType() != "io1" {
+						t.Errorf("unexpected etcd data volume type: expected=io1, actual=%s", c.EtcdDataVolumeType())
+					}
+					if c.EtcdDataVolumeIOPS() != 104 {
+						t.Errorf("unexpected etcd data volume iops: expected=104, actual=%d", c.EtcdDataVolumeIOPS())
+					}
+					if !c.EtcdDataVolumeEncrypted() {
+						t.Errorf("unexpected etcd data volume encrypted: expected=true, actual=%v", c.EtcdDataVolumeEncrypted())
+					}
+					if c.EtcdTenancy() != "dedicated" {
+						t.Errorf("unexpected etcd tenancy: expected=dedicated, actual=%s", c.EtcdTenancy())
 					}
 				},
 			},

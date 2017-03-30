@@ -106,7 +106,7 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 
 func newDefaultCluster() *ProvidedConfig {
 	return &ProvidedConfig{
-		WorkerNodePoolConfig: NewWorkerNodePoolConfig(),
+		WorkerNodePoolConfig: newWorkerNodePoolConfig(),
 	}
 }
 
@@ -128,18 +128,38 @@ func ClusterFromBytes(data []byte, main *cfg.Config) (*ProvidedConfig, error) {
 	return c, nil
 }
 
-func (c *ProvidedConfig) Load(main *cfg.Config) error {
-	defaults := newDefaultCluster()
-	if c.Count == nil {
-		c.Count = defaults.Count
+func (c *ProvidedConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type t ProvidedConfig
+	work := t(*newDefaultCluster())
+	if err := unmarshal(&work); err != nil {
+		return fmt.Errorf("failed to parse node pool config: %v", err)
 	}
+	*c = ProvidedConfig(work)
+
+	// TODO Remove deprecated keys in v0.9.7
+	if c.DeprecatedRootVolumeIOPS != nil {
+		fmt.Println("WARN: worker.nodePools[].rootVolumeIOPS is deprecated and will be removed in v0.9.7. Please use worker.nodePools[].rootVolume.iops instead")
+		c.RootVolume.IOPS = *c.DeprecatedRootVolumeIOPS
+	}
+	if c.DeprecatedRootVolumeSize != nil {
+		fmt.Println("WARN: worker.nodePools[].rootVolumeSize is deprecated and will be removed in v0.9.7. Please use worker.nodePools[].rootVolume.size instead")
+		c.RootVolume.Size = *c.DeprecatedRootVolumeSize
+	}
+	if c.DeprecatedRootVolumeType != nil {
+		fmt.Println("WARN: worker.nodePools[].rootVolumeType is deprecated and will be removed in v0.9.7. Please use worker.nodePools[].rootVolume.type instead")
+		c.RootVolume.Type = *c.DeprecatedRootVolumeType
+	}
+
+	return nil
+}
+
+func (c *ProvidedConfig) Load(main *cfg.Config) error {
 	if c.SpotFleet.Enabled() {
 		enabled := false
 		c.WaitSignal.EnabledOverride = &enabled
 	}
 
 	c.WorkerNodePoolConfig = c.WorkerNodePoolConfig.WithDefaultsFrom(main.DefaultWorkerSettings)
-	c.NodePoolConfig.SpotFleet = c.NodePoolConfig.SpotFleet.WithDefaults()
 	c.DeploymentSettings = c.DeploymentSettings.WithDefaultsFrom(main.DeploymentSettings)
 
 	// Inherit parameters from the control plane stack

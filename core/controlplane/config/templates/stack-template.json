@@ -48,7 +48,7 @@
       "CreationPolicy" : {
         "ResourceSignal" : {
           "Count" : "{{.MinControllerCount}}",
-          "Timeout" : "{{.ControllerCreateTimeout}}"
+          "Timeout" : "{{.Controller.CreateTimeout}}"
         }
       },
       {{end}}
@@ -58,7 +58,7 @@
           "MaxBatchSize" : "1",
           {{if .WaitSignal.Enabled}}
           "WaitOnResourceSignals" : "true",
-          "PauseTime": "{{.ControllerCreateTimeout}}"
+          "PauseTime": "{{.Controller.CreateTimeout}}"
           {{else}}
           "PauseTime": "PT2M"
           {{end}}
@@ -99,7 +99,7 @@
           }
         }
       },
-      "DependsOn": ["{{$.Etcd.LogicalName}}{{minus $.EtcdCount 1}}"]
+      "DependsOn": ["{{$.Etcd.LogicalName}}{{minus $.Etcd.Count 1}}"]
     },
     {{ if .CreateRecordSet }}
     "ExternalDNS": {
@@ -418,21 +418,21 @@
       "Type": "AWS::EC2::EIP"
     },
     {{end}}
-    {{if not $.EtcdDataVolumeEphemeral}}
+    {{if not $.Etcd.DataVolume.Ephemeral}}
     "{{$etcdInstance.EBSLogicalName}}": {
       "Properties": {
           "AvailabilityZone": "{{$etcdInstance.SubnetAvailabilityZone}}",
-          "Size": "{{$.EtcdDataVolumeSize}}",
-          {{if gt $.EtcdDataVolumeIOPS 0}}
-          "Iops": "{{$.EtcdDataVolumeIOPS}}",
+          "Size": "{{$.Etcd.DataVolume.Size}}",
+          {{if gt $.Etcd.DataVolume.IOPS 0}}
+          "Iops": "{{$.Etcd.DataVolume.IOPS}}",
           {{end}}
-          {{if $.EtcdDataVolumeEncrypted}}
-          "Encrypted": {{$.EtcdDataVolumeEncrypted}},
+          {{if $.Etcd.DataVolume.Encrypted}}
+          "Encrypted": {{$.Etcd.DataVolume.Encrypted}},
           {{if $.Etcd.KMSKeyARN}}
           "KmsKeyId": "{{$.Etcd.KMSKeyARN}}",
           {{end}}
           {{end}}
-          "VolumeType": "{{$.EtcdDataVolumeType}}",
+          "VolumeType": "{{$.Etcd.DataVolume.Type}}",
           "Tags": [
             {
               "Key": "kube-aws:etcd:index",
@@ -494,7 +494,7 @@
       "CreationPolicy" : {
         "ResourceSignal" : {
           "Count" : "1",
-          "Timeout" : "{{$.ControllerCreateTimeout}}"
+          "Timeout" : "{{$.Controller.CreateTimeout}}"
         }
       },
       {{end}}
@@ -504,7 +504,7 @@
           "MaxBatchSize" : "1",
           {{if $.WaitSignal.Enabled}}
           "WaitOnResourceSignals" : "true",
-          "PauseTime": "{{$.ControllerCreateTimeout}}"
+          "PauseTime": "{{$.Controller.CreateTimeout}}"
           {{else}}
           "PauseTime": "PT2M"
           {{end}}
@@ -555,14 +555,14 @@
           {
             "DeviceName": "/dev/xvda",
             "Ebs": {
-              "VolumeSize": "{{$.EtcdRootVolumeSize}}",
-              {{if gt $.EtcdRootVolumeIOPS 0}}
-              "Iops": "{{$.EtcdRootVolumeIOPS}}",
+              "VolumeSize": "{{$.Etcd.RootVolume.Size}}",
+              {{if gt $.Etcd.RootVolume.IOPS 0}}
+              "Iops": "{{$.Etcd.RootVolume.IOPS}}",
               {{end}}
-              "VolumeType": "{{$.EtcdRootVolumeType}}"
+              "VolumeType": "{{$.Etcd.RootVolume.Type}}"
             }
           }
-          {{if $.EtcdDataVolumeEphemeral}}
+          {{if $.Etcd.DataVolume.Ephemeral}}
           ,
           {
             "DeviceName": "/dev/xvdf",
@@ -574,14 +574,14 @@
           "Ref": "IAMInstanceProfileEtcd"
         },
         "ImageId": "{{$.AMI}}",
-        "InstanceType": "{{$.EtcdInstanceType}}",
+        "InstanceType": "{{$.Etcd.InstanceType}}",
         {{if $.KeyName}}"KeyName": "{{$.KeyName}}",{{end}}
         "SecurityGroups": [
           {
             "Ref": "SecurityGroupEtcd"
           }
         ],
-        "PlacementTenancy": "{{$.EtcdTenancy}}",
+        "PlacementTenancy": "{{$.Etcd.Tenancy}}",
         "UserData": { "Fn::Base64": { "Fn::Join" : ["\n", [
           "#!/bin/bash -xe",
           {"Fn::Join":["",[ "echo '{{$.StackNameEnvVarName}}=", { "Ref": "AWS::StackName" }, "' >> {{$.EtcdNodeEnvFileName}}" ]]},
@@ -608,11 +608,11 @@
           {
             "DeviceName": "/dev/xvda",
             "Ebs": {
-              "VolumeSize": "{{.ControllerRootVolumeSize}}",
-              {{if gt .ControllerRootVolumeIOPS 0}}
-              "Iops": "{{.ControllerRootVolumeIOPS}}",
+              "VolumeSize": "{{.Controller.RootVolume.Size}}",
+              {{if gt .Controller.RootVolume.IOPS 0}}
+              "Iops": "{{.Controller.RootVolume.IOPS}}",
               {{end}}
-              "VolumeType": "{{.ControllerRootVolumeType}}"
+              "VolumeType": "{{.Controller.RootVolume.Type}}"
             }
           }
         ],
@@ -620,14 +620,14 @@
           "Ref": "IAMInstanceProfileController"
         },
         "ImageId": "{{.AMI}}",
-        "InstanceType": "{{.ControllerInstanceType}}",
+        "InstanceType": "{{.Controller.InstanceType}}",
         {{if .KeyName}}"KeyName": "{{.KeyName}}",{{end}}
         "SecurityGroups": [
           {
             "Ref": "SecurityGroupController"
           }
         ],
-        "PlacementTenancy": "{{ .ControllerTenancy }}",
+        "PlacementTenancy": "{{ .Controller.Tenancy }}",
         "UserData": { "Fn::Base64": { "Fn::Join" : ["\n", [
 		"#!/bin/bash -xe",
 		" . /etc/environment",

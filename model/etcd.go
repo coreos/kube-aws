@@ -5,10 +5,32 @@ import (
 )
 
 type Etcd struct {
-	Subnets     []Subnet    `yaml:"subnets,omitempty"`
-	Nodes       []EtcdNode  `yaml:"nodes,omitempty"`
 	Cluster     EtcdCluster `yaml:",inline"`
+	DataVolume  DataVolume  `yaml:"dataVolume,omitempty"`
+	EC2Instance `yaml:",inline"`
+	Nodes       []EtcdNode `yaml:"nodes,omitempty"`
+	Subnets     []Subnet   `yaml:"subnets,omitempty"`
 	UnknownKeys `yaml:",inline"`
+}
+
+func NewDefaultEtcd() Etcd {
+	return Etcd{
+		EC2Instance: EC2Instance{
+			Count:        1,
+			InstanceType: "t2.medium",
+			RootVolume: RootVolume{
+				Size: 30,
+				Type: "gp2",
+				IOPS: 0,
+			},
+			Tenancy: "default",
+		},
+		DataVolume: DataVolume{
+			Size: 30,
+			Type: "gp2",
+			IOPS: 0,
+		},
+	}
 }
 
 func (i Etcd) LogicalName() string {

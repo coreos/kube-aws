@@ -127,25 +127,10 @@ func NewDefaultCluster() *Cluster {
 			WorkerTenancy:          "default",
 		},
 		ControllerSettings: ControllerSettings{
-			Controller:               model.NewDefaultController(),
-			ControllerCount:          1,
-			ControllerCreateTimeout:  "PT15M",
-			ControllerInstanceType:   "t2.medium",
-			ControllerRootVolumeType: "gp2",
-			ControllerRootVolumeIOPS: 0,
-			ControllerRootVolumeSize: 30,
-			ControllerTenancy:        "default",
+			Controller: model.NewDefaultController(),
 		},
 		EtcdSettings: EtcdSettings{
-			EtcdCount:          1,
-			EtcdInstanceType:   "t2.medium",
-			EtcdRootVolumeSize: 30,
-			EtcdRootVolumeType: "gp2",
-			EtcdRootVolumeIOPS: 0,
-			EtcdDataVolumeSize: 30,
-			EtcdDataVolumeType: "gp2",
-			EtcdDataVolumeIOPS: 0,
-			EtcdTenancy:        "default",
+			Etcd: model.NewDefaultEtcd(),
 		},
 		FlannelSettings: FlannelSettings{
 			PodCIDR: "10.2.0.0/16",
@@ -185,9 +170,11 @@ func ClusterFromFile(filename string) (*Cluster, error) {
 // ClusterFromBytes Necessary for unit tests, which store configs as hardcoded strings
 func ClusterFromBytes(data []byte) (*Cluster, error) {
 	c := NewDefaultCluster()
+
 	if err := yaml.Unmarshal(data, c); err != nil {
 		return nil, fmt.Errorf("failed to parse cluster: %v", err)
 	}
+
 	c.HyperkubeImage.Tag = c.K8sVer
 
 	if err := c.Load(); err != nil {
@@ -217,6 +204,8 @@ func (c *Cluster) Load() error {
 
 	c.HostedZoneID = withHostedZoneIDPrefix(c.HostedZoneID)
 
+	c.ConsumeDeprecatedKeys()
+
 	if err := c.valid(); err != nil {
 		return fmt.Errorf("invalid cluster: %v", err)
 	}
@@ -224,6 +213,86 @@ func (c *Cluster) Load() error {
 	c.SetDefaults()
 
 	return nil
+}
+
+func (c *Cluster) ConsumeDeprecatedKeys() {
+	// TODO Remove deprecated keys in v0.9.7
+	if c.DeprecatedControllerCount != nil {
+		fmt.Println("WARN: controllerCount is deprecated and will be removed in v0.9.7. Please use controller.count instead")
+		c.Controller.Count = *c.DeprecatedControllerCount
+	}
+	if c.DeprecatedControllerTenancy != nil {
+		fmt.Println("WARN: controllerTenancy is deprecated and will be removed in v0.9.7. Please use controller.tenancy instead")
+		c.Controller.Tenancy = *c.DeprecatedControllerTenancy
+	}
+	if c.DeprecatedControllerInstanceType != nil {
+		fmt.Println("WARN: controllerInstanceType is deprecated and will be removed in v0.9.7. Please use controller.instanceType instead")
+		c.Controller.InstanceType = *c.DeprecatedControllerInstanceType
+	}
+	if c.DeprecatedControllerCreateTimeout != nil {
+		fmt.Println("WARN: controllerCreateTimeout is deprecated and will be removed in v0.9.7. Please use controller.createTimeout instead")
+		c.Controller.CreateTimeout = *c.DeprecatedControllerCreateTimeout
+	}
+	if c.DeprecatedControllerRootVolumeIOPS != nil {
+		fmt.Println("WARN: controllerRootVolumeIOPS is deprecated and will be removed in v0.9.7. Please use controller.rootVolume.iops instead")
+		c.Controller.RootVolume.IOPS = *c.DeprecatedControllerRootVolumeIOPS
+	}
+	if c.DeprecatedControllerRootVolumeSize != nil {
+		fmt.Println("WARN: controllerRootVolumeSize is deprecated and will be removed in v0.9.7. Please use controller.rootVolume.size instead")
+		c.Controller.RootVolume.Size = *c.DeprecatedControllerRootVolumeSize
+	}
+	if c.DeprecatedControllerRootVolumeType != nil {
+		fmt.Println("WARN: controllerRootVolumeType is deprecated and will be removed in v0.9.7. Please use controller.rootVolume.type instead")
+		c.Controller.RootVolume.Type = *c.DeprecatedControllerRootVolumeType
+	}
+
+	if c.DeprecatedEtcdCount != nil {
+		fmt.Println("WARN: etcdCount is deprecated and will be removed in v0.9.7. Please use etcd.count instead")
+		c.Etcd.Count = *c.DeprecatedEtcdCount
+	}
+	if c.DeprecatedEtcdTenancy != nil {
+		fmt.Println("WARN: etcdTenancy is deprecated and will be removed in v0.9.7. Please use etcd.tenancy instead")
+		c.Etcd.Tenancy = *c.DeprecatedEtcdTenancy
+	}
+	if c.DeprecatedEtcdInstanceType != nil {
+		fmt.Println("WARN: etcdInstanceType is deprecated and will be removed in v0.9.7. Please use etcd.instanceType instead")
+		c.Etcd.InstanceType = *c.DeprecatedEtcdInstanceType
+	}
+	//if c.DeprecatedEtcdCreateTimeout != nil {
+	//	c.Etcd.CreateTimeout = *c.DeprecatedEtcdCreateTimeout
+	//}
+	if c.DeprecatedEtcdRootVolumeIOPS != nil {
+		fmt.Println("WARN: etcdRootVolumeIOPS is deprecated and will be removed in v0.9.7. Please use etcd.rootVolume.iops instead")
+		c.Etcd.RootVolume.IOPS = *c.DeprecatedEtcdRootVolumeIOPS
+	}
+	if c.DeprecatedEtcdRootVolumeSize != nil {
+		fmt.Println("WARN: etcdRootVolumeSize is deprecated and will be removed in v0.9.7. Please use etcd.rootVolume.size instead")
+		c.Etcd.RootVolume.Size = *c.DeprecatedEtcdRootVolumeSize
+	}
+	if c.DeprecatedEtcdRootVolumeType != nil {
+		fmt.Println("WARN: etcdRootVolumeType is deprecated and will be removed in v0.9.7. Please use etcd.rootVolume.type instead")
+		c.Etcd.RootVolume.Type = *c.DeprecatedEtcdRootVolumeType
+	}
+	if c.DeprecatedEtcdDataVolumeIOPS != nil {
+		fmt.Println("WARN: etcdDataVolumeIOPS is deprecated and will be removed in v0.9.7. Please use etcd.dataVolume.iops instead")
+		c.Etcd.DataVolume.IOPS = *c.DeprecatedEtcdDataVolumeIOPS
+	}
+	if c.DeprecatedEtcdDataVolumeSize != nil {
+		fmt.Println("WARN: etcdDataVolumeSize is deprecated and will be removed in v0.9.7. Please use etcd.dataVolume.size instead")
+		c.Etcd.DataVolume.Size = *c.DeprecatedEtcdDataVolumeSize
+	}
+	if c.DeprecatedEtcdDataVolumeType != nil {
+		fmt.Println("WARN: etcdDataVolumeType is deprecated and will be removed in v0.9.7. Please use etcd.dataVolume.type instead")
+		c.Etcd.DataVolume.Type = *c.DeprecatedEtcdDataVolumeType
+	}
+	if c.DeprecatedEtcdDataVolumeEphemeral != nil {
+		fmt.Println("WARN: etcdDataVolumeEphemeral is deprecated and will be removed in v0.9.7. Please use etcd.dataVolume.ephemeral instead")
+		c.Etcd.DataVolume.Ephemeral = *c.DeprecatedEtcdDataVolumeEphemeral
+	}
+	if c.DeprecatedEtcdDataVolumeEncrypted != nil {
+		fmt.Println("WARN: etcdDataVolumeEncrypted is deprecated and will be removed in v0.9.7. Please use etcd.dataVolume.encrypted instead")
+		c.Etcd.DataVolume.Encrypted = *c.DeprecatedEtcdDataVolumeEncrypted
+	}
 }
 
 func (c *Cluster) SetDefaults() {
@@ -406,30 +475,120 @@ type DefaultWorkerSettings struct {
 
 // Part of configuration which is specific to controller nodes
 type ControllerSettings struct {
-	model.Controller         `yaml:"controller,omitempty"`
-	ControllerCount          int    `yaml:"controllerCount,omitempty"`
-	ControllerCreateTimeout  string `yaml:"controllerCreateTimeout,omitempty"`
-	ControllerInstanceType   string `yaml:"controllerInstanceType,omitempty"`
-	ControllerRootVolumeType string `yaml:"controllerRootVolumeType,omitempty"`
-	ControllerRootVolumeIOPS int    `yaml:"controllerRootVolumeIOPS,omitempty"`
-	ControllerRootVolumeSize int    `yaml:"controllerRootVolumeSize,omitempty"`
-	ControllerTenancy        string `yaml:"controllerTenancy,omitempty"`
+	model.Controller                   `yaml:"controller,omitempty"`
+	DeprecatedControllerCount          *int    `yaml:"controllerCount,omitempty"`
+	DeprecatedControllerCreateTimeout  *string `yaml:"controllerCreateTimeout,omitempty"`
+	DeprecatedControllerInstanceType   *string `yaml:"controllerInstanceType,omitempty"`
+	DeprecatedControllerRootVolumeType *string `yaml:"controllerRootVolumeType,omitempty"`
+	DeprecatedControllerRootVolumeIOPS *int    `yaml:"controllerRootVolumeIOPS,omitempty"`
+	DeprecatedControllerRootVolumeSize *int    `yaml:"controllerRootVolumeSize,omitempty"`
+	DeprecatedControllerTenancy        *string `yaml:"controllerTenancy,omitempty"`
+}
+
+func (c ControllerSettings) ControllerCount() int {
+	fmt.Println("WARN: ControllerCount is deprecated and will be removed in v0.9.7. Please use Controller.Count instead")
+	return c.Controller.Count
+}
+
+func (c ControllerSettings) ControllerCreateTimeout() string {
+	fmt.Println("WARN: ControllerCreateTimeout is deprecated and will be removed in v0.9.7. Please use Controller.CreateTimeout instead")
+	return c.Controller.CreateTimeout
+}
+
+func (c ControllerSettings) ControllerInstanceType() string {
+	fmt.Println("WARN: ControllerInstanceType is deprecated and will be removed in v0.9.7. Please use Controller.InstanceType instead")
+	return c.Controller.InstanceType
+}
+
+func (c ControllerSettings) ControllerRootVolumeType() string {
+	fmt.Println("WARN: ControllerRootVolumeType is deprecated and will be removed in v0.9.7. Please use Controller.RootVolume.Type instead")
+	return c.Controller.RootVolume.Type
+}
+
+func (c ControllerSettings) ControllerRootVolumeIOPS() int {
+	fmt.Println("WARN: ControllerRootVolumeIOPS is deprecated and will be removed in v0.9.7. Please use Controller.RootVolume.IOPS instead")
+	return c.Controller.RootVolume.IOPS
+}
+
+func (c ControllerSettings) ControllerRootVolumeSize() int {
+	fmt.Println("WARN: ControllerRootVolumeSize is deprecated and will be removed in v0.9.7. Please use Controller.RootVolume.Size instead")
+	return c.Controller.RootVolume.Size
+}
+
+func (c ControllerSettings) ControllerTenancy() string {
+	fmt.Println("WARN: ControllerTenancy is deprecated and will be removed in v0.9.7. Please use Controller.Tenancy instead")
+	return c.Controller.Tenancy
 }
 
 // Part of configuration which is specific to etcd nodes
 type EtcdSettings struct {
-	model.Etcd              `yaml:"etcd,omitempty"`
-	EtcdCount               int    `yaml:"etcdCount"`
-	EtcdInstanceType        string `yaml:"etcdInstanceType,omitempty"`
-	EtcdRootVolumeSize      int    `yaml:"etcdRootVolumeSize,omitempty"`
-	EtcdRootVolumeType      string `yaml:"etcdRootVolumeType,omitempty"`
-	EtcdRootVolumeIOPS      int    `yaml:"etcdRootVolumeIOPS,omitempty"`
-	EtcdDataVolumeSize      int    `yaml:"etcdDataVolumeSize,omitempty"`
-	EtcdDataVolumeType      string `yaml:"etcdDataVolumeType,omitempty"`
-	EtcdDataVolumeIOPS      int    `yaml:"etcdDataVolumeIOPS,omitempty"`
-	EtcdDataVolumeEphemeral bool   `yaml:"etcdDataVolumeEphemeral,omitempty"`
-	EtcdDataVolumeEncrypted bool   `yaml:"etcdDataVolumeEncrypted,omitempty"`
-	EtcdTenancy             string `yaml:"etcdTenancy,omitempty"`
+	model.Etcd                        `yaml:"etcd,omitempty"`
+	DeprecatedEtcdCount               *int    `yaml:"etcdCount"`
+	DeprecatedEtcdInstanceType        *string `yaml:"etcdInstanceType,omitempty"`
+	DeprecatedEtcdRootVolumeSize      *int    `yaml:"etcdRootVolumeSize,omitempty"`
+	DeprecatedEtcdRootVolumeType      *string `yaml:"etcdRootVolumeType,omitempty"`
+	DeprecatedEtcdRootVolumeIOPS      *int    `yaml:"etcdRootVolumeIOPS,omitempty"`
+	DeprecatedEtcdDataVolumeSize      *int    `yaml:"etcdDataVolumeSize,omitempty"`
+	DeprecatedEtcdDataVolumeType      *string `yaml:"etcdDataVolumeType,omitempty"`
+	DeprecatedEtcdDataVolumeIOPS      *int    `yaml:"etcdDataVolumeIOPS,omitempty"`
+	DeprecatedEtcdDataVolumeEphemeral *bool   `yaml:"etcdDataVolumeEphemeral,omitempty"`
+	DeprecatedEtcdDataVolumeEncrypted *bool   `yaml:"etcdDataVolumeEncrypted,omitempty"`
+	DeprecatedEtcdTenancy             *string `yaml:"etcdTenancy,omitempty"`
+}
+
+func (e EtcdSettings) EtcdCount() int {
+	fmt.Println("WARN: EtcdCount is deprecated and will be removed in v0.9.7. Please use Etcd.Count instead")
+	return e.Etcd.Count
+}
+
+func (e EtcdSettings) EtcdInstanceType() string {
+	fmt.Println("WARN: EtcdInstanceType is deprecated and will be removed in v0.9.7. Please use Etcd.InstanceType instead")
+	return e.Etcd.InstanceType
+}
+
+func (e EtcdSettings) EtcdRootVolumeSize() int {
+	fmt.Println("WARN: EtcdRootVolumeSize is deprecated and will be removed in v0.9.7. Please use Etcd.RootVolume.Size instead")
+	return e.Etcd.RootVolume.Size
+}
+
+func (e EtcdSettings) EtcdRootVolumeType() string {
+	fmt.Println("WARN: EtcdRootVolumeType is deprecated and will be removed in v0.9.7. Please use Etcd.RootVolume.Type instead")
+	return e.Etcd.RootVolume.Type
+}
+
+func (e EtcdSettings) EtcdRootVolumeIOPS() int {
+	fmt.Println("WARN: EtcdRootVolumeIOPS is deprecated and will be removed in v0.9.7. Please use Etcd.RootVolume.IOPS instead")
+	return e.Etcd.RootVolume.IOPS
+}
+
+func (e EtcdSettings) EtcdDataVolumeSize() int {
+	fmt.Println("WARN: EtcdDataVolumeSize is deprecated and will be removed in v0.9.7. Please use Etcd.DataVolume.Size instead")
+	return e.Etcd.DataVolume.Size
+}
+
+func (e EtcdSettings) EtcdDataVolumeType() string {
+	fmt.Println("WARN: EtcdDataVolumeType is deprecated and will be removed in v0.9.7. Please use Etcd.DataVolume.Type instead")
+	return e.Etcd.DataVolume.Type
+}
+
+func (e EtcdSettings) EtcdDataVolumeIOPS() int {
+	fmt.Println("WARN: EtcdDataVolumeIOPS is deprecated and will be removed in v0.9.7. Please use Etcd.DataVolume.IOPS instead")
+	return e.Etcd.DataVolume.IOPS
+}
+
+func (e EtcdSettings) EtcdDataVolumeEphemeral() bool {
+	fmt.Println("WARN: EtcdDataVolumeEphemeral is deprecated and will be removed in v0.9.7. Please use Etcd.DataVolume.Ephemeral instead")
+	return e.Etcd.DataVolume.Ephemeral
+}
+
+func (e EtcdSettings) EtcdDataVolumeEncrypted() bool {
+	fmt.Println("WARN: EtcdDataVolumeEncrypted is deprecated and will be removed in v0.9.7. Please use Etcd.DataVolume.Encrypted instead")
+	return e.Etcd.DataVolume.Encrypted
+}
+
+func (e EtcdSettings) EtcdTenancy() string {
+	fmt.Println("WARN: EtcdTenancy is deprecated and will be removed in v0.9.7. Please use Etcd.Tenancy instead")
+	return e.Etcd.Tenancy
 }
 
 // Part of configuration which is specific to flanneld
@@ -608,14 +767,14 @@ var supportedReleaseChannels = map[string]bool{
 
 func (c ControllerSettings) MinControllerCount() int {
 	if c.Controller.AutoScalingGroup.MinSize == nil {
-		return c.ControllerCount
+		return c.Controller.Count
 	}
 	return *c.Controller.AutoScalingGroup.MinSize
 }
 
 func (c ControllerSettings) MaxControllerCount() int {
 	if c.Controller.AutoScalingGroup.MaxSize == 0 {
-		return c.ControllerCount
+		return c.Controller.Count
 	}
 	return c.Controller.AutoScalingGroup.MaxSize
 }
@@ -683,7 +842,7 @@ func (c Cluster) Config() (*Config, error) {
 
 func (c *Cluster) EtcdCluster() derived.EtcdCluster {
 	etcdNetwork := derived.NewNetwork(c.Etcd.Subnets, c.NATGateways())
-	return derived.NewEtcdCluster(c.Etcd.Cluster, c.Region, etcdNetwork, c.EtcdCount)
+	return derived.NewEtcdCluster(c.Etcd.Cluster, c.Region, etcdNetwork, c.Etcd.Count)
 }
 
 // releaseVersionIsGreaterThan will return true if the supplied version is greater then
@@ -957,7 +1116,7 @@ func (c Cluster) valid() error {
 		return fmt.Errorf("awsNodeLabels can't be enabled for controllers because the total number of characters in clusterName(=\"%s\") exceeds the limit of %d", c.ClusterName, limit)
 	}
 
-	if c.ControllerInstanceType == "t2.micro" || c.EtcdInstanceType == "t2.micro" || c.ControllerInstanceType == "t2.nano" || c.EtcdInstanceType == "t2.nano" {
+	if c.Controller.InstanceType == "t2.micro" || c.Etcd.InstanceType == "t2.micro" || c.Controller.InstanceType == "t2.nano" || c.Etcd.InstanceType == "t2.nano" {
 		fmt.Println(`WARNING: instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/kubernetes-incubator/kube-aws/issues/258 for more information`)
 	}
 
@@ -1203,29 +1362,33 @@ func (c DefaultWorkerSettings) Valid() error {
 }
 
 func (c ControllerSettings) Valid() error {
-	if c.ControllerRootVolumeType == "io1" {
-		if c.ControllerRootVolumeIOPS < 100 || c.ControllerRootVolumeIOPS > 2000 {
-			return fmt.Errorf("invalid controllerRootVolumeIOPS: %d", c.ControllerRootVolumeIOPS)
+	controller := c.Controller
+	rootVolume := controller.RootVolume
+
+	if rootVolume.Type == "io1" {
+		if rootVolume.IOPS < 100 || rootVolume.IOPS > 2000 {
+			return fmt.Errorf("invalid controller.rootVolume.iops: %d", rootVolume.IOPS)
 		}
 	} else {
-		if c.ControllerRootVolumeIOPS != 0 {
-			return fmt.Errorf("invalid controllerRootVolumeIOPS for volume type '%s': %d", c.ControllerRootVolumeType, c.ControllerRootVolumeIOPS)
+		if rootVolume.IOPS != 0 {
+			return fmt.Errorf("invalid controller.rootVolume.iops for type \"%s\": %d", rootVolume.Type, rootVolume.IOPS)
 		}
 
-		if c.ControllerRootVolumeType != "standard" && c.ControllerRootVolumeType != "gp2" {
-			return fmt.Errorf("invalid controllerRootVolumeType: %s", c.ControllerRootVolumeType)
+		if rootVolume.Type != "standard" && rootVolume.Type != "gp2" {
+			return fmt.Errorf("invalid controller.rootVolume.type: %s in %+v", rootVolume.Type, c)
 		}
 	}
 
-	if c.ControllerCount < 0 {
-		return fmt.Errorf("`controllerCount` must be zero or greater if specified")
+	if controller.Count < 0 {
+		return fmt.Errorf("`controller.count` must be zero or greater if specified or otherwrise omitted, but was: %d", controller.Count)
 	}
-	// one is the default ControllerCount
-	if c.ControllerCount != 1 && (c.AutoScalingGroup.MinSize != nil && *c.AutoScalingGroup.MinSize != 0 || c.AutoScalingGroup.MaxSize != 0) {
-		return fmt.Errorf("`controller.autoScalingGroup.minSize` and `controller.autoScalingGroup.maxSize` can only be specified without `controllerCount`")
+	// one is the default Controller.Count
+	asg := c.AutoScalingGroup
+	if controller.Count != model.DefaultControllerCount && (asg.MinSize != nil && *asg.MinSize != 0 || asg.MaxSize != 0) {
+		return errors.New("`controller.autoScalingGroup.minSize` and `controller.autoScalingGroup.maxSize` can only be specified without `controller.count`")
 	}
 
-	if err := c.Controller.Validate(); err != nil {
+	if err := controller.Validate(); err != nil {
 		return err
 	}
 
@@ -1233,8 +1396,8 @@ func (c ControllerSettings) Valid() error {
 }
 
 func (e EtcdSettings) Valid() error {
-	if !e.EtcdDataVolumeEncrypted && e.Etcd.KMSKeyARN() != "" {
-		return fmt.Errorf("`etcd.kmsKeyArn` can only be specified when `etcdDataVolumeEncrypted` is enabled")
+	if !e.Etcd.DataVolume.Encrypted && e.Etcd.KMSKeyARN() != "" {
+		return errors.New("`etcd.kmsKeyArn` can only be specified when `etcdDataVolumeEncrypted` is enabled")
 	}
 
 	return nil

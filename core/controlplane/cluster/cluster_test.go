@@ -636,6 +636,46 @@ func TestValidateControllerRootVolume(t *testing.T) {
 				VolumeType: aws.String("standard"),
 			},
 			clusterYaml: `
+controller:
+  rootVolume:
+    type: standard
+`,
+		},
+		{
+			expectedRootVolume: &ec2.CreateVolumeInput{
+				Iops:       aws.Int64(0),
+				Size:       aws.Int64(50),
+				VolumeType: aws.String("gp2"),
+			},
+			clusterYaml: `
+controller:
+  rootVolume:
+    type: gp2
+    size: 50
+`,
+		},
+		{
+			expectedRootVolume: &ec2.CreateVolumeInput{
+				Iops:       aws.Int64(2000),
+				Size:       aws.Int64(100),
+				VolumeType: aws.String("io1"),
+			},
+			clusterYaml: `
+controller:
+  rootVolume:
+    type: io1
+    size: 100
+    iops: 2000
+`,
+		},
+		// TODO Remove test cases for deprecated keys in v0.9.7
+		{
+			expectedRootVolume: &ec2.CreateVolumeInput{
+				Iops:       aws.Int64(0),
+				Size:       aws.Int64(30),
+				VolumeType: aws.String("standard"),
+			},
+			clusterYaml: `
 controllerRootVolumeType: standard
 `,
 		},

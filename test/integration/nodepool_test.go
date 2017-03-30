@@ -105,7 +105,8 @@ spotFleet:
   launchSpecifications:
   - weightedCapacity: 1
     instanceType: c4.large
-    rootVolumeType: foo
+    rootVolume:
+      type: foo
 `,
 		},
 		{
@@ -116,9 +117,10 @@ spotFleet:
   launchSpecifications:
   - weightedCapacity: 1
     instanceType: c4.large
-    rootVolumeType: io1
-    # must be 100~2000
-    rootVolumeIOPS: 50
+    rootVolume:
+      type: io1
+      # must be 100~2000
+      iops: 50
 `,
 		},
 		{
@@ -129,8 +131,9 @@ spotFleet:
   launchSpecifications:
   - weightedCapacity: 1
     instanceType: c4.large
-    rootVolumeType: gp2
-    rootVolumeIOPS: 1000
+    rootVolume:
+      type: gp2
+      iops: 1000
 `,
 		},
 		{

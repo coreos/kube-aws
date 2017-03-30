@@ -489,6 +489,45 @@ func TestControllerVolumeType(t *testing.T) {
 		},
 		{
 			conf: `
+controller:
+  rootVolume:
+    type: gp2
+`,
+			volumeType: "gp2",
+			iops:       0,
+		},
+		{
+			conf: `
+controller:
+  rootVolume:
+    type: standard
+`,
+			volumeType: "standard",
+			iops:       0,
+		},
+		{
+			conf: `
+controller:
+  rootVolume:
+    type: io1
+    iops: 100
+`,
+			volumeType: "io1",
+			iops:       100,
+		},
+		{
+			conf: `
+controller:
+  rootVolume:
+    type: io1
+    iops: 2000
+`,
+			volumeType: "io1",
+			iops:       2000,
+		},
+		// TODO Remove test cases for deprecated keys in v0.9.7
+		{
+			conf: `
 controllerRootVolumeType: gp2
 `,
 			volumeType: "gp2",
@@ -553,10 +592,10 @@ controllerRootVolumeIOPS: 2001
 			t.Errorf("failed to parse config %s: %v", confBody, err)
 			continue
 		}
-		if c.ControllerRootVolumeType != conf.volumeType {
+		if c.Controller.RootVolume.Type != conf.volumeType {
 			t.Errorf(
 				"parsed root volume type %s does not match root volume %s in config: %s",
-				c.ControllerRootVolumeType,
+				c.Controller.RootVolume.Type,
 				conf.volumeType,
 				confBody,
 			)

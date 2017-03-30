@@ -220,13 +220,13 @@ waitSignal:
 experimental:
   awsNodeLabels:
     enabled: true
-etcdCount: $ETCD_COUNT
+# etcd configuration
+etcd:
+  count: $ETCD_COUNT
 " >> cluster.yaml
 
   if [ "${ETCD_MEMBER_IDENTITY_PROVIDER}" != "" ]; then
     echo -e "
-# etcd configuration
-etcd:
   memberIdentityProvider: ${ETCD_MEMBER_IDENTITY_PROVIDER}
 " >> cluster.yaml
   fi

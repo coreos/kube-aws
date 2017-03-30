@@ -176,6 +176,42 @@ rootVolumeSize: 100
 rootVolumeIOPS: 2000
 `,
 		},
+		{
+			expectedRootVolume: &ec2.CreateVolumeInput{
+				Iops:       aws.Int64(0),
+				Size:       aws.Int64(30),
+				VolumeType: aws.String("standard"),
+			},
+			clusterYaml: `
+rootVolume:
+  type: standard
+`,
+		},
+		{
+			expectedRootVolume: &ec2.CreateVolumeInput{
+				Iops:       aws.Int64(0),
+				Size:       aws.Int64(50),
+				VolumeType: aws.String("gp2"),
+			},
+			clusterYaml: `
+rootVolume:
+  type: gp2
+  size: 50
+`,
+		},
+		{
+			expectedRootVolume: &ec2.CreateVolumeInput{
+				Iops:       aws.Int64(2000),
+				Size:       aws.Int64(100),
+				VolumeType: aws.String("io1"),
+			},
+			clusterYaml: `
+rootVolume:
+  type: io1
+  size: 100
+  iops: 2000
+`,
+		},
 	}
 
 	for _, testCase := range testCases {
