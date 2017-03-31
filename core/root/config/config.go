@@ -54,12 +54,12 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 	}
 	c.HyperkubeImage.Tag = c.K8sVer
 
-	cpCluser := &c.Cluster
-	if err := cpCluser.Load(); err != nil {
+	cpCluster := &c.Cluster
+	if err := cpCluster.Load(); err != nil {
 		return nil, err
 	}
 
-	cpConfig, err := cpCluser.Config()
+	cpConfig, err := cpCluster.Config()
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 		}
 	}
 
-	cfg := &Config{Cluster: cpCluser, NodePools: nodePools}
+	cfg := &Config{Cluster: cpCluster, NodePools: nodePools}
 
 	if err := failFastWhenUnknownKeysFound([]unknownKeyValidation{
 		{c, ""},
@@ -112,6 +112,12 @@ func ConfigFromBytesWithEncryptService(data []byte, encryptService controlplane.
 		return nil, err
 	}
 	c.ProvidedEncryptService = encryptService
+
+	// Uses the same encrypt service for node pools for consistency
+	for _, p := range c.NodePools {
+		p.ProvidedEncryptService = encryptService
+	}
+
 	return c, nil
 }
 

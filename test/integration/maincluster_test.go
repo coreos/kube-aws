@@ -2,16 +2,18 @@ package integration
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"reflect"
+	"strings"
+	"testing"
+
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	controlplane_config "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root"
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/test/helper"
-	"os"
-	"reflect"
-	"strings"
-	"testing"
 )
 
 type ConfigTester func(c *config.Config, t *testing.T)
@@ -93,6 +95,9 @@ func TestMainClusterConfig(t *testing.T) {
 				Enabled: false,
 			},
 			ClusterAutoscalerSupport: controlplane_config.ClusterAutoscalerSupport{
+				Enabled: false,
+			},
+			ClusterTLSBootstrap: controlplane_config.ClusterTLSBootstrap{
 				Enabled: false,
 			},
 			EphemeralImageStorage: controlplane_config.EphemeralImageStorage{
@@ -893,6 +898,8 @@ experimental:
     enabled: true
   clusterAutoscalerSupport:
     enabled: true
+  clusterTLSBootstrap:
+    enabled: true
   ephemeralImageStorage:
     enabled: true
   kube2IamSupport:
@@ -956,6 +963,9 @@ worker:
 							Enabled: true,
 						},
 						ClusterAutoscalerSupport: controlplane_config.ClusterAutoscalerSupport{
+							Enabled: true,
+						},
+						ClusterTLSBootstrap: controlplane_config.ClusterTLSBootstrap{
 							Enabled: true,
 						},
 						EphemeralImageStorage: controlplane_config.EphemeralImageStorage{
@@ -1029,6 +1039,8 @@ worker:
       enabled: true
     clusterAutoscalerSupport:
       enabled: true
+    clusterTLSBootstrap:
+      enabled: true # Must be ignored, value is synced with the one from control plane
     ephemeralImageStorage:
       enabled: true
     kube2IamSupport:
@@ -1070,6 +1082,9 @@ worker:
 						},
 						ClusterAutoscalerSupport: controlplane_config.ClusterAutoscalerSupport{
 							Enabled: true,
+						},
+						ClusterTLSBootstrap: controlplane_config.ClusterTLSBootstrap{
+							Enabled: false,
 						},
 						EphemeralImageStorage: controlplane_config.EphemeralImageStorage{
 							Enabled:    true,
@@ -2559,6 +2574,14 @@ etcdDataVolumeIOPS: 104
 				stackTemplateOptions.RootStackTemplateTmplFile = "../../core/root/config/templates/stack-template.json"
 				stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../core/nodepool/config/templates/stack-template.json"
 				stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/templates/stack-template.json"
+
+				// Creates auth token file with bootstrap token if this setting is enabled
+				if providedConfig.Experimental.ClusterTLSBootstrap.Enabled {
+					tokensFile := fmt.Sprintf("%s/tokens.csv", dummyAssetsDir)
+					if err := ioutil.WriteFile(tokensFile, []byte("dummytoken,kubelet-bootstrap,10001,system:kubelet-bootstrap"), 0664); err != nil {
+						panic(err)
+					}
+				}
 
 				cluster, err := root.ClusterFromConfig(providedConfig, stackTemplateOptions, false)
 				if err != nil {

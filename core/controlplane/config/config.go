@@ -58,6 +58,9 @@ func NewDefaultCluster() *Cluster {
 		ClusterAutoscalerSupport: ClusterAutoscalerSupport{
 			Enabled: false,
 		},
+		ClusterTLSBootstrap: ClusterTLSBootstrap{
+			Enabled: false,
+		},
 		EphemeralImageStorage: EphemeralImageStorage{
 			Enabled:    false,
 			Disk:       "xvdb",
@@ -461,6 +464,7 @@ type Experimental struct {
 	AwsEnvironment           AwsEnvironment           `yaml:"awsEnvironment"`
 	AwsNodeLabels            AwsNodeLabels            `yaml:"awsNodeLabels"`
 	ClusterAutoscalerSupport ClusterAutoscalerSupport `yaml:"clusterAutoscalerSupport"`
+	ClusterTLSBootstrap      ClusterTLSBootstrap      `yaml:"clusterTLSBootstrap"`
 	EphemeralImageStorage    EphemeralImageStorage    `yaml:"ephemeralImageStorage"`
 	Kube2IamSupport          Kube2IamSupport          `yaml:"kube2IamSupport,omitempty"`
 	LoadBalancer             LoadBalancer             `yaml:"loadBalancer"`
@@ -506,6 +510,10 @@ type AwsNodeLabels struct {
 }
 
 type ClusterAutoscalerSupport struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type ClusterTLSBootstrap struct {
 	Enabled bool `yaml:"enabled"`
 }
 
@@ -744,7 +752,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 		}
 		stackConfig.Config.AuthTokensConfig = compactAuthTokens
 	} else {
-		rawAuthTokens, err := ReadOrCreateUnecryptedCompactAuthTokens(opts.AssetsDir)
+		rawAuthTokens, err := ReadOrCreateUnencryptedCompactAuthTokens(opts.AssetsDir)
 		if err != nil {
 			return nil, err
 		}
@@ -752,19 +760,15 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	}
 	if c.ManageCertificates {
 		if c.AssetsEncryptionEnabled() {
-
 			compactAssets, err = ReadOrCreateCompactTLSAssets(opts.AssetsDir, KMSConfig{
 				Region:         stackConfig.Config.Region,
 				KMSKeyARN:      c.KMSKeyARN,
 				EncryptService: c.ProvidedEncryptService,
 			})
-			if err != nil {
-				return nil, err
-			}
 
 			stackConfig.Config.TLSConfig = compactAssets
 		} else {
-			rawAssets, err := ReadOrCreateUnecryptedCompactTLSAssets(opts.AssetsDir)
+			rawAssets, err := ReadOrCreateUnencryptedCompactTLSAssets(opts.AssetsDir)
 			if err != nil {
 				return nil, err
 			}
@@ -778,6 +782,13 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	}
 	if stackConfig.UserDataEtcd, err = userdatatemplate.GetString(opts.EtcdTmplFile, stackConfig.Config); err != nil {
 		return nil, fmt.Errorf("failed to render etcd cloud config: %v", err)
+	}
+	if len(stackConfig.Config.AuthTokensConfig.KubeletBootstrapToken) == 0 && c.DeploymentSettings.Experimental.ClusterTLSBootstrap.Enabled {
+		bootstrapRecord, err := RandomBootstrapTokenRecord()
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("kubelet bootstrap token not found in ./credentials/tokens.csv\n\nTo fix this, append the following line to ./credentials.tokens.csv:\n%s", bootstrapRecord)
 	}
 
 	stackConfig.StackTemplateOptions = opts
@@ -798,11 +809,8 @@ type Config struct {
 
 	EtcdNodes []derived.EtcdNode
 
-	// Encoded auth tokens
 	AuthTokensConfig *CompactAuthTokens
-
-	// Encoded TLS assets
-	TLSConfig *CompactTLSAssets
+	TLSConfig        *CompactTLSAssets
 }
 
 // StackName returns the logical name of a CloudFormation stack resource in a root stack template
@@ -959,6 +967,10 @@ func (c Cluster) valid() error {
 
 	if c.ControllerInstanceType == "t2.micro" || c.EtcdInstanceType == "t2.micro" || c.ControllerInstanceType == "t2.nano" || c.EtcdInstanceType == "t2.nano" {
 		fmt.Println(`WARNING: instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/kubernetes-incubator/kube-aws/issues/258 for more information`)
+	}
+
+	if c.Experimental.ClusterTLSBootstrap.Enabled && !c.Experimental.Plugins.Rbac.Enabled {
+		fmt.Println(`WARNING: enabling cluster-level TLS bootstrapping without RBAC is not recommended. See https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/ for more information`)
 	}
 
 	if e := cfnresource.ValidateRoleNameLength(c.ClusterName, c.NestedStackName(), c.Controller.ManagedIamRoleName, c.Region.String()); e != nil {

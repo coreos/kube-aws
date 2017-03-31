@@ -53,12 +53,12 @@ func runCmdValidate(cmd *cobra.Command, args []string) error {
 	if report != "" {
 		fmt.Fprintf(os.Stderr, "Validation Report: %s\n", report)
 	}
-
 	if err != nil {
 		return err
 	}
-	fmt.Printf("stack template is valid.\n\n")
 
-	fmt.Printf("Validation OK!\n")
+	fmt.Printf("stack template is valid.\n\n")
+	fmt.Println("Validation OK!")
+
 	return nil
 }
