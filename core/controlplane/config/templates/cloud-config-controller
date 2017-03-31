@@ -893,8 +893,7 @@ write_files:
           - nonResourceURLs: ["*"]
             verbs: ["*"]
 
-  # Grants super-user permissions to users in the group system:masters, useful for Kubernetes < 1.5.x clusters
-  # (This is already set up in Kubernetes 1.5.x+)
+  # Grants super-user permissions to the kube-admin user
   - path: /srv/kubernetes/rbac/cluster-role-bindings/kube-admin.yaml
     content: |
         kind: ClusterRoleBinding
@@ -902,8 +901,8 @@ write_files:
         metadata:
           name: kube-admin
         subjects:
-          - kind: Group
-            name: system:masters
+          - kind: User
+            name: kube-admin
         roleRef:
           kind: ClusterRole
           name: cluster-admin
