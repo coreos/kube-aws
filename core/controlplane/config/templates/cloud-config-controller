@@ -1064,6 +1064,7 @@ write_files:
           {{ end }}
           {{if .Experimental.Plugins.Rbac.Enabled}}
           - --authorization-mode=RBAC
+          - --authorization-rbac-super-user=kube-admin
           {{ end }}
           {{if .Experimental.Authentication.Webhook.Enabled}}
           - --authentication-token-webhook-config-file=/etc/kubernetes/webhooks/authentication.yaml
