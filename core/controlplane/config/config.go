@@ -58,7 +58,7 @@ func NewDefaultCluster() *Cluster {
 		ClusterAutoscalerSupport: ClusterAutoscalerSupport{
 			Enabled: false,
 		},
-		ClusterTLSBootstrap: ClusterTLSBootstrap{
+		TLSBootstrap: TLSBootstrap{
 			Enabled: false,
 		},
 		EphemeralImageStorage: EphemeralImageStorage{
@@ -464,7 +464,7 @@ type Experimental struct {
 	AwsEnvironment           AwsEnvironment           `yaml:"awsEnvironment"`
 	AwsNodeLabels            AwsNodeLabels            `yaml:"awsNodeLabels"`
 	ClusterAutoscalerSupport ClusterAutoscalerSupport `yaml:"clusterAutoscalerSupport"`
-	ClusterTLSBootstrap      ClusterTLSBootstrap      `yaml:"clusterTLSBootstrap"`
+	TLSBootstrap             TLSBootstrap             `yaml:"tlsBootstrap"`
 	EphemeralImageStorage    EphemeralImageStorage    `yaml:"ephemeralImageStorage"`
 	Kube2IamSupport          Kube2IamSupport          `yaml:"kube2IamSupport,omitempty"`
 	LoadBalancer             LoadBalancer             `yaml:"loadBalancer"`
@@ -513,7 +513,7 @@ type ClusterAutoscalerSupport struct {
 	Enabled bool `yaml:"enabled"`
 }
 
-type ClusterTLSBootstrap struct {
+type TLSBootstrap struct {
 	Enabled bool `yaml:"enabled"`
 }
 
@@ -783,7 +783,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	if stackConfig.UserDataEtcd, err = userdatatemplate.GetString(opts.EtcdTmplFile, stackConfig.Config); err != nil {
 		return nil, fmt.Errorf("failed to render etcd cloud config: %v", err)
 	}
-	if len(stackConfig.Config.AuthTokensConfig.KubeletBootstrapToken) == 0 && c.DeploymentSettings.Experimental.ClusterTLSBootstrap.Enabled {
+	if len(stackConfig.Config.AuthTokensConfig.KubeletBootstrapToken) == 0 && c.DeploymentSettings.Experimental.TLSBootstrap.Enabled {
 		bootstrapRecord, err := RandomBootstrapTokenRecord()
 		if err != nil {
 			return nil, err
@@ -969,7 +969,7 @@ func (c Cluster) valid() error {
 		fmt.Println(`WARNING: instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/kubernetes-incubator/kube-aws/issues/258 for more information`)
 	}
 
-	if c.Experimental.ClusterTLSBootstrap.Enabled && !c.Experimental.Plugins.Rbac.Enabled {
+	if c.Experimental.TLSBootstrap.Enabled && !c.Experimental.Plugins.Rbac.Enabled {
 		fmt.Println(`WARNING: enabling cluster-level TLS bootstrapping without RBAC is not recommended. See https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/ for more information`)
 	}
 

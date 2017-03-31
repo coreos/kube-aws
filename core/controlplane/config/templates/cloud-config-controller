@@ -519,7 +519,7 @@ write_files:
           "http://127.0.0.1:8080/apis/rbac.authorization.k8s.io/v1alpha1/clusterrolebindings"
       done
 
-      {{ if .Experimental.ClusterTLSBootstrap.Enabled }}
+      {{ if .Experimental.TLSBootstrap.Enabled }}
       post_yaml "@${mfdir}/cluster-roles/kubelet-bootstrap.yaml" \
       "http://127.0.0.1:8080/apis/rbac.authorization.k8s.io/v1alpha1/clusterroles" |true
 
@@ -955,7 +955,7 @@ write_files:
           name: bootstrapped-node
           apiGroup: rbac.authorization.k8s.io
 
-{{ if .Experimental.ClusterTLSBootstrap.Enabled }}
+{{ if .Experimental.TLSBootstrap.Enabled }}
   # Only allows certificate signing requests to be performed with the bootstrap token
   - path: /srv/kubernetes/rbac/cluster-roles/kubelet-bootstrap.yaml
     content: |
@@ -1149,7 +1149,7 @@ write_files:
           - --master=http://127.0.0.1:8080
           - --leader-elect=true
           - --service-account-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
-          {{ if .Experimental.ClusterTLSBootstrap.Enabled }}
+          {{ if .Experimental.TLSBootstrap.Enabled }}
           - --insecure-experimental-approve-all-kubelet-csrs-for-group=system:kubelet-bootstrap
           - --cluster-signing-cert-file=/etc/kubernetes/ssl/ca.pem
           - --cluster-signing-key-file=/etc/kubernetes/ssl/ca-key.pem
@@ -1582,7 +1582,7 @@ write_files:
     encoding: gzip+base64
     content: {{.TLSConfig.CACert}}
 
-{{ if .Experimental.ClusterTLSBootstrap.Enabled }}
+{{ if .Experimental.TLSBootstrap.Enabled }}
   - path: /etc/kubernetes/ssl/ca-key.pem.enc
     encoding: gzip+base64
     content: {{.TLSConfig.CAKey}}

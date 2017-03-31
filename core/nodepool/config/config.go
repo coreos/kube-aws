@@ -89,7 +89,7 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 		}
 	}
 
-	if c.DeploymentSettings.Experimental.ClusterTLSBootstrap.Enabled {
+	if c.DeploymentSettings.Experimental.TLSBootstrap.Enabled {
 		if stackConfig.ComputedConfig.AssetsEncryptionEnabled() {
 			compactAuthTokens, _ := cfg.ReadOrCreateCompactAuthTokens(opts.AssetsDir, cfg.KMSConfig{
 				Region:         stackConfig.ComputedConfig.Region,
@@ -164,7 +164,7 @@ func (c *ProvidedConfig) Load(main *cfg.Config) error {
 	c.KubeClusterSettings = main.KubeClusterSettings
 
 	// Inherit cluster TLS bootstrap config from control plane stack
-	c.Experimental.ClusterTLSBootstrap = main.DeploymentSettings.Experimental.ClusterTLSBootstrap
+	c.Experimental.TLSBootstrap = main.DeploymentSettings.Experimental.TLSBootstrap
 
 	// Validate whole the inputs including inherited ones
 	if err := c.valid(); err != nil {

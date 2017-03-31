@@ -722,46 +722,46 @@ experimental:
 
 }
 
-func TestClusterTLSBootstrapConfig(t *testing.T) {
+func TestTLSBootstrapConfig(t *testing.T) {
 
 	validConfigs := []struct {
-		conf                string
-		clusterTLSBootstrap ClusterTLSBootstrap
+		conf         string
+		tlsBootstrap TLSBootstrap
 	}{
 		{
 			conf: `
 `,
-			clusterTLSBootstrap: ClusterTLSBootstrap{
+			tlsBootstrap: TLSBootstrap{
 				Enabled: false,
 			},
 		},
 		{
 			conf: `
 experimental:
-  clusterTLSBootstrap:
+  tlsBootstrap:
     enabled: false
 `,
-			clusterTLSBootstrap: ClusterTLSBootstrap{
+			tlsBootstrap: TLSBootstrap{
 				Enabled: false,
 			},
 		},
 		{
 			conf: `
 experimental:
-  clusterTLSBootstrap:
+  tlsBootstrap:
     enabled: true
 `,
-			clusterTLSBootstrap: ClusterTLSBootstrap{
+			tlsBootstrap: TLSBootstrap{
 				Enabled: true,
 			},
 		},
 		{
 			conf: `
 # Settings for an experimental feature must be under the "experimental" field. Ignored.
-clusterTLSBootstrap:
+tlsBootstrap:
   enabled: true
 `,
-			clusterTLSBootstrap: ClusterTLSBootstrap{
+			tlsBootstrap: TLSBootstrap{
 				Enabled: false,
 			},
 		},
@@ -774,10 +774,10 @@ clusterTLSBootstrap:
 			t.Errorf("failed to parse config %s: %v", confBody, err)
 			continue
 		}
-		if !reflect.DeepEqual(c.Experimental.ClusterTLSBootstrap, conf.clusterTLSBootstrap) {
+		if !reflect.DeepEqual(c.Experimental.TLSBootstrap, conf.tlsBootstrap) {
 			t.Errorf(
-				"parsed cluster TLS bootstrap settings %+v does not match config: %s",
-				c.Experimental.ClusterTLSBootstrap,
+				"parsed TLS bootstrap settings %+v does not match config: %s",
+				c.Experimental.TLSBootstrap,
 				confBody,
 			)
 		}

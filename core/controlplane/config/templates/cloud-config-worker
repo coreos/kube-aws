@@ -170,7 +170,7 @@ coreos:
         --cluster_domain=cluster.local \
         --cloud-provider=aws \
         --cert-dir=/etc/kubernetes/ssl \
-        {{- if .Experimental.ClusterTLSBootstrap.Enabled }}
+        {{- if .Experimental.TLSBootstrap.Enabled }}
         --experimental-bootstrap-kubeconfig=/etc/kubernetes/worker-bootstrap-kubeconfig.yaml \
         {{- else }}
         --tls-cert-file=/etc/kubernetes/ssl/worker.pem \
@@ -552,7 +552,7 @@ write_files:
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientKey}}
 
-{{ if not .Experimental.ClusterTLSBootstrap.Enabled }}
+{{ if not .Experimental.TLSBootstrap.Enabled }}
   - path: /etc/kubernetes/ssl/worker.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.WorkerCert}}
@@ -578,7 +578,7 @@ write_files:
       rkt run \
         --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
         --mount=volume=ssl,target=/etc/kubernetes/ssl \
-        {{- if .Experimental.ClusterTLSBootstrap.Enabled }}
+        {{- if .Experimental.TLSBootstrap.Enabled }}
         --volume=kube,kind=host,source=/etc/kubernetes,readOnly=false \
         --mount=volume=kube,target=/etc/kubernetes \
         {{- end }}
@@ -590,7 +590,7 @@ write_files:
           -ec \
           'echo decrypting assets
            shopt -s nullglob
-           for encKey in /etc/kubernetes/{ssl,{{if .Experimental.ClusterTLSBootstrap.Enabled}}auth{{end}}}/*.enc; do
+           for encKey in /etc/kubernetes/{ssl,{{if .Experimental.TLSBootstrap.Enabled}}auth{{end}}}/*.enc; do
              echo decrypting $encKey
              f=$(mktemp $encKey.XXXXXXXX)
              /usr/bin/aws \
@@ -602,7 +602,7 @@ write_files:
              mv -f $f ${encKey%.enc}
            done;
 
-           {{ if .Experimental.ClusterTLSBootstrap.Enabled }}
+           {{ if .Experimental.TLSBootstrap.Enabled }}
            echo injecting token into the kubelet bootstrap kubeconfig file
            bootstrap_token=$(cat /etc/kubernetes/auth/kubelet-bootstrap.token);
            sed -i -e "s#\$KUBELET_BOOTSTRAP_TOKEN#$bootstrap_token#g" /etc/kubernetes/worker-bootstrap-kubeconfig.yaml
@@ -741,7 +741,7 @@ write_files:
               hostPath:
                 path: /var/run/dbus
 
-{{ if .Experimental.ClusterTLSBootstrap.Enabled }}
+{{ if .Experimental.TLSBootstrap.Enabled }}
   - path: /etc/kubernetes/worker-bootstrap-kubeconfig.yaml
     content: |
         apiVersion: v1
@@ -795,7 +795,7 @@ write_files:
         }
 {{ end }}
 
-{{ if .Experimental.ClusterTLSBootstrap.Enabled }}
+{{ if .Experimental.TLSBootstrap.Enabled }}
   - path: /etc/kubernetes/auth/kubelet-bootstrap.token{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.AuthTokensConfig.KubeletBootstrapToken}}

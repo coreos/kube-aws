@@ -97,7 +97,7 @@ func TestMainClusterConfig(t *testing.T) {
 			ClusterAutoscalerSupport: controlplane_config.ClusterAutoscalerSupport{
 				Enabled: false,
 			},
-			ClusterTLSBootstrap: controlplane_config.ClusterTLSBootstrap{
+			TLSBootstrap: controlplane_config.TLSBootstrap{
 				Enabled: false,
 			},
 			EphemeralImageStorage: controlplane_config.EphemeralImageStorage{
@@ -898,7 +898,7 @@ experimental:
     enabled: true
   clusterAutoscalerSupport:
     enabled: true
-  clusterTLSBootstrap:
+  tlsBootstrap:
     enabled: true
   ephemeralImageStorage:
     enabled: true
@@ -965,7 +965,7 @@ worker:
 						ClusterAutoscalerSupport: controlplane_config.ClusterAutoscalerSupport{
 							Enabled: true,
 						},
-						ClusterTLSBootstrap: controlplane_config.ClusterTLSBootstrap{
+						TLSBootstrap: controlplane_config.TLSBootstrap{
 							Enabled: true,
 						},
 						EphemeralImageStorage: controlplane_config.EphemeralImageStorage{
@@ -1039,7 +1039,7 @@ worker:
       enabled: true
     clusterAutoscalerSupport:
       enabled: true
-    clusterTLSBootstrap:
+    tlsBootstrap:
       enabled: true # Must be ignored, value is synced with the one from control plane
     ephemeralImageStorage:
       enabled: true
@@ -1083,7 +1083,7 @@ worker:
 						ClusterAutoscalerSupport: controlplane_config.ClusterAutoscalerSupport{
 							Enabled: true,
 						},
-						ClusterTLSBootstrap: controlplane_config.ClusterTLSBootstrap{
+						TLSBootstrap: controlplane_config.TLSBootstrap{
 							Enabled: false,
 						},
 						EphemeralImageStorage: controlplane_config.EphemeralImageStorage{
@@ -2576,7 +2576,7 @@ etcdDataVolumeIOPS: 104
 				stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/templates/stack-template.json"
 
 				// Creates auth token file with bootstrap token if this setting is enabled
-				if providedConfig.Experimental.ClusterTLSBootstrap.Enabled {
+				if providedConfig.Experimental.TLSBootstrap.Enabled {
 					tokensFile := fmt.Sprintf("%s/tokens.csv", dummyAssetsDir)
 					if err := ioutil.WriteFile(tokensFile, []byte("dummytoken,kubelet-bootstrap,10001,system:kubelet-bootstrap"), 0664); err != nil {
 						panic(err)

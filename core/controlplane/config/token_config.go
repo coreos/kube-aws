@@ -89,7 +89,7 @@ func RandomBootstrapTokenRecord() (string, error) {
 }
 
 func (c *Cluster) CreateRawAuthTokens(dirname string) error {
-	createBootstrapToken := c.DeploymentSettings.Experimental.ClusterTLSBootstrap.Enabled
+	createBootstrapToken := c.DeploymentSettings.Experimental.TLSBootstrap.Enabled
 	return CreateRawAuthTokens(createBootstrapToken, dirname)
 }
 
