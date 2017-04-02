@@ -60,6 +60,9 @@ externalDNSName: {{.ExternalDNSName}}
 #  # Must be omitted when `id` is specified
 #  private: true
 #
+#  # TTL in seconds for the Route53 RecordSet created if createRecordSet is set to true.
+#  recordSetTTL: 300
+#
 #  # The Route 53 hosted zone is where the resulting Alias record is created for this endpoint
 #  # Must be omitted when `id` is specified
 #  hostedZone:

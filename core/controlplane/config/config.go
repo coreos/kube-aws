@@ -238,16 +238,14 @@ func (c *Cluster) Load() error {
 		for _, s := range c.Controller.LoadBalancer.Subnets {
 			subnetRefs = append(subnetRefs, model.SubnetReference{Name: s.Name})
 		}
-		hostedZoneId := c.HostedZoneID
-		createRecordSet := c.CreateRecordSet
-		private := c.Controller.LoadBalancer.Private
 
 		c.APIEndpointConfigs = model.NewDefaultAPIEndpoints(
 			c.ExternalDNSName,
 			subnetRefs,
-			hostedZoneId,
-			createRecordSet,
-			private,
+			c.HostedZoneID,
+			c.CreateRecordSet,
+			c.RecordSetTTL,
+			c.Controller.LoadBalancer.Private,
 		)
 	}
 

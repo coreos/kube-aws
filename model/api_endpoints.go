@@ -8,7 +8,7 @@ import (
 const DefaultAPIEndpointName = "Default"
 
 // NewDefaultAPIEndpoints creates the slice of API endpoints containing only the default one which is with arbitrary DNS name and an ELB
-func NewDefaultAPIEndpoints(dnsName string, subnets []SubnetReference, hostedZoneId string, createRecordSet bool, private bool) []APIEndpoint {
+func NewDefaultAPIEndpoints(dnsName string, subnets []SubnetReference, hostedZoneId string, createRecordSet bool, recordSetTTL int, private bool) []APIEndpoint {
 	return []APIEndpoint{
 		APIEndpoint{
 			Name:    DefaultAPIEndpointName,
@@ -20,8 +20,9 @@ func NewDefaultAPIEndpoints(dnsName string, subnets []SubnetReference, hostedZon
 						ID: hostedZoneId,
 					},
 				},
-				CreateRecordSet:  &createRecordSet,
-				PrivateSpecified: &private,
+				CreateRecordSet:       &createRecordSet,
+				RecordSetTTLSpecified: &recordSetTTL,
+				PrivateSpecified:      &private,
 			},
 		},
 	}
