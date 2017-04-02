@@ -27,6 +27,8 @@ if [ "${KUBE_AWS_REGION}" == "" ]; then
   echo KUBE_AWS_REGION is not set. Run this command like $USAGE_EXAMPLE 1>&2
   exit 1
 fi
+# set the AWS CLI default region to the region we are deploying to, otherwise a mismatch with the user env will cause all `aws` commands to fail
+export AWS_DEFAULT_REGION=${KUBE_AWS_REGION}
 
 if [ "${KUBE_AWS_AVAILABILITY_ZONE}" == "" ]; then
   echo KUBE_AWS_REGION is not set. Run this command like $USAGE_EXAMPLE 1>&2

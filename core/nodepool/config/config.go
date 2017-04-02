@@ -24,9 +24,12 @@ type Ref struct {
 
 type ComputedConfig struct {
 	ProvidedConfig
+
 	// Fields computed from Cluster
-	AMI       string
-	TLSConfig *cfg.CompactTLSAssets
+	AMI string
+
+	TLSConfig        *cfg.CompactTLSAssets
+	AuthTokensConfig *cfg.CompactAuthTokens
 }
 
 type ProvidedConfig struct {
@@ -37,7 +40,7 @@ type ProvidedConfig struct {
 	cfg.Experimental        `yaml:",inline"`
 	Private                 bool   `yaml:"private,omitempty"`
 	NodePoolName            string `yaml:"name,omitempty"`
-	providedEncryptService  cfg.EncryptService
+	ProvidedEncryptService  cfg.EncryptService
 }
 
 type DeploymentSettings struct {
@@ -77,14 +80,29 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 			compactAssets, _ := cfg.ReadOrCreateCompactTLSAssets(opts.AssetsDir, cfg.KMSConfig{
 				Region:         stackConfig.ComputedConfig.Region,
 				KMSKeyARN:      c.KMSKeyARN,
-				EncryptService: c.providedEncryptService,
+				EncryptService: c.ProvidedEncryptService,
 			})
-
 			stackConfig.ComputedConfig.TLSConfig = compactAssets
 		} else {
-			rawAssets, _ := cfg.ReadOrCreateUnecryptedCompactTLSAssets(opts.AssetsDir)
+			rawAssets, _ := cfg.ReadOrCreateUnencryptedCompactTLSAssets(opts.AssetsDir)
 			stackConfig.ComputedConfig.TLSConfig = rawAssets
 		}
+	}
+
+	if c.DeploymentSettings.Experimental.TLSBootstrap.Enabled {
+		if stackConfig.ComputedConfig.AssetsEncryptionEnabled() {
+			compactAuthTokens, _ := cfg.ReadOrCreateCompactAuthTokens(opts.AssetsDir, cfg.KMSConfig{
+				Region:         stackConfig.ComputedConfig.Region,
+				KMSKeyARN:      c.KMSKeyARN,
+				EncryptService: c.ProvidedEncryptService,
+			})
+			stackConfig.ComputedConfig.AuthTokensConfig = compactAuthTokens
+		} else {
+			rawAuthTokens, _ := cfg.ReadOrCreateUnencryptedCompactAuthTokens(opts.AssetsDir)
+			stackConfig.ComputedConfig.AuthTokensConfig = rawAuthTokens
+		}
+	} else {
+		stackConfig.ComputedConfig.AuthTokensConfig = &cfg.CompactAuthTokens{}
 	}
 
 	if stackConfig.UserDataWorker, err = userdatatemplate.GetString(opts.WorkerTmplFile, stackConfig.ComputedConfig); err != nil {
@@ -145,6 +163,9 @@ func (c *ProvidedConfig) Load(main *cfg.Config) error {
 	// Inherit parameters from the control plane stack
 	c.KubeClusterSettings = main.KubeClusterSettings
 
+	// Inherit cluster TLS bootstrap config from control plane stack
+	c.Experimental.TLSBootstrap = main.DeploymentSettings.Experimental.TLSBootstrap
+
 	// Validate whole the inputs including inherited ones
 	if err := c.valid(); err != nil {
 		return err
@@ -195,7 +216,7 @@ func ClusterFromBytesWithEncryptService(data []byte, main *cfg.Config, encryptSe
 	if err != nil {
 		return nil, err
 	}
-	cluster.providedEncryptService = encryptService
+	cluster.ProvidedEncryptService = encryptService
 	return cluster, nil
 }
 

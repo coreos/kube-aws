@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
@@ -94,6 +95,9 @@ func TestMainClusterConfig(t *testing.T) {
 				Enabled: false,
 			},
 			ClusterAutoscalerSupport: controlplane_config.ClusterAutoscalerSupport{
+				Enabled: false,
+			},
+			TLSBootstrap: controlplane_config.TLSBootstrap{
 				Enabled: false,
 			},
 			EphemeralImageStorage: controlplane_config.EphemeralImageStorage{
@@ -894,6 +898,8 @@ experimental:
     enabled: true
   clusterAutoscalerSupport:
     enabled: true
+  tlsBootstrap:
+    enabled: true
   ephemeralImageStorage:
     enabled: true
   kube2IamSupport:
@@ -957,6 +963,9 @@ worker:
 							Enabled: true,
 						},
 						ClusterAutoscalerSupport: controlplane_config.ClusterAutoscalerSupport{
+							Enabled: true,
+						},
+						TLSBootstrap: controlplane_config.TLSBootstrap{
 							Enabled: true,
 						},
 						EphemeralImageStorage: controlplane_config.EphemeralImageStorage{
@@ -1030,6 +1039,8 @@ worker:
       enabled: true
     clusterAutoscalerSupport:
       enabled: true
+    tlsBootstrap:
+      enabled: true # Must be ignored, value is synced with the one from control plane
     ephemeralImageStorage:
       enabled: true
     kube2IamSupport:
@@ -1071,6 +1082,9 @@ worker:
 						},
 						ClusterAutoscalerSupport: controlplane_config.ClusterAutoscalerSupport{
 							Enabled: true,
+						},
+						TLSBootstrap: controlplane_config.TLSBootstrap{
+							Enabled: false,
 						},
 						EphemeralImageStorage: controlplane_config.EphemeralImageStorage{
 							Enabled:    true,
@@ -2560,6 +2574,14 @@ etcdDataVolumeIOPS: 104
 				stackTemplateOptions.RootStackTemplateTmplFile = "../../core/root/config/templates/stack-template.json"
 				stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../core/nodepool/config/templates/stack-template.json"
 				stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/templates/stack-template.json"
+
+				// Creates auth token file with bootstrap token if this setting is enabled
+				if providedConfig.Experimental.TLSBootstrap.Enabled {
+					tokensFile := fmt.Sprintf("%s/tokens.csv", dummyAssetsDir)
+					if err := ioutil.WriteFile(tokensFile, []byte("dummytoken,kubelet-bootstrap,10001,system:kubelet-bootstrap"), 0664); err != nil {
+						panic(err)
+					}
+				}
 
 				cluster, err := root.ClusterFromConfig(providedConfig, stackTemplateOptions, false)
 				if err != nil {

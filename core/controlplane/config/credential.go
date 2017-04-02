@@ -28,6 +28,10 @@ type CachedEncryptor struct {
 	bytesEncryptionService bytesEncryptionService
 }
 
+func (e CachedEncryptor) EncryptedBytes(raw []byte) ([]byte, error) {
+	return e.bytesEncryptionService.Encrypt(raw)
+}
+
 func (e CachedEncryptor) EncryptedCredentialFromPath(filePath string) (*EncryptedCredentialOnDisk, error) {
 	raw, err := RawCredentialFileFromPath(filePath)
 	if err != nil {

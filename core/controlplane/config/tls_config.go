@@ -230,7 +230,7 @@ func ReadRawTLSAssets(dirname string) (*RawTLSAssetsOnDisk, error) {
 		name      string
 		cert, key *RawCredentialOnDisk
 	}{
-		{"ca", &r.CACert, nil},
+		{"ca", &r.CACert, &r.CAKey},
 		{"apiserver", &r.APIServerCert, &r.APIServerKey},
 		{"worker", &r.WorkerCert, &r.WorkerKey},
 		{"admin", &r.AdminCert, &r.AdminKey},
@@ -264,7 +264,7 @@ func ReadOrEncryptTLSAssets(dirname string, encryptor CachedEncryptor) (*Encrypt
 		name      string
 		cert, key *EncryptedCredentialOnDisk
 	}{
-		{"ca", &r.CACert, nil},
+		{"ca", &r.CACert, &r.CAKey},
 		{"apiserver", &r.APIServerCert, &r.APIServerKey},
 		{"worker", &r.WorkerCert, &r.WorkerKey},
 		{"admin", &r.AdminCert, &r.AdminKey},
@@ -403,6 +403,7 @@ func (r *EncryptedTLSAssetsOnDisk) Compact() (*CompactTLSAssets, error) {
 	}
 	compactAssets := CompactTLSAssets{
 		CACert:         compact(r.CACert),
+		CAKey:          compact(r.CAKey),
 		APIServerCert:  compact(r.APIServerCert),
 		APIServerKey:   compact(r.APIServerKey),
 		WorkerCert:     compact(r.WorkerCert),
@@ -448,12 +449,7 @@ func ReadOrCreateEncryptedTLSAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*
 		bytesEncryptionService: encryptionSvc,
 	}
 
-	readOrEncryptedTLSAssets, err := ReadOrEncryptTLSAssets(tlsAssetsDir, encryptor)
-	if err != nil {
-		return nil, err
-	}
-
-	return readOrEncryptedTLSAssets, nil
+	return ReadOrEncryptTLSAssets(tlsAssetsDir, encryptor)
 }
 
 func ReadOrCreateCompactTLSAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*CompactTLSAssets, error) {
@@ -470,7 +466,7 @@ func ReadOrCreateCompactTLSAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*Co
 	return compactAssets, nil
 }
 
-func ReadOrCreateUnecryptedCompactTLSAssets(tlsAssetsDir string) (*CompactTLSAssets, error) {
+func ReadOrCreateUnencryptedCompactTLSAssets(tlsAssetsDir string) (*CompactTLSAssets, error) {
 	unencryptedAssets, err := ReadRawTLSAssets(tlsAssetsDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read/create TLS assets: %v", err)

@@ -284,17 +284,13 @@ func (c *Provisioner) waitUntilStackGetsUpdated(cfSvc CRUDService, updateOutput 
 	}
 }
 
-func (c *Provisioner) Validate(stackBody string) (string, error) {
-	validateInput := cloudformation.ValidateTemplateInput{}
+func (c *Provisioner) ValidateStackAtURL(templateURL string) (string, error) {
+	if templateURL == "" {
+		return "", errors.New("[bug] ValidateStackAtURL: templateURL must not be nil")
+	}
 
-	templateURL, uploadErr := c.uploadStackAssets(s3.New(c.session), stackBody, map[string]string{})
-
-	if uploadErr != nil {
-		return "", fmt.Errorf("template upload failed: %v", uploadErr)
-	} else if templateURL != nil {
-		validateInput.TemplateURL = templateURL
-	} else {
-		return "", fmt.Errorf("[bug] kube-aws skipped template upload")
+	validateInput := cloudformation.ValidateTemplateInput{
+		TemplateURL: aws.String(templateURL),
 	}
 
 	cfSvc := cloudformation.New(c.session)

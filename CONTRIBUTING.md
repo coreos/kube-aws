@@ -1,6 +1,6 @@
 # How to Contribute
 
-CoreOS projects are [Apache 2.0 licensed](LICENSE) and accept contributions via
+kube-aws is [Apache 2.0 licensed](LICENSE) and accept contributions via
 GitHub pull requests.  This document outlines some of the conventions on
 development workflow, commit message formatting, contact points and other
 resources to make it easier to get your contribution accepted.
@@ -14,12 +14,9 @@ contribution. See the [DCO](DCO) file for details.
 
 # Email and Chat
 
-The project currently uses the general CoreOS email list and IRC channel:
-- Email: [coreos-dev](https://groups.google.com/forum/#!forum/coreos-dev)
-- IRC: #[coreos](irc://irc.freenode.org:6667/#coreos) IRC channel on freenode.org
-
+The project currently uses the kube-aws GitHub Issues for collecting issues, and k8s.slack.io for chatting in rare cases.
 Please avoid emailing maintainers found in the MAINTAINERS file directly. They
-are very busy and read the mailing lists.
+are very busy and read the GitHub issues.
 
 ## Getting Started
 

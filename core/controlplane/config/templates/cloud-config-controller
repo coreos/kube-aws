@@ -24,6 +24,14 @@ coreos:
         ExecStartPre=/opt/bin/cfn-etcd-environment
         ExecStart=/usr/bin/mv -f /var/run/coreos/etcd-environment /etc/etcd-environment
 
+{{if .UseCalico }}
+    # https://github.com/coreos/docs/blob/5d7b1cccb8286185275b07db1495828be9fdb0ea/os/other-settings.md#tuning-sysctl-parameters
+    - name: systemd-modules-load.service
+      command: restart
+    - name: systemd-sysctl.service
+      command: restart
+{{ end }}
+
 {{if .Experimental.AwsEnvironment.Enabled}}
     - name: set-aws-environment.service
       enable: true
@@ -87,6 +95,29 @@ coreos:
             set /coreos.com/network/config '{"Network" : "{{.PodCIDR}}", "Backend" : {"Type" : "vxlan"}}'
             TimeoutStartSec=120
 
+{{if .FlannelImage.RktPullDocker}}
+        - name: 20-flannel-custom-image.conf
+          content: |
+            [Unit]
+            PartOf=flanneld.service
+            Before=docker.service
+
+            [Service]
+            Environment="FLANNEL_IMAGE={{.FlannelImage.RktRepo}}"
+            Environment="RKT_RUN_ARGS={{.FlannelImage.Options}}"
+
+    - name: flannel-docker-opts.service
+      drop-ins:
+        - name: 10-flannel-docker-options.conf
+          content: |
+            [Unit]
+            PartOf=flanneld.service
+            Before=docker.service
+
+            [Service]
+            Environment="FLANNEL_IMAGE={{.FlannelImage.RktRepo}}"
+            Environment="RKT_RUN_ARGS={{.FlannelImage.Options}} --uuid-file-save=/var/lib/coreos/flannel-wrapper2.uuid"
+{{end}}
     - name: kubelet.service
       command: start
       runtime: true
@@ -96,9 +127,9 @@ coreos:
         After=cfn-etcd-environment.service
         [Service]
         EnvironmentFile=-/etc/etcd-environment
-        Environment=KUBELET_VERSION={{.K8sVer}}
-        Environment=KUBELET_ACI={{ .HyperkubeImage.RktRepoWithoutTag }}
-        Environment="RKT_OPTS=--volume dns,kind=host,source=/etc/resolv.conf {{.HyperkubeImage.Options}}\
+        Environment=KUBELET_IMAGE_TAG={{.K8sVer}}
+        Environment=KUBELET_IMAGE_URL={{ .HyperkubeImage.RktRepoWithoutTag }}
+        Environment="RKT_RUN_ARGS=--volume dns,kind=host,source=/etc/resolv.conf {{.HyperkubeImage.Options}}\
         --set-env=ETCD_CA_CERT_FILE=/etc/kubernetes/ssl/ca.pem \
         --set-env=ETCD_CERT_FILE=/etc/kubernetes/ssl/etcd-client.pem \
         --set-env=ETCD_KEY_FILE=/etc/kubernetes/ssl/etcd-client-key.pem \
@@ -338,14 +369,18 @@ ssh_authorized_keys:
       content: |
         [Unit]
         Description=Pull and tag a mirror image for pause-amd64
-        After=docker.service
         Wants=docker.service
+        After=docker.service
 
         [Service]
         Restart=on-failure
         RemainAfterExit=true
+        ExecStartPre=/usr/bin/systemctl is-active docker.service
         ExecStartPre=/usr/bin/docker pull {{.PauseImage.RepoWithTag}}
-        ExecStart=/usr/bin/docker tag  {{.PauseImage.RepoWithTag}} gcr.io/google_containers/pause-amd64:3.0
+        ExecStart=/usr/bin/docker tag {{.PauseImage.RepoWithTag}} gcr.io/google_containers/pause-amd64:3.0
+        ExecStop=/bin/true
+        [Install]
+        WantedBy=install-kube-system.service
 {{end}}
 write_files:
 {{if .Experimental.AwsEnvironment.Enabled}}
@@ -485,14 +520,26 @@ write_files:
           echo 'Failed to create the cluster role named "cluster-admin". It is ok if you are using k8s newer than 1.5'
       fi
 
+      for manifest in {bootstrapped-node,}; do
+          post_yaml "@${mfdir}/cluster-roles/$manifest.yaml" \
+          "http://127.0.0.1:8080/apis/rbac.authorization.k8s.io/v1alpha1/clusterroles"
+      done
+
       post_yaml "@${mfdir}/cluster-roles/cluster-admin.yaml" \
       "http://127.0.0.1:8080/apis/rbac.authorization.k8s.io/v1alpha1/clusterroles" |true
 
-      for manifest in {system-worker,kube-worker,kube-admin}; do
+      for manifest in {system-worker,kube-worker,kube-admin,bootstrapped-node}; do
           post_yaml "@${mfdir}/cluster-role-bindings/$manifest.yaml" \
           "http://127.0.0.1:8080/apis/rbac.authorization.k8s.io/v1alpha1/clusterrolebindings"
       done
 
+      {{ if .Experimental.TLSBootstrap.Enabled }}
+      post_yaml "@${mfdir}/cluster-roles/kubelet-bootstrap.yaml" \
+      "http://127.0.0.1:8080/apis/rbac.authorization.k8s.io/v1alpha1/clusterroles" |true
+
+      post_yaml "@${mfdir}/cluster-role-bindings/kubelet-bootstrap.yaml" \
+      "http://127.0.0.1:8080/apis/rbac.authorization.k8s.io/v1alpha1/clusterrolebindings" |true
+      {{ end }}
       {{ end }}
 
   - path: /etc/kubernetes/cni/docker_opts_cni.env
@@ -811,8 +858,9 @@ write_files:
            echo "done."'
 
   {{if .Experimental.Plugins.Rbac.Enabled }}
-
-  #https://github.com/coreos/kube-aws/issues/230#issuecomment-274946933
+  # Creates the cluster-admin role, useful for Kubernetes < 1.5.x clusters
+  # (This is already set up in Kubernetes 1.5.x+)
+  # https://github.com/coreos/kube-aws/issues/230#issuecomment-274946933
   - path: /srv/kubernetes/rbac/cluster-roles/cluster-admin.yaml
     content: |
         kind: ClusterRole
@@ -826,6 +874,40 @@ write_files:
           - nonResourceURLs: ["*"]
             verbs: ["*"]
 
+  # We need to give nodes a few extra permissions so that both the node
+  # draining and node labeling with AWS metadata work as expected
+  - path: /srv/kubernetes/rbac/cluster-roles/bootstrapped-node.yaml
+    content: |
+        kind: ClusterRole
+        apiVersion: rbac.authorization.k8s.io/v1alpha1
+        metadata:
+            name: bootstrapped-node
+        rules:
+          - apiGroups: ["*"]
+            resources:
+            - nodes
+            verbs:
+            - patch
+            - update
+          - apiGroups: ["*"]
+            resources:
+            - replicasets
+            verbs:
+            - get
+          - apiGroups: ["*"]
+            resources:
+            - replicationcontrollers
+            verbs:
+            - get
+          - apiGroups: ["*"]
+            resources:
+            - pods/eviction
+            verbs:
+            - create
+          - nonResourceURLs: ["*"]
+            verbs: ["*"]
+
+  # Grants super-user permissions to the kube-admin user
   - path: /srv/kubernetes/rbac/cluster-role-bindings/kube-admin.yaml
     content: |
         kind: ClusterRoleBinding
@@ -854,6 +936,7 @@ write_files:
           name: cluster-admin
           apiGroup: rbac.authorization.k8s.io
 
+  # Allows add-ons running with the default service account in kube-sytem to have super-user access
   - path: /srv/kubernetes/rbac/cluster-role-bindings/system-worker.yaml
     content: |
         kind: ClusterRoleBinding
@@ -868,6 +951,57 @@ write_files:
           kind: ClusterRole
           name: cluster-admin
           apiGroup: rbac.authorization.k8s.io
+
+  # Associates the add-on group `bootstrapped-node` to all nodes, so that extra kube-aws
+  # features like node draining work as expected
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/bootstrapped-node.yaml
+    content: |
+        kind: ClusterRoleBinding
+        apiVersion: rbac.authorization.k8s.io/v1alpha1
+        metadata:
+          name: bootstrapped-node
+        subjects:
+          - kind: Group
+            name: system:nodes
+        roleRef:
+          kind: ClusterRole
+          name: bootstrapped-node
+          apiGroup: rbac.authorization.k8s.io
+
+{{ if .Experimental.TLSBootstrap.Enabled }}
+  # Only allows certificate signing requests to be performed with the bootstrap token
+  - path: /srv/kubernetes/rbac/cluster-roles/kubelet-bootstrap.yaml
+    content: |
+        kind: ClusterRole
+        apiVersion: rbac.authorization.k8s.io/v1alpha1
+        metadata:
+          name: kubelet-bootstrap
+        rules:
+          - apiGroups:
+              - '*'
+            resources:
+              - certificatesigningrequests
+            verbs:
+            - create
+            - get
+            - list
+            - watch
+
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/kubelet-bootstrap.yaml
+    content: |
+        kind: ClusterRoleBinding
+        apiVersion: rbac.authorization.k8s.io/v1alpha1
+        metadata:
+          name: kubelet-bootstrap
+        subjects:
+          - kind: Group
+            namespace: '*'
+            name: system:kubelet-bootstrap
+        roleRef:
+          kind: ClusterRole
+          name: kubelet-bootstrap
+          apiGroup: rbac.authorization.k8s.io
+{{ end }}
 {{ end }}
 
   - path: /etc/kubernetes/manifests/kube-proxy.yaml
@@ -953,6 +1087,7 @@ write_files:
           - --advertise-address=$private_ipv4
           - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }},ResourceQuota
           - --anonymous-auth=false
+          - --cert-dir=/etc/kubernetes/ssl
           - --tls-cert-file=/etc/kubernetes/ssl/apiserver.pem
           - --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
           - --client-ca-file=/etc/kubernetes/ssl/ca.pem
@@ -1027,6 +1162,11 @@ write_files:
           - --master=http://127.0.0.1:8080
           - --leader-elect=true
           - --service-account-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+          {{ if .Experimental.TLSBootstrap.Enabled }}
+          - --insecure-experimental-approve-all-kubelet-csrs-for-group=system:kubelet-bootstrap
+          - --cluster-signing-cert-file=/etc/kubernetes/ssl/ca.pem
+          - --cluster-signing-key-file=/etc/kubernetes/ssl/ca-key.pem
+          {{ end }}
           - --root-ca-file=/etc/kubernetes/ssl/ca.pem
           - --cloud-provider=aws
           resources:
@@ -1486,6 +1626,12 @@ write_files:
     encoding: gzip+base64
     content: {{.TLSConfig.CACert}}
 
+{{ if .Experimental.TLSBootstrap.Enabled }}
+  - path: /etc/kubernetes/ssl/ca-key.pem.enc
+    encoding: gzip+base64
+    content: {{.TLSConfig.CAKey}}
+{{ end }}
+
   - path: /etc/kubernetes/ssl/apiserver.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.APIServerCert}}
@@ -1514,6 +1660,17 @@ write_files:
                 "isDefaultGateway": true
             }
         }
+
+{{ else }}
+
+  # http://docs.projectcalico.org/v2.0/usage/configuration/
+  - path: /etc/modules-load.d/nf.conf
+    content: |
+      nf_conntrack
+  - path: /etc/sysctl.d/nf.conf
+    content: |
+      net.netfilter.nf_conntrack_max=1000000
+
 {{ end }}
 
 {{if .Experimental.Authentication.Webhook.Enabled}}

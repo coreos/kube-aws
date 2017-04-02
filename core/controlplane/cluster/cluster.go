@@ -156,15 +156,17 @@ func (c *Cluster) TemplateURL() (string, error) {
 	return asset.URL(), nil
 }
 
+// ValidateStack validates the CloudFormation stack for this control plane already uploaded to S3
 func (c *Cluster) ValidateStack() (string, error) {
 	if err := c.ValidateUserData(); err != nil {
 		return "", fmt.Errorf("failed to validate userdata : %v", err)
 	}
-	stackTemplate, err := c.RenderStackTemplateAsString()
+
+	templateURL, err := c.TemplateURL()
 	if err != nil {
-		return "", fmt.Errorf("Error while rendering stack template : %v", err)
+		return "", fmt.Errorf("failed to get template url : %v", err)
 	}
-	return c.stackProvisioner().Validate(stackTemplate)
+	return c.stackProvisioner().ValidateStackAtURL(templateURL)
 }
 
 func (c *Cluster) RenderTemplateAsString() (string, error) {

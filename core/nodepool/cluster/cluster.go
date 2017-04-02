@@ -159,6 +159,7 @@ func (c *Cluster) Update() (string, error) {
 	return updateOutput, err
 }
 
+// ValidateStack validates the CloudFormation stack for this worker node pool already uploaded to S3
 func (c *Cluster) ValidateStack() (string, error) {
 	if err := c.ValidateUserData(); err != nil {
 		return "", fmt.Errorf("failed to validate userdata : %v", err)
@@ -174,11 +175,11 @@ func (c *Cluster) ValidateStack() (string, error) {
 		}
 	}
 
-	stackTemplate, err := c.RenderStackTemplateAsString()
+	stackTemplateURL, err := c.TemplateURL()
 	if err != nil {
-		return "", fmt.Errorf("failed to validate template : %v", err)
+		return "", fmt.Errorf("failed to get template url : %v", err)
 	}
-	return c.stackProvisioner().Validate(stackTemplate)
+	return c.stackProvisioner().ValidateStackAtURL(stackTemplateURL)
 }
 
 func (c *ClusterRef) validateKeyPair(ec2Svc ec2DescribeKeyPairsService) error {

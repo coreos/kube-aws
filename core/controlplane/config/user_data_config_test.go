@@ -64,7 +64,9 @@ func TestCloudConfigTemplating(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed generating tls ca: %v", err)
 	}
-	opts := CredentialsOptions{}
+	opts := CredentialsOptions{
+		GenerateCA: true,
+	}
 
 	var compactAssets *CompactTLSAssets
 
@@ -100,10 +102,8 @@ func TestCloudConfigTemplating(t *testing.T) {
 
 	// Auth tokens
 	helper.WithTempDir(func(dir string) {
-		_, err := NewAuthTokensOnDisk(dir)
-		if err != nil {
-			t.Fatalf("failed to write auth tokens on disk: %v", err)
-			t.FailNow()
+		if err := CreateRawAuthTokens(false, dir); err != nil {
+			t.Fatalf("failed to create auth token file: %v", err)
 		}
 
 		encryptedAuthTokens, err := ReadOrEncryptAuthTokens(dir, cachedEncryptor)

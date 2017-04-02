@@ -722,6 +722,69 @@ experimental:
 
 }
 
+func TestTLSBootstrapConfig(t *testing.T) {
+
+	validConfigs := []struct {
+		conf         string
+		tlsBootstrap TLSBootstrap
+	}{
+		{
+			conf: `
+`,
+			tlsBootstrap: TLSBootstrap{
+				Enabled: false,
+			},
+		},
+		{
+			conf: `
+experimental:
+  tlsBootstrap:
+    enabled: false
+`,
+			tlsBootstrap: TLSBootstrap{
+				Enabled: false,
+			},
+		},
+		{
+			conf: `
+experimental:
+  tlsBootstrap:
+    enabled: true
+`,
+			tlsBootstrap: TLSBootstrap{
+				Enabled: true,
+			},
+		},
+		{
+			conf: `
+# Settings for an experimental feature must be under the "experimental" field. Ignored.
+tlsBootstrap:
+  enabled: true
+`,
+			tlsBootstrap: TLSBootstrap{
+				Enabled: false,
+			},
+		},
+	}
+
+	for _, conf := range validConfigs {
+		confBody := singleAzConfigYaml + conf.conf
+		c, err := ClusterFromBytes([]byte(confBody))
+		if err != nil {
+			t.Errorf("failed to parse config %s: %v", confBody, err)
+			continue
+		}
+		if !reflect.DeepEqual(c.Experimental.TLSBootstrap, conf.tlsBootstrap) {
+			t.Errorf(
+				"parsed TLS bootstrap settings %+v does not match config: %s",
+				c.Experimental.TLSBootstrap,
+				confBody,
+			)
+		}
+	}
+
+}
+
 func TestRktConfig(t *testing.T) {
 	validChannels := []string{
 		"alpha",

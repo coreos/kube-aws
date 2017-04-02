@@ -58,6 +58,9 @@ func NewDefaultCluster() *Cluster {
 		ClusterAutoscalerSupport: ClusterAutoscalerSupport{
 			Enabled: false,
 		},
+		TLSBootstrap: TLSBootstrap{
+			Enabled: false,
+		},
 		EphemeralImageStorage: EphemeralImageStorage{
 			Enabled:    false,
 			Disk:       "xvdb",
@@ -112,6 +115,7 @@ func NewDefaultCluster() *Cluster {
 			KubeDashboardImage:          model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.5.1", RktPullDocker: false},
 			CalicoCtlImage:              model.Image{Repo: "calico/ctl", Tag: "v1.0.0", RktPullDocker: false},
 			PauseImage:                  model.Image{Repo: "gcr.io/google_containers/pause-amd64", Tag: "3.0", RktPullDocker: false},
+			FlannelImage:                model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.6.2", RktPullDocker: false},
 		},
 		KubeClusterSettings: KubeClusterSettings{
 			DNSServiceIP: "10.3.0.10",
@@ -389,6 +393,7 @@ type DeploymentSettings struct {
 	AddonResizerImage           model.Image `yaml:"addonResizerImage,omitempty"`
 	KubeDashboardImage          model.Image `yaml:"kubeDashboardImage,omitempty"`
 	PauseImage                  model.Image `yaml:"pauseImage,omitempty"`
+	FlannelImage                model.Image `yaml:"flannelImage,omitempty"`
 }
 
 // Part of configuration which is specific to worker nodes
@@ -462,6 +467,7 @@ type Experimental struct {
 	AwsEnvironment           AwsEnvironment           `yaml:"awsEnvironment"`
 	AwsNodeLabels            AwsNodeLabels            `yaml:"awsNodeLabels"`
 	ClusterAutoscalerSupport ClusterAutoscalerSupport `yaml:"clusterAutoscalerSupport"`
+	TLSBootstrap             TLSBootstrap             `yaml:"tlsBootstrap"`
 	EphemeralImageStorage    EphemeralImageStorage    `yaml:"ephemeralImageStorage"`
 	Kube2IamSupport          Kube2IamSupport          `yaml:"kube2IamSupport,omitempty"`
 	LoadBalancer             LoadBalancer             `yaml:"loadBalancer"`
@@ -507,6 +513,10 @@ type AwsNodeLabels struct {
 }
 
 type ClusterAutoscalerSupport struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type TLSBootstrap struct {
 	Enabled bool `yaml:"enabled"`
 }
 
@@ -731,46 +741,42 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 		return nil, err
 	}
 
-	// TODO: Check if new tests are needed to verify the auth token file is handled correctly
+	var compactAssets *CompactTLSAssets
+	var compactAuthTokens *CompactAuthTokens
 
+	if c.AssetsEncryptionEnabled() {
+		compactAuthTokens, err = ReadOrCreateCompactAuthTokens(opts.AssetsDir, KMSConfig{
+			Region:         stackConfig.Config.Region,
+			KMSKeyARN:      c.KMSKeyARN,
+			EncryptService: c.ProvidedEncryptService,
+		})
+		if err != nil {
+			return nil, err
+		}
+		stackConfig.Config.AuthTokensConfig = compactAuthTokens
+	} else {
+		rawAuthTokens, err := ReadOrCreateUnencryptedCompactAuthTokens(opts.AssetsDir)
+		if err != nil {
+			return nil, err
+		}
+		stackConfig.Config.AuthTokensConfig = rawAuthTokens
+	}
 	if c.ManageCertificates {
 		if c.AssetsEncryptionEnabled() {
-			var compactAssets *CompactTLSAssets
-			var compactAuthTokens *CompactAuthTokens
-
 			compactAssets, err = ReadOrCreateCompactTLSAssets(opts.AssetsDir, KMSConfig{
 				Region:         stackConfig.Config.Region,
 				KMSKeyARN:      c.KMSKeyARN,
 				EncryptService: c.ProvidedEncryptService,
 			})
-			if err != nil {
-				return nil, err
-			}
-
-			compactAuthTokens, err = ReadOrCreateCompactAuthTokens(opts.AssetsDir, KMSConfig{
-				Region:         stackConfig.Config.Region,
-				KMSKeyARN:      c.KMSKeyARN,
-				EncryptService: c.ProvidedEncryptService,
-			})
-			if err != nil {
-				return nil, err
-			}
 
 			stackConfig.Config.TLSConfig = compactAssets
-			stackConfig.Config.AuthTokensConfig = compactAuthTokens
 		} else {
-			rawAssets, err := ReadOrCreateUnecryptedCompactTLSAssets(opts.AssetsDir)
-			if err != nil {
-				return nil, err
-			}
-
-			rawAuthTokens, err := ReadOrCreateUnecryptedCompactAuthTokens(opts.AssetsDir)
+			rawAssets, err := ReadOrCreateUnencryptedCompactTLSAssets(opts.AssetsDir)
 			if err != nil {
 				return nil, err
 			}
 
 			stackConfig.Config.TLSConfig = rawAssets
-			stackConfig.Config.AuthTokensConfig = rawAuthTokens
 		}
 	}
 
@@ -779,6 +785,13 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	}
 	if stackConfig.UserDataEtcd, err = userdatatemplate.GetString(opts.EtcdTmplFile, stackConfig.Config); err != nil {
 		return nil, fmt.Errorf("failed to render etcd cloud config: %v", err)
+	}
+	if len(stackConfig.Config.AuthTokensConfig.KubeletBootstrapToken) == 0 && c.DeploymentSettings.Experimental.TLSBootstrap.Enabled {
+		bootstrapRecord, err := RandomBootstrapTokenRecord()
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("kubelet bootstrap token not found in ./credentials/tokens.csv\n\nTo fix this, append the following line to ./credentials.tokens.csv:\n%s", bootstrapRecord)
 	}
 
 	stackConfig.StackTemplateOptions = opts
@@ -799,11 +812,8 @@ type Config struct {
 
 	EtcdNodes []derived.EtcdNode
 
-	// Encoded auth tokens
 	AuthTokensConfig *CompactAuthTokens
-
-	// Encoded TLS assets
-	TLSConfig *CompactTLSAssets
+	TLSConfig        *CompactTLSAssets
 }
 
 // StackName returns the logical name of a CloudFormation stack resource in a root stack template
@@ -960,6 +970,10 @@ func (c Cluster) valid() error {
 
 	if c.ControllerInstanceType == "t2.micro" || c.EtcdInstanceType == "t2.micro" || c.ControllerInstanceType == "t2.nano" || c.EtcdInstanceType == "t2.nano" {
 		fmt.Println(`WARNING: instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/kubernetes-incubator/kube-aws/issues/258 for more information`)
+	}
+
+	if c.Experimental.TLSBootstrap.Enabled && !c.Experimental.Plugins.Rbac.Enabled {
+		fmt.Println(`WARNING: enabling cluster-level TLS bootstrapping without RBAC is not recommended. See https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/ for more information`)
 	}
 
 	if e := cfnresource.ValidateRoleNameLength(c.ClusterName, c.NestedStackName(), c.Controller.ManagedIamRoleName, c.Region.String()); e != nil {

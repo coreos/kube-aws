@@ -323,8 +323,22 @@ func (c clusterImpl) ValidateTemplates() error {
 	return nil
 }
 
+// ValidateStack validates all the CloudFormation stack templates already uploaded to S3
 func (c clusterImpl) ValidateStack() (string, error) {
 	reports := []string{}
+
+	// Upload all the assets including stack templates and cloud-configs for all the stacks
+	rootStackTemplateURL, err := c.prepareTemplateWithAssets()
+	if err != nil {
+		return "", err
+	}
+
+	r, err := c.stackProvisioner().ValidateStackAtURL(rootStackTemplateURL)
+	if err != nil {
+		return "", err
+	}
+
+	reports = append(reports, r)
 
 	cpReport, err := c.controlPlane.ValidateStack()
 	if err != nil {
@@ -339,18 +353,6 @@ func (c clusterImpl) ValidateStack() (string, error) {
 		}
 		reports = append(reports, npReport)
 	}
-
-	stackTemplate, err := c.renderTemplateAsString()
-	if err != nil {
-		return "", fmt.Errorf("failed to validate template : %v", err)
-	}
-
-	r, err := c.stackProvisioner().Validate(stackTemplate)
-	if err != nil {
-		return "", err
-	}
-
-	reports = append(reports, r)
 
 	return strings.Join(reports, "\n"), nil
 }
