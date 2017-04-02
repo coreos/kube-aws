@@ -148,6 +148,11 @@ func ClusterFromBytes(data []byte, main *cfg.Config) (*ProvidedConfig, error) {
 	return c, nil
 }
 
+func (c *ProvidedConfig) ExternalDNSName() string {
+	fmt.Println("WARN: ExternalDNSName is deprecated and will be removed in v0.9.7. Please use APIEndpoint.Name instead")
+	return c.APIEndpoint.DNSName
+}
+
 func (c *ProvidedConfig) Load(main *cfg.Config) error {
 	defaults := newDefaultCluster()
 	if c.Count == nil {
