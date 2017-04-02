@@ -7,6 +7,7 @@ clusterName: {{.ClusterName}}
 # from worker nodes and external clients. Configure the options
 # below if you'd like kube-aws to create a Route53 record sets/hosted zones
 # for you.  Otherwise the deployer is responsible for making this name routable
+# If you'd like to have 2 or more DNS names, please omit this and use `apiEndpoints` instead
 externalDNSName: {{.ExternalDNSName}}
 
 # CoreOS release channel to use. Currently supported options: alpha, beta, stable
