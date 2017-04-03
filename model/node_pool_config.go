@@ -5,17 +5,18 @@ import (
 )
 
 type NodePoolConfig struct {
-	AutoScalingGroup     AutoScalingGroup  `yaml:"autoScalingGroup,omitempty"`
-	ClusterAutoscaler    ClusterAutoscaler `yaml:"clusterAutoscaler"`
-	SpotFleet            SpotFleet         `yaml:"spotFleet,omitempty"`
-	EC2Instance          `yaml:",inline"`
-	ManagedIamRoleName   string `yaml:"managedIamRoleName,omitempty"`
-	DeprecatedRootVolume `yaml:",inline"`
-	SpotPrice            string                 `yaml:"spotPrice,omitempty"`
-	SecurityGroupIds     []string               `yaml:"securityGroupIds,omitempty"`
-	CustomSettings       map[string]interface{} `yaml:"customSettings,omitempty"`
-	VolumeMounts         []VolumeMount          `yaml:"volumeMounts,omitempty"`
-	UnknownKeys          `yaml:",inline"`
+	AutoScalingGroup          AutoScalingGroup  `yaml:"autoScalingGroup,omitempty"`
+	ClusterAutoscaler         ClusterAutoscaler `yaml:"clusterAutoscaler"`
+	SpotFleet                 SpotFleet         `yaml:"spotFleet,omitempty"`
+	EC2Instance               `yaml:",inline"`
+	ManagedIamRoleName        string `yaml:"managedIamRoleName,omitempty"`
+	DeprecatedRootVolume      `yaml:",inline"`
+	SpotPrice                 string                 `yaml:"spotPrice,omitempty"`
+	SecurityGroupIds          []string               `yaml:"securityGroupIds,omitempty"`
+	CustomSettings            map[string]interface{} `yaml:"customSettings,omitempty"`
+	VolumeMounts              []VolumeMount          `yaml:"volumeMounts,omitempty"`
+	UnknownKeys               `yaml:",inline"`
+	NodeStatusUpdateFrequency string `yaml:"nodeStatusUpdateFrequency"`
 }
 
 type ClusterAutoscaler struct {

@@ -165,7 +165,8 @@ coreos:
         {{end}}--register-node=true \
         {{if .Experimental.Taints}}--register-schedulable=false \
         {{end}}--allow-privileged=true \
-        --pod-manifest-path=/etc/kubernetes/manifests \
+        {{if .NodeStatusUpdateFrequency}}--node-status-update-frequency={{.NodeStatusUpdateFrequency}} \
+        {{end}}--pod-manifest-path=/etc/kubernetes/manifests \
         --cluster_dns={{.DNSServiceIP}} \
         --cluster_domain=cluster.local \
         --cloud-provider=aws \

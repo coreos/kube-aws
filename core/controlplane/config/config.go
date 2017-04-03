@@ -646,22 +646,24 @@ type Cluster struct {
 }
 
 type Experimental struct {
-	Admission                Admission                `yaml:"admission"`
-	AuditLog                 AuditLog                 `yaml:"auditLog"`
-	Authentication           Authentication           `yaml:"authentication"`
-	AwsEnvironment           AwsEnvironment           `yaml:"awsEnvironment"`
-	AwsNodeLabels            AwsNodeLabels            `yaml:"awsNodeLabels"`
-	ClusterAutoscalerSupport ClusterAutoscalerSupport `yaml:"clusterAutoscalerSupport"`
-	TLSBootstrap             TLSBootstrap             `yaml:"tlsBootstrap"`
-	EphemeralImageStorage    EphemeralImageStorage    `yaml:"ephemeralImageStorage"`
-	Kube2IamSupport          Kube2IamSupport          `yaml:"kube2IamSupport,omitempty"`
-	LoadBalancer             LoadBalancer             `yaml:"loadBalancer"`
-	TargetGroup              TargetGroup              `yaml:"targetGroup"`
-	NodeDrainer              NodeDrainer              `yaml:"nodeDrainer"`
-	NodeLabels               NodeLabels               `yaml:"nodeLabels"`
-	Plugins                  Plugins                  `yaml:"plugins"`
-	Taints                   []Taint                  `yaml:"taints"`
-	model.UnknownKeys        `yaml:",inline"`
+	Admission                   Admission                `yaml:"admission"`
+	AuditLog                    AuditLog                 `yaml:"auditLog"`
+	Authentication              Authentication           `yaml:"authentication"`
+	AwsEnvironment              AwsEnvironment           `yaml:"awsEnvironment"`
+	AwsNodeLabels               AwsNodeLabels            `yaml:"awsNodeLabels"`
+	ClusterAutoscalerSupport    ClusterAutoscalerSupport `yaml:"clusterAutoscalerSupport"`
+	TLSBootstrap                TLSBootstrap             `yaml:"tlsBootstrap"`
+	EphemeralImageStorage       EphemeralImageStorage    `yaml:"ephemeralImageStorage"`
+	Kube2IamSupport             Kube2IamSupport          `yaml:"kube2IamSupport,omitempty"`
+	LoadBalancer                LoadBalancer             `yaml:"loadBalancer"`
+	TargetGroup                 TargetGroup              `yaml:"targetGroup"`
+	NodeDrainer                 NodeDrainer              `yaml:"nodeDrainer"`
+	NodeLabels                  NodeLabels               `yaml:"nodeLabels"`
+	Plugins                     Plugins                  `yaml:"plugins"`
+	DisableSecurityGroupIngress bool                     `yaml:"disableSecurityGroupIngress"`
+	NodeMonitorGracePeriod      string                   `yaml:"nodeMonitorGracePeriod"`
+	Taints                      []Taint                  `yaml:"taints"`
+	model.UnknownKeys           `yaml:",inline"`
 }
 
 type Admission struct {
