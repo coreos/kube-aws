@@ -65,9 +65,6 @@ func runCmdRender(cmd *cobra.Command, args []string) error {
 	if _, err := os.Stat(renderTLSCredentialsOpts.CaKeyPath); os.IsNotExist(err) {
 		renderTLSCredentialsOpts.GenerateCA = true
 	}
-	if err := runCmdRenderTokenFile(cmdRenderTLSCredentials, args); err != nil {
-		return err
-	}
 	if err := runCmdRenderTLSCredentials(cmdRenderTLSCredentials, args); err != nil {
 		return err
 	}
@@ -95,8 +92,7 @@ func runCmdRenderStack(cmd *cobra.Command, args []string) error {
 Next steps:
 1. (Optional) Validate your changes to %s with "kube-aws validate"
 2. (Optional) Further customize the cluster by modifying templates in ./stack-templates or cloud-configs in ./userdata.
-3. (Optional) Add more authentication tokens in ./credentials/tokens.csv
-4. Start the cluster with "kube-aws up".
+3. Start the cluster with "kube-aws up".
 `
 
 	fmt.Printf(successMsg, configPath)
