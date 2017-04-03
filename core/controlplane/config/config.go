@@ -1471,9 +1471,14 @@ func (c ControllerSettings) Valid() error {
 	return nil
 }
 
+// Valid returns an error when there's any user error in the `etcd` settings
 func (e EtcdSettings) Valid() error {
 	if !e.Etcd.DataVolume.Encrypted && e.Etcd.KMSKeyARN() != "" {
 		return errors.New("`etcd.kmsKeyArn` can only be specified when `etcdDataVolumeEncrypted` is enabled")
+	}
+
+	if e.Etcd.DisasterRecovery.Automated && !e.Etcd.Snapshot.Automated {
+		return errors.New("`etcd.disasterRecovery.automated` is set to true but `etcd.snapshot.automated` is not - automated disaster recovery requires snapshot to be also automated")
 	}
 
 	return nil
