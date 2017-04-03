@@ -60,6 +60,45 @@ func TestRandomKubeletBootstrapTokenString(t *testing.T) {
 	}
 }
 
+func TestAuthTokensFileExists(t *testing.T) {
+	t.Run("NoAuthTokenFile", func(t *testing.T) {
+		helper.WithTempDir(func(dir string) {
+			exists := AuthTokensFileExists(dir)
+			if exists {
+				t.Errorf("Expected auth token file not to exist, but it does")
+			}
+		})
+	})
+
+	t.Run("EmptyAuthTokenFile", func(t *testing.T) {
+		helper.WithTempDir(func(dir string) {
+			authTokensFile := fmt.Sprintf("%s/tokens.csv", dir)
+			if err := ioutil.WriteFile(authTokensFile, []byte(""), 0600); err != nil {
+				t.Errorf("Error writing the empty auth token file: %v", err)
+			}
+
+			exists := AuthTokensFileExists(dir)
+			if exists {
+				t.Errorf("Expected auth token file not to exist, but it does")
+			}
+		})
+	})
+
+	t.Run("NonEmptyAuthTokenFile", func(t *testing.T) {
+		helper.WithTempDir(func(dir string) {
+			authTokensFile := fmt.Sprintf("%s/tokens.csv", dir)
+			if err := ioutil.WriteFile(authTokensFile, []byte("dummy-token"), 0600); err != nil {
+				t.Errorf("Error writing the empty auth token file: %v", err)
+			}
+
+			exists := AuthTokensFileExists(dir)
+			if !exists {
+				t.Errorf("Expected auth token file to exist, but it does not")
+			}
+		})
+	})
+}
+
 func TestRandomBootstrapTokenRecord(t *testing.T) {
 	record, err := RandomBootstrapTokenRecord()
 	if err != nil {

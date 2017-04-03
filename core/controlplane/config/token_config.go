@@ -73,7 +73,6 @@ func NewAuthTokens() RawAuthTokensOnMemory {
 	}
 }
 
-// TODO: Add tests
 func AuthTokensFileExists(dirname string) bool {
 	authTokensPath := filepath.Join(dirname, authTokenFilename)
 	stat, err := os.Stat(authTokensPath)
