@@ -3030,7 +3030,7 @@ worker:
 			context: "WithAwsNodeLabelEnabledForTooLongClusterNameAndPoolName",
 			configYaml: minimalValidConfigYaml + `
 # clusterName + nodePools[].name should be less than or equal to 25 characters or the launch configuration name
-# "mykubeawsclustername-mynestedstackname-1N2C4K3LLBEDZ-ControllersLC-BC2S9P3JG2QD" exceeds the limit of 63 characters
+# "mykubeawsclustername-mynestedstackname-1N2C4K3LLBEDZ-WorkersLC-BC2S9P3JG2QD" exceeds the limit of 63 characters
 # See https://kubernetes.io/docs/user-guide/labels/#syntax-and-character-set
 clusterName: my-cluster1 # 11 characters
 worker:
@@ -3047,12 +3047,12 @@ worker:
 # clusterName should be less than or equal to 21 characters or the launch configuration name
 # "mykubeawsclustername-mynestedstackname-1N2C4K3LLBEDZ-ControllersLC-BC2S9P3JG2QD" exceeds the limit of 63 characters
 # See https://kubernetes.io/docs/user-guide/labels/#syntax-and-character-set
-clusterName: my-long-long-cluster-1 # 22 characters
+clusterName: mycluster # 9
 experimental:
   awsNodeLabels:
      enabled: true
 `,
-			expectedErrorMessage: "awsNodeLabels can't be enabled for controllers because the total number of characters in clusterName(=\"my-long-long-cluster-1\") exceeds the limit of 21",
+			expectedErrorMessage: "awsNodeLabels can't be enabled for controllers because the total number of characters in clusterName(=\"mycluster\") exceeds the limit of 8",
 		},
 		{
 			context: "WithMultiAPIEndpointsInvalidLB",
