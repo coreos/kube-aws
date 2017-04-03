@@ -17,6 +17,7 @@ type APIEndpoint struct {
 	// LoadBalancer is a set of an ELB and relevant settings and resources to serve a Kubernetes API hosted by controller nodes
 	LoadBalancer APIEndpointLB `yaml:"loadBalancer,omitempty"`
 	//DNSRoundRobin APIDNSRoundRobin `yaml:"dnsRoundRobin,omitempty"`
+	UnknownKeys `yaml:",inline"`
 }
 
 // Validate returns an error when there's any user error in the `apiEndpoint` settings

@@ -115,7 +115,7 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 
 	cfg := &Config{Cluster: cpCluster, NodePools: nodePools}
 
-	if err := failFastWhenUnknownKeysFound([]unknownKeyValidation{
+	validations := []unknownKeyValidation{
 		{c, ""},
 		{c.Worker, "worker"},
 		{c.Etcd, "etcd"},
@@ -124,11 +124,22 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 		{c.Controller, "controller"},
 		{c.Controller.AutoScalingGroup, "controller.autoScalingGroup"},
 		{c.Controller.ClusterAutoscaler, "controller.clusterAutoscaler"},
-        {c.Controller.RootVolume, "controller.rootVolume"},
+		{c.Controller.RootVolume, "controller.rootVolume"},
 		{c.Experimental, "experimental"},
 		{c.Addons, "addons"},
 		{c.Addons.Rescheduler, "addons.rescheduler"},
-	}); err != nil {
+	}
+
+	for i, np := range c.Worker.NodePools {
+		validations = append(validations, unknownKeyValidation{np, fmt.Sprintf("worker.nodePools[%d]", i)})
+		validations = append(validations, unknownKeyValidation{np.RootVolume, fmt.Sprintf("worker.nodePools[%d].rootVolume", i)})
+
+		for j, endpoint := range np.APIEndpointConfigs {
+			validations = append(validations, unknownKeyValidation{endpoint, fmt.Sprintf("worker.nodePools[%d].apiEndpoints[%d]", i, j)})
+		}
+	}
+
+	if err := failFastWhenUnknownKeysFound(validations); err != nil {
 		return nil, err
 	}
 
