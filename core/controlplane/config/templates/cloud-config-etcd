@@ -66,6 +66,12 @@ coreos:
         EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=-/var/run/coreos/etcdadm-environment
         ExecStart=/opt/bin/etcdadm member_status_set_started
+        {{if .Etcd.Snapshot.IsAutomatedForEtcdVersion .Etcd.Version -}}
+        ExecStartPost=/usr/bin/systemctl start etcdadm-save.timer
+        {{end -}}
+        {{if .Etcd.DisasterRecovery.IsAutomatedForEtcdVersion .Etcd.Version -}}
+        ExecStartPost=/usr/bin/systemctl start etcdadm-check.timer
+        {{end -}}
         TimeoutStartSec=120
     {{- end}}
 
@@ -119,7 +125,6 @@ coreos:
     {{if .Etcd.Snapshot.IsAutomatedForEtcdVersion .Etcd.Version -}}
     - name: etcdadm-save.timer
       enable: true
-      command: start
       content: |
         [Unit]
         Description=periodic etcd snapshot
