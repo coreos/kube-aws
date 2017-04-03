@@ -3014,6 +3014,42 @@ controller:
 			expectedErrorMessage: "clusterName(=my.cluster) is malformed. It must consist only of alphanumeric characters, colons, or hyphens",
 		},
 		{
+			context: "WithEtcdAutomatedDisasterRecoveryRequiresAutomatedSnapshot",
+			configYaml: minimalValidConfigYaml + `
+etcd:
+  version: 3
+  snapshot:
+    automated: false
+  disasterRecovery:
+    automated: true
+`,
+			expectedErrorMessage: "`etcd.disasterRecovery.automated` is set to true but `etcd.snapshot.automated` is not - automated disaster recovery requires snapshot to be also automated",
+		},
+		{
+			context: "WithEtcdAutomatedDisasterRecoveryDoesntSupportEtcd2",
+			configYaml: minimalValidConfigYaml + `
+etcd:
+  version: 2
+  snapshot:
+    automated: true
+  disasterRecovery:
+    automated: false
+`,
+			expectedErrorMessage: "`etcd.snapshot.automated` is set to true for enabling automated snapshot. However the feature is available only for etcd version 3",
+		},
+		{
+			context: "WithEtcdAutomatedSnapshotDoesntSupportEtcd2",
+			configYaml: minimalValidConfigYaml + `
+etcd:
+  version: 2
+  snapshot:
+    automated: false
+  disasterRecovery:
+    automated: true
+`,
+			expectedErrorMessage: "`etcd.disasterRecovery.automated` is set to true for enabling automated disaster recovery. However the feature is available only for etcd version 3",
+		},
+		{
 			context: "WithInvalidTaint",
 			configYaml: minimalValidConfigYaml + `
 worker:

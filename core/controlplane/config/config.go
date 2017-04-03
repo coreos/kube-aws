@@ -1477,8 +1477,17 @@ func (e EtcdSettings) Valid() error {
 		return errors.New("`etcd.kmsKeyArn` can only be specified when `etcdDataVolumeEncrypted` is enabled")
 	}
 
-	if e.Etcd.DisasterRecovery.Automated && !e.Etcd.Snapshot.Automated {
-		return errors.New("`etcd.disasterRecovery.automated` is set to true but `etcd.snapshot.automated` is not - automated disaster recovery requires snapshot to be also automated")
+	if e.Etcd.Version().Is3() {
+		if e.Etcd.DisasterRecovery.Automated && !e.Etcd.Snapshot.Automated {
+			return errors.New("`etcd.disasterRecovery.automated` is set to true but `etcd.snapshot.automated` is not - automated disaster recovery requires snapshot to be also automated")
+		}
+	} else {
+		if e.Etcd.DisasterRecovery.Automated {
+			return errors.New("`etcd.disasterRecovery.automated` is set to true for enabling automated disaster recovery. However the feature is available only for etcd version 3")
+		}
+		if e.Etcd.Snapshot.Automated {
+			return errors.New("`etcd.snapshot.automated` is set to true for enabling automated snapshot. However the feature is available only for etcd version 3")
+		}
 	}
 
 	return nil
