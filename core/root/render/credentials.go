@@ -13,7 +13,6 @@ import (
 
 type CredentialsRenderer interface {
 	RenderTLSCerts(config.CredentialsOptions) error
-	RenderAuthTokenFile() error
 }
 
 type credentialsRendererImpl struct {
@@ -68,15 +67,4 @@ func (r credentialsRendererImpl) RenderTLSCerts(renderCredentialsOpts config.Cre
 	}
 
 	return nil
-}
-
-func (r credentialsRendererImpl) RenderAuthTokenFile() error {
-	cluster := r.c
-	dir := defaults.AssetsDir
-	if err := os.MkdirAll(dir, 0700); err != nil {
-		return err
-	}
-
-	fmt.Println("Generating auth token file...")
-	return cluster.CreateRawAuthTokens(dir)
 }

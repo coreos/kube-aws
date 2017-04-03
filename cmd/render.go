@@ -26,14 +26,6 @@ var (
 		SilenceUsage: true,
 	}
 
-	cmdRenderTokenFile = &cobra.Command{
-		Use:          "token-file",
-		Short:        "Render auth token file",
-		Long:         ``,
-		RunE:         runCmdRenderTokenFile,
-		SilenceUsage: true,
-	}
-
 	renderTLSCredentialsOpts = config.CredentialsOptions{}
 
 	cmdRenderStack = &cobra.Command{
@@ -49,7 +41,6 @@ func init() {
 	RootCmd.AddCommand(cmdRender)
 
 	cmdRender.AddCommand(cmdRenderTLSCredentials)
-	cmdRender.AddCommand(cmdRenderTokenFile)
 	cmdRender.AddCommand(cmdRenderStack)
 
 	cmdRenderTLSCredentials.Flags().BoolVar(&renderTLSCredentialsOpts.GenerateCA, "generate-ca", false, "if generating credentials, generate root CA key and cert. NOT RECOMMENDED FOR PRODUCTION USE- use '-ca-key-path' and '-ca-cert-path' options to provide your own certificate authority assets")
@@ -105,16 +96,4 @@ func runCmdRenderTLSCredentials(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to read cluster config: %v", err)
 	}
 	return cluster.RenderTLSCerts(renderTLSCredentialsOpts)
-}
-
-func runCmdRenderTokenFile(cmd *cobra.Command, args []string) error {
-	cluster, err := root.CredentialsRendererFromFile(configPath)
-	if err != nil {
-		return fmt.Errorf("failed to read cluster config: %v", err)
-	}
-
-	if err = cluster.RenderAuthTokenFile(); err != nil {
-		return err
-	}
-	return nil
 }

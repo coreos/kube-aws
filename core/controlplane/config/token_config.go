@@ -73,10 +73,6 @@ func NewAuthTokens() RawAuthTokensOnMemory {
 	}
 }
 
-func (_ *Cluster) AuthTokensFileExist(dirname string) bool {
-	return AuthTokensFileExists(dirname)
-}
-
 // TODO: Add tests
 func AuthTokensFileExists(dirname string) bool {
 	authTokensPath := filepath.Join(dirname, authTokenFilename)
@@ -105,12 +101,6 @@ func RandomBootstrapTokenRecord() (string, error) {
 		return "", fmt.Errorf("cannot generate a random Kubelet bootstrap token: %v", err)
 	}
 	return fmt.Sprintf("%s,%s,%s,%s", randomToken, kubeletBootstrapUser, kubeletBootstrapUserId, kubeletBootstrapGroup), nil
-}
-
-func (c *Cluster) CreateRawAuthTokens(dirname string) error {
-	createBootstrapToken := c.DeploymentSettings.Experimental.TLSBootstrap.Enabled
-	_, err := CreateRawAuthTokens(createBootstrapToken, dirname)
-	return err
 }
 
 func CreateRawAuthTokens(addBootstrapToken bool, dirname string) (bool, error) {
