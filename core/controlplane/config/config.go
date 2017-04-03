@@ -348,7 +348,7 @@ func ClusterFromBytesWithEncryptService(data []byte, encryptService EncryptServi
 // Part of configuration which is shared between controller nodes and worker nodes.
 // Its name is prefixed with `Kube` because it doesn't relate to etcd.
 type KubeClusterSettings struct {
-	APIEndpointConfigs []model.APIEndpoint `yaml:"apiEndpoints,omitempty"`
+	APIEndpointConfigs model.APIEndpoints `yaml:"apiEndpoints,omitempty"`
 	// Required by kubelet to locate the kube-apiserver
 	ExternalDNSName string `yaml:"externalDNSName,omitempty"`
 	// Required by kubelet to locate the cluster-internal dns hosted on controller nodes in the base cluster
@@ -1041,10 +1041,8 @@ func (c KubeClusterSettings) Valid() (*InfrastructureValidationResult, error) {
 		return nil, errors.New("Either externalDNSName or apiEndpoints must be set")
 	}
 
-	for i, apiEndpoint := range c.APIEndpointConfigs {
-		if err := apiEndpoint.Validate(); err != nil {
-			return nil, fmt.Errorf("invalid apiEndpoint at index %d: %v", i, err)
-		}
+	if err := c.APIEndpointConfigs.Validate(); err != nil {
+		return nil, err
 	}
 
 	dnsServiceIPAddr := net.ParseIP(c.DNSServiceIP)

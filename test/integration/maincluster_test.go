@@ -2901,7 +2901,7 @@ apiEndpoints:
     hostedZone:
       id: hostedzone-public
 `,
-			expectedErrorMessage: "invalid apiEndpoint at index 0: invalid apiEndpoint named \"unversionedPublic\": invalid loadBalancer: createRecordSet, private, subnets, hostedZone must be omitted when id is specified to reuse an existing ELB",
+			expectedErrorMessage: "invalid apiEndpoint \"unversionedPublic\" at index 0: invalid loadBalancer: createRecordSet, private, subnets, hostedZone must be omitted when id is specified to reuse an existing ELB",
 		},
 		{
 			context: "WithMultiAPIEndpointsInvalidWorkerAPIEndpointName",
@@ -2972,6 +2972,22 @@ apiEndpoints:
 			expectedErrorMessage: "invalid node pool at index 0: failed to find an API endpoint named \"unknownEndpoint\": no API endpoint named \"unknownEndpoint\" defined under the `apiEndpoints[]`",
 		},
 		{
+			context: "WithMultiAPIEndpointsMissingDNSName",
+			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
+vpcId: vpc-1a2b3c4d
+
+subnets:
+- name: publicSubnet1
+  availabilityZone: us-west-1a
+  instanceCIDR: "10.0.1.0/24"
+
+apiEndpoints:
+- name: unversionedPublic
+  dnsName:
+`,
+			expectedErrorMessage: "invalid apiEndpoint \"unversionedPublic\" at index 0: dnsName must be set",
+		},
+		{
 			context: "WithMultiAPIEndpointsMissingGlobalAPIEndpointName",
 			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
 vpcId: vpc-1a2b3c4d
@@ -3030,7 +3046,7 @@ apiEndpoints:
     - name: publicSubnet1
     # missing hosted zone id here!
 `,
-			expectedErrorMessage: "invalid apiEndpoint named \"unversionedPublic\": invalid loadBalancer: missing hostedZoneId",
+			expectedErrorMessage: "invalid apiEndpoint \"unversionedPublic\" at index 0: invalid loadBalancer: missing hostedZoneId",
 		},
 		{
 			context: "WithMultiAPIEndpointsRecordSetImpliedByExplicitPublicMissingHostedZoneID",
@@ -3054,7 +3070,7 @@ apiEndpoints:
     private: false
     # missing hosted zone id here!
 `,
-			expectedErrorMessage: "invalid apiEndpoint named \"unversionedPublic\": invalid loadBalancer: missing hostedZoneId",
+			expectedErrorMessage: "invalid apiEndpoint \"unversionedPublic\" at index 0: invalid loadBalancer: missing hostedZoneId",
 		},
 		{
 			context: "WithMultiAPIEndpointsRecordSetImpliedByExplicitPrivateMissingHostedZoneID",
@@ -3081,7 +3097,7 @@ apiEndpoints:
     private: true
     # missing hosted zone id here!
 `,
-			expectedErrorMessage: "invalid apiEndpoint named \"unversionedPublic\": invalid loadBalancer: missing hostedZoneId",
+			expectedErrorMessage: "invalid apiEndpoint \"unversionedPublic\" at index 0: invalid loadBalancer: missing hostedZoneId",
 		},
 		{
 			context: "WithMultiAPIEndpointsExplicitRecordSetMissingHostedZoneID",
@@ -3105,7 +3121,7 @@ apiEndpoints:
     createRecordSet: true
     # missing hosted zone id here!
 `,
-			expectedErrorMessage: "invalid apiEndpoint named \"unversionedPublic\": invalid loadBalancer: missing hostedZoneId",
+			expectedErrorMessage: "invalid apiEndpoint \"unversionedPublic\" at index 0: invalid loadBalancer: missing hostedZoneId",
 		},
 		{
 			context: "WithNonZeroWorkerCount",
