@@ -116,6 +116,11 @@ configure() {
   find .
 }
 
+kube-aws() {
+  cd ${WORK_DIR}
+  ${KUBE_AWS_CMD} "$@"
+}
+
 validate() {
   cd ${WORK_DIR}
   ${KUBE_AWS_CMD} validate --s3-uri ${KUBE_AWS_S3_URI}
