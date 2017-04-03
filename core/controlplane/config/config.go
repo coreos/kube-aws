@@ -13,9 +13,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"regexp"
-	"sort"
-
 	"github.com/coreos/go-semver/semver"
 	"github.com/kubernetes-incubator/kube-aws/cfnresource"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
@@ -662,7 +659,6 @@ type Experimental struct {
 	Plugins                     Plugins                  `yaml:"plugins"`
 	DisableSecurityGroupIngress bool                     `yaml:"disableSecurityGroupIngress"`
 	NodeMonitorGracePeriod      string                   `yaml:"nodeMonitorGracePeriod"`
-	NodeStatusUpdateFrequency   string                   `yaml:"nodeStatusUpdateFrequency"`
 	Taints                      []Taint                  `yaml:"taints"`
 	model.UnknownKeys           `yaml:",inline"`
 }
