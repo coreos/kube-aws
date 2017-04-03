@@ -929,7 +929,7 @@ etcd:
 		},
 		{
 			context: "WithExperimentalFeatures",
-			configYaml:  kubeAwsSettings.withClusterName("kubeit").minimumValidClusterYaml() + `
+			configYaml: kubeAwsSettings.withClusterName("kubeit").minimumValidClusterYaml() + `
 experimental:
   admission:
     podSecurityPolicy:
