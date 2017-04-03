@@ -33,16 +33,22 @@ Please file an issue to make suggestions on this roadmap!
     * Private subnets and NAT gateways for etcd, controller and worker nodes
     * Deployments to existing subnets
   * Rethink how node pools are implemented
-    * See https://github.com/coreos/kube-aws/issues/238
+    * See https://github.com/kubernetes-incubator/kube-aws/issues/238
 
 ## v0.9.5
 
-  * etcd improvements
-    * Automatic recovery from temporary node failures
-    * Manual disaster recovery w/ or w/o recreating etcd nodes
-  * Experimental support for an internal domain and custom hostnames for etcd nodes
-    
+  * Kubernetes 1.5.4
+  * etcd: Automatic recovery from temporary etcd node failures
+  * etcd: Experimental support for an internal domain and custom hostnames for etcd nodes
+
 ## v0.9.6
+
+  * Kubernetes 1.6
+  * etcd: etcd v3 support #381
+    * It is enabled by default in 1.6: https://github.com/kubernetes/kubernetes/issues/22448#event-913208648
+  * etcd: Manual/Automatic recovery from permanent etcd node failures #417
+
+## v0.9.7
 
   * Cluster Auto Scaling
     * Support for auto-scaling worker nodes via:
@@ -50,11 +56,6 @@ Please file an issue to make suggestions on this roadmap!
       * Automatic discovery of target node pools for cluster-autoscaler
     * Requires much work on CA side
   
-## v0.9.7
-
-  * Kubernetes 1.6
-  * Etcd v3 support as it is enabled by default in 1.6: https://github.com/kubernetes/kubernetes/issues/22448#event-913208648
-
 ## v0.9.x
 
   * Migrate from coreos-cloudinit to ignition for node bootstrapping

@@ -2,9 +2,8 @@ package root
 
 import (
 	"fmt"
-	controlplane "github.com/coreos/kube-aws/core/controlplane/cluster"
-	nodepool "github.com/coreos/kube-aws/core/nodepool/cluster"
-	"strings"
+	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
+	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/cluster"
 )
 
 type TemplateParams struct {
@@ -32,8 +31,7 @@ type controlPlane struct {
 }
 
 func (p controlPlane) Name() string {
-	stackName := p.controlPlane.StackName()
-	return strings.Title(strings.Replace(stackName, "-", "", -1))
+	return p.controlPlane.NestedStackName()
 }
 
 func (p controlPlane) Tags() map[string]string {
@@ -55,10 +53,7 @@ type nodePool struct {
 }
 
 func (p nodePool) Name() string {
-	// Convert stack name into something valid as a cfn resource name or
-	// we'll end up with cfn errors like "Template format error: Resource name test5-controlplane is non alphanumeric"
-	stackName := p.nodePool.StackName()
-	return strings.Title(strings.Replace(stackName, "-", "", -1))
+	return p.nodePool.NestedStackName()
 }
 
 func (p nodePool) Tags() map[string]string {

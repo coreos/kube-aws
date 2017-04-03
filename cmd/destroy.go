@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/coreos/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/core/root"
 )
 
 var (

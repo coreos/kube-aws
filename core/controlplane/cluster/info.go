@@ -3,12 +3,13 @@ package cluster
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"text/tabwriter"
 )
 
 type Info struct {
-	Name           string
-	ControllerHost string
+	Name            string
+	ControllerHosts []string
 }
 
 func (c *Info) String() string {
@@ -17,7 +18,7 @@ func (c *Info) String() string {
 	w.Init(buf, 0, 8, 0, '\t', 0)
 
 	fmt.Fprintf(w, "Cluster Name:\t%s\n", c.Name)
-	fmt.Fprintf(w, "Controller DNS Name:\t%s\n", c.ControllerHost)
+	fmt.Fprintf(w, "Controller DNS Names:\t%s\n", strings.Join(c.ControllerHosts, ", "))
 
 	w.Flush()
 	return buf.String()

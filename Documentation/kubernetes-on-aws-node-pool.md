@@ -72,7 +72,7 @@ If you've chosen to power your worker nodes in a node pool with an auto scaling 
 
 Please read [the AWS documentation](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-as-group.html#aws-properties-as-group-prop) for more information on `MinSize`, `MaxSize`, `MinInstancesInService` for ASGs.
 
-```
+```yaml
 worker:
   nodePools:
   - name: pool1
@@ -82,7 +82,7 @@ worker:
       rollingUpdateMinInstancesInService: 2
 ```
 
-See [the detailed comments in `cluster.yaml`](https://github.com/coreos/kube-aws/blob/master/nodepool/config/templates/cluster.yaml) for further information.
+See [the detailed comments in `cluster.yaml`](https://github.com/kubernetes-incubator/kube-aws/blob/master/core/controlplane/config/templates/cluster.yaml) for further information.
 
 ## Deploying a node pool powered by Spot Fleet
 
@@ -95,7 +95,7 @@ However, we'd greatly appreciate your feedbacks because they do accelerate impro
 
 ### Known Limitations
 
-* Running `kube-aws node-pools update` to increase or decrease `targetCapacity` of a spot fleet results in a complete replacement of the Spot Fleet hence some downtime. [This is due to how CloudFormation works for updating a Spot Fleet](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-spotfleet.html#d0e60520)
+* Running `kube-aws update` to increase or decrease `targetCapacity` of a spot fleet results in a complete replacement of the Spot Fleet hence some downtime. [This is due to how CloudFormation works for updating a Spot Fleet](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-spotfleet.html#d0e60520)
    * It is recommended to temporarily bring up an another, spare node pool to maintain the whole cluster capacity at a certain level while replacing the spot fleet.
 
 ### Pre-requisites
@@ -142,13 +142,15 @@ This configuration would normally result in Spot Fleet to bring up 3 instances t
 This is achieved by the `diversified` strategy of Spot Fleet.
 Please read [the AWS documentation describing Spot Fleet Allocation Strategy](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-fleet.html#spot-fleet-allocation-strategy) for more details.
 
-Please also see [the detailed comments in `cluster.yaml`](https://github.com/coreos/kube-aws/blob/master/nodepool/config/templates/cluster.yaml) and [the GitHub issue summarizing the initial implementation](https://github.com/coreos/kube-aws/issues/112) of this feature for further information.
+Please also see [the detailed comments in `cluster.yaml`](https://github.com/kubernetes-incubator/kube-aws/blob/master/core/controlplane/config/templates/cluster.yaml) and [the GitHub issue summarizing the initial implementation](https://github.com/kubernetes-incubator/kube-aws/issues/112) of this feature for further information.
 
-When you are done with your cluster, [destroy your cluster][aws-step-6]
+You can optionally [configure various Kubernetes add-ons][aws-step-6] according to your requirements.
+When you are done with your cluster, [destroy your cluster][aws-step-7]
 
 [aws-step-1]: kubernetes-on-aws.md
 [aws-step-2]: kubernetes-on-aws-render.md
 [aws-step-3]: kubernetes-on-aws-launch.md
 [aws-step-4]: kube-aws-cluster-updates.md
 [aws-step-5]: kubernetes-on-aws-node-pool.md
-[aws-step-6]: kubernetes-on-aws-destroy.md
+[aws-step-6]: kubernetes-on-aws-add-ons.md
+[aws-step-7]: kubernetes-on-aws-destroy.md

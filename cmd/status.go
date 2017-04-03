@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/coreos/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/core/root"
 	"github.com/spf13/cobra"
 )
 

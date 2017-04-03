@@ -6,14 +6,15 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"github.com/coreos/kube-aws/model"
-	"github.com/coreos/kube-aws/test/helper"
+	"fmt"
+	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/test/helper"
 	"os"
 	"path/filepath"
 	"reflect"
 )
 
-func genTLSAssets(t *testing.T) *RawTLSAssets {
+func genTLSAssets(t *testing.T) *RawTLSAssetsOnMemory {
 	cluster, err := ClusterFromBytes([]byte(singleAzConfigYaml))
 	if err != nil {
 		t.Fatalf("failed generating config: %v", err)
@@ -23,7 +24,7 @@ func genTLSAssets(t *testing.T) *RawTLSAssets {
 	if err != nil {
 		t.Fatalf("failed generating tls ca: %v", err)
 	}
-	assets, err := cluster.NewTLSAssets(caKey, caCert)
+	assets, err := cluster.NewTLSAssetsOnMemory(caKey, caCert)
 	if err != nil {
 		t.Fatalf("failed generating tls: %v", err)
 	}
@@ -116,7 +117,7 @@ func TestReadOrCreateCompactTLSAssets(t *testing.T) {
 			EncryptService: &dummyEncryptService{},
 		}
 
-		// See https://github.com/coreos/kube-aws/issues/107
+		// See https://github.com/kubernetes-incubator/kube-aws/issues/107
 		t.Run("CachedToPreventUnnecessaryNodeReplacement", func(t *testing.T) {
 			created, err := ReadOrCreateCompactTLSAssets(dir, kmsConfig)
 
@@ -125,7 +126,7 @@ func TestReadOrCreateCompactTLSAssets(t *testing.T) {
 			}
 
 			// This depends on TestDummyEncryptService which ensures dummy encrypt service to produce different ciphertext for each encryption
-			// created == read means that encrypted assets were loaded from cached files named *.pem.enc, instead of re-encryptiong raw tls assets named *.pem files
+			// created == read means that encrypted assets were loaded from cached files named *.pem.enc, instead of re-encrypting raw tls assets named *.pem files
 			// TODO Use some kind of mocking framework for tests like this
 			read, err := ReadOrCreateCompactTLSAssets(dir, kmsConfig)
 
@@ -134,23 +135,31 @@ func TestReadOrCreateCompactTLSAssets(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(created, read) {
-				t.Errorf(`failed to cache encrypted tls assets.
+				t.Errorf(`failed to content encrypted tls assets.
 	encrypted tls assets must not change after their first creation but they did change:
 	created = %v
 	read = %v`, created, read)
 			}
 		})
 
-		t.Run("RemoveOneOrMoreCacheFilesToRegenerateAll", func(t *testing.T) {
+		t.Run("RemoveFilesToRegenerate", func(t *testing.T) {
 			original, err := ReadOrCreateCompactTLSAssets(dir, kmsConfig)
 
 			if err != nil {
 				t.Errorf("failed to read the original encrypted tls assets : %v", err)
 			}
 
-			if err := os.Remove(filepath.Join(dir, "ca.pem.enc")); err != nil {
-				t.Errorf("failed to remove ca.pem.enc for test setup : %v", err)
-				t.FailNow()
+			files := []string{
+				"ca", "admin", "admin-key", "worker", "worker-key", "apiserver", "apiserver-key",
+				"etcd", "etcd-key", "etcd-client", "etcd-client-key",
+			}
+
+			for _, f := range files {
+				filename := fmt.Sprintf("%s.pem.enc", f)
+				if err := os.Remove(filepath.Join(dir, filename)); err != nil {
+					t.Errorf("failed to remove %s for test setup : %v", filename, err)
+					t.FailNow()
+				}
 			}
 
 			regenerated, err := ReadOrCreateCompactTLSAssets(dir, kmsConfig)
@@ -217,23 +226,23 @@ func TestReadOrCreateCompactTLSAssets(t *testing.T) {
 	})
 }
 
-func TestReadOrCreateUnEcryptedCompactTLSAssets(t *testing.T) {
+func TestReadOrCreateUnEncryptedCompactTLSAssets(t *testing.T) {
 	helper.WithDummyCredentials(func(dir string) {
 		t.Run("CachedToPreventUnnecessaryNodeReplacementOnUnencrypted", func(t *testing.T) {
-			created, err := ReadOrCreateUnecryptedCompactTLSAssets(dir)
+			created, err := ReadOrCreateUnencryptedCompactTLSAssets(dir)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact tls assets in %s : %v", dir, err)
 			}
 
-			read, err := ReadOrCreateUnecryptedCompactTLSAssets(dir)
+			read, err := ReadOrCreateUnencryptedCompactTLSAssets(dir)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact tls assets in %s : %v", dir, err)
 			}
 
 			if !reflect.DeepEqual(created, read) {
-				t.Errorf(`failed to cache unencrypted tls assets.
+				t.Errorf(`failed to content unencrypted tls assets.
  	unencrypted tls assets must not change after their first creation but they did change:
  	created = %v
  	read = %v`, created, read)

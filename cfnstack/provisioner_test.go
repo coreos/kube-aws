@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/coreos/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/model"
 	"testing"
 )
 

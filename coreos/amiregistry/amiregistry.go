@@ -3,7 +3,6 @@ package amiregistry
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 )
 
 func GetAMI(region, channel string) (string, error) {
@@ -27,7 +26,7 @@ func GetAMI(region, channel string) (string, error) {
 }
 
 func GetAMIData(channel string) (map[string]map[string]string, error) {
-	r, err := http.Get(fmt.Sprintf("https://coreos.com/dist/aws/aws-%s.json", channel))
+	r, err := newHttp().Get(fmt.Sprintf("https://coreos.com/dist/aws/aws-%s.json", channel))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AMI data: %s: %v", channel, err)
 	}

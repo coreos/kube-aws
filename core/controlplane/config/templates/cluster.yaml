@@ -7,6 +7,7 @@ clusterName: {{.ClusterName}}
 # from worker nodes and external clients. Configure the options
 # below if you'd like kube-aws to create a Route53 record sets/hosted zones
 # for you.  Otherwise the deployer is responsible for making this name routable
+# If you'd like to have 2 or more DNS names, please omit this and use `apiEndpoints` instead
 externalDNSName: {{.ExternalDNSName}}
 
 # CoreOS release channel to use. Currently supported options: alpha, beta, stable
@@ -33,6 +34,63 @@ externalDNSName: {{.ExternalDNSName}}
 # Either specify hostedZoneId or hostedZone, but not both
 #hostedZoneId: ""
 
+# Kubernetes API endpoints with each one has a DNS name and is with/without a managed/unmanaged ELB, Route 53 record set
+# CAUTION: `externalDNSName` must be omitted when there are one or more items under `apiEndpoints`
+#apiEndpoints:
+#  # The unique name of this API endpoint used to identify it inside CloudFormation stacks or
+#  # to be referenced from other parts of cluster.yaml
+#- name: template
+#
+#  # Specifies an existing load-balancer used for load-balancing controller nodes and serving this endpoint
+#  # Setting id requires all the other settings excluding `name` to be omitted because reusing an ELB implies that configuring other resources
+#  # like a Route 53 record set for the endpoint is now your responsibility!
+#  id: existing-elb
+#
+#  # Set to false when you want to disable creation of the record set for this api load balancer
+#  # Must be omitted when `id` is specified
+#  createRecordSet: true
+#
+#  # All the subnets assigned to this load-balancer. Specified only when this load balancer is not reused but managed one
+#  # Must be omitted when `id` is specified
+#  subnets:
+#  - name: managedPublic1
+#
+#  # Set to true so that the managed ELB becomes an `internal` one rather than `internet-facing` one
+#  # When set to true while subnets are omitted, one or more private subnets in the top-level `subnets` must exist
+#  # Must be omitted when `id` is specified
+#  private: true
+#
+#  # TTL in seconds for the Route53 RecordSet created if createRecordSet is set to true.
+#  recordSetTTL: 300
+#
+#  # The Route 53 hosted zone is where the resulting Alias record is created for this endpoint
+#  # Must be omitted when `id` is specified
+#  hostedZone:
+#    id: hostedzone-abc
+#
+#  #
+#  # Common configuration #1: Unversioned, internet-facing API endpoint
+#  #
+#  - name: unversionedPublic
+#    dnsName: api.example.com
+#    loadBalancer:
+#      id: elb-abcdefg
+#
+#  #
+#  # Common configuration #2: Versioned, internet-facing API endpoint
+#  #
+#  - name: versionedPublic
+#    dnsName: v1api.example.com
+#    loadBalancer:
+#      hostedZone:
+#        id: hostedzone-abcedfg
+#
+#  #
+#  # Common configuration #3: Unmanaged endpoint a.k.a Extra DNS name added to the kube-apiserver TLS cert
+#  #
+#  - name: extra
+#    dnsName: youralias.example.com
+
 # Name of the SSH keypair already loaded into the AWS
 # account being used to deploy this cluster.
 keyName: {{.KeyName}}
@@ -50,10 +108,28 @@ availabilityZone: {{.AvailabilityZone}}
 # ARN of the KMS key used to encrypt TLS assets.
 kmsKeyArn: "{{.KMSKeyARN}}"
 
-# Number of controller nodes to create, for more control use `controller.autoScalingGroup` and do not use this setting
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use controller.count instead
 #controllerCount: 1
 
 #controller:
+#  # Number of controller nodes to create, for more control use `controller.autoScalingGroup` and do not use this setting
+#  count: 1
+#
+#  # Maximum time to wait for controller creation
+#  createTimeout: PT15M
+#
+#  # Instance type for controller node.
+#  # CAUTION: Don't use t2.micro or the cluster won't work. See https://github.com/kubernetes/kubernetes/issues/18975
+#  instanceType: t2.medium
+#
+#  rootVolume:
+#    # Disk size (GiB) for controller node
+#    size: 30
+#    # Disk type for controller node (one of standard, io1, or gp2)
+#    type: gp2
+#    # Number of I/O operations per second (IOPS) that the controller node disk supports. Leave blank if controllerRootVolumeType is not io1
+#    iops: 0
+#
 #  # Auto Scaling Group definition for controllers. If only `controllerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
 #  autoScalingGroup:
 #    minSize: 1
@@ -63,6 +139,10 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #  # Role will be created with "Ref": {"AWS::StackName"}-{"AWS::Region"}-yourManagedRole
 #  # to follow the recommendation in AWS documentation  http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
 #  # This is also intended to be used in combination with .experimental.kube2IamSupport. See #297 for more information.
+#  #
+#  # ATTENTION: Consider limiting number of characters in clusterName and managedIamRoleName to avoid the resulting IAM
+#  # role name's length from exceeding the AWS limit: 64
+#  # See https://github.com/kubernetes-incubator/kube-aws/issues/347
 #  managedIamRoleName: "yourManagedRole"
 #  # If omitted, public subnets are created by kube-aws and used for controller nodes
 #  subnets:
@@ -84,20 +164,19 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #    # subnets:
 #    #   - name: ManagedPrivateSubnet0
 
-# Maximum time to wait for controller creation
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use controller.createTimeout instead
 #controllerCreateTimeout: PT15M
 
-# Instance type for controller node.
-# CAUTION: Don't use t2.micro or the cluster won't work. See https://github.com/kubernetes/kubernetes/issues/18975
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use controller.instanceType instead
 #controllerInstanceType: t2.medium
 
-# Disk size (GiB) for controller node
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use controller.rootVolume.size instead
 #controllerRootVolumeSize: 30
 
-# Disk type for controller node (one of standard, io1, or gp2)
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use controller.rootVolume.type instead
 #controllerRootVolumeType: gp2
 
-# Number of I/O operations per second (IOPS) that the controller node disk supports. Leave blank if controllerRootVolumeType is not io1
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use controller.rootVolume.iops instead
 #controllerRootVolumeIOPS: 0
 
 # Default number of worker nodes per node pool to create, for more control use `worker.nodePools[].count` and/or `worker.autoScalingGroup` and do not use this setting
@@ -107,25 +186,112 @@ worker:
   nodePools:
     - # Name of this node pool. Must be unique among all the node pools in this cluster
       name: nodepool1
-#      # Number of worker nodes to create for an autoscaling group based pool
-#      count: 1
 #      # If omitted, public subnets are created by kube-aws and used for worker nodes
 #      subnets:
 #      - # References subnets defined under the top-level `subnets` key by their names
 #        name: ManagedPublicSubnet1
+#
+#      # Existing "glue" security groups attached to worker nodes which are typically used to allow
+#      # access from worker nodes to services running on an existing infrastructure
+#      securityGroupIds:
+#        - sg-1234abcd
+#        - sg-5678efab
+#
+#      # Configuration for external managed ELBs for worker nodes
+#      # Use this with k8s load balancers with type=NodePort. See https://kubernetes.io/docs/user-guide/services/#type-nodeport
+#      #
+#      # NOTICE: This is generally recommended over k8s managed load-balancers with type=LoadBalancer because it allows
+#      # a manual but no-downtime rotation of kube-aws clusters
+#      loadBalancer:
+#        enabled: true
+#        # Names of ELBs attached to worker nodes
+#        names: [ "manuallymanagedelb" ]
+#        # IDs of "glue" security groups attached to worker nodes to allow the ELBs to communicate with worker nodes
+#        securityGroupIds: [ "sg-87654321" ]
+#
+#      # Configuration for external managed ALBs Target Groups for worker nodes
+#      targetGroup:
+#        enabled: true
+#        # ARNs of ALBs Target Groups attached to worker nodes
+#        arns:
+#        - arn:aws:elasticloadbalancing:eu-west-1:xxxxxxxxxxxx:targetgroup/manuallymanagedetg/xxxxxxxxxxxxxxxx
+#        # IDs of "glue" security groups attached to worker nodes to allow the ALBs Target Groups to communicate with worker nodes
+#        securityGroupIds: [ "sg-87654321" ]
+#
+#      # If you specify managedIamRoleName the role created for worker nodes will not suffix the random id at the end
+#      # Role will be created with "Ref": {"AWS::StackName"}-{"AWS::Region"}-yourManagedRole
+#      # to follow the recommendation in AWS documentation  http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
+#      # This is also intended to be used in combination with kube2IamSupport. See #297 for more information.
+#      #
+#      # ATTENTION: Consider limiting number of characters in clusterName, nodePools[].name and managedIamRoleName to
+#      # avoid the resulting IAM role name's length from exceeding the AWS limit: 64
+#      # See https://github.com/kubernetes-incubator/kube-aws/issues/347
+#      managedIamRoleName: "yourManagedRole"
+#
+#      # Additional EBS volumes mounted on the worker
+#      # No additional EBS volumes by default. All parameter values do not default - they must be explicitly defined
+#      volumeMounts:
+#      - type: "gp2"
+#        iops: 0
+#        size: 30
+#        # Follow the aws convention of '/dev/xvd*' where '*' is a single letter from 'f' to 'z'
+#        device: "/dev/xvdf"
+#        path: "/ebs"
+#
+#      #
+#      # Settings only for ASG-based node pools
+#      #
+#
+#      # Number of worker nodes to create for an autoscaling group based pool
+#      count: 1
+#
+#      # Instance type for worker nodes
+#      # CAUTION: Don't use t2.micro or the cluster won't work. See https://github.com/kubernetes/kubernetes/issues/16122
+#      instanceType: t2.medium
+#
+#      rootVolume:
+#        # Disk size (GiB) for worker nodes
+#        size: 30
+#        # Disk type for worker node (one of standard, io1, or gp2)
+#        type: gp2
+#        # Number of I/O operations per second (IOPS) that the worker node disk supports. Leave blank if workerRootVolumeType is not io1
+#        iops: 0
+#
+#      # CAUTION: Deprecated and will be removed in v0.9.7. Please use rootVolume.size instead
+#      rootVolumeSize: 30
+#
+#      # CAUTION: Deprecated and will be removed in v0.9.7. Please use rootVolume.type instead
+#      rootVolumeType: gp2
+#
+#      # CAUTION: Deprecated and will be removed in v0.9.7. Please use rootVolume.iops instead
+#      rootVolumeIOPS: 0
+#
+#      # Maximum time to wait for worker creation
+#      createTimeout: PT15M
+#
+#      # Tenancy of the worker nodes. Options are "default" and "dedicated"
+#      # Documentation: http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/dedicated-instance.html
+#      tenancy: default
+#
+#      # Price (Dollars) to bid for spot instances. Omit for on-demand instances.
+#      spotPrice: "0.05"
+#
+#      # When enabled, autoscaling groups managing worker nodes wait for nodes to be up and running.
+#      # This is enabled by default.
+#      waitSignal:
+#        enabled: true
+#        # Max number of nodes concurrently updated
+#        maxBatchSize: 1
+#
 #      # Auto Scaling Group definition for workers. If only `workerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
 #      autoScalingGroup:
 #        minSize: 1
 #        maxSize: 3
 #        rollingUpdateMinInstancesInService: 2
-#      # Tag the cloudformation stack with the key `kube-aws:cluster-autoscaler:scale-specs` with the value containing
-#      # source of truth for cluster-autoscaler to update their autoscaling target and its min/max size.
-#      # Currently, enabling this configuration doesn't automatically deploy cluster-autoscaler itself.
-#      # Please read [the original issue](https://github.com/coreos/kube-aws/issues/148) carefully for more information.
-#      clusterAutoscaler:
-#        minSize: 1
-#        maxSize: 3
+#
+#      #
 #      # Spot fleet config for worker nodes
+#      #
 #      spotFleet:
 #        # Total desired number of units to maintain
 #        # An unit is chosen by you and can be a vCPU, specific amount of memory, size of instance store, etc., according to your requirement.
@@ -164,93 +330,77 @@ worker:
 #          # Defaults to worker.spotFleet.spotPrice * weightedCapacity if omitted
 #          #spotPrice:
 #
-#          # Defaults to worker.spotFleet.rootVolumeType if omitted
+#          rootVolume:
+#            # Defaults to worker.spotFleet.rootVolumeType if omitted
+#            type:
+#            # Defaults to worker.spotFleet.unitRootVolumeSize * weightedCapacity if omitted
+#            size:
+#            # Number of provisioned IOPS when rootVlumeType is io1
+#            # Must be within the range between 100 and 2000
+#            # Defaults to worker.spotFleet.unitRootVolumeIOPS * weightedCapacity if omitted
+#            iops:
+#
+#          # CAUTION: Deprecated and will be removed in v0.9.7. Please use rootVolume.type instead
 #          #rootVolumeType:
 #
-#          # Defaults to worker.spotFleet.unitRootVolumeSize * weightedCapacity if omitted
+#          # CAUTION: Deprecated and will be removed in v0.9.7. Please use rootVolume.size instead
 #          #rootVolumeSize:
 #
-#          # Number of provisioned IOPS when rootVlumeType is io1
-#          # Must be within the range between 100 and 2000
-#          # Defaults to worker.spotFleet.unitRootVolumeIOPS * weightedCapacity if omitted
+#          # CAUTION: Deprecated and will be removed in v0.9.7. Please use rootVolume.iops instead
 #          #rootVolumeIOPS:
 #
 #        - weightedCapacity: 2
 #          instanceType: c4.xlarge
 #
-#    #  # Additional EBS volumes mounted on the worker
-#    #  # No additional EBS volumes by default. All parameter values do not default - they must be explicitly defined
-#    #  volumeMounts:
-#    #  - type: "gp2"
-#    #    iops: 0
-#    #    size: 30
-#    #    # Follow the aws convention of '/dev/xvd*' where '*' is a single letter from 'f' to 'z'
-#    #    device: "/dev/xvdf"
-#    #    path: "/ebs"
+#      #
+#      # Optional settings for both ASG-based and SpotFleet-based node pools
+#      #
+#
+#      # Tag the cloudformation stack with the key `kube-aws:cluster-autoscaler:scale-specs` with the value containing
+#      # source of truth for cluster-autoscaler to update their autoscaling target and its min/max size.
+#      # Currently, enabling this configuration doesn't automatically deploy cluster-autoscaler itself.
+#      # Please read [the original issue](https://github.com/kubernetes-incubator/kube-aws/issues/148) carefully for more information.
+#      clusterAutoscaler:
+#        minSize: 1
+#        maxSize: 3
+#
 #      # Used to provide `/etc/environment` env vars with values from arbitrary CloudFormation refs
 #      awsEnvironment:
 #        enabled: true
 #        environment:
 #          CFNSTACK: '{ "Ref" : "AWS::StackId" }'
+#
 #      # Add predefined set of labels to the nodes
 #      # The set includes names of launch configurations and autoscaling groups
 #      awsNodeLabels:
 #        enabled: true
+#
 #      # Will provision worker nodes with IAM permissions to run cluster-autoscaler
 #      clusterAutoscalerSupport:
 #        enabled: true
+#
 #      # This option has not yet been tested with rkt as container runtime
 #      ephemeralImageStorage:
 #        enabled: true
-#
-#      # Existing "glue" security groups attached to worker nodes which are typically used to allow
-#      # access from worker nodes to services running on an existing infrastructure
-#      securityGroupIds:
-#        - sg-1234abcd
-#        - sg-5678efab
 #
 #      # When enabled it will grant sts:assumeRole permission to the IAM roles for worker nodes.
 #      # This is intended to be used in combination with managedIamRoleName. See #297 for more information.
 #      kube2IamSupport:
 #        enabled: true
-#      # Configuration for external managed ELBs for worker nodes
-#      loadBalancer:
-#        enabled: true
-#        # Names of ELBs attached to worker nodes
-#        names: [ "manuallymanagedelb" ]
-#        # IDs of "glue" security groups attached to worker nodes to allow the ELBs to communicate with worker nodes
-#        securityGroupIds: [ "sg-87654321" ]
-#      # Configuration for external managed ALBs Target Groups for worker nodes
-#      targetGroup:
-#        enabled: true
-#        # ARNs of ALBs Target Groups attached to worker nodes
-#        arns:
-#        - arn:aws:elasticloadbalancing:eu-west-1:xxxxxxxxxxxx:targetgroup/manuallymanagedetg/xxxxxxxxxxxxxxxx
-#        # IDs of "glue" security groups attached to worker nodes to allow the ALBs Target Groups to communicate with worker nodes
-#        securityGroupIds: [ "sg-87654321" ]
-
-#      # If you specify managedIamRoleName the role created for worker nodes will not suffix the random id at the end
-#      # Role will be created with "Ref": {"AWS::StackName"}-{"AWS::Region"}-yourManagedRole
-#      # to follow the recommendation in AWS documentation  http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
-#      # This is also intended to be used in combination with kube2IamSupport. See #297 for more information.
-#      managedIamRoleName: "yourManagedRole"
+#
 #      # When enabled, `kubectl drain` is run on the node going to shut-down
 #      nodeDrainer:
 #        enabled: true
+#
 #      # Kubernetes node labels to be added to worker nodes
 #      nodeLabels:
 #        kube-aws.coreos.com/role: worker
+#
 #      # Kubernetes node taints to be added to worker nodes
 #      taints:
 #        - key: dedicated
 #          value: search
 #          effect: NoSchedule
-#      # When enabled, autoscaling groups managing worker nodes wait for nodes to be up and running.
-#      # This is enabled by default.
-#      waitSignal:
-#        enabled: true
-#        # Max number of nodes concurrently updated
-#        maxBatchSize: 1
 #
 #      # Other less common customizations per node pool
 #      # All these settings default to the top-level ones
@@ -298,11 +448,44 @@ worker:
 ## during a cluster upgrade, due to concerns over data loss.
 ## This situation is being rectified with work towards automated management of etcd clusters
 
-# Number of etcd nodes
-# (Set to an odd number >= 3 for HA control plane)
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use etcd.count instead
 # etcdCount: 1
 
 #etcd:
+#  # Number of etcd nodes
+#  # (Set to an odd number >= 3 for HA control plane)
+#  count: 1
+#
+#  # Instance type for etcd node
+#  instanceType: t2.medium
+#
+#  rootVolume:
+#    # Root volume size (GiB) for etcd node
+#    size: 30
+#    # Root volume type for etcd node (one of standard, io1, or gp2)
+#    type: gp2
+#    # Number of I/O operations per second (IOPS) that the etcd node's root volume supports. Leave blank if etcdRootVolumeType is not io1
+#    iops: 0
+#
+#  dataVolume:
+#    # Data volume size (GiB) for etcd node
+#    # if etcdDataVolumeEphemeral=true, this value is ignored. The size of ephemeral volumes is not configurable.
+#    size: 30
+#    # Data volume type for etcd node (one of standard, io1, or gp2)
+#    type: gp2
+#    # Number of I/O operations per second (IOPS) that the etcd node's data volume supports. Leave blank if etcdDataVolumeType is not io1
+#    iops: 0
+#    # Encrypt the Etcd Data volume.  Set to true for encryption.  This does not work for etcdDataVolumeEphemeral.
+#    encrypted: false
+#    # Use ephemeral instance storage for etcd data volume instead of EBS?
+#    # (Recommended set to true for high-throughput control planes)
+#    # CAUTION: Currently broken. Please don't turn this on until it is fixed in https://github.com/kubernetes-incubator/kube-aws/pull/417
+#    ephemeral: false
+#
+#  # Tenancy of the etcd instances. Options are "default" and "dedicated"
+#  # Documentation: http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/dedicated-instance.html
+#  tenancy: default
+#
 #  # If omitted, public subnets are created by kube-aws and used for etcd nodes
 #  subnets:
 #    # References subnets defined under the top-level `subnets` key by their names
@@ -357,38 +540,39 @@ worker:
 #    fqdn: etcd1.<internalDomainName>
 #  - name: etcd2
 #    fqdn: etcd2.<internalDomainName>
+#
+#  # ARN of the KMS key used to encrypt the etcd data volume. The account default key will be used if `etcdDataVolumeEncrypted`
+#  # is enable and `etcd.kmsKeyArn` is omitted.
+#  kmsKeyArn: ""
 
-# Instance type for etcd node
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use etcd.instanceType instead
 # etcdInstanceType: t2.medium
 
-# Root volume size (GiB) for etcd node
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use etcd.rootVolume.size instead
 # etcdRootVolumeSize: 30
 
-# Root volume type for etcd node (one of standard, io1, or gp2)
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use etcd.rootVolume.type instead
 # etcdRootVolumeType: gp2
 
-# Number of I/O operations per second (IOPS) that the etcd node's root volume supports. Leave blank if etcdRootVolumeType is not io1
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use etcd.rootVolume.iops instead
 # etcdRootVolumeIOPS: 0
 
-# Use ephemeral instance storage for etcd data volume instead of EBS?
-# (Recommended set to true for high-throughput control planes)
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use etcd.dataVolume.ephemeral instead
 # etcdDataVolumeEphemeral: false
 
-# Data volume size (GiB) for etcd node
-# if etcdDataVolumeEphemeral=true, this value is ignored. The size of ephemeral volumes is not configurable.
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use etcd.dataVolume.size instead
 # etcdDataVolumeSize: 30
 
-# Data volume type for etcd node (one of standard, io1, or gp2)
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use etcd.dataVolume.type instead
 # etcdDataVolumeType: gp2
 
-# Number of I/O operations per second (IOPS) that the etcd node's data volume supports. Leave blank if etcdDataVolumeType is not io1
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use etcd.dataVolume.iops instead
 # etcdDataVolumeIOPS: 0
 
-# Encrypt the Etcd Data volume.  Set to true for encryption.  This does not work for etcdDataVolumeEphemeral.
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use etcd.dataVolume.encrypted instead
 # etcdDataVolumeEncrypted: false
 
-# Tenancy of the etcd instances. Options are "default" and "dedicated"
-# Documentation: http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/dedicated-instance.html
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use etcd.tenancy instead
 # etcdTenancy: default
 
 ## Networking config
@@ -599,7 +783,7 @@ worker:
 # and pulling from quay or dockerhub is slow and you get many timeouts.
 
 # Version of hyperkube image to use. This is the tag for the hyperkube image repository.
-# kubernetesVersion: v1.5.4_coreos.0
+# kubernetesVersion: v1.5.5_coreos.0
 
 # Hyperkube image repository to use.
 # hyperkubeImage:
@@ -648,6 +832,12 @@ worker:
 #  tag: 1.4
 #  rktPullDocker: false
 
+# kube rescheduler image repository to use.
+#kubeReschedulerImage:
+#  repo: gcr.io/google-containers/rescheduler
+#  tag: v0.2.2
+#  rktPullDocker: false
+
 # DNS Masq metrics image repository to use.
 #dnsMasqMetricsImage:
 #  gcr.io/google_containers/dnsmasq-metrics-amd64
@@ -663,7 +853,7 @@ worker:
 # Heapster image repository to use.
 #heapsterImage:
 #  repo: gcr.io/google_containers/heapster
-#  tag: v1.2.0
+#  tag: v1.3.0
 #  rktPullDocker: false
 
 # Addon Resizer image repository to use.
@@ -690,6 +880,12 @@ worker:
 #  tag: 3.0
 #  rktPullDocker: false
 
+# Flannel image repository to use.This allow pulling flannel image from a docker repo.
+#flannelImage:
+#  repo: quay.io/coreos/flannel
+#  tag: v0.6.2
+#  rktPullDocker: false
+
 # Use Calico for network policy.
 # useCalico: false
 
@@ -702,7 +898,7 @@ worker:
 # Beware that an EFS file system can not be mounted from mutiple subnets from the same availability zone and
 # therefore this feature won't work like you might have expected when you're deploying your cluster to an existing VPC and
 # wanted to mount an existing EFS to the subnet(s) created by kube-aws
-# See https://github.com/coreos/kube-aws/issues/208 for more information
+# See https://github.com/kubernetes-incubator/kube-aws/issues/208 for more information
 #elasticFileSystemId: fs-47a2c22e
 
 # Determines the container runtime for kubernetes to use. Accepts 'docker' or 'rkt'.
@@ -718,6 +914,13 @@ worker:
 #waitSignal:
 #  enabled: true
 #   maxBatchSize: 1
+
+# Addon features
+addons:
+  # When enabled, Kubernetes rescheduler is deployed to the cluster controller(s)
+  # This feature is experimental currently so may not be production ready
+  rescheduler:
+    enabled: false
 
 # Experimental features will change in backward-incompatible ways
 # experimental:
@@ -749,6 +952,10 @@ worker:
 #   # Will provision controller nodes with IAM permissions to run cluster-autoscaler
 #   clusterAutoscalerSupport:
 #     enable: true
+#   # If enabled, instructs the controller manager to automatically issue TLS certificates to worker nodes via certificate signing requests (csr) made to the API server using the bootstrap token.
+#   # If enabled, also consider enabling the rbac plugin to limit requests using the bootstrap token to only be able to make requests related to certificate provisioning.
+#   tlsBootstrap:
+#     enable: true
 #   # This option has not yet been tested with rkt as container runtime
 #   ephemeralImageStorage:
 #     enabled: true
@@ -769,7 +976,7 @@ worker:
 #       effect: NoSchedule
 #   plugins:
 #     # When enabled, you also need to configure a minimum set of role bindings or everything breaks.
-#     # See https://github.com/coreos/kube-aws/issues/230 for more information.
+#     # See https://github.com/kubernetes-incubator/kube-aws/issues/230 for more information.
 #     rbac:
 #       enabled: true
 #

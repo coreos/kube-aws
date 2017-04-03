@@ -18,14 +18,14 @@ git diff # view changes to rendered assets
 kube-aws update
 ```
 
-## Certificate rotation
+## Certificate and access token rotation
 
-The parameter-level update mechanism can be used to rotate in new TLS credentials.
+The parameter-level update mechanism can be used to rotate in new TLS credentials and access tokens.
 
 More concretely, steps should be taken in order to rotate your certs on nodes are:
 
 * Optionally modify the `externalDNSName` attribute in `cluster.yaml`
-* Remove all the `credentials/*.enc` which are cached encrypted certs and keys to prevent unnecessary node replacement when there's actually no update. See #107 and #237 for more context.
+* Remove all the `credentials/*.enc` which are cached encrypted certs/keys/tokens to prevent unnecessary node replacement when there's actually no update. See #107 and #237 for more context.
 * Render new credentials using kube-aws render credentials:
 
   ```sh
@@ -37,7 +37,7 @@ More concretely, steps should be taken in order to rotate your certs on nodes ar
   kube-aws update --s3-uri s3://my/own/path
   ```
 
-## the etcd caveat
+## The etcd caveat
 
 There is no solution for hosting an etcd cluster in a way that is easily updateable in this fashion- so updates are automatically masked for the etcd instances. This means that, after the cluster is created, nothing about the etcd ec2 instances is allowed to be updated.
 
@@ -52,4 +52,5 @@ Once you have successfully updated your cluster, you are ready to [add node pool
 [aws-step-3]: kubernetes-on-aws-launch.md
 [aws-step-4]: kube-aws-cluster-updates.md
 [aws-step-5]: kubernetes-on-aws-node-pool.md
-[aws-step-6]: kubernetes-on-aws-destroy.md
+[aws-step-6]: kubernetes-on-aws-add-ons.md
+[aws-step-7]: kubernetes-on-aws-destroy.md

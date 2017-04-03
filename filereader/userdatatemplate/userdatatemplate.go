@@ -1,7 +1,7 @@
 package userdatatemplate
 
 import (
-	"github.com/coreos/kube-aws/filereader/texttemplate"
+	"github.com/kubernetes-incubator/kube-aws/filereader/texttemplate"
 )
 
 func GetString(filename string, data interface{}) (string, error) {

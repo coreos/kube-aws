@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/coreos/kube-aws/core/controlplane/cluster"
+	"github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
 	"github.com/spf13/cobra"
 )
 

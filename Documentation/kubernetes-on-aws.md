@@ -3,7 +3,7 @@
 Deploy a fully-functional Kubernetes cluster using AWS CloudFormation.
 Your cluster will be configured to use AWS features to enhance Kubernetes.
 For example, Kubernetes may automatically provision an Elastic Load Balancer for each Kubernetes Service.
-At CoreOS, we use the [kube-aws](https://github.com/coreos/kube-aws/releases) CLI tool to automate cluster deployment to AWS.
+At CoreOS, we use the [kube-aws](https://github.com/kubernetes-incubator/kube-aws/releases) CLI tool to automate cluster deployment to AWS.
 
 After completing this guide, a deployer will be able to interact with the Kubernetes API from their workstation using the `kubectl` CLI tool.
 
@@ -25,7 +25,9 @@ Each of the steps will cover:
   * Create the additional pool of worker nodes
   * Adjust template configuration for each pool of worker nodes
   * Required to support [cluster-autoscaler](https://github.com/kubernetes/contrib/tree/master/cluster-autoscaler)
-* [Step 6: Destroy][aws-step-6]
+* [Step 6: Configure add-ons][aws-step-6]
+  * Configure various Kubernetes add-ons
+* [Step 7: Destroy][aws-step-7]
   * Destroy the cluster
 
 Let's get started.
@@ -33,11 +35,11 @@ Let's get started.
 ## Announcement to regular users of kube-aws
 
 Older versions of kube-aws releases had been signed by the CoreOS key and were able to be verified with [CoreOS Application Signing Public Key](https://coreos.com/security/app-signing-key/).
-However, the signing process is postponed since v0.9.3. Please read the issue [#288](https://github.com/coreos/kube-aws/issues/288) for more information.
+However, the signing process is postponed since v0.9.3. Please read the issue [#288](https://github.com/kubernetes-incubator/kube-aws/issues/288) for more information.
 
 ## Download kube-aws
 
-Go to the [releases](https://github.com/coreos/kube-aws/releases) and download the latest release tarball for your architecture.
+Go to the [releases](https://github.com/kubernetes-incubator/kube-aws/releases) and download the latest release tarball for your architecture.
 
 Extract the binary:
 
@@ -106,4 +108,5 @@ $ aws ec2 describe-instances
 [aws-step-3]: kubernetes-on-aws-launch.md
 [aws-step-4]: kube-aws-cluster-updates.md
 [aws-step-5]: kubernetes-on-aws-node-pool.md
-[aws-step-6]: kubernetes-on-aws-destroy.md
+[aws-step-6]: kubernetes-on-aws-add-ons.md
+[aws-step-7]: kubernetes-on-aws-destroy.md

@@ -3,11 +3,11 @@ package render
 import (
 	"bytes"
 	"fmt"
-	controlplane "github.com/coreos/kube-aws/core/controlplane/config"
-	nodepool "github.com/coreos/kube-aws/core/nodepool/config"
-	"github.com/coreos/kube-aws/core/root/config"
-	"github.com/coreos/kube-aws/core/root/defaults"
-	"github.com/coreos/kube-aws/filegen"
+	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
+	"github.com/kubernetes-incubator/kube-aws/core/root/config"
+	"github.com/kubernetes-incubator/kube-aws/core/root/defaults"
+	"github.com/kubernetes-incubator/kube-aws/filegen"
 	"path/filepath"
 	"text/template"
 )
@@ -37,7 +37,7 @@ func (r stackRendererImpl) RenderFiles() error {
 	}
 
 	if err := filegen.Render(
-		filegen.File(filepath.Join(defaults.TLSAssetsDir, ".gitignore"), []byte("*"), 0644),
+		filegen.File(filepath.Join(defaults.AssetsDir, ".gitignore"), []byte("*"), 0644),
 		filegen.File(defaults.ControllerTmplFile, controlplane.CloudConfigController, 0644),
 		filegen.File(defaults.WorkerTmplFile, controlplane.CloudConfigWorker, 0644),
 		filegen.File(defaults.EtcdTmplFile, controlplane.CloudConfigEtcd, 0644),

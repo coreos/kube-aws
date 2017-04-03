@@ -1,8 +1,8 @@
 package root
 
 import (
-	"github.com/coreos/kube-aws/core/controlplane/config"
-	"github.com/coreos/kube-aws/core/root/render"
+	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	"github.com/kubernetes-incubator/kube-aws/core/root/render"
 )
 
 func StackAssetsRendererFromFile(configPath string) (render.StackRenderer, error) {

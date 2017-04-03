@@ -6,14 +6,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/coreos/kube-aws/cfnstack"
-	controlplane "github.com/coreos/kube-aws/core/controlplane/cluster"
-	controlplane_cfg "github.com/coreos/kube-aws/core/controlplane/config"
-	nodepool "github.com/coreos/kube-aws/core/nodepool/cluster"
-	nodepool_cfg "github.com/coreos/kube-aws/core/nodepool/config"
-	"github.com/coreos/kube-aws/core/root/config"
-	"github.com/coreos/kube-aws/core/root/defaults"
-	"github.com/coreos/kube-aws/filereader/jsontemplate"
+	"github.com/kubernetes-incubator/kube-aws/cfnstack"
+	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
+	controlplane_cfg "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/cluster"
+	nodepool_cfg "github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
+	"github.com/kubernetes-incubator/kube-aws/core/root/config"
+	"github.com/kubernetes-incubator/kube-aws/core/root/defaults"
+	"github.com/kubernetes-incubator/kube-aws/filereader/jsontemplate"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -103,6 +103,7 @@ type Cluster interface {
 	ValidateStack() (string, error)
 	ValidateTemplates() error
 	ValidateUserData() error
+	ControlPlane() *controlplane.Cluster
 }
 
 func ClusterFromFile(configPath string, opts options, awsDebug bool) (Cluster, error) {
@@ -115,7 +116,7 @@ func ClusterFromFile(configPath string, opts options, awsDebug bool) (Cluster, e
 
 func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster, error) {
 	cpOpts := controlplane_cfg.StackTemplateOptions{
-		TLSAssetsDir:          opts.TLSAssetsDir,
+		AssetsDir:             opts.AssetsDir,
 		ControllerTmplFile:    opts.ControllerTmplFile,
 		EtcdTmplFile:          opts.EtcdTmplFile,
 		StackTemplateTmplFile: opts.ControlPlaneStackTemplateTmplFile,
@@ -130,7 +131,7 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 	nodePools := []*nodepool.Cluster{}
 	for i, c := range cfg.NodePools {
 		npOpts := nodepool_cfg.StackTemplateOptions{
-			TLSAssetsDir:          opts.TLSAssetsDir,
+			AssetsDir:             opts.AssetsDir,
 			WorkerTmplFile:        opts.WorkerTmplFile,
 			StackTemplateTmplFile: opts.NodePoolStackTemplateTmplFile,
 			PrettyPrint:           opts.PrettyPrint,
@@ -170,6 +171,10 @@ type clusterImpl struct {
 	session      *session.Session
 }
 
+func (c clusterImpl) ControlPlane() *controlplane.Cluster {
+	return c.controlPlane
+}
+
 func (c clusterImpl) Create() error {
 	cfSvc := cloudformation.New(c.session)
 
@@ -182,7 +187,13 @@ func (c clusterImpl) Create() error {
 }
 
 func (c clusterImpl) Info() (*Info, error) {
-	describer := NewClusterDescriber(c.controlPlane.ClusterName, c.stackName(), c.session)
+	// TODO Cleaner way to obtain this dependency
+	cpConfig, err := c.controlPlane.Cluster.Config()
+	if err != nil {
+		return nil, err
+	}
+
+	describer := NewClusterDescriber(c.controlPlane.ClusterName, c.stackName(), cpConfig, c.session)
 	return describer.Info()
 }
 
@@ -323,8 +334,22 @@ func (c clusterImpl) ValidateTemplates() error {
 	return nil
 }
 
+// ValidateStack validates all the CloudFormation stack templates already uploaded to S3
 func (c clusterImpl) ValidateStack() (string, error) {
 	reports := []string{}
+
+	// Upload all the assets including stack templates and cloud-configs for all the stacks
+	rootStackTemplateURL, err := c.prepareTemplateWithAssets()
+	if err != nil {
+		return "", err
+	}
+
+	r, err := c.stackProvisioner().ValidateStackAtURL(rootStackTemplateURL)
+	if err != nil {
+		return "", err
+	}
+
+	reports = append(reports, r)
 
 	cpReport, err := c.controlPlane.ValidateStack()
 	if err != nil {
@@ -339,18 +364,6 @@ func (c clusterImpl) ValidateStack() (string, error) {
 		}
 		reports = append(reports, npReport)
 	}
-
-	stackTemplate, err := c.renderTemplateAsString()
-	if err != nil {
-		return "", fmt.Errorf("failed to validate template : %v", err)
-	}
-
-	r, err := c.stackProvisioner().Validate(stackTemplate)
-	if err != nil {
-		return "", err
-	}
-
-	reports = append(reports, r)
 
 	return strings.Join(reports, "\n"), nil
 }

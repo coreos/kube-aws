@@ -15,7 +15,7 @@ If you want to deploy `nginx-ingress-controller` which requires `hostPort`, just
             name: nginx-ingress-lb
 ```
 
-Relevant kube-aws issue: [does hostPort not work on kube-aws/CoreOS?](https://github.com/coreos/kube-aws/issues/91)
+Relevant kube-aws issue: [does hostPort not work on kube-aws/CoreOS?](https://github.com/kubernetes-incubator/kube-aws/issues/91)
 
 See [the related upstream issue](https://github.com/kubernetes/kubernetes/issues/23920#issuecomment-254918942) for more information.
 

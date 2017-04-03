@@ -10,21 +10,23 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"regexp"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/coreos/go-semver/semver"
-	"github.com/coreos/kube-aws/coreos/amiregistry"
-	"github.com/coreos/kube-aws/filereader/userdatatemplate"
-	"github.com/coreos/kube-aws/gzipcompressor"
-	"github.com/coreos/kube-aws/model"
-	"github.com/coreos/kube-aws/model/derived"
-	"github.com/coreos/kube-aws/netutil"
+	"github.com/kubernetes-incubator/kube-aws/cfnresource"
+	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
+	"github.com/kubernetes-incubator/kube-aws/filereader/userdatatemplate"
+	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/model/derived"
+	"github.com/kubernetes-incubator/kube-aws/netutil"
 	yaml "gopkg.in/yaml.v2"
 )
 
 const (
-	k8sVer = "v1.5.4_coreos.0"
+	k8sVer = "v1.5.5_coreos.0"
 
 	credentialsDir = "credentials"
 	userDataDir    = "userdata"
@@ -32,56 +34,59 @@ const (
 
 func NewDefaultCluster() *Cluster {
 	experimental := Experimental{
-		Admission{
+		Admission: Admission{
 			PodSecurityPolicy{
 				Enabled: false,
 			},
 		},
-		AuditLog{
+		AuditLog: AuditLog{
 			Enabled: false,
 			MaxAge:  30,
 			LogPath: "/dev/stdout",
 		},
-		Authentication{
+		Authentication: Authentication{
 			Webhook{
 				Enabled:  false,
 				CacheTTL: "5m0s",
 				Config:   "",
 			},
 		},
-		AwsEnvironment{
+		AwsEnvironment: AwsEnvironment{
 			Enabled: false,
 		},
-		AwsNodeLabels{
+		AwsNodeLabels: AwsNodeLabels{
 			Enabled: false,
 		},
-		ClusterAutoscalerSupport{
+		ClusterAutoscalerSupport: ClusterAutoscalerSupport{
 			Enabled: false,
 		},
-		EphemeralImageStorage{
+		TLSBootstrap: TLSBootstrap{
+			Enabled: false,
+		},
+		EphemeralImageStorage: EphemeralImageStorage{
 			Enabled:    false,
 			Disk:       "xvdb",
 			Filesystem: "xfs",
 		},
-		Kube2IamSupport{
+		Kube2IamSupport: Kube2IamSupport{
 			Enabled: false,
 		},
-		LoadBalancer{
+		LoadBalancer: LoadBalancer{
 			Enabled: false,
 		},
-		TargetGroup{
+		TargetGroup: TargetGroup{
 			Enabled: false,
 		},
-		NodeDrainer{
+		NodeDrainer: NodeDrainer{
 			Enabled: false,
 		},
-		NodeLabels{},
-		Plugins{
-			Rbac{
+		NodeLabels: NodeLabels{},
+		Plugins: Plugins{
+			Rbac: Rbac{
 				Enabled: false,
 			},
 		},
-		[]Taint{},
+		Taints: []Taint{},
 	}
 
 	return &Cluster{
@@ -100,17 +105,19 @@ func NewDefaultCluster() *Cluster {
 			AWSCliImage:                 model.Image{Repo: "quay.io/coreos/awscli", Tag: "master", RktPullDocker: false},
 			CalicoNodeImage:             model.Image{Repo: "quay.io/calico/node", Tag: "v1.0.2", RktPullDocker: false},
 			CalicoCniImage:              model.Image{Repo: "quay.io/calico/cni", Tag: "v1.5.6", RktPullDocker: false},
-			CalicoPolicyControllerImage: model.Image{Repo: "quay.io/calico/kube-policy-controller", Tag: "v0.5.2", RktPullDocker: false},
+			CalicoPolicyControllerImage: model.Image{Repo: "quay.io/calico/kube-policy-controller", Tag: "v0.5.4", RktPullDocker: false},
 			ClusterAutoscalerImage:      model.Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64", Tag: "1.0.0", RktPullDocker: false},
 			KubeDnsImage:                model.Image{Repo: "gcr.io/google_containers/kubedns-amd64", Tag: "1.9", RktPullDocker: false},
 			KubeDnsMasqImage:            model.Image{Repo: "gcr.io/google_containers/kube-dnsmasq-amd64", Tag: "1.4", RktPullDocker: false},
+			KubeReschedulerImage:        model.Image{Repo: "gcr.io/google-containers/rescheduler", Tag: "v0.2.2", RktPullDocker: false},
 			DnsMasqMetricsImage:         model.Image{Repo: "gcr.io/google_containers/dnsmasq-metrics-amd64", Tag: "1.0", RktPullDocker: false},
 			ExecHealthzImage:            model.Image{Repo: "gcr.io/google_containers/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
-			HeapsterImage:               model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.2.0", RktPullDocker: false},
+			HeapsterImage:               model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.3.0", RktPullDocker: false},
 			AddonResizerImage:           model.Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "1.6", RktPullDocker: false},
 			KubeDashboardImage:          model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.5.1", RktPullDocker: false},
 			CalicoCtlImage:              model.Image{Repo: "calico/ctl", Tag: "v1.0.0", RktPullDocker: false},
 			PauseImage:                  model.Image{Repo: "gcr.io/google_containers/pause-amd64", Tag: "3.0", RktPullDocker: false},
+			FlannelImage:                model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.6.2", RktPullDocker: false},
 		},
 		KubeClusterSettings: KubeClusterSettings{
 			DNSServiceIP: "10.3.0.10",
@@ -126,25 +133,10 @@ func NewDefaultCluster() *Cluster {
 			WorkerTenancy:          "default",
 		},
 		ControllerSettings: ControllerSettings{
-			Controller:               model.NewDefaultController(),
-			ControllerCount:          1,
-			ControllerCreateTimeout:  "PT15M",
-			ControllerInstanceType:   "t2.medium",
-			ControllerRootVolumeType: "gp2",
-			ControllerRootVolumeIOPS: 0,
-			ControllerRootVolumeSize: 30,
-			ControllerTenancy:        "default",
+			Controller: model.NewDefaultController(),
 		},
 		EtcdSettings: EtcdSettings{
-			EtcdCount:          1,
-			EtcdInstanceType:   "t2.medium",
-			EtcdRootVolumeSize: 30,
-			EtcdRootVolumeType: "gp2",
-			EtcdRootVolumeIOPS: 0,
-			EtcdDataVolumeSize: 30,
-			EtcdDataVolumeType: "gp2",
-			EtcdDataVolumeIOPS: 0,
-			EtcdTenancy:        "default",
+			Etcd: model.NewDefaultEtcd(),
 		},
 		FlannelSettings: FlannelSettings{
 			PodCIDR: "10.2.0.0/16",
@@ -184,9 +176,11 @@ func ClusterFromFile(filename string) (*Cluster, error) {
 // ClusterFromBytes Necessary for unit tests, which store configs as hardcoded strings
 func ClusterFromBytes(data []byte) (*Cluster, error) {
 	c := NewDefaultCluster()
+
 	if err := yaml.Unmarshal(data, c); err != nil {
 		return nil, fmt.Errorf("failed to parse cluster: %v", err)
 	}
+
 	c.HyperkubeImage.Tag = c.K8sVer
 
 	if err := c.Load(); err != nil {
@@ -216,13 +210,117 @@ func (c *Cluster) Load() error {
 
 	c.HostedZoneID = withHostedZoneIDPrefix(c.HostedZoneID)
 
+	c.ConsumeDeprecatedKeys()
+
 	if err := c.valid(); err != nil {
 		return fmt.Errorf("invalid cluster: %v", err)
 	}
 
 	c.SetDefaults()
 
+	if c.ExternalDNSName != "" {
+		// TODO: Deprecate externalDNSName?
+
+		if len(c.APIEndpointConfigs) != 0 {
+			return errors.New("invalid cluster: you can only specify either externalDNSName or apiEndpoints, but not both")
+		}
+
+		subnetRefs := []model.SubnetReference{}
+		for _, s := range c.Controller.LoadBalancer.Subnets {
+			subnetRefs = append(subnetRefs, model.SubnetReference{Name: s.Name})
+		}
+
+		c.APIEndpointConfigs = model.NewDefaultAPIEndpoints(
+			c.ExternalDNSName,
+			subnetRefs,
+			c.HostedZoneID,
+			c.CreateRecordSet,
+			c.RecordSetTTL,
+			c.Controller.LoadBalancer.Private,
+		)
+	}
+
 	return nil
+}
+
+func (c *Cluster) ConsumeDeprecatedKeys() {
+	// TODO Remove deprecated keys in v0.9.7
+	if c.DeprecatedControllerCount != nil {
+		fmt.Println("WARN: controllerCount is deprecated and will be removed in v0.9.7. Please use controller.count instead")
+		c.Controller.Count = *c.DeprecatedControllerCount
+	}
+	if c.DeprecatedControllerTenancy != nil {
+		fmt.Println("WARN: controllerTenancy is deprecated and will be removed in v0.9.7. Please use controller.tenancy instead")
+		c.Controller.Tenancy = *c.DeprecatedControllerTenancy
+	}
+	if c.DeprecatedControllerInstanceType != nil {
+		fmt.Println("WARN: controllerInstanceType is deprecated and will be removed in v0.9.7. Please use controller.instanceType instead")
+		c.Controller.InstanceType = *c.DeprecatedControllerInstanceType
+	}
+	if c.DeprecatedControllerCreateTimeout != nil {
+		fmt.Println("WARN: controllerCreateTimeout is deprecated and will be removed in v0.9.7. Please use controller.createTimeout instead")
+		c.Controller.CreateTimeout = *c.DeprecatedControllerCreateTimeout
+	}
+	if c.DeprecatedControllerRootVolumeIOPS != nil {
+		fmt.Println("WARN: controllerRootVolumeIOPS is deprecated and will be removed in v0.9.7. Please use controller.rootVolume.iops instead")
+		c.Controller.RootVolume.IOPS = *c.DeprecatedControllerRootVolumeIOPS
+	}
+	if c.DeprecatedControllerRootVolumeSize != nil {
+		fmt.Println("WARN: controllerRootVolumeSize is deprecated and will be removed in v0.9.7. Please use controller.rootVolume.size instead")
+		c.Controller.RootVolume.Size = *c.DeprecatedControllerRootVolumeSize
+	}
+	if c.DeprecatedControllerRootVolumeType != nil {
+		fmt.Println("WARN: controllerRootVolumeType is deprecated and will be removed in v0.9.7. Please use controller.rootVolume.type instead")
+		c.Controller.RootVolume.Type = *c.DeprecatedControllerRootVolumeType
+	}
+
+	if c.DeprecatedEtcdCount != nil {
+		fmt.Println("WARN: etcdCount is deprecated and will be removed in v0.9.7. Please use etcd.count instead")
+		c.Etcd.Count = *c.DeprecatedEtcdCount
+	}
+	if c.DeprecatedEtcdTenancy != nil {
+		fmt.Println("WARN: etcdTenancy is deprecated and will be removed in v0.9.7. Please use etcd.tenancy instead")
+		c.Etcd.Tenancy = *c.DeprecatedEtcdTenancy
+	}
+	if c.DeprecatedEtcdInstanceType != nil {
+		fmt.Println("WARN: etcdInstanceType is deprecated and will be removed in v0.9.7. Please use etcd.instanceType instead")
+		c.Etcd.InstanceType = *c.DeprecatedEtcdInstanceType
+	}
+	//if c.DeprecatedEtcdCreateTimeout != nil {
+	//	c.Etcd.CreateTimeout = *c.DeprecatedEtcdCreateTimeout
+	//}
+	if c.DeprecatedEtcdRootVolumeIOPS != nil {
+		fmt.Println("WARN: etcdRootVolumeIOPS is deprecated and will be removed in v0.9.7. Please use etcd.rootVolume.iops instead")
+		c.Etcd.RootVolume.IOPS = *c.DeprecatedEtcdRootVolumeIOPS
+	}
+	if c.DeprecatedEtcdRootVolumeSize != nil {
+		fmt.Println("WARN: etcdRootVolumeSize is deprecated and will be removed in v0.9.7. Please use etcd.rootVolume.size instead")
+		c.Etcd.RootVolume.Size = *c.DeprecatedEtcdRootVolumeSize
+	}
+	if c.DeprecatedEtcdRootVolumeType != nil {
+		fmt.Println("WARN: etcdRootVolumeType is deprecated and will be removed in v0.9.7. Please use etcd.rootVolume.type instead")
+		c.Etcd.RootVolume.Type = *c.DeprecatedEtcdRootVolumeType
+	}
+	if c.DeprecatedEtcdDataVolumeIOPS != nil {
+		fmt.Println("WARN: etcdDataVolumeIOPS is deprecated and will be removed in v0.9.7. Please use etcd.dataVolume.iops instead")
+		c.Etcd.DataVolume.IOPS = *c.DeprecatedEtcdDataVolumeIOPS
+	}
+	if c.DeprecatedEtcdDataVolumeSize != nil {
+		fmt.Println("WARN: etcdDataVolumeSize is deprecated and will be removed in v0.9.7. Please use etcd.dataVolume.size instead")
+		c.Etcd.DataVolume.Size = *c.DeprecatedEtcdDataVolumeSize
+	}
+	if c.DeprecatedEtcdDataVolumeType != nil {
+		fmt.Println("WARN: etcdDataVolumeType is deprecated and will be removed in v0.9.7. Please use etcd.dataVolume.type instead")
+		c.Etcd.DataVolume.Type = *c.DeprecatedEtcdDataVolumeType
+	}
+	if c.DeprecatedEtcdDataVolumeEphemeral != nil {
+		fmt.Println("WARN: etcdDataVolumeEphemeral is deprecated and will be removed in v0.9.7. Please use etcd.dataVolume.ephemeral instead")
+		c.Etcd.DataVolume.Ephemeral = *c.DeprecatedEtcdDataVolumeEphemeral
+	}
+	if c.DeprecatedEtcdDataVolumeEncrypted != nil {
+		fmt.Println("WARN: etcdDataVolumeEncrypted is deprecated and will be removed in v0.9.7. Please use etcd.dataVolume.encrypted instead")
+		c.Etcd.DataVolume.Encrypted = *c.DeprecatedEtcdDataVolumeEncrypted
+	}
 }
 
 func (c *Cluster) SetDefaults() {
@@ -242,7 +340,7 @@ func (c *Cluster) SetDefaults() {
 		}
 
 		// DEPRECATED AND REMOVED IN THE FUTURE
-		// See https://github.com/coreos/kube-aws/pull/284#issuecomment-275998862
+		// See https://github.com/kubernetes-incubator/kube-aws/pull/284#issuecomment-275998862
 		//
 		// This implies a deployment to an existing VPC with a route table with a preconfigured Internet Gateway
 		// and all the subnets created by kube-aws are public
@@ -255,7 +353,7 @@ func (c *Cluster) SetDefaults() {
 		}
 
 		// DEPRECATED AND REMOVED IN THE FUTURE
-		// See https://github.com/coreos/kube-aws/pull/284#issuecomment-275998862
+		// See https://github.com/kubernetes-incubator/kube-aws/pull/284#issuecomment-275998862
 		//
 		// This implies a deployment to an existing VPC with a route table with a preconfigured NAT Gateway
 		// and all the subnets created by kube-aws are private
@@ -321,6 +419,7 @@ func ClusterFromBytesWithEncryptService(data []byte, encryptService EncryptServi
 // Part of configuration which is shared between controller nodes and worker nodes.
 // Its name is prefixed with `Kube` because it doesn't relate to etcd.
 type KubeClusterSettings struct {
+	APIEndpointConfigs model.APIEndpoints `yaml:"apiEndpoints,omitempty"`
 	// Required by kubelet to locate the kube-apiserver
 	ExternalDNSName string `yaml:"externalDNSName,omitempty"`
 	// Required by kubelet to locate the cluster-internal dns hosted on controller nodes in the base cluster
@@ -366,6 +465,7 @@ type DeploymentSettings struct {
 	MapPublicIPs        bool              `yaml:"mapPublicIPs,omitempty"`
 	ElasticFileSystemID string            `yaml:"elasticFileSystemId,omitempty"`
 	SSHAuthorizedKeys   []string          `yaml:"sshAuthorizedKeys,omitempty"`
+	Addons              model.Addons      `yaml:"addons"`
 	Experimental        Experimental      `yaml:"experimental"`
 	ManageCertificates  bool              `yaml:"manageCertificates,omitempty"`
 	WaitSignal          WaitSignal        `yaml:"waitSignal"`
@@ -380,12 +480,14 @@ type DeploymentSettings struct {
 	ClusterAutoscalerImage      model.Image `yaml:"clusterAutoscalerImage,omitempty"`
 	KubeDnsImage                model.Image `yaml:"kubeDnsImage,omitempty"`
 	KubeDnsMasqImage            model.Image `yaml:"kubeDnsMasqImage,omitempty"`
+	KubeReschedulerImage        model.Image `yaml:"kubeReschedulerImage,omitempty"`
 	DnsMasqMetricsImage         model.Image `yaml:"dnsMasqMetricsImage,omitempty"`
 	ExecHealthzImage            model.Image `yaml:"execHealthzImage,omitempty"`
 	HeapsterImage               model.Image `yaml:"heapsterImage,omitempty"`
 	AddonResizerImage           model.Image `yaml:"addonResizerImage,omitempty"`
 	KubeDashboardImage          model.Image `yaml:"kubeDashboardImage,omitempty"`
 	PauseImage                  model.Image `yaml:"pauseImage,omitempty"`
+	FlannelImage                model.Image `yaml:"flannelImage,omitempty"`
 }
 
 // Part of configuration which is specific to worker nodes
@@ -404,30 +506,120 @@ type DefaultWorkerSettings struct {
 
 // Part of configuration which is specific to controller nodes
 type ControllerSettings struct {
-	model.Controller         `yaml:"controller,omitempty"`
-	ControllerCount          int    `yaml:"controllerCount,omitempty"`
-	ControllerCreateTimeout  string `yaml:"controllerCreateTimeout,omitempty"`
-	ControllerInstanceType   string `yaml:"controllerInstanceType,omitempty"`
-	ControllerRootVolumeType string `yaml:"controllerRootVolumeType,omitempty"`
-	ControllerRootVolumeIOPS int    `yaml:"controllerRootVolumeIOPS,omitempty"`
-	ControllerRootVolumeSize int    `yaml:"controllerRootVolumeSize,omitempty"`
-	ControllerTenancy        string `yaml:"controllerTenancy,omitempty"`
+	model.Controller                   `yaml:"controller,omitempty"`
+	DeprecatedControllerCount          *int    `yaml:"controllerCount,omitempty"`
+	DeprecatedControllerCreateTimeout  *string `yaml:"controllerCreateTimeout,omitempty"`
+	DeprecatedControllerInstanceType   *string `yaml:"controllerInstanceType,omitempty"`
+	DeprecatedControllerRootVolumeType *string `yaml:"controllerRootVolumeType,omitempty"`
+	DeprecatedControllerRootVolumeIOPS *int    `yaml:"controllerRootVolumeIOPS,omitempty"`
+	DeprecatedControllerRootVolumeSize *int    `yaml:"controllerRootVolumeSize,omitempty"`
+	DeprecatedControllerTenancy        *string `yaml:"controllerTenancy,omitempty"`
+}
+
+func (c ControllerSettings) ControllerCount() int {
+	fmt.Println("WARN: ControllerCount is deprecated and will be removed in v0.9.7. Please use Controller.Count instead")
+	return c.Controller.Count
+}
+
+func (c ControllerSettings) ControllerCreateTimeout() string {
+	fmt.Println("WARN: ControllerCreateTimeout is deprecated and will be removed in v0.9.7. Please use Controller.CreateTimeout instead")
+	return c.Controller.CreateTimeout
+}
+
+func (c ControllerSettings) ControllerInstanceType() string {
+	fmt.Println("WARN: ControllerInstanceType is deprecated and will be removed in v0.9.7. Please use Controller.InstanceType instead")
+	return c.Controller.InstanceType
+}
+
+func (c ControllerSettings) ControllerRootVolumeType() string {
+	fmt.Println("WARN: ControllerRootVolumeType is deprecated and will be removed in v0.9.7. Please use Controller.RootVolume.Type instead")
+	return c.Controller.RootVolume.Type
+}
+
+func (c ControllerSettings) ControllerRootVolumeIOPS() int {
+	fmt.Println("WARN: ControllerRootVolumeIOPS is deprecated and will be removed in v0.9.7. Please use Controller.RootVolume.IOPS instead")
+	return c.Controller.RootVolume.IOPS
+}
+
+func (c ControllerSettings) ControllerRootVolumeSize() int {
+	fmt.Println("WARN: ControllerRootVolumeSize is deprecated and will be removed in v0.9.7. Please use Controller.RootVolume.Size instead")
+	return c.Controller.RootVolume.Size
+}
+
+func (c ControllerSettings) ControllerTenancy() string {
+	fmt.Println("WARN: ControllerTenancy is deprecated and will be removed in v0.9.7. Please use Controller.Tenancy instead")
+	return c.Controller.Tenancy
 }
 
 // Part of configuration which is specific to etcd nodes
 type EtcdSettings struct {
-	model.Etcd              `yaml:"etcd,omitempty"`
-	EtcdCount               int    `yaml:"etcdCount"`
-	EtcdInstanceType        string `yaml:"etcdInstanceType,omitempty"`
-	EtcdRootVolumeSize      int    `yaml:"etcdRootVolumeSize,omitempty"`
-	EtcdRootVolumeType      string `yaml:"etcdRootVolumeType,omitempty"`
-	EtcdRootVolumeIOPS      int    `yaml:"etcdRootVolumeIOPS,omitempty"`
-	EtcdDataVolumeSize      int    `yaml:"etcdDataVolumeSize,omitempty"`
-	EtcdDataVolumeType      string `yaml:"etcdDataVolumeType,omitempty"`
-	EtcdDataVolumeIOPS      int    `yaml:"etcdDataVolumeIOPS,omitempty"`
-	EtcdDataVolumeEphemeral bool   `yaml:"etcdDataVolumeEphemeral,omitempty"`
-	EtcdDataVolumeEncrypted bool   `yaml:"etcdDataVolumeEncrypted,omitempty"`
-	EtcdTenancy             string `yaml:"etcdTenancy,omitempty"`
+	model.Etcd                        `yaml:"etcd,omitempty"`
+	DeprecatedEtcdCount               *int    `yaml:"etcdCount"`
+	DeprecatedEtcdInstanceType        *string `yaml:"etcdInstanceType,omitempty"`
+	DeprecatedEtcdRootVolumeSize      *int    `yaml:"etcdRootVolumeSize,omitempty"`
+	DeprecatedEtcdRootVolumeType      *string `yaml:"etcdRootVolumeType,omitempty"`
+	DeprecatedEtcdRootVolumeIOPS      *int    `yaml:"etcdRootVolumeIOPS,omitempty"`
+	DeprecatedEtcdDataVolumeSize      *int    `yaml:"etcdDataVolumeSize,omitempty"`
+	DeprecatedEtcdDataVolumeType      *string `yaml:"etcdDataVolumeType,omitempty"`
+	DeprecatedEtcdDataVolumeIOPS      *int    `yaml:"etcdDataVolumeIOPS,omitempty"`
+	DeprecatedEtcdDataVolumeEphemeral *bool   `yaml:"etcdDataVolumeEphemeral,omitempty"`
+	DeprecatedEtcdDataVolumeEncrypted *bool   `yaml:"etcdDataVolumeEncrypted,omitempty"`
+	DeprecatedEtcdTenancy             *string `yaml:"etcdTenancy,omitempty"`
+}
+
+func (e EtcdSettings) EtcdCount() int {
+	fmt.Println("WARN: EtcdCount is deprecated and will be removed in v0.9.7. Please use Etcd.Count instead")
+	return e.Etcd.Count
+}
+
+func (e EtcdSettings) EtcdInstanceType() string {
+	fmt.Println("WARN: EtcdInstanceType is deprecated and will be removed in v0.9.7. Please use Etcd.InstanceType instead")
+	return e.Etcd.InstanceType
+}
+
+func (e EtcdSettings) EtcdRootVolumeSize() int {
+	fmt.Println("WARN: EtcdRootVolumeSize is deprecated and will be removed in v0.9.7. Please use Etcd.RootVolume.Size instead")
+	return e.Etcd.RootVolume.Size
+}
+
+func (e EtcdSettings) EtcdRootVolumeType() string {
+	fmt.Println("WARN: EtcdRootVolumeType is deprecated and will be removed in v0.9.7. Please use Etcd.RootVolume.Type instead")
+	return e.Etcd.RootVolume.Type
+}
+
+func (e EtcdSettings) EtcdRootVolumeIOPS() int {
+	fmt.Println("WARN: EtcdRootVolumeIOPS is deprecated and will be removed in v0.9.7. Please use Etcd.RootVolume.IOPS instead")
+	return e.Etcd.RootVolume.IOPS
+}
+
+func (e EtcdSettings) EtcdDataVolumeSize() int {
+	fmt.Println("WARN: EtcdDataVolumeSize is deprecated and will be removed in v0.9.7. Please use Etcd.DataVolume.Size instead")
+	return e.Etcd.DataVolume.Size
+}
+
+func (e EtcdSettings) EtcdDataVolumeType() string {
+	fmt.Println("WARN: EtcdDataVolumeType is deprecated and will be removed in v0.9.7. Please use Etcd.DataVolume.Type instead")
+	return e.Etcd.DataVolume.Type
+}
+
+func (e EtcdSettings) EtcdDataVolumeIOPS() int {
+	fmt.Println("WARN: EtcdDataVolumeIOPS is deprecated and will be removed in v0.9.7. Please use Etcd.DataVolume.IOPS instead")
+	return e.Etcd.DataVolume.IOPS
+}
+
+func (e EtcdSettings) EtcdDataVolumeEphemeral() bool {
+	fmt.Println("WARN: EtcdDataVolumeEphemeral is deprecated and will be removed in v0.9.7. Please use Etcd.DataVolume.Ephemeral instead")
+	return e.Etcd.DataVolume.Ephemeral
+}
+
+func (e EtcdSettings) EtcdDataVolumeEncrypted() bool {
+	fmt.Println("WARN: EtcdDataVolumeEncrypted is deprecated and will be removed in v0.9.7. Please use Etcd.DataVolume.Encrypted instead")
+	return e.Etcd.DataVolume.Encrypted
+}
+
+func (e EtcdSettings) EtcdTenancy() string {
+	fmt.Println("WARN: EtcdTenancy is deprecated and will be removed in v0.9.7. Please use Etcd.Tenancy instead")
+	return e.Etcd.Tenancy
 }
 
 // Part of configuration which is specific to flanneld
@@ -459,6 +651,7 @@ type Experimental struct {
 	AwsEnvironment           AwsEnvironment           `yaml:"awsEnvironment"`
 	AwsNodeLabels            AwsNodeLabels            `yaml:"awsNodeLabels"`
 	ClusterAutoscalerSupport ClusterAutoscalerSupport `yaml:"clusterAutoscalerSupport"`
+	TLSBootstrap             TLSBootstrap             `yaml:"tlsBootstrap"`
 	EphemeralImageStorage    EphemeralImageStorage    `yaml:"ephemeralImageStorage"`
 	Kube2IamSupport          Kube2IamSupport          `yaml:"kube2IamSupport,omitempty"`
 	LoadBalancer             LoadBalancer             `yaml:"loadBalancer"`
@@ -467,6 +660,7 @@ type Experimental struct {
 	NodeLabels               NodeLabels               `yaml:"nodeLabels"`
 	Plugins                  Plugins                  `yaml:"plugins"`
 	Taints                   []Taint                  `yaml:"taints"`
+	model.UnknownKeys        `yaml:",inline"`
 }
 
 type Admission struct {
@@ -506,6 +700,10 @@ type ClusterAutoscalerSupport struct {
 	Enabled bool `yaml:"enabled"`
 }
 
+type TLSBootstrap struct {
+	Enabled bool `yaml:"enabled"`
+}
+
 type EphemeralImageStorage struct {
 	Enabled    bool   `yaml:"enabled"`
 	Disk       string `yaml:"disk"`
@@ -529,7 +727,13 @@ func (l NodeLabels) Enabled() bool {
 // Returns key=value pairs separated by ',' to be passed to kubelet's `--node-labels` flag
 func (l NodeLabels) String() string {
 	labels := []string{}
-	for k, v := range l {
+	keys := []string{}
+	for k, _ := range l {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		v := l[k]
 		labels = append(labels, fmt.Sprintf("%s=%s", k, v))
 	}
 	return strings.Join(labels, ",")
@@ -599,14 +803,14 @@ var supportedReleaseChannels = map[string]bool{
 
 func (c ControllerSettings) MinControllerCount() int {
 	if c.Controller.AutoScalingGroup.MinSize == nil {
-		return c.ControllerCount
+		return c.Controller.Count
 	}
 	return *c.Controller.AutoScalingGroup.MinSize
 }
 
 func (c ControllerSettings) MaxControllerCount() int {
 	if c.Controller.AutoScalingGroup.MaxSize == 0 {
-		return c.ControllerCount
+		return c.Controller.Count
 	}
 	return c.Controller.AutoScalingGroup.MaxSize
 }
@@ -669,12 +873,19 @@ func (c Cluster) Config() (*Config, error) {
 		}
 	}
 
+	apiEndpoints, err := derived.NewAPIEndpoints(c.APIEndpointConfigs, c.Subnets)
+	if err != nil {
+		return nil, fmt.Errorf("invalid cluster: %v", err)
+	}
+
+	config.APIEndpoints = apiEndpoints
+
 	return &config, nil
 }
 
 func (c *Cluster) EtcdCluster() derived.EtcdCluster {
 	etcdNetwork := derived.NewNetwork(c.Etcd.Subnets, c.NATGateways())
-	return derived.NewEtcdCluster(c.Etcd.Cluster, c.Region, etcdNetwork, c.EtcdCount)
+	return derived.NewEtcdCluster(c.Etcd.Cluster, c.Region, etcdNetwork, c.Etcd.Count)
 }
 
 // releaseVersionIsGreaterThan will return true if the supplied version is greater then
@@ -704,7 +915,7 @@ func releaseVersionIsGreaterThan(minVersion semver.Version, release string) (boo
 }
 
 type StackTemplateOptions struct {
-	TLSAssetsDir          string
+	AssetsDir             string
 	ControllerTmplFile    string
 	EtcdTmplFile          string
 	StackTemplateTmplFile string
@@ -721,23 +932,41 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 		return nil, err
 	}
 
+	var compactAssets *CompactTLSAssets
+	var compactAuthTokens *CompactAuthTokens
+
+	if c.AssetsEncryptionEnabled() {
+		compactAuthTokens, err = ReadOrCreateCompactAuthTokens(opts.AssetsDir, KMSConfig{
+			Region:         stackConfig.Config.Region,
+			KMSKeyARN:      c.KMSKeyARN,
+			EncryptService: c.ProvidedEncryptService,
+		})
+		if err != nil {
+			return nil, err
+		}
+		stackConfig.Config.AuthTokensConfig = compactAuthTokens
+	} else {
+		rawAuthTokens, err := ReadOrCreateUnencryptedCompactAuthTokens(opts.AssetsDir)
+		if err != nil {
+			return nil, err
+		}
+		stackConfig.Config.AuthTokensConfig = rawAuthTokens
+	}
 	if c.ManageCertificates {
-		if c.TLSAssetsEncryptionEnabled() {
-			var compactAssets *CompactTLSAssets
-			compactAssets, err = ReadOrCreateCompactTLSAssets(opts.TLSAssetsDir, KMSConfig{
+		if c.AssetsEncryptionEnabled() {
+			compactAssets, err = ReadOrCreateCompactTLSAssets(opts.AssetsDir, KMSConfig{
 				Region:         stackConfig.Config.Region,
 				KMSKeyARN:      c.KMSKeyARN,
 				EncryptService: c.ProvidedEncryptService,
 			})
-			if err != nil {
-				return nil, err
-			}
+
 			stackConfig.Config.TLSConfig = compactAssets
 		} else {
-			rawAssets, err := ReadOrCreateUnecryptedCompactTLSAssets(opts.TLSAssetsDir)
+			rawAssets, err := ReadOrCreateUnencryptedCompactTLSAssets(opts.AssetsDir)
 			if err != nil {
 				return nil, err
 			}
+
 			stackConfig.Config.TLSConfig = rawAssets
 		}
 	}
@@ -747,6 +976,13 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	}
 	if stackConfig.UserDataEtcd, err = userdatatemplate.GetString(opts.EtcdTmplFile, stackConfig.Config); err != nil {
 		return nil, fmt.Errorf("failed to render etcd cloud config: %v", err)
+	}
+	if len(stackConfig.Config.AuthTokensConfig.KubeletBootstrapToken) == 0 && c.DeploymentSettings.Experimental.TLSBootstrap.Enabled {
+		bootstrapRecord, err := RandomBootstrapTokenRecord()
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("kubelet bootstrap token not found in ./credentials/tokens.csv\n\nTo fix this, append the following line to ./credentials.tokens.csv:\n%s", bootstrapRecord)
 	}
 
 	stackConfig.StackTemplateOptions = opts
@@ -765,10 +1001,12 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 type Config struct {
 	Cluster
 
+	APIEndpoints derived.APIEndpoints
+
 	EtcdNodes []derived.EtcdNode
 
-	// Encoded TLS assets
-	TLSConfig *CompactTLSAssets
+	AuthTokensConfig *CompactAuthTokens
+	TLSConfig        *CompactTLSAssets
 }
 
 // StackName returns the logical name of a CloudFormation stack resource in a root stack template
@@ -815,11 +1053,36 @@ func (c Config) InternetGatewayRef() string {
 	}
 }
 
-func (c *Config) Etcdadm() (string, error) {
-	return gzipcompressor.CompressData(Etcdadm)
+// ExternalDNSNames returns all the DNS names of Kubernetes API endpoints should be covered in the TLS cert for k8s API
+func (c Cluster) ExternalDNSNames() []string {
+	names := []string{}
+
+	if c.ExternalDNSName != "" {
+		names = append(names, c.ExternalDNSName)
+	}
+
+	for _, e := range c.APIEndpointConfigs {
+		names = append(names, e.DNSName)
+	}
+
+	sort.Strings(names)
+
+	return names
+}
+
+// NestedStackName returns a sanitized name of this control-plane which is usable as a valid cloudformation nested stack name
+func (c Cluster) NestedStackName() string {
+	// Convert stack name into something valid as a cfn resource name or
+	// we'll end up with cfn errors like "Template format error: Resource name test5-controlplane is non alphanumeric"
+	return strings.Title(strings.Replace(c.StackName(), "-", "", -1))
 }
 
 func (c Cluster) valid() error {
+	validClusterNaming := regexp.MustCompile("^[a-zA-Z0-9-:]+$")
+	if !validClusterNaming.MatchString(c.ClusterName) {
+		return fmt.Errorf("clusterName(=%s) is malformed. It must consist only of alphanumeric characters, colons, or hyphens", c.ClusterName)
+	}
+
 	if c.CreateRecordSet {
 		if c.HostedZoneID == "" {
 			return errors.New("hostedZoneID must be specified when createRecordSet is true")
@@ -898,6 +1161,10 @@ func (c Cluster) valid() error {
 		return err
 	}
 
+	if err := c.EtcdSettings.Valid(); err != nil {
+		return err
+	}
+
 	if c.WorkerTenancy != "default" && c.WorkerSpotPrice != "" {
 		return fmt.Errorf("selected worker tenancy (%s) is incompatible with spot instances", c.WorkerTenancy)
 	}
@@ -911,8 +1178,16 @@ func (c Cluster) valid() error {
 		return fmt.Errorf("awsNodeLabels can't be enabled for controllers because the total number of characters in clusterName(=\"%s\") exceeds the limit of %d", c.ClusterName, limit)
 	}
 
-	if c.ControllerInstanceType == "t2.micro" || c.EtcdInstanceType == "t2.micro" || c.ControllerInstanceType == "t2.nano" || c.EtcdInstanceType == "t2.nano" {
-		fmt.Println(`WARNING: instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/coreos/kube-aws/issues/258 for more information`)
+	if c.Controller.InstanceType == "t2.micro" || c.Etcd.InstanceType == "t2.micro" || c.Controller.InstanceType == "t2.nano" || c.Etcd.InstanceType == "t2.nano" {
+		fmt.Println(`WARNING: instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/kubernetes-incubator/kube-aws/issues/258 for more information`)
+	}
+
+	if c.Experimental.TLSBootstrap.Enabled && !c.Experimental.Plugins.Rbac.Enabled {
+		fmt.Println(`WARNING: enabling cluster-level TLS bootstrapping without RBAC is not recommended. See https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/ for more information`)
+	}
+
+	if e := cfnresource.ValidateRoleNameLength(c.ClusterName, c.NestedStackName(), c.Controller.ManagedIamRoleName, c.Region.String()); e != nil {
+		return e
 	}
 
 	return nil
@@ -923,8 +1198,12 @@ type InfrastructureValidationResult struct {
 }
 
 func (c KubeClusterSettings) Valid() (*InfrastructureValidationResult, error) {
-	if c.ExternalDNSName == "" {
-		return nil, errors.New("externalDNSName must be set")
+	if c.ExternalDNSName == "" && len(c.APIEndpointConfigs) == 0 {
+		return nil, errors.New("Either externalDNSName or apiEndpoints must be set")
+	}
+
+	if err := c.APIEndpointConfigs.Validate(); err != nil {
+		return nil, err
 	}
 
 	dnsServiceIPAddr := net.ParseIP(c.DNSServiceIP)
@@ -951,7 +1230,7 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 	if c.ClusterName == "" {
 		return nil, errors.New("clusterName must be set")
 	}
-	if c.KMSKeyARN == "" && c.TLSAssetsEncryptionEnabled() {
+	if c.KMSKeyARN == "" && c.AssetsEncryptionEnabled() {
 		return nil, errors.New("kmsKeyArn must be set")
 	}
 
@@ -1052,7 +1331,7 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 	return &DeploymentValidationResult{vpcNet: vpcNet}, nil
 }
 
-func (c DeploymentSettings) TLSAssetsEncryptionEnabled() bool {
+func (c DeploymentSettings) AssetsEncryptionEnabled() bool {
 	return c.ManageCertificates && c.Region.SupportsKMS()
 }
 
@@ -1153,30 +1432,42 @@ func (c DefaultWorkerSettings) Valid() error {
 }
 
 func (c ControllerSettings) Valid() error {
-	if c.ControllerRootVolumeType == "io1" {
-		if c.ControllerRootVolumeIOPS < 100 || c.ControllerRootVolumeIOPS > 2000 {
-			return fmt.Errorf("invalid controllerRootVolumeIOPS: %d", c.ControllerRootVolumeIOPS)
+	controller := c.Controller
+	rootVolume := controller.RootVolume
+
+	if rootVolume.Type == "io1" {
+		if rootVolume.IOPS < 100 || rootVolume.IOPS > 2000 {
+			return fmt.Errorf("invalid controller.rootVolume.iops: %d", rootVolume.IOPS)
 		}
 	} else {
-		if c.ControllerRootVolumeIOPS != 0 {
-			return fmt.Errorf("invalid controllerRootVolumeIOPS for volume type '%s': %d", c.ControllerRootVolumeType, c.ControllerRootVolumeIOPS)
+		if rootVolume.IOPS != 0 {
+			return fmt.Errorf("invalid controller.rootVolume.iops for type \"%s\": %d", rootVolume.Type, rootVolume.IOPS)
 		}
 
-		if c.ControllerRootVolumeType != "standard" && c.ControllerRootVolumeType != "gp2" {
-			return fmt.Errorf("invalid controllerRootVolumeType: %s", c.ControllerRootVolumeType)
+		if rootVolume.Type != "standard" && rootVolume.Type != "gp2" {
+			return fmt.Errorf("invalid controller.rootVolume.type: %s in %+v", rootVolume.Type, c)
 		}
 	}
 
-	if c.ControllerCount < 0 {
-		return fmt.Errorf("`controllerCount` must be zero or greater if specified")
+	if controller.Count < 0 {
+		return fmt.Errorf("`controller.count` must be zero or greater if specified or otherwrise omitted, but was: %d", controller.Count)
 	}
-	// one is the default ControllerCount
-	if c.ControllerCount != 1 && (c.AutoScalingGroup.MinSize != nil && *c.AutoScalingGroup.MinSize != 0 || c.AutoScalingGroup.MaxSize != 0) {
-		return fmt.Errorf("`controller.autoScalingGroup.minSize` and `controller.autoScalingGroup.maxSize` can only be specified without `controllerCount`")
+	// one is the default Controller.Count
+	asg := c.AutoScalingGroup
+	if controller.Count != model.DefaultControllerCount && (asg.MinSize != nil && *asg.MinSize != 0 || asg.MaxSize != 0) {
+		return errors.New("`controller.autoScalingGroup.minSize` and `controller.autoScalingGroup.maxSize` can only be specified without `controller.count`")
 	}
 
-	if err := c.Controller.Validate(); err != nil {
+	if err := controller.Validate(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (e EtcdSettings) Valid() error {
+	if !e.Etcd.DataVolume.Encrypted && e.Etcd.KMSKeyARN() != "" {
+		return errors.New("`etcd.kmsKeyArn` can only be specified when `etcdDataVolumeEncrypted` is enabled")
 	}
 
 	return nil
@@ -1185,7 +1476,7 @@ func (c ControllerSettings) Valid() error {
 func (c Experimental) Valid() error {
 	for _, taint := range c.Taints {
 		if taint.Effect != "NoSchedule" && taint.Effect != "PreferNoSchedule" {
-			return fmt.Errorf("Effect must be NoSchdule or PreferNoSchedule, but was %s", taint.Effect)
+			return fmt.Errorf("Effect must be NoSchedule or PreferNoSchedule, but was %s", taint.Effect)
 		}
 	}
 
@@ -1273,6 +1564,11 @@ func (c *Cluster) ValidateExistingVPC(existingVPCCIDR string, existingSubnetCIDR
 	}
 
 	return nil
+}
+
+// ManageELBLogicalNames returns all the logical names of the cfn resources corresponding to ELBs managed by kube-aws for API endpoints
+func (c *Config) ManagedELBLogicalNames() []string {
+	return c.APIEndpoints.ManagedELBLogicalNames()
 }
 
 func WithTrailingDot(s string) string {

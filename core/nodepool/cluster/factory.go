@@ -1,8 +1,8 @@
 package cluster
 
 import (
-	controlplane "github.com/coreos/kube-aws/core/controlplane/config"
-	"github.com/coreos/kube-aws/core/nodepool/config"
+	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	"github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 )
 
 func ClusterRefFromBytes(bytes []byte, main *controlplane.Config, awsDebug bool) (*ClusterRef, error) {

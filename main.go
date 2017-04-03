@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/coreos/kube-aws/cmd"
 	"os"
+
+	"github.com/kubernetes-incubator/kube-aws/cmd"
 )
 
 func main() {

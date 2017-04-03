@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/coreos/kube-aws/model"
-	"github.com/coreos/kube-aws/netutil"
+	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/netutil"
 )
 
 const minimalConfigYaml = `externalDNSName: test.staging.core-os.net
@@ -35,14 +35,12 @@ var goodNetworkingConfigs = []string{
 	`
 vpcCIDR: 10.4.3.0/24
 instanceCIDR: 10.4.3.0/24
-controllerIP: 10.4.3.5
 podCIDR: 172.4.0.0/16
 serviceCIDR: 172.5.0.0/16
 dnsServiceIP: 172.5.100.101
 `, `
 vpcCIDR: 10.4.0.0/16
 instanceCIDR: 10.4.3.0/24
-controllerIP: 10.4.3.5
 podCIDR: 10.6.0.0/16
 serviceCIDR: 10.5.0.0/16
 dnsServiceIP: 10.5.100.101
@@ -68,7 +66,6 @@ var incorrectNetworkingConfigs = []string{
 	`
 vpcCIDR: 10.4.2.0/23
 instanceCIDR: 10.4.3.0/24
-controllerIP: 10.4.3.5
 podCIDR: 10.4.0.0/16 #podCIDR contains vpcCDIR.
 serviceCIDR: 10.5.0.0/16
 dnsServiceIP: 10.5.100.101
@@ -76,28 +73,24 @@ dnsServiceIP: 10.5.100.101
 	`
 vpcCIDR: 10.4.2.0/23
 instanceCIDR: 10.4.3.0/24
-controllerIP: 10.4.3.5
 podCIDR: 10.5.0.0/16
 serviceCIDR: 10.4.0.0/16 #serviceCIDR contains vpcCDIR.
 dnsServiceIP: 10.4.100.101
 `, `
 vpcCIDR: 10.4.0.0/16
 instanceCIDR: 10.5.3.0/24 #instanceCIDR not in vpcCIDR
-controllerIP: 10.5.3.5
 podCIDR: 10.6.0.0/16
 serviceCIDR: 10.5.0.0/16
 dnsServiceIP: 10.5.100.101
 `, `
 vpcCIDR: 10.4.3.0/16
 instanceCIDR: 10.4.3.0/24
-controllerIP: 10.4.3.5
 podCIDR: 172.4.0.0/16
 serviceCIDR: 172.5.0.0/16
 dnsServiceIP: 172.5.0.1 #dnsServiceIP conflicts with kubernetesServiceIP
 `, `
 vpcCIDR: 10.4.3.0/16
 instanceCIDR: 10.4.3.0/24
-controllerIP: 10.4.3.5
 podCIDR: 10.4.0.0/16 #vpcCIDR overlaps with podCIDR
 serviceCIDR: 172.5.0.0/16
 dnsServiceIP: 172.5.100.101
@@ -105,7 +98,6 @@ dnsServiceIP: 172.5.100.101
 `, `
 vpcCIDR: 10.4.3.0/16
 instanceCIDR: 10.4.3.0/24
-controllerIP: 10.4.3.5
 podCIDR: 172.4.0.0/16
 serviceCIDR: 172.5.0.0/16
 dnsServiceIP: 172.6.100.101 #dnsServiceIP not in service CIDR
@@ -160,8 +152,8 @@ func TestMinimalChinaConfig(t *testing.T) {
 		t.Error("IsChinaRegion test failed.")
 	}
 
-	if c.TLSAssetsEncryptionEnabled() {
-		t.Error("TLS Assets encryption must be disabled on China.")
+	if c.AssetsEncryptionEnabled() {
+		t.Error("Assets encryption must be disabled on China.")
 	}
 }
 
@@ -298,7 +290,6 @@ func TestAvailabilityZones(t *testing.T) {
 			conf: minimalConfigYaml + `
 # You can specify multiple subnets to be created in order to achieve H/A
 vpcCIDR: 10.4.3.0/16
-controllerIP: 10.4.3.50
 subnets:
   - availabilityZone: ap-northeast-1a
     instanceCIDR: 10.4.3.0/24
@@ -339,7 +330,6 @@ func TestMultipleSubnets(t *testing.T) {
 			conf: `
 # You can specify multiple subnets to be created in order to achieve H/A
 vpcCIDR: 10.4.3.0/16
-controllerIP: 10.4.3.50
 subnets:
   - availabilityZone: ap-northeast-1a
     instanceCIDR: 10.4.3.0/24
@@ -363,7 +353,6 @@ subnets:
 			conf: `
 # Given AZ/CIDR, missing subnets fall-back to the single subnet with the AZ/CIDR given.
 vpcCIDR: 10.4.3.0/16
-controllerIP: 10.4.3.50
 availabilityZone: ap-northeast-1a
 instanceCIDR: 10.4.3.0/24
 `,
@@ -379,7 +368,6 @@ instanceCIDR: 10.4.3.0/24
 			conf: `
 # Given AZ/CIDR, empty subnets fall-back to the single subnet with the AZ/CIDR given.
 vpcCIDR: 10.4.3.0/16
-controllerIP: 10.4.3.50
 availabilityZone: ap-northeast-1a
 instanceCIDR: 10.4.3.0/24
 subnets: []
@@ -452,13 +440,6 @@ subnets:
 `,
 		`
 subnets:
-# Both AZ/instanceCIDR is given. This is O.K. but...
-- availabilityZone: "ap-northeast-1a"
-# instanceCIDR does not include the default controllerIP
-- instanceCIDR: 10.0.5.0/24
-`,
-		`
-subnets:
 # Overlapping subnets
 - availabilityZone: "ap-northeast-1a"
   instanceCIDR: 10.0.5.0/24
@@ -506,6 +487,45 @@ func TestControllerVolumeType(t *testing.T) {
 			volumeType: "gp2",
 			iops:       0,
 		},
+		{
+			conf: `
+controller:
+  rootVolume:
+    type: gp2
+`,
+			volumeType: "gp2",
+			iops:       0,
+		},
+		{
+			conf: `
+controller:
+  rootVolume:
+    type: standard
+`,
+			volumeType: "standard",
+			iops:       0,
+		},
+		{
+			conf: `
+controller:
+  rootVolume:
+    type: io1
+    iops: 100
+`,
+			volumeType: "io1",
+			iops:       100,
+		},
+		{
+			conf: `
+controller:
+  rootVolume:
+    type: io1
+    iops: 2000
+`,
+			volumeType: "io1",
+			iops:       2000,
+		},
+		// TODO Remove test cases for deprecated keys in v0.9.7
 		{
 			conf: `
 controllerRootVolumeType: gp2
@@ -572,10 +592,10 @@ controllerRootVolumeIOPS: 2001
 			t.Errorf("failed to parse config %s: %v", confBody, err)
 			continue
 		}
-		if c.ControllerRootVolumeType != conf.volumeType {
+		if c.Controller.RootVolume.Type != conf.volumeType {
 			t.Errorf(
 				"parsed root volume type %s does not match root volume %s in config: %s",
-				c.ControllerRootVolumeType,
+				c.Controller.RootVolume.Type,
 				conf.volumeType,
 				confBody,
 			)
@@ -721,16 +741,6 @@ experimental:
 				Enabled: true,
 			},
 		},
-		{
-			conf: `
-# Settings for an experimental feature must be under the "experimental" field. Ignored.
-nodeDrainer:
-  enabled: true
-`,
-			nodeDrainer: NodeDrainer{
-				Enabled: false,
-			},
-		},
 	}
 
 	for _, conf := range validConfigs {
@@ -744,6 +754,69 @@ nodeDrainer:
 			t.Errorf(
 				"parsed node drainer settings %+v does not match config: %s",
 				c.Experimental.NodeDrainer,
+				confBody,
+			)
+		}
+	}
+
+}
+
+func TestTLSBootstrapConfig(t *testing.T) {
+
+	validConfigs := []struct {
+		conf         string
+		tlsBootstrap TLSBootstrap
+	}{
+		{
+			conf: `
+`,
+			tlsBootstrap: TLSBootstrap{
+				Enabled: false,
+			},
+		},
+		{
+			conf: `
+experimental:
+  tlsBootstrap:
+    enabled: false
+`,
+			tlsBootstrap: TLSBootstrap{
+				Enabled: false,
+			},
+		},
+		{
+			conf: `
+experimental:
+  tlsBootstrap:
+    enabled: true
+`,
+			tlsBootstrap: TLSBootstrap{
+				Enabled: true,
+			},
+		},
+		{
+			conf: `
+# Settings for an experimental feature must be under the "experimental" field. Ignored.
+tlsBootstrap:
+  enabled: true
+`,
+			tlsBootstrap: TLSBootstrap{
+				Enabled: false,
+			},
+		},
+	}
+
+	for _, conf := range validConfigs {
+		confBody := singleAzConfigYaml + conf.conf
+		c, err := ClusterFromBytes([]byte(confBody))
+		if err != nil {
+			t.Errorf("failed to parse config %s: %v", confBody, err)
+			continue
+		}
+		if !reflect.DeepEqual(c.Experimental.TLSBootstrap, conf.tlsBootstrap) {
+			t.Errorf(
+				"parsed TLS bootstrap settings %+v does not match config: %s",
+				c.Experimental.TLSBootstrap,
 				confBody,
 			)
 		}

@@ -2,7 +2,7 @@ package derived
 
 import (
 	"fmt"
-	"github.com/coreos/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/model"
 )
 
 // NewEtcdNodes derives etcd nodes from user-provided etcd node configs

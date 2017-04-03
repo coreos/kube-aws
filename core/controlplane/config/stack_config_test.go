@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/coreos/kube-aws/model"
-	"github.com/coreos/kube-aws/test/helper"
+	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/test/helper"
 	"testing"
 )
 
@@ -18,7 +18,7 @@ func TestRenderStackTemplate(t *testing.T) {
 
 	helper.WithDummyCredentials(func(dir string) {
 		var stackTemplateOptions = StackTemplateOptions{
-			TLSAssetsDir:          dir,
+			AssetsDir:             dir,
 			ControllerTmplFile:    "templates/cloud-config-controller",
 			EtcdTmplFile:          "templates/cloud-config-etcd",
 			StackTemplateTmplFile: "templates/stack-template.json",
@@ -52,7 +52,7 @@ func TestValidateUserData(t *testing.T) {
 
 	helper.WithDummyCredentials(func(dir string) {
 		var stackTemplateOptions = StackTemplateOptions{
-			TLSAssetsDir:          dir,
+			AssetsDir:             dir,
 			ControllerTmplFile:    "templates/cloud-config-controller",
 			EtcdTmplFile:          "templates/cloud-config-etcd",
 			StackTemplateTmplFile: "templates/stack-template.json",

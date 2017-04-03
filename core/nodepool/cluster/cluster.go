@@ -9,8 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/coreos/kube-aws/cfnstack"
-	"github.com/coreos/kube-aws/core/nodepool/config"
+	"github.com/kubernetes-incubator/kube-aws/cfnstack"
+	"github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"text/tabwriter"
 )
 
@@ -91,7 +91,7 @@ func (c *Cluster) Assets() (cfnstack.Assets, error) {
 	}
 
 	return cfnstack.NewAssetsBuilder(c.StackName(), c.StackConfig.S3URI, c.StackConfig.Region).
-		Add("userdata-worker", c.UserDataWorker).
+		Add(c.UserDataWorkerFileName(), c.UserDataWorker).
 		Add(STACK_TEMPLATE_FILENAME, stackTemplate).
 		Build(), nil
 }
@@ -159,6 +159,7 @@ func (c *Cluster) Update() (string, error) {
 	return updateOutput, err
 }
 
+// ValidateStack validates the CloudFormation stack for this worker node pool already uploaded to S3
 func (c *Cluster) ValidateStack() (string, error) {
 	if err := c.ValidateUserData(); err != nil {
 		return "", fmt.Errorf("failed to validate userdata : %v", err)
@@ -174,11 +175,11 @@ func (c *Cluster) ValidateStack() (string, error) {
 		}
 	}
 
-	stackTemplate, err := c.RenderStackTemplateAsString()
+	stackTemplateURL, err := c.TemplateURL()
 	if err != nil {
-		return "", fmt.Errorf("failed to validate template : %v", err)
+		return "", fmt.Errorf("failed to get template url : %v", err)
 	}
-	return c.stackProvisioner().Validate(stackTemplate)
+	return c.stackProvisioner().ValidateStackAtURL(stackTemplateURL)
 }
 
 func (c *ClusterRef) validateKeyPair(ec2Svc ec2DescribeKeyPairsService) error {
@@ -203,9 +204,9 @@ func (c *ClusterRef) validateWorkerRootVolume(ec2Svc ec2CreateVolumeService) err
 	workerRootVolume := &ec2.CreateVolumeInput{
 		DryRun:           aws.Bool(true),
 		AvailabilityZone: aws.String(c.Subnets[0].AvailabilityZone),
-		Iops:             aws.Int64(int64(c.RootVolumeIOPS)),
-		Size:             aws.Int64(int64(c.RootVolumeSize)),
-		VolumeType:       aws.String(c.RootVolumeType),
+		Iops:             aws.Int64(int64(c.RootVolume.IOPS)),
+		Size:             aws.Int64(int64(c.RootVolume.Size)),
+		VolumeType:       aws.String(c.RootVolume.Type),
 	}
 
 	if _, err := ec2Svc.CreateVolume(workerRootVolume); err != nil {

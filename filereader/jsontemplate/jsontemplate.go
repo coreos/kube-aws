@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/coreos/kube-aws/filereader/texttemplate"
+	"github.com/kubernetes-incubator/kube-aws/filereader/texttemplate"
 )
 
 func GetBytes(filename string, data interface{}, prettyPrint bool) ([]byte, error) {

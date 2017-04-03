@@ -2,8 +2,8 @@ package integration
 
 import (
 	"fmt"
-	cfg "github.com/coreos/kube-aws/core/controlplane/config"
-	"github.com/coreos/kube-aws/core/nodepool/config"
+	cfg "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	"github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"strings"
 	"testing"
 )
@@ -87,7 +87,7 @@ taints:
     value: bar
     effect: UnknownEffect
 `,
-			expectedErrorMessage: "Effect must be NoSchdule or PreferNoSchedule, but was UnknownEffect",
+			expectedErrorMessage: "Effect must be NoSchedule or PreferNoSchedule, but was UnknownEffect",
 		},
 		{
 			context: "WithVpcIdAndVPCCIDRSpecified",
@@ -105,7 +105,8 @@ spotFleet:
   launchSpecifications:
   - weightedCapacity: 1
     instanceType: c4.large
-    rootVolumeType: foo
+    rootVolume:
+      type: foo
 `,
 		},
 		{
@@ -116,9 +117,10 @@ spotFleet:
   launchSpecifications:
   - weightedCapacity: 1
     instanceType: c4.large
-    rootVolumeType: io1
-    # must be 100~2000
-    rootVolumeIOPS: 50
+    rootVolume:
+      type: io1
+      # must be 100~2000
+      iops: 50
 `,
 		},
 		{
@@ -129,8 +131,9 @@ spotFleet:
   launchSpecifications:
   - weightedCapacity: 1
     instanceType: c4.large
-    rootVolumeType: gp2
-    rootVolumeIOPS: 1000
+    rootVolume:
+      type: gp2
+      iops: 1000
 `,
 		},
 		{

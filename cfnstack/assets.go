@@ -2,7 +2,7 @@ package cfnstack
 
 import (
 	"fmt"
-	"github.com/coreos/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/model"
 	"path/filepath"
 	"strings"
 )

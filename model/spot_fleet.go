@@ -16,6 +16,7 @@ type SpotFleet struct {
 	UnitRootVolumeSize   int                   `yaml:"unitRootVolumeSize"`
 	UnitRootVolumeIOPS   int                   `yaml:"unitRootVolumeIOPS"`
 	LaunchSpecifications []LaunchSpecification `yaml:"launchSpecifications,omitempty"`
+	UnknownKeys          `yaml:",inline"`
 }
 
 func (f SpotFleet) Enabled() bool {
@@ -32,28 +33,13 @@ func (c SpotFleet) Valid() error {
 	return nil
 }
 
-func (f SpotFleet) WithDefaults() SpotFleet {
-	defaults := newDefaultSpotFleet()
-
-	if f.SpotPrice == "" {
-		f.SpotPrice = defaults.SpotPrice
+func (f *SpotFleet) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type t SpotFleet
+	work := t(newDefaultSpotFleet())
+	if err := unmarshal(&work); err != nil {
+		return fmt.Errorf("failed to parse node pool config: %v", err)
 	}
-
-	if f.UnitRootVolumeSize == 0 {
-		f.UnitRootVolumeSize = defaults.UnitRootVolumeSize
-	}
-
-	if f.UnitRootVolumeIOPS == 0 {
-		f.UnitRootVolumeIOPS = defaults.UnitRootVolumeIOPS
-	}
-
-	if f.RootVolumeType == "" {
-		f.RootVolumeType = defaults.RootVolumeType
-	}
-
-	if len(f.LaunchSpecifications) == 0 {
-		f.LaunchSpecifications = defaults.LaunchSpecifications
-	}
+	*f = SpotFleet(work)
 
 	launchSpecs := []LaunchSpecification{}
 	for _, spec := range f.LaunchSpecifications {
@@ -64,20 +50,20 @@ func (f SpotFleet) WithDefaults() SpotFleet {
 			}
 			spec.SpotPrice = strconv.FormatFloat(p*float64(spec.WeightedCapacity), 'f', -1, 64)
 		}
-		if spec.RootVolumeType == "" {
-			spec.RootVolumeType = f.RootVolumeType
+		if spec.RootVolume.Type == "" {
+			spec.RootVolume.Type = f.RootVolumeType
 		}
-		if spec.RootVolumeSize == 0 {
-			spec.RootVolumeSize = f.UnitRootVolumeSize * spec.WeightedCapacity
+		if spec.RootVolume.Size == 0 {
+			spec.RootVolume.Size = f.UnitRootVolumeSize * spec.WeightedCapacity
 		}
-		if spec.RootVolumeType == "io1" && spec.RootVolumeIOPS == 0 {
-			spec.RootVolumeIOPS = f.UnitRootVolumeIOPS * spec.WeightedCapacity
+		if spec.RootVolume.Type == "io1" && spec.RootVolume.IOPS == 0 {
+			spec.RootVolume.IOPS = f.UnitRootVolumeIOPS * spec.WeightedCapacity
 		}
 		launchSpecs = append(launchSpecs, spec)
 	}
 	f.LaunchSpecifications = launchSpecs
 
-	return f
+	return nil
 }
 
 func (f SpotFleet) IAMFleetRoleRef() string {

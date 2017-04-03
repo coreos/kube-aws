@@ -39,7 +39,9 @@ Check out our getting started tutorial on launching your first Kubernetes cluste
   * Create the additional pool of worker nodes
   * Adjust template configuration for each pool of worker nodes
   * Required to support [cluster-autoscaler](https://github.com/kubernetes/contrib/tree/master/cluster-autoscaler)
-* [Step 6: Destroy](/Documentation/kubernetes-on-aws-destroy.md)
+* [Step 6: Configure add-ons](/Documentation/kubernetes-on-aws-add-ons.md)
+  * Configure various Kubernetes add-ons
+* [Step 7: Destroy](/Documentation/kubernetes-on-aws-destroy.md)
   * Destroy the cluster
 
 ## Examples
@@ -108,8 +110,8 @@ Clone this repository to the appropriate path under the GOPATH.
 
 ```
 $ export GOPATH=$HOME/go
-$ mkdir -p $GOPATH/src/github.com/coreos/
-$ git clone git@github.com:coreos/kube-aws.git $GOPATH/src/github.com/coreos/kube-aws
+$ mkdir -p $GOPATH/src/github.com/kubernetes-incubator/
+$ git clone git@github.com:kubernetes-incubator/kube-aws.git $GOPATH/src/github.com/kubernetes-incubator/kube-aws
 ```
 
 Run `make build` to compile `kube-aws` locally.

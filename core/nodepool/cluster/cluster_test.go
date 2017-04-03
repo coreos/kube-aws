@@ -9,9 +9,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	controlplane "github.com/coreos/kube-aws/core/controlplane/config"
-	"github.com/coreos/kube-aws/core/nodepool/config"
-	"github.com/coreos/kube-aws/test/helper"
+	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	"github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
+	"github.com/kubernetes-incubator/kube-aws/test/helper"
 )
 
 type dummyEC2CreateVolumeService struct {
@@ -176,6 +176,42 @@ rootVolumeSize: 100
 rootVolumeIOPS: 2000
 `,
 		},
+		{
+			expectedRootVolume: &ec2.CreateVolumeInput{
+				Iops:       aws.Int64(0),
+				Size:       aws.Int64(30),
+				VolumeType: aws.String("standard"),
+			},
+			clusterYaml: `
+rootVolume:
+  type: standard
+`,
+		},
+		{
+			expectedRootVolume: &ec2.CreateVolumeInput{
+				Iops:       aws.Int64(0),
+				Size:       aws.Int64(50),
+				VolumeType: aws.String("gp2"),
+			},
+			clusterYaml: `
+rootVolume:
+  type: gp2
+  size: 50
+`,
+		},
+		{
+			expectedRootVolume: &ec2.CreateVolumeInput{
+				Iops:       aws.Int64(2000),
+				Size:       aws.Int64(100),
+				VolumeType: aws.String("io1"),
+			},
+			clusterYaml: `
+rootVolume:
+  type: io1
+  size: 100
+  iops: 2000
+`,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -232,9 +268,9 @@ name: pool1
 		ExpectedContentLength: 2,
 	}
 
-	helper.WithDummyCredentials(func(dummyTlsAssetsDir string) {
+	helper.WithDummyCredentials(func(dummyAssetsDir string) {
 		var stackTemplateOptions = config.StackTemplateOptions{
-			TLSAssetsDir:          dummyTlsAssetsDir,
+			AssetsDir:             dummyAssetsDir,
 			StackTemplateTmplFile: "../config/templates/stack-template.json",
 			WorkerTmplFile:        "../../controlplane/config/templates/cloud-config-worker",
 			S3URI:                 "s3://test-bucket/foo/bar",
@@ -252,13 +288,13 @@ name: pool1
 			t.Errorf("error creating cluster: %v", err)
 		}
 
-		path, err := cluster.UserDataWorkerS3Path()
+		path, err := cluster.UserDataWorkerS3Prefix()
 		if err != nil {
 			t.Errorf("failed to get worker user data path in s3: %v", err)
 		}
 
 		if path != "test-bucket/foo/bar/kube-aws/clusters/test-cluster-name/exported/stacks/pool1/userdata-worker" {
-			t.Errorf("UserDataControllerS3Path returned an unexpected value: %s", path)
+			t.Errorf("UserDataControllerS3Prefix returned an unexpected value: %s", path)
 		}
 	})
 }

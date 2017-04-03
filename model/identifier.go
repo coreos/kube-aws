@@ -11,6 +11,7 @@ type Identifier struct {
 	IDFromFn          string `yaml:"idFromFn,omitempty"`
 }
 
+// HasIdentifier returns true when the id of a resource i.e. either `id` or `idFromStackOutput` is specified
 func (i Identifier) HasIdentifier() bool {
 	return i.ID != "" || i.IDFromStackOutput != ""
 }

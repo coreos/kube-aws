@@ -4,31 +4,47 @@ package config
 //go:generate gofmt -w templates.go
 
 import (
+	"errors"
 	"fmt"
-	controlplane "github.com/coreos/kube-aws/core/controlplane/config"
-	nodepool "github.com/coreos/kube-aws/core/nodepool/config"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+
+	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
+	"github.com/kubernetes-incubator/kube-aws/model"
+	"gopkg.in/yaml.v2"
 )
 
 type UnmarshalledConfig struct {
 	controlplane.Cluster `yaml:",inline"`
-	WorkerConfig         `yaml:"worker,omitempty"`
+	Worker               `yaml:"worker,omitempty"`
+	model.UnknownKeys    `yaml:",inline"`
 }
 
-type WorkerConfig struct {
-	NodePools []*nodepool.ProvidedConfig `yaml:"nodePools,omitempty"`
+type Worker struct {
+	APIEndpointName   string                     `yaml:"apiEndpointName,omitempty"`
+	NodePools         []*nodepool.ProvidedConfig `yaml:"nodePools,omitempty"`
+	model.UnknownKeys `yaml:",inline"`
 }
 
 type Config struct {
 	*controlplane.Cluster
-	NodePools []*nodepool.ProvidedConfig
+	NodePools         []*nodepool.ProvidedConfig
+	model.UnknownKeys `yaml:",inline"`
+}
+
+type unknownKeysSupport interface {
+	FailWhenUnknownKeysFound(keyPath string) error
+}
+
+type unknownKeyValidation struct {
+	unknownKeysSupport
+	keyPath string
 }
 
 func newDefaultUnmarshalledConfig() *UnmarshalledConfig {
 	return &UnmarshalledConfig{
 		Cluster: *controlplane.NewDefaultCluster(),
-		WorkerConfig: WorkerConfig{
+		Worker: Worker{
 			NodePools: []*nodepool.ProvidedConfig{},
 		},
 	}
@@ -41,24 +57,102 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 	}
 	c.HyperkubeImage.Tag = c.K8sVer
 
-	cpCluser := &c.Cluster
-	if err := cpCluser.Load(); err != nil {
+	cpCluster := &c.Cluster
+	if err := cpCluster.Load(); err != nil {
 		return nil, err
 	}
 
-	cpConfig, err := cpCluser.Config()
+	cpConfig, err := cpCluster.Config()
 	if err != nil {
 		return nil, err
 	}
 
 	nodePools := c.NodePools
-	for i, np := range nodePools {
-		if err := np.Load(cpConfig); err != nil {
-			return nil, fmt.Errorf("invalid node pool at index %d: %v", i, err)
+
+	anyNodePoolIsMissingAPIEndpointName := true
+	for _, np := range nodePools {
+		if np.APIEndpointName == "" {
+			anyNodePoolIsMissingAPIEndpointName = true
+			break
 		}
 	}
 
-	return &Config{Cluster: cpCluser, NodePools: nodePools}, nil
+	if len(cpConfig.APIEndpoints) > 1 && c.Worker.APIEndpointName == "" && anyNodePoolIsMissingAPIEndpointName {
+		return nil, errors.New("worker.apiEndpointName must not be empty when there're 2 or more API endpoints under the key `apiEndpoints` and one of worker.nodePools[] are missing apiEndpointName")
+	}
+
+	if c.Worker.APIEndpointName != "" {
+		if _, err := cpConfig.APIEndpoints.FindByName(c.APIEndpointName); err != nil {
+			return nil, fmt.Errorf("invalid value for worker.apiEndpointName: no API endpoint named \"%s\" found", c.APIEndpointName)
+		}
+	}
+
+	for i, np := range nodePools {
+		if np.APIEndpointName == "" {
+			if c.Worker.APIEndpointName == "" {
+				if len(cpConfig.APIEndpoints) > 1 {
+					return nil, errors.New("worker.apiEndpointName can be omitted only when there's only 1 api endpoint under apiEndpoints")
+				}
+				np.APIEndpointName = cpConfig.APIEndpoints.GetDefault().Name
+			} else {
+				np.APIEndpointName = c.Worker.APIEndpointName
+			}
+		}
+
+		if err := np.Load(cpConfig); err != nil {
+			return nil, fmt.Errorf("invalid node pool at index %d: %v", i, err)
+		}
+
+		if err := failFastWhenUnknownKeysFound([]unknownKeyValidation{
+			{np, fmt.Sprintf("worker.nodePools[%d]", i)},
+			{np.AutoScalingGroup, fmt.Sprintf("worker.nodePools[%d].autoScalingGroup", i)},
+			{np.ClusterAutoscaler, fmt.Sprintf("worker.nodePools[%d].clusterAutoscaler", i)},
+			{np.SpotFleet, fmt.Sprintf("worker.nodePools[%d].spotFleet", i)},
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	cfg := &Config{Cluster: cpCluster, NodePools: nodePools}
+
+	validations := []unknownKeyValidation{
+		{c, ""},
+		{c.Worker, "worker"},
+		{c.Etcd, "etcd"},
+		{c.Etcd.RootVolume, "etcd.rootVolume"},
+		{c.Etcd.DataVolume, "etcd.dataVolume"},
+		{c.Controller, "controller"},
+		{c.Controller.AutoScalingGroup, "controller.autoScalingGroup"},
+		{c.Controller.ClusterAutoscaler, "controller.clusterAutoscaler"},
+		{c.Controller.RootVolume, "controller.rootVolume"},
+		{c.Experimental, "experimental"},
+		{c.Addons, "addons"},
+		{c.Addons.Rescheduler, "addons.rescheduler"},
+	}
+
+	for i, np := range c.Worker.NodePools {
+		validations = append(validations, unknownKeyValidation{np, fmt.Sprintf("worker.nodePools[%d]", i)})
+		validations = append(validations, unknownKeyValidation{np.RootVolume, fmt.Sprintf("worker.nodePools[%d].rootVolume", i)})
+
+		for j, endpoint := range np.APIEndpointConfigs {
+			validations = append(validations, unknownKeyValidation{endpoint, fmt.Sprintf("worker.nodePools[%d].apiEndpoints[%d]", i, j)})
+		}
+	}
+
+	if err := failFastWhenUnknownKeysFound(validations); err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
+func failFastWhenUnknownKeysFound(vs []unknownKeyValidation) error {
+	for _, v := range vs {
+		if err := v.unknownKeysSupport.FailWhenUnknownKeysFound(v.keyPath); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func ConfigFromBytesWithEncryptService(data []byte, encryptService controlplane.EncryptService) (*Config, error) {
@@ -67,6 +161,12 @@ func ConfigFromBytesWithEncryptService(data []byte, encryptService controlplane.
 		return nil, err
 	}
 	c.ProvidedEncryptService = encryptService
+
+	// Uses the same encrypt service for node pools for consistency
+	for _, p := range c.NodePools {
+		p.ProvidedEncryptService = encryptService
+	}
+
 	return c, nil
 }
 

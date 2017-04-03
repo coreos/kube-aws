@@ -1,7 +1,7 @@
 package derived
 
 import (
-	"github.com/coreos/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/model"
 	"reflect"
 	"testing"
 )

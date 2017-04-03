@@ -10,9 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/route53"
-	"github.com/coreos/kube-aws/cfnstack"
-	"github.com/coreos/kube-aws/core/controlplane/config"
-	"github.com/coreos/kube-aws/test/helper"
+	"github.com/kubernetes-incubator/kube-aws/cfnstack"
+	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	"github.com/kubernetes-incubator/kube-aws/test/helper"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -172,16 +172,13 @@ vpcCIDR: 10.5.0.0/16
 vpcId: vpc-xxx1
 routeTableId: rtb-xxxxxx
 instanceCIDR: 10.5.11.0/24
-controllerIP: 10.5.11.10
 `, `
 vpcCIDR: 192.168.1.0/24
 vpcId: vpc-xxx2
 instanceCIDR: 192.168.1.50/28
-controllerIP: 192.168.1.50
 `, `
 vpcCIDR: 192.168.1.0/24
 vpcId: vpc-xxx2
-controllerIP: 192.168.1.5
 subnets:
   - instanceCIDR: 192.168.1.0/28
   - instanceCIDR: 192.168.1.32/28
@@ -194,29 +191,24 @@ subnets:
 vpcCIDR: 10.0.0.0/16
 vpcId: vpc-xxx3 #vpc does not exist
 instanceCIDR: 10.0.0.0/24
-controllerIP: 10.0.0.50
 routeTableId: rtb-xxxxxx
 `, `
 vpcCIDR: 10.10.0.0/16 #vpc cidr does match existing vpc-xxx1
 vpcId: vpc-xxx1
 instanceCIDR: 10.10.0.0/24
-controllerIP: 10.10.0.50
 routeTableId: rtb-xxxxxx
 `, `
 vpcCIDR: 10.5.0.0/16
 instanceCIDR: 10.5.2.0/28 #instance cidr conflicts with existing subnet
-controllerIP: 10.5.2.10
 vpcId: vpc-xxx1
 routeTableId: rtb-xxxxxx
 `, `
 vpcCIDR: 192.168.1.0/24
 instanceCIDR: 192.168.1.100/26 #instance cidr conflicts with existing subnet
-controllerIP: 192.168.1.80
 vpcId: vpc-xxx2
 routeTableId: rtb-xxxxxx
 `, `
 vpcCIDR: 192.168.1.0/24
-controllerIP: 192.168.1.80
 vpcId: vpc-xxx2
 routeTableId: rtb-xxxxxx
 subnets:
@@ -481,9 +473,9 @@ stackTags:
 			ExpectedContentLength: 2,
 		}
 
-		helper.WithDummyCredentials(func(dummyTlsAssetsDir string) {
+		helper.WithDummyCredentials(func(dummyAssetsDir string) {
 			var stackTemplateOptions = config.StackTemplateOptions{
-				TLSAssetsDir:          dummyTlsAssetsDir,
+				AssetsDir:             dummyAssetsDir,
 				ControllerTmplFile:    "../config/templates/cloud-config-controller",
 				EtcdTmplFile:          "../config/templates/cloud-config-etcd",
 				StackTemplateTmplFile: "../config/templates/stack-template.json",
@@ -502,13 +494,13 @@ stackTags:
 				t.Errorf("error creating cluster: %v\nfor test case %+v", err, testCase)
 			}
 
-			path, err := cluster.UserDataControllerS3Path()
+			path, err := cluster.UserDataControllerS3Prefix()
 			if err != nil {
 				t.Errorf("failed to get controller user data path in s3: %v", err)
 			}
 
 			if path != "test-bucket/foo/bar/kube-aws/clusters/test-cluster-name/exported/stacks/control-plane/userdata-controller" {
-				t.Errorf("UserDataControllerS3Path returned an unexpected value: %s", path)
+				t.Errorf("UserDataControllerS3Prefix returned an unexpected value: %s", path)
 			}
 		})
 	}
@@ -637,6 +629,46 @@ func TestValidateControllerRootVolume(t *testing.T) {
 # no root volumes set
 `,
 		},
+		{
+			expectedRootVolume: &ec2.CreateVolumeInput{
+				Iops:       aws.Int64(0),
+				Size:       aws.Int64(30),
+				VolumeType: aws.String("standard"),
+			},
+			clusterYaml: `
+controller:
+  rootVolume:
+    type: standard
+`,
+		},
+		{
+			expectedRootVolume: &ec2.CreateVolumeInput{
+				Iops:       aws.Int64(0),
+				Size:       aws.Int64(50),
+				VolumeType: aws.String("gp2"),
+			},
+			clusterYaml: `
+controller:
+  rootVolume:
+    type: gp2
+    size: 50
+`,
+		},
+		{
+			expectedRootVolume: &ec2.CreateVolumeInput{
+				Iops:       aws.Int64(2000),
+				Size:       aws.Int64(100),
+				VolumeType: aws.String("io1"),
+			},
+			clusterYaml: `
+controller:
+  rootVolume:
+    type: io1
+    size: 100
+    iops: 2000
+`,
+		},
+		// TODO Remove test cases for deprecated keys in v0.9.7
 		{
 			expectedRootVolume: &ec2.CreateVolumeInput{
 				Iops:       aws.Int64(0),

@@ -7,6 +7,7 @@ type EtcdCluster struct {
 	MemberIdentityProvider string     `yaml:"memberIdentityProvider,omitempty"`
 	HostedZone             Identifier `yaml:"hostedZone,omitempty"`
 	ManageRecordSets       *bool      `yaml:"manageRecordSets,omitempty"`
+	KMSKeyARN              string     `yaml:"kmsKeyArn,omitempty"`
 }
 
 const (
