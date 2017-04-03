@@ -143,7 +143,6 @@ func ReadRawAuthTokens(dirname string) (*RawAuthTokensOnDisk, error) {
 	kubeletBootstrapToken := []byte{}
 
 	// Ignore if the auth token file does not exist
-	// TODO: add test
 	if !AuthTokensFileExists(dirname) {
 		return &RawAuthTokensOnDisk{
 			AuthTokens: RawCredentialOnDisk{
@@ -260,7 +259,6 @@ func ReadOrEncryptAuthTokens(dirname string, encryptor CachedEncryptor) (*Encryp
 	authTokensPath := filepath.Join(dirname, authTokenFilename)
 
 	// Ignore if the auth token file does not exist
-	// TODO: add test
 	if !AuthTokensFileExists(dirname) {
 		return &EncryptedAuthTokensOnDisk{
 			AuthTokens: EncryptedCredentialOnDisk{
