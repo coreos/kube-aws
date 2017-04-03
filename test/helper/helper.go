@@ -44,11 +44,5 @@ func WithDummyCredentials(fn func(dir string)) {
 		defer os.Remove(keyFile)
 	}
 
-	authTokenFile := fmt.Sprintf("%s/tokens.csv", dir)
-	if err := ioutil.WriteFile(authTokenFile, []byte(""), 0644); err != nil {
-		panic(err)
-	}
-	defer os.Remove(authTokenFile)
-
 	fn(dir)
 }

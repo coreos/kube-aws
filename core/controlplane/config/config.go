@@ -933,6 +933,18 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	var compactAssets *CompactTLSAssets
 	var compactAuthTokens *CompactAuthTokens
 
+	// Automatically generates the auth token file if it doesn't exist
+	if !AuthTokensFileExists(opts.AssetsDir) {
+		createBootstrapToken := c.DeploymentSettings.Experimental.TLSBootstrap.Enabled
+		created, err := CreateRawAuthTokens(createBootstrapToken, opts.AssetsDir)
+		if err != nil {
+			return nil, err
+		}
+		if created {
+			fmt.Println("INFO: Created initial auth token file in ./credentials/tokens.csv")
+		}
+	}
+
 	if c.AssetsEncryptionEnabled() {
 		compactAuthTokens, err = ReadOrCreateCompactAuthTokens(opts.AssetsDir, KMSConfig{
 			Region:         stackConfig.Config.Region,
@@ -969,12 +981,25 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 		}
 	}
 
+	if c.Experimental.TLSBootstrap.Enabled && !c.Experimental.Plugins.Rbac.Enabled {
+		fmt.Println(`WARNING: enabling cluster-level TLS bootstrapping without RBAC is not recommended. See https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/ for more information`)
+	}
 	if stackConfig.UserDataController, err = userdatatemplate.GetString(opts.ControllerTmplFile, stackConfig.Config); err != nil {
 		return nil, fmt.Errorf("failed to render controller cloud config: %v", err)
 	}
 	if stackConfig.UserDataEtcd, err = userdatatemplate.GetString(opts.EtcdTmplFile, stackConfig.Config); err != nil {
 		return nil, fmt.Errorf("failed to render etcd cloud config: %v", err)
 	}
+
+	if len(stackConfig.Config.AuthTokensConfig.KubeletBootstrapToken) == 0 && c.DeploymentSettings.Experimental.TLSBootstrap.Enabled {
+		bootstrapRecord, err := RandomBootstrapTokenRecord()
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("kubelet bootstrap token not found in ./credentials/tokens.csv.\n\nTo fix this, please append the following line to ./credentials.tokens.csv:\n%s", bootstrapRecord)
+
+	}
+
 	if len(stackConfig.Config.AuthTokensConfig.KubeletBootstrapToken) == 0 && c.DeploymentSettings.Experimental.TLSBootstrap.Enabled {
 		bootstrapRecord, err := RandomBootstrapTokenRecord()
 		if err != nil {
@@ -1178,10 +1203,6 @@ func (c Cluster) valid() error {
 
 	if c.Controller.InstanceType == "t2.micro" || c.Etcd.InstanceType == "t2.micro" || c.Controller.InstanceType == "t2.nano" || c.Etcd.InstanceType == "t2.nano" {
 		fmt.Println(`WARNING: instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/kubernetes-incubator/kube-aws/issues/258 for more information`)
-	}
-
-	if c.Experimental.TLSBootstrap.Enabled && !c.Experimental.Plugins.Rbac.Enabled {
-		fmt.Println(`WARNING: enabling cluster-level TLS bootstrapping without RBAC is not recommended. See https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/ for more information`)
 	}
 
 	if e := cfnresource.ValidateRoleNameLength(c.ClusterName, c.NestedStackName(), c.Controller.ManagedIamRoleName, c.Region.String()); e != nil {

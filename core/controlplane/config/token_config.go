@@ -18,8 +18,10 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
 )
 
-// Taken from https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/#apiserver-configuration
 const (
+	authTokenFilename = "tokens.csv"
+
+	// Taken from https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/#apiserver-configuration
 	kubeletBootstrapGroup     = "system:kubelet-bootstrap"
 	kubeletBootstrapUser      = "kubelet-bootstrap"
 	kubeletBootstrapUserId    = "10001"
@@ -55,13 +57,6 @@ type CompactAuthTokens struct {
 	KubeletBootstrapToken string
 }
 
-func NewAuthTokens() RawAuthTokensOnMemory {
-	// Uses an empty file as the default auth token file
-	return RawAuthTokensOnMemory{
-		Contents: make([]byte, 0),
-	}
-}
-
 func parseAuthTokensCSV(authTokens []byte) ([][]string, error) {
 	if len(authTokens) == 0 {
 		return make([][]string, 0), nil
@@ -69,6 +64,30 @@ func parseAuthTokensCSV(authTokens []byte) ([][]string, error) {
 
 	csvReader := csv.NewReader(bytes.NewReader(authTokens))
 	return csvReader.ReadAll()
+}
+
+func NewAuthTokens() RawAuthTokensOnMemory {
+	// Uses an empty file as the default auth token file
+	return RawAuthTokensOnMemory{
+		Contents: make([]byte, 0),
+	}
+}
+
+func (_ *Cluster) AuthTokensFileExist(dirname string) bool {
+	return AuthTokensFileExists(dirname)
+}
+
+// TODO: Add tests
+func AuthTokensFileExists(dirname string) bool {
+	authTokensPath := filepath.Join(dirname, authTokenFilename)
+	stat, err := os.Stat(authTokensPath)
+
+	// Considers empty token file as non-existent
+	if os.IsNotExist(err) || stat.Size() == 0 {
+		return false
+	}
+
+	return true
 }
 
 func RandomKubeletBootstrapTokenString(n int) (string, error) {
@@ -90,19 +109,26 @@ func RandomBootstrapTokenRecord() (string, error) {
 
 func (c *Cluster) CreateRawAuthTokens(dirname string) error {
 	createBootstrapToken := c.DeploymentSettings.Experimental.TLSBootstrap.Enabled
-	return CreateRawAuthTokens(createBootstrapToken, dirname)
+	_, err := CreateRawAuthTokens(createBootstrapToken, dirname)
+	return err
 }
 
-func CreateRawAuthTokens(addBootstrapToken bool, dirname string) error {
+func CreateRawAuthTokens(addBootstrapToken bool, dirname string) (bool, error) {
 	tokens := RawAuthTokensOnMemory{}
+
 	if addBootstrapToken {
 		bootstrapToken, err := RandomBootstrapTokenRecord()
 		if err != nil {
-			return err
+			return false, err
 		}
 		tokens.Contents = []byte(bootstrapToken)
+		if err = tokens.WriteToDir(dirname); err != nil {
+			return false, err
+		}
+		return true, nil
 	}
-	return tokens.WriteToDir(dirname)
+
+	return false, nil
 }
 
 func KubeletBootstrapTokenFromRecord(csvRecord []string) (string, error) {
@@ -124,11 +150,19 @@ func KubeletBootstrapTokenFromRecord(csvRecord []string) (string, error) {
 }
 
 func ReadRawAuthTokens(dirname string) (*RawAuthTokensOnDisk, error) {
-	authTokensPath := filepath.Join(dirname, "tokens.csv")
-	kubeletBootstrapToken := make([]byte, 0)
+	authTokensPath := filepath.Join(dirname, authTokenFilename)
+	kubeletBootstrapToken := []byte{}
 
-	if _, err := os.Stat(authTokensPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("auth tokens file not found: %s\n\nTo fix this, please run the following command to create it: kube-aws render token-file", authTokensPath)
+	// Ignore if the auth token file does not exist
+	// TODO: add test
+	if !AuthTokensFileExists(dirname) {
+		return &RawAuthTokensOnDisk{
+			AuthTokens: RawCredentialOnDisk{
+				content:  []byte{},
+				filePath: authTokensPath,
+			},
+			KubeletBootstrapToken: kubeletBootstrapToken,
+		}, nil
 	}
 
 	data, err := RawCredentialFileFromPath(authTokensPath)
@@ -168,7 +202,7 @@ func ReadRawAuthTokens(dirname string) (*RawAuthTokensOnDisk, error) {
 }
 
 func (r RawAuthTokensOnMemory) WriteToDir(dirname string) error {
-	authTokensPath := filepath.Join(dirname, "tokens.csv")
+	authTokensPath := filepath.Join(dirname, authTokenFilename)
 
 	if err := ioutil.WriteFile(authTokensPath, r.Contents, 0600); err != nil {
 		return err
@@ -234,7 +268,18 @@ func (r *EncryptedAuthTokensOnDisk) Compact() (*CompactAuthTokens, error) {
 }
 
 func ReadOrEncryptAuthTokens(dirname string, encryptor CachedEncryptor) (*EncryptedAuthTokensOnDisk, error) {
-	authTokenPath := filepath.Join(dirname, "tokens.csv")
+	authTokensPath := filepath.Join(dirname, authTokenFilename)
+
+	// Ignore if the auth token file does not exist
+	// TODO: add test
+	if !AuthTokensFileExists(dirname) {
+		return &EncryptedAuthTokensOnDisk{
+			AuthTokens: EncryptedCredentialOnDisk{
+				content: []byte{},
+			},
+			KubeletBootstrapToken: []byte{},
+		}, nil
+	}
 
 	// Extracts and encrypts the Kubelet bootstrap token
 	authTokens, err := ReadRawAuthTokens(dirname)
@@ -246,7 +291,7 @@ func ReadOrEncryptAuthTokens(dirname string, encryptor CachedEncryptor) (*Encryp
 		return nil, err
 	}
 
-	data, err := encryptor.EncryptedCredentialFromPath(authTokenPath)
+	data, err := encryptor.EncryptedCredentialFromPath(authTokensPath)
 	if err != nil {
 		return nil, err
 	}

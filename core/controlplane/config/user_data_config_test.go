@@ -102,7 +102,7 @@ func TestCloudConfigTemplating(t *testing.T) {
 
 	// Auth tokens
 	helper.WithTempDir(func(dir string) {
-		if err := CreateRawAuthTokens(false, dir); err != nil {
+		if _, err := CreateRawAuthTokens(false, dir); err != nil {
 			t.Fatalf("failed to create auth token file: %v", err)
 		}
 
