@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"regexp"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
@@ -19,8 +21,6 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/model/derived"
 	"github.com/kubernetes-incubator/kube-aws/netutil"
 	yaml "gopkg.in/yaml.v2"
-	"regexp"
-	"sort"
 )
 
 const (
@@ -56,6 +56,9 @@ func NewDefaultCluster() *Cluster {
 			Enabled: false,
 		},
 		ClusterAutoscalerSupport: ClusterAutoscalerSupport{
+			Enabled: false,
+		},
+		TLSBootstrap: TLSBootstrap{
 			Enabled: false,
 		},
 		EphemeralImageStorage: EphemeralImageStorage{
@@ -104,6 +107,7 @@ func NewDefaultCluster() *Cluster {
 			ClusterAutoscalerImage:      model.Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64", Tag: "1.0.0", RktPullDocker: false},
 			KubeDnsImage:                model.Image{Repo: "gcr.io/google_containers/kubedns-amd64", Tag: "1.9", RktPullDocker: false},
 			KubeDnsMasqImage:            model.Image{Repo: "gcr.io/google_containers/kube-dnsmasq-amd64", Tag: "1.4", RktPullDocker: false},
+			KubeReschedulerImage:        model.Image{Repo: "gcr.io/google-containers/rescheduler", Tag: "v0.2.2", RktPullDocker: false},
 			DnsMasqMetricsImage:         model.Image{Repo: "gcr.io/google_containers/dnsmasq-metrics-amd64", Tag: "1.0", RktPullDocker: false},
 			ExecHealthzImage:            model.Image{Repo: "gcr.io/google_containers/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
 			HeapsterImage:               model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.3.0", RktPullDocker: false},
@@ -211,6 +215,28 @@ func (c *Cluster) Load() error {
 	}
 
 	c.SetDefaults()
+
+	if c.ExternalDNSName != "" {
+		// TODO: Deprecate externalDNSName?
+
+		if len(c.APIEndpointConfigs) != 0 {
+			return errors.New("invalid cluster: you can only specify either externalDNSName or apiEndpoints, but not both")
+		}
+
+		subnetRefs := []model.SubnetReference{}
+		for _, s := range c.Controller.LoadBalancer.Subnets {
+			subnetRefs = append(subnetRefs, model.SubnetReference{Name: s.Name})
+		}
+
+		c.APIEndpointConfigs = model.NewDefaultAPIEndpoints(
+			c.ExternalDNSName,
+			subnetRefs,
+			c.HostedZoneID,
+			c.CreateRecordSet,
+			c.RecordSetTTL,
+			c.Controller.LoadBalancer.Private,
+		)
+	}
 
 	return nil
 }
@@ -391,6 +417,7 @@ func ClusterFromBytesWithEncryptService(data []byte, encryptService EncryptServi
 // Part of configuration which is shared between controller nodes and worker nodes.
 // Its name is prefixed with `Kube` because it doesn't relate to etcd.
 type KubeClusterSettings struct {
+	APIEndpointConfigs model.APIEndpoints `yaml:"apiEndpoints,omitempty"`
 	// Required by kubelet to locate the kube-apiserver
 	ExternalDNSName string `yaml:"externalDNSName,omitempty"`
 	// Required by kubelet to locate the cluster-internal dns hosted on controller nodes in the base cluster
@@ -436,6 +463,7 @@ type DeploymentSettings struct {
 	MapPublicIPs        bool              `yaml:"mapPublicIPs,omitempty"`
 	ElasticFileSystemID string            `yaml:"elasticFileSystemId,omitempty"`
 	SSHAuthorizedKeys   []string          `yaml:"sshAuthorizedKeys,omitempty"`
+	Addons              model.Addons      `yaml:"addons"`
 	Experimental        Experimental      `yaml:"experimental"`
 	ManageCertificates  bool              `yaml:"manageCertificates,omitempty"`
 	WaitSignal          WaitSignal        `yaml:"waitSignal"`
@@ -450,6 +478,7 @@ type DeploymentSettings struct {
 	ClusterAutoscalerImage      model.Image `yaml:"clusterAutoscalerImage,omitempty"`
 	KubeDnsImage                model.Image `yaml:"kubeDnsImage,omitempty"`
 	KubeDnsMasqImage            model.Image `yaml:"kubeDnsMasqImage,omitempty"`
+	KubeReschedulerImage        model.Image `yaml:"kubeReschedulerImage,omitempty"`
 	DnsMasqMetricsImage         model.Image `yaml:"dnsMasqMetricsImage,omitempty"`
 	ExecHealthzImage            model.Image `yaml:"execHealthzImage,omitempty"`
 	HeapsterImage               model.Image `yaml:"heapsterImage,omitempty"`
@@ -620,6 +649,7 @@ type Experimental struct {
 	AwsEnvironment           AwsEnvironment           `yaml:"awsEnvironment"`
 	AwsNodeLabels            AwsNodeLabels            `yaml:"awsNodeLabels"`
 	ClusterAutoscalerSupport ClusterAutoscalerSupport `yaml:"clusterAutoscalerSupport"`
+	TLSBootstrap             TLSBootstrap             `yaml:"tlsBootstrap"`
 	EphemeralImageStorage    EphemeralImageStorage    `yaml:"ephemeralImageStorage"`
 	Kube2IamSupport          Kube2IamSupport          `yaml:"kube2IamSupport,omitempty"`
 	LoadBalancer             LoadBalancer             `yaml:"loadBalancer"`
@@ -665,6 +695,10 @@ type AwsNodeLabels struct {
 }
 
 type ClusterAutoscalerSupport struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type TLSBootstrap struct {
 	Enabled bool `yaml:"enabled"`
 }
 
@@ -837,6 +871,13 @@ func (c Cluster) Config() (*Config, error) {
 		}
 	}
 
+	apiEndpoints, err := derived.NewAPIEndpoints(c.APIEndpointConfigs, c.Subnets)
+	if err != nil {
+		return nil, fmt.Errorf("invalid cluster: %v", err)
+	}
+
+	config.APIEndpoints = apiEndpoints
+
 	return &config, nil
 }
 
@@ -903,7 +944,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 		}
 		stackConfig.Config.AuthTokensConfig = compactAuthTokens
 	} else {
-		rawAuthTokens, err := ReadOrCreateUnecryptedCompactAuthTokens(opts.AssetsDir)
+		rawAuthTokens, err := ReadOrCreateUnencryptedCompactAuthTokens(opts.AssetsDir)
 		if err != nil {
 			return nil, err
 		}
@@ -911,19 +952,15 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	}
 	if c.ManageCertificates {
 		if c.AssetsEncryptionEnabled() {
-
 			compactAssets, err = ReadOrCreateCompactTLSAssets(opts.AssetsDir, KMSConfig{
 				Region:         stackConfig.Config.Region,
 				KMSKeyARN:      c.KMSKeyARN,
 				EncryptService: c.ProvidedEncryptService,
 			})
-			if err != nil {
-				return nil, err
-			}
 
 			stackConfig.Config.TLSConfig = compactAssets
 		} else {
-			rawAssets, err := ReadOrCreateUnecryptedCompactTLSAssets(opts.AssetsDir)
+			rawAssets, err := ReadOrCreateUnencryptedCompactTLSAssets(opts.AssetsDir)
 			if err != nil {
 				return nil, err
 			}
@@ -937,6 +974,13 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	}
 	if stackConfig.UserDataEtcd, err = userdatatemplate.GetString(opts.EtcdTmplFile, stackConfig.Config); err != nil {
 		return nil, fmt.Errorf("failed to render etcd cloud config: %v", err)
+	}
+	if len(stackConfig.Config.AuthTokensConfig.KubeletBootstrapToken) == 0 && c.DeploymentSettings.Experimental.TLSBootstrap.Enabled {
+		bootstrapRecord, err := RandomBootstrapTokenRecord()
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("kubelet bootstrap token not found in ./credentials/tokens.csv\n\nTo fix this, append the following line to ./credentials.tokens.csv:\n%s", bootstrapRecord)
 	}
 
 	stackConfig.StackTemplateOptions = opts
@@ -955,13 +999,12 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 type Config struct {
 	Cluster
 
+	APIEndpoints derived.APIEndpoints
+
 	EtcdNodes []derived.EtcdNode
 
-	// Encoded auth tokens
 	AuthTokensConfig *CompactAuthTokens
-
-	// Encoded TLS assets
-	TLSConfig *CompactTLSAssets
+	TLSConfig        *CompactTLSAssets
 }
 
 // StackName returns the logical name of a CloudFormation stack resource in a root stack template
@@ -1006,6 +1049,23 @@ func (c Config) InternetGatewayRef() string {
 	} else {
 		return fmt.Sprintf(`{ "Ref" : %q }`, c.InternetGatewayLogicalName())
 	}
+}
+
+// ExternalDNSNames returns all the DNS names of Kubernetes API endpoints should be covered in the TLS cert for k8s API
+func (c Cluster) ExternalDNSNames() []string {
+	names := []string{}
+
+	if c.ExternalDNSName != "" {
+		names = append(names, c.ExternalDNSName)
+	}
+
+	for _, e := range c.APIEndpointConfigs {
+		names = append(names, e.DNSName)
+	}
+
+	sort.Strings(names)
+
+	return names
 }
 
 // NestedStackName returns a sanitized name of this control-plane which is usable as a valid cloudformation nested stack name
@@ -1120,6 +1180,10 @@ func (c Cluster) valid() error {
 		fmt.Println(`WARNING: instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/kubernetes-incubator/kube-aws/issues/258 for more information`)
 	}
 
+	if c.Experimental.TLSBootstrap.Enabled && !c.Experimental.Plugins.Rbac.Enabled {
+		fmt.Println(`WARNING: enabling cluster-level TLS bootstrapping without RBAC is not recommended. See https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/ for more information`)
+	}
+
 	if e := cfnresource.ValidateRoleNameLength(c.ClusterName, c.NestedStackName(), c.Controller.ManagedIamRoleName, c.Region.String()); e != nil {
 		return e
 	}
@@ -1132,8 +1196,12 @@ type InfrastructureValidationResult struct {
 }
 
 func (c KubeClusterSettings) Valid() (*InfrastructureValidationResult, error) {
-	if c.ExternalDNSName == "" {
-		return nil, errors.New("externalDNSName must be set")
+	if c.ExternalDNSName == "" && len(c.APIEndpointConfigs) == 0 {
+		return nil, errors.New("Either externalDNSName or apiEndpoints must be set")
+	}
+
+	if err := c.APIEndpointConfigs.Validate(); err != nil {
+		return nil, err
 	}
 
 	dnsServiceIPAddr := net.ParseIP(c.DNSServiceIP)
@@ -1494,6 +1562,11 @@ func (c *Cluster) ValidateExistingVPC(existingVPCCIDR string, existingSubnetCIDR
 	}
 
 	return nil
+}
+
+// ManageELBLogicalNames returns all the logical names of the cfn resources corresponding to ELBs managed by kube-aws for API endpoints
+func (c *Config) ManagedELBLogicalNames() []string {
+	return c.APIEndpoints.ManagedELBLogicalNames()
 }
 
 func WithTrailingDot(s string) string {

@@ -24,6 +24,14 @@ coreos:
         ExecStartPre=/opt/bin/cfn-etcd-environment
         ExecStart=/usr/bin/mv -f /var/run/coreos/etcd-environment /etc/etcd-environment
 
+{{if .UseCalico }}
+    # https://github.com/coreos/docs/blob/5d7b1cccb8286185275b07db1495828be9fdb0ea/os/other-settings.md#tuning-sysctl-parameters
+    - name: systemd-modules-load.service
+      command: restart
+    - name: systemd-sysctl.service
+      command: restart
+{{ end }}
+
 {{if .Experimental.AwsEnvironment.Enabled}}
     - name: set-aws-environment.service
       enable: true
@@ -468,52 +476,54 @@ write_files:
     owner: root:root
     content: |
       #!/bin/bash -e
-      {{ if .UseCalico }}
-      /bin/bash /opt/bin/populate-tls-calico-etcd
-      /usr/bin/docker run --rm --net=host -v /srv/kubernetes/manifests:/host/manifests {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl apply -f /host/manifests/calico.yaml
-      {{ end }}
 
-      post_yaml() {
-          /usr/bin/curl  -H "Content-Type: application/yaml" -XPOST \
-          --data-binary "$1" "$2"
-      }
-
-      post_yaml_status_code(){
-          /usr/bin/curl  -H "Content-Type: application/yaml" -XPOST \
-          --write-out %{http_code} --silent --output /dev/null \
-          --data-binary "$1" "$2"
+      kubectl() {
+          /usr/bin/docker run --rm --net=host -v /srv/kubernetes/manifests:/srv/kubernetes/manifests {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl "$@"
       }
 
       mfdir=/srv/kubernetes/manifests
+
+      {{ if .UseCalico }}
+      /bin/bash /opt/bin/populate-tls-calico-etcd
+      kubectl apply -f "${mfdir}/calico.yaml"
+      {{ end }}
+
+      # Deployments
       for manifest in {kube-dns-de,kube-dns-autoscaler-de,heapster-de}.yaml; do
-          post_yaml "@$mfdir/$manifest" \
-          "http://127.0.0.1:8080/apis/extensions/v1beta1/namespaces/kube-system/deployments"
+          kubectl apply -f "${mfdir}/$manifest"
       done
 
-      post_yaml "@$mfdir/kube-dashboard-rc.yaml" \
-      "http://127.0.0.1:8080/api/v1/namespaces/kube-system/replicationcontrollers"
+      # Replicationcontrollers
+      kubectl apply -f "${mfdir}/kube-dashboard-rc.yaml"
 
+      # Services
       for manifest in {kube-dns,heapster,kube-dashboard}-svc.yaml;do
-          post_yaml "@$mfdir/$manifest" \
-          "http://127.0.0.1:8080/api/v1/namespaces/kube-system/services"
+          kubectl apply -f "${mfdir}/$manifest"
       done
+
+      {{- if .Addons.Rescheduler.Enabled }}
+      kubectl apply -f "@$mfdir/kube-rescheduler-de.yaml"
+      {{- end }}
 
       {{if .Experimental.Plugins.Rbac.Enabled}}
-      # k8s > 1.5 already have this clusterRole, so we accept http.code != 200
       mfdir=/srv/kubernetes/rbac
-      if [[ $(post_yaml_status_code "@mfdir/cluster-roles/cluster-admin.yaml" \
-          "http://127.0.0.1:8081/apis/rbac.authorization.k8s.io/v1alpha1/clusterroles") -ne "200" ]] ; then
-          echo 'Failed to create the cluster role named "cluster-admin". It is ok if you are using k8s newer than 1.5'
+      # k8s > 1.5 already have this clusterRole, so we accept http.code != 200
+      if ! kubectl create -f "${mfdir}/cluster-roles/cluster-admin.yaml"; then
+         echo 'Failed to create the cluster role named "cluster-admin". It is ok if you are using k8s newer than 1.5'
       fi
 
-      post_yaml "@${mfdir}/cluster-roles/cluster-admin.yaml" \
-      "http://127.0.0.1:8080/apis/rbac.authorization.k8s.io/v1alpha1/clusterroles" |true
-
-      for manifest in {system-worker,kube-worker,kube-admin}; do
-          post_yaml "@${mfdir}/cluster-role-bindings/$manifest.yaml" \
-          "http://127.0.0.1:8080/apis/rbac.authorization.k8s.io/v1alpha1/clusterrolebindings"
+      for manifest in {bootstrapped-node,}; do
+          kubectl apply -f "@${mfdir}/cluster-roles/$manifest.yaml"
       done
 
+      for manifest in {system-worker,kube-worker,kube-admin,bootstrapped-node}; do
+          kubectl apply -f "${mfdir}/cluster-role-bindings/$manifest.yaml"
+      done
+
+      {{ if .Experimental.TLSBootstrap.Enabled }}
+      kubectl create -f "@${mfdir}/cluster-roles/kubelet-bootstrap.yaml" | echo 'Failed to create the cluster role named "kubelet-bootstrap". Skipping'
+      kubectl create -f "@${mfdir}/cluster-role-bindings/kubelet-bootstrap.yaml" |  | echo 'Failed to create the cluster role binding "kubelet-bootstrap". Skipping'
+      {{ end }}
       {{ end }}
 
   - path: /etc/kubernetes/cni/docker_opts_cni.env
@@ -832,8 +842,9 @@ write_files:
            echo "done."'
 
   {{if .Experimental.Plugins.Rbac.Enabled }}
-
-  #https://github.com/coreos/kube-aws/issues/230#issuecomment-274946933
+  # Creates the cluster-admin role, useful for Kubernetes < 1.5.x clusters
+  # (This is already set up in Kubernetes 1.5.x+)
+  # https://github.com/coreos/kube-aws/issues/230#issuecomment-274946933
   - path: /srv/kubernetes/rbac/cluster-roles/cluster-admin.yaml
     content: |
         kind: ClusterRole
@@ -847,6 +858,40 @@ write_files:
           - nonResourceURLs: ["*"]
             verbs: ["*"]
 
+  # We need to give nodes a few extra permissions so that both the node
+  # draining and node labeling with AWS metadata work as expected
+  - path: /srv/kubernetes/rbac/cluster-roles/bootstrapped-node.yaml
+    content: |
+        kind: ClusterRole
+        apiVersion: rbac.authorization.k8s.io/v1alpha1
+        metadata:
+            name: bootstrapped-node
+        rules:
+          - apiGroups: ["*"]
+            resources:
+            - nodes
+            verbs:
+            - patch
+            - update
+          - apiGroups: ["*"]
+            resources:
+            - replicasets
+            verbs:
+            - get
+          - apiGroups: ["*"]
+            resources:
+            - replicationcontrollers
+            verbs:
+            - get
+          - apiGroups: ["*"]
+            resources:
+            - pods/eviction
+            verbs:
+            - create
+          - nonResourceURLs: ["*"]
+            verbs: ["*"]
+
+  # Grants super-user permissions to the kube-admin user
   - path: /srv/kubernetes/rbac/cluster-role-bindings/kube-admin.yaml
     content: |
         kind: ClusterRoleBinding
@@ -875,6 +920,7 @@ write_files:
           name: cluster-admin
           apiGroup: rbac.authorization.k8s.io
 
+  # Allows add-ons running with the default service account in kube-sytem to have super-user access
   - path: /srv/kubernetes/rbac/cluster-role-bindings/system-worker.yaml
     content: |
         kind: ClusterRoleBinding
@@ -889,6 +935,57 @@ write_files:
           kind: ClusterRole
           name: cluster-admin
           apiGroup: rbac.authorization.k8s.io
+
+  # Associates the add-on group `bootstrapped-node` to all nodes, so that extra kube-aws
+  # features like node draining work as expected
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/bootstrapped-node.yaml
+    content: |
+        kind: ClusterRoleBinding
+        apiVersion: rbac.authorization.k8s.io/v1alpha1
+        metadata:
+          name: bootstrapped-node
+        subjects:
+          - kind: Group
+            name: system:nodes
+        roleRef:
+          kind: ClusterRole
+          name: bootstrapped-node
+          apiGroup: rbac.authorization.k8s.io
+
+{{ if .Experimental.TLSBootstrap.Enabled }}
+  # Only allows certificate signing requests to be performed with the bootstrap token
+  - path: /srv/kubernetes/rbac/cluster-roles/kubelet-bootstrap.yaml
+    content: |
+        kind: ClusterRole
+        apiVersion: rbac.authorization.k8s.io/v1alpha1
+        metadata:
+          name: kubelet-bootstrap
+        rules:
+          - apiGroups:
+              - '*'
+            resources:
+              - certificatesigningrequests
+            verbs:
+            - create
+            - get
+            - list
+            - watch
+
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/kubelet-bootstrap.yaml
+    content: |
+        kind: ClusterRoleBinding
+        apiVersion: rbac.authorization.k8s.io/v1alpha1
+        metadata:
+          name: kubelet-bootstrap
+        subjects:
+          - kind: Group
+            namespace: '*'
+            name: system:kubelet-bootstrap
+        roleRef:
+          kind: ClusterRole
+          name: kubelet-bootstrap
+          apiGroup: rbac.authorization.k8s.io
+{{ end }}
 {{ end }}
 
   - path: /etc/kubernetes/manifests/kube-proxy.yaml
@@ -974,6 +1071,7 @@ write_files:
           - --advertise-address=$private_ipv4
           - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }},ResourceQuota
           - --anonymous-auth=false
+          - --cert-dir=/etc/kubernetes/ssl
           - --tls-cert-file=/etc/kubernetes/ssl/apiserver.pem
           - --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
           - --client-ca-file=/etc/kubernetes/ssl/ca.pem
@@ -1048,6 +1146,11 @@ write_files:
           - --master=http://127.0.0.1:8080
           - --leader-elect=true
           - --service-account-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+          {{ if .Experimental.TLSBootstrap.Enabled }}
+          - --insecure-experimental-approve-all-kubelet-csrs-for-group=system:kubelet-bootstrap
+          - --cluster-signing-cert-file=/etc/kubernetes/ssl/ca.pem
+          - --cluster-signing-key-file=/etc/kubernetes/ssl/ca-key.pem
+          {{ end }}
           - --root-ca-file=/etc/kubernetes/ssl/ca.pem
           - --cloud-provider=aws
           resources:
@@ -1106,6 +1209,37 @@ write_files:
             initialDelaySeconds: 15
             timeoutSeconds: 15
 
+  {{- if .Addons.Rescheduler.Enabled }}
+  - path: /srv/kubernetes/manifests/kube-rescheduler-de.yaml
+    content: |
+      apiVersion: extensions/v1beta1
+      kind: Deployment
+      metadata:
+        name: kube-rescheduler
+        namespace: kube-system
+        labels:
+          k8s-app: kube-rescheduler
+          kubernetes.io/cluster-service: "true"
+          kubernetes.io/name: "Rescheduler"
+      spec:
+        # `replicas` should always be the default of 1, rescheduler crashes otherwise
+        template:
+          metadata:
+            labels:
+              k8s-app: kube-rescheduler
+            annotations:
+              scheduler.alpha.kubernetes.io/critical-pod: ''
+              scheduler.alpha.kubernetes.io/tolerations: '[{"key":"CriticalAddonsOnly", "operator":"Exists"}]'
+          spec:
+            hostNetwork: true
+            containers:
+            - name: kube-rescheduler
+              image: {{ .KubeReschedulerImage.RepoWithTag }}
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 100Mi
+  {{- end }}
 
   - path: /srv/kubernetes/manifests/kube-dns-autoscaler-de.yaml
     content: |
@@ -1476,6 +1610,12 @@ write_files:
     encoding: gzip+base64
     content: {{.TLSConfig.CACert}}
 
+{{ if .Experimental.TLSBootstrap.Enabled }}
+  - path: /etc/kubernetes/ssl/ca-key.pem.enc
+    encoding: gzip+base64
+    content: {{.TLSConfig.CAKey}}
+{{ end }}
+
   - path: /etc/kubernetes/ssl/apiserver.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.APIServerCert}}
@@ -1504,6 +1644,17 @@ write_files:
                 "isDefaultGateway": true
             }
         }
+
+{{ else }}
+
+  # http://docs.projectcalico.org/v2.0/usage/configuration/
+  - path: /etc/modules-load.d/nf.conf
+    content: |
+      nf_conntrack
+  - path: /etc/sysctl.d/nf.conf
+    content: |
+      net.netfilter.nf_conntrack_max=1000000
+
 {{ end }}
 
 {{if .Experimental.Authentication.Webhook.Enabled}}

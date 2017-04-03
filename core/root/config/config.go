@@ -4,12 +4,14 @@ package config
 //go:generate gofmt -w templates.go
 
 import (
+	"errors"
 	"fmt"
+	"io/ioutil"
+
 	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 )
 
 type UnmarshalledConfig struct {
@@ -19,6 +21,7 @@ type UnmarshalledConfig struct {
 }
 
 type Worker struct {
+	APIEndpointName   string                     `yaml:"apiEndpointName,omitempty"`
 	NodePools         []*nodepool.ProvidedConfig `yaml:"nodePools,omitempty"`
 	model.UnknownKeys `yaml:",inline"`
 }
@@ -54,18 +57,48 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 	}
 	c.HyperkubeImage.Tag = c.K8sVer
 
-	cpCluser := &c.Cluster
-	if err := cpCluser.Load(); err != nil {
+	cpCluster := &c.Cluster
+	if err := cpCluster.Load(); err != nil {
 		return nil, err
 	}
 
-	cpConfig, err := cpCluser.Config()
+	cpConfig, err := cpCluster.Config()
 	if err != nil {
 		return nil, err
 	}
 
 	nodePools := c.NodePools
+
+	anyNodePoolIsMissingAPIEndpointName := true
+	for _, np := range nodePools {
+		if np.APIEndpointName == "" {
+			anyNodePoolIsMissingAPIEndpointName = true
+			break
+		}
+	}
+
+	if len(cpConfig.APIEndpoints) > 1 && c.Worker.APIEndpointName == "" && anyNodePoolIsMissingAPIEndpointName {
+		return nil, errors.New("worker.apiEndpointName must not be empty when there're 2 or more API endpoints under the key `apiEndpoints` and one of worker.nodePools[] are missing apiEndpointName")
+	}
+
+	if c.Worker.APIEndpointName != "" {
+		if _, err := cpConfig.APIEndpoints.FindByName(c.APIEndpointName); err != nil {
+			return nil, fmt.Errorf("invalid value for worker.apiEndpointName: no API endpoint named \"%s\" found", c.APIEndpointName)
+		}
+	}
+
 	for i, np := range nodePools {
+		if np.APIEndpointName == "" {
+			if c.Worker.APIEndpointName == "" {
+				if len(cpConfig.APIEndpoints) > 1 {
+					return nil, errors.New("worker.apiEndpointName can be omitted only when there's only 1 api endpoint under apiEndpoints")
+				}
+				np.APIEndpointName = cpConfig.APIEndpoints.GetDefault().Name
+			} else {
+				np.APIEndpointName = c.Worker.APIEndpointName
+			}
+		}
+
 		if err := np.Load(cpConfig); err != nil {
 			return nil, fmt.Errorf("invalid node pool at index %d: %v", i, err)
 		}
@@ -80,7 +113,7 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 		}
 	}
 
-	cfg := &Config{Cluster: cpCluser, NodePools: nodePools}
+	cfg := &Config{Cluster: cpCluster, NodePools: nodePools}
 
 	if err := failFastWhenUnknownKeysFound([]unknownKeyValidation{
 		{c, ""},
@@ -90,9 +123,11 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 		{c.Etcd.DataVolume, "etcd.dataVolume"},
 		{c.Controller, "controller"},
 		{c.Controller.AutoScalingGroup, "controller.autoScalingGroup"},
-		{c.Controller.ClusterAutoscaler, "controller.ClusterAutoscaler"},
-		{c.Controller.RootVolume, "controller.rootVolume"},
+		{c.Controller.ClusterAutoscaler, "controller.clusterAutoscaler"},
+        {c.Controller.RootVolume, "controller.rootVolume"},
 		{c.Experimental, "experimental"},
+		{c.Addons, "addons"},
+		{c.Addons.Rescheduler, "addons.rescheduler"},
 	}); err != nil {
 		return nil, err
 	}
@@ -115,6 +150,12 @@ func ConfigFromBytesWithEncryptService(data []byte, encryptService controlplane.
 		return nil, err
 	}
 	c.ProvidedEncryptService = encryptService
+
+	// Uses the same encrypt service for node pools for consistency
+	for _, p := range c.NodePools {
+		p.ProvidedEncryptService = encryptService
+	}
+
 	return c, nil
 }
 

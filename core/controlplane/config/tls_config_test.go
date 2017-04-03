@@ -162,11 +162,6 @@ func TestReadOrCreateCompactTLSAssets(t *testing.T) {
 				}
 			}
 
-			if err := os.Remove(filepath.Join(dir, "ca-key.pem.enc")); err == nil {
-				t.Error("ca-key.pem.enc should not exist")
-				t.FailNow()
-			}
-
 			regenerated, err := ReadOrCreateCompactTLSAssets(dir, kmsConfig)
 
 			if err != nil {
@@ -231,16 +226,16 @@ func TestReadOrCreateCompactTLSAssets(t *testing.T) {
 	})
 }
 
-func TestReadOrCreateUnEcryptedCompactTLSAssets(t *testing.T) {
+func TestReadOrCreateUnEncryptedCompactTLSAssets(t *testing.T) {
 	helper.WithDummyCredentials(func(dir string) {
 		t.Run("CachedToPreventUnnecessaryNodeReplacementOnUnencrypted", func(t *testing.T) {
-			created, err := ReadOrCreateUnecryptedCompactTLSAssets(dir)
+			created, err := ReadOrCreateUnencryptedCompactTLSAssets(dir)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact tls assets in %s : %v", dir, err)
 			}
 
-			read, err := ReadOrCreateUnecryptedCompactTLSAssets(dir)
+			read, err := ReadOrCreateUnencryptedCompactTLSAssets(dir)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact tls assets in %s : %v", dir, err)

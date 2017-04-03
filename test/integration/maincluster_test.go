@@ -2,16 +2,18 @@ package integration
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"reflect"
+	"strings"
+	"testing"
+
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	controlplane_config "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root"
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/test/helper"
-	"os"
-	"reflect"
-	"strings"
-	"testing"
 )
 
 type ConfigTester func(c *config.Config, t *testing.T)
@@ -99,6 +101,9 @@ func TestMainClusterConfig(t *testing.T) {
 				Enabled: false,
 			},
 			ClusterAutoscalerSupport: controlplane_config.ClusterAutoscalerSupport{
+				Enabled: false,
+			},
+			TLSBootstrap: controlplane_config.TLSBootstrap{
 				Enabled: false,
 			},
 			EphemeralImageStorage: controlplane_config.EphemeralImageStorage{
@@ -946,6 +951,8 @@ experimental:
     enabled: true
   clusterAutoscalerSupport:
     enabled: true
+  tlsBootstrap:
+    enabled: true
   ephemeralImageStorage:
     enabled: true
   kube2IamSupport:
@@ -1009,6 +1016,9 @@ worker:
 							Enabled: true,
 						},
 						ClusterAutoscalerSupport: controlplane_config.ClusterAutoscalerSupport{
+							Enabled: true,
+						},
+						TLSBootstrap: controlplane_config.TLSBootstrap{
 							Enabled: true,
 						},
 						EphemeralImageStorage: controlplane_config.EphemeralImageStorage{
@@ -1082,6 +1092,8 @@ worker:
       enabled: true
     clusterAutoscalerSupport:
       enabled: true
+    tlsBootstrap:
+      enabled: true # Must be ignored, value is synced with the one from control plane
     ephemeralImageStorage:
       enabled: true
     kube2IamSupport:
@@ -1123,6 +1135,9 @@ worker:
 						},
 						ClusterAutoscalerSupport: controlplane_config.ClusterAutoscalerSupport{
 							Enabled: true,
+						},
+						TLSBootstrap: controlplane_config.TLSBootstrap{
+							Enabled: false,
 						},
 						EphemeralImageStorage: controlplane_config.EphemeralImageStorage{
 							Enabled:    true,
@@ -1355,6 +1370,191 @@ worker:
 					}
 					if c.NodePools[2].MinCount() != 0 {
 						t.Errorf("worker min count should be 0 but was: %d", c.NodePools[2].MinCount())
+					}
+				},
+			},
+		},
+		{
+			context: "WithMultiAPIEndpoints",
+			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
+vpcId: vpc-1a2b3c4d
+
+subnets:
+- name: privateSubnet1
+  availabilityZone: us-west-1a
+  instanceCIDR: "10.0.1.0/24"
+  private: true
+- name: privateSubnet2
+  availabilityZone: us-west-1b
+  instanceCIDR: "10.0.2.0/24"
+  private: true
+- name: publicSubnet1
+  availabilityZone: us-west-1a
+  instanceCIDR: "10.0.3.0/24"
+- name: publicSubnet2
+  availabilityZone: us-west-1b
+  instanceCIDR: "10.0.4.0/24"
+
+worker:
+  # cant be possibly "unversioned" one w/ existing elb because doing so would result in a worker kubelet has chances to
+  # connect to multiple masters from different clusters!
+  apiEndpointName: versionedPrivate
+  # btw apiEndpointName can be defaulted to a private/public managed(hence unstable/possibly versioned but not stable/unversioned)
+  # elb/round-robin if and only if there is only one. However we dont do the complex defaulting like that for now.
+
+apiEndpoints:
+- name: unversionedPublic
+  dnsName: api.example.com
+  loadBalancer:
+    id: elb-internet-facing
+    ##you cant configure existing elb like below
+    #private: true
+    #subnets:
+    #- name: privateSubnet1
+    ##hostedZone must be omitted when elb id is specified.
+    ##in other words, it your responsibility to create an alias record for the elb
+    #hostedZone:
+    #  id: hostedzone-private
+- name: unversionedPrivate
+  dnsName: api.internal.example.com
+  loadBalancer:
+    id: elb-internal
+- name: versionedPublic
+  dnsName: v1api.example.com
+  loadBalancer:
+    subnets:
+    - name: publicSubnet1
+    hostedZone:
+      id: hostedzone-public
+- name: versionedPrivate
+  dnsName: v1api.internal.example.com
+  loadBalancer:
+    private: true
+    subnets:
+    - name: privateSubnet1
+    hostedZone:
+      id: hostedzone-private
+- name: versionedPublicAlt
+  dnsName: v1apialt.example.com
+  loadBalancer:
+    # "private: false" implies all the private subnets defined in the top-level "subnets"
+    #subnets:
+    #- name: publicSubnet1
+    #- name: publicSubnet2
+    hostedZone:
+      id: hostedzone-public
+- name: versionedPrivateAlt
+  dnsName: v1apialt.internal.example.com
+  loadBalancer:
+    private: true
+    # "private: true" implies all the private subnets defined in the top-level "subnets"
+    #subnets:
+    #- name: privateSubnet1
+    #- name: privateSubnet2
+    hostedZone:
+      id: hostedzone-private
+- name: addedToCertCommonNames
+  dnsName: api-alt.example.com
+`,
+			assertCluster: []ClusterTester{
+				func(rootCluster root.Cluster, t *testing.T) {
+					c := rootCluster.ControlPlane()
+
+					private1 := model.NewPrivateSubnet("us-west-1a", "10.0.1.0/24")
+					private1.Name = "privateSubnet1"
+
+					private2 := model.NewPrivateSubnet("us-west-1b", "10.0.2.0/24")
+					private2.Name = "privateSubnet2"
+
+					public1 := model.NewPublicSubnet("us-west-1a", "10.0.3.0/24")
+					public1.Name = "publicSubnet1"
+
+					public2 := model.NewPublicSubnet("us-west-1b", "10.0.4.0/24")
+					public2.Name = "publicSubnet2"
+
+					subnets := []model.Subnet{
+						private1,
+						private2,
+						public1,
+						public2,
+					}
+					if !reflect.DeepEqual(c.AllSubnets(), subnets) {
+						t.Errorf("Managed subnets didn't match: expected=%+v actual=%+v", subnets, c.AllSubnets())
+					}
+
+					publicSubnets := []model.Subnet{
+						public1,
+						public2,
+					}
+
+					privateSubnets := []model.Subnet{
+						private1,
+						private2,
+					}
+
+					unversionedPublic := c.APIEndpoints["unversionedPublic"]
+					unversionedPrivate := c.APIEndpoints["unversionedPrivate"]
+					versionedPublic := c.APIEndpoints["versionedPublic"]
+					versionedPrivate := c.APIEndpoints["versionedPrivate"]
+					versionedPublicAlt := c.APIEndpoints["versionedPublicAlt"]
+					versionedPrivateAlt := c.APIEndpoints["versionedPrivateAlt"]
+					addedToCertCommonNames := c.APIEndpoints["addedToCertCommonNames"]
+
+					if len(unversionedPublic.LoadBalancer.Subnets) != 0 {
+						t.Errorf("unversionedPublic: subnets shuold be empty but was not: actual=%+v", unversionedPublic.LoadBalancer.Subnets)
+					}
+					if !unversionedPublic.LoadBalancer.Enabled() {
+						t.Errorf("unversionedPublic: it should be enabled as the lb to which controller nodes are added, but it was not: loadBalancer=%+v", unversionedPublic.LoadBalancer)
+					}
+
+					if len(unversionedPrivate.LoadBalancer.Subnets) != 0 {
+						t.Errorf("unversionedPrivate: subnets shuold be empty but was not: actual=%+v", unversionedPrivate.LoadBalancer.Subnets)
+					}
+					if !unversionedPrivate.LoadBalancer.Enabled() {
+						t.Errorf("unversionedPrivate: it should be enabled as the lb to which controller nodes are added, but it was not: loadBalancer=%+v", unversionedPrivate.LoadBalancer)
+					}
+
+					if !reflect.DeepEqual(versionedPublic.LoadBalancer.Subnets, []model.Subnet{public1}) {
+						t.Errorf("versionedPublic: subnets didn't match: expected=%+v actual=%+v", []model.Subnet{public1}, versionedPublic.LoadBalancer.Subnets)
+					}
+					if !versionedPublic.LoadBalancer.Enabled() {
+						t.Errorf("versionedPublic: it should be enabled as the lb to which controller nodes are added, but it was not: loadBalancer=%+v", versionedPublic.LoadBalancer)
+					}
+
+					if !reflect.DeepEqual(versionedPrivate.LoadBalancer.Subnets, []model.Subnet{private1}) {
+						t.Errorf("versionedPrivate: subnets didn't match: expected=%+v actual=%+v", []model.Subnet{private1}, versionedPrivate.LoadBalancer.Subnets)
+					}
+					if !versionedPrivate.LoadBalancer.Enabled() {
+						t.Errorf("versionedPrivate: it should be enabled as the lb to which controller nodes are added, but it was not: loadBalancer=%+v", versionedPrivate.LoadBalancer)
+					}
+
+					if !reflect.DeepEqual(versionedPublicAlt.LoadBalancer.Subnets, publicSubnets) {
+						t.Errorf("versionedPublicAlt: subnets didn't match: expected=%+v actual=%+v", publicSubnets, versionedPublicAlt.LoadBalancer.Subnets)
+					}
+					if !versionedPublicAlt.LoadBalancer.Enabled() {
+						t.Errorf("versionedPublicAlt: it should be enabled as the lb to which controller nodes are added, but it was not: loadBalancer=%+v", versionedPublicAlt.LoadBalancer)
+					}
+
+					if !reflect.DeepEqual(versionedPrivateAlt.LoadBalancer.Subnets, privateSubnets) {
+						t.Errorf("versionedPrivateAlt: subnets didn't match: expected=%+v actual=%+v", privateSubnets, versionedPrivateAlt.LoadBalancer.Subnets)
+					}
+					if !versionedPrivateAlt.LoadBalancer.Enabled() {
+						t.Errorf("versionedPrivateAlt: it should be enabled as the lb to which controller nodes are added, but it was not: loadBalancer=%+v", versionedPrivateAlt.LoadBalancer)
+					}
+
+					if len(addedToCertCommonNames.LoadBalancer.Subnets) != 0 {
+						t.Errorf("addedToCertCommonNames: subnets shuold be empty but was not: actual=%+v", addedToCertCommonNames.LoadBalancer.Subnets)
+					}
+					if addedToCertCommonNames.LoadBalancer.Enabled() {
+						t.Errorf("addedToCertCommonNames: it should not be enabled as the lb to which controller nodes are added, but it was: loadBalancer=%+v", addedToCertCommonNames.LoadBalancer)
+					}
+
+					if !reflect.DeepEqual(c.ExternalDNSNames(), []string{"api-alt.example.com", "api.example.com", "api.internal.example.com", "v1api.example.com", "v1api.internal.example.com", "v1apialt.example.com", "v1apialt.internal.example.com"}) {
+						t.Errorf("unexpected external DNS names: %s", strings.Join(c.ExternalDNSNames(), ", "))
+					}
+
+					if !reflect.DeepEqual(c.APIEndpoints.ManagedELBLogicalNames(), []string{"APIEndpointVersionedPrivateAltELB", "APIEndpointVersionedPrivateELB", "APIEndpointVersionedPublicAltELB", "APIEndpointVersionedPublicELB"}) {
+						t.Errorf("unexpected managed ELB logical names: %s", strings.Join(c.APIEndpoints.ManagedELBLogicalNames(), ", "))
 					}
 				},
 			},
@@ -2737,6 +2937,14 @@ etcdDataVolumeEncrypted: true
 				stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../core/nodepool/config/templates/stack-template.json"
 				stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/templates/stack-template.json"
 
+				// Creates auth token file with bootstrap token if this setting is enabled
+				if providedConfig.Experimental.TLSBootstrap.Enabled {
+					tokensFile := fmt.Sprintf("%s/tokens.csv", dummyAssetsDir)
+					if err := ioutil.WriteFile(tokensFile, []byte("dummytoken,kubelet-bootstrap,10001,system:kubelet-bootstrap"), 0664); err != nil {
+						panic(err)
+					}
+				}
+
 				cluster, err := root.ClusterFromConfig(providedConfig, stackTemplateOptions, false)
 				if err != nil {
 					t.Errorf("failed to create cluster driver : %v", err)
@@ -2845,6 +3053,252 @@ experimental:
      enabled: true
 `,
 			expectedErrorMessage: "awsNodeLabels can't be enabled for controllers because the total number of characters in clusterName(=\"my-long-long-cluster-1\") exceeds the limit of 21",
+		},
+		{
+			context: "WithMultiAPIEndpointsInvalidLB",
+			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
+vpcId: vpc-1a2b3c4d
+
+subnets:
+- name: publicSubnet1
+  availabilityZone: us-west-1a
+  instanceCIDR: "10.0.1.0/24"
+
+worker:
+  apiEndpointName: unversionedPublic
+
+apiEndpoints:
+- name: unversionedPublic
+  dnsName: api.example.com
+  loadBalancer:
+    id: elb-internet-facing
+    private: true
+    subnets:
+    - name: publicSubnet1
+    hostedZone:
+      id: hostedzone-public
+`,
+			expectedErrorMessage: "invalid apiEndpoint \"unversionedPublic\" at index 0: invalid loadBalancer: createRecordSet, private, subnets, hostedZone must be omitted when id is specified to reuse an existing ELB",
+		},
+		{
+			context: "WithMultiAPIEndpointsInvalidWorkerAPIEndpointName",
+			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
+vpcId: vpc-1a2b3c4d
+
+subnets:
+- name: publicSubnet1
+  availabilityZone: us-west-1a
+  instanceCIDR: "10.0.1.0/24"
+
+worker:
+  # no api endpoint named like that exists!
+  apiEndpointName: unknownEndpoint
+
+apiEndpoints:
+- name: unversionedPublic
+  dnsName: api.example.com
+  loadBalancer:
+    subnets:
+    - name: publicSubnet1
+    hostedZone:
+      id: hostedzone-public
+- name: versionedPublic
+  dnsName: apiv1.example.com
+  loadBalancer:
+    subnets:
+    - name: publicSubnet1
+    hostedZone:
+      id: hostedzone-public
+`,
+			expectedErrorMessage: "invalid value for worker.apiEndpointName: no API endpoint named \"unknownEndpoint\" found",
+		},
+		{
+			context: "WithMultiAPIEndpointsInvalidWorkerNodePoolAPIEndpointName",
+			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
+vpcId: vpc-1a2b3c4d
+
+subnets:
+- name: publicSubnet1
+  availabilityZone: us-west-1a
+  instanceCIDR: "10.0.1.0/24"
+
+worker:
+  # this one is ok but...
+  apiEndpointName: versionedPublic
+  nodePools:
+  - name: pool1
+    # this one is ng; no api endpoint named this exists!
+    apiEndpointName: unknownEndpoint
+
+apiEndpoints:
+- name: unversionedPublic
+  dnsName: api.example.com
+  loadBalancer:
+    subnets:
+    - name: publicSubnet1
+    hostedZone:
+      id: hostedzone-public
+- name: versionedPublic
+  dnsName: apiv1.example.com
+  loadBalancer:
+    subnets:
+    - name: publicSubnet1
+    hostedZone:
+      id: hostedzone-public
+`,
+			expectedErrorMessage: "invalid node pool at index 0: failed to find an API endpoint named \"unknownEndpoint\": no API endpoint named \"unknownEndpoint\" defined under the `apiEndpoints[]`",
+		},
+		{
+			context: "WithMultiAPIEndpointsMissingDNSName",
+			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
+vpcId: vpc-1a2b3c4d
+
+subnets:
+- name: publicSubnet1
+  availabilityZone: us-west-1a
+  instanceCIDR: "10.0.1.0/24"
+
+apiEndpoints:
+- name: unversionedPublic
+  dnsName:
+`,
+			expectedErrorMessage: "invalid apiEndpoint \"unversionedPublic\" at index 0: dnsName must be set",
+		},
+		{
+			context: "WithMultiAPIEndpointsMissingGlobalAPIEndpointName",
+			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
+vpcId: vpc-1a2b3c4d
+
+subnets:
+- name: publicSubnet1
+  availabilityZone: us-west-1a
+  instanceCIDR: "10.0.1.0/24"
+
+worker:
+  nodePools:
+  - name: pool1
+    # this one is ng; no api endpoint named this exists!
+    apiEndpointName: unknownEndpoint
+  - name: pool1
+    # this one is ng; missing apiEndpointName
+
+apiEndpoints:
+- name: unversionedPublic
+  dnsName: api.example.com
+  loadBalancer:
+    subnets:
+    - name: publicSubnet1
+    hostedZone:
+      id: hostedzone-public
+- name: versionedPublic
+  dnsName: apiv1.example.com
+  loadBalancer:
+    subnets:
+    - name: publicSubnet1
+    hostedZone:
+      id: hostedzone-public
+`,
+			expectedErrorMessage: "worker.apiEndpointName must not be empty when there're 2 or more API endpoints under the key `apiEndpoints` and one of worker.nodePools[] are missing apiEndpointName",
+		},
+		{
+			context: "WithMultiAPIEndpointsRecordSetImpliedBySubnetsMissingHostedZoneID",
+			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
+vpcId: vpc-1a2b3c4d
+
+subnets:
+- name: publicSubnet1
+  availabilityZone: us-west-1a
+  instanceCIDR: "10.0.1.0/24"
+
+worker:
+  apiEndpointName: unversionedPublic
+
+apiEndpoints:
+- name: unversionedPublic
+  dnsName: api.example.com
+  loadBalancer:
+    # an internet-facing(which is the default) lb in the public subnet is going to be created with a corresponding record set
+    # however no hosted zone for the record set is provided!
+    subnets:
+    - name: publicSubnet1
+    # missing hosted zone id here!
+`,
+			expectedErrorMessage: "invalid apiEndpoint \"unversionedPublic\" at index 0: invalid loadBalancer: missing hostedZoneId",
+		},
+		{
+			context: "WithMultiAPIEndpointsRecordSetImpliedByExplicitPublicMissingHostedZoneID",
+			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
+vpcId: vpc-1a2b3c4d
+
+subnets:
+- name: publicSubnet1
+  availabilityZone: us-west-1a
+  instanceCIDR: "10.0.1.0/24"
+
+worker:
+  apiEndpointName: unversionedPublic
+
+apiEndpoints:
+- name: unversionedPublic
+  dnsName: api.example.com
+  loadBalancer:
+    # an internet-facing lb is going to be created with a corresponding record set
+    # however no hosted zone for the record set is provided!
+    private: false
+    # missing hosted zone id here!
+`,
+			expectedErrorMessage: "invalid apiEndpoint \"unversionedPublic\" at index 0: invalid loadBalancer: missing hostedZoneId",
+		},
+		{
+			context: "WithMultiAPIEndpointsRecordSetImpliedByExplicitPrivateMissingHostedZoneID",
+			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
+vpcId: vpc-1a2b3c4d
+
+subnets:
+- name: publicSubnet1
+  availabilityZone: us-west-1a
+  instanceCIDR: "10.0.1.0/24"
+- name: privateSubnet1
+  availabilityZone: us-west-1a
+  instanceCIDR: "10.0.2.0/24"
+
+worker:
+  apiEndpointName: unversionedPublic
+
+apiEndpoints:
+- name: unversionedPublic
+  dnsName: api.example.com
+  loadBalancer:
+    # an internal lb is going to be created with a corresponding record set
+    # however no hosted zone for the record set is provided!
+    private: true
+    # missing hosted zone id here!
+`,
+			expectedErrorMessage: "invalid apiEndpoint \"unversionedPublic\" at index 0: invalid loadBalancer: missing hostedZoneId",
+		},
+		{
+			context: "WithMultiAPIEndpointsExplicitRecordSetMissingHostedZoneID",
+			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
+vpcId: vpc-1a2b3c4d
+
+subnets:
+- name: publicSubnet1
+  availabilityZone: us-west-1a
+  instanceCIDR: "10.0.1.0/24"
+
+worker:
+  apiEndpointName: unversionedPublic
+
+apiEndpoints:
+- name: unversionedPublic
+  dnsName: api.example.com
+  loadBalancer:
+    # lb is going to be created with a corresponding record set
+    # however no hosted zone for the record set is provided!
+    createRecordSet: true
+    # missing hosted zone id here!
+`,
+			expectedErrorMessage: "invalid apiEndpoint \"unversionedPublic\" at index 0: invalid loadBalancer: missing hostedZoneId",
 		},
 		{
 			context: "WithNonZeroWorkerCount",
@@ -2994,6 +3448,23 @@ worker:
       baz: 1
 `,
 			expectedErrorMessage: "unknown keys found in worker.nodePools[0].clusterAutoscaler: baz",
+		},
+		{
+			context: "WithUnknownKeyInAddons",
+			configYaml: minimalValidConfigYaml + `
+addons:
+  blah: 5
+`,
+			expectedErrorMessage: "unknown keys found in addons: blah",
+		},
+		{
+			context: "WithUnknownKeyInReschedulerAddon",
+			configYaml: minimalValidConfigYaml + `
+addons:
+  rescheduler:
+    foo: yeah
+`,
+			expectedErrorMessage: "unknown keys found in addons.rescheduler: foo",
 		},
 		{
 			context: "WithTooLongControllerIAMRoleName",

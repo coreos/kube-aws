@@ -169,9 +169,14 @@ coreos:
         --cluster_dns={{.DNSServiceIP}} \
         --cluster_domain=cluster.local \
         --cloud-provider=aws \
-        --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
+        --cert-dir=/etc/kubernetes/ssl \
+        {{- if .Experimental.TLSBootstrap.Enabled }}
+        --experimental-bootstrap-kubeconfig=/etc/kubernetes/worker-bootstrap-kubeconfig.yaml \
+        {{- else }}
         --tls-cert-file=/etc/kubernetes/ssl/worker.pem \
-        --tls-private-key-file=/etc/kubernetes/ssl/worker-key.pem
+        --tls-private-key-file=/etc/kubernetes/ssl/worker-key.pem \
+        {{- end }}
+        --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml
         Restart=always
         RestartSec=10
         [Install]
@@ -221,14 +226,14 @@ coreos:
         Type=oneshot
         RemainAfterExit=true
         ExecStart=/bin/true
-        TimeoutStopSec=30s
+        TimeoutStopSec=60s
         ExecStop=/bin/sh -c '/usr/bin/rkt run \
         --volume=kube,kind=host,source=/etc/kubernetes,readOnly=true \
         --mount=volume=kube,target=/etc/kubernetes \
         --net=host \
         {{.HyperkubeImage.RepoWithTag}} \
           --exec=/kubectl -- \
-          --server=https://{{.ExternalDNSName}}:443 \
+          --server=https://{{.APIEndpoint.DNSName}}:443 \
           --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
           drain $(hostname) \
           --ignore-daemonsets \
@@ -236,6 +241,14 @@ coreos:
 
         [Install]
         WantedBy=multi-user.target
+{{ end }}
+
+{{if .UseCalico }}
+    # https://github.com/coreos/docs/blob/5d7b1cccb8286185275b07db1495828be9fdb0ea/os/other-settings.md#tuning-sysctl-parameters
+    - name: systemd-modules-load.service
+      command: restart
+    - name: systemd-sysctl.service
+      command: restart
 {{ end }}
 
 {{if .AwsEnvironment.Enabled}}
@@ -374,24 +387,22 @@ coreos:
           aws autoscaling describe-auto-scaling-groups \
           --auto-scaling-group-name $AUTOSCALINGGROUP --region {{.Region}} \
           --query 'AutoScalingGroups[].LaunchConfigurationName' --output text)\""
-        ExecStart=/bin/sh -c "/usr/bin/curl \
-          --cert   /etc/kubernetes/ssl/worker.pem \
-          --key    /etc/kubernetes/ssl/worker-key.pem \
-          --cacert /etc/kubernetes/ssl/ca.pem  \
-          --request PATCH \
-          -H 'Content-Type: application/strategic-merge-patch+json' \
-          -d'{ \
-          \"metadata\": { \
-            \"labels\": { \
-              \"kube-aws.coreos.com/autoscalinggroup\": \"${AUTOSCALINGGROUP}\", \
-              \"kube-aws.coreos.com/launchconfiguration\": \"${LAUNCHCONFIGURATION}\" \
-            }, \
-            \"annotations\": { \
-              \"kube-aws.coreos.com/securitygroups\": \"${SECURITY_GROUPS}\" \
-            } \
-          } \
-          }\"' \
-          https://{{.ExternalDNSName}}:443/api/v1/nodes/$(hostname)"
+        ExecStart=/usr/bin/docker run --rm -t --net=host \
+          -v /etc/kubernetes:/etc/kubernetes \
+          -v /etc/resolv.conf:/etc/resolv.conf \
+          -e INSTANCE_ID=${INSTANCE_ID} \
+          -e SECURITY_GROUPS=${SECURITY_GROUPS} \
+          -e AUTOSCALINGGROUP=${AUTOSCALINGGROUP} \
+          -e LAUNCHCONFIGURATION=${LAUNCHCONFIGURATION} \
+          {{.HyperkubeImage.RepoWithTag}} /bin/bash \
+            -ec 'echo "placing labels and annotations with additional AWS parameters."; \
+             kctl="/kubectl --server=https://{{.APIEndpoint.DNSName}}:443 --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml"; \
+             kctl_label="$kctl label --overwrite nodes/$(hostname)"; \
+             kctl_annotate="$kctl annotate --overwrite nodes/$(hostname)"; \
+             $kctl_label kube-aws.coreos.com/autoscalinggroup=${AUTOSCALINGGROUP}; \
+             $kctl_label kube-aws.coreos.com/launchconfiguration=${LAUNCHCONFIGURATION}; \
+             $kctl_annotate kube-aws.coreos.com/securitygroups=${SECURITY_GROUPS}; \
+             echo "done."'
 {{end}}
 
 {{if .Experimental.EphemeralImageStorage.Enabled}}
@@ -549,6 +560,7 @@ write_files:
     encoding: gzip+base64
     content: {{.TLSConfig.EtcdClientKey}}
 
+{{ if not .Experimental.TLSBootstrap.Enabled }}
   - path: /etc/kubernetes/ssl/worker.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.WorkerCert}}
@@ -556,6 +568,7 @@ write_files:
   - path: /etc/kubernetes/ssl/worker-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.TLSConfig.WorkerKey}}
+{{ end }}
 
   - path: /etc/kubernetes/ssl/ca.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
@@ -573,15 +586,19 @@ write_files:
       rkt run \
         --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
         --mount=volume=ssl,target=/etc/kubernetes/ssl \
+        {{- if .Experimental.TLSBootstrap.Enabled }}
+        --volume=kube,kind=host,source=/etc/kubernetes,readOnly=false \
+        --mount=volume=kube,target=/etc/kubernetes \
+        {{- end }}
         --uuid-file-save=/var/run/coreos/decrypt-assets.uuid \
         --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
         --net=host \
         --trust-keys-from-https \
         {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
           -ec \
-          'echo decrypting tls assets
+          'echo decrypting assets
            shopt -s nullglob
-           for encKey in /etc/kubernetes/ssl/*.pem.enc; do
+           for encKey in /etc/kubernetes/{ssl,{{if .Experimental.TLSBootstrap.Enabled}}auth{{end}}}/*.enc; do
              echo decrypting $encKey
              f=$(mktemp $encKey.XXXXXXXX)
              /usr/bin/aws \
@@ -592,9 +609,16 @@ write_files:
              | base64 -d > $f
              mv -f $f ${encKey%.enc}
            done;
+
+           {{ if .Experimental.TLSBootstrap.Enabled }}
+           echo injecting token into the kubelet bootstrap kubeconfig file
+           bootstrap_token=$(cat /etc/kubernetes/auth/kubelet-bootstrap.token);
+           sed -i -e "s#\$KUBELET_BOOTSTRAP_TOKEN#$bootstrap_token#g" /etc/kubernetes/worker-bootstrap-kubeconfig.yaml
+           {{ end }}
            echo done.'
 
       rkt rm --uuid-file=/var/run/coreos/decrypt-assets.uuid || :
+
 {{ end }}
 
 {{if .SpotFleet.Enabled}}
@@ -674,7 +698,7 @@ write_files:
           'echo "tainting this node."
            hostname="'${hostname}'"
            taints=({{range $i, $taint := .Experimental.Taints}}"{{$taint.String}}" {{end}})
-           kubectl="/kubectl --server=https://{{.ExternalDNSName}}:443 --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml"
+           kubectl="/kubectl --server=https://{{.APIEndpoint.DNSName}}:443 --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml"
            taint="$kubectl taint node --overwrite"
            for t in ${taints[@]}; do
              $taint "$hostname" "$t"
@@ -707,30 +731,45 @@ write_files:
               privileged: true
             volumeMounts:
               - mountPath: /etc/ssl/certs
-                name: "ssl-certs"
-              - mountPath: /etc/kubernetes/worker-kubeconfig.yaml
-                name: "kubeconfig"
-                readOnly: true
-              - mountPath: /etc/kubernetes/ssl
-                name: "etc-kube-ssl"
+                name: ssl-certs
+              - mountPath: /etc/kubernetes
+                name: kubeconfig
                 readOnly: true
               - mountPath: /var/run/dbus
                 name: dbus
                 readOnly: false
           volumes:
-            - name: "ssl-certs"
+            - name: ssl-certs
               hostPath:
-                path: "/usr/share/ca-certificates"
-            - name: "kubeconfig"
+                path: /usr/share/ca-certificates
+            - name: kubeconfig
               hostPath:
-                path: "/etc/kubernetes/worker-kubeconfig.yaml"
-            - name: "etc-kube-ssl"
+                path: /etc/kubernetes
+            - name: dbus
               hostPath:
-                path: "/etc/kubernetes/ssl"
-            - hostPath:
                 path: /var/run/dbus
-              name: dbus
 
+{{ if .Experimental.TLSBootstrap.Enabled }}
+  - path: /etc/kubernetes/worker-bootstrap-kubeconfig.yaml
+    content: |
+        apiVersion: v1
+        kind: Config
+        clusters:
+        - name: local
+          cluster:
+            certificate-authority: /etc/kubernetes/ssl/ca.pem
+            server: https://{{.ExternalDNSName}}:443
+        users:
+        - name: kubelet-bootstrap
+          user:
+            token: $KUBELET_BOOTSTRAP_TOKEN
+        contexts:
+        - context:
+            cluster: local
+            user: kubelet-bootstrap
+          name: kubelet-bootstrap-context
+        current-context: kubelet-bootstrap-context
+{{ else }}
   - path: /etc/kubernetes/worker-kubeconfig.yaml
     content: |
         apiVersion: v1
@@ -750,6 +789,7 @@ write_files:
             user: kubelet
           name: kubelet-context
         current-context: kubelet-context
+{{ end }}
 
 {{ if not .UseCalico }}
   - path: /etc/kubernetes/cni/net.d/10-flannel.conf
@@ -761,4 +801,21 @@ write_files:
                 "isDefaultGateway": true
             }
         }
+
+{{ else }}
+
+  # http://docs.projectcalico.org/v2.0/usage/configuration/
+  - path: /etc/modules-load.d/nf.conf
+    content: |
+      nf_conntrack
+  - path: /etc/sysctl.d/nf.conf
+    content: |
+      net.netfilter.nf_conntrack_max=1000000
+
+{{ end }}
+
+{{ if .Experimental.TLSBootstrap.Enabled }}
+  - path: /etc/kubernetes/auth/kubelet-bootstrap.token{{if .AssetsEncryptionEnabled}}.enc{{end}}
+    encoding: gzip+base64
+    content: {{.AuthTokensConfig.KubeletBootstrapToken}}
 {{ end }}

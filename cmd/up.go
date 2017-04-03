@@ -57,7 +57,7 @@ func runCmdUp(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	fmt.Printf("Creating AWS resources. Please wait. It may take a few minutes.\n")
+	fmt.Println("Creating AWS resources. Please wait. It may take a few minutes.")
 	if err := cluster.Create(); err != nil {
 		return fmt.Errorf("Error creating cluster: %v", err)
 	}

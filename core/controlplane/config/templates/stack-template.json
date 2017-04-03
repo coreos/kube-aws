@@ -41,7 +41,10 @@
           {{end}}
         ],
         "LoadBalancerNames" : [
-          { "Ref" : "ElbAPIServer" }
+          {{range $i, $ref := .APIEndpoints.ELBRefs -}}
+          {{- if gt $i 0}},{{end}}
+          {{ $ref }}
+          {{- end}}
         ]
       },
       {{if .WaitSignal.Enabled}}
@@ -101,22 +104,6 @@
       },
       "DependsOn": ["{{$.Etcd.LogicalName}}{{minus $.Etcd.Count 1}}"]
     },
-    {{ if .CreateRecordSet }}
-    "ExternalDNS": {
-      "Type": "AWS::Route53::RecordSet",
-      "Properties": {
-        {{if .HostedZoneID}}
-        "HostedZoneId": "{{.HostedZoneID}}",
-        {{else}}
-        "HostedZoneName": "{{.HostedZone}}",
-        {{end}}
-        "Name": "{{.ExternalDNSName}}",
-        "TTL": {{.RecordSetTTL}},
-        "ResourceRecords": [{ "Fn::GetAtt": ["ElbAPIServer", "DNSName"]}],
-        "Type": "CNAME"
-      }
-    },
-    {{ end }}
     "IAMInstanceProfileController": {
       "Properties": {
         "Path": "/",
@@ -662,7 +649,21 @@
   {{end}}
       "Type": "AWS::AutoScaling::LaunchConfiguration"
     },
-    "ElbAPIServer" : {
+    {{range $i, $apiEndpoint := $.APIEndpoints -}}
+    {{if .LoadBalancer.ManageELB -}}
+    {{if .LoadBalancer.ManageELBRecordSet -}}
+    "{{.LoadBalancer.RecordSetLogicalName}}": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneId": "{{.LoadBalancer.HostedZoneRef}}",
+        "Name": "{{$apiEndpoint.DNSName}}",
+        "TTL": {{.LoadBalancer.RecordSetTTL}},
+        "ResourceRecords": [{{.LoadBalancer.DNSNameRef}}],
+        "Type": "CNAME"
+      }
+    },
+    {{ end -}}
+    "{{.LoadBalancer.LogicalName}}" : {
       "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties" : {
         "CrossZone" : true,
@@ -677,7 +678,7 @@
           "IdleTimeout" : "3600"
         },
         "Subnets" : [
-          {{range $index, $subnet := .Controller.LoadBalancer.Subnets}}
+          {{range $index, $subnet := .LoadBalancer.Subnets}}
           {{if gt $index 0}},{{end}}
           {{$subnet.Ref}}
           {{end}}
@@ -690,7 +691,7 @@
             "Protocol" : "TCP"
           }
         ],
-        {{if .Controller.LoadBalancer.Private}}
+        {{if .LoadBalancer.Private}}
         "Scheme": "internal",
         {{else}}
         "Scheme": "internet-facing",
@@ -700,6 +701,8 @@
         ]
       }
     },
+    {{end -}}
+    {{end -}}
     "SecurityGroupElbAPIServer" : {
       "Properties": {
         "GroupDescription": {

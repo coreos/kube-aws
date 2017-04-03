@@ -93,6 +93,18 @@ There will now be a `cluster.yaml` file in the asset directory. This is the main
 
 ### Render contents of the asset directory
 
+#### Auth token file
+
+* The initial token file can be created via the `render token-file` sub-command.
+
+  ```sh
+  $ kube-aws render token-file
+  ```
+
+* If you turned on the cluster TLS bootstrapping experimental feature in the `cluster.yaml` file, the generated auth token file will include a randomly generated token used during the bootstrapping, as documented [here](https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/).
+
+#### TLS certificates
+
 * In the simplest case, you can have kube-aws generate both your TLS identities and certificate authority for you.
 
   ```sh
@@ -118,6 +130,8 @@ There will now be a `cluster.yaml` file in the asset directory. This is the main
   admin-key.pem       apiserver-key.pem   ca-key.pem          etcd-client-key.pem etcd-key.pem        tokens.csv          worker.pem
   admin.pem           apiserver.pem       ca.pem              etcd-client.pem     etcd.pem            worker-key.pem
   ```
+
+### Render cluster assets
 
 The next command generates the default set of cluster assets in your asset directory.
 

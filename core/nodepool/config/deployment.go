@@ -98,6 +98,9 @@ func (c DeploymentSettings) WithDefaultsFrom(main cfg.DeploymentSettings) Deploy
 	c.PauseImage.MergeIfEmpty(main.PauseImage)
 	c.FlannelImage.MergeIfEmpty(main.FlannelImage)
 
+	// Inherit main TLS bootstrap config
+	c.Experimental.TLSBootstrap = main.Experimental.TLSBootstrap
+
 	if len(c.SSHAuthorizedKeys) == 0 {
 		c.SSHAuthorizedKeys = main.SSHAuthorizedKeys
 	}

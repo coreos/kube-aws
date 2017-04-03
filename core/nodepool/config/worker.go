@@ -6,6 +6,7 @@ import (
 )
 
 type WorkerNodePoolConfig struct {
+	APIEndpointName      string `yaml:"apiEndpointName,omitempty"`
 	model.NodePoolConfig `yaml:",inline"`
 }
 

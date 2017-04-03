@@ -269,6 +269,11 @@ up() {
   set -vx
 }
 
+status() {
+  cd ${WORK_DIR}
+  ${KUBE_AWS_CMD} status
+}
+
 main_destroy() {
   status=$(main_status)
 

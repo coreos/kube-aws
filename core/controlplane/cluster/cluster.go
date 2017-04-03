@@ -348,11 +348,6 @@ func (c *Cluster) Update() (string, error) {
 	return updateOutput, err
 }
 
-func (c *ClusterRef) Info() (*Info, error) {
-	describer := NewClusterDescriber(c.ClusterName, c.StackName(), c.session)
-	return describer.Info()
-}
-
 func (c *ClusterRef) Destroy() error {
 	return cfnstack.NewDestroyer(c.StackName(), c.session).Destroy()
 }

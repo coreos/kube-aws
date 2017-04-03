@@ -2,11 +2,14 @@ package config
 
 import (
 	"bytes"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/csv"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -15,79 +18,156 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
 )
 
-// Contents of the CSV file holding auth tokens.
-// See https://kubernetes.io/docs/admin/authentication/#static-token-file
-type AuthTokens struct {
+// Taken from https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/#apiserver-configuration
+const (
+	kubeletBootstrapGroup     = "system:kubelet-bootstrap"
+	kubeletBootstrapUser      = "kubelet-bootstrap"
+	kubeletBootstrapUserId    = "10001"
+	kubeletBootstrapTokenBits = 256
+)
+
+type RawAuthTokensOnMemory struct {
+	// Contents of the CSV file holding auth tokens.
 	Contents []byte
 }
 
-// Contents of the CSV file holding auth tokens.
 type RawAuthTokensOnDisk struct {
+	// Contents of the CSV file holding auth tokens.
 	AuthTokens RawCredentialOnDisk
+
+	// Extracted from the auth tokens file
+	KubeletBootstrapToken []byte
 }
 
-// Encrypted contents of the CSV file holding auth tokens.
 type EncryptedAuthTokensOnDisk struct {
+	// Encrypted contents of the CSV file holding auth tokens.
 	AuthTokens EncryptedCredentialOnDisk
+
+	// Encrypted version of the Kubelet bootstrap token.
+	KubeletBootstrapToken []byte
 }
 
-// Encrypted -> gzip -> base64 encoded auth token file contents.
 type CompactAuthTokens struct {
+	// Encrypted -> gzip -> base64 encoded auth token file contents.
 	Contents string
+
+	// Encrypted -> gzip -> base64 encoded version of the Kubelet auth token.
+	KubeletBootstrapToken string
 }
 
-func NewAuthTokens() AuthTokens {
+func NewAuthTokens() RawAuthTokensOnMemory {
 	// Uses an empty file as the default auth token file
-	return AuthTokens{
+	return RawAuthTokensOnMemory{
 		Contents: make([]byte, 0),
 	}
 }
 
-func NewAuthTokensOnDisk(dir string) (*RawAuthTokensOnDisk, error) {
-	authToken := NewAuthTokens()
-	if err := authToken.WriteToDir(dir); err != nil {
-		return nil, fmt.Errorf("error creating auth token file: %v", err)
+func parseAuthTokensCSV(authTokens []byte) ([][]string, error) {
+	if len(authTokens) == 0 {
+		return make([][]string, 0), nil
 	}
-	return ReadRawAuthTokens(dir)
+
+	csvReader := csv.NewReader(bytes.NewReader(authTokens))
+	return csvReader.ReadAll()
 }
 
-func validateAuthTokens(authTokens []byte) error {
-	if len(authTokens) > 0 {
-		csvReader := csv.NewReader(bytes.NewReader(authTokens))
+func RandomKubeletBootstrapTokenString(n int) (string, error) {
+	b := make([]byte, n)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(b), nil
+}
 
-		records, err := csvReader.ReadAll()
+func RandomBootstrapTokenRecord() (string, error) {
+	randomToken, err := RandomKubeletBootstrapTokenString(kubeletBootstrapTokenBits)
+	if err != nil {
+		return "", fmt.Errorf("cannot generate a random Kubelet bootstrap token: %v", err)
+	}
+	return fmt.Sprintf("%s,%s,%s,%s", randomToken, kubeletBootstrapUser, kubeletBootstrapUserId, kubeletBootstrapGroup), nil
+}
+
+func (c *Cluster) CreateRawAuthTokens(dirname string) error {
+	createBootstrapToken := c.DeploymentSettings.Experimental.TLSBootstrap.Enabled
+	return CreateRawAuthTokens(createBootstrapToken, dirname)
+}
+
+func CreateRawAuthTokens(addBootstrapToken bool, dirname string) error {
+	tokens := RawAuthTokensOnMemory{}
+	if addBootstrapToken {
+		bootstrapToken, err := RandomBootstrapTokenRecord()
 		if err != nil {
 			return err
 		}
+		tokens.Contents = []byte(bootstrapToken)
+	}
+	return tokens.WriteToDir(dirname)
+}
 
-		for _, line := range records {
-			columns := len(line)
-			if columns < 3 {
-				return fmt.Errorf("auth token record must have at least 3 columns, but has %d: '%v'", columns, line)
-			}
-		}
+func KubeletBootstrapTokenFromRecord(csvRecord []string) (string, error) {
+	if csvRecord == nil || len(csvRecord) < 4 {
+		return "", nil
 	}
 
-	return nil
+	pattern := fmt.Sprintf(`^(?:\s*\S+\s*,\s*|\s+)?(?:%s)(?:\s*|\s*,\s*\S+\s*)+$`, kubeletBootstrapGroup)
+	match, err := regexp.MatchString(pattern, csvRecord[3])
+	if err != nil {
+		return "", fmt.Errorf("error trying to identify the Kubelet bootstrap token")
+	}
+
+	if match {
+		return csvRecord[0], nil
+	}
+
+	return "", nil
 }
 
 func ReadRawAuthTokens(dirname string) (*RawAuthTokensOnDisk, error) {
 	authTokensPath := filepath.Join(dirname, "tokens.csv")
+	kubeletBootstrapToken := make([]byte, 0)
+
+	if _, err := os.Stat(authTokensPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("auth tokens file not found: %s\n\nTo fix this, please run the following command to create it: kube-aws render token-file", authTokensPath)
+	}
 
 	data, err := RawCredentialFileFromPath(authTokensPath)
 	if err != nil {
 		return nil, err
 	}
 
-	authTokens := data.content
-	if err = validateAuthTokens(authTokens); err != nil {
-		return nil, err
+	records, err := parseAuthTokensCSV(data.content)
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse auth token file: %v", err)
 	}
 
-	return &RawAuthTokensOnDisk{AuthTokens: *data}, nil
+	// Checks whether the CSV file has the expected layout
+	for _, line := range records {
+		columns := len(line)
+		if columns < 3 {
+			return nil, fmt.Errorf("auth token record must have at least 3 columns, but has %d: '%v'", columns, line)
+		}
+
+		// Keeps the first token assigned for the Kubelet bootstrap group
+		if len(kubeletBootstrapToken) == 0 && columns > 3 {
+			kubeletBootstrapTokenFromRecord, err := KubeletBootstrapTokenFromRecord(line)
+			if err != nil {
+				return nil, err
+			}
+
+			if len(kubeletBootstrapTokenFromRecord) > 0 {
+				kubeletBootstrapToken = []byte(kubeletBootstrapTokenFromRecord)
+			}
+		}
+	}
+
+	return &RawAuthTokensOnDisk{
+		AuthTokens:            *data,
+		KubeletBootstrapToken: kubeletBootstrapToken,
+	}, nil
 }
 
-func (r AuthTokens) WriteToDir(dirname string) error {
+func (r RawAuthTokensOnMemory) WriteToDir(dirname string) error {
 	authTokensPath := filepath.Join(dirname, "tokens.csv")
 
 	if err := ioutil.WriteFile(authTokensPath, r.Contents, 0600); err != nil {
@@ -116,7 +196,8 @@ func (r *RawAuthTokensOnDisk) Compact() (*CompactAuthTokens, error) {
 	}
 
 	compactAuthTokens := &CompactAuthTokens{
-		Contents: compact(r.AuthTokens.content),
+		Contents:              compact(r.AuthTokens.content),
+		KubeletBootstrapToken: compact(r.KubeletBootstrapToken),
 	}
 	if err != nil {
 		return nil, err
@@ -143,7 +224,8 @@ func (r *EncryptedAuthTokensOnDisk) Compact() (*CompactAuthTokens, error) {
 	}
 
 	compactAuthTokens := &CompactAuthTokens{
-		Contents: compact(r.AuthTokens.content),
+		Contents:              compact(r.AuthTokens.content),
+		KubeletBootstrapToken: compact(r.KubeletBootstrapToken),
 	}
 	if err != nil {
 		return nil, err
@@ -154,16 +236,13 @@ func (r *EncryptedAuthTokensOnDisk) Compact() (*CompactAuthTokens, error) {
 func ReadOrEncryptAuthTokens(dirname string, encryptor CachedEncryptor) (*EncryptedAuthTokensOnDisk, error) {
 	authTokenPath := filepath.Join(dirname, "tokens.csv")
 
-	// Auto-creates the auth token file, useful for those coming from previous versions of kube-aws
-	if _, err := os.Stat(authTokenPath); os.IsNotExist(err) {
-		file, err := os.OpenFile(authTokenPath, os.O_RDONLY|os.O_CREATE, 0600)
-		if err != nil {
-			return nil, err
-		}
-		file.Close()
+	// Extracts and encrypts the Kubelet bootstrap token
+	authTokens, err := ReadRawAuthTokens(dirname)
+	if err != nil {
+		return nil, err
 	}
-
-	if _, err := ReadRawAuthTokens(dirname); err != nil {
+	encryptedToken, err := encryptor.EncryptedBytes(authTokens.KubeletBootstrapToken)
+	if err != nil {
 		return nil, err
 	}
 
@@ -174,30 +253,33 @@ func ReadOrEncryptAuthTokens(dirname string, encryptor CachedEncryptor) (*Encryp
 	if err := data.Persist(); err != nil {
 		return nil, err
 	}
+
 	return &EncryptedAuthTokensOnDisk{
-		AuthTokens: *data,
+		AuthTokens:            *data,
+		KubeletBootstrapToken: encryptedToken,
 	}, nil
 }
 
 func ReadOrCreateEncryptedAuthTokens(dirname string, kmsConfig KMSConfig) (*EncryptedAuthTokensOnDisk, error) {
 	var kmsSvc EncryptService
 
-	awsConfig := aws.NewConfig().
-		WithRegion(kmsConfig.Region.String()).
-		WithCredentialsChainVerboseErrors(true)
-
 	// TODO Cleaner way to inject this dependency
 	if kmsConfig.EncryptService == nil {
+		awsConfig := aws.NewConfig().
+			WithRegion(kmsConfig.Region.String()).
+			WithCredentialsChainVerboseErrors(true)
 		kmsSvc = kms.New(session.New(awsConfig))
 	} else {
 		kmsSvc = kmsConfig.EncryptService
 	}
 
+	encryptionSvc := bytesEncryptionService{
+		kmsKeyARN: kmsConfig.KMSKeyARN,
+		kmsSvc:    kmsSvc,
+	}
+
 	encryptor := CachedEncryptor{
-		bytesEncryptionService: bytesEncryptionService{
-			kmsKeyARN: kmsConfig.KMSKeyARN,
-			kmsSvc:    kmsSvc,
-		},
+		bytesEncryptionService: encryptionSvc,
 	}
 
 	return ReadOrEncryptAuthTokens(dirname, encryptor)
@@ -217,7 +299,7 @@ func ReadOrCreateCompactAuthTokens(dirname string, kmsConfig KMSConfig) (*Compac
 	return compactTokens, nil
 }
 
-func ReadOrCreateUnecryptedCompactAuthTokens(dirname string) (*CompactAuthTokens, error) {
+func ReadOrCreateUnencryptedCompactAuthTokens(dirname string) (*CompactAuthTokens, error) {
 	unencryptedTokens, err := ReadRawAuthTokens(dirname)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read/create auth token assets: %v", err)
