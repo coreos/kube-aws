@@ -45,6 +45,9 @@ coreos:
         ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
         ExecStartPre=/usr/bin/mkdir -p /var/run/coreos/etcdadm/snapshots
         ExecStart=/opt/bin/etcdadm reconfigure
+        {{if .Etcd.DisasterRecovery.IsAutomatedForEtcdVersion .Etcd.Version -}}
+        ExecStartPost=/usr/bin/systemctl start etcdadm-check.timer
+        {{end -}}
         TimeoutStartSec=120
 
         [Install]
@@ -68,9 +71,6 @@ coreos:
         ExecStart=/opt/bin/etcdadm member_status_set_started
         {{if .Etcd.Snapshot.IsAutomatedForEtcdVersion .Etcd.Version -}}
         ExecStartPost=/usr/bin/systemctl start etcdadm-save.timer
-        {{end -}}
-        {{if .Etcd.DisasterRecovery.IsAutomatedForEtcdVersion .Etcd.Version -}}
-        ExecStartPost=/usr/bin/systemctl start etcdadm-check.timer
         {{end -}}
         TimeoutStartSec=120
     {{- end}}
