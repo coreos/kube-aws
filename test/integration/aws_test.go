@@ -44,7 +44,7 @@ func newKubeAwsSettingsFromEnv(t *testing.T) kubeAwsSettings {
 	clusterName, clusterNameExists := os.LookupEnv("KUBE_AWS_CLUSTER_NAME")
 
 	if !clusterNameExists || clusterName == "" {
-		clusterName = "kubeaws-it"
+		clusterName = "it"
 		t.Logf(`Falling back clusterName to a stub value "%s" for tests of validating stack templates. No assets will actually be uploaded to S3 and no clusters will be created with CloudFormation`, clusterName)
 	}
 
@@ -103,9 +103,13 @@ region: "%s"
 }
 
 func (s kubeAwsSettings) minimumValidClusterYaml() string {
+	return s.minimumValidClusterYamlWithAZ("a")
+}
+
+func (s kubeAwsSettings) minimumValidClusterYamlWithAZ(suffix string) string {
 	return s.mainClusterYaml() + fmt.Sprintf(`
 availabilityZone: %s
-`, s.region+"a")
+`, s.region+suffix)
 }
 
 func (s kubeAwsSettings) withClusterName(n string) kubeAwsSettings {
