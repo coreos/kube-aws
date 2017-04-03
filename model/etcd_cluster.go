@@ -3,11 +3,12 @@ package model
 import "fmt"
 
 type EtcdCluster struct {
-	InternalDomainName     string     `yaml:"internalDomainName,omitempty"`
-	MemberIdentityProvider string     `yaml:"memberIdentityProvider,omitempty"`
-	HostedZone             Identifier `yaml:"hostedZone,omitempty"`
-	ManageRecordSets       *bool      `yaml:"manageRecordSets,omitempty"`
-	KMSKeyARN              string     `yaml:"kmsKeyArn,omitempty"`
+	InternalDomainName     string      `yaml:"internalDomainName,omitempty"`
+	MemberIdentityProvider string      `yaml:"memberIdentityProvider,omitempty"`
+	HostedZone             Identifier  `yaml:"hostedZone,omitempty"`
+	ManageRecordSets       *bool       `yaml:"manageRecordSets,omitempty"`
+	KMSKeyARN              string      `yaml:"kmsKeyArn,omitempty"`
+	Version                EtcdVersion `yaml:"version,omitempty"`
 }
 
 const (

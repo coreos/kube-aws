@@ -2,15 +2,41 @@ package model
 
 import (
 	"errors"
+	"strings"
 )
 
 type Etcd struct {
-	Cluster     EtcdCluster `yaml:",inline"`
-	DataVolume  DataVolume  `yaml:"dataVolume,omitempty"`
-	EC2Instance `yaml:",inline"`
-	Nodes       []EtcdNode `yaml:"nodes,omitempty"`
-	Subnets     []Subnet   `yaml:"subnets,omitempty"`
-	UnknownKeys `yaml:",inline"`
+	Cluster          EtcdCluster          `yaml:",inline"`
+	DataVolume       DataVolume           `yaml:"dataVolume,omitempty"`
+	DisasterRecovery EtcdDisasterRecovery `yaml:"disasterRecovery,omitempty"`
+	Snapshot         EtcdSnapshot         `yaml:"snapshot,omitempty"`
+	EC2Instance      `yaml:",inline"`
+	Nodes            []EtcdNode `yaml:"nodes,omitempty"`
+	Subnets          []Subnet   `yaml:"subnets,omitempty"`
+	UnknownKeys      `yaml:",inline"`
+}
+
+type EtcdVersion string
+
+type EtcdDisasterRecovery struct {
+	Automated bool `yaml:"automated,omitempty"`
+}
+
+// Supported returns true when the disaster recovery feature provided by etcdadm can be enabled on the specified version of etcd
+func (r EtcdDisasterRecovery) SupportsEtcdVersion(etcdVersion EtcdVersion) bool {
+	return etcdVersion.Is3()
+}
+
+func (r EtcdDisasterRecovery) IsAutomatedForEtcdVersion(etcdVersion EtcdVersion) bool {
+	return etcdVersion.Is3() && r.Automated
+}
+
+type EtcdSnapshot struct {
+	Automated bool `yaml:"automated,omitempty"`
+}
+
+func (s EtcdSnapshot) IsAutomatedForEtcdVersion(etcdVersion EtcdVersion) bool {
+	return etcdVersion.Is3() && s.Automated
 }
 
 func NewDefaultEtcd() Etcd {
@@ -94,4 +120,30 @@ func (e Etcd) HostedZoneLogicalName() (string, error) {
 
 func (e Etcd) KMSKeyARN() string {
 	return e.Cluster.KMSKeyARN
+}
+
+func (e Etcd) SystemdUnitName() string {
+	if e.Version().Is3() {
+		return "etcd-member.service"
+	}
+	return "etcd2.service"
+}
+
+// Version returns the version of etcd (e.g. `2`, `3`, `3.1.3`) to be used for this etcd cluster
+func (e Etcd) Version() EtcdVersion {
+	if e.Cluster.Version != "" {
+		return e.Cluster.Version
+	}
+	if e.Cluster.Version == "3" {
+		return "3.1.3"
+	}
+	return "2"
+}
+
+func (v EtcdVersion) Is3() bool {
+	return strings.HasPrefix(string(v), "3")
+}
+
+func (v EtcdVersion) String() string {
+	return string(v)
 }

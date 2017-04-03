@@ -24,7 +24,7 @@ coreos:
         [Install]
         RequiredBy=format-etcd2-volume.service
 
-    {{if .Etcd.DisasterRecovery.Supported -}}
+    {{if .Etcd.DisasterRecovery.SupportsEtcdVersion .Etcd.Version -}}
     - name: etcdadm-reconfigure.service
       enable: true
       content: |
@@ -55,8 +55,8 @@ coreos:
       content: |
         [Unit]
         Description=etcdadm update status
-        BindsTo=etcd-member.service
-        After=etcd-member.service
+        BindsTo={{.Etcd.SystemdUnitName}}
+        After={{.Etcd.SystemdUnitName}}
         After=network.target
 
         [Service]
@@ -84,7 +84,7 @@ coreos:
         ExecStart=/opt/bin/etcdadm check
         TimeoutStartSec=120
 
-      {{if .Etcd.DisasterRecovery.Automated -}}
+    {{if .Etcd.DisasterRecovery.IsAutomatedForEtcdVersion .Etcd.Version -}}
     - name: etcdadm-check.timer
       enable: true
       content: |
@@ -116,11 +116,10 @@ coreos:
         ExecStart=/opt/bin/etcdadm save
         TimeoutStartSec=300
 
+    {{if .Etcd.Snapshot.IsAutomatedForEtcdVersion .Etcd.Version -}}
     - name: etcdadm-save.timer
-      {{if .Etcd.Snapshot.Enabled -}}
       enable: true
       command: start
-      {{end -}}
       content: |
         [Unit]
         Description=periodic etcd snapshot
@@ -133,20 +132,24 @@ coreos:
 
         [Install]
         WantedBy=timers.target
+    {{- end}}
 
     - name: {{.Etcd.SystemdUnitName}}
       drop-ins:
         - name: 20-aws-cluster.conf
           content: |
-            {{- if .AssetsEncryptionEnabled}}
             [Unit]
+            {{- if .AssetsEncryptionEnabled}}
             Wants=decrypt-assets.service cfn-etcd-environment.service
             After=decrypt-assets.service cfn-etcd-environment.service
             {{- end}}
+            {{if .Etcd.DisasterRecovery.Automated -}}
             {{/* can be `Wants` if you like etcd-member to not stop when etcdadm-reconfigure failed */}}
             BindsTo=etcdadm-reconfigure.service etcdadm-update-status.service
             After=etcdadm-reconfigure.service
             Before=etcdadm-update-status.service
+            {{end -}}
+
             [Service]
             EnvironmentFile=-/etc/etcd-environment
 

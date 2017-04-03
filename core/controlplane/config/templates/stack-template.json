@@ -337,7 +337,7 @@
                   "Action": [
                     "s3:GetObject"
                   ],
-                  "Resource": "arn:{{.Region.Partition}}:s3:::{{$.UserDataEtcdS3Prefix}}/*"
+                  "Resource": "arn:{{.Region.Partition}}:s3:::{{$.UserDataEtcdS3Prefix}}*"
                 },
                 {{/* Required for `etcdadm reconfigure` to check existence of an etcd snapshot in S3 */}}
                 {
@@ -593,7 +593,7 @@
                     "/var/run/coreos/etcdadm",
                   "'\n",
                   "ETCDADM_MEMBER_COUNT='",
-                    "{{$.EtcdCount}}",
+                    "{{$.Etcd.Count}}",
                   "'\n",
                   "ETCDADM_MEMBER_INDEX='",
                     "{{$etcdIndex}}",

@@ -492,6 +492,21 @@ worker:
 #    - name: ManagedPrivateSubnet1
 #    - name: ManagedPrivateSubnet2
 #
+#  # The version of etcd to be used. Set to e.g. "3.1.3" to use etcd3
+#  version: 2
+#
+#  snapshot:
+#    # Set to true to periodically take an etcd snapshot
+#    # Beware that this can be enabled only for etcd 3+
+#    # Please carefully test if it works as you've expected when being enabled for your production clusters
+#    automated: false
+#
+#  disasterRecovery:
+#    # Set to true to automatically execute a disaster-recovery process whenever etcd node(s) seemed to be broken for a while
+#    # Beware that this can be enabled only for etcd 3+
+#    # Please carefully test if it works as you've expected when being enabled for your production clusters
+#    automated: false
+#
 #  # The strategy to provide your etcd nodes, in combination with floating EBS volumes, stable member identities. Defaults to "eip".
 #  #
 #  # Available options: eip, eni

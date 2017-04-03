@@ -19,6 +19,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnresource"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/filereader/userdatatemplate"
+	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/model/derived"
 	"github.com/kubernetes-incubator/kube-aws/netutil"
@@ -1075,6 +1076,11 @@ func (c Cluster) NestedStackName() string {
 	// Convert stack name into something valid as a cfn resource name or
 	// we'll end up with cfn errors like "Template format error: Resource name test5-controlplane is non alphanumeric"
 	return strings.Title(strings.Replace(c.StackName(), "-", "", -1))
+}
+
+// Etcdadm returns the content of the etcdadm script to be embedded into cloud-config-etcd
+func (c *Config) Etcdadm() (string, error) {
+	return gzipcompressor.CompressData(Etcdadm)
 }
 
 func (c Cluster) valid() error {

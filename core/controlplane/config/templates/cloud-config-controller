@@ -1052,7 +1052,9 @@ write_files:
           - --allow-privileged=true
           - --service-cluster-ip-range={{.ServiceCIDR}}
           - --secure-port=443
+          {{if .Etcd.Version.Is3}}
           - --storage-backend=etcd3
+          {{end}}
           - --kubelet-preferred-address-types=InternalIP,Hostname,ExternalIP
           {{ if .AuthTokensConfig.HasTokens }}
           - --token-auth-file=/etc/kubernetes/auth/tokens.csv

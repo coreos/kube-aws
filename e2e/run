@@ -9,6 +9,7 @@ SRC_DIR=$(cd $(dirname $0); cd ..; pwd)
 KUBECONFIG=${WORK_DIR}/kubeconfig
 ETCD_COUNT=${ETCD_COUNT:-3}
 CONTROLLER_COUNT=${CONTROLLER_COUNT:-2}
+ETCD_VERSION=${ETCD_VERSION:-3}
 
 export KUBECONFIG
 
@@ -225,13 +226,25 @@ experimental:
     enabled: true
 # etcd configuration
 etcd:
-  count: $ETCD_COUNT
-" >> cluster.yaml
+  count: $ETCD_COUNT" >> cluster.yaml
+
+  if [ "${ETCD_VERSION}" != "" ]; then
+    echo -e "  version: 3" >> cluster.yaml
+  fi
+
+  if [ "${ETCD_DISASTER_RECOVERY_AUTOMATED}" != "" ]; then
+    echo -e "  disasterRecovery:
+    automated: true" >> cluster.yaml
+  fi
+
+
+  if [ "${ETCD_DISASTER_RECOVERY_AUTOMATED}" != "" ]; then
+    echo -e "  snapshot:
+    automated: true" >> cluster.yaml
+  fi
 
   if [ "${ETCD_MEMBER_IDENTITY_PROVIDER}" != "" ]; then
-    echo -e "
-  memberIdentityProvider: ${ETCD_MEMBER_IDENTITY_PROVIDER}
-" >> cluster.yaml
+    echo -e "  memberIdentityProvider: ${ETCD_MEMBER_IDENTITY_PROVIDER}" >> cluster.yaml
   fi
 
   if [ "${ETCD_INTERNAL_DOMAIN_NAME}" != "" ]; then
