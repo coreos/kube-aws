@@ -74,30 +74,28 @@ Beware that this tool does not support etcd2.
 
 ## Other notes
 
-Although it might be a bad idea, `etcadm` is implemented in bash (for now) due to the fact it requires access to rkt, docker, systemd and etcd data dir on a host machine to reconfigure an etcd member.
+Although it might be a bad idea, `etcdadm` is implemented in bash (for now) due to the fact it requires access to rkt, docker, systemd and etcd data dir on a host machine to reconfigure an etcd member.
 
 ## Developing
 
 ### Running integration tests
 
-The following snippet bootstraps a 3-nodes etcd3 cluster inside a Container Linux machine and run through various steps to verify etcdadm works.
-A machine can be one created with [coreos-vagrant](https://github.com/coreos/coreos-vagrant).
+The following snippet creates a [coreos-vagrant](https://github.com/coreos/coreos-vagrant) virtualbox vm and then bootstraps a 3-nodes etcd3 cluster inside a Container Linux machine and run through various steps to verify etcdadm works.
 
 ```bash
-export AWS_ACCESS_KEY_ID=<YOUR KEY>
-export AWS_SECRET_ACCESS_KY=<YOUR KEY>
+$ cat > test.env 
+AWS_ACCESS_KEY_ID=<YOUR KEY>
+AWS_SECRET_ACCESS_KY=<YOUR KEY>
+ETCD_CLUSTER_FAILURE_PERIOD_LIMIT=1000
+ETCD_MEMBER_FAILURE_PERIOD_LIMIT=1000
+TESTER_WORK_DIR=/home/core/tester
+AWS_DEFAULT_REGION=<YOUR AWS REGION>
+ETCDADM_CLUSTER_SNAPSHOTS_S3_URI=s3://kuokakubeawstest/snapshots
+ETCDADM_MEMBER__COUNT=3
+ETCD_INITIAL_CLUSTER=etcd0=http://127.0.0.1:3080,etcd1=http://127.0.0.1:3180,etcd2=http://127.0.0.1:3280
+ETCD_ENDPOINTS=http://127.0.0.1:3079,http://127.0.0.1:3179,http://127.0.0.1:3279
 
-echo \
-  ETCD_CLUSTER_FAILURE_PERIOD_LIMIT=1000 \
-  ETCD_MEMBER_FAILURE_PERIOD_LIMIT=1000 \
-  TESTER_WORK_DIR=$(pwd)/tester \
-  AWS_DEFAULT_REGION=<YOUR AWS REGION> \
-  ETCDADM_CLUSTER_SNAPSHOTS_S3_URI=s3://kuokakubeawstest/snapshots \
-  ETCDADM_MEMBER__COUNT=3 \
-  ETCD_INITIAL_CLUSTER=etcd0=http://127.0.0.1:3080,etcd1=http://127.0.0.1:3180,etcd2=http://127.0.0.1:3280 \
-  ETCD_ENDPOINTS=http://127.0.0.1:3079,http://127.0.0.1:3179,http://127.0.0.1:3279 \
-  ./etcdadm \
-  tester_run_all_tests | sudo bash
+$ make test-integration
 ```
 
 ### Notes for kube-aws users

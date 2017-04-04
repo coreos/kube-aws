@@ -1,0 +1,781 @@
+#!/bin/bash
+
+set -o nounset
+set -o errexit
+set -o pipefail
+IFS=$'\n\t'
+
+if [ "${DEBUG:-}" == "yes" ]; then
+  set -vx
+fi
+
+tester_member_pid() {
+  local name
+  local pid
+  name=$(member_name)
+  pid=$(ps auxww | grep "\(--name $name\)" | grep -v grep | awk '{ print $2 }')
+  if [ "$pid" == "" ]; then
+    return 1
+  fi
+  echo "$pid"
+}
+
+tester_cluster_tail() {
+  journalctl -f -u etcd-node-0 -u etcd-node-1 -u etcd-node-2 -o json | jq -r '._SYSTEMD_UNIT + ": " + .MESSAGE'
+}
+
+tester_clean_local_snapshots() {
+  local dir
+  dir=$(member_host_snapshots_dir_path)
+  tester_log "removing local snapshots in ${dir}"
+  sudo rm -Rf "${dir}"
+}
+
+tester_clean_remote_snapshots() {
+  local cmd
+  local s3uri
+  s3uri=$(member_remote_snapshot_s3_uri)
+  tester_log "removing remote snapshot ${s3uri}"
+  cmd=$(_awscli_command s3 rm "${s3uri}")
+  _run_as_root $cmd || echo "${s3uri} not found" 1>&2
+}
+
+tester_show_member_log() {
+  journalctl -u "$(config_member_systemd_unit_name)" -o json | jq -r '._SYSTEMD_UNIT + ": " + .MESSAGE'
+}
+
+tester_tail_member_log() {
+  journalctl -f -u "$(config_member_systemd_unit_name)" -o json | jq -r '._SYSTEMD_UNIT + ": " + .MESSAGE'
+}
+
+tester_remove_data_dir() {
+  local data_dir
+  data_dir=$(member_data_dir)
+  tester_log removing "${data_dir}"
+  _run_as_root rm -rf "${data_dir}"
+}
+
+tester_remove_state_dir() {
+  local d
+  d=$(config_state_dir)
+  tester_log removing state dir "${d}"
+  _run_as_root rm -rf "${d}"
+}
+
+tester_create_data_dir() {
+  local data_dir
+  data_dir=$(member_data_dir)
+  tester_log creating "${data_dir}"
+  _run_as_root mkdir -p "${data_dir}"
+  _run_as_root chown -R etcd:etcd "${data_dir}"
+}
+
+tester_create_state_dir() {
+  local d
+  d=$(config_state_dir)
+  tester_log creating state dir "${d}"
+  _run_as_root mkdir -p "${d}"
+}
+
+tester_append_member_to_cloud_config_file() {
+  local name
+  local f
+  name=$(member_name)
+  f=$(tester_work_dir)/$(config_member_systemd_unit_name)
+
+  cat > "$f" << EOS
+[Unit]
+Description=$(config_member_systemd_unit_name)
+Documentation=https://github.com/coreos/etcd
+Wants=network.target
+Conflicts=etcd.service
+Conflicts=etcd2.service
+
+[Service]
+Type=notify
+Restart=on-failure
+RestartSec=10s
+TimeoutStartSec=0
+LimitNOFILE=40000
+
+Environment="ETCD_IMAGE_TAG=v3.0.10"
+Environment="ETCD_NAME=%m"
+Environment="ETCD_USER=etcd"
+Environment="ETCD_DATA_DIR=/var/lib/etcd"
+Environment="RKT_RUN_ARGS=--uuid-file-save=$(config_state_dir)/$(config_member_systemd_unit_name).uuid"
+
+ExecStartPre=/usr/bin/mkdir --parents $(config_state_dir)
+ExecStartPre=-/usr/bin/rkt rm --uuid-file=$(config_state_dir)/$(config_member_systemd_unit_name).uuid
+ExecStart=/usr/lib/coreos/etcd-wrapper \$ETCD_OPTS
+ExecStop=-/usr/bin/rkt stop --uuid-file=$(config_state_dir)/$(config_member_systemd_unit_name).uuid
+
+[Install]
+WantedBy=multi-user.target
+EOS
+
+  sudo cp "$f" "$(tester_member_systemd_unit_path)"
+
+  local cloud_config_file
+  cloud_config_file=$(tester_cloud_config_file)
+
+  client_url=$(member_client_url)
+  peer_url=$(member_peer_url)
+  initial_cluster=$(config_etcd_initial_cluster)
+  data_dir=$(member_data_dir)
+
+  cat >> ${cloud_config_file} << EOS
+    - name: $(config_member_systemd_unit_name)
+      enable: true
+      drop-ins:
+        - name: 40-etcd3-cluster.conf
+          content: |
+            [Service]
+            EnvironmentFile=-$(member_env_file)
+
+            [Service]
+            Environment="ETCD_IMAGE_TAG=v$etcd_version"
+            Environment="ETCD_NAME=${name}"
+            Environment="ETCD_ADVERTISE_CLIENT_URLS=${client_url}"
+            Environment="ETCD_INITIAL_ADVERTISE_PEER_URLS=${peer_url}"
+            Environment="ETCD_LISTEN_CLIENT_URLS=${client_url}"
+            Environment="ETCD_LISTEN_PEER_URLS=${peer_url}"
+            Environment="ETCD_INITIAL_CLUSTER=${initial_cluster}"
+            Environment="ETCD_STRICT_RECONFIG_CHECK=true"
+            Environment="ETCD_DATA_DIR=${data_dir}"
+EOS
+}
+
+tester_bind_configurator_systemd_unit() {
+  tester_log binding the reconfiguration service to the etcd service
+  local drop_in_file=$(tester_member_systemd_drop_in_path 50-reconfiguration)
+  _run_as_root bash -c "cat > ${drop_in_file} << EOS
+[Unit]
+Requires=$(tester_member_configurator_systemd_unit_name)
+After=$(tester_member_configurator_systemd_unit_name)
+EOS
+"
+}
+
+tester_bind_status_updater_systemd_unit() {
+  tester_log binding a status updater service to the etcd service
+  local drop_in_file=$(tester_member_systemd_drop_in_path 60-status-updater)
+  _run_as_root bash -c "cat > ${drop_in_file} << EOS
+[Unit]
+BindsTo=$(tester_member_status_updater_systemd_unit_name)
+Before=$(tester_member_status_updater_systemd_unit_name)
+EOS
+"
+}
+
+tester_member_configurator_systemd_unit_name() {
+  echo $(config_member_systemd_service_name)-configurator.service
+}
+
+tester_member_configurator_systemd_unit_path() {
+  echo /etc/systemd/system/$(tester_member_configurator_systemd_unit_name)
+}
+
+tester_member_status_updater_systemd_unit_name() {
+  echo $(config_member_systemd_service_name)-status-updater.service
+}
+
+tester_member_status_updater_systemd_unit_path() {
+  echo /etc/systemd/system/$(tester_member_status_updater_systemd_unit_name)
+}
+
+tester_log() {
+  echo tester: "${@}" 1>&2
+}
+
+tester_num_running_nodes_file() {
+  local d
+  d=$(tester_work_dir)
+  echo "${d}/num-running-nodes"
+}
+
+tester_set_num_running_nodes() {
+  local f
+  f=$(tester_num_running_nodes_file)
+  _run_as_root bash -c "echo $1 > $f"
+  tester_log number of nodes set to $1
+}
+
+tester_work_dir() {
+  echo ${TESTER_WORK_DIR:?missing required env}
+}
+
+tester_cloud_config_file() {
+  echo $(tester_work_dir)/cloud-config
+}
+
+tester_generate_cloud_config_file() {
+  mkdir -p $(member_snapshots_dir_name)
+  cat > $(tester_cloud_config_file) << EOS
+#cloud-config
+coreos:
+  units:
+EOS
+  tester_each_member tester_append_member_to_cloud_config_file
+  tester_log starting coreos-cloudinit...
+  sudo /usr/bin/coreos-cloudinit --from-file $(tester_cloud_config_file)
+  tester_log coreos-cloudinit finished
+  tester_log reloading systemd
+  sudo systemctl daemon-reload
+  tester_log reloaded systemd
+}
+
+tester_each_member() {
+  for i in $(cluster_member_indices); do
+    tester_log $(ETCDADM_MEMBER_INDEX=$i member_name): running "$@"
+    ETCDADM_MEMBER_INDEX=$i $1 "${@:2}"
+  done
+}
+
+tester_start_member() {
+  tester_log starting $(member_name)
+  sudo systemctl start $(config_member_systemd_unit_name)
+  tester_log started $(member_name)
+}
+
+tester_create_configurator_systemd_unit() {
+  local unit_file
+  unit_file=$(tester_member_configurator_systemd_unit_path)
+  tester_log creating the reconfiguration service for the etcd service
+  _run_as_root bash -c "cat > ${unit_file} << EOS
+[Unit]
+Description=$(tester_member_configurator_systemd_unit_name)
+BindsTo=$(config_member_systemd_unit_name)
+Before=$(config_member_systemd_unit_name)
+Wants=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+#Setting to simple ends up etcd-member.service to hang up while starting
+#Type=simple
+#Restart=on-failure
+RestartSec=5
+Environment=AWS_ACCESS_KEY_ID=$aws_access_key_id
+Environment=AWS_SECRET_ACCESS_KEY=$aws_secret_access_key
+Environment=AWS_DEFAULT_REGION=$aws_region
+Environment=ETCD_CLUSTER_FAILURE_PERIOD_LIMIT=$(cluster_failure_period_limit)
+Environment=ETCD_MEMBER_FAILURE_PERIOD_LIMIT=$(member_failure_period_limit)
+Environment=TESTER_WORK_DIR=$(tester_work_dir)
+Environment=ETCD_INITIAL_CLUSTER=$(config_etcd_initial_cluster)
+Environment=ETCD_ENDPOINTS=$(config_etcd_endpoints)
+Environment=ETCD_DATA_DIR=$(member_data_dir)
+Environment=TEST_MODE=1
+Environment=ETCDADM_MEMBER_COUNT=$member_count
+Environment=ETCDADM_MEMBER_INDEX=$(config_member_index)
+Environment=ETCDADM_STATE_FILES_DIR=$(config_state_dir)
+Environment=ETCDADM_CLUSTER_SNAPSHOTS_S3_URI=$cluster_snapshots_s3_uri
+ExecStart=$(pwd)/etcdadm reconfigure
+EOS
+"
+}
+
+tester_create_status_updater_systemd_unit() {
+  local unit_file
+  unit_file=$(tester_member_status_updater_systemd_unit_path)
+  tester_log creating a status updater service for the etcd service
+  _run_as_root bash -c "cat > ${unit_file} << EOS
+[Unit]
+Description=etcdadm update status
+BindsTo=$(config_member_systemd_unit_name)
+After=$(config_member_systemd_unit_name)
+Wants=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+RestartSec=5
+Environment=AWS_ACCESS_KEY_ID=$aws_access_key_id
+Environment=AWS_SECRET_ACCESS_KEY=$aws_secret_access_key
+Environment=AWS_DEFAULT_REGION=$aws_region
+Environment=ETCD_CLUSTER_FAILURE_PERIOD_LIMIT=$(cluster_failure_period_limit)
+Environment=ETCD_MEMBER_FAILURE_PERIOD_LIMIT=$(member_failure_period_limit)
+Environment=TESTER_WORK_DIR=$(tester_work_dir)
+Environment=ETCD_INITIAL_CLUSTER=$(config_etcd_initial_cluster)
+Environment=ETCD_ENDPOINTS=$(config_etcd_endpoints)
+Environment=ETCD_DATA_DIR=$(member_data_dir)
+Environment=TEST_MODE=1
+Environment=ETCDADM_MEMBER_COUNT=$member_count
+Environment=ETCDADM_MEMBER_INDEX=$(config_member_index)
+Environment=ETCDADM_STATE_FILES_DIR=$(config_state_dir)
+Environment=ETCDADM_CLUSTER_SNAPSHOTS_S3_URI=$cluster_snapshots_s3_uri
+ExecStart=$(pwd)/etcdadm member_status_set_started
+TimeoutStartSec=120
+EOS
+"
+}
+
+tester_create_checker_systemd_unit() {
+  local timer
+  local name
+  name="$(config_member_systemd_service_name)-check"
+  timer="/etc/systemd/system/${name}.timer"
+  tester_log creating check timer for etcd
+  _run_as_root bash -c "cat > ${timer} << EOS
+[Unit]
+Description=periodic etcd health check
+
+[Timer]
+OnBootSec=60sec
+# Actual interval would be 10+0~5 sec
+OnUnitInactiveSec=10sec
+AccuracySec=5sec
+
+[Install]
+WantedBy=timers.target
+EOS
+"
+  service="/etc/systemd/system/${name}.service"
+  tester_log creating check service for etcd
+  _run_as_root bash -c "cat > ${service} << EOS
+[Unit]
+Description=etcd health check
+Wants=network.target
+Wants=$(config_member_systemd_unit_name)
+After=$(config_member_systemd_unit_name)
+
+[Service]
+Type=simple
+Environment=AWS_ACCESS_KEY_ID=$aws_access_key_id
+Environment=AWS_SECRET_ACCESS_KEY=$aws_secret_access_key
+Environment=AWS_DEFAULT_REGION=$aws_region
+Environment=ETCD_CLUSTER_FAILURE_PERIOD_LIMIT=$(cluster_failure_period_limit)
+Environment=ETCD_MEMBER_FAILURE_PERIOD_LIMIT=$(member_failure_period_limit)
+Environment=TESTER_WORK_DIR=$(tester_work_dir)
+Environment=ETCD_INITIAL_CLUSTER=$(config_etcd_initial_cluster)
+Environment=ETCD_ENDPOINTS=$(config_etcd_endpoints)
+Environment=ETCD_DATA_DIR=$(member_data_dir)
+Environment=TEST_MODE=1
+Environment=ETCDADM_MEMBER_COUNT=$member_count
+Environment=ETCDADM_MEMBER_INDEX=$(config_member_index)
+Environment=ETCDADM_STATE_FILES_DIR=$(config_state_dir)
+Environment=ETCDADM_CLUSTER_SNAPSHOTS_S3_URI=$cluster_snapshots_s3_uri
+ExecStart=$(pwd)/etcdadm check
+EOS
+"
+  _run_as_root systemctl daemon-reload
+  _run_as_root systemctl stop ${name}.service
+  _run_as_root systemctl restart ${name}.timer
+}
+
+tester_create_snapshot_systemd_unit() {
+  local timer
+  local name
+  name="$(config_member_systemd_service_name)-snapshot"
+  timer="/etc/systemd/system/${name}.timer"
+  tester_log creating check timer for etcd
+  _run_as_root bash -c "cat > ${timer} << EOS
+[Unit]
+Description=periodic etcd snapshot
+
+[Timer]
+OnBootSec=120sec
+# Actual interval would be 10+0~5 sec
+OnUnitInactiveSec=60sec
+AccuracySec=5sec
+
+[Install]
+WantedBy=timers.target
+EOS
+"
+  service="/etc/systemd/system/${name}.service"
+  tester_log creating check service for etcd
+  _run_as_root bash -c "cat > ${service} << EOS
+[Unit]
+Description=etcd snapshot
+Wants=network.target
+Wants=$(config_member_systemd_unit_name)
+After=$(config_member_systemd_unit_name)
+
+[Service]
+Type=simple
+Environment=AWS_ACCESS_KEY_ID=$aws_access_key_id
+Environment=AWS_SECRET_ACCESS_KEY=$aws_secret_access_key
+Environment=AWS_DEFAULT_REGION=$aws_region
+Environment=ETCD_CLUSTER_FAILURE_PERIOD_LIMIT=$(cluster_failure_period_limit)
+Environment=ETCD_MEMBER_FAILURE_PERIOD_LIMIT=$(member_failure_period_limit)
+Environment=TESTER_WORK_DIR=$(tester_work_dir)
+Environment=ETCD_INITIAL_CLUSTER=$(config_etcd_initial_cluster)
+Environment=ETCD_ENDPOINTS=$(config_etcd_endpoints)
+Environment=ETCD_DATA_DIR=$(member_data_dir)
+Environment=TEST_MODE=1
+Environment=ETCDADM_MEMBER_COUNT=$member_count
+Environment=ETCDADM_MEMBER_INDEX=$(config_member_index)
+Environment=ETCDADM_STATE_FILES_DIR=$(config_state_dir)
+Environment=ETCDADM_CLUSTER_SNAPSHOTS_S3_URI=$cluster_snapshots_s3_uri
+Restart=no
+ExecStartPre=/usr/bin/systemctl is-active $(config_member_systemd_unit_name)
+ExecStart=$(pwd)/etcdadm save
+EOS
+"
+  _run_as_root systemctl daemon-reload
+  _run_as_root systemctl stop ${name}.service
+  _run_as_root systemctl restart ${name}.timer
+}
+
+tester_simulate_node_startup() {
+  tester_set_num_running_nodes $(( $(cluster_num_running_nodes) + 1 ))
+  tester_log num running nodes is now $(cluster_num_running_nodes)
+  tester_start_member
+}
+
+tester_stop_member() {
+  if systemctl status $(config_member_systemd_unit_name) >/dev/null 2>&1; then
+    tester_log stopping $(member_name)
+    # Required for the initial author to prevent `systemctl stop` from failing due to a `Job for etcd-member-x.service canceled.` error,
+    # whose cause is still unknown to the author
+    sleep 1
+    sudo systemctl stop $(config_member_systemd_unit_name)
+    tester_log stopped $(member_name)
+  else
+    tester_log $(member_name) is already stopped
+  fi
+}
+
+tester_simulate_permanent_member_failure() {
+  tester_stop_member
+  member_failure_beginning_time_set 0
+}
+
+tester_simulate_temporary_member_failure() {
+  tester_stop_member
+  member_failure_beginning_time_clear
+}
+
+tester_simulate_permanent_cluster_failure() {
+  for i in $(cluster_member_indices); do
+    ETCDADM_MEMBER_INDEX=$i tester_simulate_permanent_member_failure
+    ETCDADM_MEMBER_INDEX=$i cluster_failure_beginning_time_set 0
+  done
+}
+
+tester_break_member() {
+  local d
+  d=$(member_data_dir)
+  svc=$(config_member_systemd_service_name)
+  _run_as_root bash -ec "echo breakit > ${d}/member/wal/0000000000000000-0000000000000000.wal
+ls -lah ${d}/member/wal
+systemctl stop ${svc}
+"
+}
+
+tester_break_cluster() {
+  for i in 0 1 2; do
+    ETCDADM_MEMBER_INDEX=$i tester_break_member
+  done
+}
+
+tester_trigger_disaster_recovery() {
+  tester_break_cluster
+
+  sleep 80
+
+  for i in 0 1 2; do
+    sudo systemctl start etcd-member-${i}.service
+  done
+}
+
+tester_put_v3() {
+  tester_log writing v3 key $1=$2
+  member_etcdctl put "${@:1}"
+}
+
+tester_put_v2() {
+  tester_log writing v2 key $1=$2
+  member_etcdctl_v2 set "${@:1}"
+}
+
+tester_get_v3() {
+  tester_log reading v3 key "${@:1}"
+  status=-1
+  until [ "$status" == "0" ]; do
+    member_etcdctl --consistency l get "${@:1}"
+    status=$?
+    if [ "$status" != "0" ]; then
+      tester_log failed to read. retrying...
+    fi
+  done
+}
+
+tester_get_v2() {
+  tester_log reading v2 key "${@:1}"
+  status=-1
+  until [ "$status" == "0" ]; do
+    member_etcdctl_v2 get "${@:1}"
+    status=$?
+    if [ "$status" != "0" ]; then
+      tester_log failed to read. retrying...
+    fi
+  done
+}
+
+tester_assert_v3_key_missing() {
+  tester_log checking v3 key "${@:1}"
+  (member_etcdctl --consistency l get "${@:1}" && echo expected the key to be missing but it was not 1>&2) || echo key not found, as expected 1>2
+}
+
+tester_assert_v2_key_missing() {
+  tester_log checking v2 key "${@:1}"
+  (member_etcdctl_v2 get "${@:1}" && echo expected the key to be missing but it was not 1>&2) || echo key not found, as expected 1>2
+}
+
+tester_cluster_health() {
+  member_etcdctl_v2 cluster-health
+}
+
+tester_member_is_ready() {
+  # If you mistakenly used ETCDCTL_API=2 here, a get request with ETCDCTL_API=3 may end up with:
+  # "[29444.043939] etcd[5]: Error:  context deadline exceeded"
+  member_etcdctl endpoint health >/dev/null 2>&1 && echo yes || echo no
+}
+
+tester_wait_until_ready() {
+  tester_log waiting until $(member_name) is ready...
+  until [ "$(tester_member_is_ready)" == "yes" ]; do
+    sleep 1
+  done
+  tester_log testing v2 api...
+  until tester_put_v2 /ready yes; do
+    sleep 1
+  done
+  tester_log testing v3 api...
+  until tester_put_v3 /ready yes; do
+    sleep 1
+  done
+  tester_log $(member_name) is now ready
+}
+
+tester_systemd_ensure_stopped() {
+  local unit=$1
+  if systemctl is-enabled "$unit"; then
+    _run_as_root systemctl stop "$unit"
+  fi
+}
+
+tester_bootstrap_cluster() {
+  mkdir -p $(tester_work_dir)
+
+  local num_nodes_file
+  num_nodes_file=$(tester_num_running_nodes_file)
+  if [ -f "${num_nodes_file}" ]; then
+    rm $(tester_num_running_nodes_file)
+  fi
+
+  for i in $(cluster_member_indices); do
+    setup() {
+      tester_stop_member
+
+      tester_systemd_ensure_stopped $(config_member_systemd_service_name)-check.timer
+      tester_systemd_ensure_stopped $(config_member_systemd_service_name)-snapshot.timer
+
+      sleep 3
+
+      tester_remove_data_dir
+      tester_remove_state_dir
+      member_status_clear
+      tester_clean_local_snapshots
+      tester_clean_remote_snapshots
+
+      tester_log removing file $(cluster_failure_beginning_time_file)
+      cluster_failure_beginning_time_clear
+
+      tester_log creating directory $(member_host_snapshots_dir_path)
+      sudo mkdir -p $(member_host_snapshots_dir_path)
+
+      tester_create_data_dir
+    }
+    ETCDADM_MEMBER_INDEX=$i setup
+  done
+  tester_each_member member_failure_beginning_time_clear
+
+  tester_generate_cloud_config_file
+
+  tester_each_member tester_create_checker_systemd_unit
+  tester_each_member tester_create_configurator_systemd_unit
+  tester_each_member tester_create_status_updater_systemd_unit
+  tester_each_member tester_create_snapshot_systemd_unit
+  tester_each_member tester_bind_configurator_systemd_unit
+  tester_each_member tester_bind_status_updater_systemd_unit
+  _run_as_root systemctl daemon-reload
+
+  tester_each_member tester_simulate_node_startup
+  tester_each_member tester_wait_until_ready
+  tester_log reading values from a brand-new etcd cluster... 1>&2
+  tester_each_member tester_assert_v3_key_missing /foo
+  tester_each_member tester_assert_v2_key_missing /foo
+  ETCDADM_MEMBER_INDEX=0 tester_put_v3 /foo FOO_v3
+  ETCDADM_MEMBER_INDEX=0 tester_put_v2 /foo FOO_v2
+  tester_log reading values written just now... 1>&2
+  tester_each_member tester_get_v3 /foo
+  tester_each_member tester_get_v2 /foo
+  tester_each_member tester_cluster_health
+}
+
+tester_run_all_tests() {
+  tester_bootstrap_cluster
+
+  for i in $(cluster_member_indices); do
+    setup() {
+      tester_systemd_ensure_stopped $(config_member_systemd_service_name)-check.timer
+      tester_systemd_ensure_stopped $(config_member_systemd_service_name)-snapshot.timer
+      sleep 3
+      tester_clean_local_snapshots
+      tester_clean_remote_snapshots
+      sudo mkdir -p $(member_host_snapshots_dir_path)
+    }
+    ETCDADM_MEMBER_INDEX=$i setup
+  done
+
+  echo
+  echo started testing recovery from temporary cluster failure
+  echo
+
+  tester_each_member tester_simulate_temporary_member_failure
+  tester_each_member tester_start_member
+  tester_each_member tester_wait_until_ready
+
+  echo reading values after all the members are restarted... 1>&2
+  tester_each_member tester_get_v3 /foo
+  tester_each_member tester_get_v2 /foo
+  tester_each_member tester_cluster_health
+
+  echo
+  echo finished testing recovery from temporary cluster failure
+  echo
+
+  # Disaster recovery: Static cluster bootstrap from snapshots (ETCD_INITIAL_CLUSTER_STATE=new)
+  echo
+  echo started testing recovery from permanent cluster failure
+  echo
+
+  ETCDADM_MEMBER_INDEX=0 tester_put_v3 /foo VALUE_NOT_READ_v3
+  ETCDADM_MEMBER_INDEX=0 tester_put_v2 /foo VALUE_NOT_READ_v2
+  tester_each_member member_save_snapshot
+  ETCDADM_MEMBER_INDEX=0 tester_put_v3 /foo VALUE_NOT_READ_v3
+  ETCDADM_MEMBER_INDEX=0 tester_put_v2 /foo VALUE_NOT_READ_v2
+  ETCDADM_MEMBER_INDEX=1 member_save_snapshot
+  ETCDADM_MEMBER_INDEX=0 tester_put_v3 /foo VALUE_TO_BE_RESTORED_v3
+  ETCDADM_MEMBER_INDEX=0 tester_put_v2 /foo VALUE_TO_BE_RESTORED_v2
+  ETCDADM_MEMBER_INDEX=2 member_save_snapshot
+  ETCDADM_MEMBER_INDEX=0 tester_put_v3 /foo VALUE_TO_BE_LOST_v3
+  ETCDADM_MEMBER_INDEX=0 tester_put_v2 /foo VALUE_TO_BE_LOST_v2
+  # CAUTION: If we used each member's own snapshot to recover the member, the data can be inconsistent
+  # So ensure that all the members reads from the same snapshot taken from a single member
+  echo reading values written just now... 1>&2
+  tester_each_member tester_get_v3 /foo
+  tester_each_member tester_get_v2 /foo
+  tester_simulate_permanent_cluster_failure
+  tester_each_member tester_start_member
+  tester_each_member tester_wait_until_ready
+
+  echo reading values restored just now... 1>&2
+  tester_each_member tester_get_v3 /foo
+  tester_each_member tester_assert_v2_key_missing /foo
+  tester_each_member tester_cluster_health
+
+  echo
+  echo finished testing recovery from permanent cluster failure
+  echo
+
+  echo
+  echo started testing recovery from temporary member failures
+  echo
+
+  for i in $(cluster_member_indices); do
+    setup() {
+      echo started testing $(member_name)
+      tester_simulate_temporary_member_failure
+      sleep 3
+      tester_start_member
+      tester_wait_until_ready
+      sleep 3
+      tester_cluster_health
+      tester_get_v3 /foo
+      tester_assert_v2_key_missing /foo
+      echo finished testing $(member_name)
+    }
+    ETCDADM_MEMBER_INDEX=$i setup
+  done
+
+  echo
+  echo finished testing recovery from temporary member failures
+  echo
+
+  #member_stop 0
+  # (1) this procedure ends up with the well-known error:
+  # "panic: tocommit(19) is out of range [lastIndex(0)]. Was the raft log corrupted, truncated, or lost?"
+  #member_clean 0
+  #member_set_initial_cluster_state_to_existing 0
+  #member_start 0
+  # (2) this procedure ends up with the well-known error:
+  # "panic: tocommit(19) is out of range [lastIndex(<non zero value>)]. Was the raft log corrupted, truncated, or lost?"
+  #member_restore 0
+  #member_set_initial_cluster_state_to_existing 0
+  #member_start 0
+
+  # Dynamic reconfiguration: replace etcd members with corrupted data one by one (ETCD_INITIAL_CLUSTER_STATE=existing)
+  echo
+  echo started testing recovery from permanent member failures
+  echo
+
+  for i in $(cluster_member_indices); do
+    {
+      export ETCDADM_MEMBER_INDEX=$i
+      echo started testing $(member_name)
+      tester_simulate_permanent_member_failure
+      sleep 3
+      tester_start_member
+      tester_wait_until_ready
+      sleep 3
+      tester_cluster_health
+      tester_get_v3 /foo
+      tester_assert_v2_key_missing /foo
+      echo finished testing $(member_name)
+      unset ETCDADM_MEMBER_INDEX
+    }
+  done
+
+  echo
+  echo finished testing recovery from permanent member failures
+  echo
+
+  echo all the tests passed. tailing log...
+  tester_cluster_tail
+}
+
+test_main() {
+  local cmd=$1
+
+  case "${cmd}" in
+    "integration" )
+      tester_run_all_tests
+      ;;
+    "bootstrap" )
+      tester_bootstrap_cluster
+      ;;
+    * )
+      if [ "$(type -t "$cmd")" == "function" ]; then
+        "$cmd" "${@:2}"
+      else
+        echo "Unexpected command: $cmd" 1>&2
+        exit 1
+      fi
+      ;;
+  esac
+}
+
+if [[ "$0" == *test ]]; then
+  if [ -f test.env ]; then
+    echo loading test.env 1>&2
+    eval $(cat test.env)
+  fi
+  echo loading etcdadm 1>&2
+  source etcdadm
+  echo loaded.
+  test_main "$@"
+  exit $?
+fi
