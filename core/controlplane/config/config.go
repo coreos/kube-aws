@@ -996,16 +996,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 		if err != nil {
 			return nil, err
 		}
-		return nil, fmt.Errorf("kubelet bootstrap token not found in ./credentials/tokens.csv.\n\nTo fix this, please append the following line to ./credentials.tokens.csv:\n%s", bootstrapRecord)
-
-	}
-
-	if len(stackConfig.Config.AuthTokensConfig.KubeletBootstrapToken) == 0 && c.DeploymentSettings.Experimental.TLSBootstrap.Enabled {
-		bootstrapRecord, err := RandomBootstrapTokenRecord()
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("kubelet bootstrap token not found in ./credentials/tokens.csv\n\nTo fix this, append the following line to ./credentials.tokens.csv:\n%s", bootstrapRecord)
+		return nil, fmt.Errorf("kubelet bootstrap token not found in ./credentials/tokens.csv.\n\nTo fix this, please append the following line to ./credentials/tokens.csv:\n%s", bootstrapRecord)
 	}
 
 	stackConfig.StackTemplateOptions = opts
