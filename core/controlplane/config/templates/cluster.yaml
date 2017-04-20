@@ -1071,6 +1071,43 @@ addons:
 #   # When enabled, `kubectl drain` is run on the node going to shut-down
 #   nodeDrainer:
 #     enabled: true
+#   # Enable dex  integration - https://github.com/coreos/dex
+#   # Configure OpenID Connect token authenticator plugin in Kubernetes API server. Notice: always use "https" for the "url",
+#   # otherwise the Kubernetes API server will not start correctly. The "caFile" can be skipped if you use a certificate signed
+#   # by a trusted CA.
+#   dex:
+#     enabled: true
+#     url: "https://dex.example.com"
+#     clientId: "example-app"
+#     username: "email"
+#     groups: "groups"
+#     caFile: "/etc/kubernetes/ssl/openid-ca.pem"
+#
+#   # Dex connectors configuration. You can add configuration for the desired connectors suported by dex or
+#   # skip this part if you don't plan to use any of them. Here is an example of GitHub connector.
+#     connectors:
+#     - type: github
+#       id: github
+#       name: GitHub
+#       config:
+#         ClientId: "your_client_id"
+#         clientSecret: "your_client_secret"
+#         redirectURI: https://dex.example.com/callback
+#         org: your_organization
+#   # Configure static clients and users
+#     staticClients:
+#     - id: 'example-app'
+#       redirectURIs: 'http://127.0.0.1:5555/callback'
+#       name: 'Example App'
+#       secret: 'ZXhhbXBsZS1hcHAtc2VjcmV0'
+#
+#     staticPasswords:
+#     - email: 'admin@example.com'
+#       # bcrypt hash of the string "password". You can use bcrypt-tool from CoreOS to generate the passwords.
+#       hash: '$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W'
+#       username: 'admin'
+#       userID: '08a8684b-db88-4b73-90a9-3cd1661f5466'
+#
 #   # Kubernetes node labels to be added to controller nodes
 #   nodeLabels:
 #     kube-aws.coreos.com/role: worker

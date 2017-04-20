@@ -88,6 +88,17 @@ func NewDefaultCluster() *Cluster {
 			},
 		},
 		Taints: []Taint{},
+		Dex: Dex{
+			Enabled:         false,
+			Url:             "https://dex.example.com",
+			ClientId:        "example-app",
+			Username:        "email",
+			Groups:          "groups",
+			CaFile:          "",
+			Connectors:      []Connector{},
+			StaticClients:   []StaticClient{},
+			StaticPasswords: []StaticPassword{},
+		},
 	}
 
 	return &Cluster{
@@ -119,6 +130,7 @@ func NewDefaultCluster() *Cluster {
 			CalicoCtlImage:              model.Image{Repo: "calico/ctl", Tag: "v1.1.0", RktPullDocker: false},
 			PauseImage:                  model.Image{Repo: "gcr.io/google_containers/pause-amd64", Tag: "3.0", RktPullDocker: false},
 			FlannelImage:                model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.6.2", RktPullDocker: false},
+			DexImage:                    model.Image{Repo: "quay.io/coreos/dex", Tag: "v2.4.0", RktPullDocker: false},
 		},
 		KubeClusterSettings: KubeClusterSettings{
 			DNSServiceIP: "10.3.0.10",
@@ -493,6 +505,7 @@ type DeploymentSettings struct {
 	KubeDashboardImage          model.Image `yaml:"kubeDashboardImage,omitempty"`
 	PauseImage                  model.Image `yaml:"pauseImage,omitempty"`
 	FlannelImage                model.Image `yaml:"flannelImage,omitempty"`
+	DexImage                    model.Image `yaml:"dexImage,omitempty"`
 }
 
 // Part of configuration which is specific to worker nodes
@@ -666,6 +679,7 @@ type Experimental struct {
 	NodeDrainer                 NodeDrainer              `yaml:"nodeDrainer"`
 	NodeLabels                  NodeLabels               `yaml:"nodeLabels"`
 	Plugins                     Plugins                  `yaml:"plugins"`
+	Dex                         Dex                      `yaml:"dex"`
 	DisableSecurityGroupIngress bool                     `yaml:"disableSecurityGroupIngress"`
 	NodeMonitorGracePeriod      string                   `yaml:"nodeMonitorGracePeriod"`
 	Taints                      []Taint                  `yaml:"taints"`
@@ -730,6 +744,39 @@ type KubeResourcesAutosave struct {
 
 type NodeDrainer struct {
 	Enabled bool `yaml:"enabled"`
+}
+
+type Dex struct {
+	Enabled         bool             `yaml:"enabled"`
+	Url             string           `yaml:"url"`
+	ClientId        string           `yaml:"clientId"`
+	Username        string           `yaml:"username"`
+	Groups          string           `yaml:"groups",omitempty`
+	CaFile          string           `yaml:"caFile",omitempty`
+	Connectors      []Connector      `yaml:"connectors",omitempty`
+	StaticClients   []StaticClient   `yaml:"staticClients"`
+	StaticPasswords []StaticPassword `yaml:"staticPasswords"`
+}
+
+type Connector struct {
+	Type   string            `yaml:"type"`
+	Id     string            `yaml:"id"`
+	Name   string            `yaml:"name"`
+	Config map[string]string `yaml:"config"`
+}
+
+type StaticClient struct {
+	Id           string `yaml:"id"`
+	RedirectURIs string `yaml:"redirectURIs"`
+	Name         string `yaml:"name"`
+	Secret       string `yaml:"secret"`
+}
+
+type StaticPassword struct {
+	Email    string `yaml:"email"`
+	Hash     string `yaml:"hash"`
+	Username string `yaml:"username"`
+	UserId   string `yaml:"userID"`
 }
 
 type NodeLabels map[string]string

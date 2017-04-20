@@ -621,6 +621,16 @@ write_files:
       {{ end }}
       {{ end }}
 
+      {{ if .Experimental.Dex.Enabled }}
+      if kubectl get cm dex -n kube-system;
+        then echo "Configmap for dex already exists and could have been customized. Skipping."; 
+      else 
+        mfdir=/srv/kubernetes/manifests
+        kubectl apply -f "${mfdir}/dex-cm.yaml"
+        kubectl apply -f "${mfdir}/dex-deployment.yaml";
+      fi
+      {{ end }}
+
   - path: /etc/kubernetes/cni/docker_opts_cni.env
     content: |
       DOCKER_OPT_BIP=""
@@ -1263,6 +1273,19 @@ write_files:
           - --advertise-address=$private_ipv4
           - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }},ResourceQuota
           - --anonymous-auth=false
+          {{if .Experimental.Dex.Enabled}}
+          - --oidc-issuer-url={{.Experimental.Dex.Url}}
+          - --oidc-client-id={{.Experimental.Dex.ClientId}}
+          {{if .Experimental.Dex.Username}}
+          - --oidc-username-claim={{.Experimental.Dex.Username}}
+          {{ end -}}
+          {{if .Experimental.Dex.Groups}}
+          - --oidc-groups-claim={{.Experimental.Dex.Groups}}
+          {{ end -}}
+          {{if .Experimental.Dex.CaFile}}
+          - --oidc-ca-file={{.Experimental.Dex.CaFile}}
+          {{ end -}}
+          {{ end -}}
           - --cert-dir=/etc/kubernetes/ssl
           - --tls-cert-file=/etc/kubernetes/ssl/apiserver.pem
           - --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
@@ -1917,3 +1940,111 @@ write_files:
            echo "Finished Loading EFS Persistent Volume"'
 
 {{ end }}
+{{if .Experimental.Dex.Enabled}}
+  - path: /srv/kubernetes/manifests/dex-deployment.yaml
+    content: |
+      apiVersion: extensions/v1beta1
+      kind: Deployment
+      metadata:
+        name: dex
+        namespace: kube-system
+        labels:
+          app: dex
+          component: identity
+        annotations:
+          scheduler.alpha.kubernetes.io/critical-pod: ''
+      spec:
+        replicas: 1
+        minReadySeconds: 30
+        strategy:
+          rollingUpdate:
+            maxUnavailable: 0
+        template:
+          metadata:
+            name: dex
+            labels:
+              app: dex
+              component: identity
+          spec:
+            volumes:
+            - name: config
+              configMap:
+                name: dex
+                items:
+                - key: config.yaml
+                  path: config.yaml
+            containers:
+            - name: dex
+              imagePullPolicy: IfNotPresent
+              image: {{.DexImage.RepoWithTag}}
+              command: ["/usr/local/bin/dex", "serve", "/etc/dex/config.yaml"]
+              volumeMounts:
+              - name: config
+                mountPath: /etc/dex
+              ports:
+              - containerPort: 5556
+                protocol: TCP
+              livenessProbe:
+                httpGet:
+                  path: /healthz
+                  port: 5556
+                initialDelaySeconds: 5
+                timeoutSeconds: 1
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 50Mi
+                limits:
+                  cpu: 100m
+                  memory: 50Mi
+
+  - path: /srv/kubernetes/manifests/dex-cm.yaml
+    content: |
+      kind: ConfigMap
+      apiVersion: v1
+      metadata:
+        name: dex
+        namespace: kube-system
+      data:
+        config.yaml: |
+          issuer: {{.Experimental.Dex.Url}}
+          storage:
+            type: kubernetes
+            config:
+              inCluster: true
+          web:
+            http: 0.0.0.0:5556
+          frontend:
+            theme: 'coreos'
+            issuer: 'KubeAWS Identity'
+          {{ if .Experimental.Dex.Connectors -}}
+          connectors:
+            {{- range $connector := .Experimental.Dex.Connectors }}
+            - type: {{ $connector.Type }}
+              id: {{ $connector.Id }}
+              name: {{ $connector.Name }}
+              config:
+                {{ range $key, $value := $connector.Config -}}
+                {{ $key }}: {{ $value }}
+                {{ end -}}
+            {{ end -}}
+          {{- end }}
+          oauth2:
+            skipApprovalScreen: true
+          staticClients:
+          {{- range $staticClient := .Experimental.Dex.StaticClients }}
+          - id: '{{ $staticClient.Id }}'
+            redirectURIs:
+            - '{{ $staticClient.RedirectURIs }}'
+            name: '{{ $staticClient.Name }}'
+            secret: '{{ $staticClient.Secret }}'
+          {{- end }}
+          enablePasswordDB: true
+          {{- range $staticPassword := .Experimental.Dex.StaticPasswords }}
+          staticPasswords:
+          - email: '{{ $staticPassword.Email }}'
+            hash: '{{ $staticPassword.Hash }}'
+            username: '{{ $staticPassword.Username }}'
+            userID: '{{ $staticPassword.UserId }}'
+         {{ end -}}
+  {{ end }}
