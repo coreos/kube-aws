@@ -751,9 +751,9 @@ type Dex struct {
 	Url             string           `yaml:"url"`
 	ClientId        string           `yaml:"clientId"`
 	Username        string           `yaml:"username"`
-	Groups          string           `yaml:"groups",omitempty`
-	CaFile          string           `yaml:"caFile",omitempty`
-	Connectors      []Connector      `yaml:"connectors",omitempty`
+	Groups          string           `yaml:"groups,omitempty"`
+	CaFile          string           `yaml:"caFile,omitempty"`
+	Connectors      []Connector      `yaml:"connectors,omitempty"`
 	StaticClients   []StaticClient   `yaml:"staticClients"`
 	StaticPasswords []StaticPassword `yaml:"staticPasswords"`
 }
