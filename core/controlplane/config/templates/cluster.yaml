@@ -1081,7 +1081,7 @@ addons:
 #     clientId: "example-app"
 #     username: "email"
 #     groups: "groups"
-#     caFile: "/etc/kubernetes/ssl/openid-ca.pem"
+#     caFile: "/etc/kubernetes/ssl/ca.pem"
 #
 #   # Dex connectors configuration. You can add configuration for the desired connectors suported by dex or
 #   # skip this part if you don't plan to use any of them. Here is an example of GitHub connector.

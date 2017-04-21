@@ -1,5 +1,9 @@
 package model
 
+import (
+	"net/url"
+)
+
 type Dex struct {
 	Enabled         bool             `yaml:"enabled"`
 	Url             string           `yaml:"url"`
@@ -31,4 +35,9 @@ type StaticPassword struct {
 	Hash     string `yaml:"hash"`
 	Username string `yaml:"username"`
 	UserId   string `yaml:"userID"`
+}
+
+func (c Dex) DexDNSNames() string {
+	u, _ := url.Parse(c.Url)
+	return u.Host
 }

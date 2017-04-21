@@ -33,6 +33,8 @@ type RawTLSAssetsOnMemory struct {
 	EtcdClientCert []byte
 	EtcdKey        []byte
 	EtcdClientKey  []byte
+	DexCert        []byte
+	DexKey         []byte
 }
 
 // PEM encoded TLS assets.
@@ -49,6 +51,8 @@ type RawTLSAssetsOnDisk struct {
 	EtcdClientCert RawCredentialOnDisk
 	EtcdKey        RawCredentialOnDisk
 	EtcdClientKey  RawCredentialOnDisk
+	DexCert        RawCredentialOnDisk
+	DexKey         RawCredentialOnDisk
 }
 
 // Encrypted PEM encoded TLS assets
@@ -65,6 +69,8 @@ type EncryptedTLSAssetsOnDisk struct {
 	EtcdClientCert EncryptedCredentialOnDisk
 	EtcdKey        EncryptedCredentialOnDisk
 	EtcdClientKey  EncryptedCredentialOnDisk
+	DexCert        EncryptedCredentialOnDisk
+	DexKey         EncryptedCredentialOnDisk
 }
 
 // PEM -> encrypted -> gzip -> base64 encoded TLS assets.
@@ -81,6 +87,8 @@ type CompactTLSAssets struct {
 	EtcdClientCert string
 	EtcdClientKey  string
 	EtcdKey        string
+	DexCert        string
+	DexKey         string
 }
 
 func (c *Cluster) NewTLSCA() (*rsa.PrivateKey, *x509.Certificate, error) {
@@ -127,14 +135,14 @@ func (c *Cluster) NewTLSAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certi
 	certDuration := time.Duration(c.TLSCertDurationDays) * 24 * time.Hour
 
 	// Generate keys for the various components.
-	keys := make([]*rsa.PrivateKey, 5)
+	keys := make([]*rsa.PrivateKey, 6)
 	var err error
 	for i := range keys {
 		if keys[i], err = tlsutil.NewPrivateKey(); err != nil {
 			return nil, err
 		}
 	}
-	apiServerKey, workerKey, adminKey, etcdKey, etcdClientKey := keys[0], keys[1], keys[2], keys[3], keys[4]
+	apiServerKey, workerKey, adminKey, etcdKey, etcdClientKey, dexKey := keys[0], keys[1], keys[2], keys[3], keys[4], keys[5]
 
 	//Compute kubernetesServiceIP from serviceCIDR
 	_, serviceNet, err := net.ParseCIDR(c.ServiceCIDR)
@@ -209,7 +217,16 @@ func (c *Cluster) NewTLSAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certi
 	if err != nil {
 		return nil, err
 	}
+	dexConfig := tlsutil.ServerCertConfig{
+		CommonName: "dex",
+		DNSNames:   []string{c.Experimental.Dex.DexDNSNames()},
+		Duration:   certDuration,
+	}
 
+	dexCert, err := tlsutil.NewSignedServerCertificate(dexConfig, dexKey, caCert, caKey)
+	if err != nil {
+		return nil, err
+	}
 	return &RawTLSAssetsOnMemory{
 		CACert:         tlsutil.EncodeCertificatePEM(caCert),
 		APIServerCert:  tlsutil.EncodeCertificatePEM(apiServerCert),
@@ -217,12 +234,14 @@ func (c *Cluster) NewTLSAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certi
 		AdminCert:      tlsutil.EncodeCertificatePEM(adminCert),
 		EtcdCert:       tlsutil.EncodeCertificatePEM(etcdCert),
 		EtcdClientCert: tlsutil.EncodeCertificatePEM(etcdClientCert),
+		DexCert:        tlsutil.EncodeCertificatePEM(dexCert),
 		CAKey:          tlsutil.EncodePrivateKeyPEM(caKey),
 		APIServerKey:   tlsutil.EncodePrivateKeyPEM(apiServerKey),
 		WorkerKey:      tlsutil.EncodePrivateKeyPEM(workerKey),
 		AdminKey:       tlsutil.EncodePrivateKeyPEM(adminKey),
 		EtcdKey:        tlsutil.EncodePrivateKeyPEM(etcdKey),
 		EtcdClientKey:  tlsutil.EncodePrivateKeyPEM(etcdClientKey),
+		DexKey:         tlsutil.EncodePrivateKeyPEM(dexKey),
 	}, nil
 }
 
@@ -238,6 +257,7 @@ func ReadRawTLSAssets(dirname string) (*RawTLSAssetsOnDisk, error) {
 		{"admin", &r.AdminCert, &r.AdminKey},
 		{"etcd", &r.EtcdCert, &r.EtcdKey},
 		{"etcd-client", &r.EtcdClientCert, &r.EtcdClientKey},
+		{"dex", &r.DexCert, &r.DexKey},
 	}
 	for _, file := range files {
 		certPath := filepath.Join(dirname, file.name+".pem")
@@ -272,6 +292,7 @@ func ReadOrEncryptTLSAssets(dirname string, encryptor CachedEncryptor) (*Encrypt
 		{"admin", &r.AdminCert, &r.AdminKey},
 		{"etcd", &r.EtcdCert, &r.EtcdKey},
 		{"etcd-client", &r.EtcdClientCert, &r.EtcdClientKey},
+		{"dex", &r.DexCert, &r.DexKey},
 	}
 	for _, file := range files {
 		certPath := filepath.Join(dirname, file.name+".pem")
@@ -314,6 +335,7 @@ func (r *RawTLSAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) err
 		{"admin", r.AdminCert, r.AdminKey},
 		{"etcd", r.EtcdCert, r.EtcdKey},
 		{"etcd-client", r.EtcdClientCert, r.EtcdClientKey},
+		{"dex", r.DexCert, r.DexKey},
 	}
 	for _, asset := range assets {
 		certPath := filepath.Join(dirname, asset.name+".pem")
@@ -342,6 +364,7 @@ func (r *EncryptedTLSAssetsOnDisk) WriteToDir(dirname string) error {
 		{"worker", r.WorkerCert, r.WorkerKey},
 		{"admin", r.AdminCert, r.AdminKey},
 		{"etcd", r.EtcdCert, r.EtcdKey},
+		{"dex", r.DexCert, r.DexKey},
 		{"etcd-client", r.EtcdClientCert, r.EtcdClientKey},
 	}
 	for _, asset := range assets {
@@ -383,6 +406,8 @@ func (r *RawTLSAssetsOnDisk) Compact() (*CompactTLSAssets, error) {
 		EtcdClientCert: compact(r.EtcdClientCert),
 		EtcdClientKey:  compact(r.EtcdClientKey),
 		EtcdKey:        compact(r.EtcdKey),
+		DexCert:        compact(r.DexCert),
+		DexKey:         compact(r.DexKey),
 	}
 	if err != nil {
 		return nil, err
@@ -416,6 +441,8 @@ func (r *EncryptedTLSAssetsOnDisk) Compact() (*CompactTLSAssets, error) {
 		EtcdClientCert: compact(r.EtcdClientCert),
 		EtcdClientKey:  compact(r.EtcdClientKey),
 		EtcdKey:        compact(r.EtcdKey),
+		DexCert:        compact(r.DexCert),
+		DexKey:         compact(r.DexKey),
 	}
 	if err != nil {
 		return nil, err

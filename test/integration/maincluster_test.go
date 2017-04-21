@@ -122,7 +122,7 @@ func TestMainClusterConfig(t *testing.T) {
 				ClientId:        "example-app",
 				Username:        "email",
 				Groups:          "groups",
-				CaFile:          "/etc/kubernetes/ssl/openid-ca.pem",
+				CaFile:          "/etc/kubernetes/ssl/ca.pem",
 				Connectors:      []model.Connector{},
 				StaticClients:   []model.StaticClient{},
 				StaticPasswords: []model.StaticPassword{},
@@ -1001,7 +1001,7 @@ experimental:
     clientId: "example-app"
     username: "email"
     groups: "groups"
-    caFile: "/etc/kubernetes/ssl/openid-ca.pem"
+    caFile: "/etc/kubernetes/ssl/ca.pem"
     connectors:
     - type: github
       id: github
@@ -1097,7 +1097,7 @@ worker:
 							ClientId: "example-app",
 							Username: "email",
 							Groups:   "groups",
-							CaFile:   "/etc/kubernetes/ssl/openid-ca.pem",
+							CaFile:   "/etc/kubernetes/ssl/ca.pem",
 							Connectors: []model.Connector{
 								{Type: "github", Id: "github", Name: "GitHub", Config: map[string]string{"clientId": "your_client_id", "clientSecret": "your_client_secret", "redirectURI": "https://dex.example.com/callback", "org": "your_organization"}},
 							},
