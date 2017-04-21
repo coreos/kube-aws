@@ -116,16 +116,16 @@ func TestMainClusterConfig(t *testing.T) {
 			LoadBalancer: controlplane_config.LoadBalancer{
 				Enabled: false,
 			},
-			Dex: controlplane_config.Dex{
+			Dex: model.Dex{
 				Enabled:         false,
 				Url:             "https://dex.example.com",
 				ClientId:        "example-app",
 				Username:        "email",
 				Groups:          "groups",
-				CaFile:          "",
-				Connectors:      []controlplane_config.Connector{},
-				StaticClients:   []controlplane_config.StaticClient{},
-				StaticPasswords: []controlplane_config.StaticPassword{},
+				CaFile:          "/etc/kubernetes/ssl/openid-ca.pem",
+				Connectors:      []model.Connector{},
+				StaticClients:   []model.StaticClient{},
+				StaticPasswords: []model.StaticPassword{},
 			},
 			NodeDrainer: controlplane_config.NodeDrainer{
 				Enabled: false,
@@ -1007,7 +1007,7 @@ experimental:
       id: github
       name: GitHub
       config:
-        ClientId: "your_client_id"
+        clientId: "your_client_id"
         clientSecret: "your_client_secret"
         redirectURI: https://dex.example.com/callback
         org: your_organization
@@ -1091,20 +1091,20 @@ worker:
 							Arns:             []string{"arn:aws:elasticloadbalancing:eu-west-1:xxxxxxxxxxxx:targetgroup/manuallymanagedetg/xxxxxxxxxxxxxxxx"},
 							SecurityGroupIds: []string{"sg-12345678"},
 						},
-						Dex: controlplane_config.Dex{
+						Dex: model.Dex{
 							Enabled:  true,
 							Url:      "https://dex.example.com",
 							ClientId: "example-app",
 							Username: "email",
 							Groups:   "groups",
 							CaFile:   "/etc/kubernetes/ssl/openid-ca.pem",
-							Connectors: []controlplane_config.Connector{
-								{Type: "github", Id: "github", Name: "GitHub", Config: map[string]string{"ClientId": "your_client_id", "clientSecret": "your_client_secret", "redirectURI": "https://dex.example.com/callback", "org": "your_organization"}},
+							Connectors: []model.Connector{
+								{Type: "github", Id: "github", Name: "GitHub", Config: map[string]string{"clientId": "your_client_id", "clientSecret": "your_client_secret", "redirectURI": "https://dex.example.com/callback", "org": "your_organization"}},
 							},
-							StaticClients: []controlplane_config.StaticClient{
+							StaticClients: []model.StaticClient{
 								{Id: "example-app", RedirectURIs: "http://127.0.0.1:5555/callback", Name: "Example App", Secret: "ZXhhbXBsZS1hcHAtc2VjcmV0"},
 							},
-							StaticPasswords: []controlplane_config.StaticPassword{
+							StaticPasswords: []model.StaticPassword{
 								{Email: "admin@example.com", Hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W", Username: "admin", UserId: "08a8684b-db88-4b73-90a9-3cd1661f5466"},
 							},
 						},

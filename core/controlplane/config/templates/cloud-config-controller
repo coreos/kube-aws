@@ -2039,12 +2039,14 @@ write_files:
             name: '{{ $staticClient.Name }}'
             secret: '{{ $staticClient.Secret }}'
           {{- end }}
+          {{if .Experimental.Dex.StaticPasswords -}}
           enablePasswordDB: true
+          {{ end -}}
           {{- range $staticPassword := .Experimental.Dex.StaticPasswords }}
           staticPasswords:
-          - email: '{{ $staticPassword.Email }}'
-            hash: '{{ $staticPassword.Hash }}'
-            username: '{{ $staticPassword.Username }}'
-            userID: '{{ $staticPassword.UserId }}'
+          - email: "{{ $staticPassword.Email }}"
+            hash: "{{ $staticPassword.Hash }}"
+            username: "{{ $staticPassword.Username }}"
+            userID: "{{ $staticPassword.UserId }}"
          {{ end -}}
   {{ end }}
