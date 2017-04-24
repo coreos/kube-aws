@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	k8sVer = "v1.6.1_coreos.0"
+	k8sVer = "v1.6.2_coreos.0"
 
 	credentialsDir = "credentials"
 	userDataDir    = "userdata"
@@ -87,18 +87,8 @@ func NewDefaultCluster() *Cluster {
 				Enabled: false,
 			},
 		},
-		Taints: []Taint{},
-		Dex: model.Dex{
-			Enabled:         false,
-			Url:             "https://dex.example.com",
-			ClientId:        "example-app",
-			Username:        "email",
-			Groups:          "groups",
-			CaFile:          "/etc/kubernetes/ssl/ca.pem",
-			Connectors:      []model.Connector{},
-			StaticClients:   []model.StaticClient{},
-			StaticPasswords: []model.StaticPassword{},
-		},
+
+		Taints: model.Taints{},
 	}
 
 	return &Cluster{
@@ -119,10 +109,10 @@ func NewDefaultCluster() *Cluster {
 			CalicoCniImage:              model.Image{Repo: "quay.io/calico/cni", Tag: "v1.6.2", RktPullDocker: false},
 			CalicoPolicyControllerImage: model.Image{Repo: "quay.io/calico/kube-policy-controller", Tag: "v0.5.4", RktPullDocker: false},
 			ClusterAutoscalerImage:      model.Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64", Tag: "1.0.0", RktPullDocker: false},
-			KubeDnsImage:                model.Image{Repo: "gcr.io/google_containers/kubedns-amd64", Tag: "1.9", RktPullDocker: false},
-			KubeDnsMasqImage:            model.Image{Repo: "gcr.io/google_containers/kube-dnsmasq-amd64", Tag: "1.4", RktPullDocker: false},
+			KubeDnsImage:                model.Image{Repo: "gcr.io/google_containers/k8s-dns-kube-dns-amd64", Tag: "1.14.1", RktPullDocker: false},
+			KubeDnsMasqImage:            model.Image{Repo: "gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64", Tag: "1.14.1", RktPullDocker: false},
 			KubeReschedulerImage:        model.Image{Repo: "gcr.io/google-containers/rescheduler", Tag: "v0.3.0", RktPullDocker: false},
-			DnsMasqMetricsImage:         model.Image{Repo: "gcr.io/google_containers/dnsmasq-metrics-amd64", Tag: "1.0", RktPullDocker: false},
+			DnsMasqMetricsImage:         model.Image{Repo: "gcr.io/google_containers/k8s-dns-sidecar-amd64", Tag: "1.14.1", RktPullDocker: false},
 			ExecHealthzImage:            model.Image{Repo: "gcr.io/google_containers/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
 			HeapsterImage:               model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.3.0", RktPullDocker: false},
 			AddonResizerImage:           model.Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "1.6", RktPullDocker: false},
@@ -157,11 +147,12 @@ func NewDefaultCluster() *Cluster {
 		// for kube-apiserver
 		ServiceCIDR: "10.3.0.0/24",
 		// for base cloudformation stack
-		TLSCADurationDays:   365 * 10,
-		TLSCertDurationDays: 365,
-		CreateRecordSet:     false,
-		RecordSetTTL:        300,
-		CustomSettings:      make(map[string]interface{}),
+		TLSCADurationDays:           365 * 10,
+		TLSCertDurationDays:         365,
+		CreateRecordSet:             false,
+		RecordSetTTL:                300,
+		SSHAccessAllowedSourceCIDRs: model.DefaultCIDRRanges(),
+		CustomSettings:              make(map[string]interface{}),
 		KubeResourcesAutosave: KubeResourcesAutosave{
 			Enabled: false,
 		},
@@ -660,8 +651,10 @@ type Cluster struct {
 	TLSCertDurationDays    int    `yaml:"tlsCertDurationDays,omitempty"`
 	HostedZoneID           string `yaml:"hostedZoneId,omitempty"`
 	ProvidedEncryptService EncryptService
-	CustomSettings         map[string]interface{} `yaml:"customSettings,omitempty"`
-	KubeResourcesAutosave  `yaml:"kubeResourcesAutosave,omitempty"`
+	// SSHAccessAllowedSourceCIDRs is network ranges of sources you'd like SSH accesses to be allowed from, in CIDR notation
+	SSHAccessAllowedSourceCIDRs model.CIDRRanges       `yaml:"sshAccessAllowedSourceCIDRs,omitempty"`
+	CustomSettings              map[string]interface{} `yaml:"customSettings,omitempty"`
+	KubeResourcesAutosave       `yaml:"kubeResourcesAutosave,omitempty"`
 }
 
 type Experimental struct {
@@ -682,7 +675,7 @@ type Experimental struct {
 	Dex                         model.Dex                `yaml:"dex"`
 	DisableSecurityGroupIngress bool                     `yaml:"disableSecurityGroupIngress"`
 	NodeMonitorGracePeriod      string                   `yaml:"nodeMonitorGracePeriod"`
-	Taints                      []Taint                  `yaml:"taints"`
+	Taints                      model.Taints             `yaml:"taints"`
 	model.UnknownKeys           `yaml:",inline"`
 }
 
@@ -785,16 +778,6 @@ type Plugins struct {
 
 type Rbac struct {
 	Enabled bool `yaml:"enabled"`
-}
-
-type Taint struct {
-	Key    string `yaml:"key"`
-	Value  string `yaml:"value"`
-	Effect string `yaml:"effect"`
-}
-
-func (t Taint) String() string {
-	return fmt.Sprintf("%s=%s:%s", t.Key, t.Value, t.Effect)
 }
 
 type WaitSignal struct {
@@ -1345,14 +1328,20 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 
 		allPrivate := true
 		allPublic := true
+		allExistingRouteTable := true
 
 		for i, subnet := range c.Subnets {
 			if subnet.Validate(); err != nil {
 				return nil, fmt.Errorf("failed to validate subnet: %v", err)
 			}
+
+			allExistingRouteTable = allExistingRouteTable && !subnet.ManageRouteTable()
+			allPrivate = allPrivate && subnet.Private
+			allPublic = allPublic && subnet.Public()
 			if subnet.HasIdentifier() {
 				continue
 			}
+
 			if subnet.AvailabilityZone == "" {
 				return nil, fmt.Errorf("availabilityZone must be set for subnet #%d", i)
 			}
@@ -1373,8 +1362,21 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 				return nil, fmt.Errorf("either subnets[].routeTable.id(%s) or routeTableId(%s) but not both can be specified", subnet.RouteTableID(), c.RouteTableID)
 			}
 
-			allPrivate = allPrivate && subnet.Private
-			allPublic = allPublic && subnet.Public()
+			if subnet.ManageSubnet() && (subnet.Public() && c.MapPublicIPs) && c.VPCID != "" && (subnet.ManageRouteTable() && c.RouteTableID == "") && c.InternetGatewayID == "" {
+				return nil, errors.New("internetGatewayId can't be omitted when there're one or more managed public subnets in an existing VPC")
+			}
+		}
+
+		// All the subnets are explicitly/implicitly(they're public by default) configured to be "public".
+		// They're also configured to reuse existing route table(s).
+		// However, the IGW, which won't be applied to anywhere, is specified
+		if (allPublic && c.MapPublicIPs) && (c.RouteTableID != "" || allExistingRouteTable) && c.InternetGatewayID != "" {
+			return nil, errors.New("internetGatewayId can't be specified when all the public subnets have existing route tables associated. kube-aws doesn't try to modify an exisinting route table to include a route to the internet gateway")
+		}
+
+		// All the subnets are explicitly configured to be "private" but the IGW, which won't be applied anywhere, is specified
+		if (allPrivate || !c.MapPublicIPs) && c.InternetGatewayID != "" {
+			return nil, errors.New("internetGatewayId can't be spcified when all the subnets are existing private subnets")
 		}
 
 		if c.RouteTableID != "" && !allPublic && !allPrivate {
@@ -1382,7 +1384,8 @@ func (c DeploymentSettings) Valid() (*DeploymentValidationResult, error) {
 		}
 
 		for i, a := range instanceCIDRs {
-			for j, b := range instanceCIDRs[i+1:] {
+			for j := i + 1; j < len(instanceCIDRs); j++ {
+				b := instanceCIDRs[j]
 				if netutil.CidrOverlap(a, b) {
 					return nil, fmt.Errorf("CIDR of subnet %d (%s) overlaps with CIDR of subnet %d (%s)", i, a, j, b)
 				}

@@ -167,7 +167,9 @@ coreos:
         --volume var-log,kind=host,source=/var/log \
         --mount volume=var-log,target=/var/log{{ if .UseCalico }} \
         --volume cni-bin,kind=host,source=/opt/cni/bin \
-        --mount volume=cni-bin,target=/opt/cni/bin{{ end }}"
+        --mount volume=cni-bin,target=/opt/cni/bin{{ end }} \
+        --volume etc-kubernetes,kind=host,source=/etc/kubernetes \
+        --mount volume=etc-kubernetes,target=/etc/kubernetes"
         ExecStartPre=/usr/bin/systemctl is-active flanneld.service
         ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
         ExecStartPre=/usr/bin/mkdir -p /var/lib/cni
@@ -186,7 +188,8 @@ coreos:
         ExecStartPre=/usr/bin/docker run --rm -e SLEEP=false -v /opt/cni/bin:/host/opt/cni/bin {{ .CalicoCniImage.RepoWithTag }} /install-cni.sh
         {{end -}}
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
-        --api-servers=http://localhost:8080 \
+        --kubeconfig=/etc/kubernetes/controller-kubeconfig.yaml \
+        --require-kubeconfig \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
         {{/* Work-around until https://github.com/kubernetes/kubernetes/issues/43967 is fixed via https://github.com/kubernetes/kubernetes/pull/43995 */ -}}
         --cni-bin-dir=/opt/cni/bin \
@@ -194,7 +197,8 @@ coreos:
         --container-runtime={{.ContainerRuntime}} \
         --rkt-path=/usr/bin/rkt \
         --rkt-stage1-image=coreos.com/rkt/stage1-coreos \
-        --register-schedulable=false \
+        {{if .Experimental.NodeLabels.Enabled}}--node-labels {{.Experimental.NodeLabels.String}} \
+        {{end}}--register-with-taints=node.alpha.kubernetes.io/role=master:NoSchedule \
         --allow-privileged=true \
         --pod-manifest-path=/etc/kubernetes/manifests \
         --cluster_dns={{.DNSServiceIP}} \
@@ -272,24 +276,6 @@ coreos:
         [Install]
         WantedBy=kubelet.service
 {{ end }}
-    - name: kube-node-taint-and-uncordon.service
-      command: start
-      runtime: true
-      content: |
-        [Unit]
-        Description=Taint this kubernetes node with its role and then uncordon it
-        Wants=kubelet.service
-        After=kubelet.service
-        Before=cfn-signal.service
-
-        [Service]
-        Type=simple
-        StartLimitInterval=0
-        RestartSec=10
-        Restart=on-failure
-        ExecStartPre=/usr/bin/systemctl is-active kubelet.service
-        ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl -s -m 20 -f  http://127.0.0.1:8080/healthz > /dev/null &&  /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10252/healthz > /dev/null && /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10251/healthz > /dev/null &&  /usr/bin/curl --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null ; then break ; fi;  done"
-        ExecStart=/opt/bin/taint-and-uncordon
 {{if .WaitSignal.Enabled}}
     - name: cfn-signal.service
       command: start
@@ -387,8 +373,9 @@ coreos:
       content: |
         [Unit]
         Description=Load efs persistent volume mount
-        Wants=kube-node-taint-and-uncordon.service
-        After=kube-node-taint-and-uncordon.service
+        Wants=kubelet.service
+        After=kubelet.service
+        Before=cfn-signal.service
         [Service]
         Type=simple
         RemainAfterExit=true
@@ -909,7 +896,7 @@ write_files:
                       for r in ${RESOURCES_OUT_NAMESPACE[@]};do
                         echo " Searching for resources: ${r}" ;
                         /kubectl get --export -o=json ${r} | \
-                        jq '.items[] |
+                        jq '.items |= ([ .[] |
                             del(.status,
                             .metadata.uid,
                             .metadata.selfLink,
@@ -917,7 +904,7 @@ write_files:
                             .metadata.creationTimestamp,
                             .metadata.generation,
                             .spec.claimRef
-                          )' > ${DUMP_DIR}/${r}.json ;
+                          )])' > ${DUMP_DIR}/${r}.json ;
                       done ;
                       RESOURCES_IN_NAMESPACE=( componentstatuses configmaps daemonsets deployments endpoints events horizontalpodautoscalers
                       ingresses jobs limitranges networkpolicies  persistentvolumeclaims pods podsecuritypolicies podtemplates replicasets
@@ -929,7 +916,7 @@ write_files:
                         for r in ${RESOURCES_IN_NAMESPACE[@]};do
                           echo " Searching for resources: ${r}" ;
                           /kubectl --namespace=${ns} get --export -o=json ${r} | \
-                          jq '.items[] |
+                          jq '.items |= ([ .[] |
                             select(.type!="kubernetes.io/service-account-token") |
                             del(
                               .spec.clusterIP,
@@ -940,7 +927,7 @@ write_files:
                               .metadata.generation,
                               .metadata.annotations."pv.kubernetes.io/bind-completed",
                               .status
-                            )' > ${DUMP_DIR}/${ns}/${r}.json && touch /probe-token ;
+                            )])' > ${DUMP_DIR}/${ns}/${r}.json && touch /probe-token ;
                         done ;
                       done ;
                     mv ${DUMP_DIR} ${DUMP_DIR_COMPLETE}/${TIMESTAMP} ;
@@ -1016,29 +1003,6 @@ write_files:
 
       rkt rm --uuid-file=/var/run/coreos/decrypt-assets.uuid || :
 {{ end }}
-
-  - path: /opt/bin/taint-and-uncordon
-    owner: root:root
-    permissions: 0700
-    content: |
-      #!/bin/bash -e
-
-      hostname=$(hostname)
-
-      docker run --rm --net=host \
-        -v /etc/kubernetes:/etc/kubernetes \
-        -v /etc/resolv.conf:/etc/resolv.conf \
-        {{.HyperkubeImage.RepoWithTag}} /bin/bash \
-          -vxec \
-          'echo "tainting this node."
-           hostname="'${hostname}'"
-           kubectl="/kubectl --server=http://127.0.0.1:8080"
-           taint="$kubectl taint node --overwrite"
-           $taint "$hostname" "node.alpha.kubernetes.io/role=master:NoSchedule"
-           echo "done."
-           echo "uncordoning this node."
-           $kubectl uncordon "$hostname"
-           echo "done."'
 
   {{if .Experimental.Plugins.Rbac.Enabled }}
   # Creates the cluster-admin role, useful for Kubernetes < 1.5.x clusters
@@ -1253,6 +1217,8 @@ write_files:
           - --secure-port=443
           {{if .Etcd.Version.Is3}}
           - --storage-backend=etcd3
+          {{else}}
+          - --storage-backend=etcd2
           {{end}}
           - --kubelet-preferred-address-types=InternalIP,Hostname,ExternalIP
           {{ if .AuthTokensConfig.HasTokens }}
@@ -1555,8 +1521,8 @@ write_files:
                     memory: 70Mi
                 livenessProbe:
                   httpGet:
-                    path: /healthz-kubedns
-                    port: 8080
+                    path: /healthcheck/kubedns
+                    port: 10054
                     scheme: HTTP
                   initialDelaySeconds: 60
                   timeoutSeconds: 5
@@ -1593,18 +1559,24 @@ write_files:
                 image: {{ .KubeDnsMasqImage.RepoWithTag }}
                 livenessProbe:
                   httpGet:
-                    path: /healthz-dnsmasq
-                    port: 8080
+                    path: /healthcheck/dnsmasq
+                    port: 10054
                     scheme: HTTP
                   initialDelaySeconds: 60
                   timeoutSeconds: 5
                   successThreshold: 1
                   failureThreshold: 5
                 args:
+                - -v=2
+                - -logtostderr
+                - -restartDnsmasq=true
+                - --
+                - -k
                 - --cache-size=1000
-                - --no-resolv
-                - --server=127.0.0.1#10053
                 - --log-facility=-
+                - --server=/cluster.local/127.0.0.1#10053
+                - --server=/in-addr.arpa/127.0.0.1#10053
+                - --server=/ip6.arpa/127.0.0.1#10053
                 ports:
                 - containerPort: 53
                   name: dns
@@ -1616,8 +1588,8 @@ write_files:
                 resources:
                   requests:
                     cpu: 150m
-                    memory: 10Mi
-              - name: dnsmasq-metrics
+                    memory: 20Mi
+              - name: sidecar
                 image: {{ .DnsMasqMetricsImage.RepoWithTag }}
                 livenessProbe:
                   httpGet:
@@ -1631,31 +1603,16 @@ write_files:
                 args:
                 - --v=2
                 - --logtostderr
+                - --probe=kubedns,127.0.0.1:10053,kubernetes.default.svc.cluster.local,5,A
+                - --probe=dnsmasq,127.0.0.1:53,kubernetes.default.svc.cluster.local,5,A
                 ports:
                 - containerPort: 10054
                   name: metrics
                   protocol: TCP
                 resources:
                   requests:
-                    memory: 10Mi
-              - name: healthz
-                image: {{ .ExecHealthzImage.RepoWithTag }}
-                resources:
-                  limits:
-                    memory: 50Mi
-                  requests:
+                    memory: 20Mi
                     cpu: 10m
-                    memory: 50Mi
-                args:
-                - --cmd=nslookup kubernetes.default.svc.cluster.local 127.0.0.1 >/dev/null
-                - --url=/healthz-dnsmasq
-                - --cmd=nslookup kubernetes.default.svc.cluster.local 127.0.0.1:10053 >/dev/null
-                - --url=/healthz-kubedns
-                - --port=8080
-                - --quiet
-                ports:
-                - containerPort: 8080
-                  protocol: TCP
               dnsPolicy: Default
 
   - path: /srv/kubernetes/manifests/kube-dns-svc.yaml
@@ -1883,6 +1840,22 @@ write_files:
 
 {{ end }}
 
+  - path: /etc/kubernetes/controller-kubeconfig.yaml
+    content: |
+        apiVersion: v1
+        kind: Config
+        clusters:
+        - name: local
+          cluster:
+            server: http://localhost:8080
+        users:
+        - name: kubelet
+        contexts:
+        - context:
+            cluster: local
+            user: kubelet
+          name: kubelet-context
+        current-context: kubelet-context
 
 {{ if not .UseCalico }}
   - path: /etc/kubernetes/cni/net.d/10-flannel.conf

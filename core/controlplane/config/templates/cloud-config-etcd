@@ -263,13 +263,18 @@ coreos:
       command: start
       content: |
         [Unit]
-        Requires={{.Etcd.SystemdUnitName}}
+        Wants={{.Etcd.SystemdUnitName}}
         After={{.Etcd.SystemdUnitName}}
 
         [Service]
-        Type=oneshot
+        Type=simple
+        Restart=on-failure
+        RestartSec=10
+
         EnvironmentFile={{.EtcdNodeEnvFileName}}
-        ExecStart=/opt/bin/cfn-signal
+        ExecStartPre=/usr/bin/systemctl is-active {{.Etcd.SystemdUnitName}}
+        ExecStartPre=/usr/bin/rkt fetch {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}}
+        ExecStart=-/opt/bin/cfn-signal
 {{end}}
 
 {{if .SSHAuthorizedKeys}}

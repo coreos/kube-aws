@@ -114,5 +114,13 @@ func (e APIEndpoints) ManagedELBLogicalNames() []string {
 // GetDefault returns the default API endpoint identified by its name.
 // The name is defined as DefaultAPIEndpointName
 func (e APIEndpoints) GetDefault() APIEndpoint {
-	return e[model.DefaultAPIEndpointName]
+	if len(e) != 1 {
+		panic(fmt.Sprintf("[bug] GetDefault invoked with an unexpected number of API endpoints: %d", len(e)))
+	}
+	var name string
+	for n, _ := range e {
+		name = n
+		break
+	}
+	return e[name]
 }

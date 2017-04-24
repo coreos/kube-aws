@@ -3,12 +3,8 @@
 # name must not conflict with an existing cluster.
 clusterName: {{.ClusterName}}
 
-# DNS name routable to the Kubernetes controller nodes
-# from worker nodes and external clients. Configure the options
-# below if you'd like kube-aws to create a Route53 record sets/hosted zones
-# for you.  Otherwise the deployer is responsible for making this name routable
-# If you'd like to have 2 or more DNS names, please omit this and use `apiEndpoints` instead
-externalDNSName: {{.ExternalDNSName}}
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use apiEndpoints[].dnsName instead
+#externalDNSName:
 
 # CoreOS release channel to use. Currently supported options: alpha, beta, stable
 # See coreos.com/releases for more information
@@ -18,21 +14,24 @@ externalDNSName: {{.ExternalDNSName}}
 # If omitted, the latest AMI for the releaseChannel is used.
 #amiId: ""
 
-# Set to true if you want kube-aws to create a Route53 Alias Record pointing to the controller ELB for you.
-#createRecordSet: false
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use apiEndpoints[].loadBalancer.createRecordSet instead
+#createRecordSet:
 
-# TTL in seconds for the Route53 RecordSet created if createRecordSet is set to true.
-#recordSetTTL: 300
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use apiEndpoints[].loadBalancer.recordSetTTL instead
+#recordSetTTL:
 
-# DEPRECATED: use hostedZoneId instead
-# The name of the hosted zone to add the externalDNSName to,
-# E.g: "google.com".  This needs to already exist, kube-aws will not create
-# it for you.
-#hostedZone: ""
+# CAUTION: Deprecated and will be removed in v0.9.7. Please use apiEndpoints[].loadBalancer.hostedZone.id instead
+#hostedZoneId:
 
 # The ID of hosted zone to add the externalDNSName to.
 # Either specify hostedZoneId or hostedZone, but not both
 #hostedZoneId: ""
+
+# Network ranges of sources you'd like SSH accesses to be allowed from, in CIDR notation. Defaults to ["0.0.0.0/0"] which allows any sources.
+# Explicitly set to an empty array to completely disable it.
+# If you do that, probably you would like to set securityGroupIds to provide this worker node pool an existing SG with a SSH access allowed from specific ranges.
+#sshAccessAllowedSourceCIDRs:
+#- 0.0.0.0/0
 
 # The name of one of API endpoints defined in `apiEndpoints` below to be written in kubeconfig and then used by admins
 # to access k8s API from their laptops, CI servers, or etc.
@@ -41,41 +40,68 @@ externalDNSName: {{.ExternalDNSName}}
 
 # Kubernetes API endpoints with each one has a DNS name and is with/without a managed/unmanaged ELB, Route 53 record set
 # CAUTION: `externalDNSName` must be omitted when there are one or more items under `apiEndpoints`
-#apiEndpoints:
-#  # The unique name of this API endpoint used to identify it inside CloudFormation stacks or
-#  # to be referenced from other parts of cluster.yaml
-#- name: template
+apiEndpoints:
+- # The unique name of this API endpoint used to identify it inside CloudFormation stacks or
+  # to be referenced from other parts of cluster.yaml
+  name: default
+
+  # DNS name for this endpoint, added to the kube-apiserver TLS cert
+  # It must be somehow routable to the Kubernetes controller nodes
+  # from worker nodes and external clients. Configure the options
+  # below if you'd like kube-aws to create a Route53 record sets/hosted zones
+  # for you.  Otherwise the deployer is responsible for making this name routable
+  dnsName: {{.ExternalDNSName}}
+
+  # Configuration for an ELB serving this endpoint
+  # Omit all the settings when you want kube-aws not to provision an ELB for you
+  loadBalancer:
+    # Specifies an existing load-balancer used for load-balancing controller nodes and serving this endpoint
+    # Setting id requires all the other settings excluding `name` to be omitted because reusing an ELB implies that configuring other resources
+    # like a Route 53 record set for the endpoint is now your responsibility!
+    # Also, don't forget to add controller.securityGroupIds to include a glue SG to allow your existing ELB to access controller nodes created by kube-aws
+    #id: existing-elb
+
+    # Set to true when you want kube-aws to create a Route53 ALIAS record set for this API load balancer for you
+    # Must be omitted when `id` is specified
+    {{if .HostedZoneID -}}
+    createRecordSet: true
+    {{else -}}
+    createRecordSet: false
+    {{- end}}
+    # All the subnets assigned to this load-balancer. Specified only when this load balancer is not reused but managed one
+    # Must be omitted when `id` is specified
+    #subnets:
+    #- name: managedPublic1
+
+    # Set to true so that the managed ELB becomes an `internal` one rather than `internet-facing` one
+    # When set to true while subnets are omitted, one or more private subnets in the top-level `subnets` must exist
+    # Must be omitted when `id` is specified
+    #private: false
+
+    # TTL in seconds for the Route53 RecordSet created if createRecordSet is set to true.
+    #recordSetTTL: 300
+
+    # The Route 53 hosted zone is where the resulting Alias record is created for this endpoint
+    # Must be omitted when `id` is specified
+    {{if .HostedZoneID -}}
+    hostedZone:
+      # The ID of hosted zone to add the dnsName to.
+      id: {{.HostedZoneID}}
+    {{else -}}
+    #hostedZone:
+    #  # The ID of hosted zone to add the dnsName to.
+    #  id: ""
+    {{- end}}
+#    # Network ranges of sources you'd like Kubernetes API accesses to be allowed from, in CIDR notation. Defaults to ["0.0.0.0/0"] which allows any sources.
+#    # Explicitly set to an empty array to completely disable it.
+#    # If you do that, probably you would like to set securityGroupIds to provide this load balancer an existing SG with a Kubernetes API access allowed from specific ranges.
+#    apiAccessAllowedSourceCIDRs:
+#    #- 0.0.0.0/0
 #
-#  # DNS name for this endpoint, added to the kube-apiserver TLS cert
-#  dnsName: dns-name.tld
-#
-#  loadBalancer:
-#    # Specifies an existing load-balancer used for load-balancing controller nodes and serving this endpoint
-#    # Setting id requires all the other settings excluding `name` to be omitted because reusing an ELB implies that configuring other resources
-#    # like a Route 53 record set for the endpoint is now your responsibility!
-#    id: existing-elb
-#
-#    # Set to false when you want to disable creation of the record set for this api load balancer
-#    # Must be omitted when `id` is specified
-#    createRecordSet: true
-#
-#    # All the subnets assigned to this load-balancer. Specified only when this load balancer is not reused but managed one
-#    # Must be omitted when `id` is specified
-#    subnets:
-#    - name: managedPublic1
-#
-#    # Set to true so that the managed ELB becomes an `internal` one rather than `internet-facing` one
-#    # When set to true while subnets are omitted, one or more private subnets in the top-level `subnets` must exist
-#    # Must be omitted when `id` is specified
-#    private: true
-#
-#    # TTL in seconds for the Route53 RecordSet created if createRecordSet is set to true.
-#    recordSetTTL: 300
-#
-#    # The Route 53 hosted zone is where the resulting Alias record is created for this endpoint
-#    # Must be omitted when `id` is specified
-#    hostedZone:
-#      id: hostedzone-abc
+#    # Existing security groups attached to this load balancer which are typically used to
+#    # allow Kubernetes API accesses from admins and/or CD systems when `apiAccessAllowedSourceCIDRs` are explicitly set to an empty array
+#    securityGroupIds:
+#    - sg-1234567
 #
 #  #
 #  # Common configuration #1: Unversioned, internet-facing API endpoint
@@ -138,6 +164,13 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #    type: gp2
 #    # Number of I/O operations per second (IOPS) that the controller node disk supports. Leave blank if controllerRootVolumeType is not io1
 #    iops: 0
+#
+#  # Existing security groups attached to controller nodes which are typically used to
+#  # (1) allow access from controller nodes to services running on an existing infrastructure
+#  # (2) allow ssh accesses from bastions when `sshAccessAllowedSourceCIDRs` are explicitly set to an empty array
+#  securityGroupIds:
+#    - sg-1234abcd
+#    - sg-5678efab
 #
 #  # Auto Scaling Group definition for controllers. If only `controllerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
 #  autoScalingGroup:
@@ -552,6 +585,12 @@ worker:
 #    - name: ManagedPrivateSubnet1
 #    - name: ManagedPrivateSubnet2
 #
+#  # Existing security groups attached to etcd nodes which are typically used to
+#  # allow ssh accesses from bastions when `sshAccessAllowedSourceCIDRs` are explicitly set to an empty array
+#  securityGroupIds:
+#    - sg-1234abcd
+#    - sg-5678efab
+#
 #  # The version of etcd to be used. Set to e.g. "3.1.3" to use etcd3
 #  version: 2
 #
@@ -876,7 +915,7 @@ worker:
 # and pulling from quay or dockerhub is slow and you get many timeouts.
 
 # Version of hyperkube image to use. This is the tag for the hyperkube image repository.
-# kubernetesVersion: v1.6.1_coreos.0
+# kubernetesVersion: v1.6.2_coreos.0
 
 # Hyperkube image repository to use.
 # hyperkubeImage:

@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -12,6 +13,7 @@ type Etcd struct {
 	Snapshot           EtcdSnapshot         `yaml:"snapshot,omitempty"`
 	EC2Instance        `yaml:",inline"`
 	Nodes              []EtcdNode          `yaml:"nodes,omitempty"`
+	SecurityGroupIds   []string            `yaml:"securityGroupIds"`
 	Subnets            []Subnet            `yaml:"subnets,omitempty"`
 	CustomFiles        []CustomFile        `yaml:"customFiles,omitempty"`
 	CustomSystemdUnits []CustomSystemdUnit `yaml:"customSystemdUnits,omitempty"`
@@ -121,6 +123,21 @@ func (e Etcd) HostedZoneLogicalName() (string, error) {
 
 func (e Etcd) KMSKeyARN() string {
 	return e.Cluster.KMSKeyARN
+}
+
+func (e Etcd) SecurityGroupRefs() []string {
+	refs := []string{}
+
+	for _, id := range e.SecurityGroupIds {
+		refs = append(refs, fmt.Sprintf(`"%s"`, id))
+	}
+
+	refs = append(
+		refs,
+		`{"Ref":"SecurityGroupEtcd"}`,
+	)
+
+	return refs
 }
 
 func (e Etcd) SystemdUnitName() string {

@@ -131,7 +131,7 @@ func TestMainClusterConfig(t *testing.T) {
 				Enabled: false,
 			},
 			NodeLabels: controlplane_config.NodeLabels{},
-			Taints:     []controlplane_config.Taint{},
+			Taints:     model.Taints{},
 		}
 
 		actual := c.Experimental
@@ -375,12 +375,89 @@ func TestMainClusterConfig(t *testing.T) {
 	minimalValidConfigYaml := mainClusterYaml + `
 availabilityZone: us-west-1c
 `
+	configYamlWithoutExernalDNSName := kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
+availabilityZone: us-west-1c
+`
+
 	validCases := []struct {
 		context       string
 		configYaml    string
 		assertConfig  []ConfigTester
 		assertCluster []ClusterTester
 	}{
+		{
+			context: "WithAPIEndpointLBAPIAccessAllowedSourceCIDRsSpecified",
+			configYaml: configYamlWithoutExernalDNSName + `
+apiEndpoints:
+- name: default
+  dnsName: k8s.example.com
+  loadBalancer:
+    apiAccessAllowedSourceCIDRs:
+    - 1.2.3.255/32
+    hostedZone:
+      id: a1b2c4
+`,
+			assertConfig: []ConfigTester{
+				func(c *config.Config, t *testing.T) {
+					l := len(c.APIEndpointConfigs[0].LoadBalancer.APIAccessAllowedSourceCIDRs)
+					if l != 1 {
+						t.Errorf("unexpected size of apiEndpoints[0].loadBalancer.apiAccessAllowedSourceCIDRs: %d", l)
+						t.FailNow()
+					}
+					actual := c.APIEndpointConfigs[0].LoadBalancer.APIAccessAllowedSourceCIDRs[0].String()
+					expected := "1.2.3.255/32"
+					if actual != expected {
+						t.Errorf("unexpected cidr in apiEndpoints[0].loadBalancer.apiAccessAllowedSourceCIDRs[0]. expected = %s, actual = %s", expected, actual)
+					}
+				},
+			},
+		},
+		{
+			context: "WithAPIEndpointLBAPIAccessAllowedSourceCIDRsOmitted",
+			configYaml: configYamlWithoutExernalDNSName + `
+apiEndpoints:
+- name: default
+  dnsName: k8s.example.com
+  loadBalancer:
+    hostedZone:
+      id: a1b2c4
+`,
+			assertConfig: []ConfigTester{
+				func(c *config.Config, t *testing.T) {
+					l := len(c.APIEndpointConfigs[0].LoadBalancer.APIAccessAllowedSourceCIDRs)
+					if l != 1 {
+						t.Errorf("unexpected size of apiEndpoints[0].loadBalancer.apiAccessAllowedSourceCIDRs: %d", l)
+						t.FailNow()
+					}
+					actual := c.APIEndpointConfigs[0].LoadBalancer.APIAccessAllowedSourceCIDRs[0].String()
+					expected := "0.0.0.0/0"
+					if actual != expected {
+						t.Errorf("unexpected cidr in apiEndpoints[0].loadBalancer.apiAccessAllowedSourceCIDRs[0]. expected = %s, actual = %s", expected, actual)
+					}
+				},
+			},
+		},
+		{
+			context: "WithAPIEndpointLBAPIAccessAllowedSourceCIDRsEmptied",
+			configYaml: configYamlWithoutExernalDNSName + `
+apiEndpoints:
+- name: default
+  dnsName: k8s.example.com
+  loadBalancer:
+    apiAccessAllowedSourceCIDRs:
+    hostedZone:
+      id: a1b2c4
+`,
+			assertConfig: []ConfigTester{
+				func(c *config.Config, t *testing.T) {
+					l := len(c.APIEndpointConfigs[0].LoadBalancer.APIAccessAllowedSourceCIDRs)
+					if l != 0 {
+						t.Errorf("unexpected size of apiEndpoints[0].loadBalancer.apiAccessAllowedSourceCIDRs: %d", l)
+						t.FailNow()
+					}
+				},
+			},
+		},
 		{
 			// See https://github.com/kubernetes-incubator/kube-aws/issues/365
 			context:    "WithClusterNameContainsHyphens",
@@ -1119,7 +1196,7 @@ worker:
 								Enabled: true,
 							},
 						},
-						Taints: []controlplane_config.Taint{
+						Taints: model.Taints{
 							{Key: "reservation", Value: "spot", Effect: "NoSchedule"},
 						},
 					}
@@ -1232,7 +1309,7 @@ worker:
 						NodeLabels: controlplane_config.NodeLabels{
 							"kube-aws.coreos.com/role": "worker",
 						},
-						Taints: []controlplane_config.Taint{
+						Taints: model.Taints{
 							{Key: "reservation", Value: "spot", Effect: "NoSchedule"},
 						},
 					}
@@ -1447,6 +1524,7 @@ worker:
 			context: "WithMultiAPIEndpoints",
 			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 
 subnets:
 - name: privateSubnet1
@@ -1778,6 +1856,7 @@ subnets:
 			context: "WithNetworkTopologyExplicitSubnets",
 			configYaml: mainClusterYaml + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 # routeTableId must be omitted
 # See https://github.com/kubernetes-incubator/kube-aws/pull/284#issuecomment-275962332
 # routeTableId: rtb-1a2b3c4d
@@ -1887,6 +1966,7 @@ worker:
 			context: "WithNetworkTopologyImplicitSubnets",
 			configYaml: mainClusterYaml + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 # routeTableId must be omitted
 # See https://github.com/kubernetes-incubator/kube-aws/pull/284#issuecomment-275962332
 # routeTableId: rtb-1a2b3c4d
@@ -1964,6 +2044,7 @@ subnets:
 			context: "WithNetworkTopologyControllerPrivateLB",
 			configYaml: mainClusterYaml + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 # routeTableId must be omitted
 # See https://github.com/kubernetes-incubator/kube-aws/pull/284#issuecomment-275962332
 # routeTableId: rtb-1a2b3c4d
@@ -2065,6 +2146,7 @@ worker:
 			context: "WithNetworkTopologyControllerPublicLB",
 			configYaml: mainClusterYaml + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 # routeTableId must be omitted
 # See https://github.com/kubernetes-incubator/kube-aws/pull/284#issuecomment-275962332
 # routeTableId: rtb-1a2b3c4d
@@ -2163,7 +2245,7 @@ worker:
 			},
 		},
 		{
-			context: "WithNetworkTopologyExistingSubnets",
+			context: "WithNetworkTopologyExistingVaryingSubnets",
 			configYaml: mainClusterYaml + `
 vpcId: vpc-1a2b3c4d
 subnets:
@@ -2256,9 +2338,72 @@ worker:
 			},
 		},
 		{
+			context: "WithNetworkTopologyAllExistingPrivateSubnets",
+			configYaml: mainClusterYaml + `
+vpcId: vpc-1a2b3c4d
+subnets:
+- name: private1
+  availabilityZone: us-west-1a
+  id: subnet-1
+  private: true
+- name: private2
+  availabilityZone: us-west-1b
+  idFromStackOutput: mycluster-private-subnet-1
+  private: true
+controller:
+  loadBalancer:
+    private: true
+etcd:
+  subnets:
+  - name: private1
+  - name: private2
+worker:
+  nodePools:
+  - name: pool1
+    subnets:
+    - name: private1
+    - name: private2
+`,
+			assertConfig: []ConfigTester{
+				hasDefaultExperimentalFeatures,
+				hasNoNGWsOrEIPsOrRoutes,
+			},
+		},
+		{
+			context: "WithNetworkTopologyAllExistingPublicSubnets",
+			configYaml: mainClusterYaml + `
+vpcId: vpc-1a2b3c4d
+subnets:
+- name: public1
+  availabilityZone: us-west-1a
+  id: subnet-2
+- name: public2
+  availabilityZone: us-west-1b
+  idFromStackOutput: mycluster-public-subnet-1
+controller:
+  loadBalancer:
+    private: false
+etcd:
+  subnets:
+  - name: public1
+  - name: public2
+worker:
+  nodePools:
+  - name: pool1
+    subnets:
+    - name: public1
+    - name: public2
+`,
+			assertConfig: []ConfigTester{
+				hasDefaultExperimentalFeatures,
+				hasNoNGWsOrEIPsOrRoutes,
+			},
+		},
+		{
 			context: "WithNetworkTopologyExistingNATGateways",
 			configYaml: mainClusterYaml + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 subnets:
 - name: private1
   availabilityZone: us-west-1a
@@ -2357,6 +2502,7 @@ worker:
 			context: "WithNetworkTopologyExistingNATGatewayEIPs",
 			configYaml: mainClusterYaml + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 subnets:
 - name: private1
   availabilityZone: us-west-1a
@@ -2441,6 +2587,36 @@ worker:
 					}
 				},
 			},
+		},
+		{
+			context: "WithNetworkTopologyVaryingPublicSubnets",
+			configYaml: mainClusterYaml + `
+vpcId: vpc-1a2b3c4d
+#required only for the managed subnet "public1"
+# "public2" is assumed to have an existing route table and an igw already associated to it
+internetGatewayId: igw-1a2b3c4d
+subnets:
+- name: public1
+  availabilityZone: us-west-1a
+  instanceCIDR: "10.0.1.0/24"
+- name: public2
+  availabilityZone: us-west-1b
+  id: subnet-2
+controller:
+  loadBalancer:
+    private: false
+etcd:
+  subnets:
+  - name: public1
+  - name: public2
+worker:
+  nodePools:
+  - name: pool1
+    subnets:
+    - name: public1
+    - name: public2
+`,
+			assertConfig: []ConfigTester{},
 		},
 		{
 			context: "WithSpotFleetEnabled",
@@ -2609,6 +2785,7 @@ worker:
 			context: "WithVpcIdSpecified",
 			configYaml: minimalValidConfigYaml + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 `,
 			assertConfig: []ConfigTester{
 				hasDefaultEtcdSettings,
@@ -2619,6 +2796,7 @@ vpcId: vpc-1a2b3c4d
 			context: "WithVpcIdAndRouteTableIdSpecified",
 			configYaml: minimalValidConfigYaml + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 routeTableId: rtb-1a2b3c4d
 `,
 			assertConfig: []ConfigTester{
@@ -2826,6 +3004,7 @@ etcd:
 			context: "WithControllerNodesWithLegacyKeys",
 			configYaml: minimalValidConfigYaml + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 routeTableId: rtb-1a2b3c4d
 controllerCount: 2
 controllerCreateTimeout: PT10M
@@ -2887,6 +3066,7 @@ controllerTenancy: dedicated
 			context: "WithEtcdNodesWithLegacyKeys",
 			configYaml: minimalValidConfigYaml + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 routeTableId: rtb-1a2b3c4d
 etcdCount: 2
 etcdTenancy: dedicated
@@ -2977,6 +3157,60 @@ etcdDataVolumeEncrypted: true
 					}
 					if c.EtcdTenancy() != "dedicated" {
 						t.Errorf("unexpected etcd tenancy: expected=dedicated, actual=%s", c.EtcdTenancy())
+					}
+				},
+			},
+		},
+		{
+			context: "WithSSHAccessAllowedSourceCIDRsSpecified",
+			configYaml: minimalValidConfigYaml + `
+sshAccessAllowedSourceCIDRs:
+- 1.2.3.255/32
+`,
+			assertConfig: []ConfigTester{
+				func(c *config.Config, t *testing.T) {
+					l := len(c.SSHAccessAllowedSourceCIDRs)
+					if l != 1 {
+						t.Errorf("unexpected size of sshAccessAllowedSouceCIDRs: %d", l)
+						t.FailNow()
+					}
+					actual := c.SSHAccessAllowedSourceCIDRs[0].String()
+					expected := "1.2.3.255/32"
+					if actual != expected {
+						t.Errorf("unexpected cidr in sshAccessAllowedSourecCIDRs[0]. expected = %s, actual = %s", expected, actual)
+					}
+				},
+			},
+		},
+		{
+			context:    "WithSSHAccessAllowedSourceCIDRsOmitted",
+			configYaml: minimalValidConfigYaml,
+			assertConfig: []ConfigTester{
+				func(c *config.Config, t *testing.T) {
+					l := len(c.SSHAccessAllowedSourceCIDRs)
+					if l != 1 {
+						t.Errorf("unexpected size of sshAccessAllowedSouceCIDRs: %d", l)
+						t.FailNow()
+					}
+					actual := c.SSHAccessAllowedSourceCIDRs[0].String()
+					expected := "0.0.0.0/0"
+					if actual != expected {
+						t.Errorf("unexpected cidr in sshAccessAllowedSourecCIDRs[0]. expected = %s, actual = %s", expected, actual)
+					}
+				},
+			},
+		},
+		{
+			context: "WithSSHAccessAllowedSourceCIDRsEmptied",
+			configYaml: minimalValidConfigYaml + `
+sshAccessAllowedSourceCIDRs:
+`,
+			assertConfig: []ConfigTester{
+				func(c *config.Config, t *testing.T) {
+					l := len(c.SSHAccessAllowedSourceCIDRs)
+					if l != 0 {
+						t.Errorf("unexpected size of sshAccessAllowedSouceCIDRs: %d", l)
+						t.FailNow()
 					}
 				},
 			},
@@ -3157,6 +3391,7 @@ experimental:
 			context: "WithMultiAPIEndpointsInvalidLB",
 			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 
 subnets:
 - name: publicSubnet1
@@ -3183,6 +3418,7 @@ apiEndpoints:
 			context: "WithMultiAPIEndpointsInvalidWorkerAPIEndpointName",
 			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 
 subnets:
 - name: publicSubnet1
@@ -3217,6 +3453,7 @@ apiEndpoints:
 			context: "WithMultiAPIEndpointsInvalidWorkerNodePoolAPIEndpointName",
 			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 
 subnets:
 - name: publicSubnet1
@@ -3255,6 +3492,7 @@ apiEndpoints:
 			context: "WithMultiAPIEndpointsMissingDNSName",
 			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 
 subnets:
 - name: publicSubnet1
@@ -3271,6 +3509,7 @@ apiEndpoints:
 			context: "WithMultiAPIEndpointsMissingGlobalAPIEndpointName",
 			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 
 subnets:
 - name: publicSubnet1
@@ -3309,6 +3548,7 @@ apiEndpoints:
 			context: "WithMultiAPIEndpointsRecordSetImpliedBySubnetsMissingHostedZoneID",
 			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 
 subnets:
 - name: publicSubnet1
@@ -3334,6 +3574,7 @@ apiEndpoints:
 			context: "WithMultiAPIEndpointsRecordSetImpliedByExplicitPublicMissingHostedZoneID",
 			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 
 subnets:
 - name: publicSubnet1
@@ -3358,6 +3599,7 @@ apiEndpoints:
 			context: "WithMultiAPIEndpointsRecordSetImpliedByExplicitPrivateMissingHostedZoneID",
 			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 
 subnets:
 - name: publicSubnet1
@@ -3385,6 +3627,7 @@ apiEndpoints:
 			context: "WithMultiAPIEndpointsExplicitRecordSetMissingHostedZoneID",
 			configYaml: kubeAwsSettings.mainClusterYamlWithoutExternalDNS() + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 
 subnets:
 - name: publicSubnet1
@@ -3406,6 +3649,102 @@ apiEndpoints:
 			expectedErrorMessage: "invalid apiEndpoint \"unversionedPublic\" at index 0: invalid loadBalancer: missing hostedZoneId",
 		},
 		{
+			context: "WithNetworkTopologyAllExistingPrivateSubnetsRejectingExistingIGW",
+			configYaml: mainClusterYaml + `
+vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
+subnets:
+- name: private1
+  availabilityZone: us-west-1a
+  id: subnet-1
+  private: true
+controller:
+  loadBalancer:
+    private: true
+etcd:
+  subnets:
+  - name: private1
+worker:
+  nodePools:
+  - name: pool1
+    subnets:
+    - name: private1
+`,
+			expectedErrorMessage: `internetGatewayId can't be spcified when all the subnets are existing private subnets`,
+		},
+		{
+			context: "WithNetworkTopologyAllExistingPublicSubnetsRejectingExistingIGW",
+			configYaml: mainClusterYaml + `
+vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
+subnets:
+- name: public1
+  availabilityZone: us-west-1a
+  id: subnet-1
+controller:
+  loadBalancer:
+    private: false
+etcd:
+  subnets:
+  - name: public1
+worker:
+  nodePools:
+  - name: pool1
+    subnets:
+    - name: public1
+`,
+			expectedErrorMessage: `internetGatewayId can't be specified when all the public subnets have existing route tables associated. kube-aws doesn't try to modify an exisinting route table to include a route to the internet gateway`,
+		},
+		{
+			context: "WithNetworkTopologyAllManagedPublicSubnetsWithExistingRouteTableRejectingExistingIGW",
+			configYaml: mainClusterYaml + `
+vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
+subnets:
+- name: public1
+  availabilityZone: us-west-1a
+  instanceCIDR: 10.0.1.0/24
+  routeTable:
+    id: subnet-1
+controller:
+  loadBalancer:
+    private: false
+etcd:
+  subnets:
+  - name: public1
+worker:
+  nodePools:
+  - name: pool1
+    subnets:
+    - name: public1
+`,
+			expectedErrorMessage: `internetGatewayId can't be specified when all the public subnets have existing route tables associated. kube-aws doesn't try to modify an exisinting route table to include a route to the internet gateway`,
+		},
+		{
+			context: "WithNetworkTopologyAllManagedPublicSubnetsMissingExistingIGW",
+			configYaml: mainClusterYaml + `
+vpcId: vpc-1a2b3c4d
+#misses this
+#internetGatewayId: igw-1a2b3c4d
+subnets:
+- name: public1
+  availabilityZone: us-west-1a
+  instanceCIDR: "10.0.1.0/24"
+controller:
+  loadBalancer:
+    private: false
+etcd:
+  subnets:
+  - name: public1
+worker:
+  nodePools:
+  - name: pool1
+    subnets:
+    - name: public1
+`,
+			expectedErrorMessage: `internetGatewayId can't be omitted when there're one or more managed public subnets in an existing VPC`,
+		},
+		{
 			context: "WithNonZeroWorkerCount",
 			configYaml: minimalValidConfigYaml + `
 workerCount: 1
@@ -3416,6 +3755,7 @@ workerCount: 1
 			context: "WithVpcIdAndVPCCIDRSpecified",
 			configYaml: minimalValidConfigYaml + `
 vpcId: vpc-1a2b3c4d
+internetGatewayId: igw-1a2b3c4d
 # vpcCIDR (10.1.0.0/16) does not contain instanceCIDR (10.0.1.0/24)
 vpcCIDR: "10.1.0.0/16"
 `,

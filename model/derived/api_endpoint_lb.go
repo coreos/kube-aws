@@ -49,3 +49,27 @@ func (b APIEndpointLB) Ref() string {
 		return b.LogicalName()
 	})
 }
+
+func (b APIEndpointLB) SecurityGroupLogicalName() string {
+	return fmt.Sprintf("APIEndpoint%sSG", strings.Title(b.Name))
+}
+
+// SecurityGroupRefs contains CloudFormation resource references for additional SGs associated to this LB
+func (b APIEndpointLB) SecurityGroupRefs() []string {
+	refs := []string{}
+
+	for _, id := range b.SecurityGroupIds {
+		refs = append(refs, fmt.Sprintf(`"%s"`, id))
+	}
+
+	if b.ManageSecurityGroup() {
+		refs = append(refs, fmt.Sprintf(`{"Ref":"%s"}`, b.SecurityGroupLogicalName()))
+	}
+
+	refs = append(
+		refs,
+		`{"Ref":"SecurityGroupElbAPIServer"}`,
+	)
+
+	return refs
+}

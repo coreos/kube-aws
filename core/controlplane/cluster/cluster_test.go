@@ -175,10 +175,12 @@ instanceCIDR: 10.5.11.0/24
 `, `
 vpcCIDR: 192.168.1.0/24
 vpcId: vpc-xxx2
+internetGatewayId: igw-xxx1
 instanceCIDR: 192.168.1.50/28
 `, `
 vpcCIDR: 192.168.1.0/24
 vpcId: vpc-xxx2
+internetGatewayId: igw-xxx1
 subnets:
   - instanceCIDR: 192.168.1.0/28
   - instanceCIDR: 192.168.1.32/28
@@ -242,7 +244,7 @@ subnets:
 		configBody := defaultConfigValues(t, networkConfig)
 		clusterConfig, err := config.ClusterFromBytes([]byte(configBody))
 		if err != nil {
-			t.Errorf("could not get valid cluster config: %v", err)
+			t.Errorf("could not get valid cluster config: %v\n%s", err, networkConfig)
 			return nil
 		}
 

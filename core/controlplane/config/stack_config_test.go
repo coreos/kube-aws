@@ -7,14 +7,20 @@ import (
 )
 
 func TestRenderStackTemplate(t *testing.T) {
-	clusterConfig := newDefaultClusterWithDeps(&dummyEncryptService{})
+	cluster := newDefaultClusterWithDeps(&dummyEncryptService{})
 
-	clusterConfig.Region = model.RegionForName("us-west-1")
-	clusterConfig.Subnets = []model.Subnet{
-		model.NewPublicSubnet("us-west-1a", "10.0.1.0/16"),
-		model.NewPublicSubnet("us-west-1b", "10.0.2.0/16"),
+	cluster.Region = model.RegionForName("us-west-1")
+	cluster.Subnets = []model.Subnet{
+		model.NewPublicSubnet("us-west-1a", "10.0.1.0/24"),
+		model.NewPublicSubnet("us-west-1b", "10.0.2.0/24"),
 	}
-	clusterConfig.SetDefaults()
+	cluster.ExternalDNSName = "foo.example.com"
+	cluster.KeyName = "mykey"
+	cluster.KMSKeyARN = "mykmskey"
+	if err := cluster.Load(); err != nil {
+		t.Errorf("load failed: %v\n%+v", err, cluster.Subnets)
+		t.FailNow()
+	}
 
 	helper.WithDummyCredentials(func(dir string) {
 		var stackTemplateOptions = StackTemplateOptions{
@@ -24,7 +30,7 @@ func TestRenderStackTemplate(t *testing.T) {
 			StackTemplateTmplFile: "templates/stack-template.json",
 		}
 
-		stackConfig, err := clusterConfig.StackConfig(stackTemplateOptions)
+		stackConfig, err := cluster.StackConfig(stackTemplateOptions)
 		if err != nil {
 			t.Errorf("failed to generate stack config : %v", err)
 		}
@@ -45,10 +51,16 @@ func TestValidateUserData(t *testing.T) {
 
 	cluster.Region = model.RegionForName("us-west-1")
 	cluster.Subnets = []model.Subnet{
-		model.NewPublicSubnet("us-west-1a", "10.0.1.0/16"),
-		model.NewPublicSubnet("us-west-1b", "10.0.2.0/16"),
+		model.NewPublicSubnet("us-west-1a", "10.0.1.0/24"),
+		model.NewPublicSubnet("us-west-1b", "10.0.2.0/24"),
 	}
-	cluster.SetDefaults()
+	cluster.ExternalDNSName = "foo.example.com"
+	cluster.KeyName = "mykey"
+	cluster.KMSKeyARN = "mykmskey"
+	if err := cluster.Load(); err != nil {
+		t.Errorf("load failed: %v", err)
+		t.FailNow()
+	}
 
 	helper.WithDummyCredentials(func(dir string) {
 		var stackTemplateOptions = StackTemplateOptions{

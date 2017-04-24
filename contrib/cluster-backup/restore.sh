@@ -112,7 +112,7 @@ main() {
     NAMESPACE_WHITELIST="${@:-}"
     NAMESPACES=""
     if [ -z ${NAMESPACE_WHITELIST} ]; then
-        for ns in $(jq -r '.metadata.name' < ${TEMP_DIR}/namespaces.json); do
+        for ns in $(jq -r '.items[].metadata.name' < ${TEMP_DIR}/namespaces.json); do
             if [[ ${ns} != "kube-system" && ${ns} != "default" ]] ; then
                 doesResourceExist "namespace" "${ns}" || err "Namespace '${ns}' already exists in the cluster!"
                 NAMESPACES="${NAMESPACES} ${ns}"
@@ -121,7 +121,7 @@ main() {
     else
         echo "Limiting Namespaces to '${NAMESPACE_WHITELIST}'..."
         for nswl in ${NAMESPACE_WHITELIST}; do
-            for ns in $(jq -r '.metadata.name' < ${TEMP_DIR}/namespaces.json); do
+            for ns in $(jq -r '.items[].metadata.name' < ${TEMP_DIR}/namespaces.json); do
                 if [ "${ns}" == "${nswl}" ] ; then
                     doesResourceExist "namespace" "${ns}" || echo "Namespace '${ns}' already exists in the cluster! Restoration will still proceed..."
                     NAMESPACES="${NAMESPACES} ${ns}"
@@ -141,7 +141,7 @@ main() {
     for ns in ${NAMESPACES}; do
         if [ -e "${TEMP_DIR}/${ns}" ] && [ -d "${TEMP_DIR}/${ns}" ]; then
         echo "Restoring resources for '${ns}' Namespace..."
-        kubectl create -f <(echo $(cat ${TEMP_DIR}/namespaces.json | jq -r --arg NS "$ns" 'select( .metadata.name | contains($NS))'))
+        kubectl create -f <(echo $(cat ${TEMP_DIR}/namespaces.json | jq -r --arg NS "$ns" 'select( .items[].metadata.name | contains($NS))'))
             for r in ${RESTORATION_ORDER_NS[@]}; do
                 createResource "${r}" "${ns}"
             done

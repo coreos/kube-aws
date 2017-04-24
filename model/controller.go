@@ -1,6 +1,9 @@
 package model
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 // TODO Merge this with NodePoolConfig
 type Controller struct {
@@ -9,6 +12,7 @@ type Controller struct {
 	EC2Instance        `yaml:",inline"`
 	LoadBalancer       ControllerElb       `yaml:"loadBalancer,omitempty"`
 	ManagedIamRoleName string              `yaml:"managedIamRoleName,omitempty"`
+	SecurityGroupIds   []string            `yaml:"securityGroupIds"`
 	Subnets            []Subnet            `yaml:"subnets,omitempty"`
 	CustomFiles        []CustomFile        `yaml:"customFiles,omitempty"`
 	CustomSystemdUnits []CustomSystemdUnit `yaml:"customSystemdUnits,omitempty"`
@@ -35,6 +39,21 @@ func NewDefaultController() Controller {
 
 func (c Controller) LogicalName() string {
 	return "Controllers"
+}
+
+func (c Controller) SecurityGroupRefs() []string {
+	refs := []string{}
+
+	for _, id := range c.SecurityGroupIds {
+		refs = append(refs, fmt.Sprintf(`"%s"`, id))
+	}
+
+	refs = append(
+		refs,
+		`{"Ref":"SecurityGroupController"}`,
+	)
+
+	return refs
 }
 
 func (c Controller) Validate() error {

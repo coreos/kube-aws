@@ -105,7 +105,8 @@
                   "    storage: 500Gi\n",
                   "  nfs:\n",
                   "    path: /\n",
-                  "    server: ", {"Ref": "FileSystemCustom"}, ".efs.{{ $.Region }}.amazonaws.com", "\n"
+                  "    server: ", {"Ref": "FileSystemCustom"}, ".efs.{{ $.Region }}.amazonaws.com", "\n",
+                  "  persistentVolumeReclaimPolicy: Recycle\n"
                 ]]}
               }
             }
@@ -439,12 +440,13 @@
     {{if $etcdInstance.NetworkInterfaceManaged}}
     "{{$etcdInstance.NetworkInterfaceLogicalName}}": {
       "Properties": {
-          "SubnetId": {{$etcdInstance.SubnetRef}},
-          "GroupSet": [
-            {
-              "Ref": "SecurityGroupEtcd"
-            }
-          ]
+        "SubnetId": {{$etcdInstance.SubnetRef}},
+        "GroupSet": [
+          {{range $sgIndex, $sgRef := $.Etcd.SecurityGroupRefs}}
+          {{if gt $sgIndex 0}},{{end}}
+          {{$sgRef}}
+          {{end}}
+        ]
       },
       "Type": "AWS::EC2::NetworkInterface"
     },
@@ -672,9 +674,10 @@
         "InstanceType": "{{$.Etcd.InstanceType}}",
         {{if $.KeyName}}"KeyName": "{{$.KeyName}}",{{end}}
         "SecurityGroups": [
-          {
-            "Ref": "SecurityGroupEtcd"
-          }
+          {{range $sgIndex, $sgRef := $.Etcd.SecurityGroupRefs}}
+          {{if gt $sgIndex 0}},{{end}}
+          {{$sgRef}}
+          {{end}}
         ],
         "PlacementTenancy": "{{$.Etcd.Tenancy}}",
         "UserData": { "Fn::Base64": { "Fn::Join" : ["\n", [
@@ -720,9 +723,10 @@
         "InstanceType": "{{.Controller.InstanceType}}",
         {{if .KeyName}}"KeyName": "{{.KeyName}}",{{end}}
         "SecurityGroups": [
-          {
-            "Ref": "SecurityGroupController"
-          }
+          {{range $sgIndex, $sgRef := $.Controller.SecurityGroupRefs}}
+          {{if gt $sgIndex 0}},{{end}}
+          {{$sgRef}}
+          {{end}}
         ],
         "PlacementTenancy": "{{ .Controller.Tenancy }}",
         "UserData": { "Fn::Base64": { "Fn::Join" : ["\n", [
@@ -808,11 +812,46 @@
         {{else}}
         "Scheme": "internet-facing",
         {{end}}
-        "SecurityGroups" : [
-          { "Ref" : "SecurityGroupElbAPIServer" }
+        "SecurityGroups": [
+          {{range $sgIndex, $sgRef := .LoadBalancer.SecurityGroupRefs}}
+          {{if gt $sgIndex 0}},{{end}}
+          {{$sgRef}}
+          {{end}}
         ]
       }
     },
+    {{if .LoadBalancer.ManageSecurityGroup -}}
+    "{{.LoadBalancer.SecurityGroupLogicalName}}" : {
+      "Properties": {
+        "GroupDescription": {
+          "Ref": "AWS::StackName"
+        },
+        "SecurityGroupIngress": [
+          {{ range $j, $r := .LoadBalancer.APIAccessAllowedSourceCIDRs -}}
+          {{if gt $j 0}},{{end}}
+          {
+            "CidrIp": "{{$r}}",
+            "FromPort": 443,
+            "IpProtocol": "tcp",
+            "ToPort": 443
+          }
+          {{end}}
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "{{$.ClusterName}}-sg-api-endpoint-{{$i}}"
+          },
+          {
+            "Key": "KubernetesCluster",
+            "Value": "{{$.ClusterName}}"
+          }
+        ],
+        "VpcId": {{$.VPCRef}}
+      },
+      "Type": "AWS::EC2::SecurityGroup"
+    },
+    {{end -}}
     {{end -}}
     {{end -}}
     "SecurityGroupElbAPIServer" : {
@@ -821,12 +860,6 @@
           "Ref": "AWS::StackName"
         },
         "SecurityGroupIngress": [
-          {
-            "CidrIp": "0.0.0.0/0",
-            "FromPort": 443,
-            "IpProtocol": "tcp",
-            "ToPort": 443
-          },
           {
              "CidrIp": "0.0.0.0/0",
              "FromPort": -1,
@@ -841,10 +874,10 @@
           },
           {
             "Key": "KubernetesCluster",
-            "Value": "{{.ClusterName}}"
+            "Value": "{{$.ClusterName}}"
           }
         ],
-        "VpcId": {{.VPCRef}}
+        "VpcId": {{$.VPCRef}}
       },
       "Type": "AWS::EC2::SecurityGroup"
     },
@@ -880,12 +913,14 @@
             "IpProtocol": "icmp",
             "ToPort": -1
           },
+          {{ range $_, $r := $.SSHAccessAllowedSourceCIDRs -}}
           {
-            "CidrIp": "0.0.0.0/0",
+            "CidrIp": "{{$r}}",
             "FromPort": 22,
             "IpProtocol": "tcp",
             "ToPort": 22
           },
+          {{end -}}
           {
             "SourceSecurityGroupId" : { "Ref" : "SecurityGroupElbAPIServer" },
             "FromPort": 443,
@@ -986,17 +1021,19 @@
           }
         ],
         "SecurityGroupIngress": [
+          {{ range $_, $r := $.SSHAccessAllowedSourceCIDRs -}}
+          {
+            "CidrIp": "{{$r}}",
+            "FromPort": 22,
+            "IpProtocol": "tcp",
+            "ToPort": 22
+          },
+          {{end -}}
           {
             "CidrIp": "0.0.0.0/0",
             "FromPort": -1,
             "IpProtocol": "icmp",
             "ToPort": -1
-          },
-          {
-            "CidrIp": "0.0.0.0/0",
-            "FromPort": 22,
-            "IpProtocol": "tcp",
-            "ToPort": 22
           }
         ],
         "Tags": [
@@ -1159,17 +1196,19 @@
           }
         ],
         "SecurityGroupIngress": [
+          {{ range $_, $r := $.SSHAccessAllowedSourceCIDRs -}}
+          {
+            "CidrIp": "{{$r}}",
+            "FromPort": 22,
+            "IpProtocol": "tcp",
+            "ToPort": 22
+          },
+          {{end -}}
           {
             "CidrIp": "0.0.0.0/0",
             "FromPort": 3,
             "IpProtocol": "icmp",
             "ToPort": -1
-          },
-          {
-            "CidrIp": "0.0.0.0/0",
-            "FromPort": 22,
-            "IpProtocol": "tcp",
-            "ToPort": 22
           }
         ],
         "Tags": [
@@ -1390,7 +1429,7 @@
     {{end}}
     {{end}}
 
-    {{if not .InternetGatewayID}}
+    {{if not .VPCID}}
     ,
     "{{.InternetGatewayLogicalName}}": {
       "Properties": {
@@ -1407,9 +1446,6 @@
       },
       "Type": "AWS::EC2::InternetGateway"
     }
-    {{end}}
-
-    {{if not .VPCID}}
     ,
     "{{.VPCLogicalName}}": {
       "Properties": {

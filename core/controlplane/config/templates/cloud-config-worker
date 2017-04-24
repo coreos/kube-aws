@@ -180,7 +180,6 @@ coreos:
         ExecStartPre=/usr/bin/docker run --rm -e SLEEP=false -v /opt/cni/bin:/host/opt/cni/bin {{ .CalicoCniImage.RepoWithTag }} /install-cni.sh
         {{end -}}
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
-        --api-servers={{.APIEndpointURL}} \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
         {{/* Work-around until https://github.com/kubernetes/kubernetes/issues/43967 is fixed via https://github.com/kubernetes/kubernetes/pull/43995 */ -}}
         --cni-bin-dir=/opt/cni/bin \
@@ -190,7 +189,7 @@ coreos:
         --rkt-stage1-image=coreos.com/rkt/stage1-coreos \
         {{if .Experimental.NodeLabels.Enabled}}--node-labels {{.Experimental.NodeLabels.String}} \
         {{end}}--register-node=true \
-        {{if .Experimental.Taints}}--register-schedulable=false \
+        {{if .Experimental.Taints}}--register-with-taints={{.Experimental.Taints.String}}\
         {{end}}--allow-privileged=true \
         {{if .NodeStatusUpdateFrequency}}--node-status-update-frequency={{.NodeStatusUpdateFrequency}} \
         {{end}}--pod-manifest-path=/etc/kubernetes/manifests \
@@ -204,7 +203,8 @@ coreos:
         --tls-cert-file=/etc/kubernetes/ssl/worker.pem \
         --tls-private-key-file=/etc/kubernetes/ssl/worker-key.pem \
         {{- end }}
-        --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml
+        --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
+        --require-kubeconfig
         Restart=always
         RestartSec=10
         [Install]
@@ -347,27 +347,6 @@ coreos:
         [Install]
         WantedBy=kubelet.service
 {{ end }}
-
-{{if .Experimental.Taints }}
-    - name: kube-node-taint-and-uncordon.service
-      command: start
-      runtime: true
-      content: |
-        [Unit]
-        Description=Taint this kubernetes node with user-provided taints and then uncordon it
-        Wants=kubelet.service
-        After=kubelet.service
-        Before=cfn-signal.service
-
-        [Service]
-        Type=simple
-        StartLimitInterval=0
-        RestartSec=10
-        Restart=on-failure
-        ExecStartPre=/usr/bin/systemctl is-active kubelet.service
-        ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl  --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null ; then break ; fi;  done"
-        ExecStart=/opt/bin/taint-and-uncordon
-{{end}}
 
 {{ if .WaitSignal.Enabled }}
     - name: cfn-signal.service
@@ -726,32 +705,6 @@ write_files:
 {{end}}
 {{end}}
 
-  - path: /opt/bin/taint-and-uncordon
-    owner: root:root
-    permissions: 0700
-    content: |
-      #!/bin/bash -e
-
-      hostname=$(hostname)
-
-      docker run --rm --net=host \
-        -v /etc/kubernetes:/etc/kubernetes \
-        -v /etc/resolv.conf:/etc/resolv.conf \
-        {{.HyperkubeImage.RepoWithTag}} /bin/bash \
-          -vxec \
-          'echo "tainting this node."
-           hostname="'${hostname}'"
-           taints=({{range $i, $taint := .Experimental.Taints}}"{{$taint.String}}" {{end}})
-           kubectl="/kubectl --server={{.APIEndpointURL}}:443 --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml"
-           taint="$kubectl taint node --overwrite"
-           for t in ${taints[@]}; do
-             $taint "$hostname" "$t"
-           done
-           echo "done."
-           echo "uncordoning this node."
-           $kubectl uncordon $hostname
-           echo "done."'
-
   - path: /etc/kubernetes/manifests/kube-proxy.yaml
     content: |
         apiVersion: v1
@@ -802,7 +755,7 @@ write_files:
         - name: local
           cluster:
             certificate-authority: /etc/kubernetes/ssl/ca.pem
-            server: https://{{.ExternalDNSName}}:443
+            server: {{.APIEndpointURL}}:443
         users:
         - name: kubelet-bootstrap
           user:
@@ -822,6 +775,7 @@ write_files:
         - name: local
           cluster:
             certificate-authority: /etc/kubernetes/ssl/ca.pem
+            server: {{.APIEndpointURL}}:443
         users:
         - name: kubelet
           user:

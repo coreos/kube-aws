@@ -95,10 +95,8 @@ init() {
     --region ${KUBE_AWS_REGION} \
     --availability-zone ${KUBE_AWS_AVAILABILITY_ZONE} \
     --key-name ${KUBE_AWS_KEY_NAME} \
-    --kms-key-arn ${KUBE_AWS_KMS_KEY_ARN}
-
-  echo "hostedZoneId: ${KUBE_AWS_HOSTED_ZONE_ID}" >> cluster.yaml
-  echo 'createRecordSet: true' >> cluster.yaml
+    --kms-key-arn ${KUBE_AWS_KMS_KEY_ARN} \
+    --hosted-zone-id ${KUBE_AWS_HOSTED_ZONE_ID}
 
   if [ "${KUBE_AWS_USE_CALICO}" != "" ]; then
     echo 'useCalico: true' >> cluster.yaml
@@ -139,6 +137,11 @@ customize_cluster_yaml() {
     echo "vpcId: $(testinfra_vpc)" >> cluster.yaml
     echo "routeTableId: $(testinfra_public_routetable)" >> cluster.yaml
     echo -e "workerSecurityGroupIds:\n- $(testinfra_glue_sg)" >> cluster.yaml
+  fi
+
+  if [ "${LIMIT_SSH_ACCESS}" != "" ]; then
+    ip=$(curl -s https://api.ipify.org)
+    echo -e "sshAccessAllowedSourceCIDRs:\n- $ip/32" >> cluster.yaml
   fi
 
   echo -e "

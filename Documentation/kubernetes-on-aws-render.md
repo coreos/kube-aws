@@ -251,14 +251,28 @@ useCalico: true
 
 `kube-aws` can optionally create an ALIAS record for the controller's ELB in an existing Route53 hosted zone.
 
-Edit the `cluster.yaml` file:
+Just run `kube-aws init` with the flag `--hosted-zone-id` to specify the id of the hosted zone in which the record is created.
+
+If you've run `kube-aws init` without the flag, edit the `cluster.yaml` file to add `loadBalancer.hostedZone.id` under the first item of `apiEndpoints`:
 
 ```yaml
-externalDNSName: kubernetes.staging.example.com
-createRecordSet: true
-hostedZoneId: A12B3CDE4FG5HI
+apiEndpoints:
+- name: default
+  dNSName: kubernetes.staging.example.com
+  loadBalancer:
+    hostedZone:
+      id: A12B3CDE4FG5HI
+
 # DEPRECATED: use hostedZoneId instead
 #hostedZone: staging.example.com
+
+# DEPRECATED: use loadBalancer.hostedZone.id instead
+#hostedZoneId: A12B3CDE4FG5HI
+
+# DEPRECATED: use loadBalancer.createRecordSet instead
+# This is even implied to be true when loadBalancer.hostedZone.id is specified
+#createRecordSet: true
+
 ```
 
 If `createRecordSet` is not set to true, the deployer will be responsible for making externalDNSName routable to the the ELB managing the controller nodes after the cluster is created.

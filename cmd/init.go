@@ -24,6 +24,7 @@ func init() {
 	RootCmd.AddCommand(cmdInit)
 	cmdInit.Flags().StringVar(&initOpts.ClusterName, "cluster-name", "", "The name of this cluster. This will be the name of the cloudformation stack")
 	cmdInit.Flags().StringVar(&initOpts.ExternalDNSName, "external-dns-name", "", "The hostname that will route to the api server")
+	cmdInit.Flags().StringVar(&initOpts.HostedZoneID, "hosted-zone-id", "", "The hosted zone in which a Route53 record set for a k8s API endpoint is created")
 	cmdInit.Flags().StringVar(&initOpts.Region.Name, "region", "", "The AWS region to deploy to")
 	cmdInit.Flags().StringVar(&initOpts.AvailabilityZone, "availability-zone", "", "The AWS availability-zone to deploy to")
 	cmdInit.Flags().StringVar(&initOpts.KeyName, "key-name", "", "The AWS key-pair for ssh access to nodes")
