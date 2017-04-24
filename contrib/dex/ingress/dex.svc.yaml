@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dex
+  namespace: kube-system
+  labels:
+    app: dex
+    component: identity
+spec:
+  selector:
+    app: dex
+    component: identity
+  ports:
+  - name: http
+    protocol: TCP
+    port: 5556
