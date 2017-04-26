@@ -89,6 +89,17 @@ func NewDefaultCluster() *Cluster {
 		},
 
 		Taints: model.Taints{},
+		Dex: model.Dex{
+			Enabled:         false,
+			Url:             "https://dex.example.com",
+			ClientId:        "example-app",
+			Username:        "email",
+			Groups:          "groups",
+			CaFile:          "/etc/kubernetes/ssl/ca.pem",
+			Connectors:      []model.Connector{},
+			StaticClients:   []model.StaticClient{},
+			StaticPasswords: []model.StaticPassword{},
+		},
 	}
 
 	return &Cluster{
