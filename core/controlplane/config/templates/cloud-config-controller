@@ -1227,6 +1227,7 @@ write_files:
           {{if .Experimental.AuditLog.Enabled}}
           - --audit-log-maxage={{.Experimental.AuditLog.MaxAge}}
           - --audit-log-path={{.Experimental.AuditLog.LogPath}}
+          - --audit-log-maxbackup=1
           {{ end }}
           {{if .Experimental.Plugins.Rbac.Enabled}}
           - --authorization-mode=RBAC
@@ -1290,6 +1291,11 @@ write_files:
             name: kubernetes-webhooks
             readOnly: true
           {{end}}
+          {{if .Experimental.AuditLog.Enabled}}
+          - mountPath: /var/log
+            name: var-log
+            readOnly: false
+          {{end}}
         volumes:
         - hostPath:
             path: /etc/kubernetes/ssl
@@ -1306,6 +1312,11 @@ write_files:
         - hostPath:
             path: /etc/kubernetes/webhooks
           name: kubernetes-webhooks
+        {{end}}
+        {{if .Experimental.AuditLog.Enabled}}
+        - hostPath:
+            path: /var/log
+          name: var-log
         {{end}}
 
   - path: /etc/kubernetes/manifests/kube-controller-manager.yaml

@@ -1524,6 +1524,11 @@
     "StackName": {
       "Description": "The name of this stack which is used by node pool stacks to import outputs from this stack",
       "Value": { "Ref": "AWS::StackName" }
+    },
+    "ControllerIAMRoleArn": {
+      "Description": "The ARN of the IAM role for this Node Pool",
+      "Value": { "Fn::GetAtt": ["IAMRoleController", "Arn"] },
+      "Export": { "Name": { "Fn::Sub": "${AWS::StackName}-ControllerIAMRoleArn" } }
     }
   }
 }

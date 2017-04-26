@@ -52,6 +52,36 @@ worker:
 
 See [the relevant GitHub issue](https://github.com/kubernetes-incubator/kube-aws/issues/253) for more information.
 
+You can reference controller and worker IAM Roles in a separate CloudFormation stack that provides roles to assume:
+
+```yaml
+...
+Parameters:
+  KubeAWSStackName:
+    Type: String
+Resources:
+  IAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: ec2.amazonaws.com
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              AWS:
+                Fn::ImportValue: !Sub "${KubeAWSStackName}-ControllerIAMRoleArn"
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              AWS:
+                Fn::ImportValue: !Sub "${KubeAWSStackName}-NodePool<Node Pool Name>WorkerIAMRoleArn"
+      ...
+```
+
 When you are done with your cluster, [destroy your cluster][aws-step-7]
 
 [aws-step-1]: kubernetes-on-aws.md

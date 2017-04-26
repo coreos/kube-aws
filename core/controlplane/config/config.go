@@ -43,7 +43,7 @@ func NewDefaultCluster() *Cluster {
 		AuditLog: AuditLog{
 			Enabled: false,
 			MaxAge:  30,
-			LogPath: "/dev/stdout",
+			LogPath: "/var/log/kube-apiserver-audit.log",
 		},
 		Authentication: Authentication{
 			Webhook{

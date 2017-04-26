@@ -423,5 +423,16 @@
       },
       "Type": "AWS::IAM::Role"
     }
+  },
+  "Outputs": {
+    "WorkerIAMRoleArn": {
+      "Description": "The ARN of the IAM role for this Node Pool",
+      "Value": { "Fn::GetAtt": ["IAMRoleWorker", "Arn"] },
+      "Export": { "Name": { "Fn::Sub": "${AWS::StackName}-WorkerIAMRoleArn" } }
+    },
+    "StackName": {
+      "Description": "The name of this stack",
+      "Value": { "Ref": "AWS::StackName" }
+    }
   }
 }
