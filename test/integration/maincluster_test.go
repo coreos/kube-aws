@@ -122,7 +122,7 @@ func TestMainClusterConfig(t *testing.T) {
 				ClientId:        "example-app",
 				Username:        "email",
 				Groups:          "groups",
-				CaFile:          "/etc/kubernetes/ssl/ca.pem",
+				SelfSignedCa:    true,
 				Connectors:      []model.Connector{},
 				StaticClients:   []model.StaticClient{},
 				StaticPasswords: []model.StaticPassword{},
@@ -1078,7 +1078,7 @@ experimental:
     clientId: "example-app"
     username: "email"
     groups: "groups"
-    caFile: "/etc/kubernetes/ssl/ca.pem"
+    SelfSignedCa: true
     connectors:
     - type: github
       id: github
@@ -1169,12 +1169,12 @@ worker:
 							SecurityGroupIds: []string{"sg-12345678"},
 						},
 						Dex: model.Dex{
-							Enabled:  true,
-							Url:      "https://dex.example.com",
-							ClientId: "example-app",
-							Username: "email",
-							Groups:   "groups",
-							CaFile:   "/etc/kubernetes/ssl/ca.pem",
+							Enabled:      true,
+							Url:          "https://dex.example.com",
+							ClientId:     "example-app",
+							Username:     "email",
+							Groups:       "groups",
+							SelfSignedCa: true,
 							Connectors: []model.Connector{
 								{Type: "github", Id: "github", Name: "GitHub", Config: map[string]string{"clientId": "your_client_id", "clientSecret": "your_client_secret", "redirectURI": "https://dex.example.com/callback", "org": "your_organization"}},
 							},

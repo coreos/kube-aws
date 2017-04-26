@@ -1249,8 +1249,8 @@ write_files:
           {{if .Experimental.Dex.Groups}}
           - --oidc-groups-claim={{.Experimental.Dex.Groups}}
           {{ end -}}
-          {{if .Experimental.Dex.CaFile}}
-          - --oidc-ca-file={{.Experimental.Dex.CaFile}}
+          {{if .Experimental.Dex.SelfSignedCa}}
+          - --oidc-ca-file=/etc/kubernetes/ssl/ca.pem
           {{ end -}}
           {{ end -}}
           - --cert-dir=/etc/kubernetes/ssl

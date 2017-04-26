@@ -10,7 +10,7 @@ type Dex struct {
 	ClientId        string           `yaml:"clientId"`
 	Username        string           `yaml:"username"`
 	Groups          string           `yaml:"groups,omitempty"`
-	CaFile          string           `yaml:"caFile,omitempty"`
+	SelfSignedCa    bool             `yaml:"selfSignedCa"`
 	Connectors      []Connector      `yaml:"connectors,omitempty"`
 	StaticClients   []StaticClient   `yaml:"staticClients,omitempty"`
 	StaticPasswords []StaticPassword `yaml:"staticPasswords,omitempty"`

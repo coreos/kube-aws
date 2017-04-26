@@ -1113,15 +1113,14 @@ addons:
 #   # Enable dex  integration - https://github.com/coreos/dex
 #   # Configure OpenID Connect token authenticator plugin in Kubernetes API server.
 #   # Notice: always use "https" for the "url", otherwise the Kubernetes API server will not start correctly.
-#   # Please leave the "caFile" commented  if you use a certificate signed  by a trusted CA as in Case you plan to
-#   # expose the service using a LoadBalancer.
+#   # Please set selfSignedCa to false if you plan to expose dex service using a LoadBalancer or Ingress with certificates signed by a trusted CA.
 #   dex:
 #     enabled: true
 #     url: "https://dex.example.com"
 #     clientId: "example-app"
 #     username: "email"
 #     groups: "groups"
-#     caFile: "/etc/kubernetes/ssl/ca.pem"
+#     selfSignedCa: true
 #
 #   # Dex connectors configuration. You can add configuration for the desired connectors suported by dex or
 #   # skip this part if you don't plan to use any of them. Here is an example of GitHub connector.

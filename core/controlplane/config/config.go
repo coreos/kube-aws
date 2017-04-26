@@ -95,7 +95,7 @@ func NewDefaultCluster() *Cluster {
 			ClientId:        "example-app",
 			Username:        "email",
 			Groups:          "groups",
-			CaFile:          "/etc/kubernetes/ssl/ca.pem",
+			SelfSignedCa:    true,
 			Connectors:      []model.Connector{},
 			StaticClients:   []model.StaticClient{},
 			StaticPasswords: []model.StaticPassword{},
