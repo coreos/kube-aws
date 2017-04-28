@@ -1040,6 +1040,12 @@ write_files:
           annotations:
             rbac.authorization.kubernetes.io/autoupdate: "false"
         rules:
+          - apiGroups:
+            - extensions
+            resources:
+            - daemonsets
+            verbs:
+            - get
           - apiGroups: ["*"]
             resources:
             - nodes
