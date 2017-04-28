@@ -600,9 +600,9 @@ write_files:
          echo 'Failed to create the cluster role named "cluster-admin". It is ok if you are using k8s newer than 1.5'
       fi
 
-      kubectl apply -f "${mfdir}/cluster-roles/bootstrapped-node.yaml"
+      kubectl apply -f "${mfdir}/cluster-roles/node.yaml"
 
-      for manifest in {system-worker,kube-worker,kube-admin,bootstrapped-node,bootstrapped-node-proxier}; do
+      for manifest in {system-worker,kube-admin,node,node-proxier}; do
           kubectl apply -f "${mfdir}/cluster-role-bindings/$manifest.yaml"
       done
 
@@ -1019,7 +1019,9 @@ write_files:
         kind: ClusterRole
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-            name: cluster-admin
+          name: cluster-admin
+          annotations:
+            rbac.authorization.kubernetes.io/autoupdate: "true"
         rules:
           - apiGroups: ["*"]
             resources: ["*"]
@@ -1029,12 +1031,14 @@ write_files:
 
   # We need to give nodes a few extra permissions so that both the node
   # draining and node labeling with AWS metadata work as expected
-  - path: /srv/kubernetes/rbac/cluster-roles/bootstrapped-node.yaml
+  - path: /srv/kubernetes/rbac/cluster-roles/node.yaml
     content: |
         kind: ClusterRole
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-            name: bootstrapped-node
+          name: kube-aws:node
+          annotations:
+            rbac.authorization.kubernetes.io/autoupdate: "false"
         rules:
           - apiGroups: ["*"]
             resources:
@@ -1060,30 +1064,22 @@ write_files:
           - nonResourceURLs: ["*"]
             verbs: ["*"]
 
-  # Grants super-user permissions to the kube-admin user
+  # Grants super-user permissions to the kube-admin user. Not actually needed
+  # in Kubernetes 1.6+ since users in the system:masters group are already
+  # given super-user access by default
   - path: /srv/kubernetes/rbac/cluster-role-bindings/kube-admin.yaml
     content: |
         kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: kube-admin
+          name: kube-aws:admin
+          annotations:
+            rbac.authorization.kubernetes.io/autoupdate: "false"
         subjects:
           - kind: User
             name: kube-admin
-        roleRef:
-          kind: ClusterRole
-          name: cluster-admin
-          apiGroup: rbac.authorization.k8s.io
-
-  - path: /srv/kubernetes/rbac/cluster-role-bindings/kube-worker.yaml
-    content: |
-        kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1beta1
-        metadata:
-          name: kube-worker
-        subjects:
-          - kind: User
-            name: kube-worker
+          - kind: Group
+            name: system:masters
         roleRef:
           kind: ClusterRole
           name: cluster-admin
@@ -1095,7 +1091,9 @@ write_files:
         kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: system-worker
+          name: kube-aws:system-worker
+          annotations:
+            rbac.authorization.kubernetes.io/autoupdate: "false"
         subjects:
           - kind: ServiceAccount
             namespace: kube-system
@@ -1105,32 +1103,38 @@ write_files:
           name: cluster-admin
           apiGroup: rbac.authorization.k8s.io
 
-  # Associates the add-on group `bootstrapped-node` to all nodes, so that extra kube-aws
+  # Associates the add-on group `kube-aws:node` to all nodes, so that extra kube-aws
   # features like node draining work as expected
-  - path: /srv/kubernetes/rbac/cluster-role-bindings/bootstrapped-node.yaml
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/node.yaml
     content: |
         kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: bootstrapped-node
+          name: kube-aws:node
+          annotations:
+            rbac.authorization.kubernetes.io/autoupdate: "false"
         subjects:
+          - kind: User
+            name: system:node:kube-worker
           - kind: Group
             name: system:nodes
         roleRef:
           kind: ClusterRole
-          name: bootstrapped-node
+          name: kube-aws:node
           apiGroup: rbac.authorization.k8s.io
 
   # Since the kube-proxy is run via the pod manifest mechanism, it's not
   # possible to inject a ServiceAccount into the kube-proxy pods, so they access
   # the API using the node identity
-  - path: /srv/kubernetes/rbac/cluster-role-bindings/bootstrapped-node-proxier.yaml
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/node-proxier.yaml
     content: |
         kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: bootstrapped-node-proxier
+          name: kube-aws:node-proxier
         subjects:
+          - kind: User
+            name: system:node:kube-worker
           - kind: Group
             name: system:nodes
         roleRef:
@@ -1145,7 +1149,7 @@ write_files:
         kind: ClusterRole
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: kubelet-bootstrap
+          name: kube-aws:kubelet-bootstrap
         rules:
           - apiGroups:
               - '*'
@@ -1162,14 +1166,14 @@ write_files:
         kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: kubelet-bootstrap
+          name: kube-aws:kubelet-bootstrap
         subjects:
           - kind: Group
             namespace: '*'
             name: system:kubelet-bootstrap
         roleRef:
           kind: ClusterRole
-          name: kubelet-bootstrap
+          name: kube-aws:kubelet-bootstrap
           apiGroup: rbac.authorization.k8s.io
 {{ end }}
 {{ end }}
