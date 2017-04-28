@@ -1135,7 +1135,7 @@ write_files:
             name: system:nodes
         roleRef:
           kind: ClusterRole
-          name: system:proxier
+          name: system:node-proxier
           apiGroup: rbac.authorization.k8s.io
 
 {{ if .Experimental.TLSBootstrap.Enabled }}
