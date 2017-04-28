@@ -1122,8 +1122,8 @@ write_files:
           apiGroup: rbac.authorization.k8s.io
 
   # Since the kube-proxy is run via the pod manifest mechanism, it's not
-  # possible to inject a ServiceAccount into the kube-proxy pods, so kube-proxy
-  # pods access the API using the node identity
+  # possible to inject a ServiceAccount into the kube-proxy pods, so they access
+  # the API using the node identity
   - path: /srv/kubernetes/rbac/cluster-role-bindings/bootstrapped-node-proxier.yaml
     content: |
         kind: ClusterRoleBinding
