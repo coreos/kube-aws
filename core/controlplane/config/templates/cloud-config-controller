@@ -602,7 +602,7 @@ write_files:
 
       kubectl apply -f "${mfdir}/cluster-roles/bootstrapped-node.yaml"
 
-      for manifest in {system-worker,kube-worker,kube-admin,bootstrapped-node}; do
+      for manifest in {system-worker,kube-worker,kube-admin,bootstrapped-node,bootstrapped-node-proxier}; do
           kubectl apply -f "${mfdir}/cluster-role-bindings/$manifest.yaml"
       done
 
@@ -1119,6 +1119,23 @@ write_files:
         roleRef:
           kind: ClusterRole
           name: bootstrapped-node
+          apiGroup: rbac.authorization.k8s.io
+
+  # Since the kube-proxy is run via the pod manifest mechanism, it's not
+  # possible to inject a ServiceAccount into the kube-proxy pods, so kube-proxy
+  # pods access the API using the node identity
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/bootstrapped-node-proxier.yaml
+    content: |
+        kind: ClusterRoleBinding
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        metadata:
+          name: bootstrapped-node-proxier
+        subjects:
+          - kind: Group
+            name: system:nodes
+        roleRef:
+          kind: ClusterRole
+          name: system:proxier
           apiGroup: rbac.authorization.k8s.io
 
 {{ if .Experimental.TLSBootstrap.Enabled }}
