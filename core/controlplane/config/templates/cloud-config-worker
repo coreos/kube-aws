@@ -725,6 +725,7 @@ write_files:
             - proxy
             - --master={{.APIEndpointURL}}
             - --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml
+            - --cluster-cidr={{.PodCIDR}}
             securityContext:
               privileged: true
             volumeMounts:

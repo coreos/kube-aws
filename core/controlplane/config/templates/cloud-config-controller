@@ -1195,6 +1195,7 @@ write_files:
             - /hyperkube
             - proxy
             - --master=http://127.0.0.1:8080
+            - --cluster-cidr={{.PodCIDR}}
             securityContext:
               privileged: true
             volumeMounts:
