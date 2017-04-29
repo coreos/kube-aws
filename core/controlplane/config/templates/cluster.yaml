@@ -1176,8 +1176,6 @@ addons:
 #       value: search
 #       effect: NoSchedule
 #   plugins:
-#     # When enabled, you also need to configure a minimum set of role bindings or everything breaks.
-#     # See https://github.com/kubernetes-incubator/kube-aws/issues/230 for more information.
 #     rbac:
 #       enabled: true
 #
