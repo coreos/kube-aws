@@ -1108,8 +1108,8 @@ write_files:
           name: cluster-admin
           apiGroup: rbac.authorization.k8s.io
 
-  # Makes kube-worker user behave like a regular member of system:node group, needed when
-  # TLS bootstrapping is disabled
+  # Makes kube-worker user behave like a regular member of system:nodes group,
+  # needed when TLS bootstrapping is disabled
   - path: /srv/kubernetes/rbac/cluster-role-bindings/node.yaml
     content: |
         kind: ClusterRoleBinding
