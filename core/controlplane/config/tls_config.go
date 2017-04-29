@@ -186,8 +186,7 @@ func (c *Cluster) NewTLSAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certi
 	}
 
 	workerConfig := tlsutil.ClientCertConfig{
-		CommonName:   "system:node:kube-worker",
-		Organization: []string{"system:nodes"},
+		CommonName: "kube-worker",
 		DNSNames: []string{
 			fmt.Sprintf("*.%s.compute.internal", c.Region),
 			"*.ec2.internal",

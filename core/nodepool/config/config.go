@@ -39,7 +39,6 @@ type ProvidedConfig struct {
 	cfg.KubeClusterSettings `yaml:",inline"`
 	WorkerNodePoolConfig    `yaml:",inline"`
 	DeploymentSettings      `yaml:",inline"`
-	cfg.FlannelSettings     `yaml:",inline"`
 	cfg.Experimental        `yaml:",inline"`
 	Private                 bool   `yaml:"private,omitempty"`
 	NodePoolName            string `yaml:"name,omitempty"`
@@ -195,7 +194,6 @@ func (c *ProvidedConfig) Load(main *cfg.Config) error {
 
 	// Inherit parameters from the control plane stack
 	c.KubeClusterSettings = main.KubeClusterSettings
-	c.FlannelSettings = main.FlannelSettings
 
 	// Inherit cluster TLS bootstrap config from control plane stack
 	c.Experimental.TLSBootstrap = main.DeploymentSettings.Experimental.TLSBootstrap
