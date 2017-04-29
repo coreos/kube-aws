@@ -169,7 +169,7 @@ coreos:
         ExecStartPre=/usr/bin/mkdir -p /var/lib/cni
         ExecStartPre=/usr/bin/mkdir -p /var/log/containers
         ExecStartPre=/usr/bin/mkdir -p /opt/cni/bin
-        ExecStartPre=/bin/sh -ec "find /etc/kubernetes/manifests /etc/kubernetes/cni/net.d/  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
+        ExecStartPre=/bin/sh -ec "find /etc/kubernetes/cni/net.d/  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
         ExecStartPre=/usr/bin/etcdctl \
                        --ca-file /etc/kubernetes/ssl/ca.pem \
                        --key-file /etc/kubernetes/ssl/etcd-client-key.pem \
@@ -192,8 +192,7 @@ coreos:
         {{if .Experimental.Taints}}--register-with-taints={{.Experimental.Taints.String}}\
         {{end}}--allow-privileged=true \
         {{if .NodeStatusUpdateFrequency}}--node-status-update-frequency={{.NodeStatusUpdateFrequency}} \
-        {{end}}--pod-manifest-path=/etc/kubernetes/manifests \
-        --cluster_dns={{.DNSServiceIP}} \
+        {{end}}--cluster_dns={{.DNSServiceIP}} \
         --cluster_domain=cluster.local \
         --cloud-provider=aws \
         --cert-dir=/etc/kubernetes/ssl \
