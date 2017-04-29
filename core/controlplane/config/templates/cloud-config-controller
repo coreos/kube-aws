@@ -612,8 +612,8 @@ write_files:
       done
 
       {{ if .Experimental.TLSBootstrap.Enabled }}
-      kubectl create -f "${mfdir}/cluster-roles/kubelet-bootstrap.yaml" | echo 'Failed to create the cluster role named "kubelet-bootstrap". Skipping'
-      kubectl create -f "${mfdir}/cluster-role-bindings/kubelet-bootstrap.yaml" | echo 'Failed to create the cluster role binding "kubelet-bootstrap". Skipping'
+      kubectl create -f "${mfdir}/cluster-roles/node-bootstrap.yaml" | echo 'Failed to create the cluster role named "kube-aws:node-bootstrap". Skipping'
+      kubectl create -f "${mfdir}/cluster-role-bindings/node-bootstrap.yaml" | echo 'Failed to create the cluster role binding "kube-aws:node-bootstrap". Skipping'
       {{ end }}
       {{ end }}
 
@@ -1159,12 +1159,12 @@ write_files:
 
 {{ if .Experimental.TLSBootstrap.Enabled }}
   # Only allows certificate signing requests to be performed with the bootstrap token
-  - path: /srv/kubernetes/rbac/cluster-roles/kubelet-bootstrap.yaml
+  - path: /srv/kubernetes/rbac/cluster-roles/node-bootstrap.yaml
     content: |
         kind: ClusterRole
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: kube-aws:kubelet-bootstrap
+          name: kube-aws:node-bootstrap
         rules:
           - apiGroups:
               - '*'
@@ -1176,12 +1176,12 @@ write_files:
             - list
             - watch
 
-  - path: /srv/kubernetes/rbac/cluster-role-bindings/kubelet-bootstrap.yaml
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/node-bootstrap.yaml
     content: |
         kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: kube-aws:kubelet-bootstrap
+          name: kube-aws:node-bootstrap
         subjects:
           - kind: Group
             namespace: '*'
