@@ -188,7 +188,7 @@ coreos:
         ExecStartPre=/usr/bin/docker run --rm -e SLEEP=false -v /opt/cni/bin:/host/opt/cni/bin {{ .CalicoCniImage.RepoWithTag }} /install-cni.sh
         {{end -}}
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
-        --kubeconfig=/etc/kubernetes/node-kubeconfig.yaml \
+        --kubeconfig=/etc/kubernetes/kubeconfig/node-config.yaml \
         --require-kubeconfig \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
         {{/* Work-around until https://github.com/kubernetes/kubernetes/issues/43967 is fixed via https://github.com/kubernetes/kubernetes/pull/43995 */ -}}
@@ -1203,9 +1203,8 @@ write_files:
           name: kube-proxy
           namespace: kube-system
         spec:
-          selector:
-            matchLabels:
-              k8s-app: kube-proxy
+          updateStrategy:
+            type: RollingUpdate
           template:
             metadata:
               labels:
@@ -1218,15 +1217,12 @@ write_files:
                 command:
                 - /usr/local/bin/kube-proxy
                 - --cluster-cidr={{.PodCIDR}}
-                - --kubeconfig=/etc/kubernetes/proxy-kubeconfig.yaml
+                - --kubeconfig=/etc/kubernetes/kubeconfig/proxy-config.yaml
                 securityContext:
                   privileged: true
                 volumeMounts:
-                - mountPath: /etc/kubernetes
+                - mountPath: /etc/kubernetes/kubeconfig
                   name: kube
-                - mountPath: /var/run/dbus
-                  name: dbus
-                  readOnly: false
               hostNetwork: true
               serviceAccountName: kube-proxy
               tolerations:
@@ -1239,10 +1235,7 @@ write_files:
               volumes:
               - name: kube
                 hostPath:
-                  path: /etc/kubernetes
-              - hostPath:
-                  path: /var/run/dbus
-                name: dbus
+                  path: /etc/kubernetes/kubeconfig
 
   - path: /etc/kubernetes/manifests/kube-apiserver.yaml
     content: |
@@ -1953,7 +1946,7 @@ write_files:
 {{ end }}
 {{ end }}
 
-  - path: /etc/kubernetes/node-kubeconfig.yaml
+  - path: /etc/kubernetes/kubeconfig/node-config.yaml
     content: |
         apiVersion: v1
         kind: Config
@@ -1970,7 +1963,7 @@ write_files:
           name: kubelet-context
         current-context: kubelet-context
 
-  - path: /etc/kubernetes/proxy-kubeconfig.yaml
+  - path: /etc/kubernetes/kubeconfig/proxy-config.yaml
     content: |
         apiVersion: v1
         kind: Config
