@@ -49,7 +49,6 @@ func (t Taints) Valid() error {
 		} else {
 			keyEffects[keyEffect] = 1
 		}
-
 	}
 
 	return nil
