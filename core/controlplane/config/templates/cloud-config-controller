@@ -1232,6 +1232,16 @@ write_files:
                 effect: "NoSchedule"
               - key: "CriticalAddonsOnly"
                 operator: "Exists"
+              # Since kube-proxy needs to run on every node, it must tolerate
+              # all taints listed in cluster configuration file
+              {{- range $taint := .Experimental.Taints.UniqKeys }}
+              - key: {{ .Key }}
+                operator: "Exists"
+              {{- end }}
+              {{- range $taint := .NodeTaints.UniqKeys }}
+              - key: {{ .Key }}
+                operator: "Exists"
+              {{- end }}
               volumes:
               - name: kube
                 hostPath:

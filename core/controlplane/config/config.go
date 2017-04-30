@@ -149,6 +149,9 @@ func NewDefaultCluster() *Cluster {
 		ControllerSettings: ControllerSettings{
 			Controller: model.NewDefaultController(),
 		},
+		ComputedNodeSettings: ComputedNodeSettings{
+			NodeTaints: model.Taints{},
+		},
 		EtcdSettings: EtcdSettings{
 			Etcd: model.NewDefaultEtcd(),
 		},
@@ -450,6 +453,11 @@ type ComputedDeploymentSettings struct {
 	AMI string
 }
 
+//Part of node pools configuration that must be available to the controller
+type ComputedNodeSettings struct {
+	NodeTaints model.Taints
+}
+
 // Part of configuration which can be customized for each type/group of nodes(etcd/controller/worker/) by its nature.
 //
 // Please beware that it is described as just "by its nature".
@@ -652,6 +660,7 @@ type Cluster struct {
 	DeploymentSettings     `yaml:",inline"`
 	DefaultWorkerSettings  `yaml:",inline"`
 	ControllerSettings     `yaml:",inline"`
+	ComputedNodeSettings   `yaml:",inline"`
 	EtcdSettings           `yaml:",inline"`
 	FlannelSettings        `yaml:",inline"`
 	AdminAPIEndpointName   string `yaml:"adminAPIEndpointName,omitempty"`
@@ -1573,13 +1582,7 @@ func (e EtcdSettings) Valid() error {
 }
 
 func (c Experimental) Valid() error {
-	for _, taint := range c.Taints {
-		if taint.Effect != "NoSchedule" && taint.Effect != "PreferNoSchedule" && taint.Effect != "NoExecute" {
-			return fmt.Errorf("Effect must be NoSchedule, PreferNoSchedule, or NoExecute, but was %s", taint.Effect)
-		}
-	}
-
-	return nil
+	return c.Taints.Valid()
 }
 
 /*
