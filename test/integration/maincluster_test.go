@@ -3400,7 +3400,7 @@ worker:
       value: bar
       effect: UnknownEffect
 `,
-			expectedErrorMessage: "Effect must be NoSchedule or PreferNoSchedule, but was UnknownEffect",
+			expectedErrorMessage: "Effect must be NoSchedule, PreferNoSchedule, or NoExecute, but was UnknownEffect",
 		},
 		{
 			context: "WithAwsNodeLabelEnabledForTooLongClusterNameAndPoolName",

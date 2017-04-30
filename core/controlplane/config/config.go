@@ -1574,8 +1574,8 @@ func (e EtcdSettings) Valid() error {
 
 func (c Experimental) Valid() error {
 	for _, taint := range c.Taints {
-		if taint.Effect != "NoSchedule" && taint.Effect != "PreferNoSchedule" {
-			return fmt.Errorf("Effect must be NoSchedule or PreferNoSchedule, but was %s", taint.Effect)
+		if taint.Effect != "NoSchedule" && taint.Effect != "PreferNoSchedule" && taint.Effect != "NoExecute" {
+			return fmt.Errorf("Effect must be NoSchedule, PreferNoSchedule, or NoExecute, but was %s", taint.Effect)
 		}
 	}
 
