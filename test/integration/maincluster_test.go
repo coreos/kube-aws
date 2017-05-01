@@ -3400,7 +3400,7 @@ worker:
       value: bar
       effect: UnknownEffect
 `,
-			expectedErrorMessage: "Effect must be NoSchedule or PreferNoSchedule, but was UnknownEffect",
+			expectedErrorMessage: "invalid taint effect: UnknownEffect",
 		},
 		{
 			context: "WithAwsNodeLabelEnabledForTooLongClusterNameAndPoolName",

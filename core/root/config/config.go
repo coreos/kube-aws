@@ -88,6 +88,10 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 	}
 
 	for i, np := range nodePools {
+		if err := np.Experimental.Taints.Valid(); err != nil {
+			return nil, fmt.Errorf("invalid taints for node pool at index %d: %v", i, err)
+		}
+
 		if np.APIEndpointName == "" {
 			if c.Worker.APIEndpointName == "" {
 				if len(cpConfig.APIEndpoints) > 1 {
