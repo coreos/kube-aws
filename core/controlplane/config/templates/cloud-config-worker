@@ -169,7 +169,7 @@ coreos:
         ExecStartPre=/usr/bin/mkdir -p /var/lib/cni
         ExecStartPre=/usr/bin/mkdir -p /var/log/containers
         ExecStartPre=/usr/bin/mkdir -p /opt/cni/bin
-        ExecStartPre=/bin/sh -ec "find /etc/kubernetes/manifests /etc/kubernetes/cni/net.d/  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
+        ExecStartPre=/bin/sh -ec "find /etc/kubernetes/cni/net.d/  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
         ExecStartPre=/usr/bin/etcdctl \
                        --ca-file /etc/kubernetes/ssl/ca.pem \
                        --key-file /etc/kubernetes/ssl/etcd-client-key.pem \
@@ -192,18 +192,17 @@ coreos:
         {{if .Experimental.Taints}}--register-with-taints={{.Experimental.Taints.String}}\
         {{end}}--allow-privileged=true \
         {{if .NodeStatusUpdateFrequency}}--node-status-update-frequency={{.NodeStatusUpdateFrequency}} \
-        {{end}}--pod-manifest-path=/etc/kubernetes/manifests \
-        --cluster_dns={{.DNSServiceIP}} \
+        {{end}}--cluster_dns={{.DNSServiceIP}} \
         --cluster_domain=cluster.local \
         --cloud-provider=aws \
         --cert-dir=/etc/kubernetes/ssl \
         {{- if .Experimental.TLSBootstrap.Enabled }}
-        --experimental-bootstrap-kubeconfig=/etc/kubernetes/worker-bootstrap-kubeconfig.yaml \
+        --experimental-bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/node-bootstrap-config.yaml \
         {{- else }}
         --tls-cert-file=/etc/kubernetes/ssl/worker.pem \
         --tls-private-key-file=/etc/kubernetes/ssl/worker-key.pem \
         {{- end }}
-        --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
+        --kubeconfig=/etc/kubernetes/kubeconfig/node-config.yaml \
         --require-kubeconfig
         Restart=always
         RestartSec=10
@@ -262,7 +261,7 @@ coreos:
         {{.HyperkubeImage.RepoWithTag}} \
           --exec=/kubectl -- \
           --server={{.APIEndpointURL}}:443 \
-          --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
+          --kubeconfig=/etc/kubernetes/kubeconfig/node-config.yaml \
           drain $(hostname) \
           --ignore-daemonsets \
           --force'
@@ -403,7 +402,7 @@ coreos:
           -e LAUNCHCONFIGURATION=${LAUNCHCONFIGURATION} \
           {{.HyperkubeImage.RepoWithTag}} /bin/bash \
             -ec 'echo "placing labels and annotations with additional AWS parameters."; \
-             kctl="/kubectl --server={{.APIEndpointURL}}:443 --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml"; \
+             kctl="/kubectl --server={{.APIEndpointURL}}:443 --kubeconfig=/etc/kubernetes/kubeconfig/node-config.yaml"; \
              kctl_label="$kctl label --overwrite nodes/$(hostname)"; \
              kctl_annotate="$kctl annotate --overwrite nodes/$(hostname)"; \
              $kctl_label kube-aws.coreos.com/autoscalinggroup=${AUTOSCALINGGROUP}; \
@@ -637,7 +636,7 @@ write_files:
            {{ if .Experimental.TLSBootstrap.Enabled }}
            echo injecting token into the kubelet bootstrap kubeconfig file
            bootstrap_token=$(cat /etc/kubernetes/auth/kubelet-bootstrap.token);
-           sed -i -e "s#\$KUBELET_BOOTSTRAP_TOKEN#$bootstrap_token#g" /etc/kubernetes/worker-bootstrap-kubeconfig.yaml
+           sed -i -e "s#\$KUBELET_BOOTSTRAP_TOKEN#$bootstrap_token#g" /etc/kubernetes/kubeconfig/node-bootstrap-config.yaml
            {{ end }}
            echo done.'
 
@@ -706,49 +705,28 @@ write_files:
 {{end}}
 {{end}}
 
-  - path: /etc/kubernetes/manifests/kube-proxy.yaml
+  - path: /etc/kubernetes/kubeconfig/proxy-config.yaml
     content: |
         apiVersion: v1
-        kind: Pod
-        metadata:
-          name: kube-proxy
-          namespace: kube-system
-          annotations:
-            rkt.alpha.kubernetes.io/stage1-name-override: coreos.com/rkt/stage1-fly
-        spec:
-          hostNetwork: true
-          containers:
-          - name: kube-proxy
-            image: {{.HyperkubeImage.RepoWithTag}}
-            command:
-            - /hyperkube
-            - proxy
-            - --master={{.APIEndpointURL}}
-            - --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml
-            securityContext:
-              privileged: true
-            volumeMounts:
-              - mountPath: /etc/ssl/certs
-                name: ssl-certs
-              - mountPath: /etc/kubernetes
-                name: kubeconfig
-                readOnly: true
-              - mountPath: /var/run/dbus
-                name: dbus
-                readOnly: false
-          volumes:
-            - name: ssl-certs
-              hostPath:
-                path: /usr/share/ca-certificates
-            - name: kubeconfig
-              hostPath:
-                path: /etc/kubernetes
-            - name: dbus
-              hostPath:
-                path: /var/run/dbus
+        kind: Config
+        clusters:
+        - name: local
+          cluster:
+            certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            server: {{.APIEndpointURL}}:443
+        users:
+        - name: proxy
+          user:
+            tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+        contexts:
+        - context:
+            cluster: local
+            user: proxy
+          name: proxy-context
+        current-context: proxy-context
 
 {{ if .Experimental.TLSBootstrap.Enabled }}
-  - path: /etc/kubernetes/worker-bootstrap-kubeconfig.yaml
+  - path: /etc/kubernetes/kubeconfig/node-bootstrap-config.yaml
     content: |
         apiVersion: v1
         kind: Config
@@ -768,7 +746,7 @@ write_files:
           name: kubelet-bootstrap-context
         current-context: kubelet-bootstrap-context
 {{ else }}
-  - path: /etc/kubernetes/worker-kubeconfig.yaml
+  - path: /etc/kubernetes/kubeconfig/node-config.yaml
     content: |
         apiVersion: v1
         kind: Config

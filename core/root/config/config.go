@@ -88,6 +88,14 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 	}
 
 	for i, np := range nodePools {
+		if err := np.Experimental.Taints.Valid(); err != nil {
+			return nil, fmt.Errorf("invalid taints for node pool at index %d: %v", i, err)
+		}
+
+		// Controllers must be aware of node pools' taints so they know which tolerations
+		// to add to pods that are supposed to run on every node (ex: kube-proxy)
+		cpCluster.ComputedNodeSettings.NodeTaints = append(cpCluster.ComputedNodeSettings.NodeTaints, np.Experimental.Taints...)
+
 		if np.APIEndpointName == "" {
 			if c.Worker.APIEndpointName == "" {
 				if len(cpConfig.APIEndpoints) > 1 {

@@ -188,7 +188,7 @@ coreos:
         ExecStartPre=/usr/bin/docker run --rm -e SLEEP=false -v /opt/cni/bin:/host/opt/cni/bin {{ .CalicoCniImage.RepoWithTag }} /install-cni.sh
         {{end -}}
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
-        --kubeconfig=/etc/kubernetes/controller-kubeconfig.yaml \
+        --kubeconfig=/etc/kubernetes/kubeconfig/node-config.yaml \
         --require-kubeconfig \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
         {{/* Work-around until https://github.com/kubernetes/kubernetes/issues/43967 is fixed via https://github.com/kubernetes/kubernetes/pull/43995 */ -}}
@@ -570,6 +570,17 @@ write_files:
       kubectl apply -f "${mfdir}/calico.yaml"
       {{ end }}
 
+      # Configmaps
+      kubectl apply -f "${mfdir}/kube-dns-cm.yaml"
+
+      # Serviceaccounts
+      for manifest in {kube-dns,kube-proxy}-se.yaml;do
+          kubectl apply -f "${mfdir}/$manifest"
+      done
+
+      # Daemonsets
+      kubectl apply -f "${mfdir}/kube-proxy-ds.yaml"
+
       # Deployments
       for manifest in {kube-dns-de,kube-dns-autoscaler-de,heapster-de{{ if .KubeResourcesAutosave.Enabled }},kube-resources-autosave{{ end }}}.yaml; do
           kubectl apply -f "${mfdir}/$manifest"
@@ -594,17 +605,15 @@ write_files:
          echo 'Failed to create the cluster role named "cluster-admin". It is ok if you are using k8s newer than 1.5'
       fi
 
-      for manifest in {bootstrapped-node,}; do
-          kubectl apply -f "${mfdir}/cluster-roles/$manifest.yaml"
-      done
+      kubectl apply -f "${mfdir}/cluster-roles/node-extensions.yaml"
 
-      for manifest in {system-worker,kube-worker,kube-admin,bootstrapped-node}; do
-          kubectl apply -f "${mfdir}/cluster-role-bindings/$manifest.yaml"
+      for manifest in {system-worker,kube-admin,node,node-extensions,node-proxier}.yaml; do
+          kubectl apply -f "${mfdir}/cluster-role-bindings/$manifest"
       done
 
       {{ if .Experimental.TLSBootstrap.Enabled }}
-      kubectl create -f "${mfdir}/cluster-roles/kubelet-bootstrap.yaml" | echo 'Failed to create the cluster role named "kubelet-bootstrap". Skipping'
-      kubectl create -f "${mfdir}/cluster-role-bindings/kubelet-bootstrap.yaml" | echo 'Failed to create the cluster role binding "kubelet-bootstrap". Skipping'
+      kubectl create -f "${mfdir}/cluster-roles/node-bootstrap.yaml" | echo 'Failed to create the cluster role named "kube-aws:node-bootstrap". Skipping'
+      kubectl create -f "${mfdir}/cluster-role-bindings/node-bootstrap.yaml" | echo 'Failed to create the cluster role binding "kube-aws:node-bootstrap". Skipping'
       {{ end }}
       {{ end }}
 
@@ -1015,7 +1024,9 @@ write_files:
         kind: ClusterRole
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-            name: cluster-admin
+          name: cluster-admin
+          annotations:
+            rbac.authorization.kubernetes.io/autoupdate: "true"
         rules:
           - apiGroups: ["*"]
             resources: ["*"]
@@ -1025,13 +1036,19 @@ write_files:
 
   # We need to give nodes a few extra permissions so that both the node
   # draining and node labeling with AWS metadata work as expected
-  - path: /srv/kubernetes/rbac/cluster-roles/bootstrapped-node.yaml
+  - path: /srv/kubernetes/rbac/cluster-roles/node-extensions.yaml
     content: |
         kind: ClusterRole
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-            name: bootstrapped-node
+          name: kube-aws:node-extensions
         rules:
+          - apiGroups:
+            - extensions
+            resources:
+            - daemonsets
+            verbs:
+            - get
           - apiGroups: ["*"]
             resources:
             - nodes
@@ -1056,30 +1073,20 @@ write_files:
           - nonResourceURLs: ["*"]
             verbs: ["*"]
 
-  # Grants super-user permissions to the kube-admin user
+  # Grants super-user permissions to the kube-admin user. Not actually needed
+  # in Kubernetes 1.6+ since users in the system:masters group are already
+  # given super-user access by default
   - path: /srv/kubernetes/rbac/cluster-role-bindings/kube-admin.yaml
     content: |
         kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: kube-admin
+          name: kube-aws:admin
         subjects:
           - kind: User
             name: kube-admin
-        roleRef:
-          kind: ClusterRole
-          name: cluster-admin
-          apiGroup: rbac.authorization.k8s.io
-
-  - path: /srv/kubernetes/rbac/cluster-role-bindings/kube-worker.yaml
-    content: |
-        kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1beta1
-        metadata:
-          name: kube-worker
-        subjects:
-          - kind: User
-            name: kube-worker
+          - kind: Group
+            name: system:masters
         roleRef:
           kind: ClusterRole
           name: cluster-admin
@@ -1091,7 +1098,7 @@ write_files:
         kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: system-worker
+          name: kube-aws:system-worker
         subjects:
           - kind: ServiceAccount
             namespace: kube-system
@@ -1101,30 +1108,63 @@ write_files:
           name: cluster-admin
           apiGroup: rbac.authorization.k8s.io
 
-  # Associates the add-on group `bootstrapped-node` to all nodes, so that extra kube-aws
-  # features like node draining work as expected
-  - path: /srv/kubernetes/rbac/cluster-role-bindings/bootstrapped-node.yaml
+  # Makes kube-worker user behave like a regular member of system:nodes group,
+  # needed when TLS bootstrapping is disabled
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/node.yaml
     content: |
         kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: bootstrapped-node
+          name: kube-aws:node
         subjects:
+          - kind: User
+            name: kube-worker
+        roleRef:
+          kind: ClusterRole
+          name: system:node
+          apiGroup: rbac.authorization.k8s.io
+
+  # Associates the add-on role `kube-aws:node-extensions` to all nodes, so that
+  # extra kube-aws features (like node draining) work as expected
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/node-extensions.yaml
+    content: |
+        kind: ClusterRoleBinding
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        metadata:
+          name: kube-aws:node-extensions
+        subjects:
+          - kind: User
+            name: kube-worker
           - kind: Group
             name: system:nodes
         roleRef:
           kind: ClusterRole
-          name: bootstrapped-node
+          name: kube-aws:node-extensions
+          apiGroup: rbac.authorization.k8s.io
+
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/node-proxier.yaml
+    content: |
+        kind: ClusterRoleBinding
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        metadata:
+          name: kube-aws:node-proxier
+        subjects:
+          - kind: ServiceAccount
+            name: kube-proxy
+            namespace: kube-system
+        roleRef:
+          kind: ClusterRole
+          name: system:node-proxier
           apiGroup: rbac.authorization.k8s.io
 
 {{ if .Experimental.TLSBootstrap.Enabled }}
   # Only allows certificate signing requests to be performed with the bootstrap token
-  - path: /srv/kubernetes/rbac/cluster-roles/kubelet-bootstrap.yaml
+  - path: /srv/kubernetes/rbac/cluster-roles/node-bootstrap.yaml
     content: |
         kind: ClusterRole
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: kubelet-bootstrap
+          name: kube-aws:node-bootstrap
         rules:
           - apiGroups:
               - '*'
@@ -1136,60 +1176,76 @@ write_files:
             - list
             - watch
 
-  - path: /srv/kubernetes/rbac/cluster-role-bindings/kubelet-bootstrap.yaml
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/node-bootstrap.yaml
     content: |
         kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: kubelet-bootstrap
+          name: kube-aws:node-bootstrap
         subjects:
           - kind: Group
             namespace: '*'
             name: system:kubelet-bootstrap
         roleRef:
           kind: ClusterRole
-          name: kubelet-bootstrap
+          name: system:node-bootstrapper
           apiGroup: rbac.authorization.k8s.io
 {{ end }}
 {{ end }}
 
-  - path: /etc/kubernetes/manifests/kube-proxy.yaml
+  - path: /srv/kubernetes/manifests/kube-proxy-ds.yaml
     content: |
-        apiVersion: v1
-        kind: Pod
+        apiVersion: extensions/v1beta1
+        kind: DaemonSet
         metadata:
-          name: kube-proxy
-          namespace: kube-system
           labels:
             k8s-app: kube-proxy
-          annotations:
-            rkt.alpha.kubernetes.io/stage1-name-override: coreos.com/rkt/stage1-fly
-
+          name: kube-proxy
+          namespace: kube-system
         spec:
-          hostNetwork: true
-          containers:
-          - name: kube-proxy
-            image: {{.HyperkubeImage.RepoWithTag}}
-            command:
-            - /hyperkube
-            - proxy
-            - --master=http://127.0.0.1:8080
-            securityContext:
-              privileged: true
-            volumeMounts:
-            - mountPath: /etc/ssl/certs
-              name: ssl-certs-host
-              readOnly: true
-            - mountPath: /var/run/dbus
-              name: dbus
-              readOnly: false
-          volumes:
-          - hostPath:
-              path: /usr/share/ca-certificates
-            name: ssl-certs-host
-          - hostPath:
-              path: /var/run/dbus
-            name: dbus
+          updateStrategy:
+            type: RollingUpdate
+          template:
+            metadata:
+              labels:
+                k8s-app: kube-proxy
+            spec:
+              containers:
+              - name: kube-proxy
+                image: {{.HyperkubeImage.RepoWithTag}}
+                imagePullPolicy: IfNotPresent
+                command:
+                - /usr/local/bin/kube-proxy
+                - --cluster-cidr={{.PodCIDR}}
+                - --kubeconfig=/etc/kubernetes/kubeconfig/proxy-config.yaml
+                securityContext:
+                  privileged: true
+                volumeMounts:
+                - mountPath: /etc/kubernetes/kubeconfig
+                  name: kube
+              hostNetwork: true
+              serviceAccountName: kube-proxy
+              tolerations:
+              - key: "node.alpha.kubernetes.io/role"
+                operator: "Equal"
+                value: "master"
+                effect: "NoSchedule"
+              - key: "CriticalAddonsOnly"
+                operator: "Exists"
+              # Since kube-proxy needs to run on every node, it must tolerate
+              # all taints listed in cluster configuration file
+              {{- range $taint := .Experimental.Taints.UniqKeys }}
+              - key: {{ .Key }}
+                operator: "Exists"
+              {{- end }}
+              {{- range $taint := .NodeTaints.UniqKeys }}
+              - key: {{ .Key }}
+                operator: "Exists"
+              {{- end }}
+              volumes:
+              - name: kube
+                hostPath:
+                  path: /etc/kubernetes/kubeconfig
 
   - path: /etc/kubernetes/manifests/kube-apiserver.yaml
     content: |
@@ -1453,6 +1509,34 @@ write_files:
                   memory: 100Mi
   {{- end }}
 
+  - path: /srv/kubernetes/manifests/kube-dns-se.yaml
+    content: |
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: kube-dns
+          namespace: kube-system
+          labels:
+            kubernetes.io/cluster-service: "true"
+
+  - path: /srv/kubernetes/manifests/kube-proxy-se.yaml
+    content: |
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: kube-proxy
+          namespace: kube-system
+          labels:
+            kubernetes.io/cluster-service: "true"
+
+  - path: /srv/kubernetes/manifests/kube-dns-cm.yaml
+    content: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: kube-dns
+          namespace: kube-system
+
   - path: /srv/kubernetes/manifests/kube-dns-autoscaler-de.yaml
     content: |
         apiVersion: extensions/v1beta1
@@ -1520,6 +1604,11 @@ write_files:
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
             spec:
+              volumes:
+              - name: kube-dns-config
+                configMap:
+                  name: kube-dns
+                  optional: true
               tolerations:
               - key: "CriticalAddonsOnly"
                 operator: "Exists"
@@ -1551,7 +1640,7 @@ write_files:
                 args:
                 - --domain=cluster.local.
                 - --dns-port=10053
-                - --config-map=kube-dns
+                - --config-dir=/kube-dns-config
                 # This should be set to v=2 only after the new image (cut from 1.5) has
                 # been released, otherwise we will flood the logs.
                 - --v=2
@@ -1568,6 +1657,9 @@ write_files:
                 - containerPort: 10055
                   name: metrics
                   protocol: TCP
+                volumeMounts:
+                - name: kube-dns-config
+                  mountPath: /kube-dns-config
               - name: dnsmasq
                 image: {{ .KubeDnsMasqImage.RepoWithTag }}
                 livenessProbe:
@@ -1582,6 +1674,7 @@ write_files:
                 args:
                 - -v=2
                 - -logtostderr
+                - -configDir=/etc/k8s/dns/dnsmasq-nanny
                 - -restartDnsmasq=true
                 - --
                 - -k
@@ -1602,6 +1695,9 @@ write_files:
                   requests:
                     cpu: 150m
                     memory: 20Mi
+                volumeMounts:
+                - name: kube-dns-config
+                  mountPath: /etc/k8s/dns/dnsmasq-nanny
               - name: sidecar
                 image: {{ .DnsMasqMetricsImage.RepoWithTag }}
                 livenessProbe:
@@ -1627,6 +1723,7 @@ write_files:
                     memory: 20Mi
                     cpu: 10m
               dnsPolicy: Default
+              serviceAccountName: kube-dns
 
   - path: /srv/kubernetes/manifests/kube-dns-svc.yaml
     content: |
@@ -1679,6 +1776,11 @@ write_files:
               tolerations:
               - key: "CriticalAddonsOnly"
                 operator: "Exists"
+              volumes:
+              - name: kube-dns-config
+                configMap:
+                  name: kube-dns
+                  optional: true
               containers:
                 - image: {{ .HeapsterImage.RepoWithTag }}
                   name: heapster
@@ -1854,7 +1956,7 @@ write_files:
 {{ end }}
 {{ end }}
 
-  - path: /etc/kubernetes/controller-kubeconfig.yaml
+  - path: /etc/kubernetes/kubeconfig/node-config.yaml
     content: |
         apiVersion: v1
         kind: Config
@@ -1870,6 +1972,23 @@ write_files:
             user: kubelet
           name: kubelet-context
         current-context: kubelet-context
+
+  - path: /etc/kubernetes/kubeconfig/proxy-config.yaml
+    content: |
+        apiVersion: v1
+        kind: Config
+        clusters:
+        - name: local
+          cluster:
+            server: http://localhost:8080
+        users:
+        - name: proxy
+        contexts:
+        - context:
+            cluster: local
+            user: proxy
+          name: proxy-context
+        current-context: proxy-context
 
 {{ if not .UseCalico }}
   - path: /etc/kubernetes/cni/net.d/10-flannel.conf

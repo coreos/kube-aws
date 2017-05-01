@@ -1207,15 +1207,13 @@ addons:
 #
 #   # Kubernetes node labels to be added to controller nodes
 #   nodeLabels:
-#     kube-aws.coreos.com/role: worker
+#     kube-aws.coreos.com/role: controller
 #   # Kubernetes node taints to be added to controller nodes
 #   taints:
 #     - key: dedicated
 #       value: search
 #       effect: NoSchedule
 #   plugins:
-#     # When enabled, you also need to configure a minimum set of role bindings or everything breaks.
-#     # See https://github.com/kubernetes-incubator/kube-aws/issues/230 for more information.
 #     rbac:
 #       enabled: true
 #
