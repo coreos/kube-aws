@@ -145,37 +145,3 @@ func TestTaintsValid(t *testing.T) {
 		}
 	}
 }
-
-func TestTaintsUniqKeys(t *testing.T) {
-	taints := Taints([]Taint{
-		{
-			Key:    "key-1",
-			Value:  "val",
-			Effect: "NoSchedule",
-		},
-		{
-			Key:    "key-2",
-			Value:  "val",
-			Effect: "NoSchedule",
-		},
-
-		// Ignored since the key-1 is already in use
-		{
-			Key:    "key-1",
-			Value:  "val-2",
-			Effect: "NoSchedule",
-		},
-	})
-
-	actual := taints.UniqKeys()
-
-	if len(actual) != 2 {
-		t.Errorf("Expected uniq taints list to contain 2 items, but it has %d", len(actual))
-	}
-
-	for _, taint := range actual {
-		if taint.Value != "val" {
-			t.Errorf("Expected taint value to be 'val', but was '%s'", taint.Value)
-		}
-	}
-}
