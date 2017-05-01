@@ -570,6 +570,12 @@ write_files:
       kubectl apply -f "${mfdir}/calico.yaml"
       {{ end }}
 
+      # Configmaps
+      kubectl apply -f "${mfdir}/kube-dns-cm.yaml"
+
+      # Serviceaccounts
+      kubectl apply -f "${mfdir}/kube-dns-sa.yaml"
+
       # Deployments
       for manifest in {kube-dns-de,kube-dns-autoscaler-de,heapster-de{{ if .KubeResourcesAutosave.Enabled }},kube-resources-autosave{{ end }}}.yaml; do
           kubectl apply -f "${mfdir}/$manifest"
@@ -1453,6 +1459,24 @@ write_files:
                   memory: 100Mi
   {{- end }}
 
+  - path: /srv/kubernetes/manifests/kube-dns-sa.yaml
+    content: |
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: kube-dns
+          namespace: kube-system
+          labels:
+            kubernetes.io/cluster-service: "true"
+
+  - path: /srv/kubernetes/manifests/kube-dns-cm.yaml
+    content: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: kube-dns
+          namespace: kube-system
+
   - path: /srv/kubernetes/manifests/kube-dns-autoscaler-de.yaml
     content: |
         apiVersion: extensions/v1beta1
@@ -1520,6 +1544,11 @@ write_files:
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
             spec:
+              volumes:
+              - name: kube-dns-config
+                configMap:
+                  name: kube-dns
+                  optional: true
               tolerations:
               - key: "CriticalAddonsOnly"
                 operator: "Exists"
@@ -1551,7 +1580,7 @@ write_files:
                 args:
                 - --domain=cluster.local.
                 - --dns-port=10053
-                - --config-map=kube-dns
+                - --config-dir=/kube-dns-config
                 # This should be set to v=2 only after the new image (cut from 1.5) has
                 # been released, otherwise we will flood the logs.
                 - --v=2
@@ -1568,6 +1597,9 @@ write_files:
                 - containerPort: 10055
                   name: metrics
                   protocol: TCP
+                volumeMounts:
+                - name: kube-dns-config
+                  mountPath: /kube-dns-config
               - name: dnsmasq
                 image: {{ .KubeDnsMasqImage.RepoWithTag }}
                 livenessProbe:
@@ -1602,6 +1634,9 @@ write_files:
                   requests:
                     cpu: 150m
                     memory: 20Mi
+                volumeMounts:
+                - name: kube-dns-config
+                  mountPath: /etc/k8s/dns/dnsmasq-nanny
               - name: sidecar
                 image: {{ .DnsMasqMetricsImage.RepoWithTag }}
                 livenessProbe:
@@ -1627,6 +1662,7 @@ write_files:
                     memory: 20Mi
                     cpu: 10m
               dnsPolicy: Default
+              serviceAccountName: kube-dns
 
   - path: /srv/kubernetes/manifests/kube-dns-svc.yaml
     content: |
@@ -1679,6 +1715,11 @@ write_files:
               tolerations:
               - key: "CriticalAddonsOnly"
                 operator: "Exists"
+              volumes:
+              - name: kube-dns-config
+                configMap:
+                  name: kube-dns
+                  optional: true
               containers:
                 - image: {{ .HeapsterImage.RepoWithTag }}
                   name: heapster
