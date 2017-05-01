@@ -143,7 +143,6 @@ func TestTaintsValid(t *testing.T) {
 		if !testCase.isValid && err == nil {
 			t.Errorf("Expected taint to be invalid, but it was not")
 		}
-
 	}
 }
 
