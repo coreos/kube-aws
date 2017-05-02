@@ -589,22 +589,16 @@ write_files:
 
       {{if .Experimental.Plugins.Rbac.Enabled}}
       mfdir=/srv/kubernetes/rbac
-      # k8s > 1.5 already have this clusterRole, so we accept http.code != 200
-      if ! kubectl create -f "${mfdir}/cluster-roles/cluster-admin.yaml"; then
-         echo 'Failed to create the cluster role named "cluster-admin". It is ok if you are using k8s newer than 1.5'
-      fi
 
-      for manifest in {bootstrapped-node,}; do
-          kubectl apply -f "${mfdir}/cluster-roles/$manifest.yaml"
-      done
+      kubectl apply -f "${mfdir}/cluster-roles/node-extensions.yaml"
 
-      for manifest in {system-worker,kube-worker,kube-admin,bootstrapped-node}; do
+      for manifest in {kube-admin,system-worker,node,node-proxier,node-extensions}; do
           kubectl apply -f "${mfdir}/cluster-role-bindings/$manifest.yaml"
       done
 
       {{ if .Experimental.TLSBootstrap.Enabled }}
-      kubectl create -f "${mfdir}/cluster-roles/kubelet-bootstrap.yaml" | echo 'Failed to create the cluster role named "kubelet-bootstrap". Skipping'
-      kubectl create -f "${mfdir}/cluster-role-bindings/kubelet-bootstrap.yaml" | echo 'Failed to create the cluster role binding "kubelet-bootstrap". Skipping'
+      kubectl create -f "${mfdir}/cluster-roles/node-bootstrapper.yaml" | echo 'Failed to create the cluster role named "kube-aws:node-bootstrapper". Skipping'
+      kubectl create -f "${mfdir}/cluster-role-bindings/node-bootstrapper.yaml" | echo 'Failed to create the cluster role binding "kube-aws:node-bootstrapper". Skipping'
       {{ end }}
       {{ end }}
 
@@ -1006,49 +1000,54 @@ write_files:
       rkt rm --uuid-file=/var/run/coreos/decrypt-assets.uuid || :
 {{ end }}
 
-  {{if .Experimental.Plugins.Rbac.Enabled }}
-  # Creates the cluster-admin role, useful for Kubernetes < 1.5.x clusters
-  # (This is already set up in Kubernetes 1.5.x+)
-  # https://github.com/coreos/kube-aws/issues/230#issuecomment-274946933
-  - path: /srv/kubernetes/rbac/cluster-roles/cluster-admin.yaml
+{{if .Experimental.Plugins.Rbac.Enabled }}
+  # Makes kube-worker user behave like a regular member of system:nodes group,
+  # needed when TLS bootstrapping is disabled
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/node.yaml
     content: |
-        kind: ClusterRole
+        kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-            name: cluster-admin
-        rules:
-          - apiGroups: ["*"]
-            resources: ["*"]
-            verbs: ["*"]
-          - nonResourceURLs: ["*"]
-            verbs: ["*"]
+          name: kube-aws:node
+        subjects:
+          - kind: User
+            name: kube-worker
+        roleRef:
+          kind: ClusterRole
+          name: system:node
+          apiGroup: rbac.authorization.k8s.io
 
   # We need to give nodes a few extra permissions so that both the node
   # draining and node labeling with AWS metadata work as expected
-  - path: /srv/kubernetes/rbac/cluster-roles/bootstrapped-node.yaml
+  - path: /srv/kubernetes/rbac/cluster-roles/node-extensions.yaml
     content: |
         kind: ClusterRole
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-            name: bootstrapped-node
+            name: kube-aws:node-extensions
         rules:
-          - apiGroups: ["*"]
+          - apiGroups: ["extensions"]
+            resources:
+            - daemonsets
+            verbs:
+            - get
+          - apiGroups: [""]
             resources:
             - nodes
             verbs:
             - patch
             - update
-          - apiGroups: ["*"]
+          - apiGroups: ["extensions"]
             resources:
             - replicasets
             verbs:
             - get
-          - apiGroups: ["*"]
+          - apiGroups: [""]
             resources:
             - replicationcontrollers
             verbs:
             - get
-          - apiGroups: ["*"]
+          - apiGroups: ["policy"]
             resources:
             - pods/eviction
             verbs:
@@ -1062,7 +1061,7 @@ write_files:
         kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: kube-admin
+          name: kube-aws:admin
         subjects:
           - kind: User
             name: kube-admin
@@ -1071,18 +1070,24 @@ write_files:
           name: cluster-admin
           apiGroup: rbac.authorization.k8s.io
 
-  - path: /srv/kubernetes/rbac/cluster-role-bindings/kube-worker.yaml
+  # Allows both `kube-worker` user and members of the `system:nodes` group
+  # to perform actions needed by the `kube-proxy` component. Once kube-proxy
+  # is migrated to DaemonSets, we could set up a ServiceAccount for it and
+  # associate this role to it instead.
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/node-proxier.yaml
     content: |
         kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: kube-worker
+          name: kube-aws:node-proxier
         subjects:
           - kind: User
             name: kube-worker
+          - kind: Group
+            name: system:nodes
         roleRef:
           kind: ClusterRole
-          name: cluster-admin
+          name: system:node-proxier
           apiGroup: rbac.authorization.k8s.io
 
   # Allows add-ons running with the default service account in kube-sytem to have super-user access
@@ -1091,7 +1096,7 @@ write_files:
         kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: system-worker
+          name: kube-aws:system-worker
         subjects:
           - kind: ServiceAccount
             namespace: kube-system
@@ -1101,30 +1106,32 @@ write_files:
           name: cluster-admin
           apiGroup: rbac.authorization.k8s.io
 
-  # Associates the add-on group `bootstrapped-node` to all nodes, so that extra kube-aws
-  # features like node draining work as expected
-  - path: /srv/kubernetes/rbac/cluster-role-bindings/bootstrapped-node.yaml
+  # Associates the add-on role `kube-aws:node-extensions` to all nodes, so that
+  # extra kube-aws features (like node draining) work as expected
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/node-extensions.yaml
     content: |
         kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: bootstrapped-node
+          name: kube-aws:node-extensions
         subjects:
+          - kind: User
+            name: kube-worker
           - kind: Group
             name: system:nodes
         roleRef:
           kind: ClusterRole
-          name: bootstrapped-node
+          name: kube-aws:node-extensions
           apiGroup: rbac.authorization.k8s.io
 
 {{ if .Experimental.TLSBootstrap.Enabled }}
   # Only allows certificate signing requests to be performed with the bootstrap token
-  - path: /srv/kubernetes/rbac/cluster-roles/kubelet-bootstrap.yaml
+  - path: /srv/kubernetes/rbac/cluster-roles/node-bootstrapper.yaml
     content: |
         kind: ClusterRole
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: kubelet-bootstrap
+          name: kube-aws:node-bootstrapper
         rules:
           - apiGroups:
               - '*'
@@ -1136,19 +1143,19 @@ write_files:
             - list
             - watch
 
-  - path: /srv/kubernetes/rbac/cluster-role-bindings/kubelet-bootstrap.yaml
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/node-bootstrapper.yaml
     content: |
         kind: ClusterRoleBinding
         apiVersion: rbac.authorization.k8s.io/v1beta1
         metadata:
-          name: kubelet-bootstrap
+          name: kube-aws:node-bootstrapper
         subjects:
           - kind: Group
             namespace: '*'
             name: system:kubelet-bootstrap
         roleRef:
           kind: ClusterRole
-          name: kubelet-bootstrap
+          name: kube-aws:node-bootstrapper
           apiGroup: rbac.authorization.k8s.io
 {{ end }}
 {{ end }}
