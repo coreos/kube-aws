@@ -70,6 +70,6 @@ func (f SpotFleet) IAMFleetRoleRef() string {
 	if f.IAMFleetRoleARN == "" {
 		return `{"Fn::Join":["", [ "arn:aws:iam::", {"Ref":"AWS::AccountId"}, ":role/aws-ec2-spot-fleet-role" ]]}`
 	} else {
-		return f.IAMFleetRoleARN
+		return fmt.Sprintf(`"%s"`, f.IAMFleetRoleARN)
 	}
 }
