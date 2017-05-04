@@ -1752,11 +1752,11 @@ write_files:
         apiVersion: v1
         kind: ReplicationController
         metadata:
-          name: kubernetes-dashboard-v1.6.0
+          name: kubernetes-dashboard-{{ .KubeDashboardImage.Tag }}
           namespace: kube-system
           labels:
             k8s-app: kubernetes-dashboard
-            version: v1.6.0
+            version: {{ .KubeDashboardImage.Tag }}
             kubernetes.io/cluster-service: "true"
         spec:
           replicas: 1
@@ -1766,7 +1766,7 @@ write_files:
             metadata:
               labels:
                 k8s-app: kubernetes-dashboard
-                version: v1.6.0
+                version: {{ .KubeDashboardImage.Tag }}
                 kubernetes.io/cluster-service: "true"
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
