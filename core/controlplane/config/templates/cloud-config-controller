@@ -1715,11 +1715,6 @@ write_files:
               tolerations:
               - key: "CriticalAddonsOnly"
                 operator: "Exists"
-              volumes:
-              - name: kube-dns-config
-                configMap:
-                  name: kube-dns
-                  optional: true
               containers:
                 - image: {{ .HeapsterImage.RepoWithTag }}
                   name: heapster
