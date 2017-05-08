@@ -1001,6 +1001,10 @@ write_files:
 {{ end }}
 
 {{if .Experimental.Plugins.Rbac.Enabled }}
+  # TODO: remove the following binding once the TLS Bootstrapping feature is enabled by default, see:
+  # https://github.com/kubernetes-incubator/kube-aws/pull/618#discussion_r115162048
+  # https://kubernetes.io/docs/admin/authorization/rbac/#core-component-roles
+
   # Makes kube-worker user behave like a regular member of system:nodes group,
   # needed when TLS bootstrapping is disabled
   - path: /srv/kubernetes/rbac/cluster-role-bindings/node.yaml
@@ -1105,6 +1109,10 @@ write_files:
           kind: ClusterRole
           name: cluster-admin
           apiGroup: rbac.authorization.k8s.io
+
+  # TODO: remove the following binding once the TLS Bootstrapping feature is enabled by default, see:
+  # https://github.com/kubernetes-incubator/kube-aws/pull/618#discussion_r115162048
+  # https://kubernetes.io/docs/admin/authorization/rbac/#core-component-roles
 
   # Associates the add-on role `kube-aws:node-extensions` to all nodes, so that
   # extra kube-aws features (like node draining) work as expected
