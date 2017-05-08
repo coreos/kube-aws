@@ -1614,6 +1614,7 @@ write_files:
                 args:
                 - -v=2
                 - -logtostderr
+                - -configDir=/etc/k8s/dns/dnsmasq-nanny
                 - -restartDnsmasq=true
                 - --
                 - -k
