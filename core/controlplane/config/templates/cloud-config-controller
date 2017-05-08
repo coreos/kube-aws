@@ -1752,7 +1752,7 @@ write_files:
         apiVersion: v1
         kind: ReplicationController
         metadata:
-          name: kubernetes-dashboard-{{ .KubeDashboardImage.Tag }}
+          name: kubernetes-dashboard
           namespace: kube-system
           labels:
             k8s-app: kubernetes-dashboard
