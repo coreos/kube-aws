@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
+	"os"
 )
 
 const CacheFileExtension = "enc"
@@ -32,13 +33,13 @@ func (e CachedEncryptor) EncryptedBytes(raw []byte) ([]byte, error) {
 	return e.bytesEncryptionService.Encrypt(raw)
 }
 
-func (e CachedEncryptor) EncryptedCredentialFromPath(filePath string) (*EncryptedCredentialOnDisk, error) {
-	raw, err := RawCredentialFileFromPath(filePath)
+func (e CachedEncryptor) EncryptedCredentialFromPath(filePath string, create bool) (*EncryptedCredentialOnDisk, error) {
+	raw, err := RawCredentialFileFromPath(filePath, create)
 	if err != nil {
 		return nil, err
 	}
 
-	cache, err := EncryptedCredentialCacheFromPath(filePath)
+	cache, err := EncryptedCredentialCacheFromPath(filePath, create)
 	if err != nil {
 		cache, err = EncryptedCredentialCacheFromRawCredential(raw, e.bytesEncryptionService)
 		if err != nil {
@@ -73,11 +74,16 @@ func EncryptedCredentialCacheFromRawCredential(raw *RawCredentialOnDisk, bytesEn
 	return &cache, nil
 }
 
-func RawCredentialFileFromPath(filePath string) (*RawCredentialOnDisk, error) {
+func RawCredentialFileFromPath(filePath string, create bool) (*RawCredentialOnDisk, error) {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) && create {
+		os.OpenFile(filePath, os.O_RDONLY|os.O_CREATE, 0600)
+	}
+
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
+
 	return &RawCredentialOnDisk{
 		filePath: filePath,
 		content:  content,
@@ -107,7 +113,7 @@ func fingerprintFilePath(rawCredFilePath string) string {
 	return fmt.Sprintf("%s.%s", rawCredFilePath, FingerprintFileExtension)
 }
 
-func EncryptedCredentialCacheFromPath(filePath string) (*EncryptedCredentialOnDisk, error) {
+func EncryptedCredentialCacheFromPath(filePath string, create bool) (*EncryptedCredentialOnDisk, error) {
 	cachePath := cacheFilePath(filePath)
 	credential, cacheErr := ioutil.ReadFile(cachePath)
 	if cacheErr != nil {
@@ -117,7 +123,7 @@ func EncryptedCredentialCacheFromPath(filePath string) (*EncryptedCredentialOnDi
 	fingerprint, fingerprintErr := loadFingerprint(fingerprintPath)
 	if fingerprintErr != nil {
 		fmt.Printf("WARNING: \"%s\" does not exist. Did you explicitly removed it or upgrading from old kube-aws? Anyway, kube-aws is generating one for you from \"%s\" to automatically detect updates to it and recreate \"%s\" if necessary\n", fingerprintPath, filePath, cachePath)
-		raw, rawErr := RawCredentialFileFromPath(filePath)
+		raw, rawErr := RawCredentialFileFromPath(filePath, create)
 		if rawErr != nil {
 			return nil, rawErr
 		}

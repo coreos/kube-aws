@@ -982,22 +982,9 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	}
 
 	var compactAssets *CompactAssets
-	var compactAuthTokens *CompactAuthTokens
-
-	// Automatically generates the auth token file if it doesn't exist
-	if !AuthTokensFileExists(opts.AssetsDir) {
-		createBootstrapToken := c.DeploymentSettings.Experimental.TLSBootstrap.Enabled
-		created, err := CreateRawAuthTokens(createBootstrapToken, opts.AssetsDir)
-		if err != nil {
-			return nil, err
-		}
-		if created {
-			fmt.Println("INFO: Created initial auth token file in ./credentials/tokens.csv")
-		}
-	}
 
 	if c.AssetsEncryptionEnabled() {
-		compactAuthTokens, err = ReadOrCreateCompactAuthTokens(opts.AssetsDir, KMSConfig{
+		compactAssets, err = ReadOrCreateCompactAssets(opts.AssetsDir, c.ManageCertificates, KMSConfig{
 			Region:         stackConfig.Config.Region,
 			KMSKeyARN:      c.KMSKeyARN,
 			EncryptService: c.ProvidedEncryptService,
@@ -1005,34 +992,15 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 		if err != nil {
 			return nil, err
 		}
-		stackConfig.Config.AuthTokensConfig = compactAuthTokens
+
+		stackConfig.Config.AssetsConfig = compactAssets
 	} else {
-		rawAuthTokens, err := ReadOrCreateUnencryptedCompactAuthTokens(opts.AssetsDir)
+		rawAssets, err := ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir, c.ManageCertificates)
 		if err != nil {
 			return nil, err
 		}
-		stackConfig.Config.AuthTokensConfig = rawAuthTokens
-	}
-	if c.ManageCertificates {
-		if c.AssetsEncryptionEnabled() {
-			compactAssets, err = ReadOrCreateCompactAssets(opts.AssetsDir, KMSConfig{
-				Region:         stackConfig.Config.Region,
-				KMSKeyARN:      c.KMSKeyARN,
-				EncryptService: c.ProvidedEncryptService,
-			})
-			if err != nil {
-				return nil, err
-			}
 
-			stackConfig.Config.AssetsConfig = compactAssets
-		} else {
-			rawAssets, err := ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir)
-			if err != nil {
-				return nil, err
-			}
-
-			stackConfig.Config.AssetsConfig = rawAssets
-		}
+		stackConfig.Config.AssetsConfig = rawAssets
 	}
 
 	if c.Experimental.TLSBootstrap.Enabled && !c.Experimental.Plugins.Rbac.Enabled {
@@ -1043,14 +1011,6 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	}
 	if stackConfig.UserDataEtcd, err = userdatatemplate.GetString(opts.EtcdTmplFile, stackConfig.Config); err != nil {
 		return nil, fmt.Errorf("failed to render etcd cloud config: %v", err)
-	}
-
-	if len(stackConfig.Config.AuthTokensConfig.KubeletBootstrapToken) == 0 && c.DeploymentSettings.Experimental.TLSBootstrap.Enabled {
-		bootstrapRecord, err := RandomBootstrapTokenRecord()
-		if err != nil {
-			return nil, err
-		}
-		return nil, fmt.Errorf("kubelet bootstrap token not found in ./credentials/tokens.csv.\n\nTo fix this, please append the following line to ./credentials/tokens.csv:\n%s", bootstrapRecord)
 	}
 
 	stackConfig.StackTemplateOptions = opts
@@ -1073,8 +1033,7 @@ type Config struct {
 
 	EtcdNodes []derived.EtcdNode
 
-	AuthTokensConfig *CompactAuthTokens
-	AssetsConfig     *CompactAssets
+	AssetsConfig *CompactAssets
 }
 
 // StackName returns the logical name of a CloudFormation stack resource in a root stack template

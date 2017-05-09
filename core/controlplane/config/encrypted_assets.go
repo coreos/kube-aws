@@ -1,8 +1,10 @@
 package config
 
 import (
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"net"
 	"time"
@@ -35,6 +37,10 @@ type RawAssetsOnMemory struct {
 	EtcdClientKey  []byte
 	DexCert        []byte
 	DexKey         []byte
+
+	// Other assets.
+	AuthTokens        []byte
+	TLSBootstrapToken []byte
 }
 
 type RawAssetsOnDisk struct {
@@ -53,10 +59,14 @@ type RawAssetsOnDisk struct {
 	EtcdClientKey  RawCredentialOnDisk
 	DexCert        RawCredentialOnDisk
 	DexKey         RawCredentialOnDisk
+
+	// Other assets.
+	AuthTokens        RawCredentialOnDisk
+	TLSBootstrapToken RawCredentialOnDisk
 }
 
 type EncryptedAssetsOnDisk struct {
-	// Encrypted PEM encoded TLS assets
+	// Encrypted PEM encoded TLS assets.
 	CACert         EncryptedCredentialOnDisk
 	CAKey          EncryptedCredentialOnDisk
 	APIServerCert  EncryptedCredentialOnDisk
@@ -71,6 +81,10 @@ type EncryptedAssetsOnDisk struct {
 	EtcdClientKey  EncryptedCredentialOnDisk
 	DexCert        EncryptedCredentialOnDisk
 	DexKey         EncryptedCredentialOnDisk
+
+	// Other encrypted assets.
+	AuthTokens        EncryptedCredentialOnDisk
+	TLSBootstrapToken EncryptedCredentialOnDisk
 }
 
 type CompactAssets struct {
@@ -89,6 +103,10 @@ type CompactAssets struct {
 	EtcdKey        string
 	DexCert        string
 	DexKey         string
+
+	// Encrypted -> gzip -> base64 encoded assets.
+	AuthTokens        string
+	TLSBootstrapToken string
 }
 
 func (c *Cluster) NewTLSCA() (*rsa.PrivateKey, *x509.Certificate, error) {
@@ -127,7 +145,7 @@ func (c *Cluster) NewAssetsOnDisk(dir string, renderCredentialsOpts CredentialsO
 	if err := assets.WriteToDir(dir, renderCredentialsOpts.GenerateCA); err != nil {
 		return nil, fmt.Errorf("Error create assets: %v", err)
 	}
-	return ReadRawAssets(dir)
+	return ReadRawAssets(dir, true)
 }
 
 func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certificate) (*RawAssetsOnMemory, error) {
@@ -227,6 +245,14 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 	if err != nil {
 		return nil, err
 	}
+
+	authTokens := ""
+
+	tlsBootstrapToken, err := RandomTLSBootstrapTokenString()
+	if err != nil {
+		return nil, err
+	}
+
 	return &RawAssetsOnMemory{
 		CACert:         tlsutil.EncodeCertificatePEM(caCert),
 		APIServerCert:  tlsutil.EncodeCertificatePEM(apiServerCert),
@@ -242,66 +268,94 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 		EtcdKey:        tlsutil.EncodePrivateKeyPEM(etcdKey),
 		EtcdClientKey:  tlsutil.EncodePrivateKeyPEM(etcdClientKey),
 		DexKey:         tlsutil.EncodePrivateKeyPEM(dexKey),
+
+		AuthTokens:        []byte(authTokens),
+		TLSBootstrapToken: []byte(tlsBootstrapToken),
 	}, nil
 }
 
-func ReadRawAssets(dirname string) (*RawAssetsOnDisk, error) {
+func ReadRawAssets(dirname string, manageCertificates bool) (*RawAssetsOnDisk, error) {
 	r := new(RawAssetsOnDisk)
-	files := []struct {
-		name string
-		data *RawCredentialOnDisk
-	}{
-		{"ca.pem", &r.CACert},
-		{"ca-key.pem", &r.CAKey},
-		{"apiserver.pem", &r.APIServerCert},
-		{"apiserver-key.pem", &r.APIServerKey},
-		{"worker.pem", &r.WorkerCert},
-		{"worker-key.pem", &r.WorkerKey},
-		{"admin.pem", &r.AdminCert},
-		{"admin-key.pem", &r.AdminKey},
-		{"etcd.pem", &r.EtcdCert},
-		{"etcd-key.pem", &r.EtcdKey},
-		{"etcd-client.pem", &r.EtcdClientCert},
-		{"etcd-client-key.pem", &r.EtcdClientKey},
-		{"dex.pem", &r.DexCert},
-		{"dex-key.pem", &r.DexKey},
+
+	type entry struct {
+		name   string
+		data   *RawCredentialOnDisk
+		create bool
 	}
+
+	files := []entry{
+		{"tokens.csv", &r.AuthTokens, true},
+		{"tls-bootstrap.token", &r.TLSBootstrapToken, true},
+	}
+
+	if manageCertificates {
+		files = append(files, []entry{
+			{"ca.pem", &r.CACert, false},
+			{"ca-key.pem", &r.CAKey, false},
+			{"apiserver.pem", &r.APIServerCert, false},
+			{"apiserver-key.pem", &r.APIServerKey, false},
+			{"worker.pem", &r.WorkerCert, false},
+			{"worker-key.pem", &r.WorkerKey, false},
+			{"admin.pem", &r.AdminCert, false},
+			{"admin-key.pem", &r.AdminKey, false},
+			{"etcd.pem", &r.EtcdCert, false},
+			{"etcd-key.pem", &r.EtcdKey, false},
+			{"etcd-client.pem", &r.EtcdClientCert, false},
+			{"etcd-client-key.pem", &r.EtcdClientKey, false},
+			{"dex.pem", &r.DexCert, false},
+			{"dex-key.pem", &r.DexKey, false},
+		}...)
+	}
+
 	for _, file := range files {
 		path := filepath.Join(dirname, file.name)
-		data, err := RawCredentialFileFromPath(path)
+		data, err := RawCredentialFileFromPath(path, file.create)
 		if err != nil {
 			return nil, err
 		}
 
 		*file.data = *data
 	}
+
 	return r, nil
 }
 
-func ReadOrEncryptAssets(dirname string, encryptor CachedEncryptor) (*EncryptedAssetsOnDisk, error) {
+func ReadOrEncryptAssets(dirname string, manageCertificates bool, encryptor CachedEncryptor) (*EncryptedAssetsOnDisk, error) {
 	r := new(EncryptedAssetsOnDisk)
-	files := []struct {
-		name string
-		data *EncryptedCredentialOnDisk
-	}{
-		{"ca.pem", &r.CACert},
-		{"ca-key.pem", &r.CAKey},
-		{"apiserver.pem", &r.APIServerCert},
-		{"apiserver-key.pem", &r.APIServerKey},
-		{"worker.pem", &r.WorkerCert},
-		{"worker-key.pem", &r.WorkerKey},
-		{"admin.pem", &r.AdminCert},
-		{"admin-key.pem", &r.AdminKey},
-		{"etcd.pem", &r.EtcdCert},
-		{"etcd-key.pem", &r.EtcdKey},
-		{"etcd-client.pem", &r.EtcdClientCert},
-		{"etcd-client-key.pem", &r.EtcdClientKey},
-		{"dex.pem", &r.DexCert},
-		{"dex-key.pem", &r.DexKey},
+
+	type entry struct {
+		name   string
+		data   *EncryptedCredentialOnDisk
+		create bool
 	}
+
+	files := []entry{
+		{"tokens.csv", &r.AuthTokens, true},
+		{"tls-bootstrap.token", &r.TLSBootstrapToken, true},
+	}
+
+	if manageCertificates {
+		files = append(files, []entry{
+			{"ca.pem", &r.CACert, false},
+			{"ca-key.pem", &r.CAKey, false},
+			{"apiserver.pem", &r.APIServerCert, false},
+			{"apiserver-key.pem", &r.APIServerKey, false},
+			{"worker.pem", &r.WorkerCert, false},
+			{"worker-key.pem", &r.WorkerKey, false},
+			{"admin.pem", &r.AdminCert, false},
+			{"admin-key.pem", &r.AdminKey, false},
+			{"etcd.pem", &r.EtcdCert, false},
+			{"etcd-key.pem", &r.EtcdKey, false},
+			{"etcd-client.pem", &r.EtcdClientCert, false},
+			{"etcd-client-key.pem", &r.EtcdClientKey, false},
+			{"dex.pem", &r.DexCert, false},
+			{"dex-key.pem", &r.DexKey, false},
+		}...)
+	}
+
 	for _, file := range files {
 		path := filepath.Join(dirname, file.name)
-		data, err := encryptor.EncryptedCredentialFromPath(path)
+		data, err := encryptor.EncryptedCredentialFromPath(path, file.create)
 		if err != nil {
 			return nil, err
 		}
@@ -334,6 +388,9 @@ func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) error 
 		{"etcd-client-key.pem", r.EtcdClientKey},
 		{"dex.pem", r.DexCert},
 		{"dex-key.pem", r.DexKey},
+
+		{"tokens.csv", r.AuthTokens},
+		{"tls-bootstrap.token", r.TLSBootstrapToken},
 	}
 	for _, asset := range assets {
 		path := filepath.Join(dirname, asset.name)
@@ -366,6 +423,9 @@ func (r *EncryptedAssetsOnDisk) WriteToDir(dirname string) error {
 		{"dex-key.pem", r.DexKey},
 		{"etcd-client.pem", r.EtcdClientCert},
 		{"etcd-client-key.pem", r.EtcdClientKey},
+
+		{"tokens.csv", r.AuthTokens},
+		{"tls-bootstrap.token", r.TLSBootstrapToken},
 	}
 	for _, asset := range assets {
 		if asset.name != "ca-key.pem" {
@@ -380,6 +440,11 @@ func (r *EncryptedAssetsOnDisk) WriteToDir(dirname string) error {
 func (r *RawAssetsOnDisk) Compact() (*CompactAssets, error) {
 	var err error
 	compact := func(c RawCredentialOnDisk) string {
+		// Nothing to compact
+		if len(c.content) == 0 {
+			return ""
+		}
+
 		if err != nil {
 			return ""
 		}
@@ -404,6 +469,9 @@ func (r *RawAssetsOnDisk) Compact() (*CompactAssets, error) {
 		EtcdKey:        compact(r.EtcdKey),
 		DexCert:        compact(r.DexCert),
 		DexKey:         compact(r.DexKey),
+
+		AuthTokens:        compact(r.AuthTokens),
+		TLSBootstrapToken: compact(r.TLSBootstrapToken),
 	}
 	if err != nil {
 		return nil, err
@@ -414,6 +482,11 @@ func (r *RawAssetsOnDisk) Compact() (*CompactAssets, error) {
 func (r *EncryptedAssetsOnDisk) Compact() (*CompactAssets, error) {
 	var err error
 	compact := func(c EncryptedCredentialOnDisk) string {
+		// Nothing to compact
+		if len(c.content) == 0 {
+			return ""
+		}
+
 		if err != nil {
 			return ""
 		}
@@ -439,6 +512,9 @@ func (r *EncryptedAssetsOnDisk) Compact() (*CompactAssets, error) {
 		EtcdKey:        compact(r.EtcdKey),
 		DexCert:        compact(r.DexCert),
 		DexKey:         compact(r.DexKey),
+
+		AuthTokens:        compact(r.AuthTokens),
+		TLSBootstrapToken: compact(r.TLSBootstrapToken),
 	}
 	if err != nil {
 		return nil, err
@@ -452,7 +528,7 @@ type KMSConfig struct {
 	KMSKeyARN      string
 }
 
-func ReadOrCreateEncryptedAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*EncryptedAssetsOnDisk, error) {
+func ReadOrCreateEncryptedAssets(tlsAssetsDir string, manageCertificates bool, kmsConfig KMSConfig) (*EncryptedAssetsOnDisk, error) {
 	var kmsSvc EncryptService
 
 	// TODO Cleaner way to inject this dependency
@@ -474,11 +550,11 @@ func ReadOrCreateEncryptedAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*Enc
 		bytesEncryptionService: encryptionSvc,
 	}
 
-	return ReadOrEncryptAssets(tlsAssetsDir, encryptor)
+	return ReadOrEncryptAssets(tlsAssetsDir, manageCertificates, encryptor)
 }
 
-func ReadOrCreateCompactAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*CompactAssets, error) {
-	encryptedAssets, err := ReadOrCreateEncryptedAssets(tlsAssetsDir, kmsConfig)
+func ReadOrCreateCompactAssets(assetsDir string, manageCertificates bool, kmsConfig KMSConfig) (*CompactAssets, error) {
+	encryptedAssets, err := ReadOrCreateEncryptedAssets(assetsDir, manageCertificates, kmsConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read/create encrypted assets: %v", err)
 	}
@@ -491,8 +567,8 @@ func ReadOrCreateCompactAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*Compa
 	return compactAssets, nil
 }
 
-func ReadOrCreateUnencryptedCompactAssets(tlsAssetsDir string) (*CompactAssets, error) {
-	unencryptedAssets, err := ReadRawAssets(tlsAssetsDir)
+func ReadOrCreateUnencryptedCompactAssets(assetsDir string, manageCertificates bool) (*CompactAssets, error) {
+	unencryptedAssets, err := ReadRawAssets(assetsDir, manageCertificates)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read/create encrypted assets: %v", err)
 	}
@@ -503,4 +579,25 @@ func ReadOrCreateUnencryptedCompactAssets(tlsAssetsDir string) (*CompactAssets, 
 	}
 
 	return compactAssets, nil
+}
+
+func RandomTLSBootstrapTokenString() (string, error) {
+	b := make([]byte, 256)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(b), nil
+}
+
+func (a *CompactAssets) HasAuthTokens() bool {
+	return len(a.AuthTokens) > 0
+}
+
+func (a *CompactAssets) HasTLSBootstrapToken() bool {
+	return len(a.TLSBootstrapToken) > 0
+}
+
+func (a *CompactAssets) HasAnyAuthTokens() bool {
+	return a.HasAuthTokens() || a.HasTLSBootstrapToken()
 }

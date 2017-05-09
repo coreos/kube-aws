@@ -5,6 +5,7 @@ import (
 
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"github.com/kubernetes-incubator/kube-aws/model"
@@ -12,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 )
 
 func genAssets(t *testing.T) *RawAssetsOnMemory {
@@ -124,7 +126,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 
 		// See https://github.com/kubernetes-incubator/kube-aws/issues/107
 		t.Run("CachedToPreventUnnecessaryNodeReplacement", func(t *testing.T) {
-			created, err := ReadOrCreateCompactAssets(dir, kmsConfig)
+			created, err := ReadOrCreateCompactAssets(dir, true, kmsConfig)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact assets in %s : %v", dir, err)
@@ -133,7 +135,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 			// This depends on TestDummyEncryptService which ensures dummy encrypt service to produce different ciphertext for each encryption
 			// created == read means that encrypted assets were loaded from cached files named *.pem.enc, instead of re-encrypting raw assets named *.pem files
 			// TODO Use some kind of mocking framework for tests like this
-			read, err := ReadOrCreateCompactAssets(dir, kmsConfig)
+			read, err := ReadOrCreateCompactAssets(dir, true, kmsConfig)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact assets in %s : %v", dir, err)
@@ -148,7 +150,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 		})
 
 		t.Run("RemoveFilesToRegenerate", func(t *testing.T) {
-			original, err := ReadOrCreateCompactAssets(dir, kmsConfig)
+			original, err := ReadOrCreateCompactAssets(dir, true, kmsConfig)
 
 			if err != nil {
 				t.Errorf("failed to read the original encrypted assets : %v", err)
@@ -167,7 +169,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 				}
 			}
 
-			regenerated, err := ReadOrCreateCompactAssets(dir, kmsConfig)
+			regenerated, err := ReadOrCreateCompactAssets(dir, true, kmsConfig)
 
 			if err != nil {
 				t.Errorf("failed to read the regenerated encrypted assets : %v", err)
@@ -234,13 +236,13 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 func TestReadOrCreateUnEncryptedCompactAssets(t *testing.T) {
 	helper.WithDummyCredentials(func(dir string) {
 		t.Run("CachedToPreventUnnecessaryNodeReplacementOnUnencrypted", func(t *testing.T) {
-			created, err := ReadOrCreateUnencryptedCompactAssets(dir)
+			created, err := ReadOrCreateUnencryptedCompactAssets(dir, true)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact assets in %s : %v", dir, err)
 			}
 
-			read, err := ReadOrCreateUnencryptedCompactAssets(dir)
+			read, err := ReadOrCreateUnencryptedCompactAssets(dir, true)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact assets in %s : %v", dir, err)
@@ -254,4 +256,130 @@ func TestReadOrCreateUnEncryptedCompactAssets(t *testing.T) {
 			}
 		})
 	})
+}
+
+func TestRandomTLSBootstrapTokenString(t *testing.T) {
+	randomToken, err := RandomTLSBootstrapTokenString()
+	if err != nil {
+		t.Errorf("failed to generate a Kubelet bootstrap token: %v", err)
+	}
+	if strings.Index(randomToken, ",") >= 0 {
+		t.Errorf("random token not expect to contain a comma: %v", randomToken)
+	}
+
+	b, err := base64.URLEncoding.DecodeString(randomToken)
+	if err != nil {
+		t.Errorf("failed to decode base64 token string: %v", err)
+	}
+	if len(b) != 256 {
+		t.Errorf("expected token to be 256 bits long, but was %d", len(b))
+	}
+}
+
+func TestHasAuthTokens(t *testing.T) {
+	testCases := []struct {
+		authTokens string
+		expected   bool
+	}{
+		// Without auth tokens
+		{
+			authTokens: "",
+			expected:   false,
+		},
+
+		// With auth tokens
+		{
+			authTokens: "contents",
+			expected:   true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		asset := &CompactAssets{
+			AuthTokens: testCase.authTokens,
+		}
+
+		actual := asset.HasAuthTokens()
+		if actual != testCase.expected {
+			t.Errorf("Expected HasAuthTokens to be %v, but was %v", testCase.expected, actual)
+		}
+	}
+}
+
+func TestHasTLSBootstrapToken(t *testing.T) {
+	testCases := []struct {
+		tlsBootstrapToken string
+		expected          bool
+	}{
+		// Without TLS bootstrap token
+		{
+			tlsBootstrapToken: "",
+			expected:          false,
+		},
+
+		// With TLS bootstrap token
+		{
+			tlsBootstrapToken: "contents",
+			expected:          true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		asset := &CompactAssets{
+			TLSBootstrapToken: testCase.tlsBootstrapToken,
+		}
+
+		actual := asset.HasTLSBootstrapToken()
+		if actual != testCase.expected {
+			t.Errorf("Expected HasTLSBootstrapToken to be %v, but was %v", testCase.expected, actual)
+		}
+	}
+}
+
+func TestHasAnyAuthTokens(t *testing.T) {
+	testCases := []struct {
+		authTokens        string
+		tlsBootstrapToken string
+		expected          bool
+	}{
+		// No tokens
+		{
+			authTokens:        "",
+			tlsBootstrapToken: "",
+			expected:          false,
+		},
+
+		// With TLS bootstrap token only
+		{
+			authTokens:        "",
+			tlsBootstrapToken: "contents",
+			expected:          true,
+		},
+
+		// With auth tokens only
+		{
+			authTokens:        "contents",
+			tlsBootstrapToken: "",
+			expected:          true,
+		},
+
+		// With both TLS bootstrap and auth tokens
+		{
+			authTokens:        "contents",
+			tlsBootstrapToken: "contents",
+			expected:          true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		asset := &CompactAssets{
+			AuthTokens:        testCase.authTokens,
+			TLSBootstrapToken: testCase.tlsBootstrapToken,
+		}
+
+		actual := asset.HasAnyAuthTokens()
+		if actual != testCase.expected {
+			t.Errorf("Expected HasAnyAuthTokens to be %v, but was %v", testCase.expected, actual)
+		}
+	}
 }

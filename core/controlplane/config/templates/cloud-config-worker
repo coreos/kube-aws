@@ -197,7 +197,7 @@ coreos:
         --cluster_domain=cluster.local \
         --cloud-provider=aws \
         --cert-dir=/etc/kubernetes/ssl \
-        {{- if .Experimental.TLSBootstrap.Enabled }}
+        {{- if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
         --experimental-bootstrap-kubeconfig=/etc/kubernetes/worker-bootstrap-kubeconfig.yaml \
         {{- else }}
         --tls-cert-file=/etc/kubernetes/ssl/worker.pem \
@@ -622,7 +622,7 @@ write_files:
           -ec \
           'echo decrypting assets
            shopt -s nullglob
-           for encKey in /etc/kubernetes/{ssl,{{if .Experimental.TLSBootstrap.Enabled}}auth{{end}}}/*.enc; do
+           for encKey in /etc/kubernetes/{ssl,{{if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasAnyAuthTokens}}auth{{end}}}/*.enc; do
              echo decrypting $encKey
              f=$(mktemp $encKey.XXXXXXXX)
              /usr/bin/aws \
@@ -634,9 +634,9 @@ write_files:
              mv -f $f ${encKey%.enc}
            done;
 
-           {{ if .Experimental.TLSBootstrap.Enabled }}
+           {{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
            echo injecting token into the kubelet bootstrap kubeconfig file
-           bootstrap_token=$(cat /etc/kubernetes/auth/kubelet-bootstrap.token);
+           bootstrap_token=$(cat /etc/kubernetes/auth/tls-bootstrap.token);
            sed -i -e "s#\$KUBELET_BOOTSTRAP_TOKEN#$bootstrap_token#g" /etc/kubernetes/worker-bootstrap-kubeconfig.yaml
            {{ end }}
            echo done.'
@@ -747,7 +747,7 @@ write_files:
               hostPath:
                 path: /var/run/dbus
 
-{{ if .Experimental.TLSBootstrap.Enabled }}
+{{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
   - path: /etc/kubernetes/worker-bootstrap-kubeconfig.yaml
     content: |
         apiVersion: v1
@@ -758,15 +758,15 @@ write_files:
             certificate-authority: /etc/kubernetes/ssl/ca.pem
             server: {{.APIEndpointURL}}:443
         users:
-        - name: kubelet-bootstrap
+        - name: tls-bootstrap
           user:
             token: $KUBELET_BOOTSTRAP_TOKEN
         contexts:
         - context:
             cluster: local
-            user: kubelet-bootstrap
-          name: kubelet-bootstrap-context
-        current-context: kubelet-bootstrap-context
+            user: tls-bootstrap
+          name: tls-bootstrap-context
+        current-context: tls-bootstrap-context
 {{ else }}
   - path: /etc/kubernetes/worker-kubeconfig.yaml
     content: |
@@ -840,8 +840,8 @@ write_files:
 
 {{ end }}
 
-{{ if .Experimental.TLSBootstrap.Enabled }}
-  - path: /etc/kubernetes/auth/kubelet-bootstrap.token{{if .AssetsEncryptionEnabled}}.enc{{end}}
+{{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
+  - path: /etc/kubernetes/auth/tls-bootstrap.token{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.AuthTokensConfig.KubeletBootstrapToken}}
+    content: {{.AssetsConfig.TLSBootstrapToken}}
 {{ end }}

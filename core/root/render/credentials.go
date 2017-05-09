@@ -12,7 +12,7 @@ import (
 )
 
 type CredentialsRenderer interface {
-	RenderTLSCerts(config.CredentialsOptions) error
+	RenderCerts(config.CredentialsOptions) error
 }
 
 type credentialsRendererImpl struct {
@@ -25,7 +25,7 @@ func NewCredentialsRenderer(c *config.Cluster) CredentialsRenderer {
 	}
 }
 
-func (r credentialsRendererImpl) RenderTLSCerts(renderCredentialsOpts config.CredentialsOptions) error {
+func (r credentialsRendererImpl) RenderCerts(renderCredentialsOpts config.CredentialsOptions) error {
 	cluster := r.c
 	fmt.Println("Generating credentials...")
 	var caKey *rsa.PrivateKey

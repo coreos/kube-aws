@@ -30,8 +30,7 @@ type ComputedConfig struct {
 	// Fields computed from Cluster
 	AMI string
 
-	AssetsConfig     *cfg.CompactAssets
-	AuthTokensConfig *cfg.CompactAuthTokens
+	AssetsConfig *cfg.CompactAssets
 }
 
 type ProvidedConfig struct {
@@ -80,37 +79,19 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 		return nil, fmt.Errorf("failed to generate config : %v", err)
 	}
 
-	if stackConfig.ManageCertificates {
-		if stackConfig.ComputedConfig.AssetsEncryptionEnabled() {
-			compactAssets, err := cfg.ReadOrCreateCompactAssets(opts.AssetsDir, cfg.KMSConfig{
-				Region:         stackConfig.ComputedConfig.Region,
-				KMSKeyARN:      c.KMSKeyARN,
-				EncryptService: c.ProvidedEncryptService,
-			})
-			if err != nil {
-				return nil, err
-			}
-			stackConfig.ComputedConfig.AssetsConfig = compactAssets
-		} else {
-			rawAssets, _ := cfg.ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir)
-			stackConfig.ComputedConfig.AssetsConfig = rawAssets
+	if stackConfig.ComputedConfig.AssetsEncryptionEnabled() {
+		compactAssets, err := cfg.ReadOrCreateCompactAssets(opts.AssetsDir, c.ManageCertificates, cfg.KMSConfig{
+			Region:         stackConfig.ComputedConfig.Region,
+			KMSKeyARN:      c.KMSKeyARN,
+			EncryptService: c.ProvidedEncryptService,
+		})
+		if err != nil {
+			return nil, err
 		}
-	}
-
-	if c.DeploymentSettings.Experimental.TLSBootstrap.Enabled {
-		if stackConfig.ComputedConfig.AssetsEncryptionEnabled() {
-			compactAuthTokens, _ := cfg.ReadOrCreateCompactAuthTokens(opts.AssetsDir, cfg.KMSConfig{
-				Region:         stackConfig.ComputedConfig.Region,
-				KMSKeyARN:      c.KMSKeyARN,
-				EncryptService: c.ProvidedEncryptService,
-			})
-			stackConfig.ComputedConfig.AuthTokensConfig = compactAuthTokens
-		} else {
-			rawAuthTokens, _ := cfg.ReadOrCreateUnencryptedCompactAuthTokens(opts.AssetsDir)
-			stackConfig.ComputedConfig.AuthTokensConfig = rawAuthTokens
-		}
+		stackConfig.ComputedConfig.AssetsConfig = compactAssets
 	} else {
-		stackConfig.ComputedConfig.AuthTokensConfig = &cfg.CompactAuthTokens{}
+		rawAssets, _ := cfg.ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir, c.ManageCertificates)
+		stackConfig.ComputedConfig.AssetsConfig = rawAssets
 	}
 
 	if stackConfig.UserDataWorker, err = userdatatemplate.GetString(opts.WorkerTmplFile, stackConfig.ComputedConfig); err != nil {

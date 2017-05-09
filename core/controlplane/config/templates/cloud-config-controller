@@ -990,7 +990,7 @@ write_files:
           -ec \
           'echo decrypting assets
            shopt -s nullglob
-           for encKey in /etc/kubernetes/{ssl,{{if .AuthTokensConfig.HasTokens}}auth{{end}}}/*.enc; do
+           for encKey in /etc/kubernetes/{ssl,{{if .AssetsConfig.HasAnyAuthTokens}}auth{{end}}}/*.enc; do
              echo decrypting $encKey
              f=$(mktemp $encKey.XXXXXXXX)
              /usr/bin/aws \
@@ -1001,6 +1001,20 @@ write_files:
              | base64 -d > $f
              mv -f $f ${encKey%.enc}
            done;
+
+           {{- if .AssetsConfig.HasAnyAuthTokens }}
+           authDir=/etc/kubernetes/auth
+           echo generating $authDir/computed-tokens.csv
+           echo > $authDir/computed-tokens.csv
+
+           {{- if .AssetsConfig.HasTLSBootstrapToken }}
+           echo $(cat $authDir/tls-bootstrap.token),kubelet-bootstrap,10001,system:kubelet-bootstrap >> $authDir/computed-tokens.csv
+           {{- end }}
+           {{- if .AssetsConfig.HasAuthTokens }}
+           cat $authDir/tokens.csv >> $authDir/computed-tokens.csv
+           {{- end }}
+           {{- end }}
+
            echo done.'
 
       rkt rm --uuid-file=/var/run/coreos/decrypt-assets.uuid || :
@@ -1244,8 +1258,8 @@ write_files:
           - --storage-backend=etcd2
           {{end}}
           - --kubelet-preferred-address-types=InternalIP,Hostname,ExternalIP
-          {{ if .AuthTokensConfig.HasTokens }}
-          - --token-auth-file=/etc/kubernetes/auth/tokens.csv
+          {{ if .AssetsConfig.HasAnyAuthTokens }}
+          - --token-auth-file=/etc/kubernetes/auth/computed-tokens.csv
           {{ end }}
           {{if .Experimental.AuditLog.Enabled}}
           - --audit-log-maxage={{.Experimental.AuditLog.MaxAge}}
@@ -1304,7 +1318,7 @@ write_files:
           - mountPath: /etc/ssl/certs
             name: ssl-certs-host
             readOnly: true
-          {{if .AuthTokensConfig.HasTokens}}
+          {{if .AssetsConfig.HasAnyAuthTokens}}
           - mountPath: /etc/kubernetes/auth
             name: auth-kubernetes
             readOnly: true
@@ -1326,7 +1340,7 @@ write_files:
         - hostPath:
             path: /usr/share/ca-certificates
           name: ssl-certs-host
-        {{if .AuthTokensConfig.HasTokens}}
+        {{if .AssetsConfig.HasAnyAuthTokens}}
         - hostPath:
             path: /etc/kubernetes/auth
           name: auth-kubernetes
@@ -1862,10 +1876,16 @@ write_files:
           - port: 80
             targetPort: 9090
 
-{{ if .AuthTokensConfig.HasTokens }}
+{{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
+  - path: /etc/kubernetes/auth/tls-bootstrap.token{{if .AssetsEncryptionEnabled}}.enc{{end}}
+    encoding: gzip+base64
+    content: {{.AssetsConfig.TLSBootstrapToken}}
+{{ end }}
+
+{{ if .AssetsConfig.HasAuthTokens }}
   - path: /etc/kubernetes/auth/tokens.csv{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.AuthTokensConfig.Contents}}
+    content: {{.AssetsConfig.AuthTokens}}
 {{ end }}
 
 {{ if .ManageCertificates }}
