@@ -981,7 +981,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 		return nil, err
 	}
 
-	var compactAssets *CompactTLSAssets
+	var compactAssets *CompactAssets
 	var compactAuthTokens *CompactAuthTokens
 
 	// Automatically generates the auth token file if it doesn't exist
@@ -1015,7 +1015,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	}
 	if c.ManageCertificates {
 		if c.AssetsEncryptionEnabled() {
-			compactAssets, err = ReadOrCreateCompactTLSAssets(opts.AssetsDir, KMSConfig{
+			compactAssets, err = ReadOrCreateCompactAssets(opts.AssetsDir, KMSConfig{
 				Region:         stackConfig.Config.Region,
 				KMSKeyARN:      c.KMSKeyARN,
 				EncryptService: c.ProvidedEncryptService,
@@ -1024,14 +1024,14 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 				return nil, err
 			}
 
-			stackConfig.Config.TLSConfig = compactAssets
+			stackConfig.Config.AssetsConfig = compactAssets
 		} else {
-			rawAssets, err := ReadOrCreateUnencryptedCompactTLSAssets(opts.AssetsDir)
+			rawAssets, err := ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir)
 			if err != nil {
 				return nil, err
 			}
 
-			stackConfig.Config.TLSConfig = rawAssets
+			stackConfig.Config.AssetsConfig = rawAssets
 		}
 	}
 
@@ -1074,7 +1074,7 @@ type Config struct {
 	EtcdNodes []derived.EtcdNode
 
 	AuthTokensConfig *CompactAuthTokens
-	TLSConfig        *CompactTLSAssets
+	AssetsConfig     *CompactAssets
 }
 
 // StackName returns the logical name of a CloudFormation stack resource in a root stack template

@@ -655,22 +655,22 @@ write_files:
 
   - path: /etc/ssl/certs/ca.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.TLSConfig.CACert}}
+    content: {{.AssetsConfig.CACert}}
 
   - path: /etc/ssl/certs/etcd-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.TLSConfig.EtcdKey}}
+    content: {{.AssetsConfig.EtcdKey}}
 
   - path: /etc/ssl/certs/etcd.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.TLSConfig.EtcdCert}}
+    content: {{.AssetsConfig.EtcdCert}}
 
   - path: /etc/ssl/certs/etcd-client.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.TLSConfig.EtcdClientCert}}
+    content: {{.AssetsConfig.EtcdClientCert}}
 
   - path: /etc/ssl/certs/etcd-client-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.TLSConfig.EtcdClientKey}}
+    content: {{.AssetsConfig.EtcdClientKey}}
 
 {{ end }}

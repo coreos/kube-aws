@@ -19,8 +19,8 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/tlsutil"
 )
 
-// PEM encoded TLS assets.
-type RawTLSAssetsOnMemory struct {
+type RawAssetsOnMemory struct {
+	// PEM encoded TLS assets.
 	CACert         []byte
 	CAKey          []byte
 	APIServerCert  []byte
@@ -37,8 +37,8 @@ type RawTLSAssetsOnMemory struct {
 	DexKey         []byte
 }
 
-// PEM encoded TLS assets.
-type RawTLSAssetsOnDisk struct {
+type RawAssetsOnDisk struct {
+	// PEM encoded TLS assets.
 	CACert         RawCredentialOnDisk
 	CAKey          RawCredentialOnDisk
 	APIServerCert  RawCredentialOnDisk
@@ -55,8 +55,8 @@ type RawTLSAssetsOnDisk struct {
 	DexKey         RawCredentialOnDisk
 }
 
-// Encrypted PEM encoded TLS assets
-type EncryptedTLSAssetsOnDisk struct {
+type EncryptedAssetsOnDisk struct {
+	// Encrypted PEM encoded TLS assets
 	CACert         EncryptedCredentialOnDisk
 	CAKey          EncryptedCredentialOnDisk
 	APIServerCert  EncryptedCredentialOnDisk
@@ -73,8 +73,8 @@ type EncryptedTLSAssetsOnDisk struct {
 	DexKey         EncryptedCredentialOnDisk
 }
 
-// PEM -> encrypted -> gzip -> base64 encoded TLS assets.
-type CompactTLSAssets struct {
+type CompactAssets struct {
+	// PEM -> encrypted -> gzip -> base64 encoded TLS assets.
 	CACert         string
 	CAKey          string
 	APIServerCert  string
@@ -119,18 +119,18 @@ type CredentialsOptions struct {
 	CaCertPath string
 }
 
-func (c *Cluster) NewTLSAssetsOnDisk(dir string, renderCredentialsOpts CredentialsOptions, caKey *rsa.PrivateKey, caCert *x509.Certificate) (*RawTLSAssetsOnDisk, error) {
-	assets, err := c.NewTLSAssetsOnMemory(caKey, caCert)
+func (c *Cluster) NewAssetsOnDisk(dir string, renderCredentialsOpts CredentialsOptions, caKey *rsa.PrivateKey, caCert *x509.Certificate) (*RawAssetsOnDisk, error) {
+	assets, err := c.NewAssetsOnMemory(caKey, caCert)
 	if err != nil {
 		return nil, fmt.Errorf("Error generating default assets: %v", err)
 	}
 	if err := assets.WriteToDir(dir, renderCredentialsOpts.GenerateCA); err != nil {
 		return nil, fmt.Errorf("Error create assets: %v", err)
 	}
-	return ReadRawTLSAssets(dir)
+	return ReadRawAssets(dir)
 }
 
-func (c *Cluster) NewTLSAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certificate) (*RawTLSAssetsOnMemory, error) {
+func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certificate) (*RawAssetsOnMemory, error) {
 	// Convert from days to time.Duration
 	certDuration := time.Duration(c.TLSCertDurationDays) * 24 * time.Hour
 
@@ -227,7 +227,7 @@ func (c *Cluster) NewTLSAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certi
 	if err != nil {
 		return nil, err
 	}
-	return &RawTLSAssetsOnMemory{
+	return &RawAssetsOnMemory{
 		CACert:         tlsutil.EncodeCertificatePEM(caCert),
 		APIServerCert:  tlsutil.EncodeCertificatePEM(apiServerCert),
 		WorkerCert:     tlsutil.EncodeCertificatePEM(workerCert),
@@ -245,108 +245,101 @@ func (c *Cluster) NewTLSAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certi
 	}, nil
 }
 
-func ReadRawTLSAssets(dirname string) (*RawTLSAssetsOnDisk, error) {
-	r := new(RawTLSAssetsOnDisk)
+func ReadRawAssets(dirname string) (*RawAssetsOnDisk, error) {
+	r := new(RawAssetsOnDisk)
 	files := []struct {
-		name      string
-		cert, key *RawCredentialOnDisk
+		name string
+		data *RawCredentialOnDisk
 	}{
-		{"ca", &r.CACert, &r.CAKey},
-		{"apiserver", &r.APIServerCert, &r.APIServerKey},
-		{"worker", &r.WorkerCert, &r.WorkerKey},
-		{"admin", &r.AdminCert, &r.AdminKey},
-		{"etcd", &r.EtcdCert, &r.EtcdKey},
-		{"etcd-client", &r.EtcdClientCert, &r.EtcdClientKey},
-		{"dex", &r.DexCert, &r.DexKey},
+		{"ca.pem", &r.CACert},
+		{"ca-key.pem", &r.CAKey},
+		{"apiserver.pem", &r.APIServerCert},
+		{"apiserver-key.pem", &r.APIServerKey},
+		{"worker.pem", &r.WorkerCert},
+		{"worker-key.pem", &r.WorkerKey},
+		{"admin.pem", &r.AdminCert},
+		{"admin-key.pem", &r.AdminKey},
+		{"etcd.pem", &r.EtcdCert},
+		{"etcd-key.pem", &r.EtcdKey},
+		{"etcd-client.pem", &r.EtcdClientCert},
+		{"etcd-client-key.pem", &r.EtcdClientKey},
+		{"dex.pem", &r.DexCert},
+		{"dex-key.pem", &r.DexKey},
 	}
 	for _, file := range files {
-		certPath := filepath.Join(dirname, file.name+".pem")
-		keyPath := filepath.Join(dirname, file.name+"-key.pem")
-
-		certData, err := RawCredentialFileFromPath(certPath)
+		path := filepath.Join(dirname, file.name)
+		data, err := RawCredentialFileFromPath(path)
 		if err != nil {
 			return nil, err
 		}
-		*file.cert = *certData
 
-		if file.key != nil {
-			keyData, err := RawCredentialFileFromPath(keyPath)
-			if err != nil {
-				return nil, err
-			}
-			*file.key = *keyData
-		}
+		*file.data = *data
 	}
 	return r, nil
 }
 
-func ReadOrEncryptTLSAssets(dirname string, encryptor CachedEncryptor) (*EncryptedTLSAssetsOnDisk, error) {
-	r := new(EncryptedTLSAssetsOnDisk)
+func ReadOrEncryptAssets(dirname string, encryptor CachedEncryptor) (*EncryptedAssetsOnDisk, error) {
+	r := new(EncryptedAssetsOnDisk)
 	files := []struct {
-		name      string
-		cert, key *EncryptedCredentialOnDisk
+		name string
+		data *EncryptedCredentialOnDisk
 	}{
-		{"ca", &r.CACert, &r.CAKey},
-		{"apiserver", &r.APIServerCert, &r.APIServerKey},
-		{"worker", &r.WorkerCert, &r.WorkerKey},
-		{"admin", &r.AdminCert, &r.AdminKey},
-		{"etcd", &r.EtcdCert, &r.EtcdKey},
-		{"etcd-client", &r.EtcdClientCert, &r.EtcdClientKey},
-		{"dex", &r.DexCert, &r.DexKey},
+		{"ca.pem", &r.CACert},
+		{"ca-key.pem", &r.CAKey},
+		{"apiserver.pem", &r.APIServerCert},
+		{"apiserver-key.pem", &r.APIServerKey},
+		{"worker.pem", &r.WorkerCert},
+		{"worker-key.pem", &r.WorkerKey},
+		{"admin.pem", &r.AdminCert},
+		{"admin-key.pem", &r.AdminKey},
+		{"etcd.pem", &r.EtcdCert},
+		{"etcd-key.pem", &r.EtcdKey},
+		{"etcd-client.pem", &r.EtcdClientCert},
+		{"etcd-client-key.pem", &r.EtcdClientKey},
+		{"dex.pem", &r.DexCert},
+		{"dex-key.pem", &r.DexKey},
 	}
 	for _, file := range files {
-		certPath := filepath.Join(dirname, file.name+".pem")
-		keyPath := filepath.Join(dirname, file.name+"-key.pem")
-
-		certData, err := encryptor.EncryptedCredentialFromPath(certPath)
+		path := filepath.Join(dirname, file.name)
+		data, err := encryptor.EncryptedCredentialFromPath(path)
 		if err != nil {
 			return nil, err
 		}
-		*file.cert = *certData
 
-		if err := certData.Persist(); err != nil {
+		*file.data = *data
+		if err := data.Persist(); err != nil {
 			return nil, err
-		}
-
-		if file.key != nil {
-			keyData, err := encryptor.EncryptedCredentialFromPath(keyPath)
-			if err != nil {
-				return nil, err
-			}
-			*file.key = *keyData
-
-			if err := keyData.Persist(); err != nil {
-				return nil, err
-			}
 		}
 	}
 
 	return r, nil
 }
 
-func (r *RawTLSAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) error {
+func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) error {
 	assets := []struct {
-		name      string
-		cert, key []byte
+		name string
+		data []byte
 	}{
-		{"ca", r.CACert, r.CAKey},
-		{"apiserver", r.APIServerCert, r.APIServerKey},
-		{"worker", r.WorkerCert, r.WorkerKey},
-		{"admin", r.AdminCert, r.AdminKey},
-		{"etcd", r.EtcdCert, r.EtcdKey},
-		{"etcd-client", r.EtcdClientCert, r.EtcdClientKey},
-		{"dex", r.DexCert, r.DexKey},
+		{"ca.pem", r.CACert},
+		{"ca-key.pem", r.CAKey},
+		{"apiserver.pem", r.APIServerCert},
+		{"apiserver-key.pem", r.APIServerKey},
+		{"worker.pem", r.WorkerCert},
+		{"worker-key.pem", r.WorkerKey},
+		{"admin.pem", r.AdminCert},
+		{"admin-key.pem", r.AdminKey},
+		{"etcd.pem", r.EtcdCert},
+		{"etcd-key.pem", r.EtcdKey},
+		{"etcd-client.pem", r.EtcdClientCert},
+		{"etcd-client-key.pem", r.EtcdClientKey},
+		{"dex.pem", r.DexCert},
+		{"dex-key.pem", r.DexKey},
 	}
 	for _, asset := range assets {
-		certPath := filepath.Join(dirname, asset.name+".pem")
-		keyPath := filepath.Join(dirname, asset.name+"-key.pem")
+		path := filepath.Join(dirname, asset.name)
 
-		if err := ioutil.WriteFile(certPath, asset.cert, 0600); err != nil {
-			return err
-		}
-
-		if asset.name != "ca" || includeCAKey {
-			if err := ioutil.WriteFile(keyPath, asset.key, 0600); err != nil {
+		if asset.name != "ca-key.pem" || includeCAKey {
+			if err := ioutil.WriteFile(path, asset.data, 0600); err != nil {
 				return err
 			}
 		}
@@ -354,26 +347,29 @@ func (r *RawTLSAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) err
 	return nil
 }
 
-func (r *EncryptedTLSAssetsOnDisk) WriteToDir(dirname string) error {
+func (r *EncryptedAssetsOnDisk) WriteToDir(dirname string) error {
 	assets := []struct {
-		name      string
-		cert, key EncryptedCredentialOnDisk
+		name string
+		data EncryptedCredentialOnDisk
 	}{
-		{"ca", r.CACert, r.CAKey},
-		{"apiserver", r.APIServerCert, r.APIServerKey},
-		{"worker", r.WorkerCert, r.WorkerKey},
-		{"admin", r.AdminCert, r.AdminKey},
-		{"etcd", r.EtcdCert, r.EtcdKey},
-		{"dex", r.DexCert, r.DexKey},
-		{"etcd-client", r.EtcdClientCert, r.EtcdClientKey},
+		{"ca.pem", r.CACert},
+		{"ca-key.pem", r.CAKey},
+		{"apiserver.pem", r.APIServerCert},
+		{"apiserver-key.pem", r.APIServerKey},
+		{"worker.pem", r.WorkerCert},
+		{"worker-key.pem", r.WorkerKey},
+		{"admin.pem", r.AdminCert},
+		{"admin-key.pem", r.AdminKey},
+		{"etcd.pem", r.EtcdCert},
+		{"etcd-key.pem", r.EtcdKey},
+		{"dex.pem", r.DexCert},
+		{"dex-key.pem", r.DexKey},
+		{"etcd-client.pem", r.EtcdClientCert},
+		{"etcd-client-key.pem", r.EtcdClientKey},
 	}
 	for _, asset := range assets {
-		if err := asset.cert.Persist(); err != nil {
-			return err
-		}
-
-		if asset.name != "ca" {
-			if err := asset.key.Persist(); err != nil {
+		if asset.name != "ca-key.pem" {
+			if err := asset.data.Persist(); err != nil {
 				return err
 			}
 		}
@@ -381,7 +377,7 @@ func (r *EncryptedTLSAssetsOnDisk) WriteToDir(dirname string) error {
 	return nil
 }
 
-func (r *RawTLSAssetsOnDisk) Compact() (*CompactTLSAssets, error) {
+func (r *RawAssetsOnDisk) Compact() (*CompactAssets, error) {
 	var err error
 	compact := func(c RawCredentialOnDisk) string {
 		if err != nil {
@@ -394,7 +390,7 @@ func (r *RawTLSAssetsOnDisk) Compact() (*CompactTLSAssets, error) {
 		}
 		return out
 	}
-	compactAssets := CompactTLSAssets{
+	compactAssets := CompactAssets{
 		CACert:         compact(r.CACert),
 		APIServerCert:  compact(r.APIServerCert),
 		APIServerKey:   compact(r.APIServerKey),
@@ -415,7 +411,7 @@ func (r *RawTLSAssetsOnDisk) Compact() (*CompactTLSAssets, error) {
 	return &compactAssets, nil
 }
 
-func (r *EncryptedTLSAssetsOnDisk) Compact() (*CompactTLSAssets, error) {
+func (r *EncryptedAssetsOnDisk) Compact() (*CompactAssets, error) {
 	var err error
 	compact := func(c EncryptedCredentialOnDisk) string {
 		if err != nil {
@@ -428,7 +424,7 @@ func (r *EncryptedTLSAssetsOnDisk) Compact() (*CompactTLSAssets, error) {
 		}
 		return out
 	}
-	compactAssets := CompactTLSAssets{
+	compactAssets := CompactAssets{
 		CACert:         compact(r.CACert),
 		CAKey:          compact(r.CAKey),
 		APIServerCert:  compact(r.APIServerCert),
@@ -456,7 +452,7 @@ type KMSConfig struct {
 	KMSKeyARN      string
 }
 
-func ReadOrCreateEncryptedTLSAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*EncryptedTLSAssetsOnDisk, error) {
+func ReadOrCreateEncryptedAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*EncryptedAssetsOnDisk, error) {
 	var kmsSvc EncryptService
 
 	// TODO Cleaner way to inject this dependency
@@ -478,32 +474,32 @@ func ReadOrCreateEncryptedTLSAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*
 		bytesEncryptionService: encryptionSvc,
 	}
 
-	return ReadOrEncryptTLSAssets(tlsAssetsDir, encryptor)
+	return ReadOrEncryptAssets(tlsAssetsDir, encryptor)
 }
 
-func ReadOrCreateCompactTLSAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*CompactTLSAssets, error) {
-	encryptedAssets, err := ReadOrCreateEncryptedTLSAssets(tlsAssetsDir, kmsConfig)
+func ReadOrCreateCompactAssets(tlsAssetsDir string, kmsConfig KMSConfig) (*CompactAssets, error) {
+	encryptedAssets, err := ReadOrCreateEncryptedAssets(tlsAssetsDir, kmsConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read/create TLS assets: %v", err)
+		return nil, fmt.Errorf("failed to read/create encrypted assets: %v", err)
 	}
 
 	compactAssets, err := encryptedAssets.Compact()
 	if err != nil {
-		return nil, fmt.Errorf("failed to compress TLS assets: %v", err)
+		return nil, fmt.Errorf("failed to compress encrypted assets: %v", err)
 	}
 
 	return compactAssets, nil
 }
 
-func ReadOrCreateUnencryptedCompactTLSAssets(tlsAssetsDir string) (*CompactTLSAssets, error) {
-	unencryptedAssets, err := ReadRawTLSAssets(tlsAssetsDir)
+func ReadOrCreateUnencryptedCompactAssets(tlsAssetsDir string) (*CompactAssets, error) {
+	unencryptedAssets, err := ReadRawAssets(tlsAssetsDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read/create TLS assets: %v", err)
+		return nil, fmt.Errorf("failed to read/create encrypted assets: %v", err)
 	}
 
 	compactAssets, err := unencryptedAssets.Compact()
 	if err != nil {
-		return nil, fmt.Errorf("failed to compress TLS assets: %v", err)
+		return nil, fmt.Errorf("failed to compress encrypted assets: %v", err)
 	}
 
 	return compactAssets, nil

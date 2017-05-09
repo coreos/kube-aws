@@ -27,7 +27,7 @@ func NewCredentialsRenderer(c *config.Cluster) CredentialsRenderer {
 
 func (r credentialsRendererImpl) RenderTLSCerts(renderCredentialsOpts config.CredentialsOptions) error {
 	cluster := r.c
-	fmt.Println("Generating TLS credentials...")
+	fmt.Println("Generating credentials...")
 	var caKey *rsa.PrivateKey
 	var caCert *x509.Certificate
 	if renderCredentialsOpts.GenerateCA {
@@ -60,8 +60,8 @@ func (r credentialsRendererImpl) RenderTLSCerts(renderCredentialsOpts config.Cre
 		return err
 	}
 
-	fmt.Println("-> Generating new TLS assets")
-	_, err := cluster.NewTLSAssetsOnDisk(dir, renderCredentialsOpts, caKey, caCert)
+	fmt.Println("-> Generating new assets")
+	_, err := cluster.NewAssetsOnDisk(dir, renderCredentialsOpts, caKey, caCert)
 	if err != nil {
 		return err
 	}

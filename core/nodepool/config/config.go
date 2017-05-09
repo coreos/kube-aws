@@ -30,7 +30,7 @@ type ComputedConfig struct {
 	// Fields computed from Cluster
 	AMI string
 
-	TLSConfig        *cfg.CompactTLSAssets
+	AssetsConfig     *cfg.CompactAssets
 	AuthTokensConfig *cfg.CompactAuthTokens
 }
 
@@ -82,7 +82,7 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 
 	if stackConfig.ManageCertificates {
 		if stackConfig.ComputedConfig.AssetsEncryptionEnabled() {
-			compactAssets, err := cfg.ReadOrCreateCompactTLSAssets(opts.AssetsDir, cfg.KMSConfig{
+			compactAssets, err := cfg.ReadOrCreateCompactAssets(opts.AssetsDir, cfg.KMSConfig{
 				Region:         stackConfig.ComputedConfig.Region,
 				KMSKeyARN:      c.KMSKeyARN,
 				EncryptService: c.ProvidedEncryptService,
@@ -90,10 +90,10 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 			if err != nil {
 				return nil, err
 			}
-			stackConfig.ComputedConfig.TLSConfig = compactAssets
+			stackConfig.ComputedConfig.AssetsConfig = compactAssets
 		} else {
-			rawAssets, _ := cfg.ReadOrCreateUnencryptedCompactTLSAssets(opts.AssetsDir)
-			stackConfig.ComputedConfig.TLSConfig = rawAssets
+			rawAssets, _ := cfg.ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir)
+			stackConfig.ComputedConfig.AssetsConfig = rawAssets
 		}
 	}
 

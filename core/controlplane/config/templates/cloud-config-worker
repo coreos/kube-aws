@@ -569,34 +569,34 @@ write_files:
 
   - path: /etc/kubernetes/ssl/etcd-client.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.TLSConfig.EtcdClientCert}}
+    content: {{.AssetsConfig.EtcdClientCert}}
 
   - path: /etc/kubernetes/ssl/etcd-client-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.TLSConfig.EtcdClientKey}}
+    content: {{.AssetsConfig.EtcdClientKey}}
 
 {{ if not .Experimental.TLSBootstrap.Enabled }}
   - path: /etc/kubernetes/ssl/worker.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.TLSConfig.WorkerCert}}
+    content: {{.AssetsConfig.WorkerCert}}
 
   - path: /etc/kubernetes/ssl/worker-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.TLSConfig.WorkerKey}}
+    content: {{.AssetsConfig.WorkerKey}}
 {{ end }}
 
   - path: /etc/kubernetes/ssl/ca.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.TLSConfig.CACert}}
+    content: {{.AssetsConfig.CACert}}
 
 {{ if .Experimental.Dex.Enabled }}
   - path: /etc/kubernetes/ssl/dex.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.TLSConfig.DexCert}}
+    content: {{.AssetsConfig.DexCert}}
 
   - path: /etc/kubernetes/ssl/dex-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.TLSConfig.DexKey}}
+    content: {{.AssetsConfig.DexKey}}
 {{ end }}
 {{ end }}
 
