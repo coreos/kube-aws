@@ -1876,7 +1876,7 @@ write_files:
           - port: 80
             targetPort: 9090
 
-{{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
+{{ if .AssetsConfig.HasTLSBootstrapToken }}
   - path: /etc/kubernetes/auth/tls-bootstrap.token{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.AssetsConfig.TLSBootstrapToken}}
