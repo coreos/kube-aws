@@ -25,7 +25,7 @@ func WithDummyCredentials(fn func(dir string)) {
 		panic(err)
 	}
 
-	// Remove all the contents in the dir including *.pem.enc created by ReadOrUpdateCompactTLSAssets()
+	// Remove all the contents in the dir including *.pem.enc created by ReadOrUpdateCompactAssets()
 	// Otherwise we end up with a lot of garbage directories we failed to remove as they aren't empty in
 	// config/temp, nodepool/config/temp, test/integration/temp
 	defer os.RemoveAll(dir)
@@ -45,4 +45,14 @@ func WithDummyCredentials(fn func(dir string)) {
 	}
 
 	fn(dir)
+}
+
+func WithTLSBootstrapToken(dir string, fn func()) {
+	tokenFile := fmt.Sprintf("%s/tls-bootstrap.token", dir)
+	if err := ioutil.WriteFile(tokenFile, []byte("dummytoken"), 0644); err != nil {
+		panic(err)
+	}
+	defer os.Remove(tokenFile)
+
+	fn()
 }
