@@ -1003,17 +1003,8 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 		stackConfig.Config.AssetsConfig = rawAssets
 	}
 
-	if c.Experimental.TLSBootstrap.Enabled {
-		if !compactAssets.HasTLSBootstrapToken() {
-			randomToken, err := RandomTLSBootstrapTokenString()
-			if err != nil {
-				return nil, err
-			}
-			return nil, fmt.Errorf("TLS bootstrapping is enabled, but no bootstrap token was defined. You can fix that by writing the following randomly generated token string to ./credentials/tls-bootstrap.token:\n%s", randomToken)
-		}
-		if !c.Experimental.Plugins.Rbac.Enabled {
-			fmt.Println(`WARNING: enabling cluster-level TLS bootstrapping without RBAC is not recommended. See https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/ for more information`)
-		}
+	if c.Experimental.TLSBootstrap.Enabled && !c.Experimental.Plugins.Rbac.Enabled {
+		fmt.Println(`WARNING: enabling cluster-level TLS bootstrapping without RBAC is not recommended. See https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/ for more information`)
 	}
 
 	if stackConfig.UserDataController, err = userdatatemplate.GetString(opts.ControllerTmplFile, stackConfig.Config); err != nil {

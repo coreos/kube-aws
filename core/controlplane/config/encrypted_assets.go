@@ -275,41 +275,49 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 }
 
 func ReadRawAssets(dirname string, manageCertificates bool) (*RawAssetsOnDisk, error) {
+	defaultTokensFile := ""
+	defaultTLSBootstrapToken, err := RandomTLSBootstrapTokenString()
+	if err != nil {
+		return nil, err
+	}
+
 	r := new(RawAssetsOnDisk)
 
 	type entry struct {
-		name   string
-		data   *RawCredentialOnDisk
-		create bool
+		name         string
+		data         *RawCredentialOnDisk
+		defaultValue *string
 	}
 
+	// Uses a random token as default value
 	files := []entry{
-		{"tokens.csv", &r.AuthTokens, true},
-		{"tls-bootstrap.token", &r.TLSBootstrapToken, true},
+		{"tokens.csv", &r.AuthTokens, &defaultTokensFile},
+		{"tls-bootstrap.token", &r.TLSBootstrapToken, &defaultTLSBootstrapToken},
 	}
 
 	if manageCertificates {
+		// Assumes no default values for any cert
 		files = append(files, []entry{
-			{"ca.pem", &r.CACert, false},
-			{"ca-key.pem", &r.CAKey, false},
-			{"apiserver.pem", &r.APIServerCert, false},
-			{"apiserver-key.pem", &r.APIServerKey, false},
-			{"worker.pem", &r.WorkerCert, false},
-			{"worker-key.pem", &r.WorkerKey, false},
-			{"admin.pem", &r.AdminCert, false},
-			{"admin-key.pem", &r.AdminKey, false},
-			{"etcd.pem", &r.EtcdCert, false},
-			{"etcd-key.pem", &r.EtcdKey, false},
-			{"etcd-client.pem", &r.EtcdClientCert, false},
-			{"etcd-client-key.pem", &r.EtcdClientKey, false},
-			{"dex.pem", &r.DexCert, false},
-			{"dex-key.pem", &r.DexKey, false},
+			{"ca.pem", &r.CACert, nil},
+			{"ca-key.pem", &r.CAKey, nil},
+			{"apiserver.pem", &r.APIServerCert, nil},
+			{"apiserver-key.pem", &r.APIServerKey, nil},
+			{"worker.pem", &r.WorkerCert, nil},
+			{"worker-key.pem", &r.WorkerKey, nil},
+			{"admin.pem", &r.AdminCert, nil},
+			{"admin-key.pem", &r.AdminKey, nil},
+			{"etcd.pem", &r.EtcdCert, nil},
+			{"etcd-key.pem", &r.EtcdKey, nil},
+			{"etcd-client.pem", &r.EtcdClientCert, nil},
+			{"etcd-client-key.pem", &r.EtcdClientKey, nil},
+			{"dex.pem", &r.DexCert, nil},
+			{"dex-key.pem", &r.DexKey, nil},
 		}...)
 	}
 
 	for _, file := range files {
 		path := filepath.Join(dirname, file.name)
-		data, err := RawCredentialFileFromPath(path, file.create)
+		data, err := RawCredentialFileFromPath(path, file.defaultValue)
 		if err != nil {
 			return nil, err
 		}
@@ -321,41 +329,47 @@ func ReadRawAssets(dirname string, manageCertificates bool) (*RawAssetsOnDisk, e
 }
 
 func ReadOrEncryptAssets(dirname string, manageCertificates bool, encryptor CachedEncryptor) (*EncryptedAssetsOnDisk, error) {
+	defaultTokensFile := ""
+	defaultTLSBootstrapToken, err := RandomTLSBootstrapTokenString()
+	if err != nil {
+		return nil, err
+	}
+
 	r := new(EncryptedAssetsOnDisk)
 
 	type entry struct {
-		name   string
-		data   *EncryptedCredentialOnDisk
-		create bool
+		name         string
+		data         *EncryptedCredentialOnDisk
+		defaultValue *string
 	}
 
 	files := []entry{
-		{"tokens.csv", &r.AuthTokens, true},
-		{"tls-bootstrap.token", &r.TLSBootstrapToken, true},
+		{"tokens.csv", &r.AuthTokens, &defaultTokensFile},
+		{"tls-bootstrap.token", &r.TLSBootstrapToken, &defaultTLSBootstrapToken},
 	}
 
 	if manageCertificates {
 		files = append(files, []entry{
-			{"ca.pem", &r.CACert, false},
-			{"ca-key.pem", &r.CAKey, false},
-			{"apiserver.pem", &r.APIServerCert, false},
-			{"apiserver-key.pem", &r.APIServerKey, false},
-			{"worker.pem", &r.WorkerCert, false},
-			{"worker-key.pem", &r.WorkerKey, false},
-			{"admin.pem", &r.AdminCert, false},
-			{"admin-key.pem", &r.AdminKey, false},
-			{"etcd.pem", &r.EtcdCert, false},
-			{"etcd-key.pem", &r.EtcdKey, false},
-			{"etcd-client.pem", &r.EtcdClientCert, false},
-			{"etcd-client-key.pem", &r.EtcdClientKey, false},
-			{"dex.pem", &r.DexCert, false},
-			{"dex-key.pem", &r.DexKey, false},
+			{"ca.pem", &r.CACert, nil},
+			{"ca-key.pem", &r.CAKey, nil},
+			{"apiserver.pem", &r.APIServerCert, nil},
+			{"apiserver-key.pem", &r.APIServerKey, nil},
+			{"worker.pem", &r.WorkerCert, nil},
+			{"worker-key.pem", &r.WorkerKey, nil},
+			{"admin.pem", &r.AdminCert, nil},
+			{"admin-key.pem", &r.AdminKey, nil},
+			{"etcd.pem", &r.EtcdCert, nil},
+			{"etcd-key.pem", &r.EtcdKey, nil},
+			{"etcd-client.pem", &r.EtcdClientCert, nil},
+			{"etcd-client-key.pem", &r.EtcdClientKey, nil},
+			{"dex.pem", &r.DexCert, nil},
+			{"dex-key.pem", &r.DexKey, nil},
 		}...)
 	}
 
 	for _, file := range files {
 		path := filepath.Join(dirname, file.name)
-		data, err := encryptor.EncryptedCredentialFromPath(path, file.create)
+		data, err := encryptor.EncryptedCredentialFromPath(path, file.defaultValue)
 		if err != nil {
 			return nil, err
 		}

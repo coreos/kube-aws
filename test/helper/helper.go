@@ -46,13 +46,3 @@ func WithDummyCredentials(fn func(dir string)) {
 
 	fn(dir)
 }
-
-func WithTLSBootstrapToken(dir string, fn func()) {
-	tokenFile := fmt.Sprintf("%s/tls-bootstrap.token", dir)
-	if err := ioutil.WriteFile(tokenFile, []byte("dummytoken"), 0644); err != nil {
-		panic(err)
-	}
-	defer os.Remove(tokenFile)
-
-	fn()
-}

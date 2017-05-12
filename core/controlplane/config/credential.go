@@ -33,13 +33,13 @@ func (e CachedEncryptor) EncryptedBytes(raw []byte) ([]byte, error) {
 	return e.bytesEncryptionService.Encrypt(raw)
 }
 
-func (e CachedEncryptor) EncryptedCredentialFromPath(filePath string, create bool) (*EncryptedCredentialOnDisk, error) {
-	raw, err := RawCredentialFileFromPath(filePath, create)
+func (e CachedEncryptor) EncryptedCredentialFromPath(filePath string, defaultValue *string) (*EncryptedCredentialOnDisk, error) {
+	raw, err := RawCredentialFileFromPath(filePath, defaultValue)
 	if err != nil {
 		return nil, err
 	}
 
-	cache, err := EncryptedCredentialCacheFromPath(filePath, create)
+	cache, err := EncryptedCredentialCacheFromPath(filePath)
 	if err != nil {
 		cache, err = EncryptedCredentialCacheFromRawCredential(raw, e.bytesEncryptionService)
 		if err != nil {
@@ -74,9 +74,11 @@ func EncryptedCredentialCacheFromRawCredential(raw *RawCredentialOnDisk, bytesEn
 	return &cache, nil
 }
 
-func RawCredentialFileFromPath(filePath string, create bool) (*RawCredentialOnDisk, error) {
-	if _, err := os.Stat(filePath); os.IsNotExist(err) && create {
-		os.OpenFile(filePath, os.O_RDONLY|os.O_CREATE, 0600)
+func RawCredentialFileFromPath(filePath string, defaultValue *string) (*RawCredentialOnDisk, error) {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) && defaultValue != nil {
+		if err := ioutil.WriteFile(filePath, []byte(*defaultValue), 0644); err != nil {
+			return nil, err
+		}
 	}
 
 	content, err := ioutil.ReadFile(filePath)
@@ -113,7 +115,7 @@ func fingerprintFilePath(rawCredFilePath string) string {
 	return fmt.Sprintf("%s.%s", rawCredFilePath, FingerprintFileExtension)
 }
 
-func EncryptedCredentialCacheFromPath(filePath string, create bool) (*EncryptedCredentialOnDisk, error) {
+func EncryptedCredentialCacheFromPath(filePath string) (*EncryptedCredentialOnDisk, error) {
 	cachePath := cacheFilePath(filePath)
 	credential, cacheErr := ioutil.ReadFile(cachePath)
 	if cacheErr != nil {
@@ -123,10 +125,11 @@ func EncryptedCredentialCacheFromPath(filePath string, create bool) (*EncryptedC
 	fingerprint, fingerprintErr := loadFingerprint(fingerprintPath)
 	if fingerprintErr != nil {
 		fmt.Printf("WARNING: \"%s\" does not exist. Did you explicitly removed it or upgrading from old kube-aws? Anyway, kube-aws is generating one for you from \"%s\" to automatically detect updates to it and recreate \"%s\" if necessary\n", fingerprintPath, filePath, cachePath)
-		raw, rawErr := RawCredentialFileFromPath(filePath, create)
+		raw, rawErr := RawCredentialFileFromPath(filePath, nil)
 		if rawErr != nil {
 			return nil, rawErr
 		}
+
 		fingerprint = raw.Fingerprint()
 	}
 	return &EncryptedCredentialOnDisk{

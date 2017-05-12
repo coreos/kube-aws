@@ -3365,25 +3365,10 @@ sshAccessAllowedSourceCIDRs:
 				stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../core/nodepool/config/templates/stack-template.json"
 				stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/templates/stack-template.json"
 
-				var cluster root.Cluster
-
-				clusterCreateFn := func() root.Cluster {
-					cluster, err := root.ClusterFromConfig(providedConfig, stackTemplateOptions, false)
-					if err != nil {
-						t.Errorf("failed to create cluster driver : %v", err)
-						t.FailNow()
-					}
-
-					return cluster
-				}
-
-				// Creates a sample TLS bootstrap token file, but only when needed
-				if providedConfig.Experimental.TLSBootstrap.Enabled {
-					helper.WithTLSBootstrapToken(dummyAssetsDir, func() {
-						cluster = clusterCreateFn()
-					})
-				} else {
-					cluster = clusterCreateFn()
+				cluster, err := root.ClusterFromConfig(providedConfig, stackTemplateOptions, false)
+				if err != nil {
+					t.Errorf("failed to create cluster driver : %v", err)
+					t.FailNow()
 				}
 
 				t.Run("AssertCluster", func(t *testing.T) {
