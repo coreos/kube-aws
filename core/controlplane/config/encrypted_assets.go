@@ -292,7 +292,7 @@ func ReadRawAssets(dirname string, manageCertificates bool) (*RawAssetsOnDisk, e
 	// Uses a random token as default value
 	files := []entry{
 		{"tokens.csv", &r.AuthTokens, &defaultTokensFile},
-		{"tls-bootstrap-token", &r.TLSBootstrapToken, &defaultTLSBootstrapToken},
+		{"kubelet-tls-bootstrap-token", &r.TLSBootstrapToken, &defaultTLSBootstrapToken},
 	}
 
 	if manageCertificates {
@@ -345,7 +345,7 @@ func ReadOrEncryptAssets(dirname string, manageCertificates bool, encryptor Cach
 
 	files := []entry{
 		{"tokens.csv", &r.AuthTokens, &defaultTokensFile},
-		{"tls-bootstrap-token", &r.TLSBootstrapToken, &defaultTLSBootstrapToken},
+		{"kubelet-tls-bootstrap-token", &r.TLSBootstrapToken, &defaultTLSBootstrapToken},
 	}
 
 	if manageCertificates {
@@ -404,7 +404,7 @@ func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) error 
 		{"dex-key.pem", r.DexKey},
 
 		{"tokens.csv", r.AuthTokens},
-		{"tls-bootstrap-token", r.TLSBootstrapToken},
+		{"kubelet-tls-bootstrap-token", r.TLSBootstrapToken},
 	}
 	for _, asset := range assets {
 		path := filepath.Join(dirname, asset.name)
@@ -439,7 +439,7 @@ func (r *EncryptedAssetsOnDisk) WriteToDir(dirname string) error {
 		{"etcd-client-key.pem", r.EtcdClientKey},
 
 		{"tokens.csv", r.AuthTokens},
-		{"tls-bootstrap-token", r.TLSBootstrapToken},
+		{"kubelet-tls-bootstrap-token", r.TLSBootstrapToken},
 	}
 	for _, asset := range assets {
 		if asset.name != "ca-key.pem" {
