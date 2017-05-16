@@ -1008,7 +1008,7 @@ write_files:
            echo > $authDir/computed-tokens.csv
 
            {{- if .AssetsConfig.HasTLSBootstrapToken }}
-           echo $(cat $authDir/tls-bootstrap.token),kubelet-bootstrap,10001,system:kubelet-bootstrap >> $authDir/computed-tokens.csv
+           echo $(cat $authDir/tls-bootstrap-token),kubelet-bootstrap,10001,system:kubelet-bootstrap >> $authDir/computed-tokens.csv
            {{- end }}
            {{- if .AssetsConfig.HasAuthTokens }}
            cat $authDir/tokens.csv >> $authDir/computed-tokens.csv
@@ -1877,7 +1877,7 @@ write_files:
             targetPort: 9090
 
 {{ if .AssetsConfig.HasTLSBootstrapToken }}
-  - path: /etc/kubernetes/auth/tls-bootstrap.token{{if .AssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/auth/tls-bootstrap-token{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.AssetsConfig.TLSBootstrapToken}}
 {{ end }}
