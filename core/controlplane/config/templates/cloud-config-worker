@@ -636,7 +636,7 @@ write_files:
 
            {{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
            echo injecting token into the kubelet bootstrap kubeconfig file
-           bootstrap_token=$(cat /etc/kubernetes/auth/kubelet-tls-bootstrap-token);
+           bootstrap_token=$(cat /etc/kubernetes/auth/kubelet-tls-bootstrap-token.tmp);
            sed -i -e "s#\$KUBELET_BOOTSTRAP_TOKEN#$bootstrap_token#g" /etc/kubernetes/worker-bootstrap-kubeconfig.yaml
            {{ end }}
            echo done.'
@@ -841,7 +841,7 @@ write_files:
 {{ end }}
 
 {{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
-  - path: /etc/kubernetes/auth/kubelet-tls-bootstrap-token{{if .AssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/auth/kubelet-tls-bootstrap-token.tmp{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.AssetsConfig.TLSBootstrapToken}}
 {{ end }}
