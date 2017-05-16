@@ -95,5 +95,5 @@ func runCmdRenderCredentials(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read cluster config: %v", err)
 	}
-	return cluster.RenderCerts(renderCredentialsOpts)
+	return cluster.RenderCredentials(renderCredentialsOpts)
 }
