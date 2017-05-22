@@ -1072,7 +1072,7 @@ write_files:
             - replicationcontrollers
             verbs:
             - get
-          - apiGroups: ["policy"]
+          - apiGroups: [""]
             resources:
             - pods/eviction
             verbs:
