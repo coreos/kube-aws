@@ -275,7 +275,7 @@ coreos:
           drain $(hostname) \
           --delete-local-data \
           --ignore-daemonsets \
-          --timeout={{.NodeDrainer.DrainTimeoutInSeconds}} \
+          --timeout={{.NodeDrainer.DrainTimeoutInSeconds}}s \
           --force'
         ExecStopPost=/bin/sh -c 'sleep {{.NodeDrainer.DrainIntervalInSeconds}}'
 
