@@ -263,7 +263,7 @@ coreos:
         Type=oneshot
         RemainAfterExit=true
         ExecStart=/bin/true
-        TimeoutStopSec=60s
+        TimeoutStopSec=infinity
         ExecStop=/bin/sh -c '/usr/bin/rkt run \
         --volume=kube,kind=host,source=/etc/kubernetes,readOnly=true \
         --mount=volume=kube,target=/etc/kubernetes \
@@ -273,8 +273,11 @@ coreos:
           --server={{.APIEndpointURL}}:443 \
           --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
           drain $(hostname) \
+          --delete-local-data \
           --ignore-daemonsets \
+          --timeout={{.NodeDrainer.DrainTimeoutInSeconds}} \
           --force'
+        ExecStopPost=/bin/sh -c 'sleep {{.NodeDrainer.DrainIntervalInSeconds}}'
 
         [Install]
         WantedBy=multi-user.target

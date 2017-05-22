@@ -127,8 +127,10 @@ func TestMainClusterConfig(t *testing.T) {
 				StaticClients:   []model.StaticClient{},
 				StaticPasswords: []model.StaticPassword{},
 			},
-			NodeDrainer: controlplane_config.NodeDrainer{
-				Enabled: false,
+			NodeDrainer: model.NodeDrainer{
+				Enabled:       false,
+				DrainTimeout:  0,
+				DrainInterval: 5,
 			},
 			NodeLabels: model.NodeLabels{},
 			Taints:     model.Taints{},
@@ -1190,6 +1192,8 @@ experimental:
       userID: '08a8684b-db88-4b73-90a9-3cd1661f5466'
   nodeDrainer:
     enabled: true
+    drainTimeout: 3
+    drainInterval: 4
   nodeLabels:
     kube-aws.coreos.com/role: worker
   plugins:
@@ -1275,8 +1279,10 @@ worker:
 								{Email: "admin@example.com", Hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W", Username: "admin", UserId: "08a8684b-db88-4b73-90a9-3cd1661f5466"},
 							},
 						},
-						NodeDrainer: controlplane_config.NodeDrainer{
-							Enabled: true,
+						NodeDrainer: model.NodeDrainer{
+							Enabled:       true,
+							DrainTimeout:  3,
+							DrainInterval: 4,
 						},
 						NodeLabels: model.NodeLabels{
 							"kube-aws.coreos.com/role": "worker",
@@ -1393,8 +1399,10 @@ worker:
 							Arns:             []string{"arn:aws:elasticloadbalancing:eu-west-1:xxxxxxxxxxxx:targetgroup/manuallymanagedetg/xxxxxxxxxxxxxxxx"},
 							SecurityGroupIds: []string{"sg-12345678"},
 						},
-						NodeDrainer: controlplane_config.NodeDrainer{
-							Enabled: true,
+						NodeDrainer: model.NodeDrainer{
+							Enabled:       true,
+							DrainTimeout:  0,
+							DrainInterval: 5,
 						},
 						NodeLabels: model.NodeLabels{
 							"kube-aws.coreos.com/role": "worker",

@@ -78,8 +78,10 @@ func NewDefaultCluster() *Cluster {
 		TargetGroup: TargetGroup{
 			Enabled: false,
 		},
-		NodeDrainer: NodeDrainer{
-			Enabled: false,
+		NodeDrainer: model.NodeDrainer{
+			Enabled:       false,
+			DrainTimeout:  0,
+			DrainInterval: 5,
 		},
 		NodeLabels: model.NodeLabels{},
 		Plugins: Plugins{
@@ -688,7 +690,7 @@ type Experimental struct {
 	Kube2IamSupport             Kube2IamSupport                `yaml:"kube2IamSupport,omitempty"`
 	LoadBalancer                LoadBalancer                   `yaml:"loadBalancer"`
 	TargetGroup                 TargetGroup                    `yaml:"targetGroup"`
-	NodeDrainer                 NodeDrainer                    `yaml:"nodeDrainer"`
+	NodeDrainer                 model.NodeDrainer              `yaml:"nodeDrainer"`
 	NodeLabels                  model.NodeLabels               `yaml:"nodeLabels"`
 	Plugins                     Plugins                        `yaml:"plugins"`
 	Dex                         model.Dex                      `yaml:"dex"`
@@ -748,10 +750,6 @@ type Kube2IamSupport struct {
 type KubeResourcesAutosave struct {
 	Enabled bool `yaml:"enabled"`
 	S3Path  string
-}
-
-type NodeDrainer struct {
-	Enabled bool `yaml:"enabled"`
 }
 
 type LoadBalancer struct {

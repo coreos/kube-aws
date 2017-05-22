@@ -527,6 +527,11 @@ worker:
 #      # When enabled, `kubectl drain` is run on the node going to shut-down
 #      nodeDrainer:
 #        enabled: true
+#        # Time to wait, in minutes, for the `kubectl drain` command to finish. Set to `0` to disable.
+#        drainTimeout: 0
+#        # Time to wait, in minutes, after the `kubectl drain` command finishes. Use this to give some time for the
+#        # pods to be up and running elsewhere before the drained node is terminated.
+#        drainInterval: 5
 #
 #      # Kubernetes node labels to be added to worker nodes
 #      nodeLabels:
