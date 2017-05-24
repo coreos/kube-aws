@@ -220,7 +220,27 @@
       },
       "Metadata": {{template "Metadata" .}}
     },
-
+    {{if and .NodeDrainer.Enabled (gt .NodeDrainer.DrainInterval 0) }}
+    "{{.LogicalName}}LHT" : {
+      "Properties" : {
+        "DisplayName" : "SNS topic for the {{.LogicalName}} ASG lifecycle hook"
+      },
+      "Type" : "AWS::SNS::Topic"
+    },
+    "{{.LogicalName}}LH" : {
+      "Properties" : {
+        "AutoScalingGroupName" : {
+          "Ref": "{{.LogicalName}}"
+        },
+        "DefaultResult" : "CONTINUE",
+        "HeartbeatTimeout" : "{{.NodeDrainer.DrainIntervalInSeconds}}",
+        "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
+        "NotificationTargetARN" : { "Ref": "{{.LogicalName}}LHT" },
+        "RoleARN" : { "Fn::GetAtt": [ "IAMRoleWorker", "Arn" ] }
+      },
+      "Type" : "AWS::AutoScaling::LifecycleHook"
+    },
+    {{end}}
     "{{.LogicalName}}LC": {
       "Properties": {
         "BlockDeviceMappings": [
@@ -398,6 +418,13 @@
                   "Resource": "*"
                 },
                 {{end}}
+                {{if .NodeDrainer.Enabled }}
+                {
+                  "Action": "SNS:*",
+                  "Effect": "Allow",
+                  "Resource": { "Ref": "{{.LogicalName}}LHT" }
+                },
+                {{end}}
                 {
                   "Action": [
                     "ecr:GetAuthorizationToken",
@@ -426,7 +453,8 @@
               "Effect": "Allow",
               "Principal": {
                 "Service": [
-                  "ec2.{{.Region.PublicDomainName}}"
+                  "ec2.{{.Region.PublicDomainName}}",
+                  "autoscaling.{{.Region.PublicDomainName}}"
                 ]
               }
             }
