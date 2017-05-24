@@ -73,27 +73,32 @@ func TestValid(t *testing.T) {
 		// Invalid, drainTimeout is < 0
 		{
 			drainTimeout: -1,
+			isValid:      false,
 		},
 
 		// Invalid, drainTimeout > 60
 		{
 			drainTimeout: 61,
+			isValid:      false,
 		},
 
 		// Invalid, drainInterval < 0
 		{
 			drainInterval: -1,
+			isValid:       false,
 		},
 
 		// Invalid, drainInterval > 60
 		{
 			drainInterval: 61,
+			isValid:       false,
 		},
 
 		// Valid
 		{
 			drainTimeout:  0,
 			drainInterval: 60,
+			isValid:       true,
 		},
 	}
 
