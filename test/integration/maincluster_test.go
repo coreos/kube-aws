@@ -3658,6 +3658,30 @@ etcd:
 			expectedErrorMessage: "`etcd.disasterRecovery.automated` is set to true for enabling automated disaster recovery. However the feature is available only for etcd version 3",
 		},
 		{
+			context: "WithInvalidNodeDrainTimeout",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  nodePools:
+  - name: pool1
+    nodeDrainer:
+      enabled: true
+      drainTimeout: 100
+`,
+			expectedErrorMessage: "Drain timeout must be an integer between 0 and 60, but was 100",
+		},
+		{
+			context: "WithInvalidNodeDrainInterval",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  nodePools:
+  - name: pool1
+    nodeDrainer:
+      enabled: true
+      drainInterval: 100
+`,
+			expectedErrorMessage: "Drain interval must be an integer between 0 and 60, but was 100",
+		},
+		{
 			context: "WithInvalidTaint",
 			configYaml: minimalValidConfigYaml + `
 worker:

@@ -63,3 +63,53 @@ func TestDrainIntervalInSeconds(t *testing.T) {
 		}
 	}
 }
+
+func TestValid(t *testing.T) {
+	testCases := []struct {
+		drainTimeout  int
+		drainInterval int
+		isValid       bool
+	}{
+		// Invalid, drainTimeout is < 0
+		{
+			drainTimeout: -1,
+		},
+
+		// Invalid, drainTimeout > 60
+		{
+			drainTimeout: 61,
+		},
+
+		// Invalid, drainInterval < 0
+		{
+			drainInterval: -1,
+		},
+
+		// Invalid, drainInterval > 60
+		{
+			drainInterval: 61,
+		},
+
+		// Valid
+		{
+			drainTimeout:  0,
+			drainInterval: 60,
+		},
+	}
+
+	for _, testCase := range testCases {
+		drainer := NodeDrainer{
+			DrainTimeout:  testCase.drainTimeout,
+			DrainInterval: testCase.drainInterval,
+		}
+
+		err := drainer.Valid()
+		if testCase.isValid && err != nil {
+			t.Errorf("Expected node drainer to be valid, but it was not: %v", err)
+		}
+
+		if !testCase.isValid && err == nil {
+			t.Errorf("Expected node drainer to be invalid, but it was not")
+		}
+	}
+}

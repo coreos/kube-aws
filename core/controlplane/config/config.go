@@ -1522,7 +1522,15 @@ func (e EtcdSettings) Valid() error {
 }
 
 func (c Experimental) Valid() error {
-	return c.Taints.Valid()
+	if err := c.Taints.Valid(); err != nil {
+		return err
+	}
+
+	if err := c.NodeDrainer.Valid(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 /*
