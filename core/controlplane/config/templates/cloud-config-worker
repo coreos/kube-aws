@@ -249,39 +249,6 @@ coreos:
         RequiredBy=rkt-api.service
 {{ end }}
 
-{{ if .NodeDrainer.Enabled }}
-    - name: kube-node-drainer-watch.service
-      command: start
-      enable: true
-      content: |
-          [Unit]
-          Description=drain this k8s node in response to auto scaling group lifecycle events
-
-          [Service]
-          Type=simple
-          Restart=on-failure
-          ExecStart=/opt/bin/kube-node-drainer-watch
-
-    - name: kube-node-drainer.service
-      enable: true
-      command: start
-      runtime: true
-      content: |
-        [Unit]
-        Description=drain this k8s node to make running pods time to gracefully shut down before stopping kubelet
-        After=multi-user.target
-
-        [Service]
-        Type=oneshot
-        RemainAfterExit=true
-        ExecStart=/bin/true
-        TimeoutStopSec=infinity
-        ExecStop=/opt/bin/kube-node-drainer
-
-        [Install]
-        WantedBy=multi-user.target
-{{ end }}
-
 {{if .UseCalico }}
     # https://github.com/coreos/docs/blob/5d7b1cccb8286185275b07db1495828be9fdb0ea/os/other-settings.md#tuning-sysctl-parameters
     - name: systemd-modules-load.service
@@ -573,69 +540,6 @@ write_files:
           '
 
       rkt rm --uuid-file=/var/run/coreos/cfn-signal.uuid || :
-
-  - path: /opt/bin/kube-node-drainer
-    permissions: 0700
-    content: |
-        #!/usr/bin/env bash
-        set -e
-
-        /usr/bin/rkt run \
-        --volume=kube,kind=host,source=/etc/kubernetes,readOnly=true \
-        --mount=volume=kube,target=/etc/kubernetes \
-        --uuid-file-save=/var/run/coreos/node-drainer.uuid \
-        --net=host \
-        {{.HyperkubeImage.RepoWithTag}} \
-          --exec=/kubectl -- \
-          --server={{.APIEndpointURL}}:443 \
-          --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
-          drain $(hostname) \
-          --delete-local-data \
-          --ignore-daemonsets \
-          --timeout={{.NodeDrainer.DrainTimeoutInSeconds}}s \
-          --force
-
-        /usr/bin/rkt rm --uuid-file=/var/run/coreos/node-drainer.uuid || :
-
-  - path: /opt/bin/kube-node-drainer-watch
-    permissions: 0700
-    content: |
-        #!/usr/bin/env bash
-        set -e
-
-        instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-        region=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')
-
-        retrieve_status() {
-          /usr/bin/rkt run \
-              --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true \
-              --mount volume=dns,target=/etc/resolv.conf \
-              --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false \
-              --mount volume=awsenv,target=/var/run/coreos \
-              --uuid-file-save=/var/run/coreos/node-drainer-current-instance-status.uuid \
-              --set-env instance_id=$instance_id --set-env region=$region \
-              --net=host \
-              --interactive \
-              --trust-keys-from-https \
-              quay.io/coreos/awscli:master --exec=/bin/sh -- -ec \
-              '
-              echo $(aws autoscaling describe-auto-scaling-instances --region=$region --instance-ids $instance_id)
-              '
-
-          (/usr/bin/rkt rm --uuid-file=/var/run/coreos/node-drainer-current-instance-status.uuid || :) > /dev/null 2>&1
-        }
-
-        echo Running drain watch loop...
-        while true; do
-          if retrieve_status | grep -q Terminating:Wait ; then
-            echo Instance terminating, draining node...
-            /opt/bin/kube-node-drainer
-            exit 0
-          else
-            echo Instance in service, nothing to do
-          fi
-          sleep 10
-        done
 
   - path: /opt/bin/cfn-etcd-environment
     owner: root:root
