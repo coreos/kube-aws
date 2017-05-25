@@ -34,78 +34,52 @@ func TestDrainTimeoutInSeconds(t *testing.T) {
 	}
 }
 
-func TestDrainIntervalInSeconds(t *testing.T) {
-	testCases := []struct {
-		intervalInMins int
-		intervalInSecs int
-	}{
-		{
-			intervalInMins: 0,
-			intervalInSecs: 0,
-		},
-		{
-			intervalInMins: 1,
-			intervalInSecs: 60,
-		},
-		{
-			intervalInMins: 2,
-			intervalInSecs: 120,
-		},
-	}
-
-	for _, testCase := range testCases {
-		drainer := NodeDrainer{
-			DrainInterval: testCase.intervalInMins,
-		}
-		actual := drainer.DrainIntervalInSeconds()
-		if actual != testCase.intervalInSecs {
-			t.Errorf("Expected drain interval in secs to be %d, but was %d", testCase.intervalInSecs, actual)
-		}
-	}
-}
-
 func TestValid(t *testing.T) {
 	testCases := []struct {
-		drainTimeout  int
-		drainInterval int
-		isValid       bool
+		enabled      bool
+		drainTimeout int
+		isValid      bool
 	}{
-		// Invalid, drainTimeout is < 0
+		// Invalid, drainTimeout is < 1
 		{
-			drainTimeout: -1,
+			enabled:      true,
+			drainTimeout: 0,
 			isValid:      false,
 		},
 
 		// Invalid, drainTimeout > 60
 		{
+			enabled:      true,
 			drainTimeout: 61,
 			isValid:      false,
 		},
 
-		// Invalid, drainInterval < 0
+		// Valid, disabled
 		{
-			drainInterval: -1,
-			isValid:       false,
+			enabled:      false,
+			drainTimeout: 0,
+			isValid:      true,
 		},
 
-		// Invalid, drainInterval > 60
+		// Valid, timeout within boundaries
 		{
-			drainInterval: 61,
-			isValid:       false,
+			enabled:      true,
+			drainTimeout: 1,
+			isValid:      true,
 		},
 
-		// Valid
+		// Valid, timeout within boundaries
 		{
-			drainTimeout:  0,
-			drainInterval: 60,
-			isValid:       true,
+			enabled:      true,
+			drainTimeout: 60,
+			isValid:      true,
 		},
 	}
 
 	for _, testCase := range testCases {
 		drainer := NodeDrainer{
-			DrainTimeout:  testCase.drainTimeout,
-			DrainInterval: testCase.drainInterval,
+			Enabled:      testCase.enabled,
+			DrainTimeout: testCase.drainTimeout,
 		}
 
 		err := drainer.Valid()

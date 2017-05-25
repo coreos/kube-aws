@@ -718,9 +718,8 @@ func TestNodeDrainerConfig(t *testing.T) {
 			conf: `
 `,
 			nodeDrainer: model.NodeDrainer{
-				Enabled:       false,
-				DrainTimeout:  0,
-				DrainInterval: 5,
+				Enabled:      false,
+				DrainTimeout: 5,
 			},
 		},
 		{
@@ -730,9 +729,8 @@ experimental:
     enabled: false
 `,
 			nodeDrainer: model.NodeDrainer{
-				Enabled:       false,
-				DrainTimeout:  0,
-				DrainInterval: 5,
+				Enabled:      false,
+				DrainTimeout: 5,
 			},
 		},
 		{
@@ -741,12 +739,10 @@ experimental:
   nodeDrainer:
     enabled: true
     drainTimeout: 3
-    drainInterval: 4
 `,
 			nodeDrainer: model.NodeDrainer{
-				Enabled:       true,
-				DrainTimeout:  3,
-				DrainInterval: 4,
+				Enabled:      true,
+				DrainTimeout: 3,
 			},
 		},
 	}

@@ -79,9 +79,8 @@ func NewDefaultCluster() *Cluster {
 			Enabled: false,
 		},
 		NodeDrainer: model.NodeDrainer{
-			Enabled:       false,
-			DrainTimeout:  0,
-			DrainInterval: 5,
+			Enabled:      false,
+			DrainTimeout: 5,
 		},
 		NodeLabels: model.NodeLabels{},
 		Plugins: Plugins{

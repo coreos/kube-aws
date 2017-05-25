@@ -128,9 +128,8 @@ func TestMainClusterConfig(t *testing.T) {
 				StaticPasswords: []model.StaticPassword{},
 			},
 			NodeDrainer: model.NodeDrainer{
-				Enabled:       false,
-				DrainTimeout:  0,
-				DrainInterval: 5,
+				Enabled:      false,
+				DrainTimeout: 5,
 			},
 			NodeLabels: model.NodeLabels{},
 			Taints:     model.Taints{},
@@ -1193,7 +1192,6 @@ experimental:
   nodeDrainer:
     enabled: true
     drainTimeout: 3
-    drainInterval: 4
   nodeLabels:
     kube-aws.coreos.com/role: worker
   plugins:
@@ -1280,9 +1278,8 @@ worker:
 							},
 						},
 						NodeDrainer: model.NodeDrainer{
-							Enabled:       true,
-							DrainTimeout:  3,
-							DrainInterval: 4,
+							Enabled:      true,
+							DrainTimeout: 3,
 						},
 						NodeLabels: model.NodeLabels{
 							"kube-aws.coreos.com/role": "worker",
@@ -1354,6 +1351,7 @@ worker:
         - sg-12345678
     nodeDrainer:
       enabled: true
+      drainTimeout: 5
     nodeLabels:
       kube-aws.coreos.com/role: worker
     taints:
@@ -1400,9 +1398,8 @@ worker:
 							SecurityGroupIds: []string{"sg-12345678"},
 						},
 						NodeDrainer: model.NodeDrainer{
-							Enabled:       true,
-							DrainTimeout:  0,
-							DrainInterval: 5,
+							Enabled:      true,
+							DrainTimeout: 5,
 						},
 						NodeLabels: model.NodeLabels{
 							"kube-aws.coreos.com/role": "worker",
@@ -3667,19 +3664,7 @@ worker:
       enabled: true
       drainTimeout: 100
 `,
-			expectedErrorMessage: "Drain timeout must be an integer between 0 and 60, but was 100",
-		},
-		{
-			context: "WithInvalidNodeDrainInterval",
-			configYaml: minimalValidConfigYaml + `
-worker:
-  nodePools:
-  - name: pool1
-    nodeDrainer:
-      enabled: true
-      drainInterval: 100
-`,
-			expectedErrorMessage: "Drain interval must be an integer between 0 and 60, but was 100",
+			expectedErrorMessage: "Drain timeout must be an integer between 1 and 60, but was 100",
 		},
 		{
 			context: "WithInvalidTaint",
