@@ -571,6 +571,10 @@ write_files:
       kubectl apply -f "${mfdir}/calico.yaml"
       {{ end }}
 
+      {{ if .Experimental.NodeDrainer.Enabled }}
+      kubectl apply -f "${mfdir}/kube-node-drainer-asg-ds.yaml"
+      {{ end }}
+
       # Configmaps
       kubectl apply -f "${mfdir}/kube-dns-cm.yaml"
 
@@ -1020,6 +1024,94 @@ write_files:
 
       rkt rm --uuid-file=/var/run/coreos/decrypt-assets.uuid || :
 {{ end }}
+
+{{if .Experimental.NodeDrainer.Enabled}}
+  - path: /srv/kubernetes/manifests/kube-node-drainer-asg-ds.yaml
+    content: |
+        kind: DaemonSet
+        apiVersion: extensions/v1beta1
+        metadata:
+          name: kube-node-drainer-sg-ds
+          namespace: kube-system
+          labels:
+            k8s-app: kube-node-drainer-sg-ds
+        spec:
+          updateStrategy:
+            type: RollingUpdate
+          template:
+            metadata:
+              labels:
+                k8s-app: kube-node-drainer-sg-ds
+              annotations:
+                scheduler.alpha.kubernetes.io/critical-pod: ''
+            spec:
+              tolerations:
+              - operator: Exists
+                effect: NoSchedule
+              - operator: Exists
+                effect: NoExecute
+              - operator: Exists
+                key: CriticalAddonsOnly
+              initContainers:
+                - name: hyperkube
+                  image: {{.HyperkubeImage.RepoWithTag}}
+                  command:
+                  - /bin/cp
+                  - -f
+                  - /hyperkube
+                  - /workdir/hyperkube
+                  volumeMounts:
+                  - mountPath: /workdir
+                    name: workdir
+              containers:
+                - name: main
+                  image: {{.AWSCliImage.RepoWithTag}}
+                  env:
+                  - name: NODE_NAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: spec.nodeName
+                  command:
+                  - /bin/sh
+                  - -xec
+                  - |
+                    kubectl()  { /lib/ld-musl-x86_64.so.1 /opt/bin/hyperkube kubectl "$@"; }
+                    metadata() { wget -O - -q http://169.254.169.254/2016-09-02/"$1"; }
+                    asg()      { aws --region="${REGION}" autoscaling "$@"; }
+
+                    INSTANCE_ID=$(metadata meta-data/instance-id)
+                    REGION=$(metadata dynamic/instance-identity/document | jq -r .region)
+                    [ -n "${REGION}" ]
+
+                    while sleep 30; do
+                      STATE=$(asg describe-auto-scaling-instances --region "${REGION}" --instance-ids "${INSTANCE_ID}" | jq -r '.AutoScalingInstances[].LifecycleState')
+                      if [ ! "${STATE}" = Terminating:Wait ]; then
+                        continue
+                      fi
+                      echo Node is in Terminating:Wait state, draining it
+
+                      if ! kubectl drain --ignore-daemonsets=true --delete-local-data=true --force=true --timeout=60s "${NODE_NAME}"; then
+                        echo Not all pods on this host can be evicted, will try again
+                        continue
+                      fi
+
+                      echo All evictable pods are gone, notifying AutoScalingGroup that instance ${INSTANCE_ID} can be shutdown
+                      ASG_NAME=$(asg describe-auto-scaling-instances --instance-ids "${INSTANCE_ID}" | jq -r '.AutoScalingInstances[].AutoScalingGroupName')
+                      HOOK_NAME=$(asg describe-lifecycle-hooks --auto-scaling-group-name "${ASG_NAME}" | jq -r '.LifecycleHooks[].LifecycleHookName' | grep -i nodedrainer)
+
+                      echo Sending notification to ASG_NAME=${ASG_NAME} HOOK_NAME=${HOOK_NAME}
+                      asg complete-lifecycle-action --lifecycle-action-result CONTINUE --instance-id "${INSTANCE_ID}" --lifecycle-hook-name "${HOOK_NAME}" --auto-scaling-group-name "${ASG_NAME}"
+
+                      # sleep 5 mins + 1 mins, expecting that instance will be shut down in this time
+                      sleep 300
+                    done
+                  volumeMounts:
+                  - mountPath: /opt/bin
+                    name: workdir
+              volumes:
+                - name: workdir
+                  emptyDir: {}
+{{end}}
 
 {{if .Experimental.Plugins.Rbac.Enabled }}
   # TODO: remove the following binding once the TLS Bootstrapping feature is enabled by default, see:

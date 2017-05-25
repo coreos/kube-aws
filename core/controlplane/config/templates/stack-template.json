@@ -230,6 +230,27 @@
                   "Resource" : "{{.KMSKeyARN}}"
                 },
                 {{end}}
+                {{if .Experimental.NodeDrainer.Enabled }}
+                {
+                  "Action": "sns:Publish",
+                  "Effect": "Allow",
+                  "Resource": { "Ref": "{{.Controller.LogicalName}}NodeDrainerLHT" }
+                },
+                {
+                  "Action": [
+                    "autoscaling:CompleteLifecycleAction",
+                    "autoscaling:DescribeAutoScalingInstances",
+                    "autoscaling:DescribeLifecycleHooks"
+                  ],
+                  "Condition": {
+                    "StringEquals": {
+                      "autoscaling:ResourceTag/aws:cloudformation:stack-id": { "Ref": "AWS::StackId" }
+                    }
+                  },
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {{end}}
                 {
                   "Action": [
                     "ecr:GetAuthorizationToken",
@@ -258,7 +279,8 @@
               "Effect": "Allow",
               "Principal": {
                 "Service": [
-                  "ec2.{{.Region.PublicDomainName}}"
+                  "ec2.{{.Region.PublicDomainName}}",
+                  "autoscaling.{{.Region.PublicDomainName}}"
                 ]
               }
             }
@@ -713,6 +735,27 @@
         ]]}}
       },
       "Type": "AWS::AutoScaling::LaunchConfiguration"
+    },
+    {{end}}
+    {{if .Experimental.NodeDrainer.Enabled }}
+    "{{.Controller.LogicalName}}NodeDrainerLHT" : {
+      "Properties" : {
+        "DisplayName" : "SNS topic for the {{.Controller.LogicalName}} node drainer ASG lifecycle hook"
+      },
+      "Type" : "AWS::SNS::Topic"
+    },
+    "{{.Controller.LogicalName}}NodeDrainerLH" : {
+      "Properties" : {
+        "AutoScalingGroupName" : {
+          "Ref": "{{.Controller.LogicalName}}"
+        },
+        "DefaultResult" : "CONTINUE",
+        "HeartbeatTimeout" : "{{.Experimental.NodeDrainer.DrainTimeoutInSeconds}}",
+        "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
+        "NotificationTargetARN" : { "Ref": "{{.Controller.LogicalName}}NodeDrainerLHT" },
+        "RoleARN" : { "Fn::GetAtt": [ "IAMRoleController", "Arn" ] }
+      },
+      "Type" : "AWS::AutoScaling::LifecycleHook"
     },
     {{end}}
     "{{.Controller.LogicalName}}LC": {

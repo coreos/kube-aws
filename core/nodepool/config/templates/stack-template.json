@@ -220,22 +220,22 @@
       },
       "Metadata": {{template "Metadata" .}}
     },
-    {{if and .NodeDrainer.Enabled (gt .NodeDrainer.DrainInterval 0) }}
-    "{{.LogicalName}}LHT" : {
+    {{if .NodeDrainer.Enabled }}
+    "{{.LogicalName}}NodeDrainerLHT" : {
       "Properties" : {
-        "DisplayName" : "SNS topic for the {{.LogicalName}} ASG lifecycle hook"
+        "DisplayName" : "SNS topic for the {{.LogicalName}} node drainer ASG lifecycle hook"
       },
       "Type" : "AWS::SNS::Topic"
     },
-    "{{.LogicalName}}LH" : {
+    "{{.LogicalName}}NodeDrainerLH" : {
       "Properties" : {
         "AutoScalingGroupName" : {
           "Ref": "{{.LogicalName}}"
         },
         "DefaultResult" : "CONTINUE",
-        "HeartbeatTimeout" : "{{.NodeDrainer.DrainIntervalInSeconds}}",
+        "HeartbeatTimeout" : "{{.NodeDrainer.DrainTimeoutInSeconds}}",
         "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
-        "NotificationTargetARN" : { "Ref": "{{.LogicalName}}LHT" },
+        "NotificationTargetARN" : { "Ref": "{{.LogicalName}}NodeDrainerLHT" },
         "RoleARN" : { "Fn::GetAtt": [ "IAMRoleWorker", "Arn" ] }
       },
       "Type" : "AWS::AutoScaling::LifecycleHook"
@@ -420,9 +420,25 @@
                 {{end}}
                 {{if .NodeDrainer.Enabled }}
                 {
-                  "Action": "SNS:*",
+                  "Action": [
+                    "sns:Publish"
+                  ],
                   "Effect": "Allow",
-                  "Resource": { "Ref": "{{.LogicalName}}LHT" }
+                  "Resource": { "Ref": "{{.LogicalName}}NodeDrainerLHT" }
+                },
+                {
+                  "Action": [
+                    "autoscaling:CompleteLifecycleAction",
+                    "autoscaling:DescribeAutoScalingInstances",
+                    "autoscaling:DescribeLifecycleHooks"
+                  ],
+                  "Condition": {
+                    "StringEquals": {
+                      "autoscaling:ResourceTag/aws:cloudformation:stack-id": { "Ref": "AWS::StackId" }
+                    }
+                  },
+                  "Effect": "Allow",
+                  "Resource": "*"
                 },
                 {{end}}
                 {
