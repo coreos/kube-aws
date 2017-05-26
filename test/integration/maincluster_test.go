@@ -1349,6 +1349,7 @@ worker:
         - arn:aws:elasticloadbalancing:eu-west-1:xxxxxxxxxxxx:targetgroup/manuallymanagedetg/xxxxxxxxxxxxxxxx
       securityGroupIds:
         - sg-12345678
+    # Ignored, uses global setting
     nodeDrainer:
       enabled: true
       drainTimeout: 5
@@ -1398,8 +1399,8 @@ worker:
 							SecurityGroupIds: []string{"sg-12345678"},
 						},
 						NodeDrainer: model.NodeDrainer{
-							Enabled:      true,
-							DrainTimeout: 5,
+							Enabled:      false,
+							DrainTimeout: 0,
 						},
 						NodeLabels: model.NodeLabels{
 							"kube-aws.coreos.com/role": "worker",
@@ -3657,12 +3658,10 @@ etcd:
 		{
 			context: "WithInvalidNodeDrainTimeout",
 			configYaml: minimalValidConfigYaml + `
-worker:
-  nodePools:
-  - name: pool1
-    nodeDrainer:
-      enabled: true
-      drainTimeout: 100
+experimental:
+  nodeDrainer:
+    enabled: true
+    drainTimeout: 100
 `,
 			expectedErrorMessage: "Drain timeout must be an integer between 1 and 60, but was 100",
 		},
