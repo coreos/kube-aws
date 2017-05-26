@@ -1,6 +1,16 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "kube-aws Kubernetes cluster {{.ClusterName}}",
+  "Parameters": {
+    "NotificationTargetARN": {
+      "Type": "String",
+      "Description": "ASG LifecycleHook notification target ARN"
+    },
+    "NotificationRoleARN": {
+      "Type": "String",
+      "Description": "Role to be used by ASG LifecycleHook to publish notification"
+    }
+  },
   "Resources": {
     "{{.Controller.LogicalName}}": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
@@ -232,22 +242,21 @@
                 {{end}}
                 {{if .Experimental.NodeDrainer.Enabled }}
                 {
-                  "Action": "sns:Publish",
-                  "Effect": "Allow",
-                  "Resource": { "Ref": "{{.Controller.LogicalName}}NodeDrainerLHT" }
-                },
-                {
                   "Action": [
-                    "autoscaling:CompleteLifecycleAction",
                     "autoscaling:DescribeAutoScalingInstances",
                     "autoscaling:DescribeLifecycleHooks"
                   ],
-                  "Condition": {
-                    "StringEquals": {
-                      "autoscaling:ResourceTag/aws:cloudformation:stack-id": { "Ref": "AWS::StackId" }
-                    }
-                  },
                   "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {
+                  "Action": [
+                    "autoscaling:CompleteLifecycleAction"
+                  ],
+                  "Effect": "Allow",
+                  "Condition": {
+                    "Null": { "autoscaling:ResourceTag/kubernetes.io/cluster/{{.ClusterName}}": "false" }
+                  },
                   "Resource": "*"
                 },
                 {{end}}
@@ -279,8 +288,7 @@
               "Effect": "Allow",
               "Principal": {
                 "Service": [
-                  "ec2.{{.Region.PublicDomainName}}",
-                  "autoscaling.{{.Region.PublicDomainName}}"
+                  "ec2.{{.Region.PublicDomainName}}"
                 ]
               }
             }
@@ -738,12 +746,6 @@
     },
     {{end}}
     {{if .Experimental.NodeDrainer.Enabled }}
-    "{{.Controller.LogicalName}}NodeDrainerLHT" : {
-      "Properties" : {
-        "DisplayName" : "SNS topic for the {{.Controller.LogicalName}} node drainer ASG lifecycle hook"
-      },
-      "Type" : "AWS::SNS::Topic"
-    },
     "{{.Controller.LogicalName}}NodeDrainerLH" : {
       "Properties" : {
         "AutoScalingGroupName" : {
@@ -752,8 +754,8 @@
         "DefaultResult" : "CONTINUE",
         "HeartbeatTimeout" : "{{.Experimental.NodeDrainer.DrainTimeoutInSeconds}}",
         "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
-        "NotificationTargetARN" : { "Ref": "{{.Controller.LogicalName}}NodeDrainerLHT" },
-        "RoleARN" : { "Fn::GetAtt": [ "IAMRoleController", "Arn" ] }
+        "NotificationTargetARN" : { "Ref": "NotificationTargetARN" },
+        "RoleARN" : { "Ref": "NotificationRoleARN" }
       },
       "Type" : "AWS::AutoScaling::LifecycleHook"
     },

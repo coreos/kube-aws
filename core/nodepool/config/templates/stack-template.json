@@ -221,12 +221,6 @@
       "Metadata": {{template "Metadata" .}}
     },
     {{if .NodeDrainer.Enabled }}
-    "{{.LogicalName}}NodeDrainerLHT" : {
-      "Properties" : {
-        "DisplayName" : "SNS topic for the {{.LogicalName}} node drainer ASG lifecycle hook"
-      },
-      "Type" : "AWS::SNS::Topic"
-    },
     "{{.LogicalName}}NodeDrainerLH" : {
       "Properties" : {
         "AutoScalingGroupName" : {
@@ -235,8 +229,8 @@
         "DefaultResult" : "CONTINUE",
         "HeartbeatTimeout" : "{{.NodeDrainer.DrainTimeoutInSeconds}}",
         "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
-        "NotificationTargetARN" : { "Ref": "{{.LogicalName}}NodeDrainerLHT" },
-        "RoleARN" : { "Fn::GetAtt": [ "IAMRoleWorker", "Arn" ] }
+        "NotificationTargetARN" : { "Ref": "NotificationTargetARN" },
+        "RoleARN" : { "Ref": "NotificationRoleARN" }
       },
       "Type" : "AWS::AutoScaling::LifecycleHook"
     },
@@ -421,23 +415,20 @@
                 {{if .NodeDrainer.Enabled }}
                 {
                   "Action": [
-                    "sns:Publish"
-                  ],
-                  "Effect": "Allow",
-                  "Resource": { "Ref": "{{.LogicalName}}NodeDrainerLHT" }
-                },
-                {
-                  "Action": [
-                    "autoscaling:CompleteLifecycleAction",
                     "autoscaling:DescribeAutoScalingInstances",
                     "autoscaling:DescribeLifecycleHooks"
                   ],
-                  "Condition": {
-                    "StringEquals": {
-                      "autoscaling:ResourceTag/aws:cloudformation:stack-id": { "Ref": "AWS::StackId" }
-                    }
-                  },
                   "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {
+                  "Action": [
+                    "autoscaling:CompleteLifecycleAction"
+                  ],
+                  "Effect": "Allow",
+                  "Condition": {
+                    "Null": { "autoscaling:ResourceTag/kubernetes.io/cluster/{{.ClusterName}}": "false" }
+                  },
                   "Resource": "*"
                 },
                 {{end}}
@@ -469,8 +460,7 @@
               "Effect": "Allow",
               "Principal": {
                 "Service": [
-                  "ec2.{{.Region.PublicDomainName}}",
-                  "autoscaling.{{.Region.PublicDomainName}}"
+                  "ec2.{{.Region.PublicDomainName}}"
                 ]
               }
             }
@@ -498,6 +488,14 @@
     "ControlPlaneStackName": {
       "Type": "String",
       "Description": "The name of a control-plane stack used to import values into this stack"
+    },
+    "NotificationTargetARN": {
+      "Type": "String",
+      "Description": "ASG LifecycleHook notification target ARN"
+    },
+    "NotificationRoleARN": {
+      "Type": "String",
+      "Description": "Role to be used by ASG LifecycleHook to publish notification"
     }
   },
   "Resources": {

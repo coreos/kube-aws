@@ -2,9 +2,45 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "kube-aws Kubernetes cluster {{.ClusterName}}",
   "Resources": {
+    "ASGNotificationTarget": {
+      "Type": "AWS::SQS::Queue"
+    },
+    "ASGNotificationRole": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [ {
+            "Action": [ "sts:AssumeRole" ],
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [ "autoscaling.amazonaws.com" ]
+            }
+          } ],
+          "Version": "2012-10-17"
+        },
+        "Policies": [{
+          "PolicyName": "root",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [ {
+              "Effect": "Allow",
+              "Action": [
+                "sqs:SendMessage",
+                "sqs:GetQueueUrl"
+              ],
+              "Resource": { "Fn::GetAtt": [ "ASGNotificationTarget", "Arn" ] }
+            } ]
+          }
+        }]
+      },
+      "Type": "AWS::IAM::Role"
+    },
     "{{.ControlPlane.Name}}": {
       "Type" : "AWS::CloudFormation::Stack",
       "Properties" : {
+        "Parameters": {
+          "NotificationTargetARN": { "Fn::GetAtt": [ "ASGNotificationTarget", "Arn" ] },
+          "NotificationRoleARN": { "Fn::GetAtt": [ "ASGNotificationRole", "Arn" ] }
+        },
         "Tags" : [
           {
             "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
@@ -22,7 +58,9 @@
       "Type" : "AWS::CloudFormation::Stack",
       "Properties" : {
         "Parameters": {
-          "ControlPlaneStackName": {"Fn::GetAtt" : [ "{{$.ControlPlane.Name}}" , "Outputs.StackName" ]}
+          "ControlPlaneStackName": {"Fn::GetAtt" : [ "{{$.ControlPlane.Name}}" , "Outputs.StackName" ]},
+          "NotificationTargetARN": { "Fn::GetAtt": [ "ASGNotificationTarget", "Arn" ] },
+          "NotificationRoleARN": { "Fn::GetAtt": [ "ASGNotificationRole", "Arn" ] }
         },
         "Tags" : [
           {
