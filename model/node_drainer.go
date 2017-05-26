@@ -22,5 +22,6 @@ func (nd *NodeDrainer) Valid() error {
 	if nd.DrainTimeout < 1 || nd.DrainTimeout > 60 {
 		return fmt.Errorf("Drain timeout must be an integer between 1 and 60, but was %d", nd.DrainTimeout)
 	}
+
 	return nil
 }

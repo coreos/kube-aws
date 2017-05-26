@@ -726,10 +726,10 @@ func TestNodeDrainerConfig(t *testing.T) {
 			conf: `
 experimental:
   nodeDrainer:
-    enabled: false
+    enabled: true
 `,
 			nodeDrainer: model.NodeDrainer{
-				Enabled:      false,
+				Enabled:      true,
 				DrainTimeout: 5,
 			},
 		},
