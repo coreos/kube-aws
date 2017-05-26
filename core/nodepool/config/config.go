@@ -181,9 +181,8 @@ func (c *ProvidedConfig) Load(main *cfg.Config) error {
 
 	// Inherit parameters from the control plane stack
 	c.KubeClusterSettings = main.KubeClusterSettings
-
-	// Inherit cluster TLS bootstrap config from control plane stack
 	c.Experimental.TLSBootstrap = main.DeploymentSettings.Experimental.TLSBootstrap
+	c.Experimental.NodeDrainer = main.DeploymentSettings.Experimental.NodeDrainer
 
 	// Validate whole the inputs including inherited ones
 	if err := c.valid(); err != nil {

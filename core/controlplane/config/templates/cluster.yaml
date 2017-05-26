@@ -524,12 +524,6 @@ worker:
 #      kube2IamSupport:
 #        enabled: true
 #
-#      # When enabled, `kubectl drain` is run on the node going to shut-down
-#      nodeDrainer:
-#        enabled: true
-#        # Maximum time to wait, in minutes, for the node to be completely drained. Must be an integer between 1 and 60.
-#        drainTimeout: 5
-#
 #      # Kubernetes node labels to be added to worker nodes
 #      nodeLabels:
 #        kube-aws.coreos.com/role: worker
@@ -1186,9 +1180,11 @@ addons:
 #   # This is intended to be used in combination with .controller.managedIamRoleName. See #297 for more information.
 #   kube2IamSupport:
 #     enabled: true
-#   # When enabled, `kubectl drain` is run on the node going to shut-down
+#   # When enabled, `kubectl drain` is run when the instance is being replaced by the auto scaling group
 #   nodeDrainer:
 #     enabled: true
+#     # Maximum time to wait, in minutes, for the node to be completely drained. Must be an integer between 1 and 60.
+#     drainTimeout: 5
 #   # Enable dex  integration - https://github.com/coreos/dex
 #   # Configure OpenID Connect token authenticator plugin in Kubernetes API server.
 #   # Notice: always use "https" for the "url", otherwise the Kubernetes API server will not start correctly.
