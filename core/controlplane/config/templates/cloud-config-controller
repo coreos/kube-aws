@@ -1075,9 +1075,13 @@ write_files:
                   - /bin/sh
                   - -xec
                   - |
-                    kubectl()  { /lib/ld-musl-x86_64.so.1 /opt/bin/hyperkube kubectl "$@"; }
                     metadata() { wget -O - -q http://169.254.169.254/2016-09-02/"$1"; }
                     asg()      { aws --region="${REGION}" autoscaling "$@"; }
+
+                    # Hyperkube binary is not statically linked, so we need to use
+                    # the musl interpreter to be able to run it in this image
+                    # See: https://github.com/kubernetes-incubator/kube-aws/pull/674#discussion_r118889687
+                    kubectl() { /lib/ld-musl-x86_64.so.1 /opt/bin/hyperkube kubectl "$@"; }
 
                     INSTANCE_ID=$(metadata meta-data/instance-id)
                     REGION=$(metadata dynamic/instance-identity/document | jq -r .region)

@@ -2,6 +2,7 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "kube-aws Kubernetes cluster {{.ClusterName}}",
   "Resources": {
+    {{/* This queue is currently not used; for now, the only reason it exist is because we cannot create ASG Lifecycle Hooks without one of these. */}}
     "ASGNotificationTarget": {
       "Type": "AWS::SQS::Queue"
     },
