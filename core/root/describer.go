@@ -93,7 +93,7 @@ func (c clusterDescriberImpl) Info() (*Info, error) {
 			return nil, fmt.Errorf("found multiple load balancers with name %s: %v", cpStackName, resp)
 		}
 
-		cpDescriber := cluster.NewClusterDescriber(c.clusterName, cpStackName, c.cpConfig.ManagedELBLogicalNames(), c.session)
+		cpDescriber := cluster.NewClusterDescriber(c.clusterName, cpStackName, c.cpConfig.ManagedELBLogicalNames(), c.cpConfig.ManagedALBLogicalNames(), c.session)
 
 		cpInfo, err := cpDescriber.Info()
 

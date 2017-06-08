@@ -135,6 +135,21 @@ configure() {
   find .
 }
 
+prereq() {
+  cd ${WORK_DIR}
+
+  if aws iam get-server-certificate --server-certificate-name $KUBE_AWS_CLUSTER_NAME; then
+    aws iam delete-server-certificate --server-certificate-name $KUBE_AWS_CLUSTER_NAME
+  fi
+
+  echo Uploading the TLS certificate used by AWS ALB
+  aws iam upload-server-certificate \
+    --server-certificate-name $KUBE_AWS_CLUSTER_NAME \
+    --certificate-body file://credentials/apiserver.pem \
+    --certificate-chain file://credentials/ca.pem \
+    --private-key file://credentials/apiserver-key.pem
+}
+
 kube-aws() {
   cd ${WORK_DIR}
   ${KUBE_AWS_CMD} "$@"
@@ -334,7 +349,7 @@ status() {
   ${KUBE_AWS_CMD} status
 }
 
-main_destroy() {
+destroy() {
   status=$(main_status)
 
   if [ "$status" != "" ]; then
@@ -347,9 +362,6 @@ main_destroy() {
   else
     echo $(main_stack_name) does not exist. skipping.
   fi
-
-  cd ${WORK_DIR}
-  rm -Rf cluster.yaml user-data/ credentials/ stack-templates/
 }
 
 update() {
@@ -537,11 +549,12 @@ all() {
 
 rerun() {
   all_destroy
+  clean
   all
 }
 
 all_destroy() {
-  main_destroy
+  destroy
   if [ "${KUBE_AWS_DEPLOY_TO_EXISTING_VPC}" != "" ]; then
     testinfra_destroy
   fi

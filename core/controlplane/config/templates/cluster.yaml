@@ -103,6 +103,14 @@ apiEndpoints:
 #    securityGroupIds:
 #    - sg-1234567
 #
+#    # Set to false provision an ALB instead of an ELB
+#    # Defaults to true for provisioning an ELB
+#    classic: true
+#
+#
+#    # ARN of the TLS cert associated to the ALB. Required when `classic` is set to false.
+#    certificateArn:
+#
 #  #
 #  # Common configuration #1: Unversioned, internet-facing API endpoint
 #  #

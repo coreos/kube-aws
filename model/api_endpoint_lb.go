@@ -12,6 +12,11 @@ const DefaultRecordSetTTL = 300
 type APIEndpointLB struct {
 	// APIAccessAllowedSourceCIDRs is network ranges of sources you'd like Kubernetes API accesses to be allowed from, in CIDR notation
 	APIAccessAllowedSourceCIDRs CIDRRanges `yaml:"apiAccessAllowedSourceCIDRs,omitempty"`
+	// Classic is set to true for provisioning an ELB, false for an ALB
+	// TODO Default to true
+	Classic bool `yaml:"classic,omitempty"`
+	// CertificateARN is the ARN of an existing TLS certificate
+	CertificateARN string `yaml:"certificateArn,omitempty"`
 	// CreateRecordSet is set to false when you want to disable creation of the record set for this api load balancer
 	CreateRecordSet *bool `yaml:"createRecordSet,omitempty"`
 	// Identifier specifies an existing load-balancer used for load-balancing controller nodes and serving this endpoint

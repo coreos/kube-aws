@@ -1570,6 +1570,11 @@ func (c *Config) ManagedELBLogicalNames() []string {
 	return c.APIEndpoints.ManagedELBLogicalNames()
 }
 
+// ManageALBLogicalNames returns all the logical names of the cfn resources corresponding to ALBs managed by kube-aws for API endpoints
+func (c *Config) ManagedALBLogicalNames() []string {
+	return c.APIEndpoints.ManagedALBLogicalNames()
+}
+
 func WithTrailingDot(s string) string {
 	if s == "" {
 		return s
