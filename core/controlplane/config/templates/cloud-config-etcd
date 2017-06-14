@@ -184,6 +184,7 @@ coreos:
           content: |
             [Service]
             Environment="ETCD_IMAGE_TAG=v{{.Etcd.Version}}"
+            Environment="ETCD_VERSION=v{{.Etcd.Version}}"
         {{end}}
       enable: true
       command: start
