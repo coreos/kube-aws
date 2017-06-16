@@ -725,6 +725,9 @@
                   "'\n",
                   "ETCDADM_MEMBER_INDEX='",
                     "{{$etcdIndex}}",
+                  "'\n",
+                  "ETCD_VERSION='",
+                    "{{$.Etcd.Version}}",
                   "'\n"
                 ]]}
               }
