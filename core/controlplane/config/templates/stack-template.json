@@ -46,6 +46,11 @@
             "Value": "{{.ClusterName}}-{{.StackName}}-kube-aws-controller"
           },
           {
+            "Key": "Role",
+            "PropagateAtLaunch": "true",
+            "Value": "Master"
+          },
+          {
             "Key": "kubernetes.io/role/master",
             "PropagateAtLaunch": "true",
             "Value": ""
@@ -626,6 +631,11 @@
             "Key": "Name",
             "PropagateAtLaunch": "true",
             "Value": "{{$.ClusterName}}-{{$.StackName}}-kube-aws-etcd-{{$etcdIndex}}"
+          },
+          {
+            "Key": "Role",
+            "PropagateAtLaunch": "true",
+            "Value": "Etcd"
           },
           {
             "Key": "kube-aws:role",
