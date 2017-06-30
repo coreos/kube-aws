@@ -332,9 +332,9 @@ _docker_awscli_command() {
   dir=$(dirname "$(config_state_dir)")
   echo docker
   echo run
+  echo --rm
   printf "%s\n" "-e"
   echo "AWS_DEFAULT_REGION=$aws_region"
-  echo "--rm"
   echo "--net=host"
   echo "--volume"
   echo "${dir}:${dir}"
