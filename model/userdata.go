@@ -7,6 +7,7 @@ import (
 
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"text/template"
@@ -146,4 +147,72 @@ func validateCoreosCloudInit(content []byte) error {
 
 func validateNone([]byte) error {
 	return nil
+}
+
+func (self UserDataPart) Base64IgnitionConfigRef() (string, error) {
+	base64Part, err := self.Base64(false)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate ignition config: %v", err)
+	}
+
+	// TODO Append user-provided ignition config via `ignition.config.append.source`
+	// once it supports sourcing from a s3 object
+	// https://coreos.com/ignition/docs/0.14.0/configuration-v2_0.html
+
+	head, err := json.Marshal(`{
+  "ignition": {
+    "version": "2.0.0"
+  },
+  "storage": {
+    "files": [
+      {
+        "filesystem": "root",
+        "path": "/kube-aws-stack-name",
+        "mode": 420,
+        "contents": {
+          "source": "data:;base64,`)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate ignition config: %v", err)
+	}
+
+	tail, err := json.Marshal(
+		fmt.Sprintf(`"
+        }
+      },
+      {
+        "filesystem": "root",
+        "path": "/opt/bin/bootstrap-worker-node",
+        "mode": 493,
+        "contents": {
+          "source": "data:;base64,%s"
+        }
+      }
+    ]
+  },
+  "systemd": {
+    "units": [
+      {
+        "name": "bootstrap-worker-node.service",
+        "enable": true,
+        "contents": "[Unit]\nRequires=network-online.target\nAfter=network-online.target\n\n[Service]\nType=oneshot\nRemainAfterExit=yes\nExecStart=/opt/bin/bootstrap-worker-node\n\n[Install]\nWantedBy=multi-user.target"
+      }
+    ]
+  }
+}`,
+			base64Part,
+		),
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate ignition config: %v", err)
+	}
+
+	splits := []string{
+		string(head),
+		`{"Fn::Base64":{"Ref":"AWS::StackName"}}`,
+		string(tail),
+	}
+
+	// TODO should emit a validation error when sum(sizeOf(split in splits)) > 16384
+
+	return fmt.Sprintf(`{"Fn::Base64": {"Fn::Join": ["", [%s]]} }`, strings.Join(splits, ",")), nil
 }

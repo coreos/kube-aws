@@ -101,7 +101,7 @@
               {{end}}
             ],
             "SubnetId": {{$workerSubnet.Ref}},
-            "UserData": {{ $.UserDataWorker.Parts.instance.Base64 true | checkSizeLessThan 16384 | quote }}
+            "UserData": {{ $.UserDataWorker.Parts.instance.Base64IgnitionConfigRef }}
           }
           {{end}}
           {{end}}
@@ -261,7 +261,7 @@
         {{else}}
         "PlacementTenancy": "{{.Tenancy}}",
         {{end}}
-        "UserData": {{ .UserDataWorker.Parts.instance.Base64 true | checkSizeLessThan 16384 | quote }}
+        "UserData": {{ .UserDataWorker.Parts.instance.Base64IgnitionConfigRef }}
       },
       "Type": "AWS::AutoScaling::LaunchConfiguration"
     {{if not .IAMConfig.InstanceProfile.Arn}}
