@@ -149,6 +149,11 @@ func validateNone([]byte) error {
 	return nil
 }
 
+func (self UserDataPart) Base64UserDataRef() (string, error) {
+	// Change this to Base64IgnitionConfigRef to test with ignition
+	return self.Base64BashScriptRef()
+}
+
 func (self UserDataPart) Base64IgnitionConfigRef() (string, error) {
 	base64Part, err := self.Base64(false)
 	if err != nil {
@@ -211,6 +216,35 @@ func (self UserDataPart) Base64IgnitionConfigRef() (string, error) {
 		`{"Fn::Base64":{"Ref":"AWS::StackName"}}`,
 		string(tail),
 	}
+
+	// TODO should emit a validation error when sum(sizeOf(split in splits)) > 16384
+
+	return fmt.Sprintf(`{"Fn::Base64": {"Fn::Join": ["", [%s]]} }`, strings.Join(splits, ",")), nil
+}
+
+func (self UserDataPart) Base64BashScriptRef() (string, error) {
+	cloudConfig, err := self.Template()
+	if err != nil {
+		return "", fmt.Errorf("failed to generate userdata: %v", err)
+	}
+
+	cloudConfigLines := strings.Split(cloudConfig, "\n")
+
+	jsonStrings := []string{}
+	for _, o := range cloudConfigLines {
+		escaped, err := json.Marshal(o + "\n")
+		if err != nil {
+			return "", fmt.Errorf("failed to generate userdata: failed to marshal \"%s\" into json: %v", o, err)
+		}
+		jsonStrings = append(jsonStrings, string(escaped))
+	}
+
+	splits := []string{}
+	splits = append(splits, jsonStrings[:1]...)
+	splits = append(splits, `"echo \""`)
+	splits = append(splits, `{"Ref":"AWS::StackName"}`)
+	splits = append(splits, `"\" >> /kube-aws-stack-name\n"`)
+	splits = append(splits, jsonStrings[1:]...)
 
 	// TODO should emit a validation error when sum(sizeOf(split in splits)) > 16384
 
