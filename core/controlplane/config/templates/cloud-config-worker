@@ -22,11 +22,7 @@ run aws s3 --region $REGION  cp {{ $S3URI }} /var/run/coreos/$USERDATA_FILE
 
 INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 
-run /bin/sh -c 'echo {{.StackNameEnvVarName}}=$(aws ec2 describe-tags --region "'$REGION'" --filters \
-  "Name=resource-id,Values='$INSTANCE_ID'" \
-  "Name=key,Values=aws:cloudformation:stack-name" \
-  --output json \
-| jq -r ".Tags[].Value") >> {{.StackNameEnvFileName}}'
+echo "{{.StackNameEnvVarName}}=$(cat /kube-aws-stack-name)" >> {{.StackNameEnvFileName}}
 
 exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE
 {{ end }}
