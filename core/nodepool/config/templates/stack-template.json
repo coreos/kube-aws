@@ -148,6 +148,11 @@
             "Key": "Name",
             "PropagateAtLaunch": "true",
             "Value": "{{.ClusterName}}-{{.StackName}}-kube-aws-worker"
+          },
+          {
+            "Key": "Role",
+            "PropagateAtLaunch": "true",
+            "Value": "Worker"
           }
         ],
         {{if .LoadBalancer.Enabled}}
