@@ -1538,6 +1538,10 @@
       "Type": "AWS::EC2::VPCGatewayAttachment"
     }
     {{end}}
+    {{range $n, $r := .AdditionalCfnResources}}
+    ,
+    {{quote $n}}: {{toJSON $r}}
+    {{end}}
   },
 
   "Outputs": {

@@ -10,6 +10,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/plugin/api"
 	"text/tabwriter"
 )
 
@@ -64,17 +65,46 @@ func NewClusterRef(cfg *config.ProvidedConfig, awsDebug bool) *ClusterRef {
 	}
 }
 
-func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOptions, awsDebug bool) (*Cluster, error) {
+func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOptions, plugins []*api.Plugin, awsDebug bool) (*Cluster, error) {
 	stackConfig, err := provided.StackConfig(opts)
 	if err != nil {
 		return nil, err
 	}
-	ref := NewClusterRef(provided, awsDebug)
+
+	clusterRef := NewClusterRef(provided, awsDebug)
+
 	c := &Cluster{
 		StackConfig: stackConfig,
-		ClusterRef:  ref,
+		ClusterRef:  clusterRef,
 	}
+
+	for _, p := range plugins {
+		if enabled, pc := p.EnabledIn(c.Plugins); enabled {
+			values := p.Spec.Values.Merge(pc.Values)
+
+			m, err := p.Spec.CloudFormation.Stacks.NodePool.Resources.Append.AsTemplatedMap(values)
+			if err != nil {
+				return nil, fmt.Errorf("failed to load additioanl resources for worker node-pool stack: %v", err)
+			}
+			for k, v := range m {
+				c.AdditionalCfnResources[k] = v
+			}
+
+			for _, d := range p.Spec.Node.Roles.Worker.Systemd.Units {
+				u := model.CustomSystemdUnit{
+					Name:    d.Name,
+					Command: "start",
+					Content: d.Contents.Inline,
+					Enable:  true,
+					Runtime: false,
+				}
+				c.StackConfig.CustomSystemdUnits = append(c.StackConfig.CustomSystemdUnits, u)
+			}
+		}
+	}
+
 	c.assets, err = c.buildAssets()
+
 	return c, err
 }
 

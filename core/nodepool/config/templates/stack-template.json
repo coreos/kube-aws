@@ -512,6 +512,10 @@
     {{if not .IAMConfig.InstanceProfile.Arn}}
     {{template "IAMRole" .}}
     {{end}}
+    {{range $n, $r := .AdditionalCfnResources}}
+    ,
+    {{quote $n}}: {{toJSON $r}}
+    {{end}}
   },
   "Outputs": {
     {{if not .IAMConfig.InstanceProfile.Arn }}

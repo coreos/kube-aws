@@ -18,6 +18,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kubernetes-incubator/kube-aws/plugin/api"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -477,7 +478,7 @@ stackTags:
 				S3URI: "s3://test-bucket/foo/bar",
 			}
 
-			cluster, err := NewCluster(clusterConfig, stackTemplateOptions, false)
+			cluster, err := NewCluster(clusterConfig, stackTemplateOptions, []*api.Plugin{}, false)
 			if !assert.NoError(t, err) {
 				return
 			}
@@ -741,7 +742,7 @@ func newDefaultClusterWithDeps(opts config.StackTemplateOptions) (*Cluster, erro
 	if err := cluster.Load(); err != nil {
 		return &Cluster{}, err
 	}
-	return NewCluster(cluster, opts, false)
+	return NewCluster(cluster, opts, []*api.Plugin{}, false)
 }
 
 func TestRenderStackTemplate(t *testing.T) {

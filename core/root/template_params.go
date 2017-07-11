@@ -9,8 +9,13 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/model"
 )
 
+// TemplateParams is the set of parameters exposed for templating cfn stack template for the root stack
 type TemplateParams struct {
 	cluster clusterImpl
+}
+
+func (p TemplateParams) AdditionalCfnResources() map[string]interface{} {
+	return p.cluster.AdditionalCfnResources
 }
 
 func (p TemplateParams) ClusterName() string {

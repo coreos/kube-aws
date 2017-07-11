@@ -13,6 +13,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/plugin/api"
 )
 
 // VERSION set by build script
@@ -119,21 +120,64 @@ func (c *ClusterRef) validateExistingVPCState(ec2Svc ec2Service) error {
 	return nil
 }
 
-func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, awsDebug bool) (*Cluster, error) {
-	cluster := NewClusterRef(cfg, awsDebug)
+func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins []*api.Plugin, awsDebug bool) (*Cluster, error) {
+	clusterRef := NewClusterRef(cfg, awsDebug)
 	// TODO Do this in a cleaner way e.g. in config.go
-	cluster.KubeResourcesAutosave.S3Path = model.NewS3Folders(opts.S3URI, cluster.ClusterName).ClusterBackups().Path()
-	stackConfig, err := cluster.StackConfig(opts)
+	clusterRef.KubeResourcesAutosave.S3Path = model.NewS3Folders(opts.S3URI, clusterRef.ClusterName).ClusterBackups().Path()
+
+	stackConfig, err := clusterRef.StackConfig(opts)
 	if err != nil {
 		return nil, err
 	}
 
 	c := &Cluster{
-		ClusterRef:  cluster,
+		ClusterRef:  clusterRef,
 		StackConfig: stackConfig,
 	}
 
+	// Notes:
+	// * `c.StackConfig.CustomSystemdUnits` results in an `ambiguous selector ` error
+	// * `c.Controller.CustomSystemdUnits = controllerUnits` and `c.ClusterRef.Controller.CustomSystemdUnits = controllerUnits` results in modifying invisible/duplicate CustomSystemdSettings
+	for _, p := range plugins {
+		if enabled, pc := p.EnabledIn(c.Plugins); enabled {
+			values := p.Spec.Values.Merge(pc.Values)
+
+			{
+				m, err := p.Spec.CloudFormation.Stacks.ControlPlane.Resources.Append.AsTemplatedMap(values)
+				if err != nil {
+					return nil, fmt.Errorf("failed to load additioanl resources for control-plane stack: %v", err)
+				}
+				for k, v := range m {
+					c.StackConfig.AdditionalCfnResources[k] = v
+				}
+			}
+
+			for _, d := range p.Spec.Node.Roles.Controller.Systemd.Units {
+				u := model.CustomSystemdUnit{
+					Name:    d.Name,
+					Command: "start",
+					Content: d.Contents.Inline,
+					Enable:  true,
+					Runtime: false,
+				}
+				c.StackConfig.Controller.CustomSystemdUnits = append(c.StackConfig.Controller.CustomSystemdUnits, u)
+			}
+
+			for _, d := range p.Spec.Node.Roles.Etcd.Systemd.Units {
+				u := model.CustomSystemdUnit{
+					Name:    d.Name,
+					Command: "start",
+					Content: d.Contents.Inline,
+					Enable:  true,
+					Runtime: false,
+				}
+				c.StackConfig.Etcd.CustomSystemdUnits = append(c.StackConfig.Etcd.CustomSystemdUnits, u)
+			}
+		}
+	}
+
 	c.assets, err = c.buildAssets()
+
 	return c, err
 }
 

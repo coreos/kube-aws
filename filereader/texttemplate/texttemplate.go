@@ -9,12 +9,16 @@ import (
 	"text/template"
 )
 
-func Parse(filename string, funcs template.FuncMap) (*template.Template, error) {
+func ParseFile(filename string, funcs template.FuncMap) (*template.Template, error) {
 	raw, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
+	return Parse(filename, string(raw), funcs)
+}
+
+func Parse(name string, raw string, funcs template.FuncMap) (*template.Template, error) {
 	funcs2 := template.FuncMap{
 		"checkSizeLessThan": func(size int, content string) (string, error) {
 			if len(content) >= size {
@@ -31,7 +35,7 @@ func Parse(filename string, funcs template.FuncMap) (*template.Template, error) 
 		},
 	}
 
-	t, err := template.New(filename).Funcs(sprig.HermeticTxtFuncMap()).Funcs(funcs).Funcs(funcs2).Parse(string(raw))
+	t, err := template.New(name).Funcs(sprig.HermeticTxtFuncMap()).Funcs(funcs).Funcs(funcs2).Parse(raw)
 	if err == nil {
 		t = t.Funcs(template.FuncMap{
 			"execTemplate": func(name string, ctx interface{}) (string, error) {
@@ -42,11 +46,10 @@ func Parse(filename string, funcs template.FuncMap) (*template.Template, error) 
 		})
 	}
 	return t, err
-
 }
 
 func GetBytesBuffer(filename string, data interface{}) (*bytes.Buffer, error) {
-	tmpl, err := Parse(filename, nil)
+	tmpl, err := ParseFile(filename, nil)
 	if err != nil {
 		return nil, err
 	}

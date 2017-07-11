@@ -488,13 +488,14 @@ type Cluster struct {
 	ControllerSettings      `yaml:",inline"`
 	EtcdSettings            `yaml:",inline"`
 	FlannelSettings         `yaml:",inline"`
-	AdminAPIEndpointName    string `yaml:"adminAPIEndpointName,omitempty"`
-	ServiceCIDR             string `yaml:"serviceCIDR,omitempty"`
-	CreateRecordSet         bool   `yaml:"createRecordSet,omitempty"`
-	RecordSetTTL            int    `yaml:"recordSetTTL,omitempty"`
-	TLSCADurationDays       int    `yaml:"tlsCADurationDays,omitempty"`
-	TLSCertDurationDays     int    `yaml:"tlsCertDurationDays,omitempty"`
-	HostedZoneID            string `yaml:"hostedZoneId,omitempty"`
+	AdminAPIEndpointName    string        `yaml:"adminAPIEndpointName,omitempty"`
+	ServiceCIDR             string        `yaml:"serviceCIDR,omitempty"`
+	CreateRecordSet         bool          `yaml:"createRecordSet,omitempty"`
+	RecordSetTTL            int           `yaml:"recordSetTTL,omitempty"`
+	TLSCADurationDays       int           `yaml:"tlsCADurationDays,omitempty"`
+	TLSCertDurationDays     int           `yaml:"tlsCertDurationDays,omitempty"`
+	HostedZoneID            string        `yaml:"hostedZoneId,omitempty"`
+	Plugins                 model.Plugins `yaml:"kubeAwsPlugins,omitempty"`
 	ProvidedEncryptService  EncryptService
 	// SSHAccessAllowedSourceCIDRs is network ranges of sources you'd like SSH accesses to be allowed from, in CIDR notation
 	SSHAccessAllowedSourceCIDRs model.CIDRRanges       `yaml:"sshAccessAllowedSourceCIDRs,omitempty"`
@@ -763,7 +764,9 @@ type StackTemplateOptions struct {
 
 func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	var err error
-	stackConfig := StackConfig{}
+	stackConfig := StackConfig{
+		AdditionalCfnResources: map[string]interface{}{},
+	}
 
 	if stackConfig.Config, err = c.Config(); err != nil {
 		return nil, err
@@ -806,6 +809,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	return &stackConfig, nil
 }
 
+// StackConfig contains configuration parameters available when rendering userdata injected into a node from golang text templates
 type Config struct {
 	Cluster
 

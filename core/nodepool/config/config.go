@@ -39,8 +39,9 @@ type ProvidedConfig struct {
 	WorkerNodePoolConfig    `yaml:",inline"`
 	DeploymentSettings      `yaml:",inline"`
 	cfg.Experimental        `yaml:",inline"`
-	Private                 bool   `yaml:"private,omitempty"`
-	NodePoolName            string `yaml:"name,omitempty"`
+	Plugins                 model.Plugins `yaml:"kubeAwsPlugins,omitempty"`
+	Private                 bool          `yaml:"private,omitempty"`
+	NodePoolName            string        `yaml:"name,omitempty"`
 	ProvidedEncryptService  cfg.EncryptService
 }
 
@@ -71,7 +72,9 @@ func (c ProvidedConfig) NestedStackName() string {
 
 func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	var err error
-	stackConfig := StackConfig{}
+	stackConfig := StackConfig{
+		AdditionalCfnResources: map[string]interface{}{},
+	}
 
 	if stackConfig.ComputedConfig, err = c.Config(); err != nil {
 		return nil, fmt.Errorf("failed to generate config : %v", err)

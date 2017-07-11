@@ -97,6 +97,10 @@
         "{{$.ControlPlane.Name}}"
       ]
     }{{end}}
+    {{range $n, $r := .AdditionalCfnResources}}
+    ,
+    {{quote $n}}: {{toJSON $r}}
+    {{end}}
   },
   "Outputs": {
     "KubeAwsVersion": {
