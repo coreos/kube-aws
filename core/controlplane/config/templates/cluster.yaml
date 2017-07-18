@@ -1214,6 +1214,8 @@ addons:
 #    role:
 #      # When specified, kube-aws reuses an existing IAM role as the notification role of a autoscaling lifecycle hook
 #      arn: "arn:aws:iam::YOURACCOUNTID:role/ROLENAME"
+#  target:
+#    arn: "arn:aws:sqs::YOURACCOUNTID:QUEUENAME"
 
 # User-provided YAML map available in control-plane's stack-template.json
 #customSettings:
