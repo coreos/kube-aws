@@ -2,10 +2,12 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "kube-aws Kubernetes cluster {{.ClusterName}}",
   "Resources": {
+    {{if .ControlPlane.AutoscalingNotification.TargetManaged}}
     {{/* This queue is currently not used; for now, the only reason it exist is because we cannot create ASG Lifecycle Hooks without one of these. */}}
-    "ASGNotificationTarget": {
+    "{{.ControlPlane.AutoscalingNotification.TargetLogicalName}}": {
       "Type": "AWS::SQS::Queue"
     },
+    {{end}}
     {{if .ControlPlane.AutoscalingNotification.RoleManaged}}
     "{{.ControlPlane.AutoscalingNotification.RoleLogicalName}}": {
       "Properties": {
@@ -29,7 +31,7 @@
                 "sqs:SendMessage",
                 "sqs:GetQueueUrl"
               ],
-              "Resource": { "Fn::GetAtt": [ "ASGNotificationTarget", "Arn" ] }
+              "Resource": {{.ControlPlane.AutoscalingNotification.TargetArn}}
             } ]
           }
         }]
@@ -49,7 +51,7 @@
       "Type" : "AWS::CloudFormation::Stack",
       "Properties" : {
         "Parameters": {
-          "NotificationTargetARN": { "Fn::GetAtt": [ "ASGNotificationTarget", "Arn" ] },
+          "NotificationTargetARN": {{.ControlPlane.AutoscalingNotification.TargetArn}},
           "NotificationRoleARN": {{.ControlPlane.AutoscalingNotification.RoleArn}}
           {{if .CloudWatchLogging.Enabled}}
           ,
@@ -74,7 +76,7 @@
       "Properties" : {
         "Parameters": {
           "ControlPlaneStackName": {"Fn::GetAtt" : [ "{{$.ControlPlane.Name}}" , "Outputs.StackName" ]},
-          "NotificationTargetARN": { "Fn::GetAtt": [ "ASGNotificationTarget", "Arn" ] },
+          "NotificationTargetARN": {{$.ControlPlane.AutoscalingNotification.TargetArn}},
           "NotificationRoleARN": {{$.ControlPlane.AutoscalingNotification.RoleArn}}
           {{if .CloudWatchLogging.Enabled}}
           ,
