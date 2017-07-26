@@ -103,6 +103,9 @@ spec:
     node:
       roles:
         controller:
+          kubelet:
+            nodeLabels:
+              role: controller
           systemd:
             units:
             - name: save-queue-name.service
@@ -117,6 +120,9 @@ spec:
                 inline: |
                   [Unit]
         worker:
+          kubelet:
+            nodeLabels:
+              role: worker
           systemd:
             units:
             - name: save-queue-name.service
@@ -128,13 +134,13 @@ spec:
 			},
 			assertConfig: []ConfigTester{
 				func(c *config.Config, t *testing.T) {
-					p1 := c.Plugins["myPlugin"]
+					cp := c.Plugins["myPlugin"]
 
-					if !p1.Enabled {
-						t.Errorf("The plugin should have been enabled: %+v", p1)
+					if !cp.Enabled {
+						t.Errorf("The plugin should have been enabled: %+v", cp)
 					}
 
-					if q, ok := p1.Settings["queue"].(map[string]interface{}); ok {
+					if q, ok := cp.Settings["queue"].(map[string]interface{}); ok {
 						if m, ok := q["name"].(string); ok {
 							if m != "baz1" {
 								t.Errorf("The plugin should have queue.name set to \"baz1\", but was set to \"%s\"", m)
@@ -142,13 +148,13 @@ spec:
 						}
 					}
 
-					p2 := c.NodePools[0].Plugins["myPlugin"]
+					np := c.NodePools[0].Plugins["myPlugin"]
 
-					if !p2.Enabled {
-						t.Errorf("The plugin should have been enabled: %+v", p2)
+					if !np.Enabled {
+						t.Errorf("The plugin should have been enabled: %+v", np)
 					}
 
-					if q, ok := p2.Settings["queue"].(map[string]interface{}); ok {
+					if q, ok := np.Settings["queue"].(map[string]interface{}); ok {
 						if m, ok := q["name"].(string); ok {
 							if m != "baz2" {
 								t.Errorf("The plugin should have queue.name set to \"baz2\", but was set to \"%s\"", m)
@@ -159,24 +165,27 @@ spec:
 			},
 			assertCluster: []ClusterTester{
 				func(c root.Cluster, t *testing.T) {
+					cp := c.ControlPlane()
+					np := c.NodePools()[0]
+
 					// A kube-aws plugin can inject systemd units
-					controllerUserdataS3Part := c.ControlPlane().UserDataController.Parts[model.USERDATA_S3].Asset.Content
+					controllerUserdataS3Part := cp.UserDataController.Parts[model.USERDATA_S3].Asset.Content
 					if !strings.Contains(controllerUserdataS3Part, "save-queue-name.service") {
 						t.Errorf("Invalid controller userdata: %v", controllerUserdataS3Part)
 					}
 
-					etcdUserdataS3Part := c.ControlPlane().UserDataEtcd.Parts[model.USERDATA_S3].Asset.Content
+					etcdUserdataS3Part := cp.UserDataEtcd.Parts[model.USERDATA_S3].Asset.Content
 					if !strings.Contains(etcdUserdataS3Part, "save-queue-name.service") {
 						t.Errorf("Invalid etcd userdata: %v", etcdUserdataS3Part)
 					}
 
-					workerUserdataS3Part := c.NodePools()[0].UserDataWorker.Parts[model.USERDATA_S3].Asset.Content
+					workerUserdataS3Part := np.UserDataWorker.Parts[model.USERDATA_S3].Asset.Content
 					if !strings.Contains(workerUserdataS3Part, "save-queue-name.service") {
 						t.Errorf("Invalid worker userdata: %v", workerUserdataS3Part)
 					}
 
 					// A kube-aws plugin can inject custom cfn stack resources
-					controlPlaneStackTemplate, err := c.ControlPlane().RenderStackTemplateAsString()
+					controlPlaneStackTemplate, err := cp.RenderStackTemplateAsString()
 					if err != nil {
 						t.Errorf("failed to render control-plane stack template: %v", err)
 					}
@@ -192,12 +201,21 @@ spec:
 						t.Errorf("Invalid root stack template: %v", rootStackTemplate)
 					}
 
-					nodePoolStackTemplate, err := c.NodePools()[0].RenderStackTemplateAsString()
+					nodePoolStackTemplate, err := np.RenderStackTemplateAsString()
 					if err != nil {
 						t.Errorf("failed to render worker node pool stack template: %v", err)
 					}
 					if !strings.Contains(nodePoolStackTemplate, "QueueFromMyPlugin") {
 						t.Errorf("Invalid worker node pool stack template: %v", nodePoolStackTemplate)
+					}
+
+					// A kube-aws plugin can inject node labels
+					if !strings.Contains(controllerUserdataS3Part, "role=controller") {
+						t.Error("missing controller node label: role=controller")
+					}
+
+					if !strings.Contains(workerUserdataS3Part, "role=worker") {
+						t.Error("missing worker node label: role=worker")
 					}
 				},
 			},

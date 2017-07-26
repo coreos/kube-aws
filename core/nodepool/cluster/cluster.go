@@ -100,6 +100,10 @@ func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOption
 				}
 				c.StackConfig.CustomSystemdUnits = append(c.StackConfig.CustomSystemdUnits, u)
 			}
+
+			for k, v := range p.Spec.Node.Roles.Worker.Kubelet.NodeLabels {
+				c.NodeSettings.NodeLabels[k] = v
+			}
 		}
 	}
 

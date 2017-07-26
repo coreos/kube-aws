@@ -163,6 +163,10 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins [
 				c.StackConfig.Controller.CustomSystemdUnits = append(c.StackConfig.Controller.CustomSystemdUnits, u)
 			}
 
+			for k, v := range p.Spec.Node.Roles.Controller.Kubelet.NodeLabels {
+				c.StackConfig.Controller.NodeLabels[k] = v
+			}
+
 			for _, d := range p.Spec.Node.Roles.Etcd.Systemd.Units {
 				u := model.CustomSystemdUnit{
 					Name:    d.Name,
