@@ -278,6 +278,14 @@ func (c ProvidedConfig) NodeLabels() model.NodeLabels {
 	return labels
 }
 
+func (c ProvidedConfig) FeatureGates() model.FeatureGates {
+	gates := c.NodeSettings.FeatureGates
+	if c.Gpu.Nvidia.IsEnabledOn(c.InstanceType) {
+		gates["Accelerators"] = "true"
+	}
+	return gates
+}
+
 func (c ProvidedConfig) WorkerDeploymentSettings() WorkerDeploymentSettings {
 	return WorkerDeploymentSettings{
 		WorkerNodePoolConfig: c.WorkerNodePoolConfig,

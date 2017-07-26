@@ -104,6 +104,10 @@ func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOption
 			for k, v := range p.Spec.Node.Roles.Worker.Kubelet.NodeLabels {
 				c.NodeSettings.NodeLabels[k] = v
 			}
+
+			for k, v := range p.Spec.Node.Roles.Worker.Kubelet.FeatureGates {
+				c.NodeSettings.FeatureGates[k] = v
+			}
 		}
 	}
 

@@ -123,6 +123,8 @@ spec:
           kubelet:
             nodeLabels:
               role: worker
+            featureGates:
+              Accelerators: "true"
           systemd:
             units:
             - name: save-queue-name.service
@@ -216,6 +218,11 @@ spec:
 
 					if !strings.Contains(workerUserdataS3Part, "role=worker") {
 						t.Error("missing worker node label: role=worker")
+					}
+
+					// A kube-aws plugin can activate feature gates
+					if !strings.Contains(workerUserdataS3Part, `--feature-gates="Accelerators=true"`) {
+						t.Error("missing worker feature gate: Accelerators=true")
 					}
 				},
 			},

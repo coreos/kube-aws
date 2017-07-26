@@ -272,8 +272,8 @@ coreos:
         --tls-private-key-file=/etc/kubernetes/ssl/worker-key.pem \
         {{- end }}
         --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
-        {{- if .Gpu.Nvidia.IsEnabledOn .InstanceType }}
-        --feature-gates="Accelerators=true" \
+        {{- if .FeatureGates.Enabled }}
+        --feature-gates="{{.FeatureGates.String}}" \
         {{- end }}
         --require-kubeconfig \
         $KUBELET_OPTS

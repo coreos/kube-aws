@@ -1,14 +1,16 @@
 package model
 
 type NodeSettings struct {
-	NodeLabels NodeLabels `yaml:"nodeLabels"`
-	Taints     Taints     `yaml:"taints"`
+	FeatureGates FeatureGates `yaml:"featureGates"`
+	NodeLabels   NodeLabels   `yaml:"nodeLabels"`
+	Taints       Taints       `yaml:"taints"`
 }
 
 func newNodeSettings() NodeSettings {
 	return NodeSettings{
-		NodeLabels: NodeLabels{},
-		Taints:     Taints{},
+		FeatureGates: FeatureGates{},
+		NodeLabels:   NodeLabels{},
+		Taints:       Taints{},
 	}
 }
 
