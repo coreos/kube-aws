@@ -8,6 +8,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/core/root"
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/plugin"
 	"github.com/kubernetes-incubator/kube-aws/test/helper"
 )
 
@@ -136,7 +137,7 @@ spec:
 			},
 			assertConfig: []ConfigTester{
 				func(c *config.Config, t *testing.T) {
-					cp := c.Plugins["myPlugin"]
+					cp := c.PluginConfigs["myPlugin"]
 
 					if !cp.Enabled {
 						t.Errorf("The plugin should have been enabled: %+v", cp)
@@ -231,30 +232,40 @@ spec:
 
 	for _, validCase := range validCases {
 		t.Run(validCase.context, func(t *testing.T) {
-			configBytes := validCase.clusterYaml
-			providedConfig, err := config.ConfigFromBytesWithEncryptService([]byte(configBytes), helper.DummyEncryptService{})
-			if err != nil {
-				t.Errorf("failed to parse config %s: %v", configBytes, err)
-				t.FailNow()
-			}
-
-			t.Run("AssertConfig", func(t *testing.T) {
-				for _, assertion := range validCase.assertConfig {
-					assertion(providedConfig, t)
+			helper.WithPlugins(validCase.plugins, func() {
+				plugins, err := plugin.LoadAll()
+				if err != nil {
+					t.Errorf("failed to load plugins: %v", err)
+					t.FailNow()
 				}
-			})
+				if len(plugins) != len(validCase.plugins) {
+					t.Errorf("failed to load plugins: expected %d plugins but loaded %d plugins", len(validCase.plugins), len(plugins))
+					t.FailNow()
+				}
 
-			helper.WithDummyCredentials(func(dummyAssetsDir string) {
-				var stackTemplateOptions = root.NewOptions(s3URI, false, false)
-				stackTemplateOptions.AssetsDir = dummyAssetsDir
-				stackTemplateOptions.ControllerTmplFile = "../../core/controlplane/config/templates/cloud-config-controller"
-				stackTemplateOptions.WorkerTmplFile = "../../core/controlplane/config/templates/cloud-config-worker"
-				stackTemplateOptions.EtcdTmplFile = "../../core/controlplane/config/templates/cloud-config-etcd"
-				stackTemplateOptions.RootStackTemplateTmplFile = "../../core/root/config/templates/stack-template.json"
-				stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../core/nodepool/config/templates/stack-template.json"
-				stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/templates/stack-template.json"
+				configBytes := validCase.clusterYaml
+				providedConfig, err := config.ConfigFromBytesWithEncryptService([]byte(configBytes), plugins, helper.DummyEncryptService{})
+				if err != nil {
+					t.Errorf("failed to parse config %s: %v", configBytes, err)
+					t.FailNow()
+				}
 
-				helper.WithPlugins(validCase.plugins, func() {
+				t.Run("AssertConfig", func(t *testing.T) {
+					for _, assertion := range validCase.assertConfig {
+						assertion(providedConfig, t)
+					}
+				})
+
+				helper.WithDummyCredentials(func(dummyAssetsDir string) {
+					var stackTemplateOptions = root.NewOptions(s3URI, false, false)
+					stackTemplateOptions.AssetsDir = dummyAssetsDir
+					stackTemplateOptions.ControllerTmplFile = "../../core/controlplane/config/templates/cloud-config-controller"
+					stackTemplateOptions.WorkerTmplFile = "../../core/controlplane/config/templates/cloud-config-worker"
+					stackTemplateOptions.EtcdTmplFile = "../../core/controlplane/config/templates/cloud-config-etcd"
+					stackTemplateOptions.RootStackTemplateTmplFile = "../../core/root/config/templates/stack-template.json"
+					stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../core/nodepool/config/templates/stack-template.json"
+					stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/templates/stack-template.json"
+
 					cluster, err := root.ClusterFromConfig(providedConfig, stackTemplateOptions, false)
 					if err != nil {
 						t.Errorf("failed to create cluster driver : %v", err)

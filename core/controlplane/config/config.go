@@ -6,10 +6,13 @@ package config
 //go:generate gofmt -w files.go
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -21,6 +24,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/model/derived"
 	"github.com/kubernetes-incubator/kube-aws/netutil"
+	"github.com/kubernetes-incubator/kube-aws/plugin/api"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -135,6 +139,7 @@ func NewDefaultCluster() *Cluster {
 			KubeReschedulerImage:               model.Image{Repo: "gcr.io/google-containers/rescheduler", Tag: "v0.3.0", RktPullDocker: false},
 			DnsMasqMetricsImage:                model.Image{Repo: "gcr.io/google_containers/k8s-dns-sidecar-amd64", Tag: "1.14.4", RktPullDocker: false},
 			ExecHealthzImage:                   model.Image{Repo: "gcr.io/google_containers/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
+			HelmImage:                          model.Image{Repo: "quay.io/kube-aws/helm", Tag: "v2.5.1", RktPullDocker: false},
 			HeapsterImage:                      model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.4.0", RktPullDocker: false},
 			AddonResizerImage:                  model.Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "2.0", RktPullDocker: false},
 			KubeDashboardImage:                 model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.6.1", RktPullDocker: false},
@@ -216,7 +221,7 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	cfg, err := c.Config()
+	cfg, err := c.Config([]*api.Plugin{})
 	if err != nil {
 		return nil, err
 	}
@@ -442,6 +447,7 @@ type DeploymentSettings struct {
 	KubeReschedulerImage               model.Image `yaml:"kubeReschedulerImage,omitempty"`
 	DnsMasqMetricsImage                model.Image `yaml:"dnsMasqMetricsImage,omitempty"`
 	ExecHealthzImage                   model.Image `yaml:"execHealthzImage,omitempty"`
+	HelmImage                          model.Image `yaml:"helmImage,omitempty"`
 	HeapsterImage                      model.Image `yaml:"heapsterImage,omitempty"`
 	AddonResizerImage                  model.Image `yaml:"addonResizerImage,omitempty"`
 	KubeDashboardImage                 model.Image `yaml:"kubeDashboardImage,omitempty"`
@@ -480,6 +486,7 @@ type FlannelSettings struct {
 	PodCIDR string `yaml:"podCIDR,omitempty"`
 }
 
+// Cluster is the container of all the configurable parameters of a kube-aws cluster, customizable via cluster.yaml
 type Cluster struct {
 	AutoscalingNotification model.AutoscalingNotification `yaml:"autoscalingNotification,omitempty"`
 	KubeClusterSettings     `yaml:",inline"`
@@ -495,7 +502,7 @@ type Cluster struct {
 	TLSCADurationDays       int           `yaml:"tlsCADurationDays,omitempty"`
 	TLSCertDurationDays     int           `yaml:"tlsCertDurationDays,omitempty"`
 	HostedZoneID            string        `yaml:"hostedZoneId,omitempty"`
-	Plugins                 model.Plugins `yaml:"kubeAwsPlugins,omitempty"`
+	PluginConfigs           model.Plugins `yaml:"kubeAwsPlugins,omitempty"`
 	ProvidedEncryptService  EncryptService
 	// SSHAccessAllowedSourceCIDRs is network ranges of sources you'd like SSH accesses to be allowed from, in CIDR notation
 	SSHAccessAllowedSourceCIDRs model.CIDRRanges       `yaml:"sshAccessAllowedSourceCIDRs,omitempty"`
@@ -689,8 +696,19 @@ func (c KubeClusterSettings) K8sNetworkPlugin() string {
 	return "cni"
 }
 
-func (c Cluster) Config() (*Config, error) {
-	config := Config{Cluster: c}
+func (c Cluster) Config(extra ...[]*api.Plugin) (*Config, error) {
+	pluginMap := map[string]*api.Plugin{}
+	if len(extra) > 0 {
+		plugins := extra[0]
+		for _, p := range plugins {
+			pluginMap[p.SettingKey()] = p
+		}
+	}
+
+	config := Config{
+		Cluster:        c,
+		KubeAwsPlugins: pluginMap,
+	}
 
 	if c.AmiId == "" {
 		var err error
@@ -762,13 +780,18 @@ type StackTemplateOptions struct {
 	SkipWait              bool
 }
 
-func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
+func (c Cluster) StackConfig(opts StackTemplateOptions, extra ...[]*api.Plugin) (*StackConfig, error) {
+	plugins := []*api.Plugin{}
+	if len(extra) > 0 {
+		plugins = extra[0]
+	}
+
 	var err error
 	stackConfig := StackConfig{
 		AdditionalCfnResources: map[string]interface{}{},
 	}
 
-	if stackConfig.Config, err = c.Config(); err != nil {
+	if stackConfig.Config, err = c.Config(plugins); err != nil {
 		return nil, err
 	}
 
@@ -809,16 +832,20 @@ func (c Cluster) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	return &stackConfig, nil
 }
 
-// StackConfig contains configuration parameters available when rendering userdata injected into a node from golang text templates
+// Config contains configuration parameters available when rendering userdata injected into a controller or an etcd node from golang text templates
 type Config struct {
 	Cluster
 
 	AdminAPIEndpoint derived.APIEndpoint
 	APIEndpoints     derived.APIEndpoints
 
+	// EtcdNodes is the golang-representation of etcd nodes, which is used to differentiate unique etcd nodes
+	// This is used to simplify templating of the control-plane stack template.
 	EtcdNodes []derived.EtcdNode
 
 	AssetsConfig *CompactAssets
+
+	KubeAwsPlugins map[string]*api.Plugin
 }
 
 // StackName returns the logical name of a CloudFormation stack resource in a root stack template
@@ -1433,6 +1460,164 @@ func (c *Cluster) ValidateExistingVPC(existingVPCCIDR string, existingSubnetCIDR
 // ManageELBLogicalNames returns all the logical names of the cfn resources corresponding to ELBs managed by kube-aws for API endpoints
 func (c *Config) ManagedELBLogicalNames() []string {
 	return c.APIEndpoints.ManagedELBLogicalNames()
+}
+
+type pluggedInFile struct {
+	Path    string
+	Content pluggedInFileContent
+}
+
+type pluggedInFileContent struct {
+	bytes []byte
+}
+
+func (c pluggedInFileContent) ToBase64() pluggedInFileContent {
+	bytes := []byte(base64.StdEncoding.EncodeToString(c.bytes))
+	return pluggedInFileContent{
+		bytes: bytes,
+	}
+}
+
+func (c pluggedInFileContent) ToGzip() pluggedInFileContent {
+	bytes, err := gzipcompressor.BytesToBytes(c.bytes)
+	if err != nil {
+		panic(fmt.Errorf("Unexpected error in ToGzip: %v", err))
+	}
+	return pluggedInFileContent{
+		bytes: bytes,
+	}
+}
+
+func (c pluggedInFileContent) String() string {
+	return string(c.bytes)
+}
+
+type kubernetesManifestPlugin struct {
+	Manifests []pluggedInKubernetesManifest
+}
+
+func (p kubernetesManifestPlugin) ManifestListFile() pluggedInFile {
+	paths := []string{}
+	for _, m := range p.Manifests {
+		paths = append(paths, m.ManifestFile.Path)
+	}
+	bytes := []byte(strings.Join(paths, "\n"))
+	return pluggedInFile{
+		Path:    p.listFilePath(),
+		Content: pluggedInFileContent{bytes: bytes},
+	}
+}
+
+func (p kubernetesManifestPlugin) listFilePath() string {
+	return "/srv/kube-aws/plugins/kubernetes-manifests"
+}
+
+func (p kubernetesManifestPlugin) Directory() string {
+	return filepath.Dir(p.listFilePath())
+}
+
+type pluggedInKubernetesManifest struct {
+	ManifestFile pluggedInFile
+}
+
+type helmReleasePlugin struct {
+	Releases []pluggedInHelmRelease
+}
+
+func (p helmReleasePlugin) ReleaseListFile() pluggedInFile {
+	paths := []string{}
+	for _, r := range p.Releases {
+		paths = append(paths, r.ReleaseFile.Path)
+	}
+	bytes := []byte(strings.Join(paths, "\n"))
+	return pluggedInFile{
+		Path:    p.listFilePath(),
+		Content: pluggedInFileContent{bytes: bytes},
+	}
+}
+
+func (p helmReleasePlugin) listFilePath() string {
+	return "/srv/kube-aws/plugins/helm-releases"
+}
+
+func (p helmReleasePlugin) Directory() string {
+	return filepath.Dir(p.listFilePath())
+}
+
+type pluggedInHelmRelease struct {
+	ValuesFile  pluggedInFile
+	ReleaseFile pluggedInFile
+}
+
+func (c *Config) KubernetesManifestPlugin() kubernetesManifestPlugin {
+	manifests := []pluggedInKubernetesManifest{}
+	for pluginName, _ := range c.PluginConfigs {
+		plugin, ok := c.KubeAwsPlugins[pluginName]
+		if !ok {
+			panic(fmt.Errorf("Plugin %s is requested but not loaded. Probably a typo in the plugin name inside cluster.yaml?", pluginName))
+		}
+		for _, manifestConfig := range plugin.Configuration.Kubernetes.Manifests {
+			bytes := []byte(manifestConfig.Contents.Inline)
+			m := pluggedInKubernetesManifest{
+				ManifestFile: pluggedInFile{
+					Path: filepath.Join("/srv/kube-aws/plugins", plugin.Metadata.Name, manifestConfig.Name),
+					Content: pluggedInFileContent{
+						bytes: bytes,
+					},
+				},
+			}
+			manifests = append(manifests, m)
+		}
+	}
+	p := kubernetesManifestPlugin{
+		Manifests: manifests,
+	}
+	return p
+}
+
+func (c *Config) HelmReleasePlugin() helmReleasePlugin {
+	releases := []pluggedInHelmRelease{}
+	for pluginName, _ := range c.PluginConfigs {
+		plugin := c.KubeAwsPlugins[pluginName]
+		for _, releaseConfig := range plugin.Configuration.Helm.Releases {
+			valuesFilePath := filepath.Join("/srv/kube-aws/plugins", plugin.Metadata.Name, "helm", "releases", releaseConfig.Name, "values.yaml")
+			valuesFileContent, err := json.Marshal(releaseConfig.Values)
+			if err != nil {
+				panic(fmt.Errorf("Unexpected error in HelmReleasePlugin: %v", err))
+			}
+			releaseFileData := map[string]interface{}{
+				"values": map[string]string{
+					"file": valuesFilePath,
+				},
+				"chart": map[string]string{
+					"name":    releaseConfig.Name,
+					"version": releaseConfig.Version,
+				},
+			}
+			releaseFilePath := filepath.Join("/srv/kube-aws/plugins", plugin.Metadata.Name, "helm", "releases", releaseConfig.Name, "release.json")
+			releaseFileContent, err := json.Marshal(releaseFileData)
+			if err != nil {
+				panic(fmt.Errorf("Unexpected error in HelmReleasePlugin: %v", err))
+			}
+			r := pluggedInHelmRelease{
+				ValuesFile: pluggedInFile{
+					Path: valuesFilePath,
+					Content: pluggedInFileContent{
+						bytes: valuesFileContent,
+					},
+				},
+				ReleaseFile: pluggedInFile{
+					Path: releaseFilePath,
+					Content: pluggedInFileContent{
+						bytes: releaseFileContent,
+					},
+				},
+			}
+			releases = append(releases, r)
+		}
+	}
+	p := helmReleasePlugin{}
+	return p
 }
 
 func WithTrailingDot(s string) string {

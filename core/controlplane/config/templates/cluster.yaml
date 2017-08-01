@@ -986,6 +986,12 @@ worker:
 #  tag: 1.2
 #  rktPullDocker: false
 
+# Helm image repository to use.
+#helmImage:
+#  repo: quay.io/kube-aws/helm
+#  tag: v2.5.1
+#  rktPullDocker: false
+
 # Heapster image repository to use.
 #heapsterImage:
 #  repo: gcr.io/google_containers/heapster

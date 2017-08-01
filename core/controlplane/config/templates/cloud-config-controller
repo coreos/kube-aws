@@ -296,6 +296,22 @@ coreos:
         ExecStartPre=/usr/bin/curl -s -f http://127.0.0.1:8080/version
         ExecStart=/opt/bin/install-kube-system
 
+    - name: apply-kube-aws-plugins.service
+      command: start
+      runtime: true
+      content: |
+        [Unit]
+        Wants=install-kube-system.service
+        After=install-kube-system.service
+
+        [Service]
+        Type=simple
+        StartLimitInterval=0
+        RestartSec=10
+        Restart=on-failure
+        ExecStartPre=/usr/local/systemctl is-active install-kube-system.service
+        ExecStart=/opt/bin/apply-kube-aws-plugins
+
 {{ if $.ElasticFileSystemID }}
     - name: rpc-statd.service
       command: start
@@ -664,6 +680,42 @@ write_files:
         kubectl apply -f "${mfdir}/dex-deployment.yaml";
       fi
       {{ end }}
+
+  - path: /opt/bin/apply-kube-aws-plugins
+    permissions: 0700
+    owner: root:root
+    content: |
+      #!/bin/bash -vxe
+
+      kubectl() {
+          /usr/bin/docker run --rm --net=host \
+            -v /etc/resolv.conf:/etc/resolv.conf \
+            -v {{.KubernetesManifestPlugin.Directory}}:{{.KubernetesManifestPlugin.Directory}} \
+            {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl "$@"
+      }
+
+      helm() {
+          /usr/bin/docker run --rm --net=host \
+            -v /etc/resolv.conf:/etc/resolv.conf \
+            -v {{.HelmReleasePlugin.Directory}}:{{.HelmReleasePlugin.Directory}} \
+            {{.HelmImage.RepoWithTag}} helm "$@"
+      }
+
+      while read m || [[ -n $m ]]; do
+        kubectl apply -f $m
+      done <{{.KubernetesManifestPlugin.ManifestListFile.Path}}
+
+      while read r || [[ -n $r ]]; do
+        release_name=$(jq .name $r)
+        chart_name=$(jq .chart.name $r)
+        chart_version=$(jq .chart.version $r)
+        values_file=$(jq .values.file $r)
+        if helm status $release_name; then
+          helm upgrade $release_name $chart_name --version $chart_version -f $values_file
+        else
+          helm install $release_name $chart_name --version $chart_version -f $values_file
+        fi
+      done <{{.HelmReleasePlugin.ReleaseListFile.Path}}
 
   - path: /etc/kubernetes/cni/docker_opts_cni.env
     content: |
@@ -2219,6 +2271,33 @@ write_files:
           type: ClusterIP
         status:
           loadBalancer: {}
+
+  - path: {{.KubernetesManifestPlugin.ManifestListFile.Path}}
+    encoding: gzip+base64
+    content: {{.KubernetesManifestPlugin.ManifestListFile.Content.ToGzip.ToBase64}}
+
+{{ range $m := .KubernetesManifestPlugin.Manifests }}
+{{ $f := $m.ManifestFile }}
+  - path: {{$f.Path}}
+    encoding: gzip+base64
+    content: {{$f.Content.ToGzip.ToBase64}}
+{{ end }}
+
+  - path: {{.HelmReleasePlugin.ReleaseListFile.Path}}
+    encoding: gzip+base64
+    content: {{.HelmReleasePlugin.ReleaseListFile.Content.ToGzip.ToBase64}}
+
+
+{{ range $r := .HelmReleasePlugin.Releases }}
+{{ $f := $r.ReleaseFile }}
+  - path: {{$f.Path}}
+    encoding: gzip+base64
+    content: {{$f.Content.ToGzip.ToBase64}}
+{{ $f := $r.ValuesFile }}
+  - path: {{$f.Path}}
+    encoding: gzip+base64
+    content: {{$f.Content.ToGzip.ToBase64}}
+{{ end }}
 
 {{ if .AssetsConfig.HasTLSBootstrapToken }}
   - path: /etc/kubernetes/auth/kubelet-tls-bootstrap-token.tmp{{if .AssetsEncryptionEnabled}}.enc{{end}}

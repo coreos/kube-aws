@@ -11,6 +11,8 @@ import (
 	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/plugin"
+	"github.com/kubernetes-incubator/kube-aws/plugin/api"
 	"gopkg.in/yaml.v2"
 )
 
@@ -30,6 +32,7 @@ type Config struct {
 	*controlplane.Cluster
 	NodePools         []*nodepool.ProvidedConfig
 	model.UnknownKeys `yaml:",inline"`
+	Plugins           []*api.Plugin
 }
 
 type unknownKeysSupport interface {
@@ -50,7 +53,7 @@ func newDefaultUnmarshalledConfig() *UnmarshalledConfig {
 	}
 }
 
-func ConfigFromBytes(data []byte) (*Config, error) {
+func ConfigFromBytes(data []byte, plugins []*api.Plugin) (*Config, error) {
 	c := newDefaultUnmarshalledConfig()
 	if err := yaml.Unmarshal(data, c); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
@@ -62,7 +65,7 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 		return nil, err
 	}
 
-	cpConfig, err := cpCluster.Config()
+	cpConfig, err := cpCluster.Config(plugins)
 	if err != nil {
 		return nil, err
 	}
@@ -157,6 +160,8 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 		return nil, err
 	}
 
+	cfg.Plugins = plugins
+
 	return cfg, nil
 }
 
@@ -169,8 +174,8 @@ func failFastWhenUnknownKeysFound(vs []unknownKeyValidation) error {
 	return nil
 }
 
-func ConfigFromBytesWithEncryptService(data []byte, encryptService controlplane.EncryptService) (*Config, error) {
-	c, err := ConfigFromBytes(data)
+func ConfigFromBytesWithEncryptService(data []byte, plugins []*api.Plugin, encryptService controlplane.EncryptService) (*Config, error) {
+	c, err := ConfigFromBytes(data, plugins)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +195,12 @@ func ConfigFromFile(configPath string) (*Config, error) {
 		return nil, err
 	}
 
-	c, err := ConfigFromBytes(data)
+	plugins, err := plugin.LoadAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load plugins: %v", err)
+	}
+
+	c, err := ConfigFromBytes(data, plugins)
 	if err != nil {
 		return nil, fmt.Errorf("file %s: %v", configPath, err)
 	}

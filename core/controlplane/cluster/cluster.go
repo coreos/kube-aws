@@ -125,7 +125,7 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins [
 	// TODO Do this in a cleaner way e.g. in config.go
 	clusterRef.KubeResourcesAutosave.S3Path = model.NewS3Folders(opts.S3URI, clusterRef.ClusterName).ClusterBackups().Path()
 
-	stackConfig, err := clusterRef.StackConfig(opts)
+	stackConfig, err := clusterRef.StackConfig(opts, plugins)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins [
 	// * `c.StackConfig.CustomSystemdUnits` results in an `ambiguous selector ` error
 	// * `c.Controller.CustomSystemdUnits = controllerUnits` and `c.ClusterRef.Controller.CustomSystemdUnits = controllerUnits` results in modifying invisible/duplicate CustomSystemdSettings
 	for _, p := range plugins {
-		if enabled, pc := p.EnabledIn(c.Plugins); enabled {
+		if enabled, pc := p.EnabledIn(c.PluginConfigs); enabled {
 			values := p.Spec.Values.Merge(pc.Values)
 
 			{

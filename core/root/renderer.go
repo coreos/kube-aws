@@ -3,6 +3,7 @@ package root
 import (
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root/render"
+	"github.com/kubernetes-incubator/kube-aws/plugin/api"
 )
 
 func StackAssetsRendererFromFile(configPath string) (render.StackRenderer, error) {
@@ -10,7 +11,7 @@ func StackAssetsRendererFromFile(configPath string) (render.StackRenderer, error
 	if err != nil {
 		return nil, err
 	}
-	c, err := cluster.Config()
+	c, err := cluster.Config([]*api.Plugin{})
 	if err != nil {
 		return nil, err
 	}

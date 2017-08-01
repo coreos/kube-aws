@@ -17,7 +17,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/core/root/defaults"
 	"github.com/kubernetes-incubator/kube-aws/filereader/jsontemplate"
 	"github.com/kubernetes-incubator/kube-aws/model"
-	"github.com/kubernetes-incubator/kube-aws/plugin"
+	"github.com/kubernetes-incubator/kube-aws/plugin/api"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -121,10 +121,7 @@ func ClusterFromFile(configPath string, opts options, awsDebug bool) (Cluster, e
 }
 
 func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster, error) {
-	plugins, err := plugin.LoadAll()
-	if err != nil {
-		return nil, fmt.Errorf("failed to load plugins: %v", err)
-	}
+	plugins := cfg.Plugins
 
 	cpOpts := controlplane_cfg.StackTemplateOptions{
 		AssetsDir:             opts.AssetsDir,
@@ -170,7 +167,7 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 
 	additionalCfnResources := map[string]interface{}{}
 	for _, p := range plugins {
-		if enabled, pc := p.EnabledIn(cp.Plugins); enabled {
+		if enabled, pc := p.EnabledIn(cp.PluginConfigs); enabled {
 			values := p.Spec.Values.Merge(pc.Values)
 
 			{
@@ -233,7 +230,7 @@ func (c clusterImpl) Create() error {
 
 func (c clusterImpl) Info() (*Info, error) {
 	// TODO Cleaner way to obtain this dependency
-	cpConfig, err := c.controlPlane.Cluster.Config()
+	cpConfig, err := c.controlPlane.Cluster.Config([]*api.Plugin{})
 	if err != nil {
 		return nil, err
 	}

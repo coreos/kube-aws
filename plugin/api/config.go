@@ -132,12 +132,25 @@ type Append struct {
 type Helm struct {
 	// Releases is a list of helm releases to be maintained on the cluster.
 	// Note that the list is sorted by their names by kube-aws so that it won't result in unnecessarily node replacements.
-	Releases `yaml:"releases,omitempty"`
+	Releases HelmReleases `yaml:"releases,omitempty"`
 }
 
-type Releases []Release
+func (k *Helm) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type t Helm
+	work := t(Helm{
+		Releases: HelmReleases{},
+	})
+	if err := unmarshal(&work); err != nil {
+		return fmt.Errorf("failed to parse helm plugin config: %v", err)
+	}
+	*k = Helm(work)
 
-type Release struct {
+	return nil
+}
+
+type HelmReleases []HelmRelease
+
+type HelmRelease struct {
 	Name    string `yaml:"name,omitempty"`
 	Chart   string `yaml:"chart,omitempty"`
 	Version string `yaml:"version,omitempty"`
@@ -148,6 +161,19 @@ type Kubernetes struct {
 	// Manifests is a list of manifests to be installed to the cluster.
 	// Note that the list is sorted by their names by kube-aws so that it won't result in unnecessarily node replacements.
 	Manifests KubernetesManifests `yaml:"manifests,omitempty"`
+}
+
+func (k *Kubernetes) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type t Kubernetes
+	work := t(Kubernetes{
+		Manifests: KubernetesManifests{},
+	})
+	if err := unmarshal(&work); err != nil {
+		return fmt.Errorf("failed to parse kubernetes plugin config: %v", err)
+	}
+	*k = Kubernetes(work)
+
+	return nil
 }
 
 type KubernetesManifests []KubernetesManifest
