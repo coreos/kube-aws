@@ -383,6 +383,22 @@ coreos:
         RemainAfterExit=true
         ExecStart=/opt/bin/add-to-load-balancers
 {{end}}
+
+{{if .TargetGroup.Enabled}}
+    - name: add-to-target-groups.service
+      enable: true
+      command: start
+      runtime: true
+      content: |
+        [Unit]
+        Description=Add this spot instance to target groups
+        After=network-online.target
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=true
+        ExecStart=/opt/bin/add-to-target-groups
+{{end}}
 {{end}}
 
 {{ if $.ElasticFileSystemID }}
@@ -840,6 +856,38 @@ write_files:
            echo done.'
 
       sudo rkt rm --uuid-file=/var/run/coreos/add-to-load-balancers.uuid
+{{end}}
+
+{{if .Experimental.TargetGroup.Enabled}}
+  - path: /opt/bin/add-to-target-groups
+    owner: root:root
+    permissions: 0700
+    content: |
+      #!/bin/bash -e
+
+      instance_id=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+
+      sudo rkt run \
+        --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
+        --mount=volume=ssl,target=/etc/kubernetes/ssl \
+        --uuid-file-save=/var/run/coreos/add-to-target-groups.uuid \
+        --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
+        --net=host \
+        --trust-keys-from-https \
+        --insecure-options=ondisk \
+        {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
+          -vxec \
+          'echo adding this spot instance to target groups
+           instance_id="'$instance_id'"
+           tgs=({{range $i, $tg := .Experimental.TargetGroup.Arns}}"{{$tg}}" {{end}})
+           add_to_tg="/usr/bin/aws --region {{.Region}} elbv2 register-targets --targets Id=$instance_id --target-group-arn"
+           for tg in ${tgs[@]}; do
+             echo "$tg"
+             $add_to_tg "$tg"
+           done
+           echo done.'
+
+      sudo rkt rm --uuid-file=/var/run/coreos/add-to-target-groups.uuid
 {{end}}
 {{end}}
 
