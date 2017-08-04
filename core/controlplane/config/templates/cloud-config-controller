@@ -1721,6 +1721,17 @@ write_files:
           - --advertise-address=$private_ipv4
           - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }},ResourceQuota,{{if .Experimental.Admission.DenyEscalatingExec.Enabled}}DenyEscalatingExec{{end}}
           - --anonymous-auth=false
+          {{- if .Experimental.OIDC.Enabled }}
+          - --oidc-issuer-url={{.Experimental.OIDC.IssuerURL}}
+          - --oidc-client-id={{.Experimental.OIDC.ClientID}}
+          - --oidc-username-claim={{.Experimental.OIDC.UsernameClaim}}
+          {{- if .Experimental.OIDC.GroupsClaim }}
+          - --oidc-groups-claim={{.Experimental.OIDC.GroupsClaim}}
+          {{- end }}
+          {{- if .Experimental.OIDC.SelfSignedCa }}
+          - --oidc-ca-file=/etc/kubernetes/ssl/ca.pem
+          {{- end }}
+          {{ end }}
           {{if .Experimental.Dex.Enabled}}
           - --oidc-issuer-url={{.Experimental.Dex.Url}}
           - --oidc-client-id={{.Experimental.Dex.ClientId}}

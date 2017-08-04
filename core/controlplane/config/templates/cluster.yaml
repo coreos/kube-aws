@@ -1174,7 +1174,18 @@ addons:
 #     enabled: true
 #     # Maximum time to wait, in minutes, for the node to be completely drained. Must be an integer between 1 and 60.
 #     drainTimeout: 5
-#   # Enable dex  integration - https://github.com/coreos/dex
+#
+#   # Configure OpenID Connect (OIDC) in the Kubernetes API server without Dex
+#   # If you want to use Dex please enable via the `dex` config section
+#   oidc:
+#     enabled: true
+#     issuerUrl: https://accounts.google.com
+#     clientId: YOUR_CLIENT_ID.apps.googleusercontent.com
+#     usernameClaim: email
+#     groupsClaim: ""
+#     selfSignedCa: false
+#
+#   # Enable dex integration - https://github.com/coreos/dex
 #   # Configure OpenID Connect token authenticator plugin in Kubernetes API server.
 #   # Notice: always use "https" for the "url", otherwise the Kubernetes API server will not start correctly.
 #   # Please set selfSignedCa to false if you plan to expose dex service using a LoadBalancer or Ingress with certificates signed by a trusted CA.
