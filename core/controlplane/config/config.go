@@ -89,16 +89,13 @@ func NewDefaultCluster() *Cluster {
 				Enabled: false,
 			},
 		},
-		Dex: model.Dex{
-			Enabled:         false,
-			Url:             "https://dex.example.com",
-			ClientId:        "example-app",
-			Username:        "email",
-			Groups:          "groups",
-			SelfSignedCa:    true,
-			Connectors:      []model.Connector{},
-			StaticClients:   []model.StaticClient{},
-			StaticPasswords: []model.StaticPassword{},
+		Oidc: model.Oidc{
+			Enabled:      false,
+			Url:          "https://accounts.google.com",
+			ClientId:     "kubernetes",
+			Username:     "sub",
+			Groups:       "groups",
+			SelfSignedCa: false,
 		},
 	}
 
@@ -150,7 +147,6 @@ func NewDefaultCluster() *Cluster {
 			KubeDashboardImage:                 model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.6.1", RktPullDocker: false},
 			PauseImage:                         model.Image{Repo: "gcr.io/google_containers/pause-amd64", Tag: "3.0", RktPullDocker: false},
 			FlannelImage:                       model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.7.1", RktPullDocker: false},
-			DexImage:                           model.Image{Repo: "quay.io/coreos/dex", Tag: "v2.4.1", RktPullDocker: false},
 			JournaldCloudWatchLogsImage:        model.Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
 		},
 		KubeClusterSettings: KubeClusterSettings{
@@ -460,7 +456,6 @@ type DeploymentSettings struct {
 	KubeDashboardImage                 model.Image `yaml:"kubeDashboardImage,omitempty"`
 	PauseImage                         model.Image `yaml:"pauseImage,omitempty"`
 	FlannelImage                       model.Image `yaml:"flannelImage,omitempty"`
-	DexImage                           model.Image `yaml:"dexImage,omitempty"`
 	JournaldCloudWatchLogsImage        model.Image `yaml:"journaldCloudWatchLogsImage,omitempty"`
 }
 
@@ -531,7 +526,7 @@ type Experimental struct {
 	TargetGroup                 TargetGroup                    `yaml:"targetGroup"`
 	NodeDrainer                 model.NodeDrainer              `yaml:"nodeDrainer"`
 	Plugins                     Plugins                        `yaml:"plugins"`
-	Dex                         model.Dex                      `yaml:"dex"`
+	Oidc                        model.Oidc                     `yaml:"oidc"`
 	DisableSecurityGroupIngress bool                           `yaml:"disableSecurityGroupIngress"`
 	NodeMonitorGracePeriod      string                         `yaml:"nodeMonitorGracePeriod"`
 	model.UnknownKeys           `yaml:",inline"`

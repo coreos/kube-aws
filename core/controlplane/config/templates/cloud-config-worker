@@ -726,14 +726,14 @@ write_files:
     encoding: gzip+base64
     content: {{.AssetsConfig.CACert}}
 
-{{ if .Experimental.Dex.Enabled }}
-  - path: /etc/kubernetes/ssl/dex.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+{{ if .Experimental.Oidc.Enabled }}
+  - path: /etc/kubernetes/ssl/oidc.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.AssetsConfig.DexCert}}
+    content: {{.AssetsConfig.OidcCert}}
 
-  - path: /etc/kubernetes/ssl/dex-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/ssl/oidc-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
-    content: {{.AssetsConfig.DexKey}}
+    content: {{.AssetsConfig.OidcKey}}
 {{ end }}
 {{ end }}
 

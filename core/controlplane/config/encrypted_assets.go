@@ -35,8 +35,8 @@ type RawAssetsOnMemory struct {
 	EtcdClientCert []byte
 	EtcdKey        []byte
 	EtcdClientKey  []byte
-	DexCert        []byte
-	DexKey         []byte
+	OidcCert       []byte
+	OidcKey        []byte
 
 	// Other assets.
 	AuthTokens        []byte
@@ -57,8 +57,8 @@ type RawAssetsOnDisk struct {
 	EtcdClientCert RawCredentialOnDisk
 	EtcdKey        RawCredentialOnDisk
 	EtcdClientKey  RawCredentialOnDisk
-	DexCert        RawCredentialOnDisk
-	DexKey         RawCredentialOnDisk
+	OidcCert       RawCredentialOnDisk
+	OidcKey        RawCredentialOnDisk
 
 	// Other assets.
 	AuthTokens        RawCredentialOnDisk
@@ -79,8 +79,8 @@ type EncryptedAssetsOnDisk struct {
 	EtcdClientCert EncryptedCredentialOnDisk
 	EtcdKey        EncryptedCredentialOnDisk
 	EtcdClientKey  EncryptedCredentialOnDisk
-	DexCert        EncryptedCredentialOnDisk
-	DexKey         EncryptedCredentialOnDisk
+	OidcCert       EncryptedCredentialOnDisk
+	OidcKey        EncryptedCredentialOnDisk
 
 	// Other encrypted assets.
 	AuthTokens        EncryptedCredentialOnDisk
@@ -101,8 +101,8 @@ type CompactAssets struct {
 	EtcdClientCert string
 	EtcdClientKey  string
 	EtcdKey        string
-	DexCert        string
-	DexKey         string
+	OidcCert       string
+	OidcKey        string
 
 	// Encrypted -> gzip -> base64 encoded assets.
 	AuthTokens        string
@@ -160,7 +160,7 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 			return nil, err
 		}
 	}
-	apiServerKey, workerKey, adminKey, etcdKey, etcdClientKey, dexKey := keys[0], keys[1], keys[2], keys[3], keys[4], keys[5]
+	apiServerKey, workerKey, adminKey, etcdKey, etcdClientKey, oidcKey := keys[0], keys[1], keys[2], keys[3], keys[4], keys[5]
 
 	//Compute kubernetesServiceIP from serviceCIDR
 	_, serviceNet, err := net.ParseCIDR(c.ServiceCIDR)
@@ -235,13 +235,13 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 	if err != nil {
 		return nil, err
 	}
-	dexConfig := tlsutil.ServerCertConfig{
-		CommonName: "dex",
-		DNSNames:   []string{c.Experimental.Dex.DexDNSNames()},
+	oidcConfig := tlsutil.ServerCertConfig{
+		CommonName: "oidc",
+		DNSNames:   []string{c.Experimental.Oidc.OidcDNSNames()},
 		Duration:   certDuration,
 	}
 
-	dexCert, err := tlsutil.NewSignedServerCertificate(dexConfig, dexKey, caCert, caKey)
+	oidcCert, err := tlsutil.NewSignedServerCertificate(oidcConfig, oidcKey, caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -260,14 +260,14 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 		AdminCert:      tlsutil.EncodeCertificatePEM(adminCert),
 		EtcdCert:       tlsutil.EncodeCertificatePEM(etcdCert),
 		EtcdClientCert: tlsutil.EncodeCertificatePEM(etcdClientCert),
-		DexCert:        tlsutil.EncodeCertificatePEM(dexCert),
+		OidcCert:       tlsutil.EncodeCertificatePEM(oidcCert),
 		CAKey:          tlsutil.EncodePrivateKeyPEM(caKey),
 		APIServerKey:   tlsutil.EncodePrivateKeyPEM(apiServerKey),
 		WorkerKey:      tlsutil.EncodePrivateKeyPEM(workerKey),
 		AdminKey:       tlsutil.EncodePrivateKeyPEM(adminKey),
 		EtcdKey:        tlsutil.EncodePrivateKeyPEM(etcdKey),
 		EtcdClientKey:  tlsutil.EncodePrivateKeyPEM(etcdClientKey),
-		DexKey:         tlsutil.EncodePrivateKeyPEM(dexKey),
+		OidcKey:        tlsutil.EncodePrivateKeyPEM(oidcKey),
 
 		AuthTokens:        []byte(authTokens),
 		TLSBootstrapToken: []byte(tlsBootstrapToken),
@@ -310,8 +310,8 @@ func ReadRawAssets(dirname string, manageCertificates bool) (*RawAssetsOnDisk, e
 			{"etcd-key.pem", &r.EtcdKey, nil},
 			{"etcd-client.pem", &r.EtcdClientCert, nil},
 			{"etcd-client-key.pem", &r.EtcdClientKey, nil},
-			{"dex.pem", &r.DexCert, nil},
-			{"dex-key.pem", &r.DexKey, nil},
+			{"oidc.pem", &r.OidcCert, nil},
+			{"oidc-key.pem", &r.OidcKey, nil},
 		}...)
 	}
 
@@ -362,8 +362,8 @@ func ReadOrEncryptAssets(dirname string, manageCertificates bool, encryptor Cach
 			{"etcd-key.pem", &r.EtcdKey, nil},
 			{"etcd-client.pem", &r.EtcdClientCert, nil},
 			{"etcd-client-key.pem", &r.EtcdClientKey, nil},
-			{"dex.pem", &r.DexCert, nil},
-			{"dex-key.pem", &r.DexKey, nil},
+			{"oidc.pem", &r.OidcCert, nil},
+			{"oidc-key.pem", &r.OidcKey, nil},
 		}...)
 	}
 
@@ -400,8 +400,8 @@ func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) error 
 		{"etcd-key.pem", r.EtcdKey},
 		{"etcd-client.pem", r.EtcdClientCert},
 		{"etcd-client-key.pem", r.EtcdClientKey},
-		{"dex.pem", r.DexCert},
-		{"dex-key.pem", r.DexKey},
+		{"oidc.pem", r.OidcCert},
+		{"oidc-key.pem", r.OidcKey},
 
 		{"tokens.csv", r.AuthTokens},
 		{"kubelet-tls-bootstrap-token", r.TLSBootstrapToken},
@@ -433,8 +433,8 @@ func (r *EncryptedAssetsOnDisk) WriteToDir(dirname string) error {
 		{"admin-key.pem", r.AdminKey},
 		{"etcd.pem", r.EtcdCert},
 		{"etcd-key.pem", r.EtcdKey},
-		{"dex.pem", r.DexCert},
-		{"dex-key.pem", r.DexKey},
+		{"oidc.pem", r.OidcCert},
+		{"oidc-key.pem", r.OidcKey},
 		{"etcd-client.pem", r.EtcdClientCert},
 		{"etcd-client-key.pem", r.EtcdClientKey},
 
@@ -481,8 +481,8 @@ func (r *RawAssetsOnDisk) Compact() (*CompactAssets, error) {
 		EtcdClientCert: compact(r.EtcdClientCert),
 		EtcdClientKey:  compact(r.EtcdClientKey),
 		EtcdKey:        compact(r.EtcdKey),
-		DexCert:        compact(r.DexCert),
-		DexKey:         compact(r.DexKey),
+		OidcCert:       compact(r.OidcCert),
+		OidcKey:        compact(r.OidcKey),
 
 		AuthTokens:        compact(r.AuthTokens),
 		TLSBootstrapToken: compact(r.TLSBootstrapToken),
@@ -524,8 +524,8 @@ func (r *EncryptedAssetsOnDisk) Compact() (*CompactAssets, error) {
 		EtcdClientCert: compact(r.EtcdClientCert),
 		EtcdClientKey:  compact(r.EtcdClientKey),
 		EtcdKey:        compact(r.EtcdKey),
-		DexCert:        compact(r.DexCert),
-		DexKey:         compact(r.DexKey),
+		OidcCert:       compact(r.OidcCert),
+		OidcKey:        compact(r.OidcKey),
 
 		AuthTokens:        compact(r.AuthTokens),
 		TLSBootstrapToken: compact(r.TLSBootstrapToken),

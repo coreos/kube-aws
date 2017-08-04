@@ -71,9 +71,9 @@ func TestTLSGeneration(t *testing.T) {
 			CertBytes: assets.EtcdCert,
 		},
 		{
-			Name:      "dex",
-			KeyBytes:  assets.DexKey,
-			CertBytes: assets.DexCert,
+			Name:      "oidc",
+			KeyBytes:  assets.OidcKey,
+			CertBytes: assets.OidcCert,
 		},
 	}
 
@@ -158,7 +158,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 
 			files := []string{
 				"ca", "admin", "admin-key", "worker", "worker-key", "apiserver", "apiserver-key",
-				"etcd", "etcd-key", "etcd-client", "etcd-client-key", "dex", "dex-key",
+				"etcd", "etcd-key", "etcd-client", "etcd-client-key", "oidc", "oidc-key",
 			}
 
 			for _, f := range files {
