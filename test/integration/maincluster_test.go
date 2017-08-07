@@ -3050,7 +3050,7 @@ worker:
   - name: pool1
     iam:
       role:
-        managedPolicies: 
+        managedPolicies:
          - arn: "arn:aws:iam::aws:policy/AdministratorAccess"
          - arn: "arn:aws:iam::000000000000:policy/myManagedPolicy"
 `,
@@ -4242,9 +4242,9 @@ addons:
 controller:
   iam:
     role:
-      name: foobarba
+      name: foobarba-foobarba-foobarba-foobarba-foobarba-foobarba
 `,
-			expectedErrorMessage: "IAM role name(=kubeaws-it-main-Controlplane-PRK1CVQNY7XZ-ap-northeast-1-foobarba) will be 65 characters long. It exceeds the AWS limit of 64 characters: cluster name(=kubeaws-it-main) + nested stack name(=Controlplane) + managed iam role name(=foobarba) should be less than or equal to 34",
+			expectedErrorMessage: "IAM role name(=ap-northeast-1-foobarba-foobarba-foobarba-foobarba-foobarba-foobarba) will be 68 characters long. It exceeds the AWS limit of 64 characters: region name(=ap-northeast-1) + managed iam role name(=foobarba-foobarba-foobarba-foobarba-foobarba-foobarba) should be less than or equal to 49",
 		},
 		{
 			context: "WithTooLongWorkerIAMRoleName",
@@ -4254,9 +4254,9 @@ worker:
   - name: pool1
     iam:
       role:
-        name: foobarbazbaraaa
+        name: foobarba-foobarba-foobarba-foobarba-foobarba-foobarbazzz
 `,
-			expectedErrorMessage: "IAM role name(=kubeaws-it-main-Pool1-PRK1CVQNY7XZ-ap-northeast-1-foobarbazbaraaa) will be 65 characters long. It exceeds the AWS limit of 64 characters: cluster name(=kubeaws-it-main) + nested stack name(=Pool1) + managed iam role name(=foobarbazbaraaa) should be less than or equal to 34",
+			expectedErrorMessage: "IAM role name(=ap-northeast-1-foobarba-foobarba-foobarba-foobarba-foobarba-foobarbazzz) will be 71 characters long. It exceeds the AWS limit of 64 characters: region name(=ap-northeast-1) + managed iam role name(=foobarba-foobarba-foobarba-foobarba-foobarba-foobarbazzz) should be less than or equal to 49",
 		},
 		{
 			context: "WithInvalidEtcdInstanceProfileArn",
