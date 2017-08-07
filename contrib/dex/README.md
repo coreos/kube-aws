@@ -1,5 +1,20 @@
+## Deploy Dex
+
+ 1. Edit the configMap `contrib/dex/dex.cm.yaml` according to your setup. By default only the GitHub provider and static clients are enabled.
+ If you have a different setup, please check [Dex's documentation](https://github.com/coreos/dex/tree/master/Documentation)
+ 
+ 2. Create a secret containing your [GitHub OAuth2 client credentials](https://github.com/settings/applications/new)
+ 
+     kubectl create secret \
+         generic github-client \
+         --from-literal=client-id=$GITHUB_CLIENT_ID \
+         --from-literal=client-secret=$GITHUB_CLIENT_SECRET
+         
+ 3. Deploy Dex: `kubectl apply -f contrib/dex/dex.de.yaml`
+ 
+ 
 ## Exposing DEX service
-After the cluster is up, you have to manually expose dex service using a ELB or Ingress.
+After Dex is deployed, you have to manually expose dex service using a ELB or Ingress.
 Faster is to use the `expose-service.sh` script or you can manually configure the services using the examples from `contrib/dex` directory.
 
 1. ELB

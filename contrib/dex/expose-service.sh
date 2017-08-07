@@ -80,7 +80,7 @@ do
             sed -i -e 's/dex.example.com/'"$endpoint"'/g' ingress/dex.ingress.yaml
 
             echo "Creating TLS secret"
-            kubectl create secret tls dex-tls-secret --cert=$credentials_path/dex.pem --key=$credentials_path/dex-key.pem -n kube-system
+            kubectl create secret tls dex-tls-secret --cert=$credentials_path/oidc.pem --key=$credentials_path/oidc-key.pem -n kube-system
 
             echo " Creating Ingress"
             kubectl apply -f ./ingress;
