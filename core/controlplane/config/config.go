@@ -93,7 +93,7 @@ func NewDefaultCluster() *Cluster {
 			Enabled:      false,
 			Url:          "https://accounts.google.com",
 			ClientId:     "kubernetes",
-			Username:     "sub",
+			Username:     "email",
 			Groups:       "groups",
 			SelfSignedCa: false,
 		},

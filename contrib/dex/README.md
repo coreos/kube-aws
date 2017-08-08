@@ -1,3 +1,16 @@
+## Configure Dex as a custom provider in cluster.yaml
+
+Example: 
+
+       oidc:
+         enabled: true
+         url: "https://dex.example.com"
+         clientId: "example-app"
+         username: "email"
+         groups: "groups"
+         selfSignedCa: false
+
+
 ## Deploy Dex
 
  1. Edit the configMap `contrib/dex/dex.cm.yaml` according to your setup. By default only the GitHub provider and static clients are enabled.
@@ -12,6 +25,9 @@
          
  3. Deploy Dex: `kubectl apply -f contrib/dex/dex.de.yaml`
  
+ **Deploy Dex using Helm**
+ 
+ For those who prefer deploying it using helm, Samsung-CNT has a [chart](https://github.com/samsung-cnct/chart-dex) available.
  
 ## Exposing DEX service
 After Dex is deployed, you have to manually expose dex service using a ELB or Ingress.

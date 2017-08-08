@@ -123,7 +123,7 @@ func TestMainClusterConfig(t *testing.T) {
 				Enabled:      false,
 				Url:          "https://accounts.google.com",
 				ClientId:     "kubernetes",
-				Username:     "sub",
+				Username:     "email",
 				Groups:       "groups",
 				SelfSignedCa: false,
 			},
@@ -1168,7 +1168,7 @@ experimental:
     enabled: true
     url: "https://accounts.google.com"
     clientId: "kubernetes"
-    username: "sub"
+    username: "email"
     groups: "groups"
     SelfSignedCa: false
   nodeDrainer:
@@ -1248,7 +1248,7 @@ worker:
 							Enabled:      true,
 							Url:          "https://accounts.google.com",
 							ClientId:     "kubernetes",
-							Username:     "sub",
+							Username:     "email",
 							Groups:       "groups",
 							SelfSignedCa: false,
 						},
