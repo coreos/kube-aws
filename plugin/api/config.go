@@ -300,15 +300,7 @@ type File struct {
 }
 
 type IAM struct {
-	// Policies is a list of IAM policies for the IAM role associated to the nodes
-	// Each policy must be a valid go text template producing a valid json object
-	Policies IAMPolicies `yaml:"policies,omitempty"`
-}
-
-type IAMPolicies []IAMPolicy
-
-type IAMPolicy struct {
-	Contents `yaml:",inline"`
+	Policy model.IAMPolicy `yaml:"policy,omitempty"`
 }
 
 type Systemd struct {

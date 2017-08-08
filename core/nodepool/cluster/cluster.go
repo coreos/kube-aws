@@ -115,6 +115,7 @@ func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOption
 				}
 				c.StackConfig.CustomFiles = append(c.StackConfig.CustomFiles, f)
 			}
+			c.StackConfig.IAMConfig.Policy.Statements = append(c.StackConfig.IAMConfig.Policy.Statements, p.Spec.Node.Roles.Worker.IAM.Policy.Statements...)
 			for k, v := range p.Spec.Node.Roles.Worker.Kubelet.NodeLabels {
 				c.NodeSettings.NodeLabels[k] = v
 			}

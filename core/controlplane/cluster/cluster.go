@@ -195,6 +195,7 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins [
 				}
 				c.StackConfig.Controller.CustomFiles = append(c.StackConfig.Controller.CustomFiles, f)
 			}
+			c.StackConfig.Controller.IAMConfig.Policy.Statements = append(c.StackConfig.Controller.IAMConfig.Policy.Statements, p.Spec.Node.Roles.Controller.IAM.Policy.Statements...)
 
 			for k, v := range p.Spec.Node.Roles.Controller.Kubelet.NodeLabels {
 				c.StackConfig.Controller.NodeLabels[k] = v
@@ -222,6 +223,7 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins [
 				}
 				c.StackConfig.Etcd.CustomFiles = append(c.StackConfig.Etcd.CustomFiles, f)
 			}
+			c.StackConfig.Etcd.IAMConfig.Policy.Statements = append(c.StackConfig.Etcd.IAMConfig.Policy.Statements, p.Spec.Node.Roles.Etcd.IAM.Policy.Statements...)
 		}
 	}
 

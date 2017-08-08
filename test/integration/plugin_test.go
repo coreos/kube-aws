@@ -124,6 +124,14 @@ spec:
     node:
       roles:
         controller:
+          iam:
+            policy:
+              statements:
+              - actions:
+                - "ec2:Describe*"
+                effect: "Allow"
+                resources:
+                - "*"
           kubelet:
             nodeLabels:
               role: controller
@@ -145,6 +153,14 @@ spec:
                 source:
                   path: assets/controller/baz.txt
         etcd:
+          iam:
+            policy:
+              statements:
+              - actions:
+                - "ec2:Describe*"
+                effect: "Allow"
+                resources:
+                - "*"
           systemd:
             units:
             - name: save-queue-name.service
@@ -163,6 +179,14 @@ spec:
                 source:
                   path: assets/etcd/baz.txt
         worker:
+          iam:
+            policy:
+              statements:
+              - actions:
+                - "ec2:*"
+                effect: "Allow"
+                resources:
+                - "*"
           kubelet:
             nodeLabels:
               role: worker
@@ -248,6 +272,21 @@ spec:
 						}
 					}
 					{
+						e := model.IAMPolicyStatements{
+							model.IAMPolicyStatement{
+								Effect:    "Allow",
+								Actions:   []string{"ec2:Describe*"},
+								Resources: []string{"*"},
+							},
+						}
+						a := cp.StackConfig.Controller.IAMConfig.Policy.Statements
+						if !reflect.DeepEqual(e, a) {
+							t.Errorf("Unexpected controller iam policy statements from plugin: expected=%v actual=%v", e, a)
+						}
+					}
+
+					{
+
 						e := model.CustomFile{
 							Path:        "/var/kube-aws/bar.txt",
 							Permissions: 0644,
@@ -270,6 +309,20 @@ spec:
 						}
 					}
 					{
+						e := model.IAMPolicyStatements{
+							model.IAMPolicyStatement{
+								Effect:    "Allow",
+								Actions:   []string{"ec2:Describe*"},
+								Resources: []string{"*"},
+							},
+						}
+						a := cp.StackConfig.Etcd.IAMConfig.Policy.Statements
+						if !reflect.DeepEqual(e, a) {
+							t.Errorf("Unexpected etcd iam policy statements from plugin: expected=%v actual=%v", e, a)
+						}
+					}
+
+					{
 						e := model.CustomFile{
 							Path:        "/var/kube-aws/bar.txt",
 							Permissions: 0644,
@@ -289,6 +342,19 @@ spec:
 						a := np.StackConfig.CustomFiles[1]
 						if !reflect.DeepEqual(e, a) {
 							t.Errorf("Unexpected worker custom file from plugin: expected=%v actual=%v", e, a)
+						}
+					}
+					{
+						e := model.IAMPolicyStatements{
+							model.IAMPolicyStatement{
+								Effect:    "Allow",
+								Actions:   []string{"ec2:*"},
+								Resources: []string{"*"},
+							},
+						}
+						a := np.StackConfig.IAMConfig.Policy.Statements
+						if !reflect.DeepEqual(e, a) {
+							t.Errorf("Unexpected worker iam policy statements from plugin: expected=%v actual=%v", e, a)
 						}
 					}
 
@@ -319,6 +385,9 @@ spec:
 					if !strings.Contains(controlPlaneStackTemplate, `"QueueName":"baz1"`) {
 						t.Errorf("Invalid control-plane stack template: missing QueueName baz1: %v", controlPlaneStackTemplate)
 					}
+					if !strings.Contains(controlPlaneStackTemplate, `"Action":["ec2:Describe*"]`) {
+						t.Errorf("Invalid control-plane stack template: missing iam policy statement ec2:Describe*: %v", controlPlaneStackTemplate)
+					}
 
 					rootStackTemplate, err := c.RenderStackTemplateAsString()
 					if err != nil {
@@ -340,6 +409,12 @@ spec:
 					}
 					if !strings.Contains(nodePoolStackTemplate, `"QueueName":"baz2"`) {
 						t.Errorf("Invalid worker node pool stack template: missing QueueName baz2: %v", nodePoolStackTemplate)
+					}
+					if !strings.Contains(nodePoolStackTemplate, `"QueueName":"baz2"`) {
+						t.Errorf("Invalid worker node pool stack template: missing QueueName baz2: %v", nodePoolStackTemplate)
+					}
+					if !strings.Contains(nodePoolStackTemplate, `"Action":["ec2:*"]`) {
+						t.Errorf("Invalid worker node pool stack template: missing iam policy statement ec2:*: %v", nodePoolStackTemplate)
 					}
 
 					// A kube-aws plugin can inject node labels

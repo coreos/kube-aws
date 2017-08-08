@@ -167,6 +167,13 @@
         "PolicyDocument" :   {
           "Version":"2012-10-17",
           "Statement": [
+                {{range $s := .Controller.IAMConfig.Policy.Statements }}
+                {
+                  "Action": {{toJSON $s.Actions}},
+                  "Effect": {{toJSON $s.Effect}},
+                  "Resource": {{toJSON $s.Resources}}
+                },
+                {{end}}
                 {
                   "Action": "ec2:*",
                   "Effect": "Allow",
@@ -351,6 +358,13 @@
         "PolicyDocument" :   {
           "Version":"2012-10-17",
           "Statement": [
+            {{range $s := .Etcd.IAMConfig.Policy.Statements }}
+            {
+              "Action": {{toJSON $s.Actions}},
+              "Effect": {{toJSON $s.Effect}},
+              "Resource": {{toJSON $s.Resources}}
+            },
+            {{end}}
             {{if .AssetsEncryptionEnabled}}
             {
               "Action" : "kms:Decrypt",

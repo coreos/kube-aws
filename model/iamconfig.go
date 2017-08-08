@@ -10,6 +10,7 @@ type IAMConfig struct {
 	Role            IAMRole            `yaml:"role,omitempty"`
 	InstanceProfile IAMInstanceProfile `yaml:"instanceProfile,omitempty"`
 	UnknownKeys     `yaml:",inline"`
+	Policy          IAMPolicy
 }
 
 type IAMRole struct {
@@ -24,6 +25,20 @@ type IAMManagedPolicy struct {
 
 type IAMInstanceProfile struct {
 	ARN `yaml:",inline"`
+}
+
+type IAMPolicy struct {
+	// Statements is a list of IAM policy statements for the IAM policy associated to the nodes
+	// Each statement must be a valid go text template producing a valid json object
+	Statements IAMPolicyStatements `yaml:"statements,omitempty"`
+}
+
+type IAMPolicyStatements []IAMPolicyStatement
+
+type IAMPolicyStatement struct {
+	Actions   []string `yaml:"actions,omitempty"`
+	Effect    string   `yaml:"effect,omitempty"`
+	Resources []string `yaml:"resources,omitempty"`
 }
 
 func (c IAMConfig) Validate() error {
