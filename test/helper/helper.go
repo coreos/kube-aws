@@ -50,8 +50,9 @@ func WithDummyCredentials(fn func(dir string)) {
 }
 
 type TestPlugin struct {
-	Name string
-	Yaml string
+	Name  string
+	Yaml  string
+	Files map[string]string
 }
 
 func WithPlugins(plugins []TestPlugin, fn func()) {
@@ -75,6 +76,21 @@ func WithPlugins(plugins []TestPlugin, fn func()) {
 		pluginYamlFile := path.Join(pluginDir, "plugin.yaml")
 		if err := ioutil.WriteFile(pluginYamlFile, []byte(p.Yaml), 0644); err != nil {
 			panic(err)
+		}
+
+		files := p.Files
+		if files == nil {
+			files = map[string]string{}
+		}
+		for relFilePath, content := range files {
+			absFilePath := filepath.Join(pluginDir, relFilePath)
+			absDirPath := filepath.Dir(absFilePath)
+			if err := os.MkdirAll(absDirPath, 0755); err != nil {
+				panic(err)
+			}
+			if err := ioutil.WriteFile(absFilePath, []byte(content), 0644); err != nil {
+				panic(err)
+			}
 		}
 	}
 

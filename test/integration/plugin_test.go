@@ -2,6 +2,7 @@ package integration
 
 import (
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -57,6 +58,11 @@ worker:
 			plugins: []helper.TestPlugin{
 				helper.TestPlugin{
 					Name: "my-plugin",
+					Files: map[string]string{
+						"assets/controller/baz.txt": "controller-baz",
+						"assets/etcd/baz.txt":       "etcd-baz",
+						"assets/worker/baz.txt":     "worker-baz",
+					},
 					Yaml: `
 metadata:
   name: my-plugin
@@ -127,6 +133,17 @@ spec:
               contents:
                 inline: |
                   [Unit]
+          storage:
+            files:
+            - path: /var/kube-aws/bar.txt
+              permissions: 0644
+              contents:
+                inline: controller-bar
+            - path: /var/kube-aws/baz.txt
+              permissions: 0644
+              contents:
+                source:
+                  path: assets/controller/baz.txt
         etcd:
           systemd:
             units:
@@ -134,6 +151,17 @@ spec:
               contents:
                 inline: |
                   [Unit]
+          storage:
+            files:
+            - path: /var/kube-aws/bar.txt
+              permissions: 0644
+              contents:
+                inline: etcd-bar
+            - path: /var/kube-aws/baz.txt
+              permissions: 0644
+              contents:
+                source:
+                  path: assets/etcd/baz.txt
         worker:
           kubelet:
             nodeLabels:
@@ -146,6 +174,18 @@ spec:
               contents:
                 inline: |
                   [Unit]
+          storage:
+            files:
+            - path: /var/kube-aws/bar.txt
+              permissions: 0644
+              contents:
+                inline: worker-bar
+            - path: /var/kube-aws/baz.txt
+              permissions: 0644
+              contents:
+                source:
+                  path: assets/worker/baz.txt
+
 `,
 				},
 			},
@@ -184,6 +224,73 @@ spec:
 				func(c root.Cluster, t *testing.T) {
 					cp := c.ControlPlane()
 					np := c.NodePools()[0]
+
+					{
+						e := model.CustomFile{
+							Path:        "/var/kube-aws/bar.txt",
+							Permissions: 0644,
+							Content:     "controller-bar",
+						}
+						a := cp.StackConfig.Controller.CustomFiles[0]
+						if !reflect.DeepEqual(e, a) {
+							t.Errorf("Unexpected controller custom file from plugin: expected=%v actual=%v", e, a)
+						}
+					}
+					{
+						e := model.CustomFile{
+							Path:        "/var/kube-aws/baz.txt",
+							Permissions: 0644,
+							Content:     "controller-baz",
+						}
+						a := cp.StackConfig.Controller.CustomFiles[1]
+						if !reflect.DeepEqual(e, a) {
+							t.Errorf("Unexpected controller custom file from plugin: expected=%v actual=%v", e, a)
+						}
+					}
+					{
+						e := model.CustomFile{
+							Path:        "/var/kube-aws/bar.txt",
+							Permissions: 0644,
+							Content:     "etcd-bar",
+						}
+						a := cp.StackConfig.Etcd.CustomFiles[0]
+						if !reflect.DeepEqual(e, a) {
+							t.Errorf("Unexpected etcd custom file from plugin: expected=%v actual=%v", e, a)
+						}
+					}
+					{
+						e := model.CustomFile{
+							Path:        "/var/kube-aws/baz.txt",
+							Permissions: 0644,
+							Content:     "etcd-baz",
+						}
+						a := cp.StackConfig.Etcd.CustomFiles[1]
+						if !reflect.DeepEqual(e, a) {
+							t.Errorf("Unexpected etcd custom file from plugin: expected=%v actual=%v", e, a)
+						}
+					}
+					{
+						e := model.CustomFile{
+							Path:        "/var/kube-aws/bar.txt",
+							Permissions: 0644,
+							Content:     "worker-bar",
+						}
+						a := np.StackConfig.CustomFiles[0]
+						if !reflect.DeepEqual(e, a) {
+							t.Errorf("Unexpected worker custom file from plugin: expected=%v actual=%v", e, a)
+						}
+					}
+					{
+						e := model.CustomFile{
+							Path:        "/var/kube-aws/baz.txt",
+							Permissions: 0644,
+							Content:     "worker-baz",
+						}
+						a := np.StackConfig.CustomFiles[1]
+						if !reflect.DeepEqual(e, a) {
+							t.Errorf("Unexpected worker custom file from plugin: expected=%v actual=%v", e, a)
+						}
+					}
 
 					// A kube-aws plugin can inject systemd units
 					controllerUserdataS3Part := cp.UserDataController.Parts[model.USERDATA_S3].Asset.Content

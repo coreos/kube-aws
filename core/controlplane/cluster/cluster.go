@@ -14,6 +14,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/plugin/api"
+	"github.com/kubernetes-incubator/kube-aws/plugin/contents"
 )
 
 // VERSION set by build script
@@ -142,6 +143,8 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins [
 		if enabled, pc := p.EnabledIn(c.PluginConfigs); enabled {
 			values := p.Spec.Values.Merge(pc.Values)
 
+			load := contents.LoaderFor(p)
+
 			{
 				m, err := p.Spec.CloudFormation.Stacks.ControlPlane.Resources.Append.MapFromTemplateWithValues(values)
 				if err != nil {
@@ -180,6 +183,18 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins [
 				}
 				c.StackConfig.Controller.CustomSystemdUnits = append(c.StackConfig.Controller.CustomSystemdUnits, u)
 			}
+			for _, d := range p.Spec.Node.Roles.Controller.Storage.Files {
+				s, err := load.StringFrom(d.Contents)
+				if err != nil {
+					return nil, fmt.Errorf("failed to load plugin controller file contents: %v", err)
+				}
+				f := model.CustomFile{
+					Path:        d.Path,
+					Permissions: d.Permissions,
+					Content:     s,
+				}
+				c.StackConfig.Controller.CustomFiles = append(c.StackConfig.Controller.CustomFiles, f)
+			}
 
 			for k, v := range p.Spec.Node.Roles.Controller.Kubelet.NodeLabels {
 				c.StackConfig.Controller.NodeLabels[k] = v
@@ -194,6 +209,18 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins [
 					Runtime: false,
 				}
 				c.StackConfig.Etcd.CustomSystemdUnits = append(c.StackConfig.Etcd.CustomSystemdUnits, u)
+			}
+			for _, d := range p.Spec.Node.Roles.Etcd.Storage.Files {
+				s, err := load.StringFrom(d.Contents)
+				if err != nil {
+					return nil, fmt.Errorf("failed to load plugin etcd file contents: %v", err)
+				}
+				f := model.CustomFile{
+					Path:        d.Path,
+					Permissions: d.Permissions,
+					Content:     s,
+				}
+				c.StackConfig.Etcd.CustomFiles = append(c.StackConfig.Etcd.CustomFiles, f)
 			}
 		}
 	}

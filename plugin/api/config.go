@@ -295,7 +295,8 @@ type Files []File
 type File struct {
 	Path     string `yaml:"path,omitempty"`
 	Contents `yaml:"contents,omitempty"`
-	Mode     string `yaml:"mode,omitempty"`
+	//Mode     string `yaml:"mode,omitempty"`
+	Permissions uint `yaml:"permissions,omitempty"`
 }
 
 type IAM struct {

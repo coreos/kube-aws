@@ -698,8 +698,9 @@ func (c KubeClusterSettings) K8sNetworkPlugin() string {
 
 func (c Cluster) Config(extra ...[]*api.Plugin) (*Config, error) {
 	pluginMap := map[string]*api.Plugin{}
+	plugins := []*api.Plugin{}
 	if len(extra) > 0 {
-		plugins := extra[0]
+		plugins = extra[0]
 		for _, p := range plugins {
 			pluginMap[p.SettingKey()] = p
 		}

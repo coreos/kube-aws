@@ -11,6 +11,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/plugin/api"
+	"github.com/kubernetes-incubator/kube-aws/plugin/contents"
 	"text/tabwriter"
 )
 
@@ -82,6 +83,8 @@ func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOption
 		if enabled, pc := p.EnabledIn(c.Plugins); enabled {
 			values := p.Spec.Values.Merge(pc.Values)
 
+			load := contents.LoaderFor(p)
+
 			m, err := p.Spec.CloudFormation.Stacks.NodePool.Resources.Append.MapFromTemplateWithValues(values)
 			if err != nil {
 				return nil, fmt.Errorf("failed to load additioanl resources for worker node-pool stack: %v", err)
@@ -100,7 +103,18 @@ func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOption
 				}
 				c.StackConfig.CustomSystemdUnits = append(c.StackConfig.CustomSystemdUnits, u)
 			}
-
+			for _, d := range p.Spec.Node.Roles.Worker.Storage.Files {
+				s, err := load.StringFrom(d.Contents)
+				if err != nil {
+					return nil, fmt.Errorf("failed to load plugin worker file contents: %v", err)
+				}
+				f := model.CustomFile{
+					Path:        d.Path,
+					Permissions: d.Permissions,
+					Content:     s,
+				}
+				c.StackConfig.CustomFiles = append(c.StackConfig.CustomFiles, f)
+			}
 			for k, v := range p.Spec.Node.Roles.Worker.Kubelet.NodeLabels {
 				c.NodeSettings.NodeLabels[k] = v
 			}
