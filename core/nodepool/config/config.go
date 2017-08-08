@@ -39,9 +39,9 @@ type ProvidedConfig struct {
 	WorkerNodePoolConfig    `yaml:",inline"`
 	DeploymentSettings      `yaml:",inline"`
 	cfg.Experimental        `yaml:",inline"`
-	Plugins                 model.Plugins `yaml:"kubeAwsPlugins,omitempty"`
-	Private                 bool          `yaml:"private,omitempty"`
-	NodePoolName            string        `yaml:"name,omitempty"`
+	Plugins                 model.PluginConfigs `yaml:"kubeAwsPlugins,omitempty"`
+	Private                 bool                `yaml:"private,omitempty"`
+	NodePoolName            string              `yaml:"name,omitempty"`
 	ProvidedEncryptService  cfg.EncryptService
 }
 

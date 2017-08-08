@@ -171,7 +171,7 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 			values := p.Spec.Values.Merge(pc.Values)
 
 			{
-				m, err := p.Spec.CloudFormation.Stacks.Root.Resources.Append.AsTemplatedMap(values)
+				m, err := p.Spec.CloudFormation.Stacks.Root.Resources.Append.MapFromTemplateWithValues(values)
 				if err != nil {
 					return nil, fmt.Errorf("failed to load additional resources for root stack: %v", err)
 				}

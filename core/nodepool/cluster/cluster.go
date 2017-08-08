@@ -82,7 +82,7 @@ func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOption
 		if enabled, pc := p.EnabledIn(c.Plugins); enabled {
 			values := p.Spec.Values.Merge(pc.Values)
 
-			m, err := p.Spec.CloudFormation.Stacks.NodePool.Resources.Append.AsTemplatedMap(values)
+			m, err := p.Spec.CloudFormation.Stacks.NodePool.Resources.Append.MapFromTemplateWithValues(values)
 			if err != nil {
 				return nil, fmt.Errorf("failed to load additioanl resources for worker node-pool stack: %v", err)
 			}

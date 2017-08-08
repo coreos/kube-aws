@@ -40,7 +40,10 @@ kubeAwsPlugins:
   myPlugin:
     enabled: true
     queue:
-      nqme: baz1
+      name: baz1
+    oidc:
+      issuer:
+        url: "https://login.example.com/"
 
 worker:
   nodePools:
@@ -63,6 +66,9 @@ spec:
     values:
       queue:
         name: bar
+      oidc:
+        issuer:
+          url: unspecified
     cloudformation:
       stacks:
         controlPlane:
@@ -101,6 +107,14 @@ spec:
                     }
                   }
                 }
+    kubernetes:
+      apiserver:
+        flags:
+        - name: "oidc-issuer-url"
+          value: "{{ .Values.oidc.issuer.url}}"
+        volumes:
+        - name: "mycreds"
+          path: "/etc/my/creds"
     node:
       roles:
         controller:
@@ -143,7 +157,7 @@ spec:
 						t.Errorf("The plugin should have been enabled: %+v", cp)
 					}
 
-					if q, ok := cp.Settings["queue"].(map[string]interface{}); ok {
+					if q, ok := cp.Values["queue"].(map[string]interface{}); ok {
 						if m, ok := q["name"].(string); ok {
 							if m != "baz1" {
 								t.Errorf("The plugin should have queue.name set to \"baz1\", but was set to \"%s\"", m)
@@ -157,7 +171,7 @@ spec:
 						t.Errorf("The plugin should have been enabled: %+v", np)
 					}
 
-					if q, ok := np.Settings["queue"].(map[string]interface{}); ok {
+					if q, ok := np.Values["queue"].(map[string]interface{}); ok {
 						if m, ok := q["name"].(string); ok {
 							if m != "baz2" {
 								t.Errorf("The plugin should have queue.name set to \"baz2\", but was set to \"%s\"", m)
@@ -193,7 +207,10 @@ spec:
 						t.Errorf("failed to render control-plane stack template: %v", err)
 					}
 					if !strings.Contains(controlPlaneStackTemplate, "QueueFromMyPlugin") {
-						t.Errorf("Invalid control-plane stack template: %v", controlPlaneStackTemplate)
+						t.Errorf("Invalid control-plane stack template: missing resource QueueFromMyPlugin: %v", controlPlaneStackTemplate)
+					}
+					if !strings.Contains(controlPlaneStackTemplate, `"QueueName":"baz1"`) {
+						t.Errorf("Invalid control-plane stack template: missing QueueName baz1: %v", controlPlaneStackTemplate)
 					}
 
 					rootStackTemplate, err := c.RenderStackTemplateAsString()
@@ -201,7 +218,10 @@ spec:
 						t.Errorf("failed to render root stack template: %v", err)
 					}
 					if !strings.Contains(rootStackTemplate, "QueueFromMyPlugin") {
-						t.Errorf("Invalid root stack template: %v", rootStackTemplate)
+						t.Errorf("Invalid root stack template: missing resource QueueFromMyPlugin: %v", rootStackTemplate)
+					}
+					if !strings.Contains(rootStackTemplate, `"QueueName":"baz1"`) {
+						t.Errorf("Invalid root stack template: missing QueueName baz1: %v", rootStackTemplate)
 					}
 
 					nodePoolStackTemplate, err := np.RenderStackTemplateAsString()
@@ -209,7 +229,10 @@ spec:
 						t.Errorf("failed to render worker node pool stack template: %v", err)
 					}
 					if !strings.Contains(nodePoolStackTemplate, "QueueFromMyPlugin") {
-						t.Errorf("Invalid worker node pool stack template: %v", nodePoolStackTemplate)
+						t.Errorf("Invalid worker node pool stack template: missing resource QueueFromMyPlugin: %v", nodePoolStackTemplate)
+					}
+					if !strings.Contains(nodePoolStackTemplate, `"QueueName":"baz2"`) {
+						t.Errorf("Invalid worker node pool stack template: missing QueueName baz2: %v", nodePoolStackTemplate)
 					}
 
 					// A kube-aws plugin can inject node labels
@@ -224,6 +247,21 @@ spec:
 					// A kube-aws plugin can activate feature gates
 					if !strings.Contains(workerUserdataS3Part, `--feature-gates="Accelerators=true"`) {
 						t.Error("missing worker feature gate: Accelerators=true")
+					}
+
+					// A kube-aws plugin can add volume mounts to apiserver pod
+					if !strings.Contains(controllerUserdataS3Part, `mountPath: "/etc/my/creds"`) {
+						t.Errorf("missing apiserver volume mount: /etc/my/creds")
+					}
+
+					// A kube-aws plugin can add volumes to apiserver pod
+					if !strings.Contains(controllerUserdataS3Part, `path: "/etc/my/creds"`) {
+						t.Errorf("missing apiserver volume: /etc/my/creds")
+					}
+
+					// A kube-aws plugin can add flags to apiserver
+					if !strings.Contains(controllerUserdataS3Part, `--oidc-issuer-url=https://login.example.com/`) {
+						t.Errorf("missing apiserver flag: --oidc-issuer-url=https://login.example.com/")
 					}
 				},
 			},

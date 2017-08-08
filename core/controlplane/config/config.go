@@ -495,14 +495,14 @@ type Cluster struct {
 	ControllerSettings      `yaml:",inline"`
 	EtcdSettings            `yaml:",inline"`
 	FlannelSettings         `yaml:",inline"`
-	AdminAPIEndpointName    string        `yaml:"adminAPIEndpointName,omitempty"`
-	ServiceCIDR             string        `yaml:"serviceCIDR,omitempty"`
-	CreateRecordSet         bool          `yaml:"createRecordSet,omitempty"`
-	RecordSetTTL            int           `yaml:"recordSetTTL,omitempty"`
-	TLSCADurationDays       int           `yaml:"tlsCADurationDays,omitempty"`
-	TLSCertDurationDays     int           `yaml:"tlsCertDurationDays,omitempty"`
-	HostedZoneID            string        `yaml:"hostedZoneId,omitempty"`
-	PluginConfigs           model.Plugins `yaml:"kubeAwsPlugins,omitempty"`
+	AdminAPIEndpointName    string              `yaml:"adminAPIEndpointName,omitempty"`
+	ServiceCIDR             string              `yaml:"serviceCIDR,omitempty"`
+	CreateRecordSet         bool                `yaml:"createRecordSet,omitempty"`
+	RecordSetTTL            int                 `yaml:"recordSetTTL,omitempty"`
+	TLSCADurationDays       int                 `yaml:"tlsCADurationDays,omitempty"`
+	TLSCertDurationDays     int                 `yaml:"tlsCertDurationDays,omitempty"`
+	HostedZoneID            string              `yaml:"hostedZoneId,omitempty"`
+	PluginConfigs           model.PluginConfigs `yaml:"kubeAwsPlugins,omitempty"`
 	ProvidedEncryptService  EncryptService
 	// SSHAccessAllowedSourceCIDRs is network ranges of sources you'd like SSH accesses to be allowed from, in CIDR notation
 	SSHAccessAllowedSourceCIDRs model.CIDRRanges       `yaml:"sshAccessAllowedSourceCIDRs,omitempty"`
@@ -706,8 +706,10 @@ func (c Cluster) Config(extra ...[]*api.Plugin) (*Config, error) {
 	}
 
 	config := Config{
-		Cluster:        c,
-		KubeAwsPlugins: pluginMap,
+		Cluster:          c,
+		KubeAwsPlugins:   pluginMap,
+		APIServerFlags:   api.APIServerFlags{},
+		APIServerVolumes: api.APIServerVolumes{},
 	}
 
 	if c.AmiId == "" {
@@ -846,6 +848,9 @@ type Config struct {
 	AssetsConfig *CompactAssets
 
 	KubeAwsPlugins map[string]*api.Plugin
+
+	APIServerVolumes api.APIServerVolumes
+	APIServerFlags   api.APIServerFlags
 }
 
 // StackName returns the logical name of a CloudFormation stack resource in a root stack template

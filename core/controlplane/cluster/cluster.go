@@ -143,13 +143,31 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins [
 			values := p.Spec.Values.Merge(pc.Values)
 
 			{
-				m, err := p.Spec.CloudFormation.Stacks.ControlPlane.Resources.Append.AsTemplatedMap(values)
+				m, err := p.Spec.CloudFormation.Stacks.ControlPlane.Resources.Append.MapFromTemplateWithValues(values)
 				if err != nil {
 					return nil, fmt.Errorf("failed to load additioanl resources for control-plane stack: %v", err)
 				}
 				for k, v := range m {
 					c.StackConfig.AdditionalCfnResources[k] = v
 				}
+			}
+
+			{
+				for _, f := range p.Spec.Kubernetes.APIServer.Flags {
+					v, err := f.TextFromTemplateWithValues(values)
+					if err != nil {
+						return nil, fmt.Errorf("failed to load apisersver flags: %v", err)
+					}
+					newFlag := api.APIServerFlag{
+						Name:  f.Name,
+						Value: v,
+					}
+					c.StackConfig.Config.APIServerFlags = append(c.StackConfig.APIServerFlags, newFlag)
+				}
+			}
+
+			{
+				c.StackConfig.APIServerVolumes = p.Spec.Kubernetes.APIServer.Volumes
 			}
 
 			for _, d := range p.Spec.Node.Roles.Controller.Systemd.Units {

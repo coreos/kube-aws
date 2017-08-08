@@ -17,10 +17,10 @@ type Plugin struct {
 	Spec     `yaml:"spec,omitempty"`
 }
 
-func (p Plugin) EnabledIn(plugins model.Plugins) (bool, *Plugin) {
+func (p Plugin) EnabledIn(plugins model.PluginConfigs) (bool, *model.PluginConfig) {
 	for name, c := range plugins {
 		if name == p.SettingKey() && c.Enabled {
-			return true, &p
+			return true, &c
 		}
 	}
 	return false, nil
@@ -158,6 +158,7 @@ type HelmRelease struct {
 }
 
 type Kubernetes struct {
+	APIServer KubernetesAPIServer `yaml:"apiserver,omitempty"`
 	// Manifests is a list of manifests to be installed to the cluster.
 	// Note that the list is sorted by their names by kube-aws so that it won't result in unnecessarily node replacements.
 	Manifests KubernetesManifests `yaml:"manifests,omitempty"`
@@ -176,6 +177,35 @@ func (k *Kubernetes) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+type KubernetesAPIServer struct {
+	Flags   APIServerFlags   `yaml:"flags,omitempty"`
+	Volumes APIServerVolumes `yaml:"volumes,omitempty"`
+}
+
+type APIServerFlags []APIServerFlag
+
+type APIServerFlag struct {
+	// Name is the name of a command-line flag passed to the k8s apiserver.
+	// For example, a name is "oidc-issuer-url" for the flag `--oidc-issuer-url`.
+	Name string `yaml:"name,omitempty"`
+	// Value is a golang text template resulting to the value of a command-line flag passed to the k8s apiserver
+	Value string `yaml:"value,omitempty"`
+}
+
+func (f APIServerFlag) TextFromTemplateWithValues(values interface{}) (string, error) {
+	return textFromTemplateWithValues(f.Value, values)
+}
+
+type APIServerVolumes []APIServerVolume
+
+type APIServerVolume struct {
+	// Name is translated to both a volume mount's and volume's name
+	Name string `yaml:"name,omitempty"`
+	// Path is translated to both a volume mount's mountPath and a volume's hostPath
+	Path     string `yaml:"path,omitempty"`
+	ReadOnly bool   `yaml:"readOnly,omitempty"`
+}
+
 type KubernetesManifests []KubernetesManifest
 
 type KubernetesManifest struct {
@@ -190,8 +220,11 @@ type Contents struct {
 	UnknownKeys map[string]interface{} `yaml:",inline"`
 }
 
-func (c Contents) ExecuteTemplate(data interface{}) (string, error) {
-	t, err := texttemplate.Parse("contents", c.Inline, template.FuncMap{})
+func textFromTemplateWithValues(expr string, values interface{}) (string, error) {
+	t, err := texttemplate.Parse("contents", expr, template.FuncMap{})
+	data := map[string]interface{}{
+		"Values": values,
+	}
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template: %v", err)
 	}
@@ -203,14 +236,18 @@ func (c Contents) ExecuteTemplate(data interface{}) (string, error) {
 	return buff.String(), nil
 }
 
-func (c Contents) AsTemplatedMap(data interface{}) (map[string]interface{}, error) {
+func (c Contents) TextFromTemplateWithValues(values interface{}) (string, error) {
+	return textFromTemplateWithValues(c.Inline, values)
+}
+
+func (c Contents) MapFromTemplateWithValues(data interface{}) (map[string]interface{}, error) {
 	m := map[string]interface{}{}
-	t, err := c.ExecuteTemplate(data)
+	t, err := c.TextFromTemplateWithValues(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute template: %v", err)
 	}
 	if err := json.Unmarshal([]byte(t), &m); err != nil {
-		return nil, fmt.Errorf("failed to parse json: %v", err)
+		return nil, fmt.Errorf("failed to parse json: %v: in=%s: out=%s", err, c.Inline, t)
 	}
 	return m, nil
 }
@@ -298,7 +335,7 @@ type FeatureGates map[string]string
 type NodeLabels map[string]string
 type Values map[string]interface{}
 
-func (v Values) Merge(o Values) Values {
+func (v Values) Merge(o map[string]interface{}) Values {
 	r := merge(map[string]interface{}(v), map[string]interface{}(o))
 	switch r := r.(type) {
 	case map[string]interface{}:

@@ -1,10 +1,10 @@
 package model
 
-type Plugins map[string]Plugin
+type PluginConfigs map[string]PluginConfig
 
-type Plugin struct {
-	Enabled  bool `yaml:"enabled,omitempty"`
-	Settings `yaml:",inline"`
+type PluginConfig struct {
+	Enabled bool `yaml:"enabled,omitempty"`
+	Values  `yaml:",inline"`
 }
 
-type Settings map[string]interface{}
+type Values map[string]interface{}
