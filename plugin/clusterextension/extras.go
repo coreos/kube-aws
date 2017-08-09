@@ -6,6 +6,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
 	"github.com/kubernetes-incubator/kube-aws/plugin/plugincontents"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginutil"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginvalue"
 )
 
@@ -30,7 +31,7 @@ func (e ClusterExtension) RootStack() (*stack, error) {
 
 	for _, p := range e.plugins {
 		if enabled, pc := p.EnabledIn(e.configs); enabled {
-			values := p.Spec.Values.Merge(pc.Values)
+			values := pluginutil.MergeValues(p.Spec.Values, pc.Values)
 
 			render := plugincontents.TemplateRendererFor(p, values)
 
@@ -79,7 +80,7 @@ func (e ClusterExtension) NodePoolStack() (*stack, error) {
 
 	for _, p := range e.plugins {
 		if enabled, pc := p.EnabledIn(e.configs); enabled {
-			values := p.Spec.Values.Merge(pc.Values)
+			values := pluginutil.MergeValues(p.Spec.Values, pc.Values)
 			render := plugincontents.TemplateRendererFor(p, values)
 
 			m, err := render.MapFromContents(p.Spec.CloudFormation.Stacks.NodePool.Resources.Append.Contents)
@@ -157,7 +158,7 @@ func (e ClusterExtension) ControlPlaneStack() (*stack, error) {
 
 	for _, p := range e.plugins {
 		if enabled, pc := p.EnabledIn(e.configs); enabled {
-			values := p.Spec.Values.Merge(pc.Values)
+			values := pluginutil.MergeValues(p.Spec.Values, pc.Values)
 
 			render := plugincontents.TemplateRendererFor(p, values)
 
@@ -188,7 +189,7 @@ func (e ClusterExtension) Controller() (*controller, error) {
 
 	for _, p := range e.plugins {
 		if enabled, pc := p.EnabledIn(e.configs); enabled {
-			values := p.Spec.Values.Merge(pc.Values)
+			values := pluginutil.MergeValues(p.Spec.Values, pc.Values)
 
 			load := plugincontents.LoaderFor(p)
 
