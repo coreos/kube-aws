@@ -6,7 +6,6 @@ package config
 //go:generate gofmt -w files.go
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,6 +23,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/model/derived"
 	"github.com/kubernetes-incubator/kube-aws/netutil"
+	"github.com/kubernetes-incubator/kube-aws/node"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -1468,49 +1468,19 @@ func (c *Config) ManagedELBLogicalNames() []string {
 	return c.APIEndpoints.ManagedELBLogicalNames()
 }
 
-type pluggedInFile struct {
-	Path    string
-	Content pluggedInFileContent
-}
-
-type pluggedInFileContent struct {
-	bytes []byte
-}
-
-func (c pluggedInFileContent) ToBase64() pluggedInFileContent {
-	bytes := []byte(base64.StdEncoding.EncodeToString(c.bytes))
-	return pluggedInFileContent{
-		bytes: bytes,
-	}
-}
-
-func (c pluggedInFileContent) ToGzip() pluggedInFileContent {
-	bytes, err := gzipcompressor.BytesToBytes(c.bytes)
-	if err != nil {
-		panic(fmt.Errorf("Unexpected error in ToGzip: %v", err))
-	}
-	return pluggedInFileContent{
-		bytes: bytes,
-	}
-}
-
-func (c pluggedInFileContent) String() string {
-	return string(c.bytes)
-}
-
 type kubernetesManifestPlugin struct {
 	Manifests []pluggedInKubernetesManifest
 }
 
-func (p kubernetesManifestPlugin) ManifestListFile() pluggedInFile {
+func (p kubernetesManifestPlugin) ManifestListFile() node.UploadedFile {
 	paths := []string{}
 	for _, m := range p.Manifests {
 		paths = append(paths, m.ManifestFile.Path)
 	}
 	bytes := []byte(strings.Join(paths, "\n"))
-	return pluggedInFile{
+	return node.UploadedFile{
 		Path:    p.listFilePath(),
-		Content: pluggedInFileContent{bytes: bytes},
+		Content: node.NewUploadedFileContent(bytes),
 	}
 }
 
@@ -1523,22 +1493,22 @@ func (p kubernetesManifestPlugin) Directory() string {
 }
 
 type pluggedInKubernetesManifest struct {
-	ManifestFile pluggedInFile
+	ManifestFile node.UploadedFile
 }
 
 type helmReleasePlugin struct {
 	Releases []pluggedInHelmRelease
 }
 
-func (p helmReleasePlugin) ReleaseListFile() pluggedInFile {
+func (p helmReleasePlugin) ReleaseListFile() node.UploadedFile {
 	paths := []string{}
 	for _, r := range p.Releases {
 		paths = append(paths, r.ReleaseFile.Path)
 	}
 	bytes := []byte(strings.Join(paths, "\n"))
-	return pluggedInFile{
+	return node.UploadedFile{
 		Path:    p.listFilePath(),
-		Content: pluggedInFileContent{bytes: bytes},
+		Content: node.NewUploadedFileContent(bytes),
 	}
 }
 
@@ -1551,8 +1521,8 @@ func (p helmReleasePlugin) Directory() string {
 }
 
 type pluggedInHelmRelease struct {
-	ValuesFile  pluggedInFile
-	ReleaseFile pluggedInFile
+	ValuesFile  node.UploadedFile
+	ReleaseFile node.UploadedFile
 }
 
 func (c *Config) KubernetesManifestPlugin() kubernetesManifestPlugin {
@@ -1565,11 +1535,9 @@ func (c *Config) KubernetesManifestPlugin() kubernetesManifestPlugin {
 		for _, manifestConfig := range plugin.Configuration.Kubernetes.Manifests {
 			bytes := []byte(manifestConfig.Contents.Inline)
 			m := pluggedInKubernetesManifest{
-				ManifestFile: pluggedInFile{
-					Path: filepath.Join("/srv/kube-aws/plugins", plugin.Metadata.Name, manifestConfig.Name),
-					Content: pluggedInFileContent{
-						bytes: bytes,
-					},
+				ManifestFile: node.UploadedFile{
+					Path:    filepath.Join("/srv/kube-aws/plugins", plugin.Metadata.Name, manifestConfig.Name),
+					Content: node.NewUploadedFileContent(bytes),
 				},
 			}
 			manifests = append(manifests, m)
@@ -1606,17 +1574,13 @@ func (c *Config) HelmReleasePlugin() helmReleasePlugin {
 				panic(fmt.Errorf("Unexpected error in HelmReleasePlugin: %v", err))
 			}
 			r := pluggedInHelmRelease{
-				ValuesFile: pluggedInFile{
-					Path: valuesFilePath,
-					Content: pluggedInFileContent{
-						bytes: valuesFileContent,
-					},
+				ValuesFile: node.UploadedFile{
+					Path:    valuesFilePath,
+					Content: node.NewUploadedFileContent(valuesFileContent),
 				},
-				ReleaseFile: pluggedInFile{
-					Path: releaseFilePath,
-					Content: pluggedInFileContent{
-						bytes: releaseFileContent,
-					},
+				ReleaseFile: node.UploadedFile{
+					Path:    releaseFilePath,
+					Content: node.NewUploadedFileContent(releaseFileContent),
 				},
 			}
 			releases = append(releases, r)
