@@ -24,7 +24,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/model/derived"
 	"github.com/kubernetes-incubator/kube-aws/netutil"
-	"github.com/kubernetes-incubator/kube-aws/plugin/api"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -221,7 +221,7 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	cfg, err := c.Config([]*api.Plugin{})
+	cfg, err := c.Config([]*pluginapi.Plugin{})
 	if err != nil {
 		return nil, err
 	}
@@ -696,9 +696,9 @@ func (c KubeClusterSettings) K8sNetworkPlugin() string {
 	return "cni"
 }
 
-func (c Cluster) Config(extra ...[]*api.Plugin) (*Config, error) {
-	pluginMap := map[string]*api.Plugin{}
-	plugins := []*api.Plugin{}
+func (c Cluster) Config(extra ...[]*pluginapi.Plugin) (*Config, error) {
+	pluginMap := map[string]*pluginapi.Plugin{}
+	plugins := []*pluginapi.Plugin{}
 	if len(extra) > 0 {
 		plugins = extra[0]
 		for _, p := range plugins {
@@ -709,8 +709,8 @@ func (c Cluster) Config(extra ...[]*api.Plugin) (*Config, error) {
 	config := Config{
 		Cluster:          c,
 		KubeAwsPlugins:   pluginMap,
-		APIServerFlags:   api.APIServerFlags{},
-		APIServerVolumes: api.APIServerVolumes{},
+		APIServerFlags:   pluginapi.APIServerFlags{},
+		APIServerVolumes: pluginapi.APIServerVolumes{},
 	}
 
 	if c.AmiId == "" {
@@ -783,8 +783,8 @@ type StackTemplateOptions struct {
 	SkipWait              bool
 }
 
-func (c Cluster) StackConfig(opts StackTemplateOptions, extra ...[]*api.Plugin) (*StackConfig, error) {
-	plugins := []*api.Plugin{}
+func (c Cluster) StackConfig(opts StackTemplateOptions, extra ...[]*pluginapi.Plugin) (*StackConfig, error) {
+	plugins := []*pluginapi.Plugin{}
 	if len(extra) > 0 {
 		plugins = extra[0]
 	}
@@ -848,10 +848,10 @@ type Config struct {
 
 	AssetsConfig *CompactAssets
 
-	KubeAwsPlugins map[string]*api.Plugin
+	KubeAwsPlugins map[string]*pluginapi.Plugin
 
-	APIServerVolumes api.APIServerVolumes
-	APIServerFlags   api.APIServerFlags
+	APIServerVolumes pluginapi.APIServerVolumes
+	APIServerFlags   pluginapi.APIServerFlags
 }
 
 // StackName returns the logical name of a CloudFormation stack resource in a root stack template

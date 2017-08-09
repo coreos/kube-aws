@@ -13,8 +13,8 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
-	"github.com/kubernetes-incubator/kube-aws/plugin/api"
 	"github.com/kubernetes-incubator/kube-aws/plugin/contents"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
 )
 
 // VERSION set by build script
@@ -121,7 +121,7 @@ func (c *ClusterRef) validateExistingVPCState(ec2Svc ec2Service) error {
 	return nil
 }
 
-func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins []*api.Plugin, awsDebug bool) (*Cluster, error) {
+func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins []*pluginapi.Plugin, awsDebug bool) (*Cluster, error) {
 	clusterRef := NewClusterRef(cfg, awsDebug)
 	// TODO Do this in a cleaner way e.g. in config.go
 	clusterRef.KubeResourcesAutosave.S3Path = model.NewS3Folders(opts.S3URI, clusterRef.ClusterName).ClusterBackups().Path()
@@ -161,7 +161,7 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins [
 					if err != nil {
 						return nil, fmt.Errorf("failed to load apisersver flags: %v", err)
 					}
-					newFlag := api.APIServerFlag{
+					newFlag := pluginapi.APIServerFlag{
 						Name:  f.Name,
 						Value: v,
 					}

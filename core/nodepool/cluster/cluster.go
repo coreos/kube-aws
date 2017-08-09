@@ -10,8 +10,8 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
-	"github.com/kubernetes-incubator/kube-aws/plugin/api"
 	"github.com/kubernetes-incubator/kube-aws/plugin/contents"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
 	"text/tabwriter"
 )
 
@@ -66,7 +66,7 @@ func NewClusterRef(cfg *config.ProvidedConfig, awsDebug bool) *ClusterRef {
 	}
 }
 
-func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOptions, plugins []*api.Plugin, awsDebug bool) (*Cluster, error) {
+func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOptions, plugins []*pluginapi.Plugin, awsDebug bool) (*Cluster, error) {
 	stackConfig, err := provided.StackConfig(opts)
 	if err != nil {
 		return nil, err

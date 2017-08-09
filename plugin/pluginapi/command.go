@@ -1,4 +1,4 @@
-package api
+package pluginapi
 
 // Command is not implemented yet
 type Command interface {

@@ -17,7 +17,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/core/root/defaults"
 	"github.com/kubernetes-incubator/kube-aws/filereader/jsontemplate"
 	"github.com/kubernetes-incubator/kube-aws/model"
-	"github.com/kubernetes-incubator/kube-aws/plugin/api"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -230,7 +230,7 @@ func (c clusterImpl) Create() error {
 
 func (c clusterImpl) Info() (*Info, error) {
 	// TODO Cleaner way to obtain this dependency
-	cpConfig, err := c.controlPlane.Cluster.Config([]*api.Plugin{})
+	cpConfig, err := c.controlPlane.Cluster.Config([]*pluginapi.Plugin{})
 	if err != nil {
 		return nil, err
 	}
