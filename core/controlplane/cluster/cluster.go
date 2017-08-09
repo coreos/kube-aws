@@ -13,8 +13,9 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
-	"github.com/kubernetes-incubator/kube-aws/plugin/contents"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
+	"github.com/kubernetes-incubator/kube-aws/plugin/plugincontents"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginvalue"
 )
 
 // VERSION set by build script
@@ -143,10 +144,11 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins [
 		if enabled, pc := p.EnabledIn(c.PluginConfigs); enabled {
 			values := p.Spec.Values.Merge(pc.Values)
 
-			load := contents.LoaderFor(p)
+			load := plugincontents.LoaderFor(p)
+			render := plugincontents.TemplateRendererFor(p, values)
 
 			{
-				m, err := p.Spec.CloudFormation.Stacks.ControlPlane.Resources.Append.MapFromTemplateWithValues(values)
+				m, err := render.MapFromContents(p.Spec.CloudFormation.Stacks.ControlPlane.Resources.Append.Contents)
 				if err != nil {
 					return nil, fmt.Errorf("failed to load additioanl resources for control-plane stack: %v", err)
 				}
@@ -156,8 +158,9 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins [
 			}
 
 			{
+				render := pluginvalue.TemplateRendererFor(p, values)
 				for _, f := range p.Spec.Kubernetes.APIServer.Flags {
-					v, err := f.TextFromTemplateWithValues(values)
+					v, err := render.StringFrom(f.Value)
 					if err != nil {
 						return nil, fmt.Errorf("failed to load apisersver flags: %v", err)
 					}

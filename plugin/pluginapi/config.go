@@ -1,14 +1,11 @@
 package pluginapi
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kubernetes-incubator/kube-aws/filereader/texttemplate"
-	"github.com/kubernetes-incubator/kube-aws/model"
 	"strings"
-	"text/template"
+
+	"github.com/kubernetes-incubator/kube-aws/model"
 )
 
 // A plugin consists of two parts: a set of metadata and a spec
@@ -186,14 +183,10 @@ type APIServerFlags []APIServerFlag
 
 type APIServerFlag struct {
 	// Name is the name of a command-line flag passed to the k8s apiserver.
-	// For example, a name is "oidc-issuer-url" for the flag `--oidc-issuer-url`.
+	// For example, a name 	is "oidc-issuer-url" for the flag `--oidc-issuer-url`.
 	Name string `yaml:"name,omitempty"`
 	// Value is a golang text template resulting to the value of a command-line flag passed to the k8s apiserver
 	Value string `yaml:"value,omitempty"`
-}
-
-func (f APIServerFlag) TextFromTemplateWithValues(values interface{}) (string, error) {
-	return textFromTemplateWithValues(f.Value, values)
 }
 
 type APIServerVolumes []APIServerVolume
@@ -218,38 +211,6 @@ type Contents struct {
 	Source `yaml:"source,omitempty"`
 	// TODO Better naming
 	UnknownKeys map[string]interface{} `yaml:",inline"`
-}
-
-func textFromTemplateWithValues(expr string, values interface{}) (string, error) {
-	t, err := texttemplate.Parse("contents", expr, template.FuncMap{})
-	data := map[string]interface{}{
-		"Values": values,
-	}
-	if err != nil {
-		return "", fmt.Errorf("failed to parse template: %v", err)
-	}
-
-	var buff bytes.Buffer
-	if err := t.Execute(&buff, data); err != nil {
-		return "", fmt.Errorf("failed to execute template: %v", err)
-	}
-	return buff.String(), nil
-}
-
-func (c Contents) TextFromTemplateWithValues(values interface{}) (string, error) {
-	return textFromTemplateWithValues(c.Inline, values)
-}
-
-func (c Contents) MapFromTemplateWithValues(data interface{}) (map[string]interface{}, error) {
-	m := map[string]interface{}{}
-	t, err := c.TextFromTemplateWithValues(data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute template: %v", err)
-	}
-	if err := json.Unmarshal([]byte(t), &m); err != nil {
-		return nil, fmt.Errorf("failed to parse json: %v: in=%s: out=%s", err, c.Inline, t)
-	}
-	return m, nil
 }
 
 type Source struct {

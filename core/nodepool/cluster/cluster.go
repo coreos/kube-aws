@@ -10,8 +10,8 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
-	"github.com/kubernetes-incubator/kube-aws/plugin/contents"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
+	"github.com/kubernetes-incubator/kube-aws/plugin/plugincontents"
 	"text/tabwriter"
 )
 
@@ -83,9 +83,10 @@ func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOption
 		if enabled, pc := p.EnabledIn(c.Plugins); enabled {
 			values := p.Spec.Values.Merge(pc.Values)
 
-			load := contents.LoaderFor(p)
+			load := plugincontents.LoaderFor(p)
+			render := plugincontents.TemplateRendererFor(p, values)
 
-			m, err := p.Spec.CloudFormation.Stacks.NodePool.Resources.Append.MapFromTemplateWithValues(values)
+			m, err := render.MapFromContents(p.Spec.CloudFormation.Stacks.NodePool.Resources.Append.Contents)
 			if err != nil {
 				return nil, fmt.Errorf("failed to load additioanl resources for worker node-pool stack: %v", err)
 			}

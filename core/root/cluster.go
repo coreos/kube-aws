@@ -18,6 +18,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/filereader/jsontemplate"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
+	"github.com/kubernetes-incubator/kube-aws/plugin/plugincontents"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -170,8 +171,10 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 		if enabled, pc := p.EnabledIn(cp.PluginConfigs); enabled {
 			values := p.Spec.Values.Merge(pc.Values)
 
+			render := plugincontents.TemplateRendererFor(p, values)
+
 			{
-				m, err := p.Spec.CloudFormation.Stacks.Root.Resources.Append.MapFromTemplateWithValues(values)
+				m, err := render.MapFromContents(p.Spec.CloudFormation.Stacks.Root.Resources.Append.Contents)
 				if err != nil {
 					return nil, fmt.Errorf("failed to load additional resources for root stack: %v", err)
 				}
