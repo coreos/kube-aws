@@ -14,8 +14,8 @@ type TemplateParams struct {
 	cluster clusterImpl
 }
 
-func (p TemplateParams) AdditionalCfnResources() map[string]interface{} {
-	return p.cluster.AdditionalCfnResources
+func (p TemplateParams) ExtraCfnResources() map[string]interface{} {
+	return p.cluster.ExtraCfnResources
 }
 
 func (p TemplateParams) ClusterName() string {

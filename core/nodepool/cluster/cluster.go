@@ -10,8 +10,8 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
-	"github.com/kubernetes-incubator/kube-aws/plugin/plugincontents"
 	"text/tabwriter"
 )
 
@@ -79,52 +79,27 @@ func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOption
 		ClusterRef:  clusterRef,
 	}
 
-	for _, p := range plugins {
-		if enabled, pc := p.EnabledIn(c.Plugins); enabled {
-			values := p.Spec.Values.Merge(pc.Values)
+	extras := clusterextension.NewExtrasFromPlugins(plugins, c.Plugins)
 
-			load := plugincontents.LoaderFor(p)
-			render := plugincontents.TemplateRendererFor(p, values)
+	extraStack, err := extras.NodePoolStack()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load node pool stack extras from plugins: %v", err)
+	}
+	c.StackConfig.ExtraCfnResources = extraStack.Resources
 
-			m, err := render.MapFromContents(p.Spec.CloudFormation.Stacks.NodePool.Resources.Append.Contents)
-			if err != nil {
-				return nil, fmt.Errorf("failed to load additioanl resources for worker node-pool stack: %v", err)
-			}
-			for k, v := range m {
-				c.AdditionalCfnResources[k] = v
-			}
+	extraWorker, err := extras.Worker()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load controller node extras from plugins: %v", err)
+	}
+	c.StackConfig.CustomSystemdUnits = append(c.StackConfig.CustomSystemdUnits, extraWorker.SystemdUnits...)
+	c.StackConfig.CustomFiles = append(c.StackConfig.CustomFiles, extraWorker.Files...)
+	c.StackConfig.IAMConfig.Policy.Statements = append(c.StackConfig.IAMConfig.Policy.Statements, extraWorker.IAMPolicyStatements...)
 
-			for _, d := range p.Spec.Node.Roles.Worker.Systemd.Units {
-				u := model.CustomSystemdUnit{
-					Name:    d.Name,
-					Command: "start",
-					Content: d.Contents.Inline,
-					Enable:  true,
-					Runtime: false,
-				}
-				c.StackConfig.CustomSystemdUnits = append(c.StackConfig.CustomSystemdUnits, u)
-			}
-			for _, d := range p.Spec.Node.Roles.Worker.Storage.Files {
-				s, err := load.StringFrom(d.Contents)
-				if err != nil {
-					return nil, fmt.Errorf("failed to load plugin worker file contents: %v", err)
-				}
-				f := model.CustomFile{
-					Path:        d.Path,
-					Permissions: d.Permissions,
-					Content:     s,
-				}
-				c.StackConfig.CustomFiles = append(c.StackConfig.CustomFiles, f)
-			}
-			c.StackConfig.IAMConfig.Policy.Statements = append(c.StackConfig.IAMConfig.Policy.Statements, p.Spec.Node.Roles.Worker.IAM.Policy.Statements...)
-			for k, v := range p.Spec.Node.Roles.Worker.Kubelet.NodeLabels {
-				c.NodeSettings.NodeLabels[k] = v
-			}
-
-			for k, v := range p.Spec.Node.Roles.Worker.Kubelet.FeatureGates {
-				c.NodeSettings.FeatureGates[k] = v
-			}
-		}
+	for k, v := range extraWorker.NodeLabels {
+		c.NodeSettings.NodeLabels[k] = v
+	}
+	for k, v := range extraWorker.FeatureGates {
+		c.NodeSettings.FeatureGates[k] = v
 	}
 
 	c.assets, err = c.buildAssets()

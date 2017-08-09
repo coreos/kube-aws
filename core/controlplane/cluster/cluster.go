@@ -13,9 +13,8 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
-	"github.com/kubernetes-incubator/kube-aws/plugin/plugincontents"
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginvalue"
 )
 
 // VERSION set by build script
@@ -140,95 +139,35 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins [
 	// Notes:
 	// * `c.StackConfig.CustomSystemdUnits` results in an `ambiguous selector ` error
 	// * `c.Controller.CustomSystemdUnits = controllerUnits` and `c.ClusterRef.Controller.CustomSystemdUnits = controllerUnits` results in modifying invisible/duplicate CustomSystemdSettings
-	for _, p := range plugins {
-		if enabled, pc := p.EnabledIn(c.PluginConfigs); enabled {
-			values := p.Spec.Values.Merge(pc.Values)
+	extras := clusterextension.NewExtrasFromPlugins(plugins, c.PluginConfigs)
 
-			load := plugincontents.LoaderFor(p)
-			render := plugincontents.TemplateRendererFor(p, values)
-
-			{
-				m, err := render.MapFromContents(p.Spec.CloudFormation.Stacks.ControlPlane.Resources.Append.Contents)
-				if err != nil {
-					return nil, fmt.Errorf("failed to load additioanl resources for control-plane stack: %v", err)
-				}
-				for k, v := range m {
-					c.StackConfig.AdditionalCfnResources[k] = v
-				}
-			}
-
-			{
-				render := pluginvalue.TemplateRendererFor(p, values)
-				for _, f := range p.Spec.Kubernetes.APIServer.Flags {
-					v, err := render.StringFrom(f.Value)
-					if err != nil {
-						return nil, fmt.Errorf("failed to load apisersver flags: %v", err)
-					}
-					newFlag := pluginapi.APIServerFlag{
-						Name:  f.Name,
-						Value: v,
-					}
-					c.StackConfig.Config.APIServerFlags = append(c.StackConfig.APIServerFlags, newFlag)
-				}
-			}
-
-			{
-				c.StackConfig.APIServerVolumes = p.Spec.Kubernetes.APIServer.Volumes
-			}
-
-			for _, d := range p.Spec.Node.Roles.Controller.Systemd.Units {
-				u := model.CustomSystemdUnit{
-					Name:    d.Name,
-					Command: "start",
-					Content: d.Contents.Inline,
-					Enable:  true,
-					Runtime: false,
-				}
-				c.StackConfig.Controller.CustomSystemdUnits = append(c.StackConfig.Controller.CustomSystemdUnits, u)
-			}
-			for _, d := range p.Spec.Node.Roles.Controller.Storage.Files {
-				s, err := load.StringFrom(d.Contents)
-				if err != nil {
-					return nil, fmt.Errorf("failed to load plugin controller file contents: %v", err)
-				}
-				f := model.CustomFile{
-					Path:        d.Path,
-					Permissions: d.Permissions,
-					Content:     s,
-				}
-				c.StackConfig.Controller.CustomFiles = append(c.StackConfig.Controller.CustomFiles, f)
-			}
-			c.StackConfig.Controller.IAMConfig.Policy.Statements = append(c.StackConfig.Controller.IAMConfig.Policy.Statements, p.Spec.Node.Roles.Controller.IAM.Policy.Statements...)
-
-			for k, v := range p.Spec.Node.Roles.Controller.Kubelet.NodeLabels {
-				c.StackConfig.Controller.NodeLabels[k] = v
-			}
-
-			for _, d := range p.Spec.Node.Roles.Etcd.Systemd.Units {
-				u := model.CustomSystemdUnit{
-					Name:    d.Name,
-					Command: "start",
-					Content: d.Contents.Inline,
-					Enable:  true,
-					Runtime: false,
-				}
-				c.StackConfig.Etcd.CustomSystemdUnits = append(c.StackConfig.Etcd.CustomSystemdUnits, u)
-			}
-			for _, d := range p.Spec.Node.Roles.Etcd.Storage.Files {
-				s, err := load.StringFrom(d.Contents)
-				if err != nil {
-					return nil, fmt.Errorf("failed to load plugin etcd file contents: %v", err)
-				}
-				f := model.CustomFile{
-					Path:        d.Path,
-					Permissions: d.Permissions,
-					Content:     s,
-				}
-				c.StackConfig.Etcd.CustomFiles = append(c.StackConfig.Etcd.CustomFiles, f)
-			}
-			c.StackConfig.Etcd.IAMConfig.Policy.Statements = append(c.StackConfig.Etcd.IAMConfig.Policy.Statements, p.Spec.Node.Roles.Etcd.IAM.Policy.Statements...)
-		}
+	extraStack, err := extras.ControlPlaneStack()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load control-plane stack extras from plugins: %v", err)
 	}
+	c.StackConfig.ExtraCfnResources = extraStack.Resources
+
+	extraController, err := extras.Controller()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load controller node extras from plugins: %v", err)
+	}
+	c.StackConfig.Config.APIServerFlags = append(c.StackConfig.Config.APIServerFlags, extraController.APIServerFlags...)
+	c.StackConfig.Config.APIServerVolumes = append(c.StackConfig.Config.APIServerVolumes, extraController.APIServerVolumes...)
+	c.StackConfig.Controller.CustomSystemdUnits = append(c.StackConfig.Controller.CustomSystemdUnits, extraController.SystemdUnits...)
+	c.StackConfig.Controller.CustomFiles = append(c.StackConfig.Controller.CustomFiles, extraController.Files...)
+	c.StackConfig.Controller.IAMConfig.Policy.Statements = append(c.StackConfig.Controller.IAMConfig.Policy.Statements, extraController.IAMPolicyStatements...)
+
+	for k, v := range extraController.NodeLabels {
+		c.StackConfig.Controller.NodeLabels[k] = v
+	}
+
+	extraEtcd, err := extras.Etcd()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load controller node extras from plugins: %v", err)
+	}
+	c.StackConfig.Etcd.CustomSystemdUnits = append(c.StackConfig.Etcd.CustomSystemdUnits, extraEtcd.SystemdUnits...)
+	c.StackConfig.Etcd.CustomFiles = append(c.StackConfig.Etcd.CustomFiles, extraEtcd.Files...)
+	c.StackConfig.Etcd.IAMConfig.Policy.Statements = append(c.StackConfig.Etcd.IAMConfig.Policy.Statements, extraEtcd.IAMPolicyStatements...)
 
 	c.assets, err = c.buildAssets()
 

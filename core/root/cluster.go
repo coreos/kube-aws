@@ -17,8 +17,8 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/core/root/defaults"
 	"github.com/kubernetes-incubator/kube-aws/filereader/jsontemplate"
 	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
-	"github.com/kubernetes-incubator/kube-aws/plugin/plugincontents"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -166,43 +166,29 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 		return nil, fmt.Errorf("failed to establish aws session: %v", err)
 	}
 
-	additionalCfnResources := map[string]interface{}{}
-	for _, p := range plugins {
-		if enabled, pc := p.EnabledIn(cp.PluginConfigs); enabled {
-			values := p.Spec.Values.Merge(pc.Values)
-
-			render := plugincontents.TemplateRendererFor(p, values)
-
-			{
-				m, err := render.MapFromContents(p.Spec.CloudFormation.Stacks.Root.Resources.Append.Contents)
-				if err != nil {
-					return nil, fmt.Errorf("failed to load additional resources for root stack: %v", err)
-				}
-				for k, v := range m {
-					additionalCfnResources[k] = v
-				}
-			}
-
-		}
+	extras := clusterextension.NewExtrasFromPlugins(plugins, cp.PluginConfigs)
+	extra, err := extras.RootStack()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load root stack extras from plugins: %v", err)
 	}
 
 	c := clusterImpl{
-		opts:                   opts,
-		controlPlane:           cp,
-		nodePools:              nodePools,
-		session:                session,
-		AdditionalCfnResources: additionalCfnResources,
+		opts:              opts,
+		controlPlane:      cp,
+		nodePools:         nodePools,
+		session:           session,
+		ExtraCfnResources: extra.Resources,
 	}
 
 	return c, nil
 }
 
 type clusterImpl struct {
-	controlPlane           *controlplane.Cluster
-	nodePools              []*nodepool.Cluster
-	opts                   options
-	session                *session.Session
-	AdditionalCfnResources map[string]interface{}
+	controlPlane      *controlplane.Cluster
+	nodePools         []*nodepool.Cluster
+	opts              options
+	session           *session.Session
+	ExtraCfnResources map[string]interface{}
 }
 
 func (c clusterImpl) ControlPlane() *controlplane.Cluster {

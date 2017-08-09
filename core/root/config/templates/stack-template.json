@@ -97,7 +97,7 @@
         "{{$.ControlPlane.Name}}"
       ]
     }{{end}}
-    {{range $n, $r := .AdditionalCfnResources}}
+    {{range $n, $r := .ExtraCfnResources}}
     ,
     {{quote $n}}: {{toJSON $r}}
     {{end}}

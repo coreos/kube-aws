@@ -73,7 +73,7 @@ func (c ProvidedConfig) NestedStackName() string {
 func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	var err error
 	stackConfig := StackConfig{
-		AdditionalCfnResources: map[string]interface{}{},
+		ExtraCfnResources: map[string]interface{}{},
 	}
 
 	if stackConfig.ComputedConfig, err = c.Config(); err != nil {

@@ -13,10 +13,10 @@ import (
 type StackConfig struct {
 	*Config
 	StackTemplateOptions
-	UserDataController     model.UserData
-	UserDataEtcd           model.UserData
-	ControllerSubnetIndex  int
-	AdditionalCfnResources map[string]interface{}
+	UserDataController    model.UserData
+	UserDataEtcd          model.UserData
+	ControllerSubnetIndex int
+	ExtraCfnResources     map[string]interface{}
 }
 
 func (c *StackConfig) s3Folders() model.S3Folders {

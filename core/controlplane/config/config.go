@@ -791,7 +791,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions, extra ...[]*pluginapi.Pl
 
 	var err error
 	stackConfig := StackConfig{
-		AdditionalCfnResources: map[string]interface{}{},
+		ExtraCfnResources: map[string]interface{}{},
 	}
 
 	if stackConfig.Config, err = c.Config(plugins); err != nil {
