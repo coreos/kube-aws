@@ -1176,16 +1176,13 @@ addons:
 #     drainTimeout: 5
 #   # Configure OpenID Connect token authenticator plugin in Kubernetes API server.
 #   # For using Dex as a custom OIDC provider, please check "contrib/dex/README.md".
-#   # WARNING: always use "https" for the "url", otherwise the Kubernetes API server will not start correctly.
-#   # WARNING: If you upgrade from a previous deployment, you have to rename all of your dex credentials to oidc
-#   # dex.pem ==> oidc.pem, dex-key.pem ==> oidc-key.pem before executing `kube-aws render stack`.
+#   # WARNING: always use "https" for "issuerUrl", otherwise the Kubernetes API server will not start correctly.
 #   oidc:
 #     enabled: true
-#     issuer-url: "https://accounts.google.com"
+#     issuerUrl: "https://accounts.google.com"
 #     clientId: "kubernetes"
-#     username: "email"
-#     groups: "groups"
-#     selfSignedCa: false
+#     usernameClaim: "email"
+#     groupsClaim: "groups"
 #
 #   plugins:
 #     rbac:

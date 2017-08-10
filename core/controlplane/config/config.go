@@ -90,12 +90,11 @@ func NewDefaultCluster() *Cluster {
 			},
 		},
 		Oidc: model.Oidc{
-			Enabled:      false,
-			Url:          "https://accounts.google.com",
-			ClientId:     "kubernetes",
-			Username:     "email",
-			Groups:       "groups",
-			SelfSignedCa: false,
+			Enabled:       false,
+			IssuerUrl:     "https://accounts.google.com",
+			ClientId:      "kubernetes",
+			UsernameClaim: "email",
+			GroupsClaim:   "groups",
 		},
 	}
 

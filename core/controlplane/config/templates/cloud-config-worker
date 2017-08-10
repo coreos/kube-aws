@@ -726,15 +726,6 @@ write_files:
     encoding: gzip+base64
     content: {{.AssetsConfig.CACert}}
 
-{{ if .Experimental.Oidc.Enabled }}
-  - path: /etc/kubernetes/ssl/oidc.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
-    encoding: gzip+base64
-    content: {{.AssetsConfig.OidcCert}}
-
-  - path: /etc/kubernetes/ssl/oidc-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
-    encoding: gzip+base64
-    content: {{.AssetsConfig.OidcKey}}
-{{ end }}
 {{ end }}
 
 {{ if .AssetsEncryptionEnabled }}

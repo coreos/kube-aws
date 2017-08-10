@@ -4,11 +4,10 @@ Example:
 
        oidc:
          enabled: true
-         url: "https://dex.example.com"
+         issuerUrl: "https://dex.example.com"
          clientId: "example-app"
-         username: "email"
-         groups: "groups"
-         selfSignedCa: false
+         usernameClaim: "email"
+         groupsClaim: "groups"
 
 
 ## Deploy Dex
@@ -29,24 +28,22 @@ Example:
  
  For those who prefer deploying it using helm, Samsung-CNT has a [chart](https://github.com/samsung-cnct/chart-dex) available.
  
-## Exposing DEX service
-After Dex is deployed, you have to manually expose dex service using a ELB or Ingress.
-Faster is to use the `expose-service.sh` script or you can manually configure the services using the examples from `contrib/dex` directory.
+## Exposing DEX
+After Dex is deployed, you have to expose it using a ELB or Ingress. 
+
+**Note:**
+Always use https with trusted SSL/TLS certificates.
 
 1. ELB
+The recommended method is to use a ELB with certificates provided by AWS Certificate Manager.
+SSL/TLS certificates provisioned through AWS Certificate Manager are free. You pay only for the AWS resources you create to run your application.
 
-First option is to use a Public or Internal ELB.
-
-In this case you have to edit one of the files from `contrib/dex/elb` directory and set your certificate `arn` and `domainName`.
-
-Note: 
-* SSL/TLS certificates provisioned through AWS Certificate Manager are free. 
-You pay only for the AWS resources you create to run your application. This is the recommended method.
+Examples are provided in `contrib/dex/elb` directory.
 
 2. Ingress
 
-After deploying the Ingress you have to configure the workers security group to allow access on port 443 and optionally on port 80.
-Please note that if you plan to restrict access of these ports to your IP, you also have to allow access from controller nodes, as the API server will access the dex endpoint.
+An example that works with [nginx-controller](https://github.com/nginxinc/kubernetes-ingress/tree/master/nginx-controller) + [kube-lego](https://github.com/jetstack/kube-lego)  is provided in `contrib/dex/ingress`. 
+
 
 ##Configure `kubectl` for token authentication
 

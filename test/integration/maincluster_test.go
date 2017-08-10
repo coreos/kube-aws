@@ -120,12 +120,11 @@ func TestMainClusterConfig(t *testing.T) {
 				Enabled: false,
 			},
 			Oidc: model.Oidc{
-				Enabled:      false,
-				Url:          "https://accounts.google.com",
-				ClientId:     "kubernetes",
-				Username:     "email",
-				Groups:       "groups",
-				SelfSignedCa: false,
+				Enabled:       false,
+				IssuerUrl:     "https://accounts.google.com",
+				ClientId:      "kubernetes",
+				UsernameClaim: "email",
+				GroupsClaim:   "groups",
 			},
 			NodeDrainer: model.NodeDrainer{
 				Enabled:      false,
@@ -1166,11 +1165,10 @@ experimental:
       - sg-12345678
   oidc:
     enabled: true
-    url: "https://accounts.google.com"
-    clientId: "kubernetes"
-    username: "email"
-    groups: "groups"
-    SelfSignedCa: false
+    oidc-issuer-url: "https://accounts.google.com"
+    oidc-client-id: "kubernetes"
+    oidc-username-claim: "email"
+    oidc-groups-claim: "groups"
   nodeDrainer:
     enabled: true
     drainTimeout: 3
@@ -1245,12 +1243,11 @@ worker:
 							SecurityGroupIds: []string{"sg-12345678"},
 						},
 						Oidc: model.Oidc{
-							Enabled:      true,
-							Url:          "https://accounts.google.com",
-							ClientId:     "kubernetes",
-							Username:     "email",
-							Groups:       "groups",
-							SelfSignedCa: false,
+							Enabled:       true,
+							IssuerUrl:     "https://accounts.google.com",
+							ClientId:      "kubernetes",
+							UsernameClaim: "email",
+							GroupsClaim:   "groups",
 						},
 						NodeDrainer: model.NodeDrainer{
 							Enabled:      true,

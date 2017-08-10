@@ -1712,16 +1712,13 @@ write_files:
           - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }},ResourceQuota,{{if .Experimental.Admission.DenyEscalatingExec.Enabled}}DenyEscalatingExec{{end}}
           - --anonymous-auth=false
           {{if .Experimental.Oidc.Enabled}}
-          - --oidc-issuer-url={{.Experimental.Oidc.Url}}
+          - --oidc-issuer-url={{.Experimental.Oidc.IssuerUrl}}
           - --oidc-client-id={{.Experimental.Oidc.ClientId}}
-          {{if .Experimental.Oidc.Username}}
-          - --oidc-username-claim={{.Experimental.Oidc.Username}}
+          {{if .Experimental.Oidc.UsernameClaim}}
+          - --oidc-username-claim={{.Experimental.Oidc.UsernameClaim}}
           {{ end -}}
-          {{if .Experimental.Oidc.Groups}}
-          - --oidc-groups-claim={{.Experimental.Oidc.Groups}}
-          {{ end -}}
-          {{if .Experimental.Oidc.SelfSignedCa}}
-          - --oidc-ca-file=/etc/kubernetes/ssl/ca.pem
+          {{if .Experimental.Oidc.GroupsClaim}}
+          - --oidc-groups-claim={{.Experimental.Oidc.GroupsClaim}}
           {{ end -}}
           {{ end -}}
           - --cert-dir=/etc/kubernetes/ssl
@@ -2598,15 +2595,6 @@ write_files:
     encoding: gzip+base64
     content: {{.AssetsConfig.EtcdClientKey}}
 
-{{ if .Experimental.Oidc.Enabled }}
-  - path: /etc/kubernetes/ssl/oidc.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
-    encoding: gzip+base64
-    content: {{.AssetsConfig.OidcCert}}
-
-  - path: /etc/kubernetes/ssl/oidc-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
-    encoding: gzip+base64
-    content: {{.AssetsConfig.OidcKey}}
-{{ end }}
 {{ end }}
 
   - path: /etc/kubernetes/controller-kubeconfig.yaml
