@@ -1024,11 +1024,11 @@ func (c Cluster) validate() error {
 	}
 
 	if len(c.Controller.IAMConfig.Role.Name) > 0 {
-		if e := cfnresource.ValidateManagedRoleNameLength(c.Controller.IAMConfig.Role.Name, c.Region.String()); e != nil {
+		if e := cfnresource.ValidateStableRoleNameLength(c.Controller.IAMConfig.Role.Name, c.Region.String()); e != nil {
 			return e
 		}
 	} else {
-		if e := cfnresource.ValidateRoleNameLength(c.ClusterName, c.NestedStackName(), c.Controller.IAMConfig.Role.Name, c.Region.String()); e != nil {
+		if e := cfnresource.ValidateUnstableRoleNameLength(c.ClusterName, c.NestedStackName(), c.Controller.IAMConfig.Role.Name, c.Region.String()); e != nil {
 			return e
 		}
 	}

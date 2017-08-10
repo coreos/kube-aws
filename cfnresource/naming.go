@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func ValidateRoleNameLength(clusterName string, nestedStackLogicalName string, managedIAMRoleName string, region string) error {
+func ValidateUnstableRoleNameLength(clusterName string, nestedStackLogicalName string, managedIAMRoleName string, region string) error {
 	name := fmt.Sprintf("%s-%s-PRK1CVQNY7XZ-%s-%s", clusterName, nestedStackLogicalName, region, managedIAMRoleName)
 	if len(name) > 64 {
 		limit := 64 - len(name) + len(clusterName) + len(nestedStackLogicalName) + len(managedIAMRoleName)
@@ -13,7 +13,7 @@ func ValidateRoleNameLength(clusterName string, nestedStackLogicalName string, m
 	return nil
 }
 
-func ValidateManagedRoleNameLength(managedIAMRoleName string, region string) error {
+func ValidateStableRoleNameLength(managedIAMRoleName string, region string) error {
 	name := fmt.Sprintf("%s-%s", region, managedIAMRoleName)
 	if len(name) > 64 {
 		limit := 64 - len(name) + len(managedIAMRoleName)

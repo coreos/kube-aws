@@ -335,11 +335,11 @@ func (c ProvidedConfig) validate() error {
 	}
 
 	if len(c.WorkerNodePoolConfig.IAMConfig.Role.Name) > 0 {
-		if e := cfnresource.ValidateManagedRoleNameLength(c.WorkerNodePoolConfig.IAMConfig.Role.Name, c.Region.String()); e != nil {
+		if e := cfnresource.ValidateStableRoleNameLength(c.WorkerNodePoolConfig.IAMConfig.Role.Name, c.Region.String()); e != nil {
 			return e
 		}
 	} else {
-		if e := cfnresource.ValidateRoleNameLength(c.ClusterName, c.NestedStackName(), c.WorkerNodePoolConfig.IAMConfig.Role.Name, c.Region.String()); e != nil {
+		if e := cfnresource.ValidateUnstableRoleNameLength(c.ClusterName, c.NestedStackName(), c.WorkerNodePoolConfig.IAMConfig.Role.Name, c.Region.String()); e != nil {
 			return e
 		}
 	}
