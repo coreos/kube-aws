@@ -67,18 +67,6 @@ func (m Metadata) Validate() error {
 type Spec struct {
 	// Configuration is the configuration part of a plugin which is used to append arbitrary configs into various resources managed by kube-aws
 	Configuration `yaml:"configuration,omitempty"`
-	// Command is the command part of a plugin which is used to hook arbitrary code into various extension points provided by kube-aws
-	Command CommandSpec `yaml:"command,omitempty"`
-}
-
-// CommandSpec is not implemented yet
-type CommandSpec struct {
-	CommandProvider `yaml:"provider,omitempty"`
-}
-
-type CommandProvider struct {
-	Interface string `yaml:"interface,omitempty"`
-	Path      string `yaml:"path,string"`
 }
 
 // Configuration is the configuration part of a plugin which is used to append arbitrary configs into various resources managed by kube-aws
