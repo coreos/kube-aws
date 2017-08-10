@@ -69,6 +69,13 @@ metadata:
   version: 0.0.1
 spec:
   configuration:
+    # This is the defaults for the values passed to templates like:
+    # * cloudformation.stacks.{controlPlane,nodePool,root}.resources.append and
+    # * kubernetes.apiserer.flags[].value
+    #
+    # The defaults can be overridden from cluster.yaml via:
+    # * kubeAwsPlugins.pluginName.* and
+    # * worker.nodePools[].kubeAwsPlugins.pluginName.*
     values:
       queue:
         name: bar
