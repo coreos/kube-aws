@@ -12,7 +12,7 @@ import (
 	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/plugin"
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"gopkg.in/yaml.v2"
 )
 
@@ -32,7 +32,7 @@ type Config struct {
 	*controlplane.Cluster
 	NodePools         []*nodepool.ProvidedConfig
 	model.UnknownKeys `yaml:",inline"`
-	Plugins           []*pluginapi.Plugin
+	Plugins           []*pluginmodel.Plugin
 }
 
 type unknownKeysSupport interface {
@@ -53,7 +53,7 @@ func newDefaultUnmarshalledConfig() *UnmarshalledConfig {
 	}
 }
 
-func ConfigFromBytes(data []byte, plugins []*pluginapi.Plugin) (*Config, error) {
+func ConfigFromBytes(data []byte, plugins []*pluginmodel.Plugin) (*Config, error) {
 	c := newDefaultUnmarshalledConfig()
 	if err := yaml.Unmarshal(data, c); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
@@ -174,7 +174,7 @@ func failFastWhenUnknownKeysFound(vs []unknownKeyValidation) error {
 	return nil
 }
 
-func ConfigFromBytesWithEncryptService(data []byte, plugins []*pluginapi.Plugin, encryptService controlplane.EncryptService) (*Config, error) {
+func ConfigFromBytesWithEncryptService(data []byte, plugins []*pluginmodel.Plugin, encryptService controlplane.EncryptService) (*Config, error) {
 	c, err := ConfigFromBytes(data, plugins)
 	if err != nil {
 		return nil, err

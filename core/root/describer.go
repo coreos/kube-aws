@@ -8,7 +8,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
 	cp "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 )
 
 type Info struct {
@@ -44,7 +44,7 @@ func ClusterDescriberFromFile(configPath string) (ClusterDescriber, error) {
 		return nil, fmt.Errorf("failed to establish aws session: %v", err)
 	}
 
-	cpConfig, err := config.Config([]*pluginapi.Plugin{})
+	cpConfig, err := config.Config([]*pluginmodel.Plugin{})
 	if err != nil {
 		return nil, err
 	}

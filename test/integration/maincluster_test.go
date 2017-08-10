@@ -12,7 +12,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/core/root"
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"github.com/kubernetes-incubator/kube-aws/test/helper"
 )
 
@@ -3407,7 +3407,7 @@ worker:
 		t.Run(validCase.context, func(t *testing.T) {
 			configBytes := validCase.configYaml
 			// TODO Allow including plugins in test data?
-			plugins := []*pluginapi.Plugin{}
+			plugins := []*pluginmodel.Plugin{}
 			providedConfig, err := config.ConfigFromBytesWithEncryptService([]byte(configBytes), plugins, helper.DummyEncryptService{})
 			if err != nil {
 				t.Errorf("failed to parse config %s: %v", configBytes, err)
@@ -4339,7 +4339,7 @@ worker:
 		t.Run(invalidCase.context, func(t *testing.T) {
 			configBytes := invalidCase.configYaml
 			// TODO Allow including plugins in test data?
-			plugins := []*pluginapi.Plugin{}
+			plugins := []*pluginmodel.Plugin{}
 			providedConfig, err := config.ConfigFromBytes([]byte(configBytes), plugins)
 			if err == nil {
 				t.Errorf("expected to fail parsing config %s: %+v", configBytes, *providedConfig)

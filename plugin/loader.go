@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"gopkg.in/yaml.v2"
 )
 
@@ -16,14 +16,14 @@ func NewLoader() *Loader {
 	return &Loader{}
 }
 
-func (l Loader) Load() ([]*pluginapi.Plugin, error) {
-	plugins := []*pluginapi.Plugin{}
+func (l Loader) Load() ([]*pluginmodel.Plugin, error) {
+	plugins := []*pluginmodel.Plugin{}
 	fileInfos, _ := ioutil.ReadDir("plugins/")
 	for _, f := range fileInfos {
 		if f.IsDir() {
 			p, err := l.TryToLoadPluginFromDir(filepath.Join("plugins", f.Name()))
 			if err != nil {
-				return []*pluginapi.Plugin{}, fmt.Errorf("Failed to load plugin from the directory %s: %v", f.Name(), err)
+				return []*pluginmodel.Plugin{}, fmt.Errorf("Failed to load plugin from the directory %s: %v", f.Name(), err)
 			}
 			plugins = append(plugins, p)
 		}
@@ -31,7 +31,7 @@ func (l Loader) Load() ([]*pluginapi.Plugin, error) {
 	return plugins, nil
 }
 
-func (l Loader) TryToLoadPluginFromDir(path string) (*pluginapi.Plugin, error) {
+func (l Loader) TryToLoadPluginFromDir(path string) (*pluginmodel.Plugin, error) {
 	p, err := PluginFromFile(filepath.Join(path, "plugin.yaml"))
 	if err != nil {
 		return nil, fmt.Errorf("Failed to load plugin from %s: %v", path, err)
@@ -39,7 +39,7 @@ func (l Loader) TryToLoadPluginFromDir(path string) (*pluginapi.Plugin, error) {
 	return p, nil
 }
 
-func PluginFromFile(path string) (*pluginapi.Plugin, error) {
+func PluginFromFile(path string) (*pluginmodel.Plugin, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read file %s: %v", path, err)
@@ -53,8 +53,8 @@ func PluginFromFile(path string) (*pluginapi.Plugin, error) {
 	return c, nil
 }
 
-func PluginFromBytes(data []byte) (*pluginapi.Plugin, error) {
-	p := &pluginapi.Plugin{}
+func PluginFromBytes(data []byte) (*pluginmodel.Plugin, error) {
+	p := &pluginmodel.Plugin{}
 	if err := yaml.Unmarshal(data, p); err != nil {
 		return nil, fmt.Errorf("Failed to parse as yaml: %v", err)
 	}
@@ -64,12 +64,12 @@ func PluginFromBytes(data []byte) (*pluginapi.Plugin, error) {
 	return p, nil
 }
 
-func LoadAll() ([]*pluginapi.Plugin, error) {
+func LoadAll() ([]*pluginmodel.Plugin, error) {
 	loaders := []*Loader{
 		NewLoader(),
 	}
 
-	plugins := []*pluginapi.Plugin{}
+	plugins := []*pluginmodel.Plugin{}
 	for _, l := range loaders {
 		ps, err := l.Load()
 		if err != nil {

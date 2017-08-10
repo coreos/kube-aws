@@ -4,18 +4,18 @@ import (
 	"fmt"
 
 	"github.com/kubernetes-incubator/kube-aws/model"
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
 	"github.com/kubernetes-incubator/kube-aws/plugin/plugincontents"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginutil"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginvalue"
 )
 
 type ClusterExtension struct {
-	plugins []*pluginapi.Plugin
+	plugins []*pluginmodel.Plugin
 	configs model.PluginConfigs
 }
 
-func NewExtrasFromPlugins(plugins []*pluginapi.Plugin, configs model.PluginConfigs) ClusterExtension {
+func NewExtrasFromPlugins(plugins []*pluginmodel.Plugin, configs model.PluginConfigs) ClusterExtension {
 	return ClusterExtension{
 		plugins: plugins,
 		configs: configs,
@@ -61,8 +61,8 @@ type worker struct {
 }
 
 type controller struct {
-	APIServerFlags      pluginapi.APIServerFlags
-	APIServerVolumes    pluginapi.APIServerVolumes
+	APIServerFlags      pluginmodel.APIServerFlags
+	APIServerVolumes    pluginmodel.APIServerVolumes
 	Files               []model.CustomFile
 	SystemdUnits        []model.CustomSystemdUnit
 	IAMPolicyStatements []model.IAMPolicyStatement
@@ -180,8 +180,8 @@ func (e ClusterExtension) ControlPlaneStack() (*stack, error) {
 }
 
 func (e ClusterExtension) Controller() (*controller, error) {
-	apiServerFlags := pluginapi.APIServerFlags{}
-	apiServerVolumes := pluginapi.APIServerVolumes{}
+	apiServerFlags := pluginmodel.APIServerFlags{}
+	apiServerVolumes := pluginmodel.APIServerVolumes{}
 	systemdUnits := []model.CustomSystemdUnit{}
 	files := []model.CustomFile{}
 	iamStatements := model.IAMPolicyStatements{}
@@ -200,7 +200,7 @@ func (e ClusterExtension) Controller() (*controller, error) {
 					if err != nil {
 						return nil, fmt.Errorf("failed to load apisersver flags: %v", err)
 					}
-					newFlag := pluginapi.APIServerFlag{
+					newFlag := pluginmodel.APIServerFlag{
 						Name:  f.Name,
 						Value: v,
 					}

@@ -13,7 +13,7 @@ import (
 
 	"errors"
 	"fmt"
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"strings"
 	"testing"
 )
@@ -233,7 +233,7 @@ name: pool1
 			S3URI:                 "s3://test-bucket/foo/bar",
 		}
 
-		cluster, err := NewCluster(clusterConfig, stackTemplateOptions, []*pluginapi.Plugin{}, false)
+		cluster, err := NewCluster(clusterConfig, stackTemplateOptions, []*pluginmodel.Plugin{}, false)
 		if !assert.NoError(t, err) {
 			return
 		}

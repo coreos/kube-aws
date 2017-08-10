@@ -5,20 +5,20 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginapi"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 )
 
 type Loader struct {
-	p *pluginapi.Plugin
+	p *pluginmodel.Plugin
 }
 
-func LoaderFor(p *pluginapi.Plugin) *Loader {
+func LoaderFor(p *pluginmodel.Plugin) *Loader {
 	return &Loader{
 		p: p,
 	}
 }
 
-func (l *Loader) StringFrom(contents pluginapi.Contents) (string, error) {
+func (l *Loader) StringFrom(contents pluginmodel.Contents) (string, error) {
 	if contents.Inline != "" {
 		return contents.Inline, nil
 	}
