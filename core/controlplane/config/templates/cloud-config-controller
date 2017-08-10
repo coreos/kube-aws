@@ -485,6 +485,43 @@ write_files:
       [global]
       DisableSecurityGroupIngress = true
 {{end}}
+
+  - path: /opt/bin/apply-kube-aws-plugins
+    permissions: 0700
+    owner: root:root
+    content: |
+      #!/bin/bash -vxe
+
+      kubectl() {
+          /usr/bin/docker run --rm --net=host \
+            -v /etc/resolv.conf:/etc/resolv.conf \
+            -v {{.KubernetesManifestPlugin.Directory}}:{{.KubernetesManifestPlugin.Directory}} \
+            {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl "$@"
+      }
+
+      helm() {
+          /usr/bin/docker run --rm --net=host \
+            -v /etc/resolv.conf:/etc/resolv.conf \
+            -v {{.HelmReleasePlugin.Directory}}:{{.HelmReleasePlugin.Directory}} \
+            {{.HelmImage.RepoWithTag}} helm "$@"
+      }
+
+      while read m || [[ -n $m ]]; do
+        kubectl apply -f $m
+      done <{{.KubernetesManifestPlugin.ManifestListFile.Path}}
+
+      while read r || [[ -n $r ]]; do
+        release_name=$(jq .name $r)
+        chart_name=$(jq .chart.name $r)
+        chart_version=$(jq .chart.version $r)
+        values_file=$(jq .values.file $r)
+        if helm status $release_name; then
+          helm upgrade $release_name $chart_name --version $chart_version -f $values_file
+        else
+          helm install $release_name $chart_name --version $chart_version -f $values_file
+        fi
+      done <{{.HelmReleasePlugin.ReleaseListFile.Path}}
+
 {{if .Experimental.AwsEnvironment.Enabled}}
   - path: /opt/bin/set-aws-environment
     owner: root:root
@@ -680,42 +717,6 @@ write_files:
         kubectl apply -f "${mfdir}/dex-deployment.yaml";
       fi
       {{ end }}
-
-  - path: /opt/bin/apply-kube-aws-plugins
-    permissions: 0700
-    owner: root:root
-    content: |
-      #!/bin/bash -vxe
-
-      kubectl() {
-          /usr/bin/docker run --rm --net=host \
-            -v /etc/resolv.conf:/etc/resolv.conf \
-            -v {{.KubernetesManifestPlugin.Directory}}:{{.KubernetesManifestPlugin.Directory}} \
-            {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl "$@"
-      }
-
-      helm() {
-          /usr/bin/docker run --rm --net=host \
-            -v /etc/resolv.conf:/etc/resolv.conf \
-            -v {{.HelmReleasePlugin.Directory}}:{{.HelmReleasePlugin.Directory}} \
-            {{.HelmImage.RepoWithTag}} helm "$@"
-      }
-
-      while read m || [[ -n $m ]]; do
-        kubectl apply -f $m
-      done <{{.KubernetesManifestPlugin.ManifestListFile.Path}}
-
-      while read r || [[ -n $r ]]; do
-        release_name=$(jq .name $r)
-        chart_name=$(jq .chart.name $r)
-        chart_version=$(jq .chart.version $r)
-        values_file=$(jq .values.file $r)
-        if helm status $release_name; then
-          helm upgrade $release_name $chart_name --version $chart_version -f $values_file
-        else
-          helm install $release_name $chart_name --version $chart_version -f $values_file
-        fi
-      done <{{.HelmReleasePlugin.ReleaseListFile.Path}}
 
   - path: /etc/kubernetes/cni/docker_opts_cni.env
     content: |
