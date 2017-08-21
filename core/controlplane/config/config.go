@@ -89,6 +89,14 @@ func NewDefaultCluster() *Cluster {
 				Enabled: false,
 			},
 		},
+		OIDC: model.OIDC{
+			Enabled:       false,
+			IssuerURL:     "https://accounts.google.com",
+			ClientID:      "YOUR_CLIENT_ID.apps.googleusercontent.com",
+			UsernameClaim: "email",
+			GroupsClaim:   "",
+			SelfSignedCa:  false,
+		},
 		Dex: model.Dex{
 			Enabled:         false,
 			Url:             "https://dex.example.com",
@@ -531,6 +539,7 @@ type Experimental struct {
 	TargetGroup                 TargetGroup                    `yaml:"targetGroup"`
 	NodeDrainer                 model.NodeDrainer              `yaml:"nodeDrainer"`
 	Plugins                     Plugins                        `yaml:"plugins"`
+	OIDC                        model.OIDC                     `yaml:"oidc"`
 	Dex                         model.Dex                      `yaml:"dex"`
 	DisableSecurityGroupIngress bool                           `yaml:"disableSecurityGroupIngress"`
 	NodeMonitorGracePeriod      string                         `yaml:"nodeMonitorGracePeriod"`
