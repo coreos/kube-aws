@@ -247,7 +247,7 @@ releaseChannel: stable
 
 	invalidConfigs := []string{
 		`
-releaseChannel: non-existant #this release channel will never exist
+releaseChannel: non-existent #this release channel will never exist
 `,
 	}
 

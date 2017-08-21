@@ -468,6 +468,13 @@ worker:
 #      kube2IamSupport:
 #        enabled: true
 #
+#      # Propagate custom CLI options to kubelet
+#      # Provided example overrides default docker image garbage collection limits
+#      # as in https://kubernetes.io/docs/concepts/cluster-administration/kubelet-garbage-collection/
+#      # Anything from https://kubernetes.io/docs/admin/kubelet/ can be used as a value
+#
+#      kubeletOpts: --image-gc-low-threshold=50 --image-gc-high-threshold=65
+#
 #      # Kubernetes node labels to be added to worker nodes
 #      nodeLabels:
 #        kube-aws.coreos.com/role: worker
@@ -606,7 +613,7 @@ worker:
 #      arn: "arn:aws:iam::YOURACCOUNTID:instance-profile/INSTANCEPROFILENAME"
 #
 #  # The version of etcd to be used. Set to e.g. "3.2.1" to use etcd3
-#  version: 3.2.1
+#  version: 3.2.5
 #
 #  snapshot:
 #    # Set to true to periodically take an etcd snapshot
@@ -913,7 +920,7 @@ worker:
 # and pulling from quay or dockerhub is slow and you get many timeouts.
 
 # Version of hyperkube image to use. This is the tag for the hyperkube image repository.
-# kubernetesVersion: v1.7.1_coreos.0
+# kubernetesVersion: v1.7.3_coreos.0
 
 # Hyperkube image repository to use.
 # hyperkubeImage:
@@ -971,12 +978,12 @@ worker:
 # kube rescheduler image repository to use.
 #kubeReschedulerImage:
 #  repo: gcr.io/google-containers/rescheduler
-#  tag: v0.3.0
+#  tag: v0.3.1
 #  rktPullDocker: false
 
 # DNS Masq metrics image repository to use.
 #dnsMasqMetricsImage:
-#  gcr.io/google_containers/k8s-dns-sidecar-amd64
+#  repo: gcr.io/google_containers/k8s-dns-sidecar-amd64
 #  tag: 1.14.4
 #  rktPullDocker: false
 
@@ -1007,7 +1014,7 @@ worker:
 # Kube Dashboard image repository to use.
 #kubeDashboardImage:
 #  repo: gcr.io/google_containers/kubernetes-dashboard-amd64
-#  tag: v1.6.1
+#  tag: v1.6.3
 #  rktPullDocker: false
 
 # Calico Controller image repository to use.
@@ -1089,9 +1096,26 @@ worker:
 # # When enabled, feedback from Journald logs (with an applied filter) will be outputted during kube-aws 'apply | up'.
 # # It is enabled by default - provided cloudWatchLogging is enabled.
 # localStreaming:
-#  enabled: true,
-#  filter:  `{ $.priority = "CRIT" || $.priority = "WARNING" && $.transport = "journal" && $.systemdUnit = "init.scope" }`,
+#  enabled: true
+#  filter:  `{ $.priority = "CRIT" || $.priority = "WARNING" && $.transport = "journal" && $.systemdUnit = "init.scope" }`
 #  interval: 60
+
+# When enabled, all nodes will have Amazon SSM Agent installed.
+# It is disabled by default.
+# You might want to set 'managedPolicies' up to run the agents properly. More details: http://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-configuring-access-policies.html
+#amazonSsmAgent:
+#  enabled: true
+#  downloadUrl: https://github.com/DailyHotel/amazon-ssm-agent/releases/download/v2.0.805.1/ssm.linux-amd64.tar.gz
+#  sha1sum: a6fff8f9839d5905934e7e3df3123b54020a1f5e
+
+# When enabled, will enable a DNS-masq DaemonSet to make PODs to resolve DNS names via locally running dnsmasq
+# It is disabled by default.
+#kubeDns:
+# nodeLocalResolver: false
+
+# When enabled, CloudFormation events will stream to stdout during kube-aws 'update | up'.
+# It is enabled by default.
+#cloudFormationStreaming: true
 
 # Addon features
 addons:
@@ -1140,8 +1164,7 @@ addons:
 #   # certificate signing requests (csr) made to the API server using the bootstrap token. It's recommended to
 #   # also enable the rbac plugin in order to limit requests using the bootstrap token to only be able to make
 #   # requests related to certificate provisioning.
-#   # The bootstrap token must be defined in ./credentials/tokens.csv; kube-aws creates this file automatically
-#   # with a randomly generated token when this setting is enabled.
+#   # The bootstrap token is automatically generated in ./credentials/kubelet-tls-bootstrap-token.
 #   tlsBootstrap:
 #     enabled: true
 #   # This option has not yet been tested with rkt as container runtime
@@ -1157,42 +1180,15 @@ addons:
 #     enabled: true
 #     # Maximum time to wait, in minutes, for the node to be completely drained. Must be an integer between 1 and 60.
 #     drainTimeout: 5
-#   # Enable dex  integration - https://github.com/coreos/dex
 #   # Configure OpenID Connect token authenticator plugin in Kubernetes API server.
-#   # Notice: always use "https" for the "url", otherwise the Kubernetes API server will not start correctly.
-#   # Please set selfSignedCa to false if you plan to expose dex service using a LoadBalancer or Ingress with certificates signed by a trusted CA.
-#   dex:
+#   # For using Dex as a custom OIDC provider, please check "contrib/dex/README.md".
+#   # WARNING: always use "https" for "issuerUrl", otherwise the Kubernetes API server will not start correctly.
+#   oidc:
 #     enabled: true
-#     url: "https://dex.example.com"
-#     clientId: "example-app"
-#     username: "email"
-#     groups: "groups"
-#     selfSignedCa: true
-#
-#   # Dex connectors configuration. You can add configuration for the desired connectors suported by dex or
-#   # skip this part if you don't plan to use any of them. Here is an example of GitHub connector.
-#     connectors:
-#     - type: github
-#       id: github
-#       name: GitHub
-#       config:
-#         clientId: "your_client_id"
-#         clientSecret: "your_client_secret"
-#         redirectURI: https://dex.example.com/callback
-#         org: your_organization
-#   # Configure static clients and users
-#     staticClients:
-#     - id: 'example-app'
-#       redirectURIs: 'http://127.0.0.1:5555/callback'
-#       name: 'Example App'
-#       secret: 'ZXhhbXBsZS1hcHAtc2VjcmV0'
-#
-#     staticPasswords:
-#     - email: "admin@example.com"
-#       # bcrypt hash of the string "password". You can use bcrypt-tool from CoreOS to generate the passwords.
-#       hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
-#       username: "admin"
-#       userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
+#     issuerUrl: "https://accounts.google.com"
+#     clientId: "kubernetes"
+#     usernameClaim: "email"
+#     groupsClaim: "groups"
 #
 #   plugins:
 #     rbac:
@@ -1212,14 +1208,6 @@ addons:
 #stackTags:
 #  Name: "Kubernetes"
 #  Environment: "Production"
-
-# Autoscaling lifecycle notifications are used by the kube-aws node drainer
-# in order to pend termination of an EC2 instance while gracefully stopping pods running on it
-#autoscalingNotification:
-#  iam:
-#    role:
-#      # When specified, kube-aws reuses an existing IAM role as the notification role of a autoscaling lifecycle hook
-#      arn: "arn:aws:iam::YOURACCOUNTID:role/ROLENAME"
 
 # User-provided YAML map available in control-plane's stack-template.json
 #customSettings:

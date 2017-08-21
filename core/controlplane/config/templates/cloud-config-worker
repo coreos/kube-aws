@@ -83,6 +83,27 @@ coreos:
         What={{$volumeMountSpec.Device}}
         Where={{$volumeMountSpec.Path}}
 {{end}}
+{{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
+    - name: amazon-ssm-agent.service
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Description=amazon-ssm-agent
+        Requires=network-online.target
+        After=network-online.target
+
+        [Service]
+        Type=simple
+        ExecStartPre=/opt/ssm/bin/install-ssm-agent.sh
+        ExecStart=/opt/ssm/bin/amazon-ssm-agent
+        KillMode=control-group
+        Restart=on-failure
+        RestartSec=1min
+
+        [Install]
+        WantedBy=network-online.target
+{{end}}
 {{if .CloudWatchLogging.Enabled}}
     - name: journald-cloudwatch-logs.service
       command: start
@@ -209,6 +230,7 @@ coreos:
         After=nvidia-start.service
         {{- end }}
         [Service]
+        EnvironmentFile=/etc/environment
         EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=-/etc/default/kubelet
         Environment=KUBELET_IMAGE_TAG={{.K8sVer}}
@@ -245,7 +267,7 @@ coreos:
                        --endpoints "${ETCD_ENDPOINTS}" \
                        cluster-health
         {{if .UseCalico -}}
-        ExecStartPre=/usr/bin/docker run --rm -e SLEEP=false -v /opt/cni/bin:/host/opt/cni/bin {{ .CalicoCniImage.RepoWithTag }} /install-cni.sh
+        ExecStartPre=/usr/bin/docker run --rm -e SLEEP=false -e KUBERNETES_SERVICE_HOST= -e KUBERNETES_SERVICE_PORT= -v /opt/cni/bin:/host/opt/cni/bin {{ .CalicoCniImage.RepoWithTag }} /install-cni.sh
         {{end -}}
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
@@ -261,8 +283,9 @@ coreos:
         {{end}}--allow-privileged=true \
         {{if .NodeStatusUpdateFrequency}}--node-status-update-frequency={{.NodeStatusUpdateFrequency}} \
         {{end}}--pod-manifest-path=/etc/kubernetes/manifests \
-        --cluster-dns={{.DNSServiceIP}} \
-        --cluster-domain=cluster.local \
+        {{ if .KubeDns.NodeLocalResolver }}--cluster-dns=${COREOS_PRIVATE_IPV4} \
+        {{ else }}--cluster-dns={{.DNSServiceIP}} \
+        {{ end }}--cluster-domain=cluster.local \
         --cloud-provider=aws \
         --cert-dir=/etc/kubernetes/ssl \
         {{- if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
@@ -359,6 +382,22 @@ coreos:
         Type=oneshot
         RemainAfterExit=true
         ExecStart=/opt/bin/add-to-load-balancers
+{{end}}
+
+{{if .TargetGroup.Enabled}}
+    - name: add-to-target-groups.service
+      enable: true
+      command: start
+      runtime: true
+      content: |
+        [Unit]
+        Description=Add this spot instance to target groups
+        After=network-online.target
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=true
+        ExecStart=/opt/bin/add-to-target-groups
 {{end}}
 {{end}}
 
@@ -552,6 +591,41 @@ write_files:
     content: {{$w.GzippedBase64Content}}
   {{- end }}
 {{- end }}
+{{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
+  - path: "/opt/ssm/bin/install-ssm-agent.sh"
+    permissions: 0700
+    content: |
+      #!/bin/bash
+      set -e
+
+      TARGET_DIR=/opt/ssm
+      if [[ -f "${TARGET_DIR}"/bin/amazon-ssm-agent ]]; then
+        exit 0
+      fi
+
+      TMP_DIR=$(mktemp -d)
+      trap "rm -rf ${TMP_DIR}" EXIT
+
+      TAR_FILE=ssm.linux-amd64.tar.gz
+      CHECKSUM_FILE="${TAR_FILE}.sha1"
+
+      echo -n "{{ .AmazonSsmAgent.Sha1Sum }} ${TMP_DIR}/${TAR_FILE}" > "${TMP_DIR}/${CHECKSUM_FILE}"
+
+      curl --silent -L -o "${TMP_DIR}/${TAR_FILE}" "{{ .AmazonSsmAgent.DownloadUrl }}"
+
+      sha1sum --quiet -c "${TMP_DIR}/${CHECKSUM_FILE}"
+
+      tar zfx "${TMP_DIR}"/"${TAR_FILE}" -C "${TMP_DIR}"
+      chown -R root:root "${TMP_DIR}"/ssm
+
+      CONFIG_DIR=/etc/amazon/ssm
+      mkdir -p "${CONFIG_DIR}"
+      mv -f "${TMP_DIR}"/ssm/amazon-ssm-agent.json "${CONFIG_DIR}"/amazon-ssm-agent.json
+      mv -f "${TMP_DIR}"/ssm/seelog_unix.xml "${CONFIG_DIR}"/seelog.xml
+
+      mv -f "${TMP_DIR}"/ssm/* "${TARGET_DIR}"/bin/
+
+{{end}}
 {{if .AwsEnvironment.Enabled}}
   - path: /opt/bin/set-aws-environment
     owner: root:root
@@ -622,7 +696,7 @@ write_files:
     permissions: 0755
     owner: root:root
     content: |
-      KUBELET_OPTS=""
+      KUBELET_OPTS="{{.Experimental.KubeletOpts}}"
 
   - path: /etc/kubernetes/cni/docker_opts_cni.env
     content: |
@@ -668,15 +742,6 @@ write_files:
     encoding: gzip+base64
     content: {{.AssetsConfig.CACert}}
 
-{{ if .Experimental.Dex.Enabled }}
-  - path: /etc/kubernetes/ssl/dex.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
-    encoding: gzip+base64
-    content: {{.AssetsConfig.DexCert}}
-
-  - path: /etc/kubernetes/ssl/dex-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
-    encoding: gzip+base64
-    content: {{.AssetsConfig.DexKey}}
-{{ end }}
 {{ end }}
 
 {{ if .AssetsEncryptionEnabled }}
@@ -733,7 +798,7 @@ write_files:
 
       instance_id=$(curl http://169.254.169.254/latest/meta-data/instance-id)
 
-      sudo rkt run \
+      rkt run \
         --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
         --mount=volume=ssl,target=/etc/kubernetes/ssl \
         --uuid-file-save=/var/run/coreos/tag-spot-instance.uuid \
@@ -751,7 +816,7 @@ write_files:
              --tags '"'"'Key=kubernetes.io/cluster/{{.ClusterName}},Value=""'"'"' '"'"'Key=Name,Value="{{.ClusterName}}-{{.StackName}}-kube-aws-worker"'"'"' '"'"'Key="kube-aws:node-pool:name",Value="{{.NodePoolName}}"'"'"'
            echo done.'
 
-      sudo rkt rm --uuid-file=/var/run/coreos/tag-spot-instance.uuid
+      rkt rm --uuid-file=/var/run/coreos/tag-spot-instance.uuid
 {{if .Experimental.LoadBalancer.Enabled}}
   - path: /opt/bin/add-to-load-balancers
     owner: root:root
@@ -761,7 +826,7 @@ write_files:
 
       instance_id=$(curl http://169.254.169.254/latest/meta-data/instance-id)
 
-      sudo rkt run \
+      rkt run \
         --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
         --mount=volume=ssl,target=/etc/kubernetes/ssl \
         --uuid-file-save=/var/run/coreos/add-to-load-balancers.uuid \
@@ -773,7 +838,7 @@ write_files:
           -vxec \
           'echo adding this spot instance to load balancers
            instance_id="'$instance_id'"
-           lbs=({{range $i, $lb := .Experimental.LoadBalancer.Names}}"{{$lb}}" {{end}})
+           lbs=({{range $lb := .Experimental.LoadBalancer.Names}}"{{$lb}}" {{end}})
            add_to_lb="/usr/bin/aws --region {{.Region}} elb register-instances-with-load-balancer --instances $instance_id --load-balancer-name"
            for lb in ${lbs[@]}; do
              echo "$lb"
@@ -781,7 +846,39 @@ write_files:
            done
            echo done.'
 
-      sudo rkt rm --uuid-file=/var/run/coreos/add-to-load-balancers.uuid
+      rkt rm --uuid-file=/var/run/coreos/add-to-load-balancers.uuid
+{{end}}
+
+{{if .Experimental.TargetGroup.Enabled}}
+  - path: /opt/bin/add-to-target-groups
+    owner: root:root
+    permissions: 0700
+    content: |
+      #!/bin/bash -e
+
+      instance_id=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+
+      rkt run \
+        --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
+        --mount=volume=ssl,target=/etc/kubernetes/ssl \
+        --uuid-file-save=/var/run/coreos/add-to-target-groups.uuid \
+        --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
+        --net=host \
+        --trust-keys-from-https \
+        --insecure-options=ondisk \
+        {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
+          -vxec \
+          'echo adding this spot instance to target groups
+           instance_id="'$instance_id'"
+           tgs=({{range $tg := .Experimental.TargetGroup.Arns}}"{{$tg}}" {{end}})
+           add_to_tg="/usr/bin/aws --region {{.Region}} elbv2 register-targets --targets Id=$instance_id --target-group-arn"
+           for tg in ${tgs[@]}; do
+             echo "$tg"
+             $add_to_tg "$tg"
+           done
+           echo done.'
+
+      rkt rm --uuid-file=/var/run/coreos/add-to-target-groups.uuid
 {{end}}
 {{end}}
 

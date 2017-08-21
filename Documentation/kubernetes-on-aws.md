@@ -88,6 +88,13 @@ export AWS_ACCESS_KEY_ID=AKID1234567890
 export AWS_SECRET_ACCESS_KEY=MY-SECRET-KEY
 ```
 
+If you are using MFA, pls export the Session Token
+
+```sh
+export AWS_SESSION_TOKEN=MY-SESSION-TOKEN
+```
+
+
 ## Test Credentials
 
 Test that your credentials work by describing any instances you may already have running on your account:

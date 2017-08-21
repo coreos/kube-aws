@@ -273,6 +273,8 @@ addons:
     enabled: true
 cloudWatchLogging:
   enabled: true
+amazonSsmAgent:
+  enabled: true
 # etcd configuration
 etcd:
   count: $ETCD_COUNT" >> cluster.yaml

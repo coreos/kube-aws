@@ -41,6 +41,27 @@ coreos:
         {{ $l }}
         {{- end }}
 {{- end}}
+{{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
+    - name: amazon-ssm-agent.service
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Description=amazon-ssm-agent
+        Requires=network-online.target
+        After=network-online.target
+
+        [Service]
+        Type=simple
+        ExecStartPre=/opt/ssm/bin/install-ssm-agent.sh
+        ExecStart=/opt/ssm/bin/amazon-ssm-agent
+        KillMode=controll-group
+        Restart=on-failure
+        RestartSec=1min
+
+        [Install]
+        WantedBy=network-online.target
+{{end}}
 {{if .CloudWatchLogging.Enabled}}
     - name: journald-cloudwatch-logs.service
       command: start
@@ -184,6 +205,8 @@ coreos:
         Wants=flanneld.service cfn-etcd-environment.service
         After=cfn-etcd-environment.service
         [Service]
+        # EnvironmentFile=/etc/environment allows the reading of COREOS_PRIVATE_IPV4
+        EnvironmentFile=/etc/environment
         EnvironmentFile=-/etc/etcd-environment
         Environment=KUBELET_IMAGE_TAG={{.K8sVer}}
         Environment=KUBELET_IMAGE_URL={{ .HyperkubeImage.RktRepoWithoutTag }}
@@ -223,7 +246,7 @@ coreos:
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/manifests /srv/kubernetes/manifests  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
         {{if .UseCalico -}}
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/cni/net.d/ -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
-        ExecStartPre=/usr/bin/docker run --rm -e SLEEP=false -v /opt/cni/bin:/host/opt/cni/bin {{ .CalicoCniImage.RepoWithTag }} /install-cni.sh
+        ExecStartPre=/usr/bin/docker run --rm -e SLEEP=false -e KUBERNETES_SERVICE_HOST= -e KUBERNETES_SERVICE_PORT= -v /opt/cni/bin:/host/opt/cni/bin {{ .CalicoCniImage.RepoWithTag }} /install-cni.sh
         {{end -}}
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
         --kubeconfig=/etc/kubernetes/controller-kubeconfig.yaml \
@@ -240,9 +263,11 @@ coreos:
         --register-with-taints=node.alpha.kubernetes.io/role=master:NoSchedule \
         --allow-privileged=true \
         --pod-manifest-path=/etc/kubernetes/manifests \
-        --cluster-dns={{.DNSServiceIP}} \
-        --cluster-domain=cluster.local \
-        --cloud-provider=aws
+        {{ if .KubeDns.NodeLocalResolver }}--cluster-dns=${COREOS_PRIVATE_IPV4} \
+        {{ else }}--cluster-dns={{.DNSServiceIP}} \
+        {{ end }}--cluster-domain=cluster.local \
+        --cloud-provider=aws \
+        $KUBELET_OPTS
         Restart=always
         RestartSec=10
 
@@ -291,10 +316,12 @@ coreos:
         StartLimitInterval=0
         RestartSec=10
         Restart=on-failure
+        RemainAfterExit=true
         ExecStartPre=/usr/bin/systemctl is-active kubelet.service
         ExecStartPre=/usr/bin/systemctl is-active docker.service
         ExecStartPre=/usr/bin/curl -s -f http://127.0.0.1:8080/version
-        ExecStart=/opt/bin/install-kube-system
+        ExecStartPre=/opt/bin/install-kube-system
+        ExecStart=/bin/true
 
     - name: apply-kube-aws-plugins.service
       command: start
@@ -336,11 +363,16 @@ coreos:
       command: start
       content: |
         [Unit]
-        Wants=kubelet.service docker.service
-        After=kubelet.service
+        Wants=kubelet.service docker.service install-kube-system.service
+        After=kubelet.service install-kube-system.service
 
         [Service]
-        Type=oneshot
+        Type=simple
+        Restart=on-failure
+        RestartSec=60
+        StartLimitInterval=320
+        StartLimitBurst=5
+        ExecStartPre=/usr/bin/systemctl is-active install-kube-system.service
         ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl -s -m 20 -f  http://127.0.0.1:8080/healthz > /dev/null &&  /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10252/healthz > /dev/null && /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10251/healthz > /dev/null &&  /usr/bin/curl --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null ; then break ; fi;  done"
         {{ if .UseCalico }}
         ExecStartPre=/usr/bin/bash -c "until /usr/bin/docker run --net=host --pid=host --rm {{ .CalicoCtlImage.RepoWithTag }} node status > /dev/null; do sleep 3; done && echo Calico running"
@@ -477,6 +509,41 @@ write_files:
     content: {{$w.GzippedBase64Content}}
   {{- end }}
 {{- end }}
+{{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
+  - path: "/opt/ssm/bin/install-ssm-agent.sh"
+    permissions: 0700
+    content: |
+      #!/bin/bash
+      set -e
+
+      TARGET_DIR=/opt/ssm
+      if [[ -f "${TARGET_DIR}"/bin/amazon-ssm-agent ]]; then
+        exit 0
+      fi
+
+      TMP_DIR=$(mktemp -d)
+      trap "rm -rf ${TMP_DIR}" EXIT
+
+      TAR_FILE=ssm.linux-amd64.tar.gz
+      CHECKSUM_FILE="${TAR_FILE}.sha1"
+
+      echo -n "{{ .AmazonSsmAgent.Sha1Sum }} ${TMP_DIR}/${TAR_FILE}" > "${TMP_DIR}/${CHECKSUM_FILE}"
+
+      curl --silent -L -o "${TMP_DIR}/${TAR_FILE}" "{{ .AmazonSsmAgent.DownloadUrl }}"
+
+      sha1sum --quiet -c "${TMP_DIR}/${CHECKSUM_FILE}"
+
+      tar zfx "${TMP_DIR}"/"${TAR_FILE}" -C "${TMP_DIR}"
+      chown -R root:root "${TMP_DIR}"/ssm
+
+      CONFIG_DIR=/etc/amazon/ssm
+      mkdir -p "${CONFIG_DIR}"
+      mv -f "${TMP_DIR}"/ssm/amazon-ssm-agent.json "${CONFIG_DIR}"/amazon-ssm-agent.json
+      mv -f "${TMP_DIR}"/ssm/seelog_unix.xml "${CONFIG_DIR}"/seelog.xml
+
+      mv -f "${TMP_DIR}"/ssm/* "${TARGET_DIR}"/bin/
+
+{{end}}
 {{if .Experimental.DisableSecurityGroupIngress}}
   - path: /etc/kubernetes/additional-configs/cloud.config
     owner: root:root
@@ -640,6 +707,12 @@ write_files:
 
       rkt rm --uuid-file=/var/run/coreos/cfn-etcd-environment.uuid || :
 
+  - path: /etc/default/kubelet
+    permissions: 0755
+    owner: root:root
+    content: |
+      KUBELET_OPTS="{{.Experimental.KubeletOpts}}"
+
   - path: /opt/bin/install-kube-system
     permissions: 0700
     owner: root:root
@@ -663,30 +736,35 @@ write_files:
       {{ end }}
 
       {{ if .Experimental.NodeDrainer.Enabled }}
-      kubectl apply -f "${mfdir}/kube-node-drainer-ds.yaml"
+      for manifest in {kube-node-drainer-ds,kube-node-drainer-asg-status-updater-de}; do
+          kubectl apply -f "${mfdir}/$manifest.yaml"
+      done
       {{ end }}
 
       # Configmaps
       kubectl apply -f "${mfdir}/kube-dns-cm.yaml"
 
-      # Serviceaccounts
-      kubectl apply -f "${mfdir}/kube-dns-sa.yaml"
-      kubectl apply -f "${mfdir}/heapster-sa.yaml"
+      # Service Accounts
+      for manifest in {kube-dns,heapster}; do
+          kubectl apply -f "${mfdir}/$manifest-sa.yaml"
+      done
 
       # Install tiller by default
       kubectl apply -f "${mfdir}/tiller.yaml"
 
+{{ if .KubeDns.NodeLocalResolver }}
+      # DNS Masq Fix
+      kubectl apply -f "${mfdir}/dnsmasq-node-ds.yaml"
+{{ end }}
+
       # Deployments
-      for manifest in {kube-dns-de,kube-dns-autoscaler-de,{{ if .Addons.ClusterAutoscaler.Enabled }}cluster-autoscaler-de,{{ end }}heapster-de{{ if .KubeResourcesAutosave.Enabled }},kube-resources-autosave{{ end }}}.yaml; do
-          kubectl apply -f "${mfdir}/$manifest"
+      for manifest in {kube-dns,kube-dns-autoscaler,kube-dashboard,{{ if .Addons.ClusterAutoscaler.Enabled }}cluster-autoscaler,{{ end }}heapster{{ if .KubeResourcesAutosave.Enabled }},kube-resources-autosave{{ end }}}; do
+          kubectl apply -f "${mfdir}/$manifest-de.yaml"
       done
 
-      # Replicationcontrollers
-      kubectl apply -f "${mfdir}/kube-dashboard-de.yaml"
-
       # Services
-      for manifest in {kube-dns,heapster,kube-dashboard}-svc.yaml;do
-          kubectl apply -f "${mfdir}/$manifest"
+      for manifest in {kube-dns,heapster,kube-dashboard}; do
+          kubectl apply -f "${mfdir}/$manifest-svc.yaml"
       done
 
       {{- if .Addons.Rescheduler.Enabled }}
@@ -696,26 +774,39 @@ write_files:
       {{if .Experimental.Plugins.Rbac.Enabled}}
       mfdir=/srv/kubernetes/rbac
 
-      kubectl apply -f "${mfdir}/cluster-roles/node-extensions.yaml"
-
+      # Cluster roles and bindings
+      for manifest in {node-extensions,}; do
+          kubectl apply -f "${mfdir}/cluster-roles/$manifest.yaml"
+      done
       for manifest in {kube-admin,system-worker,node,node-proxier,node-extensions,heapster}; do
           kubectl apply -f "${mfdir}/cluster-role-bindings/$manifest.yaml"
       done
 
+      # Roles and bindings
+      for manifest in {pod-nanny,}; do
+          kubectl apply -f "${mfdir}/roles/$manifest.yaml"
+      done
+      for manifest in {heapster-nanny,}; do
+          kubectl apply -f "${mfdir}/role-bindings/$manifest.yaml"
+      done
+
       {{ if .Experimental.TLSBootstrap.Enabled }}
-      kubectl create -f "${mfdir}/cluster-roles/node-bootstrapper.yaml" | echo 'Failed to create the cluster role named "kube-aws:node-bootstrapper". Skipping'
-      kubectl create -f "${mfdir}/cluster-role-bindings/node-bootstrapper.yaml" | echo 'Failed to create the cluster role binding "kube-aws:node-bootstrapper". Skipping'
+      for manifest in {node-bootstrapper,kubelet-certificate-bootstrap}; do
+          kubectl apply -f "${mfdir}/cluster-roles/$manifest.yaml"
+      done
+
+      for manifest in {node-bootstrapper,kubelet-certificate-bootstrap}; do
+          kubectl apply -f "${mfdir}/cluster-role-bindings/$manifest.yaml"
+      done
       {{ end }}
       {{ end }}
 
-      {{ if .Experimental.Dex.Enabled }}
-      if kubectl get cm dex -n kube-system;
-        then echo "Configmap for dex already exists and could have been customized. Skipping.";
-      else
+      {{if .Experimental.Kube2IamSupport.Enabled }}
         mfdir=/srv/kubernetes/manifests
-        kubectl apply -f "${mfdir}/dex-cm.yaml"
-        kubectl apply -f "${mfdir}/dex-deployment.yaml";
-      fi
+       {{if .Experimental.Plugins.Rbac.Enabled}}
+        kubectl apply -f "${mfdir}/kube2iam-rbac.yaml"
+       {{end}}
+        kubectl apply -f "${mfdir}/kube2iam-ds.yaml";
       {{ end }}
 
   - path: /etc/kubernetes/cni/docker_opts_cni.env
@@ -828,6 +919,8 @@ write_files:
                         key: etcd_endpoints
                   - name: CALICO_NETWORKING_BACKEND
                     value: "none"
+                  - name: CLUSTER_TYPE
+                    value: "kubeaws,canal"
                   - name: CALICO_DISABLE_FILE_LOGGING
                     value: "true"
                   - name: NO_DEFAULT_POOLS
@@ -962,7 +1055,7 @@ write_files:
 
 {{ end }}
 {{ if .KubeResourcesAutosave.Enabled }}
-  - path: /srv/kubernetes/manifests/kube-resources-autosave.yaml
+  - path: /srv/kubernetes/manifests/kube-resources-autosave-de.yaml
     content: |
       ---
       apiVersion: extensions/v1beta1
@@ -1121,22 +1214,103 @@ write_files:
 {{ end }}
 
 {{if .Experimental.NodeDrainer.Enabled}}
+  - path: /srv/kubernetes/manifests/kube-node-drainer-asg-status-updater-de.yaml
+    content: |
+        kind: Deployment
+        apiVersion: extensions/v1beta1
+        metadata:
+          name: kube-node-drainer-asg-status-updater
+          namespace: kube-system
+          labels:
+            k8s-app: kube-node-drainer-asg-status-updater
+        spec:
+          replicas: 1
+          template:
+            metadata:
+              labels:
+                k8s-app: kube-node-drainer-asg-status-updater
+              annotations:
+                scheduler.alpha.kubernetes.io/critical-pod: ''
+            spec:
+              initContainers:
+                - name: hyperkube
+                  image: {{.HyperkubeImage.RepoWithTag}}
+                  command:
+                  - /bin/cp
+                  - -f
+                  - /hyperkube
+                  - /workdir/hyperkube
+                  volumeMounts:
+                  - mountPath: /workdir
+                    name: workdir
+              containers:
+                - name: main
+                  image: {{.AWSCliImage.RepoWithTag}}
+                  env:
+                  - name: NODE_NAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: spec.nodeName
+                  command:
+                  - /bin/sh
+                  - -xec
+                  - |
+                    metadata() { wget -O - -q http://169.254.169.254/2016-09-02/"$1"; }
+                    asg()      { aws --region="${REGION}" autoscaling "$@"; }
+
+                    # Hyperkube binary is not statically linked, so we need to use
+                    # the musl interpreter to be able to run it in this image
+                    # See: https://github.com/kubernetes-incubator/kube-aws/pull/674#discussion_r118889687
+                    kubectl() { /lib/ld-musl-x86_64.so.1 /opt/bin/hyperkube kubectl "$@"; }
+
+                    REGION=$(metadata dynamic/instance-identity/document | jq -r .region)
+                    [ -n "${REGION}" ]
+
+                    # Not customizable, for now
+                    POLL_INTERVAL=10
+
+                    # Keeps a comma-separated list of instances that need to be drained. Sets '-'
+                    # to force the ConfigMap to be updated in the first iteration.
+                    instances_to_drain='-'
+
+                    # Instance termination detection loop
+                    while sleep ${POLL_INTERVAL}; do
+
+                      # Fetch the list of instances being terminated by their respective ASGs
+                      updated_instances_to_drain=$(asg describe-auto-scaling-groups | jq -r '[.AutoScalingGroups[] | select((.Tags[].Key | contains("kube-aws:")) and (.Tags[].Key | contains("kubernetes.io/cluster/{{.ClusterName}}"))) | .Instances[] | select(.LifecycleState == "Terminating:Wait") | .InstanceId] | sort | join(",")')
+
+                      # Have things changed since last iteration?
+                      if [ "${updated_instances_to_drain}" == "${instances_to_drain}" ]; then
+                        continue
+                      fi
+                      instances_to_drain="${updated_instances_to_drain}"
+
+                      # Update ConfigMap to reflect current ASG state
+                      echo "{\"apiVersion\": \"v1\", \"kind\": \"ConfigMap\", \"metadata\": {\"name\": \"kube-node-drainer-status\"}, \"data\": {\"asg\": \"${instances_to_drain}\"}}" | kubectl -n kube-system apply -f -
+                    done
+                  volumeMounts:
+                  - mountPath: /opt/bin
+                    name: workdir
+              volumes:
+                - name: workdir
+                  emptyDir: {}
+
   - path: /srv/kubernetes/manifests/kube-node-drainer-ds.yaml
     content: |
         kind: DaemonSet
         apiVersion: extensions/v1beta1
         metadata:
-          name: kube-node-drainer-sg-ds
+          name: kube-node-drainer-ds
           namespace: kube-system
           labels:
-            k8s-app: kube-node-drainer-sg-ds
+            k8s-app: kube-node-drainer-ds
         spec:
           updateStrategy:
             type: RollingUpdate
           template:
             metadata:
               labels:
-                k8s-app: kube-node-drainer-sg-ds
+                k8s-app: kube-node-drainer-ds
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
             spec:
@@ -1182,19 +1356,14 @@ write_files:
                     REGION=$(metadata dynamic/instance-identity/document | jq -r .region)
                     [ -n "${REGION}" ]
 
-                    # Not customizable (for now)
-                    SPOT_POLL_INTERVAL=5
-                    SG_POLL_INTERVAL=30
+                    # Not customizable, for now
+                    POLL_INTERVAL=10
 
-                    # Used to control when to execute each termination check
-                    secs=0
-
-                    # Used to identify which was the source that requested the instance termination ('spot' or 'asg', for now)
+                    # Used to identify the source which requested the instance termination
                     termination_source=''
 
                     # Instance termination detection loop
-                    while sleep ${SPOT_POLL_INTERVAL}; do
-                      secs=$((secs + SPOT_POLL_INTERVAL))
+                    while sleep ${POLL_INTERVAL}; do
 
                       # Spot instance termination check
                       http_status=$(curl -o /dev/null -w '%{http_code}' -sL http://169.254.169.254/latest/meta-data/spot/termination-time)
@@ -1203,16 +1372,10 @@ write_files:
                         break
                       fi
 
-                      if [ $((secs % SG_POLL_INTERVAL)) -eq 0 ]; then
-                        # Reset counter to avoid overflow
-                        secs=0
-
-                        # AutoScalingGroup lifecycle check
-                        state=$(asg describe-auto-scaling-instances --region "${REGION}" --instance-ids "${INSTANCE_ID}" | jq -r '.AutoScalingInstances[].LifecycleState')
-                        if [ "${state}" = Terminating:Wait ]; then
-                          termination_source=asg
-                          break
-                        fi
+                      # Termination ConfigMap check
+                      if [ -e /etc/kube-node-drainer/asg ] && grep -q "${INSTANCE_ID}" /etc/kube-node-drainer/asg; then
+                        termination_source=asg
+                        break
                       fi
                     done
 
@@ -1224,13 +1387,12 @@ write_files:
                         echo Not all pods on this host can be evicted, will try again
                         continue
                       fi
+                      echo All evictable pods are gone
 
                       if [ "${termination_source}" == asg ]; then
-                        echo All evictable pods are gone, notifying AutoScalingGroup that instance ${INSTANCE_ID} can be shutdown
+                        echo Notifying AutoScalingGroup that instance ${INSTANCE_ID} can be shutdown
                         ASG_NAME=$(asg describe-auto-scaling-instances --instance-ids "${INSTANCE_ID}" | jq -r '.AutoScalingInstances[].AutoScalingGroupName')
                         HOOK_NAME=$(asg describe-lifecycle-hooks --auto-scaling-group-name "${ASG_NAME}" | jq -r '.LifecycleHooks[].LifecycleHookName' | grep -i nodedrainer)
-
-                        echo Sending notification to ASG_NAME=${ASG_NAME} HOOK_NAME=${HOOK_NAME}
                         asg complete-lifecycle-action --lifecycle-action-result CONTINUE --instance-id "${INSTANCE_ID}" --lifecycle-hook-name "${HOOK_NAME}" --auto-scaling-group-name "${ASG_NAME}"
                       fi
 
@@ -1240,9 +1402,18 @@ write_files:
                   volumeMounts:
                   - mountPath: /opt/bin
                     name: workdir
+                  - mountPath: /etc/kube-node-drainer
+                    name: kube-node-drainer-status
+                    readOnly: true
               volumes:
-                - name: workdir
-                  emptyDir: {}
+              - name: workdir
+                emptyDir: {}
+              - name: kube-node-drainer-status
+                projected:
+                  sources:
+                  - configMap:
+                      name: kube-node-drainer-status
+                      optional: true
 {{end}}
 
 {{if .Experimental.Plugins.Rbac.Enabled }}
@@ -1398,7 +1569,86 @@ write_files:
           name: heapster
           namespace: kube-system
 
+  # Heapster's pod_nanny monitors the heapster deployment & its pod(s), and scales
+  # the resources of the deployment if necessary.
+  - path: /srv/kubernetes/rbac/roles/pod-nanny.yaml
+    content: |
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        kind: Role
+        metadata:
+          name: system:pod-nanny
+          namespace: kube-system
+          labels:
+            kubernetes.io/cluster-service: "true"
+            addonmanager.kubernetes.io/mode: Reconcile
+        rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+        - apiGroups:
+          - "extensions"
+          resources:
+          - deployments
+          verbs:
+          - get
+          - update
+
+  # Allow heapster nanny access to the pod nanny role via its service account (same pod as heapster)
+  - path: /srv/kubernetes/rbac/role-bindings/heapster-nanny.yaml
+    content: |
+        kind: RoleBinding
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        metadata:
+          name: heapster-nanny
+          namespace: kube-system
+          labels:
+            kubernetes.io/cluster-service: "true"
+            addonmanager.kubernetes.io/mode: Reconcile
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: Role
+          name: system:pod-nanny
+        subjects:
+        - kind: ServiceAccount
+          name: heapster
+          namespace: kube-system
+
 {{ if .Experimental.TLSBootstrap.Enabled }}
+  # A ClusterRole which instructs the CSR approver to approve a user requesting
+  # node client credentials.
+  - path: /srv/kubernetes/rbac/cluster-roles/kubelet-certificate-bootstrap.yaml
+    content: |
+        kind: ClusterRole
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        metadata:
+          name: kube-aws:kubelet-certificate-bootstrap
+        rules:
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
+          - certificatesigningrequests/nodeclient
+          verbs:
+          - create
+
+  # Approve all CSRs for the group "system:kubelet-bootstrap-token"
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/kubelet-certificate-bootstrap.yaml
+    content: |
+        kind: ClusterRoleBinding
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        metadata:
+          name: kube-aws:kubelet-certificate-bootstrap
+        subjects:
+        - kind: Group
+          name: system:kubelet-bootstrap
+          apiGroup: rbac.authorization.k8s.io
+        roleRef:
+          kind: ClusterRole
+          name: kube-aws:kubelet-certificate-bootstrap
+          apiGroup: rbac.authorization.k8s.io
+
   # Only allows certificate signing requests to be performed with the bootstrap token
   - path: /srv/kubernetes/rbac/cluster-roles/node-bootstrapper.yaml
     content: |
@@ -1408,7 +1658,7 @@ write_files:
           name: kube-aws:node-bootstrapper
         rules:
           - apiGroups:
-              - '*'
+              - certificates.k8s.io
             resources:
               - certificatesigningrequests
             verbs:
@@ -1523,17 +1773,14 @@ write_files:
           - --advertise-address=$private_ipv4
           - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }},ResourceQuota,{{if .Experimental.Admission.DenyEscalatingExec.Enabled}}DenyEscalatingExec{{end}}
           - --anonymous-auth=false
-          {{if .Experimental.Dex.Enabled}}
-          - --oidc-issuer-url={{.Experimental.Dex.Url}}
-          - --oidc-client-id={{.Experimental.Dex.ClientId}}
-          {{if .Experimental.Dex.Username}}
-          - --oidc-username-claim={{.Experimental.Dex.Username}}
+          {{if .Experimental.Oidc.Enabled}}
+          - --oidc-issuer-url={{.Experimental.Oidc.IssuerUrl}}
+          - --oidc-client-id={{.Experimental.Oidc.ClientId}}
+          {{if .Experimental.Oidc.UsernameClaim}}
+          - --oidc-username-claim={{.Experimental.Oidc.UsernameClaim}}
           {{ end -}}
-          {{if .Experimental.Dex.Groups}}
-          - --oidc-groups-claim={{.Experimental.Dex.Groups}}
-          {{ end -}}
-          {{if .Experimental.Dex.SelfSignedCa}}
-          - --oidc-ca-file=/etc/kubernetes/ssl/ca.pem
+          {{if .Experimental.Oidc.GroupsClaim}}
+          - --oidc-groups-claim={{.Experimental.Oidc.GroupsClaim}}
           {{ end -}}
           {{ end -}}
           - --cert-dir=/etc/kubernetes/ssl
@@ -1802,6 +2049,104 @@ write_files:
                   - --logtostderr=true
                   - --v=2
 
+{{ if .KubeDns.NodeLocalResolver }}
+  - path: /srv/kubernetes/manifests/dnsmasq-node-ds.yaml
+    content: |
+        apiVersion: extensions/v1beta1
+        kind: DaemonSet
+        metadata:
+          name: dnsmasq-node
+          namespace: kube-system
+          labels:
+            k8s-app: dnsmasq-node
+        spec:
+          updateStrategy:
+            type: RollingUpdate
+          template:
+            metadata:
+              labels:
+                k8s-app: dnsmasq-node
+              annotations:
+                scheduler.alpha.kubernetes.io/critical-pod: ''
+            spec:
+              tolerations:
+              - operator: Exists
+                effect: NoSchedule
+              - operator: Exists
+                effect: NoExecute
+              - operator: Exists
+                key: CriticalAddonsOnly
+              volumes:
+              - name: kube-dns-config
+                configMap:
+                  name: kube-dns
+                  optional: true
+              containers:
+              - name: dnsmasq
+                image: {{ .KubeDnsMasqImage.RepoWithTag }}
+                livenessProbe:
+                  httpGet:
+                    path: /healthcheck/dnsmasq
+                    port: 10054
+                    scheme: HTTP
+                  initialDelaySeconds: 60
+                  timeoutSeconds: 5
+                  successThreshold: 1
+                  failureThreshold: 5
+                args:
+                - -v=2
+                - -logtostderr
+                - -configDir=/etc/k8s/dns/dnsmasq-nanny
+                - -restartDnsmasq=true
+                - --
+                - -k
+                - --cache-size=1000
+                - --server=/cluster.local/{{.DNSServiceIP}}
+                - --server=/in-addr.arpa/{{.DNSServiceIP}}
+                - --server=/ip6.arpa/{{.DNSServiceIP}}
+                - --log-facility=-
+                ports:
+                - containerPort: 53
+                  name: dns
+                  protocol: UDP
+                - containerPort: 53
+                  name: dns-tcp
+                  protocol: TCP
+                # see: https://github.com/kubernetes/kubernetes/issues/29055 for details
+                resources:
+                  requests:
+                    cpu: 150m
+                    memory: 20Mi
+                volumeMounts:
+                - name: kube-dns-config
+                  mountPath: /etc/k8s/dns/dnsmasq-nanny
+              - name: sidecar
+                image: {{ .DnsMasqMetricsImage.RepoWithTag }}
+                livenessProbe:
+                  httpGet:
+                    path: /metrics
+                    port: 10054
+                    scheme: HTTP
+                  initialDelaySeconds: 60
+                  timeoutSeconds: 5
+                  successThreshold: 1
+                  failureThreshold: 5
+                args:
+                - --v=2
+                - --logtostderr
+                - --probe=dnsmasq,127.0.0.1:53,ec2.amazonaws.com,5,A
+                ports:
+                - containerPort: 10054
+                  name: metrics
+                  protocol: TCP
+                resources:
+                  requests:
+                    memory: 20Mi
+              hostNetwork: true
+              dnsPolicy: Default
+              automountServiceAccountToken: false
+{{ end }}
+
   - path: /srv/kubernetes/manifests/kube-dns-de.yaml
     content: |
         apiVersion: extensions/v1beta1
@@ -1990,7 +2335,7 @@ write_files:
         apiVersion: extensions/v1beta1
         kind: Deployment
         metadata:
-          name: heapster-v1.4.0
+          name: heapster
           namespace: kube-system
           labels:
             k8s-app: heapster
@@ -2058,7 +2403,7 @@ write_files:
                     - --extra-cpu=4m
                     - --memory=200Mi
                     - --extra-memory=4Mi
-                    - --deployment=heapster-v1.4.0
+                    - --deployment=heapster
                     - --container=heapster
                     - --poll-period=300000
 
@@ -2242,7 +2587,7 @@ write_files:
               - env:
                 - name: TILLER_NAMESPACE
                   value: kube-system
-                image: gcr.io/kubernetes-helm/tiller:v2.5.0
+                image: gcr.io/kubernetes-helm/tiller:v2.5.1
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
                   httpGet:
@@ -2352,15 +2697,6 @@ write_files:
     encoding: gzip+base64
     content: {{.AssetsConfig.EtcdClientKey}}
 
-{{ if .Experimental.Dex.Enabled }}
-  - path: /etc/kubernetes/ssl/dex.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
-    encoding: gzip+base64
-    content: {{.AssetsConfig.DexCert}}
-
-  - path: /etc/kubernetes/ssl/dex-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
-    encoding: gzip+base64
-    content: {{.AssetsConfig.DexKey}}
-{{ end }}
 {{ end }}
 
   - path: /etc/kubernetes/controller-kubeconfig.yaml
@@ -2437,115 +2773,104 @@ write_files:
            echo "Finished Loading EFS Persistent Volume"'
 
 {{ end }}
-{{if .Experimental.Dex.Enabled}}
-  - path: /srv/kubernetes/manifests/dex-deployment.yaml
+{{if .Experimental.Kube2IamSupport.Enabled }}
+  - path: /srv/kubernetes/manifests/kube2iam-ds.yaml
     content: |
       apiVersion: extensions/v1beta1
-      kind: Deployment
+      kind: DaemonSet
       metadata:
-        name: dex
+        name: kube2iam
         namespace: kube-system
         labels:
-          app: dex
-          component: identity
+          app: kube2iam
         annotations:
           scheduler.alpha.kubernetes.io/critical-pod: ''
       spec:
-        replicas: 1
-        minReadySeconds: 30
-        strategy:
-          rollingUpdate:
-            maxUnavailable: 0
+        updateStrategy:
+          type: RollingUpdate
         template:
           metadata:
-            name: dex
             labels:
-              app: dex
-              component: identity
+              name: kube2iam
           spec:
-            volumes:
-            - name: config
-              configMap:
-                name: dex
-                items:
-                - key: config.yaml
-                  path: config.yaml
+            {{- if .Experimental.Plugins.Rbac.Enabled}}
+            serviceAccountName: kube2iam
+            {{- end}}
+            hostNetwork: true
             containers:
-            - name: dex
-              imagePullPolicy: IfNotPresent
-              image: {{.DexImage.RepoWithTag}}
-              command: ["/usr/local/bin/dex", "serve", "/etc/dex/config.yaml"]
-              volumeMounts:
-              - name: config
-                mountPath: /etc/dex
-              ports:
-              - containerPort: 5556
-                protocol: TCP
-              livenessProbe:
-                httpGet:
-                  path: /healthz
-                  port: 5556
-                initialDelaySeconds: 5
-                timeoutSeconds: 1
-              resources:
-                requests:
-                  cpu: 100m
-                  memory: 50Mi
-                limits:
-                  cpu: 100m
-                  memory: 50Mi
-
-  - path: /srv/kubernetes/manifests/dex-cm.yaml
+              - image: jtblin/kube2iam:latest
+                name: kube2iam
+                args:
+                  - "--app-port=8282"
+                  - "--auto-discover-base-arn"
+                  - "--auto-discover-default-role"
+                  - "--iptables=true"
+                  - "--host-ip=$(HOST_IP)"
+           {{- if .UseCalico }}
+                  - "--host-interface=cali+"
+           {{else}}
+                  - "--host-interface=cni0"
+           {{- end }}
+                env:
+                  - name: HOST_IP
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: status.podIP
+                ports:
+                  - containerPort: 8282
+                    hostPort: 8282
+                    name: http
+                resources:
+                  limits:
+                    cpu: 10m
+                    memory: 32Mi
+                  requests:
+                    cpu: 10m
+                    memory: 32Mi
+                securityContext:
+                  privileged: true
+  {{if .Experimental.Plugins.Rbac.Enabled}}
+  - path: /srv/kubernetes/manifests/kube2iam-rbac.yaml
     content: |
-      kind: ConfigMap
       apiVersion: v1
+      kind: ServiceAccount
       metadata:
-        name: dex
+        name: kube2iam
         namespace: kube-system
-      data:
-        config.yaml: |
-          issuer: {{.Experimental.Dex.Url}}
-          storage:
-            type: kubernetes
-            config:
-              inCluster: true
-          web:
-            http: 0.0.0.0:5556
-          frontend:
-            theme: 'coreos'
-            issuer: 'KubeAWS Identity'
-          {{ if .Experimental.Dex.Connectors -}}
-          connectors:
-            {{- range $connector := .Experimental.Dex.Connectors }}
-            - type: {{ $connector.Type }}
-              id: {{ $connector.Id }}
-              name: {{ $connector.Name }}
-              config:
-                {{ range $key, $value := $connector.Config -}}
-                {{ $key }}: {{ $value }}
-                {{ end -}}
-            {{ end -}}
-          {{- end }}
-          oauth2:
-            skipApprovalScreen: true
-          staticClients:
-          {{- range $staticClient := .Experimental.Dex.StaticClients }}
-          - id: '{{ $staticClient.Id }}'
-            redirectURIs:
-            - '{{ $staticClient.RedirectURIs }}'
-            name: '{{ $staticClient.Name }}'
-            secret: '{{ $staticClient.Secret }}'
-          {{- end }}
-          {{if .Experimental.Dex.StaticPasswords -}}
-          enablePasswordDB: true
-          {{ end -}}
-          {{- range $staticPassword := .Experimental.Dex.StaticPasswords }}
-          staticPasswords:
-          - email: "{{ $staticPassword.Email }}"
-            hash: "{{ $staticPassword.Hash }}"
-            username: "{{ $staticPassword.Username }}"
-            userID: "{{ $staticPassword.UserId }}"
-         {{ end -}}
-  {{ end }}
+      ---
 
+      apiVersion: rbac.authorization.k8s.io/v1beta1
+      kind: ClusterRole
+      metadata:
+        annotations:
+          rbac.authorization.kubernetes.io/autoupdate: "true"
+        labels:
+          kubernetes.io/bootstrapping: kube2iam
+        name: kube2iam
+      rules:
+      - apiGroups:
+        - ""
+        resources:
+        - pods
+        - namespaces
+        verbs:
+        - get
+        - list
+        - watch
+      ---
+
+      apiVersion: rbac.authorization.k8s.io/v1beta1
+      kind: ClusterRoleBinding
+      metadata:
+        name: kube2iam
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: kube2iam
+      subjects:
+      - kind: ServiceAccount
+        name: kube2iam
+        namespace: kube-system
+  {{end}}
+{{end}}
 {{ end }}

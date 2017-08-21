@@ -26,7 +26,18 @@ journaldCloudWatchLogsImage:
 
 ## kube-aws up/update feedback
 
-During kube-aws up/update, filtered Journald logs can be printed to stdout.
+During kube-aws up/update, filtered Journald logs can be printed to stdout. This may assist debugging.
+The format of the messages are:
+```
+TimePassed   NodeName: "LogMessage"
+```
+For example:
+```
++00:04:51	ip-10-29-29-100.us-west-2.compute.internal: "check-certification-validity.service: Failed to run 'start-pre' task: No such file or directory"
++00:04:52	ip-10-29-29-100.us-west-2.compute.internal: "check-certification-validity.service: Failed with result 'resources'."
++00:04:53	ip-10-29-29-100.us-west-2.compute.internal: "kubelet.service: Failed with result 'exit-code'."
+```
+
 This feature is configurable in cluster.yaml under the *cloudWatchLogging* section, and requires *cloudWatchLogging* to be enabled.
 ( Default values: )
 
@@ -36,8 +47,8 @@ cloudWatchLogging:
  imageWithTag: jollinshead/journald-cloudwatch-logs:0.1
  retentionInDays: 7
  localStreaming:
-  enabled: true,
-  filter:  `{ $.priority = "CRIT" || $.priority = "WARNING" && $.transport = "journal" && $.systemdUnit = "init.scope" }`,
+  enabled: true
+  filter:  `{ $.priority = "CRIT" || $.priority = "WARNING" && $.transport = "journal" && $.systemdUnit = "init.scope" }`
   interval: 60
 ```
 

@@ -345,8 +345,14 @@ func (c ProvidedConfig) validate() error {
 		return fmt.Errorf("awsNodeLabels can't be enabled for node pool because the total number of characters in clusterName(=\"%s\") + node pool's name(=\"%s\") exceeds the limit of %d", c.ClusterName, c.NodePoolName, limit)
 	}
 
-	if e := cfnresource.ValidateRoleNameLength(c.ClusterName, c.NestedStackName(), c.WorkerNodePoolConfig.IAMConfig.Role.Name, c.Region.String()); e != nil {
-		return e
+	if len(c.WorkerNodePoolConfig.IAMConfig.Role.Name) > 0 {
+		if e := cfnresource.ValidateStableRoleNameLength(c.WorkerNodePoolConfig.IAMConfig.Role.Name, c.Region.String()); e != nil {
+			return e
+		}
+	} else {
+		if e := cfnresource.ValidateUnstableRoleNameLength(c.ClusterName, c.NestedStackName(), c.WorkerNodePoolConfig.IAMConfig.Role.Name, c.Region.String()); e != nil {
+			return e
+		}
 	}
 
 	return nil

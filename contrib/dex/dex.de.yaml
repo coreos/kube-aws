@@ -1,0 +1,65 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dex
+  namespace: kube-system
+  labels:
+    app: dex
+    component: identity
+  annotations:
+    scheduler.alpha.kubernetes.io/critical-pod: ''
+spec:
+  replicas: 1
+  minReadySeconds: 30
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+  template:
+    metadata:
+      name: dex
+      labels:
+        app: dex
+        component: identity
+    spec:
+      volumes:
+      - name: config
+        configMap:
+          name: dex
+          items:
+          - key: config.yaml
+            path: config.yaml
+      containers:
+      - name: dex
+        imagePullPolicy: IfNotPresent
+        image: quay.io/coreos/dex:v2.5.0
+        command: ["/usr/local/bin/dex", "serve", "/etc/dex/config.yaml"]
+        volumeMounts:
+        - name: config
+          mountPath: /etc/dex
+        ports:
+        - containerPort: 5556
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 5556
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
+        env:
+        - name: GITHUB_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: dex
+              key: client-id
+        - name: GITHUB_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: dex
+              key: client-secret
+        resources:
+          requests:
+            cpu: 100m
+            memory: 50Mi
+          limits:
+            cpu: 100m
+            memory: 50Mi

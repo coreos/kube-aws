@@ -98,7 +98,7 @@ RestartSec=10s
 TimeoutStartSec=0
 LimitNOFILE=40000
 
-Environment="ETCD_IMAGE_TAG=v3.2.1"
+Environment="ETCD_IMAGE_TAG=v3.2.5"
 Environment="ETCD_NAME=%m"
 Environment="ETCD_USER=etcd"
 Environment="ETCD_DATA_DIR=/var/lib/etcd"

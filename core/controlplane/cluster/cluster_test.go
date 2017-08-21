@@ -392,7 +392,7 @@ hostedZoneId: /hostedzone/staging_id_3 # <staging_id_id> is not a super-domain
 `, `
 createRecordSet: true
 recordSetTTL: 60
-hostedZoneId: /hostedzone/staging_id_5 #non-existant hostedZoneId
+hostedZoneId: /hostedzone/staging_id_5 #non-existent hostedZoneId
 `,
 	}
 

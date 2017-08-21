@@ -116,7 +116,7 @@ func checkControllerASG(configuredCount *int, configuredMin *int, configuredMax 
 		}
 	} else {
 		if expectedError != "" {
-			t.Errorf("expeced error \"%s\" not occured", expectedError)
+			t.Errorf("expected error \"%s\" not occurred", expectedError)
 			t.FailNow()
 		}
 

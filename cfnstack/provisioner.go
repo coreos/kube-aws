@@ -231,3 +231,67 @@ func (c *Destroyer) Destroy() error {
 	_, err := cfSvc.DeleteStack(dreq)
 	return err
 }
+
+func (c *Provisioner) StreamEventsNested(q chan struct{}, f *cloudformation.CloudFormation, stackId string, headStackName string, t time.Time) error {
+	nestedStacks := make(map[string]bool)
+	nestedQuit := make(chan struct{}, 1)
+	var lastSeenEventId string
+	defer func() { nestedQuit <- struct{}{} }()
+	for {
+		select {
+		case <-q:
+			return nil
+		case <-time.After(1 * time.Second):
+			events := make([]cloudformation.StackEvent, 0)
+
+			_ = f.DescribeStackEventsPages(
+				&cloudformation.DescribeStackEventsInput{StackName: &stackId},
+				func(page *cloudformation.DescribeStackEventsOutput, lastPage bool) bool {
+					for _, e := range page.StackEvents {
+						if (e.Timestamp).Before(t) {
+							return false
+						}
+						if *e.EventId == lastSeenEventId {
+							return false
+						}
+						events = append(events, *e)
+					}
+					return true
+				})
+
+			for i := len(events) - 1; i >= 0; i-- {
+				e := events[i]
+				if *e.ResourceType == "AWS::CloudFormation::Stack" && *e.PhysicalResourceId != *e.StackId && !nestedStacks[*e.PhysicalResourceId] {
+					nestedStacks[*e.PhysicalResourceId] = true
+					go c.StreamEventsNested(nestedQuit, f, *e.PhysicalResourceId, headStackName, t)
+				}
+				eventPrettyPrint(e, headStackName, t)
+				lastSeenEventId = *e.EventId
+			}
+		}
+	}
+}
+
+func eventPrettyPrint(e cloudformation.StackEvent, n string, t time.Time) {
+	ns := strings.Split(strings.TrimLeft(*e.StackName, n), "-")
+	if len(ns) > 2 {
+		n = "\t" + ns[len(ns)-2]
+	} else {
+		n = ""
+	}
+
+	s := int((*e.Timestamp).Sub(t).Seconds())
+	d := fmt.Sprintf("+%.2d:%.2d:%.2d", s/3600, (s/60)%60, s%60)
+	if e.ResourceStatusReason != nil {
+		fmt.Printf("%s%s\t%s\t\t%s\t\"%s\"\n", d, n, resize(*e.ResourceStatus, 24), resize(*e.LogicalResourceId, 22), *e.ResourceStatusReason)
+	} else {
+		fmt.Printf("%s%s\t%s\t\t%s\n", d, n, resize(*e.ResourceStatus, 24), resize(*e.LogicalResourceId, 22))
+	}
+}
+
+func resize(s string, i int) string {
+	if len(s) < i {
+		s += strings.Repeat(" ", i-len(s))
+	}
+	return s
+}

@@ -153,7 +153,7 @@ func (e Etcd) Version() EtcdVersion {
 	if e.Cluster.Version != "" {
 		return e.Cluster.Version
 	}
-	return "3.2.1"
+	return "3.2.5"
 }
 
 func (v EtcdVersion) Is3() bool {

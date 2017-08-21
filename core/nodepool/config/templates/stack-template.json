@@ -210,9 +210,7 @@
         },
         "DefaultResult" : "CONTINUE",
         "HeartbeatTimeout" : "{{.NodeDrainer.DrainTimeoutInSeconds}}",
-        "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
-        "NotificationTargetARN" : { "Ref": "NotificationTargetARN" },
-        "RoleARN" : { "Ref": "NotificationRoleARN" }
+        "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING"
       },
       "Type" : "AWS::AutoScaling::LifecycleHook"
     },
@@ -493,14 +491,6 @@
     "ControlPlaneStackName": {
       "Type": "String",
       "Description": "The name of a control-plane stack used to import values into this stack"
-    },
-    "NotificationTargetARN": {
-      "Type": "String",
-      "Description": "ASG LifecycleHook notification target ARN"
-    },
-    "NotificationRoleARN": {
-      "Type": "String",
-      "Description": "Role to be used by ASG LifecycleHook to publish notification"
     }
     {{if .CloudWatchLogging.Enabled}}
     ,

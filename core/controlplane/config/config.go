@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	k8sVer = "v1.7.1_coreos.0"
+	k8sVer = "v1.7.3_coreos.0"
 
 	credentialsDir = "credentials"
 	userDataDir    = "userdata"
@@ -77,6 +77,7 @@ func NewDefaultCluster() *Cluster {
 		Kube2IamSupport: Kube2IamSupport{
 			Enabled: false,
 		},
+		KubeletOpts: "",
 		LoadBalancer: LoadBalancer{
 			Enabled: false,
 		},
@@ -92,16 +93,12 @@ func NewDefaultCluster() *Cluster {
 				Enabled: false,
 			},
 		},
-		Dex: model.Dex{
-			Enabled:         false,
-			Url:             "https://dex.example.com",
-			ClientId:        "example-app",
-			Username:        "email",
-			Groups:          "groups",
-			SelfSignedCa:    true,
-			Connectors:      []model.Connector{},
-			StaticClients:   []model.StaticClient{},
-			StaticPasswords: []model.StaticPassword{},
+		Oidc: model.Oidc{
+			Enabled:       false,
+			IssuerUrl:     "https://accounts.google.com",
+			ClientId:      "kubernetes",
+			UsernameClaim: "email",
+			GroupsClaim:   "groups",
 		},
 	}
 
@@ -117,6 +114,11 @@ func NewDefaultCluster() *Cluster {
 			MapPublicIPs:       true,
 			Experimental:       experimental,
 			ManageCertificates: true,
+			AmazonSsmAgent: AmazonSsmAgent{
+				Enabled:     false,
+				DownloadUrl: "",
+				Sha1Sum:     "",
+			},
 			CloudWatchLogging: CloudWatchLogging{
 				Enabled:         false,
 				RetentionInDays: 7,
@@ -126,26 +128,29 @@ func NewDefaultCluster() *Cluster {
 					interval: 60,
 				},
 			},
+			KubeDns: KubeDns{
+				NodeLocalResolver: false,
+			},
+			CloudFormationStreaming:            true,
 			HyperkubeImage:                     model.Image{Repo: "quay.io/coreos/hyperkube", Tag: k8sVer, RktPullDocker: false},
 			AWSCliImage:                        model.Image{Repo: "quay.io/coreos/awscli", Tag: "master", RktPullDocker: false},
-			CalicoNodeImage:                    model.Image{Repo: "quay.io/calico/node", Tag: "v1.2.1", RktPullDocker: false},
-			CalicoCniImage:                     model.Image{Repo: "quay.io/calico/cni", Tag: "v1.8.3", RktPullDocker: false},
-			CalicoPolicyControllerImage:        model.Image{Repo: "quay.io/calico/kube-policy-controller", Tag: "v0.6.0", RktPullDocker: false},
-			CalicoCtlImage:                     model.Image{Repo: "quay.io/calico/ctl", Tag: "v1.2.1", RktPullDocker: false},
+			CalicoNodeImage:                    model.Image{Repo: "quay.io/calico/node", Tag: "v2.4.1", RktPullDocker: false},
+			CalicoCniImage:                     model.Image{Repo: "quay.io/calico/cni", Tag: "v1.10.0", RktPullDocker: false},
+			CalicoPolicyControllerImage:        model.Image{Repo: "quay.io/calico/kube-policy-controller", Tag: "v0.7.0", RktPullDocker: false},
+			CalicoCtlImage:                     model.Image{Repo: "quay.io/calico/ctl", Tag: "v1.4.0", RktPullDocker: false},
 			ClusterAutoscalerImage:             model.Image{Repo: "gcr.io/google_containers/cluster-autoscaler", Tag: "v0.6.0", RktPullDocker: false},
 			ClusterProportionalAutoscalerImage: model.Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64", Tag: "1.1.2", RktPullDocker: false},
 			KubeDnsImage:                       model.Image{Repo: "gcr.io/google_containers/k8s-dns-kube-dns-amd64", Tag: "1.14.4", RktPullDocker: false},
 			KubeDnsMasqImage:                   model.Image{Repo: "gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64", Tag: "1.14.4", RktPullDocker: false},
-			KubeReschedulerImage:               model.Image{Repo: "gcr.io/google-containers/rescheduler", Tag: "v0.3.0", RktPullDocker: false},
+			KubeReschedulerImage:               model.Image{Repo: "gcr.io/google-containers/rescheduler", Tag: "v0.3.1", RktPullDocker: false},
 			DnsMasqMetricsImage:                model.Image{Repo: "gcr.io/google_containers/k8s-dns-sidecar-amd64", Tag: "1.14.4", RktPullDocker: false},
 			ExecHealthzImage:                   model.Image{Repo: "gcr.io/google_containers/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
 			HelmImage:                          model.Image{Repo: "quay.io/kube-aws/helm", Tag: "v2.5.1", RktPullDocker: false},
 			HeapsterImage:                      model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.4.0", RktPullDocker: false},
 			AddonResizerImage:                  model.Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "2.0", RktPullDocker: false},
-			KubeDashboardImage:                 model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.6.1", RktPullDocker: false},
+			KubeDashboardImage:                 model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.6.3", RktPullDocker: false},
 			PauseImage:                         model.Image{Repo: "gcr.io/google_containers/pause-amd64", Tag: "3.0", RktPullDocker: false},
 			FlannelImage:                       model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.7.1", RktPullDocker: false},
-			DexImage:                           model.Image{Repo: "quay.io/coreos/dex", Tag: "v2.4.1", RktPullDocker: false},
 			JournaldCloudWatchLogsImage:        model.Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
 		},
 		KubeClusterSettings: KubeClusterSettings{
@@ -415,23 +420,26 @@ type DeploymentSettings struct {
 	InternetGateway             model.InternetGateway `yaml:"internetGateway,omitempty"`
 	RouteTableID                string                `yaml:"routeTableId,omitempty"`
 	// Required for validations like e.g. if instance cidr is contained in vpc cidr
-	VPCCIDR                string            `yaml:"vpcCIDR,omitempty"`
-	InstanceCIDR           string            `yaml:"instanceCIDR,omitempty"`
-	K8sVer                 string            `yaml:"kubernetesVersion,omitempty"`
-	ContainerRuntime       string            `yaml:"containerRuntime,omitempty"`
-	KMSKeyARN              string            `yaml:"kmsKeyArn,omitempty"`
-	StackTags              map[string]string `yaml:"stackTags,omitempty"`
-	Subnets                []model.Subnet    `yaml:"subnets,omitempty"`
-	EIPAllocationIDs       []string          `yaml:"eipAllocationIDs,omitempty"`
-	MapPublicIPs           bool              `yaml:"mapPublicIPs,omitempty"`
-	ElasticFileSystemID    string            `yaml:"elasticFileSystemId,omitempty"`
-	SharedPersistentVolume bool              `yaml:"sharedPersistentVolume,omitempty"`
-	SSHAuthorizedKeys      []string          `yaml:"sshAuthorizedKeys,omitempty"`
-	Addons                 model.Addons      `yaml:"addons"`
-	Experimental           Experimental      `yaml:"experimental"`
-	ManageCertificates     bool              `yaml:"manageCertificates,omitempty"`
-	WaitSignal             WaitSignal        `yaml:"waitSignal"`
-	CloudWatchLogging      `yaml:"cloudWatchLogging,omitempty"`
+	VPCCIDR                 string            `yaml:"vpcCIDR,omitempty"`
+	InstanceCIDR            string            `yaml:"instanceCIDR,omitempty"`
+	K8sVer                  string            `yaml:"kubernetesVersion,omitempty"`
+	ContainerRuntime        string            `yaml:"containerRuntime,omitempty"`
+	KMSKeyARN               string            `yaml:"kmsKeyArn,omitempty"`
+	StackTags               map[string]string `yaml:"stackTags,omitempty"`
+	Subnets                 []model.Subnet    `yaml:"subnets,omitempty"`
+	EIPAllocationIDs        []string          `yaml:"eipAllocationIDs,omitempty"`
+	MapPublicIPs            bool              `yaml:"mapPublicIPs,omitempty"`
+	ElasticFileSystemID     string            `yaml:"elasticFileSystemId,omitempty"`
+	SharedPersistentVolume  bool              `yaml:"sharedPersistentVolume,omitempty"`
+	SSHAuthorizedKeys       []string          `yaml:"sshAuthorizedKeys,omitempty"`
+	Addons                  model.Addons      `yaml:"addons"`
+	Experimental            Experimental      `yaml:"experimental"`
+	ManageCertificates      bool              `yaml:"manageCertificates,omitempty"`
+	WaitSignal              WaitSignal        `yaml:"waitSignal"`
+	CloudWatchLogging       `yaml:"cloudWatchLogging,omitempty"`
+	AmazonSsmAgent          `yaml:"amazonSsmAgent,omitempty"`
+	CloudFormationStreaming bool `yaml:"cloudFormationStreaming,omitempty"`
+	KubeDns                 `yaml:"kubeDns,omitempty"`
 
 	// Images repository
 	HyperkubeImage                     model.Image `yaml:"hyperkubeImage,omitempty"`
@@ -453,7 +461,6 @@ type DeploymentSettings struct {
 	KubeDashboardImage                 model.Image `yaml:"kubeDashboardImage,omitempty"`
 	PauseImage                         model.Image `yaml:"pauseImage,omitempty"`
 	FlannelImage                       model.Image `yaml:"flannelImage,omitempty"`
-	DexImage                           model.Image `yaml:"dexImage,omitempty"`
 	JournaldCloudWatchLogsImage        model.Image `yaml:"journaldCloudWatchLogsImage,omitempty"`
 }
 
@@ -488,22 +495,21 @@ type FlannelSettings struct {
 
 // Cluster is the container of all the configurable parameters of a kube-aws cluster, customizable via cluster.yaml
 type Cluster struct {
-	AutoscalingNotification model.AutoscalingNotification `yaml:"autoscalingNotification,omitempty"`
-	KubeClusterSettings     `yaml:",inline"`
-	DeploymentSettings      `yaml:",inline"`
-	DefaultWorkerSettings   `yaml:",inline"`
-	ControllerSettings      `yaml:",inline"`
-	EtcdSettings            `yaml:",inline"`
-	FlannelSettings         `yaml:",inline"`
-	AdminAPIEndpointName    string              `yaml:"adminAPIEndpointName,omitempty"`
-	ServiceCIDR             string              `yaml:"serviceCIDR,omitempty"`
-	CreateRecordSet         bool                `yaml:"createRecordSet,omitempty"`
-	RecordSetTTL            int                 `yaml:"recordSetTTL,omitempty"`
-	TLSCADurationDays       int                 `yaml:"tlsCADurationDays,omitempty"`
-	TLSCertDurationDays     int                 `yaml:"tlsCertDurationDays,omitempty"`
-	HostedZoneID            string              `yaml:"hostedZoneId,omitempty"`
-	PluginConfigs           model.PluginConfigs `yaml:"kubeAwsPlugins,omitempty"`
-	ProvidedEncryptService  EncryptService
+	KubeClusterSettings    `yaml:",inline"`
+	DeploymentSettings     `yaml:",inline"`
+	DefaultWorkerSettings  `yaml:",inline"`
+	ControllerSettings     `yaml:",inline"`
+	EtcdSettings           `yaml:",inline"`
+	FlannelSettings        `yaml:",inline"`
+	AdminAPIEndpointName   string              `yaml:"adminAPIEndpointName,omitempty"`
+	ServiceCIDR            string              `yaml:"serviceCIDR,omitempty"`
+	CreateRecordSet        bool                `yaml:"createRecordSet,omitempty"`
+	RecordSetTTL           int                 `yaml:"recordSetTTL,omitempty"`
+	TLSCADurationDays      int                 `yaml:"tlsCADurationDays,omitempty"`
+	TLSCertDurationDays    int                 `yaml:"tlsCertDurationDays,omitempty"`
+	HostedZoneID           string              `yaml:"hostedZoneId,omitempty"`
+	PluginConfigs          model.PluginConfigs `yaml:"kubeAwsPlugins,omitempty"`
+	ProvidedEncryptService EncryptService
 	// SSHAccessAllowedSourceCIDRs is network ranges of sources you'd like SSH accesses to be allowed from, in CIDR notation
 	SSHAccessAllowedSourceCIDRs model.CIDRRanges       `yaml:"sshAccessAllowedSourceCIDRs,omitempty"`
 	CustomSettings              map[string]interface{} `yaml:"customSettings,omitempty"`
@@ -522,11 +528,12 @@ type Experimental struct {
 	TLSBootstrap                TLSBootstrap                   `yaml:"tlsBootstrap"`
 	EphemeralImageStorage       EphemeralImageStorage          `yaml:"ephemeralImageStorage"`
 	Kube2IamSupport             Kube2IamSupport                `yaml:"kube2IamSupport,omitempty"`
+	KubeletOpts                 string                         `yaml:"kubeletOpts,omitempty"`
 	LoadBalancer                LoadBalancer                   `yaml:"loadBalancer"`
 	TargetGroup                 TargetGroup                    `yaml:"targetGroup"`
 	NodeDrainer                 model.NodeDrainer              `yaml:"nodeDrainer"`
 	Plugins                     Plugins                        `yaml:"plugins"`
-	Dex                         model.Dex                      `yaml:"dex"`
+	Oidc                        model.Oidc                     `yaml:"oidc"`
 	DisableSecurityGroupIngress bool                           `yaml:"disableSecurityGroupIngress"`
 	NodeMonitorGracePeriod      string                         `yaml:"nodeMonitorGracePeriod"`
 	model.UnknownKeys           `yaml:",inline"`
@@ -589,6 +596,12 @@ type KubeResourcesAutosave struct {
 	S3Path  string
 }
 
+type AmazonSsmAgent struct {
+	Enabled     bool   `yaml:"enabled"`
+	DownloadUrl string `yaml:"downloadUrl"`
+	Sha1Sum     string `yaml:"sha1sum"`
+}
+
 type CloudWatchLogging struct {
 	Enabled         bool `yaml:"enabled"`
 	RetentionInDays int  `yaml:"retentionInDays"`
@@ -631,6 +644,16 @@ type Plugins struct {
 
 type Rbac struct {
 	Enabled bool `yaml:"enabled"`
+}
+
+type KubeDns struct {
+	NodeLocalResolver bool `yaml:"nodeLocalResolver"`
+}
+
+func (c *KubeDns) MergeIfEmpty(other KubeDns) {
+	if c.NodeLocalResolver == false {
+		c.NodeLocalResolver = other.NodeLocalResolver
+	}
 }
 
 type WaitSignal struct {
@@ -1047,8 +1070,14 @@ func (c Cluster) validate() error {
 		fmt.Println(`WARNING: instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/kubernetes-incubator/kube-aws/issues/258 for more information`)
 	}
 
-	if e := cfnresource.ValidateRoleNameLength(c.ClusterName, c.NestedStackName(), c.Controller.IAMConfig.Role.Name, c.Region.String()); e != nil {
-		return e
+	if len(c.Controller.IAMConfig.Role.Name) > 0 {
+		if e := cfnresource.ValidateStableRoleNameLength(c.Controller.IAMConfig.Role.Name, c.Region.String()); e != nil {
+			return e
+		}
+	} else {
+		if e := cfnresource.ValidateUnstableRoleNameLength(c.ClusterName, c.NestedStackName(), c.Controller.IAMConfig.Role.Name, c.Region.String()); e != nil {
+			return e
+		}
 	}
 
 	return nil

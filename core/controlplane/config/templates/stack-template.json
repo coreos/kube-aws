@@ -2,16 +2,7 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "kube-aws Kubernetes cluster {{.ClusterName}}",
   "Parameters": {
-    "NotificationTargetARN": {
-      "Type": "String",
-      "Description": "ASG LifecycleHook notification target ARN"
-    },
-    "NotificationRoleARN": {
-      "Type": "String",
-      "Description": "Role to be used by ASG LifecycleHook to publish notification"
-    }
     {{if .CloudWatchLogging.Enabled}}
-    ,
     "CloudWatchLogGroupARN": {
       "Type": "String",
       "Description": "CloudWatch LogGroup to send journald logs to"
@@ -824,9 +815,7 @@
         },
         "DefaultResult" : "CONTINUE",
         "HeartbeatTimeout" : "{{.Experimental.NodeDrainer.DrainTimeoutInSeconds}}",
-        "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
-        "NotificationTargetARN" : { "Ref": "NotificationTargetARN" },
-        "RoleARN" : { "Ref": "NotificationRoleARN" }
+        "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING"
       },
       "Type" : "AWS::AutoScaling::LifecycleHook"
     },

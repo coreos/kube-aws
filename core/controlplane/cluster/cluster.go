@@ -63,7 +63,7 @@ func (c *ClusterRef) validateExistingVPCState(ec2Svc ec2Service) error {
 
 	// TODO kube-aws should de-reference the vpc id from the stack output and continue validating with it
 	if c.VPC.IDFromStackOutput != "" {
-		fmt.Printf("kube-aws doesn't support validating the vpc referenced by the stack output `%s`. Skipped validation of exsiting vpc state. The cluster creation may fail afterwards if the VPC isn't configured properly.", c.VPC.IDFromStackOutput)
+		fmt.Printf("kube-aws doesn't support validating the vpc referenced by the stack output `%s`. Skipped validation of existing vpc state. The cluster creation may fail afterwards if the VPC isn't configured properly.", c.VPC.IDFromStackOutput)
 		return nil
 	}
 

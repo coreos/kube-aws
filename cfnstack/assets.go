@@ -124,7 +124,7 @@ func (p AssetLocationProvider) locationFor(filename string) (*model.AssetLocatio
 	uri, err := S3URIFromString(s3URI)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to determin location for %s: %v", filename, err)
+		return nil, fmt.Errorf("failed to determine location for %s: %v", filename, err)
 	}
 
 	relativePathComponents := []string{

@@ -6,6 +6,7 @@ metadata:
   annotations:
     ingress.kubernetes.io/ssl-redirect: "true"
     ingress.kubernetes.io/use-port-in-redirects: "true"
+    kubernetes.io/tls-acme: "true"
 spec:
   tls:
     - secretName: dex-tls-secret

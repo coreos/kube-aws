@@ -70,11 +70,6 @@ func TestTLSGeneration(t *testing.T) {
 			KeyBytes:  assets.EtcdKey,
 			CertBytes: assets.EtcdCert,
 		},
-		{
-			Name:      "dex",
-			KeyBytes:  assets.DexKey,
-			CertBytes: assets.DexCert,
-		},
 	}
 
 	var err error
@@ -158,7 +153,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 
 			files := []string{
 				"ca", "admin", "admin-key", "worker", "worker-key", "apiserver", "apiserver-key",
-				"etcd", "etcd-key", "etcd-client", "etcd-client-key", "dex", "dex-key",
+				"etcd", "etcd-key", "etcd-client", "etcd-client-key",
 			}
 
 			for _, f := range files {
