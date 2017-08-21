@@ -2,7 +2,6 @@ package cfnstack
 
 import (
 	"fmt"
-	"github.com/kubernetes-incubator/kube-aws/fingerprint"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"path/filepath"
 	"strings"
@@ -50,46 +49,30 @@ func (a assetsImpl) FindAssetByStackAndFileName(stack string, file string) (mode
 }
 
 type AssetsBuilder interface {
-	Add(filename string, content string) (model.Asset, error)
-	AddUserDataPart(userdata model.UserData, part string, assetName string) error
+	Add(a model.Asset)
+	AddNew(filename string, content string) (model.Asset, error)
 	Build() Assets
 }
 
 type assetsBuilderImpl struct {
-	locProvider AssetLocationProvider
-	assets      map[model.AssetID]model.Asset
+	assetFactory model.AssetFactory
+	assets       map[model.AssetID]model.Asset
 }
 
-func (b *assetsBuilderImpl) Add(filename string, content string) (model.Asset, error) {
-	loc, err := b.locProvider.locationFor(filename)
+func (b *assetsBuilderImpl) Add(a model.Asset) {
+	b.assets[a.ID] = a
+}
+
+func (b *assetsBuilderImpl) AddNew(filename string, content string) (model.Asset, error) {
+	asset, err := b.assetFactory.Create(filename, content)
+
 	if err != nil {
-		return model.Asset{}, err
+		return model.Asset{}, fmt.Errorf("Failed to create asset: %v", err)
 	}
 
-	asset := model.Asset{
-		AssetLocation: *loc,
-		Content:       content,
-	}
+	b.Add(asset)
 
-	b.assets[loc.ID] = asset
 	return asset, nil
-}
-
-func (b *assetsBuilderImpl) AddUserDataPart(userdata model.UserData, part string, assetName string) error {
-	if p, ok := userdata.Parts[part]; ok {
-		content, err := p.Template()
-		if err != nil {
-			return err
-		}
-
-		filename := fmt.Sprintf("%s-%s", assetName, fingerprint.SHA256(content))
-		asset, err := b.Add(filename, content)
-		if err != nil {
-			return err
-		}
-		p.Asset = asset
-	}
-	return nil // it is not an error if part is not found
 }
 
 func (b *assetsBuilderImpl) Build() Assets {
@@ -98,14 +81,10 @@ func (b *assetsBuilderImpl) Build() Assets {
 	}
 }
 
-func NewAssetsBuilder(stackName string, s3URI string, region model.Region) AssetsBuilder {
+func NewAssetsBuilder(assetFactory model.AssetFactory) AssetsBuilder {
 	return &assetsBuilderImpl{
-		locProvider: AssetLocationProvider{
-			s3URI:     s3URI,
-			region:    region,
-			stackName: stackName,
-		},
-		assets: map[model.AssetID]model.Asset{},
+		assetFactory: assetFactory,
+		assets:       map[model.AssetID]model.Asset{},
 	}
 }
 
@@ -146,4 +125,32 @@ func (p AssetLocationProvider) locationFor(filename string) (*model.AssetLocatio
 		Path:   filepath.Join(relativePathComponents...),
 		Region: p.region,
 	}, nil
+}
+
+func NewAssetFactory(stackName string, s3URI string, region model.Region) model.AssetFactory {
+	return &assetFactoryImpl{
+		locProvider: AssetLocationProvider{
+			s3URI:     s3URI,
+			region:    region,
+			stackName: stackName,
+		},
+	}
+}
+
+type assetFactoryImpl struct {
+	locProvider AssetLocationProvider
+}
+
+func (f *assetFactoryImpl) Create(filename string, content string) (model.Asset, error) {
+	loc, err := f.locProvider.locationFor(filename)
+	if err != nil {
+		return model.Asset{}, err
+	}
+
+	asset := model.Asset{
+		AssetLocation: *loc,
+		Content:       content,
+	}
+
+	return asset, nil
 }

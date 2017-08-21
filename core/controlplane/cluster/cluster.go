@@ -143,32 +143,27 @@ func (c *Cluster) Assets() cfnstack.Assets {
 
 func (c *Cluster) buildAssets() (cfnstack.Assets, error) {
 	var err error
-	assets := cfnstack.NewAssetsBuilder(c.StackName(), c.StackConfig.ClusterExportedStacksS3URI(), c.StackConfig.Region)
+	assetFactory := cfnstack.NewAssetFactory(c.StackName(), c.StackConfig.ClusterExportedStacksS3URI(), c.StackConfig.Region)
+	s3Assets := cfnstack.NewAssetsBuilder(assetFactory)
 
-	if c.StackConfig.UserDataController, err = model.NewUserData(c.StackTemplateOptions.ControllerTmplFile, c.StackConfig.Config); err != nil {
+	if c.StackConfig.UserDataController, err = model.NewUserDataFromTemplateFile(c.StackTemplateOptions.ControllerTmplFile, c.StackConfig.Config, assetFactory); err != nil {
 		return nil, fmt.Errorf("failed to render controller cloud config: %v", err)
 	}
+	s3Assets.Add(c.UserDataController.S3PartAsset())
 
-	if c.StackConfig.UserDataEtcd, err = model.NewUserData(c.StackTemplateOptions.EtcdTmplFile, c.StackConfig.Config); err != nil {
+	if c.StackConfig.UserDataEtcd, err = model.NewUserDataFromTemplateFile(c.StackTemplateOptions.EtcdTmplFile, c.StackConfig.Config, assetFactory); err != nil {
 		return nil, fmt.Errorf("failed to render etcd cloud config: %v", err)
 	}
-
-	if err = assets.AddUserDataPart(c.UserDataController, model.USERDATA_S3, "userdata-controller"); err != nil {
-		return nil, fmt.Errorf("failed to render controller cloud config: %v", err)
-	}
-
-	if err = assets.AddUserDataPart(c.UserDataEtcd, model.USERDATA_S3, "userdata-etcd"); err != nil {
-		return nil, fmt.Errorf("failed to render etcd cloud config: %v", err)
-	}
+	s3Assets.Add(c.UserDataEtcd.S3PartAsset())
 
 	stackTemplate, err := c.RenderStackTemplateAsString()
 	if err != nil {
 		return nil, fmt.Errorf("Error while rendering template: %v", err)
 	}
 
-	assets.Add(STACK_TEMPLATE_FILENAME, stackTemplate)
+	s3Assets.AddNew(STACK_TEMPLATE_FILENAME, stackTemplate)
 
-	return assets.Build(), nil
+	return s3Assets.Build(), nil
 }
 
 func (c *Cluster) TemplateURL() (string, error) {

@@ -84,20 +84,18 @@ func (c *Cluster) Assets() cfnstack.Assets {
 
 func (c *Cluster) buildAssets() (cfnstack.Assets, error) {
 	var err error
-	assets := cfnstack.NewAssetsBuilder(c.StackName(), c.StackConfig.S3URI, c.StackConfig.Region)
-	if c.UserDataWorker, err = model.NewUserData(c.StackTemplateOptions.WorkerTmplFile, c.ComputedConfig); err != nil {
+	assetFactory := cfnstack.NewAssetFactory(c.StackName(), c.StackConfig.S3URI, c.StackConfig.Region)
+	assets := cfnstack.NewAssetsBuilder(assetFactory)
+	if c.UserDataWorker, err = model.NewUserDataFromTemplateFile(c.StackTemplateOptions.WorkerTmplFile, c.ComputedConfig, assetFactory); err != nil {
 		return nil, fmt.Errorf("failed to render worker cloud config: %v", err)
 	}
-
-	if err = assets.AddUserDataPart(c.UserDataWorker, model.USERDATA_S3, "userdata-worker"); err != nil {
-		return nil, fmt.Errorf("failed to render worker cloud config: %v", err)
-	}
+	assets.Add(c.UserDataWorker.S3PartAsset())
 
 	stackTemplate, err := c.RenderStackTemplateAsString()
 	if err != nil {
 		return nil, fmt.Errorf("Error while rendering template : %v", err)
 	}
-	assets.Add(STACK_TEMPLATE_FILENAME, stackTemplate)
+	assets.AddNew(STACK_TEMPLATE_FILENAME, stackTemplate)
 
 	return assets.Build(), nil
 }

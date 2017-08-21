@@ -118,16 +118,13 @@ func TestCloudConfigTemplating(t *testing.T) {
 		tmpfile.Close()
 		defer os.Remove(tmpfile.Name())
 
-		udata, err := model.NewUserData(tmpfile.Name(), cfg)
-		if !assert.NoError(t, err, "Error loading template %s", cloudTemplate.Name) {
-			continue
-		}
-		content, err := udata.Parts[model.USERDATA_S3].Template()
-		if !assert.NoError(t, err, "Can't render template %s", cloudTemplate.Name) {
+		assetFactory := &TestAssetFactory{}
+		udata, err := model.NewUserDataFromTemplateFile(tmpfile.Name(), cfg, assetFactory)
+		if !assert.NoError(t, err, "Error while creating userdata from template file \"%s\"", cloudTemplate.Name) {
 			continue
 		}
 
-		report, err := validate.Validate([]byte(content))
+		report, err := validate.Validate([]byte(udata.S3PartContent()))
 		if !assert.NoError(t, err, "cloud-config %s could not be parsed", cloudTemplate.Name) {
 			for _, entry := range report.Entries() {
 				t.Errorf("%s: %+v", cloudTemplate.Name, entry)
@@ -135,4 +132,14 @@ func TestCloudConfigTemplating(t *testing.T) {
 			continue
 		}
 	}
+}
+
+type TestAssetFactory struct {
+}
+
+func (f *TestAssetFactory) Create(filename string, content string) (model.Asset, error) {
+	return model.Asset{
+		AssetLocation: model.AssetLocation{ID: filename},
+		Content:       content,
+	}, nil
 }

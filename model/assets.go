@@ -24,6 +24,10 @@ type AssetLocation struct {
 	Region Region
 }
 
+type AssetFactory interface {
+	Create(filename string, content string) (Asset, error)
+}
+
 func NewAssetID(stack string, file string) AssetID {
 	return AssetID{
 		StackName: stack,

@@ -243,8 +243,9 @@ func (c clusterImpl) Assets() (cfnstack.Assets, error) {
 		c.controlPlane.ClusterName,
 	)
 
-	assetsBuilder := cfnstack.NewAssetsBuilder(c.stackName(), s3URI, c.controlPlane.Region)
-	assetsBuilder.Add(REMOTE_STACK_TEMPLATE_FILENAME, stackTemplate)
+	assetFactory := cfnstack.NewAssetFactory(c.stackName(), s3URI, c.controlPlane.Region)
+	assetsBuilder := cfnstack.NewAssetsBuilder(assetFactory)
+	assetsBuilder.AddNew(REMOTE_STACK_TEMPLATE_FILENAME, stackTemplate)
 	assets := assetsBuilder.Build()
 
 	cpAssets := c.controlPlane.Assets()

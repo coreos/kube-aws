@@ -44,17 +44,13 @@ func TestUserDataNew(t *testing.T) {
 
 				a.Len(ud.Parts, 2)
 				if a.Contains(ud.Parts, USERDATA_S3) {
-					udata, _ := ud.Parts[USERDATA_S3]
-					content, err := udata.Template()
-					a.NoError(err)
-					a.Equal(content, s3Body)
+					p, _ := ud.Parts[USERDATA_S3]
+					a.Equal(p.Content, s3Body)
 				}
 
 				if a.Contains(ud.Parts, USERDATA_INSTANCE) {
-					udata, _ := ud.Parts[USERDATA_INSTANCE]
-					content, err := udata.Template()
-					a.NoError(err)
-					a.Equal(content, "INSTANCE BODY")
+					p, _ := ud.Parts[USERDATA_INSTANCE]
+					a.Equal(p.Content, "INSTANCE BODY")
 				}
 			},
 		},
@@ -65,15 +61,18 @@ func TestUserDataNew(t *testing.T) {
 				}
 			},
 		},
-		{"extra", mkInstance("{{extra.Body}}"), instanceOnlyOpt,
+		{"extra", mkInstance("{{extra.Body}}"), []UserDataOption{
+				func(o *UserDataOpt) {
+					o.Extra = UserDataTemplateExtraParams{"Bodu": "EXTRA BODY"}
+					o.Parts = []PartDesc{{USERDATA_INSTANCE, validateNone}}
+				},
+			},
 			func(a *assert.Assertions, ud UserData, err error) {
 				a.NoError(err, "Userdata creation failed")
 
 				p, ok := ud.Parts[USERDATA_INSTANCE]
 				if a.True(ok) {
-					content, err := p.Template(map[string]interface{}{"Body": "EXTRA BODY"})
-					a.NoError(err, "Can't find 'extra' function")
-					a.Equal("EXTRA BODY", content)
+					a.Equal("EXTRA BODY", p.Content)
 				}
 			},
 		},
@@ -85,9 +84,7 @@ func TestUserDataNew(t *testing.T) {
 
 				p, ok := ud.Parts[USERDATA_INSTANCE]
 				if a.True(ok, "Can't find Instance template") {
-					content, err := p.Template()
-					a.NoError(err, "Can't find 'self' function")
-					a.Equal("GOOD", content, "self function doesn't return our own UserData")
+					a.Equal("GOOD", p.Content, "self function doesn't return our own UserData")
 				}
 			},
 		},
@@ -99,8 +96,19 @@ func TestUserDataNew(t *testing.T) {
 		tmpfile.Close()
 		defer os.Remove(tmpfile.Name())
 		t.Run(test.name, func(t *testing.T) {
-			ud, err := NewUserData(tmpfile.Name(), nil, test.opts...)
+			assetFactory := &TestAssetFactory{}
+			ud, err := NewUserDataFromTemplateFile(tmpfile.Name(), nil, assetFactory, test.opts...)
 			test.exp(assert.New(t), ud, err)
 		})
 	}
+}
+
+type TestAssetFactory struct {
+}
+
+func (f *TestAssetFactory) Create(filename string, content string) (Asset, error) {
+	return Asset{
+		AssetLocation: AssetLocation{ID: filename},
+		Content:       content,
+	}, nil
 }
