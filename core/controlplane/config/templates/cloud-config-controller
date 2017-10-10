@@ -759,7 +759,7 @@ write_files:
       kubectl apply -f "${mfdir}/kube-dns-cm.yaml"
 
       # Service Accounts
-      for manifest in {kube-dns,heapster,kube-proxy}; do
+      for manifest in {kube-dns,heapster,kube-proxy,metrics-server}; do
           kubectl apply -f "${mfdir}/$manifest-sa.yaml"
       done
 
@@ -790,13 +790,18 @@ write_files:
       kubectl apply -f "${mfdir}/kube-rescheduler-de.yaml"
       {{- end }}
 
+      # API Services
+      for manifest in {metrics-server}; do
+          kubectl apply -f "${mfdir}/$manifest-apisvc.yaml"
+      done
+
       mfdir=/srv/kubernetes/rbac
 
       # Cluster roles and bindings
-      for manifest in {node-extensions,}; do
+      for manifest in {node-extensions,metrics-server}; do
           kubectl apply -f "${mfdir}/cluster-roles/$manifest.yaml"
       done
-      for manifest in {kube-admin,system-worker,node,node-proxier,node-extensions,heapster}; do
+      for manifest in {kube-admin,system-worker,node,node-proxier,node-extensions,heapster,metrics-server}; do
           kubectl apply -f "${mfdir}/cluster-role-bindings/$manifest.yaml"
       done
 
@@ -804,7 +809,7 @@ write_files:
       for manifest in {pod-nanny,}; do
           kubectl apply -f "${mfdir}/roles/$manifest.yaml"
       done
-      for manifest in {heapster-nanny,}; do
+      for manifest in {heapster-nanny,metrics-server}; do
           kubectl apply -f "${mfdir}/role-bindings/$manifest.yaml"
       done
 
@@ -1585,6 +1590,77 @@ write_files:
         - kind: ServiceAccount
           name: heapster
           namespace: kube-system
+
+  # metrics-server
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/metrics-server.yaml
+    content: |
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        kind: ClusterRoleBinding
+        metadata:
+          name: metrics-server:system:auth-delegator
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: system:auth-delegator
+        subjects:
+        - kind: ServiceAccount
+          name: metrics-server
+          namespace: kube-system
+        ---
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRoleBinding
+        metadata:
+          name: system:metrics-server
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: system:metrics-server
+        subjects:
+        - kind: ServiceAccount
+          name: metrics-server
+          namespace: kube-system
+
+  - path: /srv/kubernetes/rbac/role-bindings/metrics-server.yaml
+    content: |
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        kind: RoleBinding
+        metadata:
+          name: metrics-server-auth-reader
+          namespace: kube-system
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: Role
+          name: extension-apiserver-authentication-reader
+        subjects:
+        - kind: ServiceAccount
+          name: metrics-server
+          namespace: kube-system
+
+  - path: /srv/kubernetes/rbac/cluster-roles/metrics-server.yaml
+    content: |
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRole
+        metadata:
+          name: system:metrics-server
+        rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - nodes
+          - namespaces
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - "extensions"
+          resources:
+          - deployments
+          verbs:
+          - get
+          - list
+          - watch
 
   # Heapster's pod_nanny monitors the heapster deployment & its pod(s), and scales
   # the resources of the deployment if necessary.
@@ -2440,6 +2516,89 @@ write_files:
                     - --deployment=heapster
                     - --container=heapster
                     - --poll-period=300000
+
+  - path: /srv/kubernetes/manifests/metrics-server-sa.yaml
+    content: |
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: metrics-server
+          namespace: kube-system
+          labels:
+
+  - path: /srv/kubernetes/manifests/metrics-server-de.yaml
+    content: |
+        apiVersion: extensions/v1beta1
+        kind: Deployment
+        metadata:
+          name: metrics-server
+          namespace: kube-system
+          labels:
+            k8s-app: metrics-server
+          annotations:
+            scheduler.alpha.kubernetes.io/critical-pod: ''
+        spec:
+          selector:
+            matchLabels:
+              k8s-app: metrics-server
+          template:
+            metadata:
+              name: metrics-server
+              labels:
+                k8s-app: metrics-server
+            spec:
+              serviceAccountName: metrics-server
+              containers:
+              - name: metrics-server
+                image: gcr.io/google_containers/metrics-server-amd64:v0.2.0
+                imagePullPolicy: Always
+                command:
+                - /metrics-server
+                - --source=kubernetes.summary_api:''
+                - --requestheader-client-ca-file=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                - --requestheader-username-headers=X-Remote-User
+                - --requestheader-group-headers=X-Remote-Group
+                - --requestheader-extra-headers-prefix=X-Remote-Extra
+                resources:
+                  limits:
+                    cpu: 80m
+                    memory: 200Mi
+                  requests:
+                    cpu: 80m
+                    memory: 200Mi
+
+  - path: /srv/kubernetes/manifests/metrics-server-apisvc.yaml
+    content: |
+        apiVersion: apiregistration.k8s.io/v1beta1
+        kind: APIService
+        metadata:
+          name: v1beta1.metrics.k8s.io
+        spec:
+          service:
+            name: metrics-server
+            namespace: kube-system
+          group: metrics.k8s.io
+          version: v1beta1
+          insecureSkipTLSVerify: true
+          groupPriorityMinimum: 100
+          versionPriority: 100
+
+  - path: /srv/kubernetes/manifests/metrics-server-svc.yaml
+    content: |
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: metrics-server
+          namespace: kube-system
+          labels:
+            kubernetes.io/name: "Metrics-server"
+        spec:
+          selector:
+            k8s-app: metrics-server
+          ports:
+          - port: 443
+            protocol: TCP
+            targetPort: 443
 
   {{if .Addons.ClusterAutoscaler.Enabled}}
   - path: /srv/kubernetes/manifests/cluster-autoscaler-de.yaml

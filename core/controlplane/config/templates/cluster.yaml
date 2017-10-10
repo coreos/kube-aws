@@ -1035,6 +1035,12 @@ worker:
 #  tag: v1.4.1
 #  rktPullDocker: false
 
+# Metrics Server image repository to use.
+#metricsServerImage:
+#  repo: gcr.io/google_containers/metrics-server-amd64
+#  tag: v0.2.0
+#  rktPullDocker: false
+
 # Addon Resizer image repository to use.
 #addonResizerImage:
 #  repo: gcr.io/google_containers/addon-resizer
