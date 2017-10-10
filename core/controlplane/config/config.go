@@ -44,6 +44,9 @@ func NewDefaultCluster() *Cluster {
 			DenyEscalatingExec{
 				Enabled: false,
 			},
+			Initializers{
+				Enabled: false,
+			},
 		},
 		AuditLog: AuditLog{
 			Enabled: false,
@@ -518,6 +521,7 @@ type Experimental struct {
 type Admission struct {
 	PodSecurityPolicy  PodSecurityPolicy  `yaml:"podSecurityPolicy"`
 	DenyEscalatingExec DenyEscalatingExec `yaml:"denyEscalatingExec"`
+	Initializers       Initializers       `yaml:"initializers"`
 }
 
 type PodSecurityPolicy struct {
@@ -525,6 +529,10 @@ type PodSecurityPolicy struct {
 }
 
 type DenyEscalatingExec struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type Initializers struct {
 	Enabled bool `yaml:"enabled"`
 }
 
