@@ -298,6 +298,9 @@ coreos:
         {{end}}--register-node=true \
         {{if .Taints}}--register-with-taints={{.Taints.String}}\
         {{end}}--allow-privileged=true \
+        {{- if .MaxPods }}
+        --max-pods={{.MaxPodsToString}} \ 
+        {{- end }}
         {{if .NodeStatusUpdateFrequency}}--node-status-update-frequency={{.NodeStatusUpdateFrequency}} \
         {{end}}--pod-manifest-path=/etc/kubernetes/manifests \
         {{ if .KubeDns.NodeLocalResolver }}--cluster-dns=${COREOS_PRIVATE_IPV4} \

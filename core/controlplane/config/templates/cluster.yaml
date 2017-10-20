@@ -538,6 +538,8 @@ worker:
 #            Description=Example Custom Service
 #            [Service]
 #            ExecStart=/bin/rkt run --set-env TAGS=Controller ...
+#      # Max pods (--max-pods option for kubelet) Number of Pods that can run on this Kubelet. (default 110)
+#      maxPods: 110
 
 # Maximum time to wait for worker creation
 #workerCreateTimeout: PT15M

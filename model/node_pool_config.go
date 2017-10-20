@@ -17,6 +17,7 @@ type NodePoolConfig struct {
 	UnknownKeys               `yaml:",inline"`
 	NodeSettings              `yaml:",inline"`
 	NodeStatusUpdateFrequency string              `yaml:"nodeStatusUpdateFrequency"`
+	MaxPods                   int32               `yaml:"maxPods,omitempty"`
 	CustomFiles               []CustomFile        `yaml:"customFiles,omitempty"`
 	CustomSystemdUnits        []CustomSystemdUnit `yaml:"customSystemdUnits,omitempty"`
 	Gpu                       Gpu                 `yaml:"gpu"`
@@ -134,4 +135,8 @@ func (c NodePoolConfig) RollingUpdateMinInstancesInService() int {
 		return 0
 	}
 	return *c.AutoScalingGroup.RollingUpdateMinInstancesInService
+}
+
+func (c NodePoolConfig) MaxPodsToString() string {
+	return fmt.Sprint(c.MaxPods)
 }
