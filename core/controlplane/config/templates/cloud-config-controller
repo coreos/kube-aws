@@ -2981,10 +2981,6 @@ write_files:
     content: |
       #!/bin/bash -e
       set -ue
-      #This script relates to story RUN-727, and can be found in the postmortem.md for date 2/10/2017.
-      #This checks whether there are any nodes other than controllers. If there is, this indicates it is
-      #a cluster update, if there is not, is a fresh cluster.
-      #If it is an update, we check whether the workers can communicate with the API server before reporting success.
 
       kubectl() {
         /usr/bin/docker run --rm --net=host -v /srv/kubernetes:/srv/kubernetes {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl "$@"
@@ -2994,6 +2990,9 @@ write_files:
         echo "Checking to see if workers are communicating with API server."
         docker logs --tail 10 ${DOCKERIMAGE} |& grep -v 127.0.0.1 | awk 'BEGIN {C=1} /kubelet\// && $8 == "200" {C=0} END {exit C}'
       }
+
+      #This checks whether there are any nodes other than controllers. If there is, this indicates it is a cluster update, if there is not, is a fresh cluster.
+      #If it is an update, we check whether the workers can communicate with the API server before reporting success.
 
       kubectl get nodes 2>/dev/null
       RC=$?
@@ -3008,6 +3007,7 @@ write_files:
         exit 0
       else
         #We first retrieve the name of the image which is running the api-server, and then search its logs for any mentions of kubelet with a 200 response.
+
         DOCKERIMAGE=$(docker ps | grep -i k8s_kube-apiserver_kube-apiserver | awk '{print $1}')
         until queryserver; do echo "Worker communication failed, retrying." && sleep 10; done
         echo "Communication with workers has been established."
