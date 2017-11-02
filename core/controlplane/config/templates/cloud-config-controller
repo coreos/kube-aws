@@ -1890,7 +1890,7 @@ write_files:
           - --authentication-token-webhook-cache-ttl={{ .Experimental.Authentication.Webhook.CacheTTL }}
           {{ end }}
           - --advertise-address=$private_ipv4
-          - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }}{{if .Experimental.NodeAuthorizer.Enabled}},NodeRestriction{{end}},ResourceQuota,{{if .Experimental.Admission.DenyEscalatingExec.Enabled}}DenyEscalatingExec{{end}}
+          - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }}{{if .Experimental.NodeAuthorizer.Enabled}},NodeRestriction{{end}},ResourceQuota,{{if .Experimental.Admission.DenyEscalatingExec.Enabled}}DenyEscalatingExec{{end}},{{if .Experimental.Admission.Initializers.Enabled}}Initializers{{end}}
           - --anonymous-auth=false
           {{if .Experimental.Oidc.Enabled}}
           - --oidc-issuer-url={{.Experimental.Oidc.IssuerUrl}}
@@ -1907,7 +1907,7 @@ write_files:
           - --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
           - --client-ca-file=/etc/kubernetes/ssl/ca.pem
           - --service-account-key-file=/etc/kubernetes/ssl/apiserver-key.pem
-          - --runtime-config=extensions/v1beta1/networkpolicies=true,batch/v2alpha1,rbac.authorization.k8s.io/v1beta1=true{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},extensions/v1beta1/podsecuritypolicy=true{{ end }}
+          - --runtime-config=extensions/v1beta1/networkpolicies=true,batch/v2alpha1,rbac.authorization.k8s.io/v1beta1=true{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},extensions/v1beta1/podsecuritypolicy=true{{ end }},{{if .Experimental.Admission.Initializers.Enabled}}admissionregistration.k8s.io/v1alpha1{{end}}
           - --cloud-provider=aws
           {{range $f := .APIServerFlags}}
           - --{{$f.Name}}={{$f.Value}}
