@@ -129,7 +129,9 @@ coreos:
                   --mount volume=journal,target=/var/log/journal \
                   --volume machine-id,kind=host,source=/etc/machine-id,readOnly=true \
                   --mount volume=machine-id,target=/etc/machine-id \
+                  --uuid-file-save=/var/journald-cloudwatch-logs/journald-cloudwatch-logs.uuid \
                   {{ .JournaldCloudWatchLogsImage.RktRepo }} -- {{.ClusterName}}
+        ExecStopPost=/usr/bin/rkt rm --uuid-file=/var/journald-cloudwatch-logs/journald-cloudwatch-logs.uuid
         Restart=always
         RestartSec=60s
 
