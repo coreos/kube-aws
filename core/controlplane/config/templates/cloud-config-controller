@@ -1137,7 +1137,7 @@ write_files:
                       done ;
                       RESOURCES_IN_NAMESPACE="componentstatuses configmaps daemonsets deployments endpoints events horizontalpodautoscalers
                       ingresses jobs limitranges networkpolicies  persistentvolumeclaims pods podsecuritypolicies podtemplates replicasets
-                      replicationcontrollers resourcequotas secrets serviceaccounts services statefulsets thirdpartyresources
+                      replicationcontrollers resourcequotas secrets serviceaccounts services statefulsets customresourcedefinitions
                       poddisruptionbudgets roles rolebindings";
                       for ns in $(jq -r '.items[].metadata.name' < ${DUMP_DIR}/namespaces.json);do
                         echo "Searching in namespace: ${ns}" ;
@@ -1165,7 +1165,7 @@ write_files:
                     done
               livenessProbe:
                 exec:
-                  command: ["/bin/bash", "-c", "(( $(date +%s) - $(stat -c%Y /probe-token) < 25*60*60 ))" ]
+                  command: ["/bin/sh", "-c", "export", "age=$(( $(date +%s) - $(stat -c%Y /probe-token)))", "/bin/sh", "-c", "$(( "$age" -lt < 90000 ))" ]
                 initialDelaySeconds: 240
                 periodSeconds: 10
               volumeMounts:
@@ -2667,7 +2667,7 @@ write_files:
               - name: kubernetes-dashboard
                 image: {{ .KubeDashboardImage.RepoWithTag }}
                 ports:
-                - containerPort: 9090
+                - containerPort: 8443
                   protocol: TCP
                 args:
                   - --tls-key-file=/certs/dashboard.key
