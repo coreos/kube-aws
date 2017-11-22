@@ -80,7 +80,10 @@ func EncryptedCredentialCacheFromRawCredential(raw *RawCredentialOnDisk, bytesEn
 }
 
 func RawCredentialFileFromPath(filePath string, defaultValue *string) (*RawCredentialOnDisk, error) {
-	if _, err := os.Stat(filePath); os.IsNotExist(err) && defaultValue != nil {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		if defaultValue == nil {
+			return nil, fmt.Errorf("%s must exist. Please confirm that you have not deleted the file manually", filePath)
+		}
 		if err := ioutil.WriteFile(filePath, []byte(*defaultValue), 0644); err != nil {
 			return nil, err
 		}
@@ -102,6 +105,9 @@ func (c *RawCredentialOnDisk) Fingerprint() string {
 }
 
 func (c *RawCredentialOnDisk) Persist() error {
+	if len(c.content) == 0 {
+		return fmt.Errorf("%s is going to be empty. Maybe a bug", c.filePath)
+	}
 	if err := ioutil.WriteFile(c.filePath, c.content, 0600); err != nil {
 		return err
 	}

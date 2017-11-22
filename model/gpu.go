@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var GPUEnabledInstanceFamily = []string{"p2", "g2"}
+var GPUEnabledInstanceFamily = []string{"p2", "p3", "g2", "g3"}
 
 type Gpu struct {
 	Nvidia NvidiaSetting `yaml:"nvidia"`

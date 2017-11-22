@@ -751,10 +751,10 @@ controller:
 controller:
   rootVolume:
     type: io1
-    iops: 2000
+    iops: 20000
 `,
 			volumeType: "io1",
-			iops:       2000,
+			iops:       20000,
 		},
 	}
 
@@ -777,7 +777,7 @@ controller:
 controller:
   rootVolume:
     type: gp2
-    iops: 2000
+    iops: 20000
 `,
 		`
 # IOPS smaller than the minimum (100)
@@ -787,11 +787,11 @@ controller:
     iops: 99
 `,
 		`
-# IOPS greater than the maximum (2000)
+# IOPS greater than the maximum (20000)
 controller:
   rootVolume:
     type: io1
-    iops: 2001
+    iops: 20001
 `,
 	}
 
@@ -858,10 +858,10 @@ workerRootVolumeIOPS: 100
 		{
 			conf: `
 workerRootVolumeType: io1
-workerRootVolumeIOPS: 2000
+workerRootVolumeIOPS: 20000
 `,
 			volumeType: "io1",
-			iops:       2000,
+			iops:       20000,
 		},
 	}
 
@@ -878,7 +878,7 @@ workerRootVolumeIOPS: 100
 		`
 # IOPS must be zero for volume types != 'io1'
 workerRootVolumeType: gp2
-workerRootVolumeIOPS: 2000
+workerRootVolumeIOPS: 20000
 `,
 		`
 # IOPS smaller than the minimum (100)
@@ -886,9 +886,9 @@ workerRootVolumeType: io1
 workerRootVolumeIOPS: 99
 `,
 		`
-# IOPS greater than the maximum (2000)
+# IOPS greater than the maximum (20000)
 workerRootVolumeType: io1
-workerRootVolumeIOPS: 2001
+workerRootVolumeIOPS: 20001
 `,
 	}
 
