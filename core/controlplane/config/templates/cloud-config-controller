@@ -1165,7 +1165,7 @@ write_files:
                     done
               livenessProbe:
                 exec:
-                  command: ["/bin/sh", "-c", "export", "age=$(( $(date +%s) - $(stat -c%Y /probe-token)))", "/bin/sh", "-c", "$(( "$age" -lt < 90000 ))" ]
+                  command: ["/bin/sh", "-c", "export", "AGE=$(( $(date +%s) - $(stat -c%Y /tmp) < 25*60*60 ));  [ $AGE -gt 0 ]" ]
                 initialDelaySeconds: 240
                 periodSeconds: 10
               volumeMounts:
