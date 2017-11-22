@@ -152,7 +152,7 @@ func NewDefaultCluster() *Cluster {
 			HelmImage:                          model.Image{Repo: "quay.io/kube-aws/helm", Tag: "v2.6.0", RktPullDocker: false},
 			TillerImage:                        model.Image{Repo: "gcr.io/kubernetes-helm/tiller", Tag: "v2.6.2", RktPullDocker: false},
 			HeapsterImage:                      model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.4.3", RktPullDocker: false},
-      MetricsServerImage:                 model.Image{Repo: "gcr.io/google_containers/metrics-server-amd64", Tag: "v0.2.0", RktPullDocker: false},
+			MetricsServerImage:                 model.Image{Repo: "gcr.io/google_containers/metrics-server-amd64", Tag: "v0.2.0", RktPullDocker: false},
 			AddonResizerImage:                  model.Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "2.1", RktPullDocker: false},
 			KubeDashboardImage:                 model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.7.1", RktPullDocker: false},
 			KubeDashboardInitImage:             model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-init-amd64", Tag: "v1.0.1", RktPullDocker: false},
