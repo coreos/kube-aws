@@ -525,11 +525,7 @@ member_restore_from_local_snapshot() {
 }
 
 member_env_file() {
-  local name
-  local env_file
-  name=$(member_name)
-  env_file=$(config_state_dir)/${name}.env
-  echo "${env_file}"
+  echo "${ETCDADM_MEMBER_ENV_FILE:-$(config_state_dir)/$(member_name).env}"
 }
 
 member_set_initial_cluster_state() {

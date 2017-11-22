@@ -5,14 +5,21 @@
 export COREOS_PRIVATE_IPV4 COREOS_PRIVATE_IPV6 COREOS_PUBLIC_IPV4 COREOS_PUBLIC_IPV6
 REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')
 USERDATA_FILE=userdata-controller
-while ! /usr/bin/rkt run \
-   --net=host \
-   --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf  \
-   --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false --mount volume=awsenv,target=/var/run/coreos \
-   --trust-keys-from-https \
-   {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=aws -- s3 --region $REGION  cp {{$S3URI}} /var/run/coreos/$USERDATA_FILE; do
-  sleep 1
-done
+
+run() {
+  bin="$1"; shift
+  while ! /usr/bin/rkt run \
+          --net=host \
+          --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf  \
+          --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false --mount volume=awsenv,target=/var/run/coreos \
+          --trust-keys-from-https \
+          {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=$bin -- "$@"; do
+    sleep 1
+  done
+}
+
+run bash -c "aws configure set s3.signature_version s3v4; aws s3 --region $REGION cp {{$S3URI}} /var/run/coreos/$USERDATA_FILE"
+
 exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE
 {{ end }}
 {{ define "s3" -}}
@@ -390,7 +397,9 @@ coreos:
         {{ if .UseCalico }}
         ExecStartPre=/usr/bin/bash -c "until /usr/bin/docker run --net=host --pid=host --rm {{ .CalicoCtlImage.RepoWithTag }} node status > /dev/null; do sleep 3; done && echo Calico running"
         {{ end }}
+        {{if .Experimental.AuditLog.Enabled -}}
         ExecStartPre=/opt/bin/check-worker-communication
+        {{end -}}
         ExecStart=/opt/bin/cfn-signal
 {{end}}
 {{if .Experimental.AwsNodeLabels.Enabled }}
@@ -409,36 +418,7 @@ coreos:
         Type=oneshot
         ExecStop=/bin/true
         RemainAfterExit=true
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment INSTANCE_ID=$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id)"
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment SECURITY_GROUPS=\"$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/security-groups | tr '\n' ',')\""
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment AUTOSCALINGGROUP=\"$(/usr/bin/docker run --rm --net=host \
-          {{.AWSCliImage.RepoWithTag}} aws \
-          autoscaling describe-auto-scaling-instances \
-          --instance-ids ${INSTANCE_ID} --region {{.Region}} \
-          --query 'AutoScalingInstances[].AutoScalingGroupName' --output text)\""
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment \
-          LAUNCHCONFIGURATION=\"$(/usr/bin/docker run --rm --net=host \
-          {{.AWSCliImage.RepoWithTag}} \
-          aws autoscaling describe-auto-scaling-groups \
-          --auto-scaling-group-name $AUTOSCALINGGROUP --region {{.Region}} \
-          --query 'AutoScalingGroups[].LaunchConfigurationName' --output text)\""
-        ExecStartPre=/usr/bin/bash -c "until /usr/bin/curl -s -f http://127.0.0.1:8080/version; do echo waiting until apiserver starts; sleep 1; done"
-        ExecStart=/bin/sh -c "/usr/bin/curl \
-          --retry 3 \
-          --request PATCH \
-          -H 'Content-Type: application/strategic-merge-patch+json' \
-          -d'{ \
-          \"metadata\": { \
-            \"labels\": { \
-              \"kube-aws.coreos.com/autoscalinggroup\": \"${AUTOSCALINGGROUP}\", \
-              \"kube-aws.coreos.com/launchconfiguration\": \"${LAUNCHCONFIGURATION}\" \
-            }, \
-            \"annotations\": { \
-              \"kube-aws.coreos.com/securitygroups\": \"${SECURITY_GROUPS}\" \
-            } \
-          } \
-          }\"' \
-          http://localhost:8080/api/v1/nodes/$(hostname)"
+        ExecStart=/opt/bin/kube-node-label
 {{end}}
 
 {{if .Experimental.EphemeralImageStorage.Enabled}}
@@ -518,6 +498,19 @@ ssh_authorized_keys:
         WantedBy=install-kube-system.service
 {{end}}
 write_files:
+  - path: /etc/ssh/sshd_config
+    permissions: 0600
+    owner: root:root
+    content: |
+      UsePrivilegeSeparation sandbox
+      Subsystem sftp internal-sftp
+      ClientAliveInterval 180
+      UseDNS no
+      UsePAM yes
+      PrintLastLog no # handled by PAM
+      PrintMotd no # handled by PAM
+      PasswordAuthentication no
+      ChallengeResponseAuthentication no
 {{- if .Controller.CustomFiles}}
   {{- range $w := .Controller.CustomFiles}}
   - path: {{$w.Path}}
@@ -643,6 +636,48 @@ write_files:
 
       rkt rm --uuid-file=/var/run/coreos/set-aws-environment.uuid || :
 {{end}}
+
+  {{if .Experimental.AwsNodeLabels.Enabled -}}
+  - path: /opt/bin/kube-node-label
+    permissions: 0700
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+      set -ue
+
+      INSTANCE_ID="$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id)"
+      SECURITY_GROUPS="$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/security-groups | tr '\n' ',')"
+      AUTOSCALINGGROUP="$(/usr/bin/docker run --rm --net=host \
+                {{.AWSCliImage.RepoWithTag}} aws \
+                autoscaling describe-auto-scaling-instances \
+                --instance-ids ${INSTANCE_ID} --region {{.Region}} \
+                --query 'AutoScalingInstances[].AutoScalingGroupName' --output text)"
+      LAUNCHCONFIGURATION="$(/usr/bin/docker run --rm --net=host \
+                {{.AWSCliImage.RepoWithTag}} \
+                aws autoscaling describe-auto-scaling-groups \
+                --auto-scaling-group-name $AUTOSCALINGGROUP --region {{.Region}} \
+                --query 'AutoScalingGroups[].LaunchConfigurationName' --output text)"
+
+       until /usr/bin/curl -s -f http://127.0.0.1:8080/version; do echo waiting until apiserver starts; sleep 1; done
+
+       /usr/bin/curl \
+         --retry 5 \
+         --request PATCH \
+         -H 'Content-Type: application/strategic-merge-patch+json' \
+         -d '{
+              "metadata": {
+                "labels": {
+                  "kube-aws.coreos.com/autoscalinggroup": "'${AUTOSCALINGGROUP}'",
+                   "kube-aws.coreos.com/launchconfiguration": "'${LAUNCHCONFIGURATION}'"
+                 },
+                 "annotations": {
+                  "kube-aws.coreos.com/securitygroups": "'${SECURITY_GROUPS}'"
+                }
+              }
+            }' \
+         http://localhost:8080/api/v1/nodes/$(hostname)
+  {{end -}}
+
 {{ if .SharedPersistentVolume }}
   - path: /opt/bin/set-efs-pv
     owner: root:root
@@ -1883,6 +1918,7 @@ write_files:
           - --audit-log-maxage={{.Experimental.AuditLog.MaxAge}}
           - --audit-log-path={{.Experimental.AuditLog.LogPath}}
           - --audit-log-maxbackup=1
+          - --audit-policy-file=/etc/kubernetes/apiserver/audit-policy.yaml
           {{ end }}
           - --authorization-mode={{if .Experimental.NodeAuthorizer.Enabled}}Node,{{end}}RBAC
           {{if .Experimental.Authentication.Webhook.Enabled}}
@@ -1890,7 +1926,7 @@ write_files:
           - --authentication-token-webhook-cache-ttl={{ .Experimental.Authentication.Webhook.CacheTTL }}
           {{ end }}
           - --advertise-address=$private_ipv4
-          - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }}{{if .Experimental.NodeAuthorizer.Enabled}},NodeRestriction{{end}},ResourceQuota{{if .Experimental.Admission.DenyEscalatingExec.Enabled}},DenyEscalatingExec{{end}}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}
+          - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }}{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.NodeAuthorizer.Enabled}},NodeRestriction{{end}},ResourceQuota{{if .Experimental.Admission.DenyEscalatingExec.Enabled}},DenyEscalatingExec{{end}}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}
           - --anonymous-auth=false
           {{if .Experimental.Oidc.Enabled}}
           - --oidc-issuer-url={{.Experimental.Oidc.IssuerUrl}}
@@ -1947,6 +1983,9 @@ write_files:
           - mountPath: /var/log
             name: var-log
             readOnly: false
+          - mountPath: /etc/kubernetes/apiserver
+            name: apiserver
+            readOnly: true
           {{end}}
           {{range $v := .APIServerVolumes}}
           - mountPath: {{quote $v.Path}}
@@ -1974,6 +2013,9 @@ write_files:
         - hostPath:
             path: /var/log
           name: var-log
+        - hostPath:
+            path: /etc/kubernetes/apiserver
+          name: apiserver
         {{end}}
         {{range $v := .APIServerVolumes}}
         - hostPath:
@@ -2942,6 +2984,143 @@ write_files:
 
 {{ end }}
 
+# AdvancedAuditing is enabled by default since K8S v1.8.
+# With AdvancedAuditing, you have to provide a audit policy file.
+# Otherwise no audit logs are recorded at all.
+{{if .Experimental.AuditLog.Enabled -}}
+  # Refer to the audit profile used by GCE
+  # https://github.com/kubernetes/kubernetes/blob/v1.8.3/cluster/gce/gci/configure-helper.sh#L517
+  - path: /etc/kubernetes/apiserver/audit-policy.yaml
+    owner: root:root
+    permissions: 0600
+    content: |
+      apiVersion: audit.k8s.io/v1beta1
+      kind: Policy
+      rules:
+        # The following requests were manually identified as high-volume and low-risk,
+        # so drop them.
+        - level: None
+          users: ["system:kube-proxy"]
+          verbs: ["watch"]
+          resources:
+            - group: "" # core
+              resources: ["endpoints", "services", "services/status"]
+        - level: None
+          # Ingress controller reads `configmaps/ingress-uid` through the unsecured port.
+          # TODO(#46983): Change this to the ingress controller service account.
+          users: ["system:unsecured"]
+          namespaces: ["kube-system"]
+          verbs: ["get"]
+          resources:
+            - group: "" # core
+              resources: ["configmaps"]
+        - level: None
+          users: ["kubelet"] # legacy kubelet identity
+          verbs: ["get"]
+          resources:
+            - group: "" # core
+              resources: ["nodes", "nodes/status"]
+        - level: None
+          userGroups: ["system:nodes"]
+          verbs: ["get"]
+          resources:
+            - group: "" # core
+              resources: ["nodes", "nodes/status"]
+        - level: None
+          users:
+            - system:kube-controller-manager
+            - system:kube-scheduler
+            - system:serviceaccount:kube-system:endpoint-controller
+          verbs: ["get", "update"]
+          namespaces: ["kube-system"]
+          resources:
+            - group: "" # core
+              resources: ["endpoints"]
+        - level: None
+          users: ["system:apiserver"]
+          verbs: ["get"]
+          resources:
+            - group: "" # core
+              resources: ["namespaces", "namespaces/status", "namespaces/finalize"]
+        # Don't log HPA fetching metrics.
+        - level: None
+          users:
+            - system:kube-controller-manager
+          verbs: ["get", "list"]
+          resources:
+            - group: "metrics.k8s.io"
+        # Don't log these read-only URLs.
+        - level: None
+          nonResourceURLs:
+            - /healthz*
+            - /version
+            - /swagger*
+        # Don't log events requests.
+        - level: None
+          resources:
+            - group: "" # core
+              resources: ["events"]
+        # Secrets, ConfigMaps, and TokenReviews can contain sensitive & binary data,
+        # so only log at the Metadata level.
+        - level: Metadata
+          resources:
+            - group: "" # core
+              resources: ["secrets", "configmaps"]
+            - group: authentication.k8s.io
+              resources: ["tokenreviews"]
+          omitStages:
+            - "RequestReceived"
+        # Get responses can be large; skip them.
+        - level: Request
+          verbs: ["get", "list", "watch"]
+          resources:
+            - group: "" # core
+            - group: "admissionregistration.k8s.io"
+            - group: "apiextensions.k8s.io"
+            - group: "apiregistration.k8s.io"
+            - group: "apps"
+            - group: "authentication.k8s.io"
+            - group: "authorization.k8s.io"
+            - group: "autoscaling"
+            - group: "batch"
+            - group: "certificates.k8s.io"
+            - group: "extensions"
+            - group: "metrics.k8s.io"
+            - group: "networking.k8s.io"
+            - group: "policy"
+            - group: "rbac.authorization.k8s.io"
+            - group: "settings.k8s.io"
+            - group: "storage.k8s.io"
+          omitStages:
+            - "RequestReceived"
+        # Default level for known APIs
+        - level: RequestResponse
+          resources:
+            - group: "" # core
+            - group: "admissionregistration.k8s.io"
+            - group: "apiextensions.k8s.io"
+            - group: "apiregistration.k8s.io"
+            - group: "apps"
+            - group: "authentication.k8s.io"
+            - group: "authorization.k8s.io"
+            - group: "autoscaling"
+            - group: "batch"
+            - group: "certificates.k8s.io"
+            - group: "extensions"
+            - group: "metrics.k8s.io"
+            - group: "networking.k8s.io"
+            - group: "policy"
+            - group: "rbac.authorization.k8s.io"
+            - group: "settings.k8s.io"
+            - group: "storage.k8s.io"
+          omitStages:
+            - "RequestReceived"
+        # Default level for all other requests.
+        - level: Metadata
+          omitStages:
+            - "RequestReceived"
+{{ end -}}
+
 {{if .Experimental.Authentication.Webhook.Enabled}}
   - path: /etc/kubernetes/webhooks/authentication.yaml
     encoding: base64
@@ -3092,6 +3271,8 @@ write_files:
           fi
       done
 
+  {{if .Experimental.AuditLog.Enabled -}}
+  # Check worker communication by searching audit logs
   - path: /opt/bin/check-worker-communication
     permissions: 0700
     owner: root:root
@@ -3099,13 +3280,25 @@ write_files:
       #!/bin/bash -e
       set -ue
 
+      AUDIT_LOG_PATH="{{.Experimental.AuditLog.LogPath}}"
+
       kubectl() {
         /usr/bin/docker run --rm --net=host -v /srv/kubernetes:/srv/kubernetes {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl "$@"
       }
 
       queryserver() {
         echo "Checking to see if workers are communicating with API server."
-        docker logs --tail 10 ${DOCKERIMAGE} |& grep -v 127.0.0.1 | awk 'BEGIN {C=1} /kubelet\// && $8 == "200" {C=0} END {exit C}'
+        auditlogs | grep -v 127.0.0.1 | grep kubelet | jq -c 'select(.responseStatus.code == 200)' --exit-status
+      }
+
+      auditlogs() {
+        if [ "$AUDIT_LOG_PATH" == "/dev/stdout" ]; then
+          # Let `docker logs` gather logs for periods slightly longer than the delay between `queryserver` calls
+          # so that we won't drop any lines.
+          docker logs --since 11s ${DOCKERIMAGE} |& cat
+        else
+          cat "$AUDIT_LOG_PATH"
+        fi
       }
 
       #This checks whether there are any nodes other than controllers. If there is, this indicates it is a cluster update, if there is not, is a fresh cluster.
@@ -3129,5 +3322,6 @@ write_files:
         until queryserver; do echo "Worker communication failed, retrying." && sleep 10; done
         echo "Communication with workers has been established."
       fi
+  {{end -}}
 
 {{ end }}

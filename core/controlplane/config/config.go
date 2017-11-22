@@ -41,6 +41,9 @@ func NewDefaultCluster() *Cluster {
 			PodSecurityPolicy{
 				Enabled: false,
 			},
+			AlwaysPullImages{
+				Enabled: false,
+			},
 			DenyEscalatingExec{
 				Enabled: false,
 			},
@@ -520,8 +523,13 @@ type Experimental struct {
 
 type Admission struct {
 	PodSecurityPolicy  PodSecurityPolicy  `yaml:"podSecurityPolicy"`
+	AlwaysPullImages   AlwaysPullImages   `yaml:"alwaysPullImages"`
 	DenyEscalatingExec DenyEscalatingExec `yaml:"denyEscalatingExec"`
 	Initializers       Initializers       `yaml:"initializers"`
+}
+
+type AlwaysPullImages struct {
+	Enabled bool `yaml:"enabled"`
 }
 
 type PodSecurityPolicy struct {

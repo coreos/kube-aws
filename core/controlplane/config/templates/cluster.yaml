@@ -1177,6 +1177,12 @@ experimental:
   admission:
     podSecurityPolicy:
       enabled: false
+    # alwaysPullImages Note
+    # Recommended to turn this on when and only when docker registries are reliable enough.
+    # Otherwise, automatic pod restarts can be delayed due to temporally docker registry outages.
+    # Please see https://github.com/kubernetes-incubator/kube-aws/pull/1009#discussion_r151197787 for more info.
+    alwaysPullImages:
+      enabled: false
     denyEscalatingExec:
       enabled: false
     initializers:
