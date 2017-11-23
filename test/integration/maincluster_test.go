@@ -83,6 +83,9 @@ func TestMainClusterConfig(t *testing.T) {
 				PodSecurityPolicy: controlplane_config.PodSecurityPolicy{
 					Enabled: false,
 				},
+				AlwaysPullImages: controlplane_config.AlwaysPullImages{
+					Enabled: false,
+				},
 				DenyEscalatingExec: controlplane_config.DenyEscalatingExec{
 					Enabled: false,
 				},
@@ -1151,6 +1154,8 @@ experimental:
       enabled: true
     denyEscalatingExec:
       enabled: true
+    alwaysPullImages:
+      enabled: true
   auditLog:
     enabled: true
     maxage: 100
@@ -1209,6 +1214,9 @@ worker:
 					expected := controlplane_config.Experimental{
 						Admission: controlplane_config.Admission{
 							PodSecurityPolicy: controlplane_config.PodSecurityPolicy{
+								Enabled: true,
+							},
+							AlwaysPullImages: controlplane_config.AlwaysPullImages{
 								Enabled: true,
 							},
 							DenyEscalatingExec: controlplane_config.DenyEscalatingExec{
@@ -4232,7 +4240,7 @@ worker:
         enabled: true
         version: ""
 `,
-			expectedErrorMessage: `instance type t2.medium doesn't support GPU. You can enable Nvidia driver intallation support only when use [p2 g2] instance family.`,
+			expectedErrorMessage: `instance type t2.medium doesn't support GPU. You can enable Nvidia driver intallation support only when use [p2 p3 g2 g3] instance family.`,
 		},
 	}
 

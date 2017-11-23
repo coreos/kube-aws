@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	k8sVer = "v1.7.6_coreos.0"
+	k8sVer = "v1.8.2_coreos.0"
 
 	credentialsDir = "credentials"
 	userDataDir    = "userdata"
@@ -41,7 +41,13 @@ func NewDefaultCluster() *Cluster {
 			PodSecurityPolicy{
 				Enabled: false,
 			},
+			AlwaysPullImages{
+				Enabled: false,
+			},
 			DenyEscalatingExec{
+				Enabled: false,
+			},
+			Initializers{
 				Enabled: false,
 			},
 		},
@@ -131,25 +137,26 @@ func NewDefaultCluster() *Cluster {
 			CloudFormationStreaming:            true,
 			HyperkubeImage:                     model.Image{Repo: "quay.io/coreos/hyperkube", Tag: k8sVer, RktPullDocker: false},
 			AWSCliImage:                        model.Image{Repo: "quay.io/coreos/awscli", Tag: "master", RktPullDocker: false},
-			CalicoNodeImage:                    model.Image{Repo: "quay.io/calico/node", Tag: "v2.4.1", RktPullDocker: false},
-			CalicoCniImage:                     model.Image{Repo: "quay.io/calico/cni", Tag: "v1.10.0", RktPullDocker: false},
-			CalicoPolicyControllerImage:        model.Image{Repo: "quay.io/calico/kube-policy-controller", Tag: "v0.7.0", RktPullDocker: false},
-			CalicoCtlImage:                     model.Image{Repo: "quay.io/calico/ctl", Tag: "v1.4.0", RktPullDocker: false},
-			ClusterAutoscalerImage:             model.Image{Repo: "gcr.io/google_containers/cluster-autoscaler", Tag: "v0.6.0", RktPullDocker: false},
+			CalicoNodeImage:                    model.Image{Repo: "quay.io/calico/node", Tag: "v2.6.1", RktPullDocker: false},
+			CalicoCniImage:                     model.Image{Repo: "quay.io/calico/cni", Tag: "v1.11.0", RktPullDocker: false},
+			CalicoKubeControllersImage:         model.Image{Repo: "quay.io/calico/kube-controllers", Tag: "v1.0.0", RktPullDocker: false},
+			CalicoCtlImage:                     model.Image{Repo: "quay.io/calico/ctl", Tag: "v1.6.1", RktPullDocker: false},
+			ClusterAutoscalerImage:             model.Image{Repo: "gcr.io/google_containers/cluster-autoscaler", Tag: "v1.0.2", RktPullDocker: false},
 			ClusterProportionalAutoscalerImage: model.Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64", Tag: "1.1.2", RktPullDocker: false},
-			Kube2IAMImage:                      model.Image{Repo: "jtblin/kube2iam", Tag: "0.7.0", RktPullDocker: false},
-			KubeDnsImage:                       model.Image{Repo: "gcr.io/google_containers/k8s-dns-kube-dns-amd64", Tag: "1.14.5", RktPullDocker: false},
-			KubeDnsMasqImage:                   model.Image{Repo: "gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64", Tag: "1.14.5", RktPullDocker: false},
+			Kube2IAMImage:                      model.Image{Repo: "jtblin/kube2iam", Tag: "0.8.1", RktPullDocker: false},
+			KubeDnsImage:                       model.Image{Repo: "gcr.io/google_containers/k8s-dns-kube-dns-amd64", Tag: "1.14.6", RktPullDocker: false},
+			KubeDnsMasqImage:                   model.Image{Repo: "gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64", Tag: "1.14.6", RktPullDocker: false},
 			KubeReschedulerImage:               model.Image{Repo: "gcr.io/google-containers/rescheduler", Tag: "v0.3.1", RktPullDocker: false},
-			DnsMasqMetricsImage:                model.Image{Repo: "gcr.io/google_containers/k8s-dns-sidecar-amd64", Tag: "1.14.5", RktPullDocker: false},
+			DnsMasqMetricsImage:                model.Image{Repo: "gcr.io/google_containers/k8s-dns-sidecar-amd64", Tag: "1.14.6", RktPullDocker: false},
 			ExecHealthzImage:                   model.Image{Repo: "gcr.io/google_containers/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
 			HelmImage:                          model.Image{Repo: "quay.io/kube-aws/helm", Tag: "v2.6.0", RktPullDocker: false},
-			TillerImage:                        model.Image{Repo: "gcr.io/kubernetes-helm/tiller", Tag: "v2.6.0", RktPullDocker: false},
-			HeapsterImage:                      model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.4.1", RktPullDocker: false},
-			AddonResizerImage:                  model.Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "2.0", RktPullDocker: false},
-			KubeDashboardImage:                 model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.6.3", RktPullDocker: false},
+			TillerImage:                        model.Image{Repo: "gcr.io/kubernetes-helm/tiller", Tag: "v2.6.2", RktPullDocker: false},
+			HeapsterImage:                      model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.4.3", RktPullDocker: false},
+			AddonResizerImage:                  model.Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "2.1", RktPullDocker: false},
+			KubeDashboardImage:                 model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.7.1", RktPullDocker: false},
+			KubeDashboardInitImage:             model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-init-amd64", Tag: "v1.0.1", RktPullDocker: false},
 			PauseImage:                         model.Image{Repo: "gcr.io/google_containers/pause-amd64", Tag: "3.0", RktPullDocker: false},
-			FlannelImage:                       model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.7.1", RktPullDocker: false},
+			FlannelImage:                       model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.9.0", RktPullDocker: false},
 			JournaldCloudWatchLogsImage:        model.Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
 		},
 		KubeClusterSettings: KubeClusterSettings{
@@ -362,8 +369,9 @@ type KubeClusterSettings struct {
 	// Required by kubelet to locate the kube-apiserver
 	ExternalDNSName string `yaml:"externalDNSName,omitempty"`
 	// Required by kubelet to locate the cluster-internal dns hosted on controller nodes in the base cluster
-	DNSServiceIP string `yaml:"dnsServiceIP,omitempty"`
-	UseCalico    bool   `yaml:"useCalico,omitempty"`
+	DNSServiceIP                 string `yaml:"dnsServiceIP,omitempty"`
+	UseCalico                    bool   `yaml:"useCalico,omitempty"`
+	KubeDashboardAdminPrivileges bool   `yaml:"kubeDashboardAdminPrivileges,omitempty"`
 }
 
 // Part of configuration which can't be provided via user input but is computed from user input
@@ -420,7 +428,7 @@ type DeploymentSettings struct {
 	CalicoNodeImage                    model.Image `yaml:"calicoNodeImage,omitempty"`
 	CalicoCniImage                     model.Image `yaml:"calicoCniImage,omitempty"`
 	CalicoCtlImage                     model.Image `yaml:"calicoCtlImage,omitempty"`
-	CalicoPolicyControllerImage        model.Image `yaml:"calicoPolicyControllerImage,omitempty"`
+	CalicoKubeControllersImage         model.Image `yaml:"calicoKubeControllersImage,omitempty"`
 	ClusterAutoscalerImage             model.Image `yaml:"clusterAutoscalerImage,omitempty"`
 	ClusterProportionalAutoscalerImage model.Image `yaml:"clusterProportionalAutoscalerImage,omitempty"`
 	Kube2IAMImage                      model.Image `yaml:"kube2iamImage,omitempty"`
@@ -434,6 +442,7 @@ type DeploymentSettings struct {
 	HeapsterImage                      model.Image `yaml:"heapsterImage,omitempty"`
 	AddonResizerImage                  model.Image `yaml:"addonResizerImage,omitempty"`
 	KubeDashboardImage                 model.Image `yaml:"kubeDashboardImage,omitempty"`
+	KubeDashboardInitImage             model.Image `yaml:"kubeDashboardInitImage,omitempty"`
 	PauseImage                         model.Image `yaml:"pauseImage,omitempty"`
 	FlannelImage                       model.Image `yaml:"flannelImage,omitempty"`
 	JournaldCloudWatchLogsImage        model.Image `yaml:"journaldCloudWatchLogsImage,omitempty"`
@@ -514,7 +523,13 @@ type Experimental struct {
 
 type Admission struct {
 	PodSecurityPolicy  PodSecurityPolicy  `yaml:"podSecurityPolicy"`
+	AlwaysPullImages   AlwaysPullImages   `yaml:"alwaysPullImages"`
 	DenyEscalatingExec DenyEscalatingExec `yaml:"denyEscalatingExec"`
+	Initializers       Initializers       `yaml:"initializers"`
+}
+
+type AlwaysPullImages struct {
+	Enabled bool `yaml:"enabled"`
 }
 
 type PodSecurityPolicy struct {
@@ -522,6 +537,10 @@ type PodSecurityPolicy struct {
 }
 
 type DenyEscalatingExec struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type Initializers struct {
 	Enabled bool `yaml:"enabled"`
 }
 
@@ -1307,7 +1326,7 @@ func (c DeploymentSettings) NATGateways() []model.NATGateway {
 
 func (c DefaultWorkerSettings) Validate() error {
 	if c.WorkerRootVolumeType == "io1" {
-		if c.WorkerRootVolumeIOPS < 100 || c.WorkerRootVolumeIOPS > 2000 {
+		if c.WorkerRootVolumeIOPS < 100 || c.WorkerRootVolumeIOPS > 20000 {
 			return fmt.Errorf("invalid workerRootVolumeIOPS: %d", c.WorkerRootVolumeIOPS)
 		}
 	} else {
@@ -1328,7 +1347,7 @@ func (c ControllerSettings) Validate() error {
 	rootVolume := controller.RootVolume
 
 	if rootVolume.Type == "io1" {
-		if rootVolume.IOPS < 100 || rootVolume.IOPS > 2000 {
+		if rootVolume.IOPS < 100 || rootVolume.IOPS > 20000 {
 			return fmt.Errorf("invalid controller.rootVolume.iops: %d", rootVolume.IOPS)
 		}
 	} else {

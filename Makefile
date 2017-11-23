@@ -54,3 +54,10 @@ publish-docs: REPO ?= kubernetes-incubator/kube-aws
 publish-docs: REMOTE ?= origin
 publish-docs: generate-docs
 	NODE_DEBUG=gh-pages gh-pages -d _book -r git@github.com:$(REPO).git -o $(REMOTE)
+
+.PHONY: relnote
+relnote:
+	go get golang.org/x/oauth2
+	go get golang.org/x/net/context
+	go get github.com/google/go-github/github
+	go run hack/relnote.go

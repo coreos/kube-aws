@@ -72,6 +72,8 @@ coreos:
         {{- end }}
       {{- end}}
 {{- end}}
+    - name: systemd-modules-load.service
+      command: restart
 {{range $volumeMountSpecIndex, $volumeMountSpec := .VolumeMounts}}
     - name: format-{{$volumeMountSpec.SystemdMountName}}.service
       command: start
@@ -606,6 +608,19 @@ users:
 {{end}}
 
 write_files:
+  - path: /etc/ssh/sshd_config
+    permissions: 0600
+    owner: root:root
+    content: |
+      UsePrivilegeSeparation sandbox
+      Subsystem sftp internal-sftp
+      ClientAliveInterval 180
+      UseDNS no
+      UsePAM yes
+      PrintLastLog no # handled by PAM
+      PrintMotd no # handled by PAM
+      PasswordAuthentication no
+      ChallengeResponseAuthentication no
 {{- if .CustomFiles}}
   {{- range $w := .CustomFiles}}
   - path: {{$w.Path}}
@@ -614,6 +629,13 @@ write_files:
     content: {{$w.GzippedBase64Content}}
   {{- end }}
 {{- end }}
+  - path: /etc/modules-load.d/ip_vs.conf
+    content: |
+      ip_vs
+      ip_vs_rr
+      ip_vs_wrr
+      ip_vs_sh
+      nf_conntrack_ipv4
 {{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
   - path: "/opt/ssm/bin/install-ssm-agent.sh"
     permissions: 0700
@@ -669,6 +691,8 @@ write_files:
           '
             cfn-init -v -c "aws-environment" --region {{.Region}} --resource {{.LogicalName}} --stack '${{.StackNameEnvVarName}}'
           '
+
+      rkt rm --uuid-file=/var/run/coreos/set-aws-environment.uuid || :
 {{end}}
 
   - path: /opt/bin/cfn-signal
@@ -843,7 +867,8 @@ write_files:
              --tags '"'"'Key=kubernetes.io/cluster/{{.ClusterName}},Value=""'"'"' '"'"'Key=Name,Value="{{.ClusterName}}-{{.StackName}}-kube-aws-worker"'"'"' '"'"'Key="kube-aws:node-pool:name",Value="{{.NodePoolName}}"'"'"'
            echo done.'
 
-      rkt rm --uuid-file=/var/run/coreos/tag-spot-instance.uuid
+      rkt rm --uuid-file=/var/run/coreos/tag-spot-instance.uuid || :
+
 {{if .Experimental.LoadBalancer.Enabled}}
   - path: /opt/bin/add-to-load-balancers
     owner: root:root
@@ -873,7 +898,7 @@ write_files:
            done
            echo done.'
 
-      rkt rm --uuid-file=/var/run/coreos/add-to-load-balancers.uuid
+      rkt rm --uuid-file=/var/run/coreos/add-to-load-balancers.uuid || :
 {{end}}
 
 {{if .Experimental.TargetGroup.Enabled}}
@@ -905,7 +930,7 @@ write_files:
            done
            echo done.'
 
-      rkt rm --uuid-file=/var/run/coreos/add-to-target-groups.uuid
+      rkt rm --uuid-file=/var/run/coreos/add-to-target-groups.uuid || :
 {{end}}
 {{end}}
 
@@ -1042,7 +1067,7 @@ write_files:
       set -e
       function is_gpu_enabled(){
         local instance_type=$1
-        [[ -n $instance_type ]] && ([[ $instance_type == p2* ]] || [[ $instance_type ==  g2* ]])
+        [[ -n $instance_type ]] && ([[ $instance_type == p2* ]] || [[ $instance_type == p3* ]] || [[ $instance_type ==  g2* ]] || [[ $instance_type == g3* ]])
       }
 
       INSTANCE_TYPE=$(curl -s http://169.254.169.254/latest/meta-data/instance-type)
@@ -1393,6 +1418,8 @@ write_files:
 
       mkdir -p /etc/ld.so.conf.d/ 2>/dev/null
       echo "/opt/nvidia/current/lib64" > /etc/ld.so.conf.d/nvidia.conf
+      rm /opt/nvidia/current/lib64/libEGL.so.1
+      ln -s /opt/nvidia/current/lib64/libEGL.so.$DRIVER_VERSION /opt/nvidia/current/lib64/libEGL.so.1
       ldconfig
 
   - path: /opt/nvidia-build/util/retry.sh

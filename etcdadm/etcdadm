@@ -85,7 +85,7 @@ config_etcd_endpoints() {
   echo "${ETCD_ENDPOINTS}"
 }
 
-etcd_version=${ETCD_VERSION:-3.2.6}
+etcd_version=${ETCD_VERSION:-3.2.9}
 etcd_aci_url="https://github.com/coreos/etcd/releases/download/v$etcd_version/etcd-v$etcd_version-linux-amd64.aci"
 
 member_count="${ETCDADM_MEMBER_COUNT:?missing required env}"
@@ -248,15 +248,19 @@ member_snapshot_relative_path() {
 }
 
 member_save_snapshot() {
-  local snapshot_name
-  snapshot_name=$(member_snapshot_relative_path)
-  if cluster_is_healthy; then
-    member_etcdctl snapshot save "$snapshot_name"
-    member_etcdctl snapshot status "$snapshot_name"
-    member_upload_snapshot
-    member_remove_snapshot
+  if member_is_leader; then
+    local snapshot_name
+    snapshot_name=$(member_snapshot_relative_path)
+    if cluster_is_healthy; then
+      member_etcdctl snapshot save "$snapshot_name"
+      member_etcdctl snapshot status "$snapshot_name"
+      member_upload_snapshot
+      member_remove_snapshot
+    else
+      _info 'cluster is not healthy. skipped taking snapshot because the cluster can be unhealthy due to the corrupted etcd data of members, including this member'
+    fi
   else
-    _info 'cluster is not healthy. skipped taking snapshot because the cluster can be unhealthy due to the corrupted etcd data of members, including this member'
+    _info 'this member is not leader. skipped taking snapshot'
   fi
 }
 
@@ -521,11 +525,7 @@ member_restore_from_local_snapshot() {
 }
 
 member_env_file() {
-  local name
-  local env_file
-  name=$(member_name)
-  env_file=$(config_state_dir)/${name}.env
-  echo "${env_file}"
+  echo "${ETCDADM_MEMBER_ENV_FILE:-$(config_state_dir)/$(member_name).env}"
 }
 
 member_set_initial_cluster_state() {
@@ -801,6 +801,10 @@ member_etcdctl() {
 
 member_is_healthy() {
   member_etcdctl endpoint health | grep "is healthy" 1>&2
+}
+
+member_is_leader() {
+  member_etcdctl -w json endpoint status | jq -r '.[].Status.leader == .[].Status.header.member_id' | grep "true" 1>&2
 }
 
 member_etcdctl_v2() {

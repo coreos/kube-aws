@@ -14,7 +14,7 @@ AWS_SECRET_ACCESS_KEY=... \
 ETCDADM_AWSCLI_DOCKER_IMAGE=quay.io/coreos/awscli \
 # Required settings
 AWS_DEFAULT_REGION=ap-northeast-1 \
-ETCD_VERSION=3.2.6 \
+ETCD_VERSION=3.2.8 \
 ETCD_DATA_DIR=/var/lib/etcd \
 ETCD_INITIAL_CLUSTER=etcd0=http://127.0.0.1:3080,etcd1=http://127.0.0.1:3180,etcd2=http://127.0.0.1:3280 \
 ETCDCTL_ENDPOINTS=http://127.0.0.1:3079,etcd1=http://127.0.0.1:3179,etcd2=http://127.0.0.1:3279, \
@@ -37,9 +37,9 @@ save it in S3
   * `N/2` or less permanently failed members, by automatically removing a permanently failed member and then re-add it as a brand-new member with empty data according to ["Replace a failed etcd member on CoreOS Container Linux"](https://coreos.com/etcd/docs/latest/etcd-live-cluster-reconfiguration.html#replace-a-failed-etcd-member-on-coreos-container-linux)
   * `(N/2)+1` or more permanently failed members, by automatically initiating a new cluster, from a snapshot if it exists, according to ["etcd disaster recovery on CoreOS Container Linux"](https://coreos.com/etcd/docs/latest/etcd-live-cluster-reconfiguration.html#etcd-disaster-recovery-on-coreos-container-linux)  
 * `etcdadm replace` is used to manually recover from an etcd member from a permanent failure. It resets the etcd member running on the same node as etcdadm by:
-  1. clearing the contents of the etcd data dir 
-  2. removing and then re-adding the etcd member by running `etcdctl member remove` and then `etcdctl memer add` 
-  
+  1. clearing the contents of the etcd data dir
+  2. removing and then re-adding the etcd member by running `etcdctl member remove` and then `etcdctl memer add`
+
 ## Pre-requisites
 
 * etcd3
@@ -83,7 +83,7 @@ Although it might be a bad idea, `etcdadm` is implemented in bash (for now) due 
 The following snippet creates a [coreos-vagrant](https://github.com/coreos/coreos-vagrant) virtualbox vm and then bootstraps a 3-nodes etcd3 cluster inside a Container Linux machine and run through various steps to verify etcdadm works.
 
 ```bash
-$ cat > test.env 
+$ cat > test.env
 AWS_ACCESS_KEY_ID=<YOUR KEY>
 AWS_SECRET_ACCESS_KY=<YOUR KEY>
 ETCD_CLUSTER_FAILURE_PERIOD_LIMIT=1000

@@ -13,9 +13,10 @@ import (
 
 	"errors"
 	"fmt"
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"strings"
 	"testing"
+
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 )
 
 type dummyEC2CreateVolumeService struct {
@@ -181,7 +182,7 @@ rootVolume:
 		},
 		{
 			expectedRootVolume: &ec2.CreateVolumeInput{
-				Iops:       aws.Int64(2000),
+				Iops:       aws.Int64(20000),
 				Size:       aws.Int64(100),
 				VolumeType: aws.String("io1"),
 			},
@@ -189,7 +190,7 @@ rootVolume:
 rootVolume:
   type: io1
   size: 100
-  iops: 2000
+  iops: 20000
 `,
 		},
 	}

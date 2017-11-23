@@ -27,8 +27,8 @@ func NewIo1RootVolume(size int, iops int) RootVolume {
 
 func (v RootVolume) Validate() error {
 	if v.Type == "io1" {
-		if v.IOPS < 100 || v.IOPS > 2000 {
-			return fmt.Errorf(`invalid rootVolumeIOPS %d in %+v: rootVolumeIOPS must be between 100 and 2000`, v.IOPS, v)
+		if v.IOPS < 100 || v.IOPS > 20000 {
+			return fmt.Errorf(`invalid rootVolumeIOPS %d in %+v: rootVolumeIOPS must be between 100 and 20000`, v.IOPS, v)
 		}
 	} else {
 		if v.IOPS != 0 {

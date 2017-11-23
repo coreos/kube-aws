@@ -55,6 +55,8 @@ coreos:
         {{- end }}
       {{- end }}
 {{- end}}
+    - name: systemd-modules-load.service
+      command: restart
 {{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
     - name: amazon-ssm-agent.service
       command: start
@@ -386,10 +388,13 @@ coreos:
         StartLimitBurst=10
         ExecStartPre=/usr/bin/systemctl is-active install-kube-system.service
         ExecStartPre=/usr/bin/systemctl is-active apply-kube-aws-plugins.service
-        ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl -s -m 20 -f  http://127.0.0.1:8080/healthz > /dev/null &&  /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10252/healthz > /dev/null && /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10251/healthz > /dev/null &&  /usr/bin/curl --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null ; then break ; fi;  done"
+        ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl -s -m 20 -f  http://127.0.0.1:8080/healthz > /dev/null &&  /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10252/healthz > /dev/null && /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10251/healthz > /dev/null &&  /usr/bin/curl --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null && /usr/bin/curl -s -m 20 -f http://127.0.0.1:10256/healthz > /dev/null; then break ; fi;  done"
         {{ if .UseCalico }}
         ExecStartPre=/usr/bin/bash -c "until /usr/bin/docker run --net=host --pid=host --rm {{ .CalicoCtlImage.RepoWithTag }} node status > /dev/null; do sleep 3; done && echo Calico running"
         {{ end }}
+        {{if .Experimental.AuditLog.Enabled -}}
+        ExecStartPre=/opt/bin/check-worker-communication
+        {{end -}}
         ExecStart=/opt/bin/cfn-signal
 {{end}}
 {{if .Experimental.AwsNodeLabels.Enabled }}
@@ -517,6 +522,19 @@ ssh_authorized_keys:
         WantedBy=install-kube-system.service
 {{end}}
 write_files:
+  - path: /etc/ssh/sshd_config
+    permissions: 0600
+    owner: root:root
+    content: |
+      UsePrivilegeSeparation sandbox
+      Subsystem sftp internal-sftp
+      ClientAliveInterval 180
+      UseDNS no
+      UsePAM yes
+      PrintLastLog no # handled by PAM
+      PrintMotd no # handled by PAM
+      PasswordAuthentication no
+      ChallengeResponseAuthentication no
 {{- if .Controller.CustomFiles}}
   {{- range $w := .Controller.CustomFiles}}
   - path: {{$w.Path}}
@@ -525,6 +543,13 @@ write_files:
     content: {{$w.GzippedBase64Content}}
   {{- end }}
 {{- end }}
+  - path: /etc/modules-load.d/ip_vs.conf
+    content: |
+      ip_vs
+      ip_vs_rr
+      ip_vs_wrr
+      ip_vs_sh
+      nf_conntrack_ipv4
 {{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
   - path: "/opt/ssm/bin/install-ssm-agent.sh"
     permissions: 0700
@@ -757,11 +782,16 @@ write_files:
       done
       {{ end }}
 
+      # Secrets
+      kubectl apply -f "${mfdir}/kubernetes-dashboard-se.yaml"
+
       # Configmaps
-      kubectl apply -f "${mfdir}/kube-dns-cm.yaml"
+      for manifest in {kube-dns,kube-proxy}; do
+        kubectl apply -f "${mfdir}/$manifest-cm.yaml"
+      done
 
       # Service Accounts
-      for manifest in {kube-dns,heapster,kube-proxy}; do
+      for manifest in {kube-dns,heapster,kube-proxy,kubernetes-dashboard}; do
           kubectl apply -f "${mfdir}/$manifest-sa.yaml"
       done
 
@@ -774,7 +804,7 @@ write_files:
 {{ end }}
 
       # Deployments
-      for manifest in {kube-dns,kube-dns-autoscaler,kube-dashboard,{{ if .Addons.ClusterAutoscaler.Enabled }}cluster-autoscaler,{{ end }}heapster{{ if .KubeResourcesAutosave.Enabled }},kube-resources-autosave{{ end }}}; do
+      for manifest in {kube-dns,kube-dns-autoscaler,kubernetes-dashboard,{{ if .Addons.ClusterAutoscaler.Enabled }}cluster-autoscaler,{{ end }}heapster{{ if .KubeResourcesAutosave.Enabled }},kube-resources-autosave{{ end }}}; do
           kubectl apply -f "${mfdir}/$manifest-de.yaml"
       done
 
@@ -784,7 +814,7 @@ write_files:
       done
 
       # Services
-      for manifest in {kube-dns,heapster,kube-dashboard}; do
+      for manifest in {kube-dns,heapster,kubernetes-dashboard}; do
           kubectl apply -f "${mfdir}/$manifest-svc.yaml"
       done
 
@@ -802,11 +832,15 @@ write_files:
           kubectl apply -f "${mfdir}/cluster-role-bindings/$manifest.yaml"
       done
 
+      {{ if .KubeDashboardAdminPrivileges }}
+      kubectl apply -f "${mfdir}/cluster-role-bindings/kubernetes-dashboard-admin.yaml"
+      {{- end }}
+
       # Roles and bindings
-      for manifest in {pod-nanny,}; do
+      for manifest in {pod-nanny,kubernetes-dashboard}; do
           kubectl apply -f "${mfdir}/roles/$manifest.yaml"
       done
-      for manifest in {heapster-nanny,}; do
+      for manifest in {heapster-nanny,kubernetes-dashboard}; do
           kubectl apply -f "${mfdir}/role-bindings/$manifest.yaml"
       done
 
@@ -996,7 +1030,7 @@ write_files:
       apiVersion: extensions/v1beta1
       kind: Deployment
       metadata:
-        name: calico-policy-controller
+        name: calico-kube-controllers
         namespace: kube-system
         labels:
           k8s-app: calico-policy
@@ -1007,7 +1041,7 @@ write_files:
         replicas: 1
         template:
           metadata:
-            name: calico-policy-controller
+            name: calico-kube-controllers
             namespace: kube-system
             labels:
               k8s-app: calico-policy
@@ -1021,8 +1055,8 @@ write_files:
               operator: "Exists"
             hostNetwork: true
             containers:
-              - name: calico-policy-controller
-                image: {{ .CalicoPolicyControllerImage.RepoWithTag }}
+              - name: calico-kube-controllers
+                image: {{ .CalicoKubeControllersImage.RepoWithTag }}
                 env:
                   - name: ETCD_ENDPOINTS
                     valueFrom:
@@ -1094,7 +1128,7 @@ write_files:
             containers:
             - name: kube-resources-autosave-dumper
               image: {{.HyperkubeImage.RepoWithTag}}
-              command: ["/bin/bash", "-c" ]
+              command: ["/bin/sh", "-c" ]
               args:
                 - |
                     set -x ;
@@ -1104,8 +1138,8 @@ write_files:
                       TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
                       DUMP_DIR=/kube-resources-autosave/tmp/${TIMESTAMP} ;
                       mkdir -p ${DUMP_DIR} ;
-                      RESOURCES_OUT_NAMESPACE=( namespaces persistentvolumes nodes storageclasses clusterrolebindings clusterroles ) ;
-                      for r in ${RESOURCES_OUT_NAMESPACE[@]};do
+                      RESOURCES_OUT_NAMESPACE="namespaces persistentvolumes nodes storageclasses clusterrolebindings clusterroles";
+                      for r in ${RESOURCES_OUT_NAMESPACE};do
                         echo " Searching for resources: ${r}" ;
                         /kubectl get --export -o=json ${r} | \
                         jq '.items |= ([ .[] |
@@ -1118,14 +1152,14 @@ write_files:
                             .spec.claimRef
                           )])' > ${DUMP_DIR}/${r}.json ;
                       done ;
-                      RESOURCES_IN_NAMESPACE=( componentstatuses configmaps daemonsets deployments endpoints events horizontalpodautoscalers
+                      RESOURCES_IN_NAMESPACE="componentstatuses configmaps daemonsets deployments endpoints events horizontalpodautoscalers
                       ingresses jobs limitranges networkpolicies  persistentvolumeclaims pods podsecuritypolicies podtemplates replicasets
                       replicationcontrollers resourcequotas secrets serviceaccounts services statefulsets thirdpartyresources
-                      poddisruptionbudgets roles rolebindings) ;
+                      poddisruptionbudgets roles rolebindings";
                       for ns in $(jq -r '.items[].metadata.name' < ${DUMP_DIR}/namespaces.json);do
                         echo "Searching in namespace: ${ns}" ;
                         mkdir -p ${DUMP_DIR}/${ns} ;
-                        for r in ${RESOURCES_IN_NAMESPACE[@]};do
+                        for r in ${RESOURCES_IN_NAMESPACE};do
                           echo " Searching for resources: ${r}" ;
                           /kubectl --namespace=${ns} get --export -o=json ${r} | \
                           jq '.items |= ([ .[] |
@@ -1702,6 +1736,77 @@ write_files:
           apiGroup: rbac.authorization.k8s.io
 {{ end }}
 
+  #kubernetes dashboard
+  - path: /srv/kubernetes/rbac/roles/kubernetes-dashboard.yaml
+    content: |
+        kind: Role
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        metadata:
+          name: kubernetes-dashboard-minimal
+          namespace: kube-system
+        rules:
+        - apiGroups: [""]
+          resources: ["secrets"]
+          verbs: ["create", "watch"]
+        - apiGroups: [""]
+          resources: ["secrets"]
+          resourceNames: ["kubernetes-dashboard-key-holder", "kubernetes-dashboard-certs"]
+          verbs: ["get", "update", "delete"]
+        - apiGroups: [""]
+          resources: ["services"]
+          resourceNames: ["heapster"]
+          verbs: ["proxy"]
+
+  - path: /srv/kubernetes/rbac/role-bindings/kubernetes-dashboard.yaml
+    content: |
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        kind: RoleBinding
+        metadata:
+          name: kubernetes-dashboard-minimal
+          namespace: kube-system
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: Role
+          name: kubernetes-dashboard-minimal
+        subjects:
+        - kind: ServiceAccount
+          name: kubernetes-dashboard
+          namespace: kube-system
+
+{{ if .KubeDashboardAdminPrivileges }}
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/kubernetes-dashboard-admin.yaml
+    content: |
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        kind: ClusterRoleBinding
+        metadata:
+          name: kubernetes-dashboard
+          labels:
+            k8s-app: kubernetes-dashboard
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: cluster-admin
+        subjects:
+        - kind: ServiceAccount
+          name: kubernetes-dashboard
+          namespace: kube-system
+{{ end }}
+  - path: /srv/kubernetes/manifests/kube-proxy-cm.yaml
+    content: |
+      kind: ConfigMap
+      apiVersion: v1
+      metadata:
+        name: kube-proxy-config
+        namespace: kube-system
+      data:
+        kube-proxy-config.yaml: |
+          apiVersion: componentconfig/v1alpha1
+          kind: KubeProxyConfiguration
+          bindAddress: 0.0.0.0
+          clientConnection:
+            kubeconfig: /etc/kubernetes/kubeconfig/kube-proxy.yaml
+          clusterCIDR: {{.PodCIDR}}
+
   - path: /srv/kubernetes/manifests/kube-proxy-ds.yaml
     content: |
         apiVersion: extensions/v1beta1
@@ -1738,18 +1843,23 @@ write_files:
                 command:
                 - /hyperkube
                 - proxy
-                - --kubeconfig=/etc/kubernetes/kubeconfig/kube-proxy.yaml
-                - --cluster-cidr={{.PodCIDR}}
+                - --config=/etc/kubernetes/kube-proxy/kube-proxy-config.yaml
                 securityContext:
                   privileged: true
                 volumeMounts:
                 - mountPath: /etc/kubernetes/kubeconfig
                   name: kubeconfig
                   readOnly: true
+                - mountPath: /etc/kubernetes/kube-proxy
+                  name: kube-proxy-config
+                  readOnly: true
               volumes:
               - name: kubeconfig
                 hostPath:
                   path: /etc/kubernetes/kubeconfig
+              - name: kube-proxy-config
+                configMap:
+                  name: kube-proxy-config
 
   - path: /etc/kubernetes/manifests/kube-apiserver.yaml
     content: |
@@ -1790,6 +1900,7 @@ write_files:
           - --audit-log-maxage={{.Experimental.AuditLog.MaxAge}}
           - --audit-log-path={{.Experimental.AuditLog.LogPath}}
           - --audit-log-maxbackup=1
+          - --audit-policy-file=/etc/kubernetes/apiserver/audit-policy.yaml
           {{ end }}
           - --authorization-mode={{if .Experimental.NodeAuthorizer.Enabled}}Node,{{end}}RBAC
           {{if .Experimental.Authentication.Webhook.Enabled}}
@@ -1797,7 +1908,7 @@ write_files:
           - --authentication-token-webhook-cache-ttl={{ .Experimental.Authentication.Webhook.CacheTTL }}
           {{ end }}
           - --advertise-address=$private_ipv4
-          - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }}{{if .Experimental.NodeAuthorizer.Enabled}},NodeRestriction{{end}},ResourceQuota,{{if .Experimental.Admission.DenyEscalatingExec.Enabled}}DenyEscalatingExec{{end}}
+          - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }}{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.NodeAuthorizer.Enabled}},NodeRestriction{{end}},ResourceQuota{{if .Experimental.Admission.DenyEscalatingExec.Enabled}},DenyEscalatingExec{{end}}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}
           - --anonymous-auth=false
           {{if .Experimental.Oidc.Enabled}}
           - --oidc-issuer-url={{.Experimental.Oidc.IssuerUrl}}
@@ -1817,7 +1928,7 @@ write_files:
           - --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
           - --client-ca-file=/etc/kubernetes/ssl/ca.pem
           - --service-account-key-file=/etc/kubernetes/ssl/apiserver-key.pem
-          - --runtime-config=extensions/v1beta1/networkpolicies=true,batch/v2alpha1,rbac.authorization.k8s.io/v1beta1=true{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},extensions/v1beta1/podsecuritypolicy=true{{ end }}
+          - --runtime-config=extensions/v1beta1/networkpolicies=true,batch/v2alpha1,rbac.authorization.k8s.io/v1beta1=true{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},extensions/v1beta1/podsecuritypolicy=true{{ end }}{{if .Experimental.Admission.Initializers.Enabled}},admissionregistration.k8s.io/v1alpha1{{end}}
           - --cloud-provider=aws
           {{range $f := .APIServerFlags}}
           - --{{$f.Name}}={{$f.Value}}
@@ -1857,6 +1968,9 @@ write_files:
           - mountPath: /var/log
             name: var-log
             readOnly: false
+          - mountPath: /etc/kubernetes/apiserver
+            name: apiserver
+            readOnly: true
           {{end}}
           {{range $v := .APIServerVolumes}}
           - mountPath: {{quote $v.Path}}
@@ -1884,6 +1998,9 @@ write_files:
         - hostPath:
             path: /var/log
           name: var-log
+        - hostPath:
+            path: /etc/kubernetes/apiserver
+          name: apiserver
         {{end}}
         {{range $v := .APIServerVolumes}}
         - hostPath:
@@ -2526,19 +2643,39 @@ write_files:
           selector:
             k8s-app: heapster
 
-  - path: /srv/kubernetes/manifests/kube-dashboard-de.yaml
+  - path: /srv/kubernetes/manifests/kubernetes-dashboard-se.yaml
     content: |
-        apiVersion: extensions/v1beta1
-        kind: Deployment
+        apiVersion: v1
+        kind: Secret
         metadata:
-          name: kubernetes-dashboard
-          namespace: kube-system
           labels:
             k8s-app: kubernetes-dashboard
-            version: {{ .KubeDashboardImage.Tag }}
-            kubernetes.io/cluster-service: "true"
+          name: kubernetes-dashboard-certs
+          namespace: kube-system
+        type: Opaque
+
+  - path: /srv/kubernetes/manifests/kubernetes-dashboard-sa.yaml
+    content: |
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          labels:
+            k8s-app: kubernetes-dashboard
+          name: kubernetes-dashboard
+          namespace: kube-system
+
+  - path: /srv/kubernetes/manifests/kubernetes-dashboard-de.yaml
+    content: |
+        kind: Deployment
+        apiVersion: extensions/v1beta1
+        metadata:
+          labels:
+            k8s-app: kubernetes-dashboard
+          name: kubernetes-dashboard
+          namespace: kube-system
         spec:
           replicas: 1
+          revisionHistoryLimit: 10
           selector:
             matchLabels:
               k8s-app: kubernetes-dashboard
@@ -2546,49 +2683,65 @@ write_files:
             metadata:
               labels:
                 k8s-app: kubernetes-dashboard
-                version: {{ .KubeDashboardImage.Tag }}
-                kubernetes.io/cluster-service: "true"
-              annotations:
-                scheduler.alpha.kubernetes.io/critical-pod: ''
             spec:
-              tolerations:
-              - key: "CriticalAddonsOnly"
-                operator: "Exists"
+              initContainers:
+              - name: kubernetes-dashboard-init
+                image: {{ .KubeDashboardInitImage.RepoWithTag }}
+                volumeMounts:
+                - name: kubernetes-dashboard-certs
+                  mountPath: /certs
               containers:
               - name: kubernetes-dashboard
                 image: {{ .KubeDashboardImage.RepoWithTag }}
-                resources:
-                  limits:
-                    cpu: 100m
-                    memory: 50Mi
-                  requests:
-                    cpu: 100m
-                    memory: 50Mi
                 ports:
                 - containerPort: 9090
+                  protocol: TCP
+                args:
+                  - --tls-key-file=/certs/dashboard.key
+                  - --tls-cert-file=/certs/dashboard.crt
+                volumeMounts:
+                - name: kubernetes-dashboard-certs
+                  mountPath: /certs
+                  readOnly: true
+                - mountPath: /tmp
+                  name: tmp-volume
                 livenessProbe:
                   httpGet:
+                    scheme: HTTPS
                     path: /
-                    port: 9090
+                    port: 8443
                   initialDelaySeconds: 30
                   timeoutSeconds: 30
+              volumes:
+              - name: kubernetes-dashboard-certs
+                secret:
+                  secretName: kubernetes-dashboard-certs
+              - name: tmp-volume
+                emptyDir: {}
+              serviceAccountName: kubernetes-dashboard
+              tolerations:
+              - key: "node.alpha.kubernetes.io/role"
+                operator: "Equal"
+                value: "master"
+                effect: "NoSchedule"
+              - key: "CriticalAddonsOnly"
+                operator: "Exists"
 
-  - path: /srv/kubernetes/manifests/kube-dashboard-svc.yaml
+  - path: /srv/kubernetes/manifests/kubernetes-dashboard-svc.yaml
     content: |
-        apiVersion: v1
         kind: Service
+        apiVersion: v1
         metadata:
-          name: kubernetes-dashboard
-          namespace: kube-system
           labels:
             k8s-app: kubernetes-dashboard
-            kubernetes.io/cluster-service: "true"
+          name: kubernetes-dashboard
+          namespace: kube-system
         spec:
+          ports:
+            - port: 443
+              targetPort: 8443
           selector:
             k8s-app: kubernetes-dashboard
-          ports:
-          - port: 80
-            targetPort: 9090
 
   - path: /srv/kubernetes/manifests/tiller.yaml
     content: |
@@ -2826,6 +2979,143 @@ write_files:
 
 {{ end }}
 
+# AdvancedAuditing is enabled by default since K8S v1.8.
+# With AdvancedAuditing, you have to provide a audit policy file.
+# Otherwise no audit logs are recorded at all.
+{{if .Experimental.AuditLog.Enabled -}}
+  # Refer to the audit profile used by GCE
+  # https://github.com/kubernetes/kubernetes/blob/v1.8.3/cluster/gce/gci/configure-helper.sh#L517
+  - path: /etc/kubernetes/apiserver/audit-policy.yaml
+    owner: root:root
+    permissions: 0600
+    content: |
+      apiVersion: audit.k8s.io/v1beta1
+      kind: Policy
+      rules:
+        # The following requests were manually identified as high-volume and low-risk,
+        # so drop them.
+        - level: None
+          users: ["system:kube-proxy"]
+          verbs: ["watch"]
+          resources:
+            - group: "" # core
+              resources: ["endpoints", "services", "services/status"]
+        - level: None
+          # Ingress controller reads `configmaps/ingress-uid` through the unsecured port.
+          # TODO(#46983): Change this to the ingress controller service account.
+          users: ["system:unsecured"]
+          namespaces: ["kube-system"]
+          verbs: ["get"]
+          resources:
+            - group: "" # core
+              resources: ["configmaps"]
+        - level: None
+          users: ["kubelet"] # legacy kubelet identity
+          verbs: ["get"]
+          resources:
+            - group: "" # core
+              resources: ["nodes", "nodes/status"]
+        - level: None
+          userGroups: ["system:nodes"]
+          verbs: ["get"]
+          resources:
+            - group: "" # core
+              resources: ["nodes", "nodes/status"]
+        - level: None
+          users:
+            - system:kube-controller-manager
+            - system:kube-scheduler
+            - system:serviceaccount:kube-system:endpoint-controller
+          verbs: ["get", "update"]
+          namespaces: ["kube-system"]
+          resources:
+            - group: "" # core
+              resources: ["endpoints"]
+        - level: None
+          users: ["system:apiserver"]
+          verbs: ["get"]
+          resources:
+            - group: "" # core
+              resources: ["namespaces", "namespaces/status", "namespaces/finalize"]
+        # Don't log HPA fetching metrics.
+        - level: None
+          users:
+            - system:kube-controller-manager
+          verbs: ["get", "list"]
+          resources:
+            - group: "metrics.k8s.io"
+        # Don't log these read-only URLs.
+        - level: None
+          nonResourceURLs:
+            - /healthz*
+            - /version
+            - /swagger*
+        # Don't log events requests.
+        - level: None
+          resources:
+            - group: "" # core
+              resources: ["events"]
+        # Secrets, ConfigMaps, and TokenReviews can contain sensitive & binary data,
+        # so only log at the Metadata level.
+        - level: Metadata
+          resources:
+            - group: "" # core
+              resources: ["secrets", "configmaps"]
+            - group: authentication.k8s.io
+              resources: ["tokenreviews"]
+          omitStages:
+            - "RequestReceived"
+        # Get responses can be large; skip them.
+        - level: Request
+          verbs: ["get", "list", "watch"]
+          resources:
+            - group: "" # core
+            - group: "admissionregistration.k8s.io"
+            - group: "apiextensions.k8s.io"
+            - group: "apiregistration.k8s.io"
+            - group: "apps"
+            - group: "authentication.k8s.io"
+            - group: "authorization.k8s.io"
+            - group: "autoscaling"
+            - group: "batch"
+            - group: "certificates.k8s.io"
+            - group: "extensions"
+            - group: "metrics.k8s.io"
+            - group: "networking.k8s.io"
+            - group: "policy"
+            - group: "rbac.authorization.k8s.io"
+            - group: "settings.k8s.io"
+            - group: "storage.k8s.io"
+          omitStages:
+            - "RequestReceived"
+        # Default level for known APIs
+        - level: RequestResponse
+          resources:
+            - group: "" # core
+            - group: "admissionregistration.k8s.io"
+            - group: "apiextensions.k8s.io"
+            - group: "apiregistration.k8s.io"
+            - group: "apps"
+            - group: "authentication.k8s.io"
+            - group: "authorization.k8s.io"
+            - group: "autoscaling"
+            - group: "batch"
+            - group: "certificates.k8s.io"
+            - group: "extensions"
+            - group: "metrics.k8s.io"
+            - group: "networking.k8s.io"
+            - group: "policy"
+            - group: "rbac.authorization.k8s.io"
+            - group: "settings.k8s.io"
+            - group: "storage.k8s.io"
+          omitStages:
+            - "RequestReceived"
+        # Default level for all other requests.
+        - level: Metadata
+          omitStages:
+            - "RequestReceived"
+{{ end -}}
+
 {{if .Experimental.Authentication.Webhook.Enabled}}
   - path: /etc/kubernetes/webhooks/authentication.yaml
     encoding: base64
@@ -2975,5 +3265,58 @@ write_files:
               sleep $attempt_interval_sec;
           fi
       done
+
+  {{if .Experimental.AuditLog.Enabled -}}
+  # Check worker communication by searching audit logs
+  - path: /opt/bin/check-worker-communication
+    permissions: 0700
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+      set -ue
+
+      AUDIT_LOG_PATH="{{.Experimental.AuditLog.LogPath}}"
+
+      kubectl() {
+        /usr/bin/docker run --rm --net=host -v /srv/kubernetes:/srv/kubernetes {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl "$@"
+      }
+
+      queryserver() {
+        echo "Checking to see if workers are communicating with API server."
+        auditlogs | grep -v 127.0.0.1 | grep kubelet | jq -c 'select(.responseStatus.code == 200)' --exit-status
+      }
+
+      auditlogs() {
+        if [ "$AUDIT_LOG_PATH" == "/dev/stdout" ]; then
+          # Let `docker logs` gather logs for periods slightly longer than the delay between `queryserver` calls
+          # so that we won't drop any lines.
+          docker logs --since 11s ${DOCKERIMAGE} |& cat
+        else
+          cat "$AUDIT_LOG_PATH"
+        fi
+      }
+
+      #This checks whether there are any nodes other than controllers. If there is, this indicates it is a cluster update, if there is not, is a fresh cluster.
+      #If it is an update, we check whether the workers can communicate with the API server before reporting success.
+
+      kubectl get nodes 2>/dev/null
+      RC=$?
+      if [[ $RC -gt 0 ]]; then
+        echo "No nodes present, assuming API server not yet ready, cannot verify cluster is up."
+        exit 1
+      fi
+
+      NUM_WORKERS=$(kubectl get nodes -l node-role.kubernetes.io/master!="" 2>/dev/null)
+      if [[ -z ${NUM_WORKERS} ]]; then
+        echo "Fresh cluster, not checking for existing workers."
+        exit 0
+      else
+        #We first retrieve the name of the image which is running the api-server, and then search its logs for any mentions of kubelet with a 200 response.
+
+        DOCKERIMAGE=$(docker ps | grep -i k8s_kube-apiserver_kube-apiserver | awk '{print $1}')
+        until queryserver; do echo "Worker communication failed, retrying." && sleep 10; done
+        echo "Communication with workers has been established."
+      fi
+  {{end -}}
 
 {{ end }}

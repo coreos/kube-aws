@@ -273,6 +273,7 @@ coreos:
 
             [Service]
             EnvironmentFile=-/etc/etcd-environment
+            EnvironmentFile=-/var/run/coreos/etcdadm/etcd-member.env
 
             PermissionsStartOnly=true
             ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
@@ -387,6 +388,19 @@ ssh_authorized_keys:
 {{end}}
 
 write_files:
+  - path: /etc/ssh/sshd_config
+    permissions: 0600
+    owner: root:root
+    content: |
+      UsePrivilegeSeparation sandbox
+      Subsystem sftp internal-sftp
+      ClientAliveInterval 180
+      UseDNS no
+      UsePAM yes
+      PrintLastLog no # handled by PAM
+      PrintMotd no # handled by PAM
+      PasswordAuthentication no
+      ChallengeResponseAuthentication no
 {{- if .Etcd.CustomFiles}}
   {{- range $w := .Etcd.CustomFiles}}
   - path: {{$w.Path}}

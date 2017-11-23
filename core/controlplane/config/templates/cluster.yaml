@@ -360,7 +360,7 @@ worker:
 #
 #      # (Experimental) GPU Driver installation support
 #      # Currently, only Nvidia driver is supported.
-#      # This setting takes effect only when configured instance type is GPU enabled (p2 or g2).
+#      # This setting takes effect only when configured instance type is GPU enabled (p2, p3, g2, or g3).
 #      # Make sure to choose 'docker' as container runtime when enabled this feature.
 #      # Ensure that automatic Container Linux is disabled(it is disabled by default btw).
 #      # Otherwise the installed driver may stop working when an OS update resulted in an updated kernel
@@ -432,7 +432,7 @@ worker:
 #            # Defaults to worker.spotFleet.unitRootVolumeSize * weightedCapacity if omitted
 #            size:
 #            # Number of provisioned IOPS when rootVlumeType is io1
-#            # Must be within the range between 100 and 2000
+#            # Must be within the range between 100 and 20000
 #            # Defaults to worker.spotFleet.unitRootVolumeIOPS * weightedCapacity if omitted
 #            iops:
 #
@@ -631,7 +631,7 @@ worker:
 #      arn: "arn:aws:iam::YOURACCOUNTID:instance-profile/INSTANCEPROFILENAME"
 #
 #  # The version of etcd to be used. Set to e.g. "3.2.1" to use etcd3
-#  version: 3.2.6
+#  version: 3.2.9
 #
 #  snapshot:
 #    # Set to true to periodically take an etcd snapshot
@@ -938,7 +938,7 @@ worker:
 # and pulling from quay or dockerhub is slow and you get many timeouts.
 
 # Version of hyperkube image to use. This is the tag for the hyperkube image repository.
-# kubernetesVersion: v1.7.6_coreos.0
+# kubernetesVersion: v1.8.2_coreos.0
 
 # Hyperkube image repository to use.
 # hyperkubeImage:
@@ -954,49 +954,49 @@ worker:
 # Calico Node image repository to use.
 #calicoNodeImage:
 #  repo: quay.io/calico/node
-#  tag: v1.2.0
+#  tag: v2.6.1
 #  rktPullDocker: false
 
 # Calico CNI image repository to use.
 #calicoCniImage:
 #  repo: quay.io/calico/cni
-#  tag: v1.8.3
+#  tag: v1.11.0
 #  rktPullDocker: false
 
-# Calico Policy Controller image repository to use.
-#calicoPolicyControllerImage:
-#  repo: quay.io/calico/kube-policy-controller
-#  tag: v0.6.0
+# Calico Kube Controllers image repository to use.
+#calicoKubeControllersImage:
+#  repo: quay.io/calico/kube-controllers
+#  tag: v1.0.0
 #  rktPullDocker: false
 
 # Cluster Autoscaler image repository to use.
 #clusterAutoscalerImage:
 #  repo: gcr.io/google_containers/cluster-autoscaler
-#  tag: v0.6.0
+#  tag: v1.0.2
 #  rktPullDocker: false
 
 # Cluster Proportional Autoscaler image repository to use.
 #clusterProportionalAutoscalerImage:
 #  repo: gcr.io/google_containers/cluster-proportional-autoscaler-amd64
-#  tag: 1.1.1
+#  tag: 1.1.2
 #  rktPullDocker: false
 
 # kube2iam image repository to use.
 #kube2iamImage:
 #  repo: jtblin/kube2iam
-#  tag: 0.7.0
+#  tag: 0.8.1
 #  rktPullDocker: false
 
 # kube DNS image repository to use.
 #kubeDnsImage:
-#  repo: gcr.io/google_containers/kubedns-amd64
-#  tag: 1.14.5
+#  repo: gcr.io/google_containers/k8s-dns-kube-dns-amd64
+#  tag: 1.14.6
 #  rktPullDocker: false
 
 # kube DNS Masq image repository to use.
 #kubeDnsMasqImage:
 #  repo: gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64
-#  tag: 1.14.5
+#  tag: 1.14.6
 #  rktPullDocker: false
 
 # kube rescheduler image repository to use.
@@ -1008,7 +1008,7 @@ worker:
 # DNS Masq metrics image repository to use.
 #dnsMasqMetricsImage:
 #  repo: gcr.io/google_containers/k8s-dns-sidecar-amd64
-#  tag: 1.14.5
+#  tag: 1.14.6
 #  rktPullDocker: false
 
 # Exec Healthz image repository to use.
@@ -1026,31 +1026,35 @@ worker:
 # Tiller (Helm backend) image repository to use.
 #tillerImage:
 #  repo: gcr.io/kubernetes-helm/tiller
-#  tag: v2.6.0
+#  tag: v2.6.2
 #  rktPullDocker: false
 
 # Heapster image repository to use.
 #heapsterImage:
 #  repo: gcr.io/google_containers/heapster
-#  tag: v1.4.1
+#  tag: v1.4.3
 #  rktPullDocker: false
 
 # Addon Resizer image repository to use.
 #addonResizerImage:
 #  repo: gcr.io/google_containers/addon-resizer
-#  tag: 2.0
+#  tag: 2.1
 #  rktPullDocker: false
 
 # Kube Dashboard image repository to use.
 #kubeDashboardImage:
 #  repo: gcr.io/google_containers/kubernetes-dashboard-amd64
-#  tag: v1.6.3
+#  tag: v1.7.1
 #  rktPullDocker: false
+
+#kubeDashboardInitImage:
+#  repo: gcr.io/google_containers/kubernetes-dashboard-init-amd64
+#  tag: v1.0.1
 
 # Calico Controller image repository to use.
 #calicoCtlImage:
 #  repo: calico/ctl
-#  tag: v1.2.0
+#  tag: v1.6.1
 #  rktPullDocker: false
 
 # Pause image repository to use.This works only if you are deploying your cluster in "cn-north-1" region.
@@ -1062,7 +1066,7 @@ worker:
 # Flannel image repository to use.This allow pulling flannel image from a docker repo.
 #flannelImage:
 #  repo: quay.io/coreos/flannel
-#  tag: v0.7.1
+#  tag: v0.9.0
 #  rktPullDocker: false
 
 # JournaldCloudWatchLogsImage image repository to use. This sends journald logs to CloudWatch.
@@ -1118,6 +1122,12 @@ worker:
 #kubeResourcesAutosave:
 #  enabled: false
 
+# By default, the kubernetes dashboard has admin privileges and doesn't require authentication.
+# Set to "false" to restrict access using a token or kubeconfig file.
+# Please check https://github.com/kubernetes-incubator/kube-aws/pull/971 for more info
+
+#kubeDashboardAdminPrivileges: true
+
 # When enabled, all nodes will forward journald logs to AWS CloudWatch.
 # It is disabled by default.
 #cloudWatchLogging:
@@ -1162,76 +1172,94 @@ addons:
     enabled: false
 
 # Experimental features will change in backward-incompatible ways
-# experimental:
-#   # Enable admission controllers
-#   admission:
-#     podSecurityPolicy:
-#       enabled: true
-#     denyEscalatingExec:
-#       enabled: true
-#   # Used to provide `/etc/environment` env vars with values from arbitrary CloudFormation refs
-#   awsEnvironment:
-#     enabled: true
-#     environment:
-#       CFNSTACK: '{ "Ref" : "AWS::StackId" }'
-#   # Enable audit log for apiserver. Recommended when `rbac` is enabled.
-#   auditLog:
-#     enabled: true
-#     maxage: 30
-#     logpath: /dev/stdout
-#   authentication:
-#     # See https://kubernetes.io/docs/admin/authentication/#webhook-token-authentication
-#     # for more information.
-#     webhook:
-#       enabled: true
-#       cacheTTL: 1m0s
-#       configBase64: base64-encoded-webhook-yaml
-#   # Add predefined set of labels to the controller nodes
-#   # The set includes names of launch configurations and autoscaling groups
-#   awsNodeLabels:
-#     enabled: true
-#   # If enabled, instructs the controller manager to automatically issue TLS certificates to worker nodes via
-#   # certificate signing requests (csr) made to the API server using the bootstrap token. It's recommended to
-#   # also enable the rbac plugin in order to limit requests using the bootstrap token to only be able to make
-#   # requests related to certificate provisioning.
-#   # The bootstrap token is automatically generated in ./credentials/kubelet-tls-bootstrap-token.
-#   tlsBootstrap:
-#     enabled: true
-#   # Enables the Node authorization + node restriction admission controller (requires Kubernetes 1.7.4+)
-#   # Requires TLS bootstrapping to be enabled as well
-#   nodeAuthorizer:
-#     enabled: true
-#   # This option has not yet been tested with rkt as container runtime
-#   ephemeralImageStorage:
-#     enabled: true
-#   # When enabled it will grant sts:assumeRole permission to the IAM role for controller nodes.
-#   # This is intended to be used in combination with .controller.managedIamRoleName. See #297 for more information.
-#   kube2IamSupport:
-#     enabled: true
-#   # When enabled, `kubectl drain` is run when the instance is being replaced by the auto scaling group, or when
-#   # the instance receives a termination notice (in case of spot instances)
-#   nodeDrainer:
-#     enabled: true
-#     # Maximum time to wait, in minutes, for the node to be completely drained. Must be an integer between 1 and 60.
-#     drainTimeout: 5
-#   # Configure OpenID Connect token authenticator plugin in Kubernetes API server.
-#   # For using Dex as a custom OIDC provider, please check "contrib/dex/README.md".
-#   # WARNING: always use "https" for "issuerUrl", otherwise the Kubernetes API server will not start correctly.
-#   oidc:
-#     enabled: true
-#     issuerUrl: "https://accounts.google.com"
-#     clientId: "kubernetes"
-#     usernameClaim: "email"
-#     groupsClaim: "groups"
-#
-#   # When set to true this configures the k8s aws provider so that it doesn't modify every node's security group to include an additional ingress rule per an ELB created for a k8s service whose type is "LoadBalancer"
-#   # It requires that the user has setup a rule that allows inbound traffic on kubelet ports
-#   # from the local VPC subnet so that load balancers can access it.  Ref: https://github.com/kubernetes/kubernetes/issues/26670
-#   disableSecurityGroupIngress: false
-#
-#   # Command line flag passed to the controller-manager. (default 40s)
-#   # This is the amount of time which we allow running Node to be unresponsive before marking it unhealthy.
-#   # Must be N times more than kubelet's nodeStatusUpdateFrequency (default 10s).
+experimental:
+  # Enable admission controllers
+  admission:
+    podSecurityPolicy:
+      enabled: false
+    # alwaysPullImages Note
+    # Recommended to turn this on when and only when docker registries are reliable enough.
+    # Otherwise, automatic pod restarts can be delayed due to temporally docker registry outages.
+    # Please see https://github.com/kubernetes-incubator/kube-aws/pull/1009#discussion_r151197787 for more info.
+    alwaysPullImages:
+      enabled: false
+    denyEscalatingExec:
+      enabled: false
+    initializers:
+      enabled: false
+
+  # Used to provide `/etc/environment` env vars with values from arbitrary CloudFormation refs
+  awsEnvironment:
+    enabled: false
+    environment:
+      CFNSTACK: '{ "Ref" : "AWS::StackId" }'
+
+  # Enable audit log for apiserver. Recommended when `rbac` is enabled.
+  auditLog:
+    enabled: false
+    maxage: 30
+    logpath: /dev/stdout
+
+  # See https://kubernetes.io/docs/admin/authentication/#webhook-token-authentication for more information
+  authentication:
+    webhook:
+      enabled: false
+      cacheTTL: 1m0s
+      configBase64: base64-encoded-webhook-yaml
+
+  # Add predefined set of labels to the controller nodes
+  # The set includes names of launch configurations and autoscaling groups
+  awsNodeLabels:
+    enabled: false
+
+  # If enabled, instructs the controller manager to automatically issue TLS certificates to worker nodes via
+  # certificate signing requests (csr) made to the API server using the bootstrap token. It's recommended to
+  # also enable the rbac plugin in order to limit requests using the bootstrap token to only be able to make
+  # requests related to certificate provisioning.
+  # The bootstrap token is automatically generated in ./credentials/kubelet-tls-bootstrap-token.
+  tlsBootstrap:
+    enabled: false
+
+  # Enables the Node authorization + node restriction admission controller (requires Kubernetes 1.7.4+)
+  # Requires TLS bootstrapping to be enabled as well
+  nodeAuthorizer:
+    enabled: false
+
+  # This option has not yet been tested with rkt as container runtime
+  ephemeralImageStorage:
+    enabled: false
+
+  # When enabled it will grant sts:assumeRole permission to the IAM role for controller nodes.
+  # This is intended to be used in combination with .controller.managedIamRoleName. See #297 for more information.
+  kube2IamSupport:
+    enabled: false
+
+  # When enabled, `kubectl drain` is run when the instance is being replaced by the auto scaling group, or when
+  # the instance receives a termination notice (in case of spot instances)
+  nodeDrainer:
+    enabled: false
+    # Maximum time to wait, in minutes, for the node to be completely drained. Must be an integer between 1 and 60.
+    drainTimeout: 5
+
+  # Configure OpenID Connect token authenticator plugin in Kubernetes API server.
+  # For using Dex as a custom OIDC provider, please check "contrib/dex/README.md".
+  # WARNING: always use "https" for "issuerUrl", otherwise the Kubernetes API server will not start correctly.
+  oidc:
+    enabled: false
+    issuerUrl: "https://accounts.google.com"
+    clientId: "kubernetes"
+    usernameClaim: "email"
+    groupsClaim: "groups"
+
+  # When set to true this configures the k8s aws provider so that it doesn't modify every node's security group
+  # to include an additional ingress rule per an ELB created for a k8s service whose type is "LoadBalancer".
+  # It requires that the user has setup a rule that allows inbound traffic on kubelet ports
+  # from the local VPC subnet so that load balancers can access it.  Ref: https://github.com/kubernetes/kubernetes/issues/26670
+  disableSecurityGroupIngress: false
+
+  # Command line flag passed to the controller-manager. (default 40s)
+  # This is the amount of time which we allow running Node to be unresponsive before marking it unhealthy.
+  # Must be N times more than kubelet's nodeStatusUpdateFrequency (default 10s).
 #   nodeMonitorGracePeriod: "40s"
 
 # AWS Tags for cloudformation stack resources

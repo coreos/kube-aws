@@ -20,8 +20,8 @@ func (v VolumeMount) SystemdMountName() string {
 
 func (v VolumeMount) Validate() error {
 	if v.Type == "io1" {
-		if v.Iops < 100 || v.Iops > 2000 {
-			return fmt.Errorf(`invalid iops "%d" in %+v: iops must be between "100" and "2000"`, v.Iops, v)
+		if v.Iops < 100 || v.Iops > 20000 {
+			return fmt.Errorf(`invalid iops "%d" in %+v: iops must be between "100" and "20000"`, v.Iops, v)
 		}
 	} else {
 		if v.Iops != 0 {
