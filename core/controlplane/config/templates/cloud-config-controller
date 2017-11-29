@@ -27,6 +27,87 @@ coreos:
     etcd_keyfile: /etc/kubernetes/ssl/etcd-client-key.pem
 
   units:
+{{/* RUN-509 Remove vault-based certs */}}
+    - name: refresh-sa-secret.service
+      enable: true
+      command: start
+      content: |
+        [Unit]
+        Description=Generates and updates ServiceAccount keys
+        After=bootstrap-serviceaccount-key.service kubelet.service network-online.target
+        Wants=kubelet.service
+
+        [Service]
+        Type=simple
+        Restart=on-failure
+        RestartSec=30
+        # keys expire every 30 days
+        Environment=KEY_EXPIRE_PERIOD_SEC=2592000
+        # attempt to renew keys 5 days before expire time
+        Environment=KEY_RENEW_THRESHOLD_SEC=432000
+        ExecStartPre=/usr/bin/systemctl is-active kubelet
+        ExecStartPre=/opt/bin/refresh-sa-secret /etc/kubernetes/ssl/serviceaccount-key.pem.latest
+        ExecStart=/bin/true
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: refresh-sa-secret.timer
+      enable: true
+      command: start
+      content: |
+        [Timer]
+        OnUnitInactiveSec=10m
+
+    - name: bootstrap-serviceaccount-key.service
+      enable: true
+      command: start
+      content: |
+        [Unit]
+        # This key is actually never used to create ServiceAccount secret, because
+        # SA secret creation is done in controller-manager which will be failing to start
+        # until serviceaccount-key.pem.controller is created by 'handler-sa-key-update.service'
+        # So whole purpose of this file is to allow APIserver to start and let `refresh-sa-secret.service`
+        # to do it's job
+        Description=Creates initial SA key to allow apiserver to start on first boot
+        Before=kubelet.service
+        Requires=network-online.target
+
+        [Service]
+        Type=oneshot
+        ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/ssl
+        ExecStart=/bin/sh -ec '[ -f /etc/kubernetes/ssl/serviceaccount-key.pem.apiserver ] || openssl ecparam -name prime256v1 -genkey -out /etc/kubernetes/ssl/serviceaccount-key.pem.apiserver'
+        [Install]
+        WantedBy=kubelet.service
+
+    - name: handler-sa-key-update.service
+      enable: true
+      content: |
+        [Unit]
+        Description=Restart APIServer and ControllerManager if ServiceAccount key was updated
+        After=kubelet.service
+
+        [Service]
+        Environment=SAKEY=/etc/kubernetes/ssl/serviceaccount-key.pem
+        Type=simple
+        Restart=on-failure
+        RestartSec=15
+        ExecStartPre=/bin/sh -ec 'cmp ${SAKEY}.apiserver ${SAKEY}.latest || \
+           { cp ${SAKEY}.latest ${SAKEY}.apiserver; docker ps --filter name='k8s_kube-apiserver*' -q | xargs --no-run-if-empty docker rm -f; }'
+        ExecStartPre=/bin/sh -ec 'cmp ${SAKEY}.controller ${SAKEY}.latest || \
+           { cp ${SAKEY}.latest ${SAKEY}.controller; docker ps --filter name='k8s_kube-controller-manager*' -q | xargs --no-run-if-empty docker rm -f; }'
+        ExecStart=/bin/true
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: handler-sa-key-update.path
+      enable: true
+      command: start
+      content: |
+        [Path]
+        PathChanged=/etc/kubernetes/ssl/serviceaccount-key.pem.latest
+{{/* RUN-509 Remove vault-based certs */}}
 {{- range $u := .Controller.CustomSystemdUnits}}
     - name: {{$u.Name}}
       {{- if $u.Command }}
@@ -517,6 +598,126 @@ ssh_authorized_keys:
         WantedBy=install-kube-system.service
 {{end}}
 write_files:
+{{/* RUN-509 Remove vault-based certs */}}
+  - path: /opt/bin/refresh-sa-secret
+    permissions: 0755
+    content: |
+      #!/bin/bash
+      set -ue
+
+      # Script tries to coordinate secret update/creation among multiple independend nodes. Only coordination
+      # primitive it is using is `kubectl create` which is assumed to be atomic and race-free (==
+      # if simultaneous `kubectl create` commands issued, only one can possibly return success)
+
+      # Script need to be careful to maintain following MUST HAVE properties:
+      #  1. Every cert written to secrets must stay there and never overwriten by a new one.
+      #     So if we have 2 active certs [A,B], there can never be update [A,B,C], followed up
+      #     with [A,B,C']. If that happens, "C" cert, no matter how little time it
+      #     stayed in secrets, can possibly be used to generate service account tokens, therefore
+      #     overwriting it with "C'" would break all pods which were started
+      #
+
+      : ${LOCK_EXPIRE_TIMEOUT_SECONDS:=20}  # maximum time any operation under lock can take
+      : ${KEY_EXPIRE_PERIOD_SEC:=$(( 60*60*24*30 ))} # 30 days
+      : ${KEY_RENEW_THRESHOLD_SEC:=$(( $KEY_EXPIRE_PERIOD_SEC/2 ))}  # time left before expire, when to attempt key renew
+      KEY_EXPIRE_THRESHOLD_SECONDS=$(( KEY_EXPIRE_PERIOD_SEC - KEY_RENEW_THRESHOLD_SEC ))
+      UPDATE_OPERATION_TIMEOUT=$(( LOCK_EXPIRE_TIMEOUT_SECONDS / 2 ))
+
+      P=serviceaccount-keys
+
+      # produces secret resource definition. .
+      # second argument is optional and goes into 'data' field and must be a string value
+      secret() {
+        if (( $# > 1 )); then
+            T=$(mktemp /tmp/sakey/tmp.XXXXXXX)
+            echo "$2" >$T
+            kubectl --namespace=kube-system create secret generic "$1" --from-file="keypairs=$T" --dry-run -o json
+            rm $T
+        else
+            kubectl --namespace=kube-system create secret generic "$1" --dry-run -o json
+        fi
+      }
+
+      kubectl() {
+        docker run --rm -i --net=host -v /tmp/sakey:/tmp/sakey -v /etc/kubernetes:/etc/kubernetes:ro -v /etc/resolv.conf:/etc/resolv.conf:ro {{.HyperkubeImage.RepoWithTag}} /kubectl "$@"
+      }
+
+      log() { >&2 echo "$@"; }
+
+      gen_new_key() { openssl ecparam -name prime256v1 -genkey -noout; }
+      get_key() { kubectl --namespace=kube-system get -o json secret "$1"; }
+      init_key() { secret "$P" '[]' | kubectl --namespace=kube-system create -f -; }
+
+
+      # caller MUST guarantee that it has right to update this key == no other servers will try to update it
+      update_secret() {
+          local new_keypairs keypairs_b64
+          new_keypairs=$(get_key "$P" \
+            | jq -er '.data.keypairs' \
+            | base64 -d \
+            | jq --arg new_key "$1" -er \
+              '([ {key: $new_key, createdAt: now} ] + .) | tojson')
+          SECRET_JSON=$(secret "$P" "$new_keypairs")
+          have_good_cert "$SECRET_JSON" || {
+              log "** ERROR/BUG: We generated a key, but didn't produce result which passes 'have_good_cert' check. K8S secret will not be updated"
+              return 1
+          }
+          kubectl --namespace=kube-system --request-timeout="${UPDATE_OPERATION_TIMEOUT}s" replace -f - <<<"$SECRET_JSON"
+      }
+
+      # expects a single arg `secret_json`, which is a content of secret in k8s
+      # it examines certs stored in it and identifies if it is a good one to be used, or
+      # we need a better one
+      have_good_cert() {
+          log "Check that first key doesn't expire within threshold=${KEY_EXPIRE_THRESHOLD_SECONDS} seconds"
+          [[ -n "$1" ]] || return $?
+          jq -er '.data.keypairs' <<<"$1" | base64 -d | jq --arg expire_threshold ${KEY_EXPIRE_THRESHOLD_SECONDS} -e \
+            '.[0].createdAt as $createdAt
+            | $createdAt != null
+              and now - $createdAt < ($expire_threshold|tonumber)'
+      }
+
+      save_keys_to_file() {
+          T="$1".tmp
+          log "Saving secrets to $1"
+          jq -er '.data.keypairs' <<<"$SECRET_JSON" | base64 -d | jq -er '.[].key' > "$T"
+          mv "$T" "$1"
+      }
+
+      release_lock() { kubectl --namespace=kube-system delete secret/"$P-lock"; }
+
+      # "Lock" here is an atomically created sa-key-lock secret
+      acquire_lock() {
+          log "acquire_lock $P-lock"
+          secret "$P-lock" | kubectl --namespace=kube-system create -f - || {
+              log -n "acquire_lock failed, checking if lock is stale"
+              get_key "$P-lock" | jq -e "now - (.metadata.creationTimestamp|fromdate) < $LOCK_EXPIRE_TIMEOUT_SECONDS" >/dev/null || {
+                  log "$P-lock is a stale lock, deleting it so it can be reacquired"
+                  release_lock || log "Lock deletion failed, but we ignore this error as it is racey"
+              }
+              return 1  # need to return error, to indicate we failed to aquire lock, so that caller can try again
+          }
+      }
+
+      init_key &>/dev/null || :  # ignore errors if key can't be created if it was by someone else
+      SECRET_JSON=$(get_key "$P") || :
+      while ! have_good_cert "$SECRET_JSON"; do
+        : ${new_key_json:=$(gen_new_key)}
+        if acquire_lock; then
+          update_secret "$new_key_json" || { release_lock; exit 1; } # populate_key_with_data is guaranteed to complete in < LOCK_EXPIRE time
+          release_lock
+          break
+        else
+          log "Somebody else acquired lock, waiting for cert to be generated"
+          sleep 10
+        fi
+        SECRET_JSON=$(get_key "$P")
+      done
+
+      save_keys_to_file "$1"
+
+      trap 'echo "** ERROR: unable to create or fetch secret"' ERR
+{{/* RUN-509 Remove vault-based certs */}}
 {{- if .Controller.CustomFiles}}
   {{- range $w := .Controller.CustomFiles}}
   - path: {{$w.Path}}
@@ -736,7 +937,9 @@ write_files:
       #!/bin/bash -e
 
       kubectl() {
-          /usr/bin/docker run --rm --net=host -v /srv/kubernetes:/srv/kubernetes {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl "$@"
+{{/* RUN-578 Introduce Dex */}}
+          /usr/bin/docker run --rm -i --net=host -v /etc/kubernetes:/etc/kubernetes -v /srv/kubernetes:/srv/kubernetes {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl "$@"
+{{/* RUN-578 Introduce Dex */}}
       }
 
       while ! kubectl get ns kube-system; do
@@ -777,6 +980,12 @@ write_files:
       for manifest in {kube-dns,kube-dns-autoscaler,kube-dashboard,{{ if .Addons.ClusterAutoscaler.Enabled }}cluster-autoscaler,{{ end }}heapster{{ if .KubeResourcesAutosave.Enabled }},kube-resources-autosave{{ end }}}; do
           kubectl apply -f "${mfdir}/$manifest-de.yaml"
       done
+
+{{/* RUN-605 Add Flyte */}}
+      {{ if .CustomSettings.Flyte.Enabled }}
+      kubectl apply -f "${mfdir}/flyte-konveyor.yaml"
+      {{ end }}
+{{/* RUN-605 Add Flyte */}}
 
       # Daemonsets
       for manifest in {kube-proxy,}; do
@@ -819,6 +1028,61 @@ write_files:
           kubectl apply -f "${mfdir}/cluster-role-bindings/$manifest.yaml"
       done
       {{ end }}
+
+{{/* RUN-578 Introduce Dex */}}
+     {{ if .Experimental.Oidc.Enabled }}
+      # create/replace Dex TLS secret
+      : ${LOCK_EXPIRE_TIMEOUT_SECONDS:=20}  # maximum time any operation under lock can take
+      UPDATE_OPERATION_TIMEOUT=$(( LOCK_EXPIRE_TIMEOUT_SECONDS / 2 ))
+      P=dex.kube-system.tls
+      OIDC_CERT="/etc/kubernetes/ssl/oidc.pem"
+      OIDC_KEY="/etc/kubernetes/ssl/oidc-key.pem"
+
+      # tls for dex is from secret from predefined cert and key
+      secret() {
+          kubectl --namespace=kube-system create secret tls "$1" --cert ${OIDC_CERT} --key ${OIDC_KEY} --dry-run -o json
+      }
+      get_key() { kubectl --namespace=kube-system get -o json secret "$1"; }
+      init_key() { secret "$P" | kubectl --namespace=kube-system create -f -; }
+
+      update_secret() {
+        SECRET_JSON=$(secret "$P")
+        kubectl --namespace=kube-system --request-timeout="${UPDATE_OPERATION_TIMEOUT}s" replace -f - <<<"$SECRET_JSON"
+      }
+
+      compare_dex_tls() {
+        [[ -n "$1" ]] || return $?
+        secret_md5sum=$(jq -er '.data' <<<"$1" | md5sum | awk '{ print $1 }')
+        new_secret_md5sum=$(secret "$P" | jq -er '.data' | md5sum | awk '{ print $1 }')
+        # check the tls cert and key has not changed - if it has, we need to replace it
+        if [ "${secret_md5sum}" != "${new_secret_md5sum}" ]; then
+          return 1
+        fi
+      }
+
+      init_key &>/dev/null || :  # ignore errors if key can't be created if it was by someone else
+      SECRET_JSON=$(get_key "$P") || :
+      while ! compare_dex_tls "$SECRET_JSON"; do
+        update_secret || exit 1;
+        SECRET_JSON=$(get_key "$P")
+      done
+
+      mfdir=/srv/kubernetes/rbac
+      # Allow unauthenticated proxy request for dex in cluster
+      kubectl apply -f "${mfdir}/cluster-role-bindings/dex.yaml"
+
+      mfdir=/srv/kubernetes/manifests
+      # create dex service
+      kubectl apply -f "${mfdir}/dex-svc.yaml"
+
+      # hash of dex config map and redeploy dex if different
+      # TODO do we need to check if config map already exists? Current way will wipe any customisation done via kubectl edit
+      dex_configmap_hash=$(md5sum ${mfdir}/dex-cm.yaml | awk '{ print $1 }')
+      kubectl apply -f "${mfdir}/dex-cm.yaml"
+      sed -i -e "s#hcom-dex-configmap-hash: '\(.*\)'#hcom-dex-configmap-hash: '${dex_configmap_hash}'#g" ${mfdir}/dex-deployment.yaml.tmpl
+      kubectl apply -f ${mfdir}/dex-deployment.yaml.tmpl
+      {{ end }}
+{{/* RUN-578 Introduce Dex */}}
 
       {{if .Experimental.Kube2IamSupport.Enabled }}
         mfdir=/srv/kubernetes/manifests
@@ -940,6 +1204,10 @@ write_files:
                     value: "kubeaws,canal"
                   - name: CALICO_DISABLE_FILE_LOGGING
                     value: "true"
+{{/* RUN-449 Open Node IpTables */}}
+                  - name: FELIX_DEFAULTENDPOINTTOHOSTACTION
+                    value: "ACCEPT"
+{{/* RUN-449 Open Node IpTables */}}
                   - name: NO_DEFAULT_POOLS
                     value: "true"
                   - name: ETCD_CA_CERT_FILE
@@ -1062,7 +1330,10 @@ write_files:
     content: |
       #!/bin/bash -e
 
-      etcd_ca=$(cat /etc/kubernetes/ssl/etcd-trusted-ca.pem | base64 | tr -d '\n')
+{{/* RUN-509 Remove vault-based certs */}}
+      # we read ca.pem instead of etcd-trusted-ca.pem as former completes full chain and that is what required by python ssl used in calico-policy controller
+      etcd_ca=$(cat /etc/kubernetes/ssl/ca.pem | base64 | tr -d '\n')
+{{/* RUN-509 Remove vault-based certs */}}
       etcd_key=$(cat /etc/kubernetes/ssl/etcd-client-key.pem | base64 | tr -d '\n')
       etcd_cert=$(cat /etc/kubernetes/ssl/etcd-client.pem | base64 | tr -d '\n')
 
@@ -1587,7 +1858,193 @@ write_files:
         - kind: ServiceAccount
           name: heapster
           namespace: kube-system
+{{/* RUN-578 Introduce Dex */}}
+{{if .Experimental.Oidc.Enabled}}
+  - path: /srv/kubernetes/manifests/dex-deployment.yaml.tmpl
+    content: |
+      apiVersion: extensions/v1beta1
+      kind: Deployment
+      metadata:
+        name: dex
+        namespace: kube-system
+        labels:
+          app: dex
+          component: identity
+        annotations:
+          scheduler.alpha.kubernetes.io/critical-pod: ''
+      spec:
+        replicas: 1
+        minReadySeconds: 30
+        strategy:
+          rollingUpdate:
+            maxUnavailable: 0
+        template:
+          metadata:
+            name: dex
+            labels:
+              app: dex
+              component: identity
+            annotations:
+              hcom-dex-configmap-hash: ''
+          spec:
+            volumes:
+            - name: config
+              configMap:
+                name: dex
+                items:
+                - key: config.yaml
+                  path: config.yaml
+            - name: tls
+              secret:
+                secretName: dex.kube-system.tls
+            containers:
+            - name: dex
+              imagePullPolicy: IfNotPresent
+              image: {{ default "181651482125.dkr.ecr.us-west-2.amazonaws.com/hotels/dex:2.7.0" .CustomSettings.Dex.ImageWithTag }}
+              command: ["/usr/local/bin/dex", "serve", "/etc/dex/config.yaml"]
+              volumeMounts:
+              - name: config
+                mountPath: /etc/dex
+              - name: tls
+                mountPath: /etc/dex/tls
+              ports:
+              - name: https
+                containerPort: 5556
+                protocol: TCP
+              env:
+              - name: D
+                value: 'Yerecharu$-qU5!C'
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 50Mi
+                limits:
+                  cpu: 100m
+                  memory: 50Mi
 
+  - path: /srv/kubernetes/manifests/dex-svc.yaml
+    content: |
+      ---
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: dex
+        namespace: kube-system
+      spec:
+        type: NodePort
+        ports:
+          - name: dex
+            port: 5556
+            protocol: TCP
+            targetPort: 5556
+            nodePort: 31000
+        selector:
+          app: dex
+
+  - path: /srv/kubernetes/manifests/dex-cm.yaml
+    content: |
+      kind: ConfigMap
+      apiVersion: v1
+      metadata:
+        name: dex
+        namespace: kube-system
+      data:
+        config.yaml: |
+          issuer: {{.Experimental.Oidc.IssuerUrl}}
+          storage:
+            type: kubernetes
+            config:
+              inCluster: true
+              {{- if .CustomSettings.Dex.UseTPR }}
+              useTPR: true
+              {{- end }}
+          web:
+            https: 0.0.0.0:5556
+            routePrefix: /dex
+            tlsCert: /etc/dex/tls/tls.crt
+            tlsKey: /etc/dex/tls/tls.key
+          logger:
+            level: "debug"
+            format: "json"
+
+          connectors:
+          - type: ldap
+            name: OpenLDAP
+            id: ldap
+            config:
+              host: {{ .CustomSettings.Dex.LDAPServerWithPort }}
+              # No TLS for this setup.
+              insecureNoSSL: true
+
+              # This would normally be a read-only user.
+              bindDN: {{ .CustomSettings.Dex.BindDN }}
+              bindPW: ${D}
+
+              userSearch:
+                baseDN: {{ .CustomSettings.Dex.UserSearchBaseDN }}
+                filter: "(objectClass=user)"
+                username: sAMAccountName
+                idAttr: DN
+                emailAttr: mail
+                nameAttr: sAMAccountName
+              groupSearch:
+                baseDN: {{ .CustomSettings.Dex.GroupSearchBaseDN }}
+                filter: "(objectClass=group)"
+                userAttr: DN
+                groupAttr: member
+                nameAttr: cn
+          oauth2:
+              skipApprovalScreen: true
+
+          staticClients:
+          - id: konveyor
+            redirectURIs:
+              - 'http://127.0.0.1:0/callback'
+            name: 'konveyor'
+            secret: ZXhhbXBsZS1hcHAtc2VjcmV1
+
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/dex.yaml
+    content: |
+        ---
+        kind: ClusterRole
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        metadata:
+          name: dex-proxy-access
+        rules:
+        - apiGroups: [""]
+          resources:
+          - services/proxy
+          verbs: ["get", "create"]
+        ---
+        kind: ClusterRoleBinding
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        metadata:
+          name: dex-anonymous-auth
+          namespace: kube-system
+        subjects:
+        - kind: Group
+          name: system:unauthenticated
+          namespace: kube-system
+          apiGroup: rbac.authorization.k8s.io
+        roleRef:
+          kind: ClusterRole
+          name: dex-proxy-access
+          apiGroup: rbac.authorization.k8s.io
+        ---
+        kind: ClusterRoleBinding
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        metadata:
+          name: runtimeplatfom
+        subjects:
+        - kind: Group
+          name: Hcom Tech RuntimePlatform
+          apiGroup: rbac.authorization.k8s.io
+        roleRef:
+          kind: ClusterRole
+          name: cluster-admin
+          apiGroup: rbac.authorization.k8s.io
+{{ end }}
+{{/* RUN-578 Introduce Dex */}}
   # Heapster's pod_nanny monitors the heapster deployment & its pod(s), and scales
   # the resources of the deployment if necessary.
   - path: /srv/kubernetes/rbac/roles/pod-nanny.yaml
@@ -1768,6 +2225,9 @@ write_files:
           command:
           - /hyperkube
           - apiserver
+{{/* RUN Enable verbose logging */}}
+          - --v=3
+{{/* RUN Enable verbose logging */}}
           - --apiserver-count={{if .MinControllerCount}}{{ .MinControllerCount }}{{else}}{{ .ControllerCount }}{{end}}
           - --bind-address=0.0.0.0
           - --etcd-servers=#ETCD_ENDPOINTS#
@@ -1798,7 +2258,13 @@ write_files:
           {{ end }}
           - --advertise-address=$private_ipv4
           - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }}{{if .Experimental.NodeAuthorizer.Enabled}},NodeRestriction{{end}},ResourceQuota,{{if .Experimental.Admission.DenyEscalatingExec.Enabled}}DenyEscalatingExec{{end}}
+{{/* RUN-578 Introduce Dex */}}
+          {{if .Experimental.Oidc.Enabled}}
+          - --anonymous-auth=true
+          {{else}}
           - --anonymous-auth=false
+          {{ end -}}
+{{/* RUN-578 Introduce Dex */}}
           {{if .Experimental.Oidc.Enabled}}
           - --oidc-issuer-url={{.Experimental.Oidc.IssuerUrl}}
           - --oidc-client-id={{.Experimental.Oidc.ClientId}}
@@ -1816,7 +2282,12 @@ write_files:
           - --tls-cert-file=/etc/kubernetes/ssl/apiserver.pem
           - --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
           - --client-ca-file=/etc/kubernetes/ssl/ca.pem
-          - --service-account-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+{{/* RUN-509 Remove vault-based certs DO NOT TOUCH THIS LINE */}}
+          - --service-account-key-file=/etc/kubernetes/ssl/serviceaccount-key.pem.apiserver
+{{/* RUN-509 Remove vault-based certs DO NOT TOUCH THIS LINE */}}
+{{/* RUN Attempt to prevent apiserver->etcd lockups. https://github.com/kubernetes/kubernetes/issues/47131#issuecomment-338166775 */}}
+          - --service-account-lookup=false
+{{/* RUN Attempt to prevent apiserver->etcd lockups. https://github.com/kubernetes/kubernetes/issues/47131#issuecomment-338166775 */}}
           - --runtime-config=extensions/v1beta1/networkpolicies=true,batch/v2alpha1,rbac.authorization.k8s.io/v1beta1=true{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},extensions/v1beta1/podsecuritypolicy=true{{ end }}
           - --cloud-provider=aws
           {{range $f := .APIServerFlags}}
@@ -1907,9 +2378,14 @@ write_files:
           command:
           - /hyperkube
           - controller-manager
+{{/* RUN Enable verbose logging */}}
+          - --v=3
+{{/* RUN Enable verbose logging */}}
           - --master=http://127.0.0.1:8080
           - --leader-elect=true
-          - --service-account-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+{{/* RUN-509 Remove vault-based certs DO NOT TOUCH THIS LINE */}}
+          - --service-account-private-key-file=/etc/kubernetes/ssl/serviceaccount-key.pem.controller
+{{/* RUN-509 Remove vault-based certs DO NOT TOUCH THIS LINE */}}
           {{ if .Experimental.TLSBootstrap.Enabled }}
           - --insecure-experimental-approve-all-kubelet-csrs-for-group=system:kubelet-bootstrap
           - --cluster-signing-cert-file=/etc/kubernetes/ssl/worker-ca.pem
@@ -2559,11 +3035,13 @@ write_files:
                 image: {{ .KubeDashboardImage.RepoWithTag }}
                 resources:
                   limits:
-                    cpu: 100m
-                    memory: 50Mi
+{{/* RUN Increase dashboard limits */}}
+                    cpu: 1
+                    memory: 2000Mi
                   requests:
-                    cpu: 100m
-                    memory: 50Mi
+                    cpu: 0.5
+                    memory: 500Mi
+{{/* RUN Increase dashboard limits */}}
                 ports:
                 - containerPort: 9090
                 livenessProbe:
@@ -2669,6 +3147,45 @@ write_files:
           type: ClusterIP
         status:
           loadBalancer: {}
+
+{{/* RUN-605 Add Flyte */}}
+{{ if .CustomSettings.Flyte.Enabled }}
+  - path: /srv/kubernetes/manifests/flyte-konveyor.yaml
+    content: |
+
+        apiVersion: extensions/v1beta1
+        kind: Deployment
+        metadata:
+          name: flyte-konveyor
+          namespace: kube-public
+        spec:
+          replicas: 1
+          template:
+            metadata:
+              labels:
+                app: flyte-konveyor
+            spec:
+              containers:
+              - name: flyte-konveyor
+                image: {{ default "181651482125.dkr.ecr.us-west-2.amazonaws.com/hotels/fkp:latest" .CustomSettings.Flyte.ImageWithTag }}
+                imagePullPolicy: Always
+                env:
+                - name: FLYTE_HOST
+                  value: {{ default "http://flyte.hcom" .CustomSettings.Flyte.HostUrl }}
+                - name: FLYTE_ENVIRONMENT
+                  value: {{ .ClusterName }}
+                - name: VAULT_ADDR
+                  value: {{ .CustomSettings.vault.address }}
+                volumeMounts:
+                - mountPath: /konveyor
+                  name: logs
+                  readOnly: false
+              volumes:
+              - name: logs
+                hostPath:
+                  path: /logs/konveyor
+{{ end }}
+{{/* RUN-605 Add Flyte */}}
 
   - path: {{.KubernetesManifestPlugin.ManifestListFile.Path}}
     encoding: gzip+base64
@@ -2825,7 +3342,47 @@ write_files:
       }
 
 {{ end }}
+{{/* RUN-509 Remove vault-based certs */}}
+  - path: /opt/bin/check-pod-serviceaccount-secrets
+    permissions: 0755
+    content: |
+      #!/bin/bash
 
+      KUBEPATH=/etc/kubernetes/serviceaccount-secret/
+      mkdir -p ${KUBEPATH}
+
+      # Get the current serviceaccount secret
+      SECRET=$( /kubectl get serviceaccount default --namespace=kube-system --output=json | jq -e --raw-output '.secrets[0].name' )
+      echo $SECRET > ${KUBEPATH}secret-name
+
+      # Produce a list of pods that reference any serviceaccount secret other than the current serviceaccount secret
+      /kubectl get pods --namespace=kube-system --output=json | jq --arg good_tokens "$SECRET" '[ .items[]
+        | { podName: .metadata.name, serviceAccountTokens: [.spec.containers[].volumeMounts[]?]
+        | [map(select(.mountPath == "/var/run/secrets/kubernetes.io/serviceaccount"))[].name] | unique } ]
+        | map(select((.serviceAccountTokens - [$good_tokens]) | length > 0)) '
+
+
+  - path: /opt/bin/rotate-serviceaccount-secret
+    permissions: 0755
+    content: |
+      #!/bin/bash
+
+      KUBEPATH=/etc/kubernetes/serviceaccount-secret/
+      SECRET_ID=$(cat ${KUBEPATH}secret-name)
+
+      # Get latest secret id
+      /opt/bin/check-pod-serviceaccount-secrets
+
+      # Remove secret (new one is regenerated)
+      /kubectl delete secret ${SECRET_ID} --namespace=kube-system
+
+      # Trigger rolling-updates
+      /kubectl patch --namespace kube-system deployment kube-dns -p   "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
+      /kubectl patch --namespace kube-system deployment calico-policy-controller -p   "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
+      /kubectl patch --namespace kube-system deployment heapster-v1.2.0 -p   "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
+      /kubectl patch --namespace kube-system deployment kube-dns-autoscaler -p   "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
+      /kubectl replace --namespace kube-system daemonset calico-node -p   "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
+{{/* RUN-509 Remove vault-based certs */}}
 {{if .Experimental.Authentication.Webhook.Enabled}}
   - path: /etc/kubernetes/webhooks/authentication.yaml
     encoding: base64
