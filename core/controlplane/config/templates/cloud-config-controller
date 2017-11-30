@@ -829,7 +829,7 @@ write_files:
 {{ end }}
 
       # Deployments
-      for manifest in {kube-dns,kube-dns-autoscaler,kubernetes-dashboard,{{ if .Addons.ClusterAutoscaler.Enabled }}cluster-autoscaler,{{ end }}heapster{{ if .KubeResourcesAutosave.Enabled }},kube-resources-autosave{{ end }}}; do
+      for manifest in {kube-dns,kube-dns-autoscaler,kubernetes-dashboard,{{ if .Addons.ClusterAutoscaler.Enabled }}cluster-autoscaler,{{ end }}heapster{{ if .KubeResourcesAutosave.Enabled }},kube-resources-autosave{{ end }},metrics-server}; do
           kubectl apply -f "${mfdir}/$manifest-de.yaml"
       done
 
@@ -2670,35 +2670,46 @@ write_files:
           namespace: kube-system
           labels:
 
-  - path: /etc/kubernetes/manifests/metrics-server.yaml
+  - path: /srv/kubernetes/manifests/metrics-server-de.yaml
     content: |
-        apiVersion: v1
-        kind: Pod
+        apiVersion: extensions/v1beta1
+        kind: Deployment
         metadata:
           name: metrics-server
+          namespace: kube-system
           labels:
             k8s-app: metrics-server
           annotations:
             scheduler.alpha.kubernetes.io/critical-pod: ''
         spec:
-          containers:
-          - name: metrics-server
-            image: {{ .MetricsServerImage.RepoWithTag }}
-            imagePullPolicy: Always
-            command:
-            - /metrics-server
-            - --source=kubernetes.summary_api:''
-            - --requestheader-client-ca-file=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-            - --requestheader-username-headers=X-Remote-User
-            - --requestheader-group-headers=X-Remote-Group
-            - --requestheader-extra-headers-prefix=X-Remote-Extra
-            resources:
-              limits:
-                cpu: 80m
-                memory: 200Mi
-              requests:
-                cpu: 80m
-                memory: 200Mi
+          selector:
+            matchLabels:
+              k8s-app: metrics-server
+          template:
+            metadata:
+              name: metrics-server
+              labels:
+                k8s-app: metrics-server
+            spec:
+              serviceAccountName: metrics-server
+              containers:
+              - name: metrics-server
+                image: {{ .MetricsServerImage.RepoWithTag }}
+                imagePullPolicy: Always
+                command:
+                - /metrics-server
+                - --source=kubernetes.summary_api:''
+                - --requestheader-client-ca-file=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                - --requestheader-username-headers=X-Remote-User
+                - --requestheader-group-headers=X-Remote-Group
+                - --requestheader-extra-headers-prefix=X-Remote-Extra
+                resources:
+                  limits:
+                    cpu: 80m
+                    memory: 200Mi
+                  requests:
+                    cpu: 80m
+                    memory: 200Mi
 
   - path: /srv/kubernetes/manifests/metrics-server-apisvc.yaml
     content: |
