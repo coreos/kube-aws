@@ -666,7 +666,7 @@ controller:
 		},
 		{
 			expectedRootVolume: &ec2.CreateVolumeInput{
-				Iops:       aws.Int64(2000),
+				Iops:       aws.Int64(20000),
 				Size:       aws.Int64(100),
 				VolumeType: aws.String("io1"),
 			},
@@ -675,7 +675,7 @@ controller:
   rootVolume:
     type: io1
     size: 100
-    iops: 2000
+    iops: 20000
 `,
 		},
 		// TODO Remove test cases for deprecated keys in v0.9.7
@@ -702,14 +702,14 @@ controllerRootVolumeSize: 50
 		},
 		{
 			expectedRootVolume: &ec2.CreateVolumeInput{
-				Iops:       aws.Int64(2000),
+				Iops:       aws.Int64(20000),
 				Size:       aws.Int64(100),
 				VolumeType: aws.String("io1"),
 			},
 			clusterYaml: `
 controllerRootVolumeType: io1
 controllerRootVolumeSize: 100
-controllerRootVolumeIOPS: 2000
+controllerRootVolumeIOPS: 20000
 `,
 		},
 	}

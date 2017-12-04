@@ -464,41 +464,48 @@ func ReadOrEncryptAssets(dirname string, manageCertificates bool, caKeyRequiredO
 }
 
 func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) error {
+	workerCAKeyDefaultSymlinkTo := ""
+	if includeCAKey {
+		workerCAKeyDefaultSymlinkTo = "ca-key.pem"
+	}
+
 	assets := []struct {
-		name      string
-		data      []byte
-		overwrite bool
+		name             string
+		data             []byte
+		overwrite        bool
+		ifEmptySymlinkTo string
 	}{
-		{"ca.pem", r.CACert, true},
-		{"worker-ca.pem", r.WorkerCACert, true},
-		{"worker-ca-key.pem", r.WorkerCAKey, true},
-		{"apiserver.pem", r.APIServerCert, true},
-		{"apiserver-key.pem", r.APIServerKey, true},
-		{"worker.pem", r.WorkerCert, true},
-		{"worker-key.pem", r.WorkerKey, true},
-		{"admin.pem", r.AdminCert, true},
-		{"admin-key.pem", r.AdminKey, true},
-		{"etcd.pem", r.EtcdCert, true},
-		{"etcd-key.pem", r.EtcdKey, true},
-		{"etcd-client.pem", r.EtcdClientCert, true},
-		{"etcd-client-key.pem", r.EtcdClientKey, true},
-		{"etcd-trusted-ca.pem", r.EtcdTrustedCA, true},
-		{"oidc.pem", r.OidcCert, true},
-		{"oidc-key.pem", r.OidcKey, true},
-		{"kubelet-tls-bootstrap-token", r.TLSBootstrapToken, true},
+		{"ca.pem", r.CACert, true, ""},
+		{"worker-ca.pem", r.WorkerCACert, true, "ca.pem"},
+		{"worker-ca-key.pem", r.WorkerCAKey, true, workerCAKeyDefaultSymlinkTo},
+		{"apiserver.pem", r.APIServerCert, true, ""},
+		{"apiserver-key.pem", r.APIServerKey, true, ""},
+		{"worker.pem", r.WorkerCert, true, ""},
+		{"worker-key.pem", r.WorkerKey, true, ""},
+		{"admin.pem", r.AdminCert, true, ""},
+		{"admin-key.pem", r.AdminKey, true, ""},
+		{"etcd.pem", r.EtcdCert, true, ""},
+		{"etcd-key.pem", r.EtcdKey, true, ""},
+		{"etcd-client.pem", r.EtcdClientCert, true, ""},
+		{"etcd-client-key.pem", r.EtcdClientKey, true, ""},
+		{"etcd-trusted-ca.pem", r.EtcdTrustedCA, true, "ca.pem"},
+		{"oidc.pem", r.OidcCert, true, ""},
+		{"oidc-key.pem", r.OidcKey, true, ""},
+		{"kubelet-tls-bootstrap-token", r.TLSBootstrapToken, true, ""},
 
 		// Content entirely provided by user, so do not overwrite it if
 		// the file already exists
-		{"tokens.csv", r.AuthTokens, false},
+		{"tokens.csv", r.AuthTokens, false, ""},
 	}
 
 	if includeCAKey {
 		// This is required to be linked from worker-ca-key.pem
 		assets = append(assets, struct {
-			name      string
-			data      []byte
-			overwrite bool
-		}{"ca-key.pem", r.CAKey, true})
+			name             string
+			data             []byte
+			overwrite        bool
+			ifEmptySymlinkTo string
+		}{"ca-key.pem", r.CAKey, true, ""})
 	}
 
 	for _, asset := range assets {
@@ -515,55 +522,62 @@ func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) error 
 				return err
 			}
 		}
+		if len(asset.data) == 0 {
+			if asset.ifEmptySymlinkTo != "" {
+				// etcd trusted ca and worker-ca are separate files, but pointing to ca.pem by default.
+				// In advanced configurations, when certs are managed outside of kube-aws,
+				// these can be separate CAs to ensure that worker nodes have no certs which would let them
+				// access etcd directly. If worker-ca.pem != ca.pem, then ca.pem should include worker-ca.pem
+				// to let TLS bootstrapped workers acces APIServer.
+				wd, err := os.Getwd()
+				if err != nil {
+					return err
+				}
+
+				if err := os.Chdir(dirname); err != nil {
+					return err
+				}
+
+				// The path of the symlink
+				from := asset.name
+				// The path to the actual file
+				to := asset.ifEmptySymlinkTo
+
+				lstatFileInfo, lstatErr := os.Lstat(from)
+				symlinkExists := lstatErr == nil && (lstatFileInfo.Mode()&os.ModeSymlink == os.ModeSymlink)
+				fileExists := lstatErr == nil && !symlinkExists
+
+				if fileExists {
+					fmt.Printf("INFO: Removing a file at %s\n", from)
+					if err := os.Remove(from); err != nil {
+						return err
+					}
+				}
+
+				if symlinkExists {
+					fmt.Printf("INFO: Removing a symlink at %s\n", from)
+					if err := os.Remove(from); err != nil {
+						return err
+					}
+				}
+
+				fmt.Printf("INFO: Creating a symlink from %s to %s\n", from, to)
+				if err := os.Symlink(to, from); err != nil {
+					return err
+				}
+
+				if err := os.Chdir(wd); err != nil {
+					return err
+				}
+				continue
+			} else if asset.name != "tokens.csv" {
+				return fmt.Errorf("Not sure what to do for %s", path)
+			}
+		}
+		fmt.Printf("INFO: Writing %d bytes to %s\n", len(asset.data), path)
 		if err := ioutil.WriteFile(path, asset.data, 0600); err != nil {
 			return err
 		}
-	}
-
-	// etcd trusted ca and worker-ca are separate files, but pointing to ca.pem by default.
-	// In advanced configurations, when certs are managed outside of kube-aws,
-	// these can be separate CAs to ensure that worker nodes have no certs which would let them
-	// access etcd directly. If worker-ca.pem != ca.pem, then ca.pem should include worker-ca.pem
-	// to let TLS bootstrapped workers acces APIServer.
-	type symlink struct {
-		from string
-		to   string
-	}
-	symlinks := []symlink{
-		{"ca.pem", "worker-ca.pem"},
-		{"ca.pem", "etcd-trusted-ca.pem"},
-	}
-
-	if includeCAKey {
-		symlinks = append(symlinks, symlink{"ca-key.pem", "worker-ca-key.pem"})
-	}
-
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	if err := os.Chdir(dirname); err != nil {
-		return err
-	}
-
-	for _, sl := range symlinks {
-		from := sl.from
-		to := sl.to
-
-		if _, err := os.Lstat(to); err == nil {
-			if err := os.Remove(to); err != nil {
-				return err
-			}
-		}
-
-		if err := os.Symlink(from, to); err != nil {
-			return err
-		}
-	}
-
-	if err := os.Chdir(wd); err != nil {
-		return err
 	}
 
 	return nil
