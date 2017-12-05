@@ -1062,12 +1062,8 @@ worker:
 # Kube Dashboard image repository to use.
 #kubeDashboardImage:
 #  repo: gcr.io/google_containers/kubernetes-dashboard-amd64
-#  tag: v1.7.1
+#  tag: v1.8.0
 #  rktPullDocker: false
-
-#kubeDashboardInitImage:
-#  repo: gcr.io/google_containers/kubernetes-dashboard-init-amd64
-#  tag: v1.0.1
 
 # Calico Controller image repository to use.
 #calicoCtlImage:
@@ -1140,11 +1136,20 @@ worker:
 #kubeResourcesAutosave:
 #  enabled: false
 
+# Accessing Dashboard:
 # By default, the kubernetes dashboard has admin privileges and doesn't require authentication.
-# Set to "false" to restrict access using a token or kubeconfig file.
-# Please check https://github.com/kubernetes-incubator/kube-aws/pull/971 for more info
+# Set 'adminPrivileges: false' to restrict access using a token or kubeconfig file.
+# An example of how to generate a token is provided in the documentation: https://kubernetes-incubator.github.io/kube-aws/advanced-topics/kubernetes-dashboard.html
 
-#kubeDashboardAdminPrivileges: true
+# Access the dashboard  using 'kubectl proxy:
+# insecureLogin: false ==> "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/"
+# insecureLogin: true ==>  "http://localhost:8001/api/v1/namespaces/kube-system/services/http:kubernetes-dashboard:/proxy/"
+# Expose the dashboard
+# Please check the documentation: https://kubernetes-incubator.github.io/kube-aws/advanced-topics/kubernetes-dashboard.html
+
+kubernetesDashboard:
+  adminPrivileges: true
+  insecureLogin: false
 
 # When enabled, all nodes will forward journald logs to AWS CloudWatch.
 # It is disabled by default.

@@ -1,6 +1,7 @@
 # Summary
 
 * [Home](README.md)
+* [Quick Start](tutorials/quick-start.md)
 * [Getting Started](getting-started/README.md)
   * [Prerequisites](getting-started/prerequisites.md)
   * [Step 1: Configure](getting-started/step-1-configure.md)
@@ -26,4 +27,3 @@
 * [Troubleshooting](troubleshooting/README.md)
   * [Known Limitations](troubleshooting/known-limitations.md)
   * [Common Problems](troubleshooting/common-problems.md)
-* [Quick Start \(WIP\)](tutorials/quick-start.md)

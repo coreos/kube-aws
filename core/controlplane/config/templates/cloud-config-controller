@@ -867,7 +867,7 @@ write_files:
 
       applyall "${mfdir}/cluster-role-bindings"/{kube-admin,system-worker,node,node-proxier,node-extensions,heapster,metrics-server}".yaml"
 
-      {{ if .KubeDashboardAdminPrivileges }}
+      {{ if .KubernetesDashboard.AdminPrivileges }}
       applyall "${mfdir}/cluster-role-bindings/kubernetes-dashboard-admin.yaml"
       {{- end }}
 
@@ -1846,11 +1846,15 @@ write_files:
         rules:
         - apiGroups: [""]
           resources: ["secrets"]
-          verbs: ["create", "watch"]
+          verbs: ["create"]
         - apiGroups: [""]
           resources: ["secrets"]
           resourceNames: ["kubernetes-dashboard-key-holder", "kubernetes-dashboard-certs"]
           verbs: ["get", "update", "delete"]
+        - apiGroups: [""]
+          resources: ["configmaps"]
+          resourceNames: ["kubernetes-dashboard-settings"]
+          verbs: ["get", "update"]
         - apiGroups: [""]
           resources: ["services"]
           resourceNames: ["heapster"]
@@ -1872,7 +1876,7 @@ write_files:
           name: kubernetes-dashboard
           namespace: kube-system
 
-{{ if .KubeDashboardAdminPrivileges }}
+{{ if .KubernetesDashboard.AdminPrivileges }}
   - path: /srv/kubernetes/rbac/cluster-role-bindings/kubernetes-dashboard-admin.yaml
     content: |
         apiVersion: rbac.authorization.k8s.io/v1
@@ -2846,7 +2850,7 @@ write_files:
   - path: /srv/kubernetes/manifests/kubernetes-dashboard-de.yaml
     content: |
         kind: Deployment
-        apiVersion: extensions/v1beta1
+        apiVersion: apps/v1beta2
         metadata:
           labels:
             k8s-app: kubernetes-dashboard
@@ -2863,32 +2867,48 @@ write_files:
               labels:
                 k8s-app: kubernetes-dashboard
             spec:
-              initContainers:
-              - name: kubernetes-dashboard-init
-                image: {{ .KubeDashboardInitImage.RepoWithTag }}
-                volumeMounts:
-                - name: kubernetes-dashboard-certs
-                  mountPath: /certs
               containers:
               - name: kubernetes-dashboard
-                image: {{ .KubeDashboardImage.RepoWithTag }}
+                image: {{ .KubernetesDashboardImage.RepoWithTag }}
                 ports:
+                {{ if .KubernetesDashboard.InsecureLogin }}
+                - containerPort: 9090
+                {{ else }}
                 - containerPort: 8443
+                {{ end }}
                   protocol: TCP
                 args:
-                  - --tls-key-file=/certs/dashboard.key
-                  - --tls-cert-file=/certs/dashboard.crt
+                  {{ if .KubernetesDashboard.InsecureLogin }}
+                  - --enable-insecure-login
+                  - --insecure-port=9090
+                  {{ else }}
+                  - --auto-generate-certificates
+                  {{ end }}
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 100Mi
+                  requests:
+                    cpu: 100m
+                    memory: 100Mi
                 volumeMounts:
                 - name: kubernetes-dashboard-certs
                   mountPath: /certs
-                  readOnly: true
                 - mountPath: /tmp
                   name: tmp-volume
                 livenessProbe:
                   httpGet:
+                    {{ if .KubernetesDashboard.InsecureLogin }}
+                    scheme: HTTP
+                    {{ else }}
                     scheme: HTTPS
+                    {{ end }}
                     path: /
+                    {{ if .KubernetesDashboard.InsecureLogin }}
+                    port: 9090
+                    {{ else }}
                     port: 8443
+                    {{ end }}
                   initialDelaySeconds: 30
                   timeoutSeconds: 30
               volumes:
@@ -2917,8 +2937,13 @@ write_files:
           namespace: kube-system
         spec:
           ports:
+            {{ if .KubernetesDashboard.InsecureLogin }}
+            - port: 9090
+              targetPort: 9090
+            {{ else }}
             - port: 443
               targetPort: 8443
+            {{ end }}
           selector:
             k8s-app: kubernetes-dashboard
 

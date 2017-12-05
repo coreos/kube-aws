@@ -134,6 +134,10 @@ func NewDefaultCluster() *Cluster {
 			KubeDns: KubeDns{
 				NodeLocalResolver: false,
 			},
+			KubernetesDashboard: KubernetesDashboard{
+				AdminPrivileges: true,
+				InsecureLogin:   false,
+			},
 			CloudFormationStreaming:            true,
 			HyperkubeImage:                     model.Image{Repo: "quay.io/coreos/hyperkube", Tag: k8sVer, RktPullDocker: false},
 			AWSCliImage:                        model.Image{Repo: "quay.io/coreos/awscli", Tag: "master", RktPullDocker: false},
@@ -154,8 +158,7 @@ func NewDefaultCluster() *Cluster {
 			HeapsterImage:                      model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.4.3", RktPullDocker: false},
 			MetricsServerImage:                 model.Image{Repo: "gcr.io/google_containers/metrics-server-amd64", Tag: "v0.2.0", RktPullDocker: false},
 			AddonResizerImage:                  model.Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "2.1", RktPullDocker: false},
-			KubeDashboardImage:                 model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.7.1", RktPullDocker: false},
-			KubeDashboardInitImage:             model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-init-amd64", Tag: "v1.0.1", RktPullDocker: false},
+			KubernetesDashboardImage:           model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.8.0", RktPullDocker: false},
 			PauseImage:                         model.Image{Repo: "gcr.io/google_containers/pause-amd64", Tag: "3.0", RktPullDocker: false},
 			FlannelImage:                       model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.9.0", RktPullDocker: false},
 			JournaldCloudWatchLogsImage:        model.Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
@@ -370,9 +373,8 @@ type KubeClusterSettings struct {
 	// Required by kubelet to locate the kube-apiserver
 	ExternalDNSName string `yaml:"externalDNSName,omitempty"`
 	// Required by kubelet to locate the cluster-internal dns hosted on controller nodes in the base cluster
-	DNSServiceIP                 string `yaml:"dnsServiceIP,omitempty"`
-	UseCalico                    bool   `yaml:"useCalico,omitempty"`
-	KubeDashboardAdminPrivileges bool   `yaml:"kubeDashboardAdminPrivileges,omitempty"`
+	DNSServiceIP string `yaml:"dnsServiceIP,omitempty"`
+	UseCalico    bool   `yaml:"useCalico,omitempty"`
 }
 
 // Part of configuration which can't be provided via user input but is computed from user input
@@ -422,7 +424,7 @@ type DeploymentSettings struct {
 	AmazonSsmAgent          `yaml:"amazonSsmAgent,omitempty"`
 	CloudFormationStreaming bool `yaml:"cloudFormationStreaming,omitempty"`
 	KubeDns                 `yaml:"kubeDns,omitempty"`
-
+	KubernetesDashboard     `yaml:"kubernetesDashboard,omitempty"`
 	// Images repository
 	HyperkubeImage                     model.Image `yaml:"hyperkubeImage,omitempty"`
 	AWSCliImage                        model.Image `yaml:"awsCliImage,omitempty"`
@@ -443,8 +445,7 @@ type DeploymentSettings struct {
 	HeapsterImage                      model.Image `yaml:"heapsterImage,omitempty"`
 	MetricsServerImage                 model.Image `yaml:"metricsServerImage,omitempty"`
 	AddonResizerImage                  model.Image `yaml:"addonResizerImage,omitempty"`
-	KubeDashboardImage                 model.Image `yaml:"kubeDashboardImage,omitempty"`
-	KubeDashboardInitImage             model.Image `yaml:"kubeDashboardInitImage,omitempty"`
+	KubernetesDashboardImage           model.Image `yaml:"kubernetesDashboardImage,omitempty"`
 	PauseImage                         model.Image `yaml:"pauseImage,omitempty"`
 	FlannelImage                       model.Image `yaml:"flannelImage,omitempty"`
 	JournaldCloudWatchLogsImage        model.Image `yaml:"journaldCloudWatchLogsImage,omitempty"`
@@ -644,6 +645,11 @@ func (c *KubeDns) MergeIfEmpty(other KubeDns) {
 	if c.NodeLocalResolver == false {
 		c.NodeLocalResolver = other.NodeLocalResolver
 	}
+}
+
+type KubernetesDashboard struct {
+	AdminPrivileges bool `yaml:"adminPrivileges"`
+	InsecureLogin   bool `yaml:"insecureLogin"`
 }
 
 type WaitSignal struct {
