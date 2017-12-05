@@ -346,23 +346,6 @@ coreos:
         ExecStartPre=/usr/bin/bash -c "until /usr/bin/curl -s -f http://127.0.0.1:8080/version; do echo waiting until apiserver starts; sleep 10; done"
         ExecStart=/opt/bin/retry 3 /opt/bin/install-kube-system
 
-    - name: install-metrics-server-apiservice.service
-      command: start
-      runtime: true
-      content: |
-        [Unit]
-        Wants=kubelet.service docker.service
-        After=install-kube-system.service
-
-        [Service]
-        Type=oneshot
-        StartLimitInterval=0
-        RemainAfterExit=true
-        ExecStartPre=/usr/bin/bash -c "until /usr/bin/systemctl is-active kubelet.service; do echo waiting until kubelet starts; sleep 10; done"
-        ExecStartPre=/usr/bin/bash -c "until /usr/bin/systemctl is-active docker.service; do echo waiting until docker starts; sleep 10; done"
-        ExecStartPre=/usr/bin/bash -c "until /usr/bin/curl -s -f http://127.0.0.1:8080/version; do echo waiting until apiserver starts; sleep 10; done"
-        ExecStart=/opt/bin/retry 3 /opt/bin/install-metrics-server-apiservice
-
     - name: apply-kube-aws-plugins.service
       command: start
       runtime: true
@@ -874,6 +857,9 @@ write_files:
       applyall "${mfdir}/kube-rescheduler-de.yaml"
       {{- end }}
 
+      # API Services
+      applyall "${mfdir}/metrics-server-apisvc.yaml"
+
       mfdir=/srv/kubernetes/rbac
 
       # Cluster roles and bindings
@@ -901,24 +887,6 @@ write_files:
         applyall "${mfdir}/kube2iam-rbac.yaml"
         applyall "${mfdir}/kube2iam-ds.yaml";
       {{ end }}
-
-  - path: /opt/bin/install-metrics-server-apiservice
-    permissions: 0700
-    owner: root:root
-    content: |
-      #!/bin/bash -e
-
-      kubectl() {
-          /usr/bin/docker run --rm --net=host -v /srv/kubernetes:/srv/kubernetes {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl --request-timeout=1s "$@"
-      }
-
-      while ! kubectl get svc metrics-server -n kube-system; do
-        echo Waiting until metrics-server service is created.
-        sleep 3
-      done
-
-      mfdir=/srv/kubernetes/manifests
-      kubectl apply -f "${mfdir}/metrics-server-apisvc.yaml"
 
   - path: /etc/kubernetes/cni/docker_opts_cni.env
     content: |
