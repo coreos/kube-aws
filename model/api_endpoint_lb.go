@@ -118,7 +118,7 @@ func (e APIEndpointLB) Validate() error {
 			return errors.New("recordSetTTL must be at least 1 second")
 		}
 	} else {
-		if *e.RecordSetManaged {
+		if e.RecordSetManaged != nil && *e.RecordSetManaged {
 			return errors.New("missing hostedZone.id: hostedZone.id is required when `recordSetManaged` is set to true. If you do want to configure DNS yourself, set it to true")
 		}
 
