@@ -3310,7 +3310,7 @@ write_files:
           name: flyte-konveyor
           namespace: kube-public
         spec:
-          replicas: 1
+          replicas: {{ default 1 .CustomSettings.Flyte.Replicas }}
           template:
             metadata:
               labels:
