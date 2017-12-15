@@ -986,7 +986,7 @@ write_files:
           # so that temporal freakiness/unresponsity of specific apiservice until apiserver/controller-manager fully starts doesn't
           # affect the whole controller bootstrap process.
 {{/* RUN-578 Introduce Dex */}}
-          /usr/bin/docker run --rm -i --net=host -v /etc/kubernetes:/etc/kubernetes -v /srv/kubernetes:/srv/kubernetes {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl "$@"
+          /usr/bin/docker run --rm -i --net=host -v /etc/kubernetes:/etc/kubernetes -v /srv/kubernetes:/srv/kubernetes {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl --request-timeout=1s "$@"
 {{/* RUN-578 Introduce Dex */}}
       }
 
