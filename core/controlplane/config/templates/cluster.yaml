@@ -164,6 +164,10 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #  # CAUTION: Don't use t2.micro or the cluster won't work. See https://github.com/kubernetes/kubernetes/issues/18975
 #  instanceType: t2.medium
 #
+#  # EC2 instance tags for controller nodes
+#  instanceTags:
+#    instanceRole: controller
+#
 #  rootVolume:
 #    # Disk size (GiB) for controller node
 #    size: 30
@@ -343,6 +347,10 @@ worker:
 #      # CAUTION: Don't use t2.micro or the cluster won't work. See https://github.com/kubernetes/kubernetes/issues/16122
 #      instanceType: t2.medium
 #
+#      # EC2 instance tags for worker nodes
+#      instanceTags:
+#        instanceRole: worker
+#
 #      rootVolume:
 #        # Disk size (GiB) for worker nodes
 #        size: 30
@@ -397,7 +405,7 @@ worker:
 #        # IAM role to grant the Spot fleet permission to bid on, launch, and terminate instances on your behalf
 #        # See http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-fleet-requests.html#spot-fleet-prerequisites
 #        #
-#        # Defaults to "arn:aws:iam::youraccountid:role/aws-ec2-spot-fleet-role" assuming you've arrived "Spot Requests" in EC2 Dashboard
+#        # Defaults to "arn:aws:iam::youraccountid:role/aws-ec2-spot-fleet-tagging-role" assuming you've arrived "Spot Requests" in EC2 Dashboard
 #        # hence the role is automatically created for you
 #        iamFleetRoleArn: "arn:aws:iam::youraccountid:role/kube-aws-doesnt-create-this-for-you"
 #
@@ -577,6 +585,10 @@ worker:
 #  # Instance type for etcd node
 #  instanceType: t2.medium
 #
+#  # EC2 instance tags for etcd nodes
+#  instanceTags:
+#    instanceRole: etcd
+#
 #  rootVolume:
 #    # Root volume size (GiB) for etcd node
 #    size: 30
@@ -631,7 +643,7 @@ worker:
 #      arn: "arn:aws:iam::YOURACCOUNTID:instance-profile/INSTANCEPROFILENAME"
 #
 #  # The version of etcd to be used. Set to e.g. "3.2.1" to use etcd3
-#  version: 3.2.9
+#  version: 3.2.10
 #
 #  snapshot:
 #    # Set to true to periodically take an etcd snapshot
@@ -938,7 +950,7 @@ worker:
 # and pulling from quay or dockerhub is slow and you get many timeouts.
 
 # Version of hyperkube image to use. This is the tag for the hyperkube image repository.
-# kubernetesVersion: v1.8.2_coreos.0
+# kubernetesVersion: v1.8.4_coreos.0
 
 # Hyperkube image repository to use.
 # hyperkubeImage:
@@ -972,7 +984,7 @@ worker:
 # Cluster Autoscaler image repository to use.
 #clusterAutoscalerImage:
 #  repo: gcr.io/google_containers/cluster-autoscaler
-#  tag: v1.0.2
+#  tag: v1.0.3
 #  rktPullDocker: false
 
 # Cluster Proportional Autoscaler image repository to use.
@@ -990,13 +1002,13 @@ worker:
 # kube DNS image repository to use.
 #kubeDnsImage:
 #  repo: gcr.io/google_containers/k8s-dns-kube-dns-amd64
-#  tag: 1.14.6
+#  tag: 1.14.7
 #  rktPullDocker: false
 
 # kube DNS Masq image repository to use.
 #kubeDnsMasqImage:
 #  repo: gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64
-#  tag: 1.14.6
+#  tag: 1.14.7
 #  rktPullDocker: false
 
 # kube rescheduler image repository to use.
@@ -1026,13 +1038,19 @@ worker:
 # Tiller (Helm backend) image repository to use.
 #tillerImage:
 #  repo: gcr.io/kubernetes-helm/tiller
-#  tag: v2.6.2
+#  tag: v2.7.2
 #  rktPullDocker: false
 
 # Heapster image repository to use.
 #heapsterImage:
 #  repo: gcr.io/google_containers/heapster
 #  tag: v1.4.3
+#  rktPullDocker: false
+
+# Metrics Server image repository to use.
+#metricsServerImage:
+#  repo: gcr.io/google_containers/metrics-server-amd64
+#  tag: v0.2.0
 #  rktPullDocker: false
 
 # Addon Resizer image repository to use.
@@ -1044,12 +1062,8 @@ worker:
 # Kube Dashboard image repository to use.
 #kubeDashboardImage:
 #  repo: gcr.io/google_containers/kubernetes-dashboard-amd64
-#  tag: v1.7.1
+#  tag: v1.8.0
 #  rktPullDocker: false
-
-#kubeDashboardInitImage:
-#  repo: gcr.io/google_containers/kubernetes-dashboard-init-amd64
-#  tag: v1.0.1
 
 # Calico Controller image repository to use.
 #calicoCtlImage:
@@ -1122,11 +1136,20 @@ worker:
 #kubeResourcesAutosave:
 #  enabled: false
 
+# Accessing Dashboard:
 # By default, the kubernetes dashboard has admin privileges and doesn't require authentication.
-# Set to "false" to restrict access using a token or kubeconfig file.
-# Please check https://github.com/kubernetes-incubator/kube-aws/pull/971 for more info
+# Set 'adminPrivileges: false' to restrict access using a token or kubeconfig file.
+# An example of how to generate a token is provided in the documentation: https://kubernetes-incubator.github.io/kube-aws/advanced-topics/kubernetes-dashboard.html
 
-#kubeDashboardAdminPrivileges: true
+# Access the dashboard  using 'kubectl proxy:
+# insecureLogin: false ==> "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/"
+# insecureLogin: true ==>  "http://localhost:8001/api/v1/namespaces/kube-system/services/http:kubernetes-dashboard:/proxy/"
+# Expose the dashboard
+# Please check the documentation: https://kubernetes-incubator.github.io/kube-aws/advanced-topics/kubernetes-dashboard.html
+
+kubernetesDashboard:
+  adminPrivileges: true
+  insecureLogin: false
 
 # When enabled, all nodes will forward journald logs to AWS CloudWatch.
 # It is disabled by default.
@@ -1169,6 +1192,10 @@ addons:
   # When enabled, Kubernetes rescheduler is deployed to the cluster controller(s)
   # This feature is experimental currently so may not be production ready
   rescheduler:
+    enabled: false
+
+  # Metrics Server (https://github.com/kubernetes-incubator/metrics-server)
+  metricsServer:
     enabled: false
 
 # Experimental features will change in backward-incompatible ways

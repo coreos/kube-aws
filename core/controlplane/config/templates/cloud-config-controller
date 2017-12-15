@@ -5,14 +5,21 @@
 export COREOS_PRIVATE_IPV4 COREOS_PRIVATE_IPV6 COREOS_PUBLIC_IPV4 COREOS_PUBLIC_IPV6
 REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')
 USERDATA_FILE=userdata-controller
-while ! /usr/bin/rkt run \
-   --net=host \
-   --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf  \
-   --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false --mount volume=awsenv,target=/var/run/coreos \
-   --trust-keys-from-https \
-   {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=aws -- s3 --region $REGION  cp {{$S3URI}} /var/run/coreos/$USERDATA_FILE; do
-  sleep 1
-done
+
+run() {
+  bin="$1"; shift
+  while ! /usr/bin/rkt run \
+          --net=host \
+          --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf  \
+          --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false --mount volume=awsenv,target=/var/run/coreos \
+          --trust-keys-from-https \
+          {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=$bin -- "$@"; do
+    sleep 1
+  done
+}
+
+run bash -c "aws configure set s3.signature_version s3v4; aws s3 --region $REGION cp {{$S3URI}} /var/run/coreos/$USERDATA_FILE"
+
 exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE
 {{ end }}
 {{ define "s3" -}}
@@ -494,36 +501,7 @@ coreos:
         Type=oneshot
         ExecStop=/bin/true
         RemainAfterExit=true
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment INSTANCE_ID=$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id)"
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment SECURITY_GROUPS=\"$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/security-groups | tr '\n' ',')\""
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment AUTOSCALINGGROUP=\"$(/usr/bin/docker run --rm --net=host \
-          {{.AWSCliImage.RepoWithTag}} aws \
-          autoscaling describe-auto-scaling-instances \
-          --instance-ids ${INSTANCE_ID} --region {{.Region}} \
-          --query 'AutoScalingInstances[].AutoScalingGroupName' --output text)\""
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment \
-          LAUNCHCONFIGURATION=\"$(/usr/bin/docker run --rm --net=host \
-          {{.AWSCliImage.RepoWithTag}} \
-          aws autoscaling describe-auto-scaling-groups \
-          --auto-scaling-group-name $AUTOSCALINGGROUP --region {{.Region}} \
-          --query 'AutoScalingGroups[].LaunchConfigurationName' --output text)\""
-        ExecStartPre=/usr/bin/bash -c "until /usr/bin/curl -s -f http://127.0.0.1:8080/version; do echo waiting until apiserver starts; sleep 1; done"
-        ExecStart=/bin/sh -c "/usr/bin/curl \
-          --retry 3 \
-          --request PATCH \
-          -H 'Content-Type: application/strategic-merge-patch+json' \
-          -d'{ \
-          \"metadata\": { \
-            \"labels\": { \
-              \"kube-aws.coreos.com/autoscalinggroup\": \"${AUTOSCALINGGROUP}\", \
-              \"kube-aws.coreos.com/launchconfiguration\": \"${LAUNCHCONFIGURATION}\" \
-            }, \
-            \"annotations\": { \
-              \"kube-aws.coreos.com/securitygroups\": \"${SECURITY_GROUPS}\" \
-            } \
-          } \
-          }\"' \
-          http://localhost:8080/api/v1/nodes/$(hostname)"
+        ExecStart=/opt/bin/kube-node-label
 {{end}}
 
 {{if .Experimental.EphemeralImageStorage.Enabled}}
@@ -861,6 +839,48 @@ write_files:
 
       rkt rm --uuid-file=/var/run/coreos/set-aws-environment.uuid || :
 {{end}}
+
+  {{if .Experimental.AwsNodeLabels.Enabled -}}
+  - path: /opt/bin/kube-node-label
+    permissions: 0700
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+      set -ue
+
+      INSTANCE_ID="$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id)"
+      SECURITY_GROUPS="$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/security-groups | tr '\n' ',')"
+      AUTOSCALINGGROUP="$(/usr/bin/docker run --rm --net=host \
+                {{.AWSCliImage.RepoWithTag}} aws \
+                autoscaling describe-auto-scaling-instances \
+                --instance-ids ${INSTANCE_ID} --region {{.Region}} \
+                --query 'AutoScalingInstances[].AutoScalingGroupName' --output text)"
+      LAUNCHCONFIGURATION="$(/usr/bin/docker run --rm --net=host \
+                {{.AWSCliImage.RepoWithTag}} \
+                aws autoscaling describe-auto-scaling-groups \
+                --auto-scaling-group-name $AUTOSCALINGGROUP --region {{.Region}} \
+                --query 'AutoScalingGroups[].LaunchConfigurationName' --output text)"
+
+       until /usr/bin/curl -s -f http://127.0.0.1:8080/version; do echo waiting until apiserver starts; sleep 1; done
+
+       /usr/bin/curl \
+         --retry 5 \
+         --request PATCH \
+         -H 'Content-Type: application/strategic-merge-patch+json' \
+         -d '{
+              "metadata": {
+                "labels": {
+                  "kube-aws.coreos.com/autoscalinggroup": "'${AUTOSCALINGGROUP}'",
+                   "kube-aws.coreos.com/launchconfiguration": "'${LAUNCHCONFIGURATION}'"
+                 },
+                 "annotations": {
+                  "kube-aws.coreos.com/securitygroups": "'${SECURITY_GROUPS}'"
+                }
+              }
+            }' \
+         http://localhost:8080/api/v1/nodes/$(hostname)
+  {{end -}}
+
 {{ if .SharedPersistentVolume }}
   - path: /opt/bin/set-efs-pv
     owner: root:root
@@ -962,9 +982,22 @@ write_files:
       #!/bin/bash -e
 
       kubectl() {
+          # --request-timeout=1s is intended to instruct kubectl to give up discovering unresponsive apiservice(s) in certain periods
+          # so that temporal freakiness/unresponsity of specific apiservice until apiserver/controller-manager fully starts doesn't
+          # affect the whole controller bootstrap process.
 {{/* RUN-578 Introduce Dex */}}
           /usr/bin/docker run --rm -i --net=host -v /etc/kubernetes:/etc/kubernetes -v /srv/kubernetes:/srv/kubernetes {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl "$@"
 {{/* RUN-578 Introduce Dex */}}
+      }
+
+      ks() {
+        kubectl --namespace kube-system "$@"
+      }
+
+      # Try to batch as many files as possible to reduce the total amount of delay due to wilderness in the API aggregation
+      # See https://github.com/kubernetes-incubator/kube-aws/issues/1039
+      applyall() {
+        kubectl apply -f $(echo "$@" | tr ' ' ',')
       }
 
       while ! kubectl get ns kube-system; do
@@ -972,44 +1005,62 @@ write_files:
         sleep 3
       done
 
+      # See https://github.com/kubernetes-incubator/kube-aws/issues/1039#issuecomment-348978375
+      if ks get apiservice v1beta1.metrics.k8s.io && ! ps ax | grep '[h]yperkube proxy'; then
+        echo "apiserver is up but kube-proxy isn't up. We have likely encountered #1039."
+        echo "Temporary deleting the v1beta1.metrics.k8s.io apiservice as a work-around for #1039"
+        ks delete apiservice v1beta1.metrics.k8s.io
+
+        echo Waiting until controller-manager stabilizes and it creates a kube-proxy pod.
+        until ps ax | grep '[h]yperkube proxy'; do
+            echo Sleeping 3 seconds.
+            sleep 3
+        done
+        echo kube-proxy stared. apiserver should be responsive again.
+      fi
+
       mfdir=/srv/kubernetes/manifests
+      rbac=/srv/kubernetes/rbac
 
       {{ if .UseCalico }}
       /bin/bash /opt/bin/populate-tls-calico-etcd
-      kubectl apply -f "${mfdir}/calico.yaml"
+      applyall "${mfdir}/calico.yaml"
       {{ end }}
 
+      {{ if .Addons.MetricsServer.Enabled -}}
+      applyall \
+        "${mfdir}/metrics-server-sa.yaml" \
+        "${mfdir}/metrics-server-de.yaml" \
+        "${mfdir}/metrics-server-svc.yaml" \
+        "${rbac}/cluster-roles/metrics-server.yaml" \
+        "${rbac}/cluster-role-bindings/metrics-server.yaml" \
+        "${rbac}/role-bindings/metrics-server.yaml" \
+        "${mfdir}/metrics-server-apisvc.yaml"
+      {{- end }}
+
       {{ if .Experimental.NodeDrainer.Enabled }}
-      for manifest in {kube-node-drainer-ds,kube-node-drainer-asg-status-updater-de}; do
-          kubectl apply -f "${mfdir}/$manifest.yaml"
-      done
+      applyall "${mfdir}"/{kube-node-drainer-ds,kube-node-drainer-asg-status-updater-de}".yaml"
       {{ end }}
 
       # Secrets
-      kubectl apply -f "${mfdir}/kubernetes-dashboard-se.yaml"
+      applyall "${mfdir}/kubernetes-dashboard-se.yaml"
 
       # Configmaps
-      for manifest in {kube-dns,kube-proxy}; do
-        kubectl apply -f "${mfdir}/$manifest-cm.yaml"
-      done
+      applyall "${mfdir}"/{kube-dns,kube-proxy}"-cm.yaml"
 
       # Service Accounts
-      for manifest in {kube-dns,heapster,kube-proxy,kubernetes-dashboard}; do
-          kubectl apply -f "${mfdir}/$manifest-sa.yaml"
-      done
+      applyall "${mfdir}"/{kube-dns,heapster,kube-proxy,kubernetes-dashboard}"-sa.yaml"
 
       # Install tiller by default
-      kubectl apply -f "${mfdir}/tiller.yaml"
+      applyall "${mfdir}/tiller.yaml"
 
 {{ if .KubeDns.NodeLocalResolver }}
       # DNS Masq Fix
-      kubectl apply -f "${mfdir}/dnsmasq-node-ds.yaml"
+      applyall "${mfdir}/dnsmasq-node-ds.yaml"
 {{ end }}
 
       # Deployments
-      for manifest in {kube-dns,kube-dns-autoscaler,kubernetes-dashboard,{{ if .Addons.ClusterAutoscaler.Enabled }}cluster-autoscaler,{{ end }}heapster{{ if .KubeResourcesAutosave.Enabled }},kube-resources-autosave{{ end }}}; do
-          kubectl apply -f "${mfdir}/$manifest-de.yaml"
-      done
+      applyall "${mfdir}"/{kube-dns,kube-dns-autoscaler,kubernetes-dashboard,{{ if .Addons.ClusterAutoscaler.Enabled }}cluster-autoscaler,{{ end }}heapster{{ if .KubeResourcesAutosave.Enabled }},kube-resources-autosave{{ end }}}"-de.yaml"
 
 {{/* RUN-605 Add Flyte */}}
       {{ if .CustomSettings.Flyte.Enabled }}
@@ -1018,49 +1069,35 @@ write_files:
 {{/* RUN-605 Add Flyte */}}
 
       # Daemonsets
-      for manifest in {kube-proxy,}; do
-          kubectl apply -f "${mfdir}/$manifest-ds.yaml"
-      done
+      applyall "${mfdir}"/kube-proxy"-ds.yaml"
 
       # Services
-      for manifest in {kube-dns,heapster,kubernetes-dashboard}; do
-          kubectl apply -f "${mfdir}/$manifest-svc.yaml"
-      done
+      applyall "${mfdir}"/{kube-dns,heapster,kubernetes-dashboard}"-svc.yaml"
 
       {{- if .Addons.Rescheduler.Enabled }}
-      kubectl apply -f "${mfdir}/kube-rescheduler-de.yaml"
+      applyall "${mfdir}/kube-rescheduler-de.yaml"
       {{- end }}
 
       mfdir=/srv/kubernetes/rbac
 
       # Cluster roles and bindings
-      for manifest in {node-extensions,}; do
-          kubectl apply -f "${mfdir}/cluster-roles/$manifest.yaml"
-      done
-      for manifest in {kube-admin,system-worker,node,node-proxier,node-extensions,heapster}; do
-          kubectl apply -f "${mfdir}/cluster-role-bindings/$manifest.yaml"
-      done
+      applyall "${mfdir}/cluster-roles/node-extensions.yaml"
 
-      {{ if .KubeDashboardAdminPrivileges }}
-      kubectl apply -f "${mfdir}/cluster-role-bindings/kubernetes-dashboard-admin.yaml"
+      applyall "${mfdir}/cluster-role-bindings"/{kube-admin,system-worker,node,node-proxier,node-extensions,heapster}".yaml"
+
+      {{ if .KubernetesDashboard.AdminPrivileges }}
+      applyall "${mfdir}/cluster-role-bindings/kubernetes-dashboard-admin.yaml"
       {{- end }}
 
       # Roles and bindings
-      for manifest in {pod-nanny,kubernetes-dashboard}; do
-          kubectl apply -f "${mfdir}/roles/$manifest.yaml"
-      done
-      for manifest in {heapster-nanny,kubernetes-dashboard}; do
-          kubectl apply -f "${mfdir}/role-bindings/$manifest.yaml"
-      done
+      applyall "${mfdir}/roles"/{pod-nanny,kubernetes-dashboard}".yaml"
+
+      applyall "${mfdir}/role-bindings"/{heapster-nanny,kubernetes-dashboard}".yaml"
 
       {{ if .Experimental.TLSBootstrap.Enabled }}
-      for manifest in {node-bootstrapper,kubelet-certificate-bootstrap}; do
-          kubectl apply -f "${mfdir}/cluster-roles/$manifest.yaml"
-      done
+      applyall "${mfdir}/cluster-roles"/{node-bootstrapper,kubelet-certificate-bootstrap}".yaml"
 
-      for manifest in {node-bootstrapper,kubelet-certificate-bootstrap}; do
-          kubectl apply -f "${mfdir}/cluster-role-bindings/$manifest.yaml"
-      done
+      applyall "${mfdir}/cluster-role-bindings"/{node-bootstrapper,kubelet-certificate-bootstrap}".yaml"
       {{ end }}
 
 {{/* RUN-578 Introduce Dex */}}
@@ -1120,8 +1157,8 @@ write_files:
 
       {{if .Experimental.Kube2IamSupport.Enabled }}
         mfdir=/srv/kubernetes/manifests
-        kubectl apply -f "${mfdir}/kube2iam-rbac.yaml"
-        kubectl apply -f "${mfdir}/kube2iam-ds.yaml";
+        applyall "${mfdir}/kube2iam-rbac.yaml"
+        applyall "${mfdir}/kube2iam-ds.yaml";
       {{ end }}
 
   - path: /etc/kubernetes/cni/docker_opts_cni.env
@@ -1425,7 +1462,7 @@ write_files:
                       done ;
                       RESOURCES_IN_NAMESPACE="componentstatuses configmaps daemonsets deployments endpoints events horizontalpodautoscalers
                       ingresses jobs limitranges networkpolicies  persistentvolumeclaims pods podsecuritypolicies podtemplates replicasets
-                      replicationcontrollers resourcequotas secrets serviceaccounts services statefulsets thirdpartyresources
+                      replicationcontrollers resourcequotas secrets serviceaccounts services statefulsets customresourcedefinitions
                       poddisruptionbudgets roles rolebindings";
                       for ns in $(jq -r '.items[].metadata.name' < ${DUMP_DIR}/namespaces.json);do
                         echo "Searching in namespace: ${ns}" ;
@@ -1453,7 +1490,7 @@ write_files:
                     done
               livenessProbe:
                 exec:
-                  command: ["/bin/bash", "-c", "(( $(date +%s) - $(stat -c%Y /probe-token) < 25*60*60 ))" ]
+                  command: ["/bin/sh", "-c",  "AGE=$(( $(date +%s) - $(stat -c%Y /probe-token) < 25*60*60 ));  [ $AGE -gt 0 ]" ]
                 initialDelaySeconds: 240
                 periodSeconds: 10
               volumeMounts:
@@ -1747,7 +1784,7 @@ write_files:
   - path: /srv/kubernetes/rbac/cluster-role-bindings/node.yaml
     content: |
         kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
           name: kube-aws:node
         subjects:
@@ -1763,7 +1800,7 @@ write_files:
   - path: /srv/kubernetes/rbac/cluster-roles/node-extensions.yaml
     content: |
         kind: ClusterRole
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
             name: kube-aws:node-extensions
         rules:
@@ -1806,7 +1843,7 @@ write_files:
   - path: /srv/kubernetes/rbac/cluster-role-bindings/kube-admin.yaml
     content: |
         kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
           name: kube-aws:admin
         subjects:
@@ -1822,7 +1859,7 @@ write_files:
   - path: /srv/kubernetes/rbac/cluster-role-bindings/node-proxier.yaml
     content: |
         kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
           name: kube-aws:node-proxier
         subjects:
@@ -1843,7 +1880,7 @@ write_files:
   - path: /srv/kubernetes/rbac/cluster-role-bindings/system-worker.yaml
     content: |
         kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
           name: kube-aws:system-worker
         subjects:
@@ -1864,7 +1901,7 @@ write_files:
   - path: /srv/kubernetes/rbac/cluster-role-bindings/node-extensions.yaml
     content: |
         kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
           name: kube-aws:node-extensions
         subjects:
@@ -1881,7 +1918,7 @@ write_files:
   - path: /srv/kubernetes/rbac/cluster-role-bindings/heapster.yaml
     content: |
         kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
           name: heapster
         roleRef:
@@ -2079,11 +2116,83 @@ write_files:
           apiGroup: rbac.authorization.k8s.io
 {{ end }}
 {{/* RUN-578 Introduce Dex */}}
+
+  # metrics-server
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/metrics-server.yaml
+    content: |
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        kind: ClusterRoleBinding
+        metadata:
+          name: metrics-server:system:auth-delegator
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: system:auth-delegator
+        subjects:
+        - kind: ServiceAccount
+          name: metrics-server
+          namespace: kube-system
+        ---
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRoleBinding
+        metadata:
+          name: system:metrics-server
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: system:metrics-server
+        subjects:
+        - kind: ServiceAccount
+          name: metrics-server
+          namespace: kube-system
+
+  - path: /srv/kubernetes/rbac/role-bindings/metrics-server.yaml
+    content: |
+        apiVersion: rbac.authorization.k8s.io/v1beta1
+        kind: RoleBinding
+        metadata:
+          name: metrics-server-auth-reader
+          namespace: kube-system
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: Role
+          name: extension-apiserver-authentication-reader
+        subjects:
+        - kind: ServiceAccount
+          name: metrics-server
+          namespace: kube-system
+
+  - path: /srv/kubernetes/rbac/cluster-roles/metrics-server.yaml
+    content: |
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRole
+        metadata:
+          name: system:metrics-server
+        rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - nodes
+          - namespaces
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - "extensions"
+          resources:
+          - deployments
+          verbs:
+          - get
+          - list
+          - watch
+
   # Heapster's pod_nanny monitors the heapster deployment & its pod(s), and scales
   # the resources of the deployment if necessary.
   - path: /srv/kubernetes/rbac/roles/pod-nanny.yaml
     content: |
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         kind: Role
         metadata:
           name: system:pod-nanny
@@ -2110,7 +2219,7 @@ write_files:
   - path: /srv/kubernetes/rbac/role-bindings/heapster-nanny.yaml
     content: |
         kind: RoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
           name: heapster-nanny
           namespace: kube-system
@@ -2132,7 +2241,7 @@ write_files:
   - path: /srv/kubernetes/rbac/cluster-roles/kubelet-certificate-bootstrap.yaml
     content: |
         kind: ClusterRole
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
           name: kube-aws:kubelet-certificate-bootstrap
         rules:
@@ -2147,7 +2256,7 @@ write_files:
   - path: /srv/kubernetes/rbac/cluster-role-bindings/kubelet-certificate-bootstrap.yaml
     content: |
         kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
           name: kube-aws:kubelet-certificate-bootstrap
         subjects:
@@ -2163,7 +2272,7 @@ write_files:
   - path: /srv/kubernetes/rbac/cluster-roles/node-bootstrapper.yaml
     content: |
         kind: ClusterRole
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
           name: kube-aws:node-bootstrapper
         rules:
@@ -2180,7 +2289,7 @@ write_files:
   - path: /srv/kubernetes/rbac/cluster-role-bindings/node-bootstrapper.yaml
     content: |
         kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
           name: kube-aws:node-bootstrapper
         subjects:
@@ -2197,18 +2306,22 @@ write_files:
   - path: /srv/kubernetes/rbac/roles/kubernetes-dashboard.yaml
     content: |
         kind: Role
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
           name: kubernetes-dashboard-minimal
           namespace: kube-system
         rules:
         - apiGroups: [""]
           resources: ["secrets"]
-          verbs: ["create", "watch"]
+          verbs: ["create"]
         - apiGroups: [""]
           resources: ["secrets"]
           resourceNames: ["kubernetes-dashboard-key-holder", "kubernetes-dashboard-certs"]
           verbs: ["get", "update", "delete"]
+        - apiGroups: [""]
+          resources: ["configmaps"]
+          resourceNames: ["kubernetes-dashboard-settings"]
+          verbs: ["get", "update"]
         - apiGroups: [""]
           resources: ["services"]
           resourceNames: ["heapster"]
@@ -2216,7 +2329,7 @@ write_files:
 
   - path: /srv/kubernetes/rbac/role-bindings/kubernetes-dashboard.yaml
     content: |
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         kind: RoleBinding
         metadata:
           name: kubernetes-dashboard-minimal
@@ -2230,10 +2343,10 @@ write_files:
           name: kubernetes-dashboard
           namespace: kube-system
 
-{{ if .KubeDashboardAdminPrivileges }}
+{{ if .KubernetesDashboard.AdminPrivileges }}
   - path: /srv/kubernetes/rbac/cluster-role-bindings/kubernetes-dashboard-admin.yaml
     content: |
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         kind: ClusterRoleBinding
         metadata:
           name: kubernetes-dashboard
@@ -2396,7 +2509,7 @@ write_files:
 {{/* RUN-509 Remove vault-based certs DO NOT TOUCH THIS LINE */}}
           - --service-account-key-file=/etc/kubernetes/ssl/serviceaccount-key.pem.apiserver
 {{/* RUN-509 Remove vault-based certs DO NOT TOUCH THIS LINE */}}
-          - --runtime-config=extensions/v1beta1/networkpolicies=true,batch/v2alpha1,rbac.authorization.k8s.io/v1beta1=true{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},extensions/v1beta1/podsecuritypolicy=true{{ end }}{{if .Experimental.Admission.Initializers.Enabled}},admissionregistration.k8s.io/v1alpha1{{end}}
+          - --runtime-config=extensions/v1beta1/networkpolicies=true,batch/v2alpha1=true{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},extensions/v1beta1/podsecuritypolicy=true{{ end }}{{if .Experimental.Admission.Initializers.Enabled}},admissionregistration.k8s.io/v1alpha1{{end}}
           - --cloud-provider=aws
 {{/* RUN Attempt to prevent apiserver->etcd lockups. https://github.com/kubernetes/kubernetes/issues/47131#issuecomment-338166775 */}}
           - --service-account-lookup=false
@@ -3039,6 +3152,89 @@ write_files:
                     - --container=heapster
                     - --poll-period=300000
 
+  - path: /srv/kubernetes/manifests/metrics-server-sa.yaml
+    content: |
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: metrics-server
+          namespace: kube-system
+          labels:
+
+  - path: /srv/kubernetes/manifests/metrics-server-de.yaml
+    content: |
+        apiVersion: extensions/v1beta1
+        kind: Deployment
+        metadata:
+          name: metrics-server
+          namespace: kube-system
+          labels:
+            k8s-app: metrics-server
+          annotations:
+            scheduler.alpha.kubernetes.io/critical-pod: ''
+        spec:
+          selector:
+            matchLabels:
+              k8s-app: metrics-server
+          template:
+            metadata:
+              name: metrics-server
+              labels:
+                k8s-app: metrics-server
+            spec:
+              serviceAccountName: metrics-server
+              containers:
+              - name: metrics-server
+                image: {{ .MetricsServerImage.RepoWithTag }}
+                imagePullPolicy: Always
+                command:
+                - /metrics-server
+                - --source=kubernetes.summary_api:''
+                - --requestheader-client-ca-file=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                - --requestheader-username-headers=X-Remote-User
+                - --requestheader-group-headers=X-Remote-Group
+                - --requestheader-extra-headers-prefix=X-Remote-Extra
+                resources:
+                  limits:
+                    cpu: 80m
+                    memory: 200Mi
+                  requests:
+                    cpu: 80m
+                    memory: 200Mi
+
+  - path: /srv/kubernetes/manifests/metrics-server-apisvc.yaml
+    content: |
+        apiVersion: apiregistration.k8s.io/v1beta1
+        kind: APIService
+        metadata:
+          name: v1beta1.metrics.k8s.io
+        spec:
+          service:
+            name: metrics-server
+            namespace: kube-system
+          group: metrics.k8s.io
+          version: v1beta1
+          insecureSkipTLSVerify: true
+          groupPriorityMinimum: 100
+          versionPriority: 100
+
+  - path: /srv/kubernetes/manifests/metrics-server-svc.yaml
+    content: |
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: metrics-server
+          namespace: kube-system
+          labels:
+            kubernetes.io/name: "Metrics-server"
+        spec:
+          selector:
+            k8s-app: metrics-server
+          ports:
+          - port: 443
+            protocol: TCP
+            targetPort: 443
+
   {{if .Addons.ClusterAutoscaler.Enabled}}
   - path: /srv/kubernetes/manifests/cluster-autoscaler-de.yaml
     content: |
@@ -3143,7 +3339,7 @@ write_files:
   - path: /srv/kubernetes/manifests/kubernetes-dashboard-de.yaml
     content: |
         kind: Deployment
-        apiVersion: extensions/v1beta1
+        apiVersion: apps/v1beta2
         metadata:
           labels:
             k8s-app: kubernetes-dashboard
@@ -3160,32 +3356,48 @@ write_files:
               labels:
                 k8s-app: kubernetes-dashboard
             spec:
-              initContainers:
-              - name: kubernetes-dashboard-init
-                image: {{ .KubeDashboardInitImage.RepoWithTag }}
-                volumeMounts:
-                - name: kubernetes-dashboard-certs
-                  mountPath: /certs
               containers:
               - name: kubernetes-dashboard
-                image: {{ .KubeDashboardImage.RepoWithTag }}
+                image: {{ .KubernetesDashboardImage.RepoWithTag }}
                 ports:
+                {{ if .KubernetesDashboard.InsecureLogin }}
                 - containerPort: 9090
+                {{ else }}
+                - containerPort: 8443
+                {{ end }}
                   protocol: TCP
                 args:
-                  - --tls-key-file=/certs/dashboard.key
-                  - --tls-cert-file=/certs/dashboard.crt
+                  {{ if .KubernetesDashboard.InsecureLogin }}
+                  - --enable-insecure-login
+                  - --insecure-port=9090
+                  {{ else }}
+                  - --auto-generate-certificates
+                  {{ end }}
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 100Mi
+                  requests:
+                    cpu: 100m
+                    memory: 100Mi
                 volumeMounts:
                 - name: kubernetes-dashboard-certs
                   mountPath: /certs
-                  readOnly: true
                 - mountPath: /tmp
                   name: tmp-volume
                 livenessProbe:
                   httpGet:
+                    {{ if .KubernetesDashboard.InsecureLogin }}
+                    scheme: HTTP
+                    {{ else }}
                     scheme: HTTPS
+                    {{ end }}
                     path: /
+                    {{ if .KubernetesDashboard.InsecureLogin }}
+                    port: 9090
+                    {{ else }}
                     port: 8443
+                    {{ end }}
                   initialDelaySeconds: 30
                   timeoutSeconds: 30
               volumes:
@@ -3214,8 +3426,13 @@ write_files:
           namespace: kube-system
         spec:
           ports:
+            {{ if .KubernetesDashboard.InsecureLogin }}
+            - port: 9090
+              targetPort: 9090
+            {{ else }}
             - port: 443
               targetPort: 8443
+            {{ end }}
           selector:
             k8s-app: kubernetes-dashboard
 
@@ -3766,7 +3983,7 @@ write_files:
         namespace: kube-system
       ---
 
-      apiVersion: rbac.authorization.k8s.io/v1beta1
+      apiVersion: rbac.authorization.k8s.io/v1
       kind: ClusterRole
       metadata:
         annotations:
@@ -3786,7 +4003,7 @@ write_files:
         - watch
       ---
 
-      apiVersion: rbac.authorization.k8s.io/v1beta1
+      apiVersion: rbac.authorization.k8s.io/v1
       kind: ClusterRoleBinding
       metadata:
         name: kube2iam

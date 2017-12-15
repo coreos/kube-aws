@@ -405,6 +405,8 @@ addons:
     enabled: true
   clusterAutoscaler:
     enabled: true
+  metricsServer:
+    enabled: true
 worker:
   nodePools:
   - name: pool1
@@ -418,6 +420,9 @@ worker:
 							Enabled: true,
 						},
 						ClusterAutoscaler: model.ClusterAutoscalerSupport{
+							Enabled: true,
+						},
+						MetricsServer: model.MetricsServer{
 							Enabled: true,
 						},
 					}

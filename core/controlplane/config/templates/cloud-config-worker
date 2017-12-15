@@ -17,7 +17,7 @@ run() {
       sleep 1
   done
 }
-run aws s3 --region $REGION  cp {{ $S3URI }} /var/run/coreos/$USERDATA_FILE
+run bash -c "aws configure set s3.signature_version s3v4; aws s3 --region $REGION cp {{ $S3URI }} /var/run/coreos/$USERDATA_FILE"
 
 INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 
@@ -470,43 +470,9 @@ coreos:
 
         [Service]
         Type=oneshot
-        RemainAfterExit=true
         ExecStop=/bin/true
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment INSTANCE_ID=$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id)"
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment SECURITY_GROUPS=\"$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/security-groups | tr '\n' ',')\""
-        {{if not .SpotFleet.Enabled -}}
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment AUTOSCALINGGROUP=\"$(/usr/bin/docker run --rm --net=host \
-          {{.AWSCliImage.RepoWithTag}} aws \
-          autoscaling describe-auto-scaling-instances \
-          --instance-ids ${INSTANCE_ID} --region {{.Region}} \
-          --query 'AutoScalingInstances[].AutoScalingGroupName' --output text)\""
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment \
-          LAUNCHCONFIGURATION=\"$(/usr/bin/docker run --rm --net=host \
-          {{.AWSCliImage.RepoWithTag}} \
-          aws autoscaling describe-auto-scaling-groups \
-          --auto-scaling-group-name $AUTOSCALINGGROUP --region {{.Region}} \
-          --query 'AutoScalingGroups[].LaunchConfigurationName' --output text)\""
-        {{end -}}
-        ExecStart=/usr/bin/docker run --rm -t --net=host \
-          -v /etc/kubernetes:/etc/kubernetes \
-          -v /etc/resolv.conf:/etc/resolv.conf \
-          -e INSTANCE_ID=${INSTANCE_ID} \
-          -e SECURITY_GROUPS=${SECURITY_GROUPS} \
-          {{if not .SpotFleet.Enabled -}}
-          -e AUTOSCALINGGROUP=${AUTOSCALINGGROUP} \
-          -e LAUNCHCONFIGURATION=${LAUNCHCONFIGURATION} \
-          {{end -}}
-          {{.HyperkubeImage.RepoWithTag}} /bin/bash \
-            -ec 'echo "placing labels and annotations with additional AWS parameters."; \
-             kctl="/kubectl --server={{.APIEndpointURL}}:443 --kubeconfig=/etc/kubernetes/kubeconfig/worker.yaml"; \
-             kctl_label="$kctl label --overwrite nodes/$(hostname)"; \
-             kctl_annotate="$kctl annotate --overwrite nodes/$(hostname)"; \
-             {{if not .SpotFleet.Enabled -}}
-             $kctl_label kube-aws.coreos.com/autoscalinggroup=${AUTOSCALINGGROUP}; \
-             $kctl_label kube-aws.coreos.com/launchconfiguration=${LAUNCHCONFIGURATION}; \
-             {{end -}}
-             $kctl_annotate kube-aws.coreos.com/securitygroups=${SECURITY_GROUPS}; \
-             echo "done."'
+        RemainAfterExit=true
+        ExecStart=/opt/bin/kube-node-label
 {{end}}
 
 {{if .Experimental.EphemeralImageStorage.Enabled}}
@@ -695,6 +661,74 @@ write_files:
       rkt rm --uuid-file=/var/run/coreos/set-aws-environment.uuid || :
 {{end}}
 
+  {{if .Experimental.AwsNodeLabels.Enabled -}}
+  - path: /opt/bin/kube-node-label
+    permissions: 0700
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+      set -ue
+
+      INSTANCE_ID="$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id)"
+      SECURITY_GROUPS="$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/security-groups | tr '\n' ',')"
+      {{if not .SpotFleet.Enabled -}}
+      AUTOSCALINGGROUP="$(/usr/bin/docker run --rm --net=host \
+        {{.AWSCliImage.RepoWithTag}} aws \
+        autoscaling describe-auto-scaling-instances \
+        --instance-ids ${INSTANCE_ID} --region {{.Region}} \
+        --query 'AutoScalingInstances[].AutoScalingGroupName' --output text)"
+      LAUNCHCONFIGURATION="$(/usr/bin/docker run --rm --net=host \
+        {{.AWSCliImage.RepoWithTag}} \
+        aws autoscaling describe-auto-scaling-groups \
+        --auto-scaling-group-name $AUTOSCALINGGROUP --region {{.Region}} \
+        --query 'AutoScalingGroups[].LaunchConfigurationName' --output text)"
+      {{end -}}
+
+      label() {
+        /usr/bin/docker run --rm -t --net=host \
+          -v /etc/kubernetes:/etc/kubernetes \
+          -v /etc/resolv.conf:/etc/resolv.conf \
+          -e INSTANCE_ID=${INSTANCE_ID} \
+          -e SECURITY_GROUPS=${SECURITY_GROUPS} \
+          {{if not .SpotFleet.Enabled -}}
+          -e AUTOSCALINGGROUP=${AUTOSCALINGGROUP} \
+          -e LAUNCHCONFIGURATION=${LAUNCHCONFIGURATION} \
+          {{end -}}
+          {{.HyperkubeImage.RepoWithTag}} /bin/bash \
+            -ec 'echo "placing labels and annotations with additional AWS parameters."; \
+             kctl="/kubectl --server={{.APIEndpointURL}}:443 --kubeconfig=/etc/kubernetes/kubeconfig/worker.yaml"; \
+             kctl_label="$kctl label --overwrite nodes/$(hostname)"; \
+             kctl_annotate="$kctl annotate --overwrite nodes/$(hostname)"; \
+             {{if not .SpotFleet.Enabled -}}
+             $kctl_label kube-aws.coreos.com/autoscalinggroup=${AUTOSCALINGGROUP}; \
+             $kctl_label kube-aws.coreos.com/launchconfiguration=${LAUNCHCONFIGURATION}; \
+             {{end -}}
+             $kctl_annotate kube-aws.coreos.com/securitygroups=${SECURITY_GROUPS}; \
+             echo "done."'
+      }
+
+      set +e
+
+      max_attempts=5
+      attempt_num=0
+      attempt_initial_interval_sec=1
+
+      until label
+      do
+        ((attempt_num++))
+        if (( attempt_num == max_attempts ))
+        then
+            echo "Attempt $attempt_num failed and there are no more attempts left!"
+            return 1
+        else
+            attempt_interval_sec=$((attempt_initial_interval_sec*2**$((attempt_num-1))))
+            echo "Attempt $attempt_num failed! Trying again in $attempt_interval_sec seconds..."
+            sleep $attempt_interval_sec;
+        fi
+      done
+
+  {{end -}}
+
   - path: /opt/bin/cfn-signal
     owner: root:root
     permissions: 0700
@@ -849,6 +883,25 @@ write_files:
 
       instance_id=$(curl http://169.254.169.254/latest/meta-data/instance-id)
 
+      TAGS=""
+      TAGS="${TAGS}Key=\"kubernetes.io/cluster/{{ .ClusterName }}\",Value=\"owned\" "
+      TAGS="${TAGS}Key=\"kube-aws:node-pool:name\",Value=\"{{.NodePoolName}}\" "
+      TAGS="${TAGS}Key=\"Name\",Value=\"{{.ClusterName}}-{{.StackName}}-kube-aws-worker\" "
+
+      {{if .Autoscaling.ClusterAutoscaler.Enabled -}}
+      TAGS="${TAGS}Key=\"{{.Autoscaling.ClusterAutoscaler.AutoDiscoveryTagKey}}\",Value=\"\" "
+      {{end -}}
+
+      {{range $k, $v := .StackTags -}}
+      TAGS="${TAGS}Key=\"{{$k}}\",Value=\"{{$v}}\" "
+      {{end -}}
+
+      {{range $k, $v := .InstanceTags -}}
+      TAGS="${TAGS}Key=\"{{$k}}\",Value=\"{{$v}}\" "
+      {{end -}}
+
+      echo Tagging this EC2 instance with: "$TAGS"
+
       rkt run \
         --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
         --mount=volume=ssl,target=/etc/kubernetes/ssl \
@@ -864,7 +917,7 @@ write_files:
            /usr/bin/aws \
              --region {{.Region}} ec2 create-tags \
              --resource $instance_id \
-             --tags '"'"'Key=kubernetes.io/cluster/{{.ClusterName}},Value=""'"'"' '"'"'Key=Name,Value="{{.ClusterName}}-{{.StackName}}-kube-aws-worker"'"'"' '"'"'Key="kube-aws:node-pool:name",Value="{{.NodePoolName}}"'"'"'
+             --tags '"$TAGS"'
            echo done.'
 
       rkt rm --uuid-file=/var/run/coreos/tag-spot-instance.uuid || :

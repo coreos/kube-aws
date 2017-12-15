@@ -19,7 +19,7 @@ run() {
     sleep 1
   done
 }
-run aws s3 --region $REGION  cp {{ $S3URI }}  /var/run/coreos/$USERDATA_FILE
+run bash -c "aws configure set s3.signature_version s3v4; aws s3 --region $REGION cp {{ $S3URI }} /var/run/coreos/$USERDATA_FILE"
 
 INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 

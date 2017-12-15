@@ -15,6 +15,7 @@ Initialize the base configuration for a cluster ready for customization prior to
 | `hosted-zone-id` | The hosted zone in which a Route53 record set for a k8s API endpoint is created | none |
 | `key-name` | The AWS key-pair for SSH access to nodes | none |
 | `kms-key-arn` | The ARN of the AWS KMS key for encrypting TLS assets |
+| `no-record-set` | Instruct kube-aws to not manage Route53 record sets for your K8S API | `false` |
 | `region` | The AWS region to deploy to | none |
 
 ### `init` example
@@ -22,9 +23,10 @@ Initialize the base configuration for a cluster ready for customization prior to
 ```bash
 $ kube-aws init \
   --cluster-name=my-cluster \
-  --external-dns-name=my-cluster-endpoint.mydomain.com \
   --region=us-west-1 \
   --availability-zone=us-west-1c \
+  --hosted-zone-id=xxxxxxxxxxxxxx \
+  --external-dns-name=my-cluster-endpoint.mydomain.com \
   --key-name=key-pair-name \
   --kms-key-arn="arn:aws:kms:us-west-1:xxxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
 ```
