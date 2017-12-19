@@ -1,6 +1,7 @@
 # Summary
 
 * [Home](README.md)
+* [Quick Start](tutorials/quick-start.md)
 * [Getting Started](getting-started/README.md)
   * [Prerequisites](getting-started/prerequisites.md)
   * [Step 1: Configure](getting-started/step-1-configure.md)
@@ -20,10 +21,10 @@
   * [Developer Guide](guides/developer-guide.md)
   * [Operator Guide](guides/operator-guide.md)
 * [Advanced Topics](advanced-topics/README.md)
-  * [etcd Backup & Restore](advanced-topics/etcd-backup-and-restore.md)
   * [CloudFormation Updates in CLI](advanced-topics/cloudformation-updates-in-cli.md)
+  * [etcd Backup & Restore](advanced-topics/etcd-backup-and-restore.md)
+  * [Kubernetes Dashboard Access](advanced-topics/kubernetes-dashboard.md)
   * [Use An Existing VPC](advanced-topics/use-an-existing-vpc.md)
 * [Troubleshooting](troubleshooting/README.md)
   * [Known Limitations](troubleshooting/known-limitations.md)
   * [Common Problems](troubleshooting/common-problems.md)
-* [Quick Start \(WIP\)](tutorials/quick-start.md)

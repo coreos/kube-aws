@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	k8sVer = "v1.8.2_coreos.0"
+	k8sVer = "v1.8.4_coreos.0"
 
 	credentialsDir = "credentials"
 	userDataDir    = "userdata"
@@ -134,6 +134,10 @@ func NewDefaultCluster() *Cluster {
 			KubeDns: KubeDns{
 				NodeLocalResolver: false,
 			},
+			KubernetesDashboard: KubernetesDashboard{
+				AdminPrivileges: true,
+				InsecureLogin:   false,
+			},
 			CloudFormationStreaming:            true,
 			HyperkubeImage:                     model.Image{Repo: "quay.io/coreos/hyperkube", Tag: k8sVer, RktPullDocker: false},
 			AWSCliImage:                        model.Image{Repo: "quay.io/coreos/awscli", Tag: "master", RktPullDocker: false},
@@ -141,20 +145,20 @@ func NewDefaultCluster() *Cluster {
 			CalicoCniImage:                     model.Image{Repo: "quay.io/calico/cni", Tag: "v1.11.0", RktPullDocker: false},
 			CalicoKubeControllersImage:         model.Image{Repo: "quay.io/calico/kube-controllers", Tag: "v1.0.0", RktPullDocker: false},
 			CalicoCtlImage:                     model.Image{Repo: "quay.io/calico/ctl", Tag: "v1.6.1", RktPullDocker: false},
-			ClusterAutoscalerImage:             model.Image{Repo: "gcr.io/google_containers/cluster-autoscaler", Tag: "v1.0.2", RktPullDocker: false},
+			ClusterAutoscalerImage:             model.Image{Repo: "gcr.io/google_containers/cluster-autoscaler", Tag: "v1.0.3", RktPullDocker: false},
 			ClusterProportionalAutoscalerImage: model.Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64", Tag: "1.1.2", RktPullDocker: false},
 			Kube2IAMImage:                      model.Image{Repo: "jtblin/kube2iam", Tag: "0.8.1", RktPullDocker: false},
-			KubeDnsImage:                       model.Image{Repo: "gcr.io/google_containers/k8s-dns-kube-dns-amd64", Tag: "1.14.6", RktPullDocker: false},
-			KubeDnsMasqImage:                   model.Image{Repo: "gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64", Tag: "1.14.6", RktPullDocker: false},
+			KubeDnsImage:                       model.Image{Repo: "gcr.io/google_containers/k8s-dns-kube-dns-amd64", Tag: "1.14.7", RktPullDocker: false},
+			KubeDnsMasqImage:                   model.Image{Repo: "gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64", Tag: "1.14.7", RktPullDocker: false},
 			KubeReschedulerImage:               model.Image{Repo: "gcr.io/google-containers/rescheduler", Tag: "v0.3.1", RktPullDocker: false},
 			DnsMasqMetricsImage:                model.Image{Repo: "gcr.io/google_containers/k8s-dns-sidecar-amd64", Tag: "1.14.6", RktPullDocker: false},
 			ExecHealthzImage:                   model.Image{Repo: "gcr.io/google_containers/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
 			HelmImage:                          model.Image{Repo: "quay.io/kube-aws/helm", Tag: "v2.6.0", RktPullDocker: false},
-			TillerImage:                        model.Image{Repo: "gcr.io/kubernetes-helm/tiller", Tag: "v2.6.2", RktPullDocker: false},
+			TillerImage:                        model.Image{Repo: "gcr.io/kubernetes-helm/tiller", Tag: "v2.7.2", RktPullDocker: false},
 			HeapsterImage:                      model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.4.3", RktPullDocker: false},
+			MetricsServerImage:                 model.Image{Repo: "gcr.io/google_containers/metrics-server-amd64", Tag: "v0.2.0", RktPullDocker: false},
 			AddonResizerImage:                  model.Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "2.1", RktPullDocker: false},
-			KubeDashboardImage:                 model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.7.1", RktPullDocker: false},
-			KubeDashboardInitImage:             model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-init-amd64", Tag: "v1.0.1", RktPullDocker: false},
+			KubernetesDashboardImage:           model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.8.0", RktPullDocker: false},
 			PauseImage:                         model.Image{Repo: "gcr.io/google_containers/pause-amd64", Tag: "3.0", RktPullDocker: false},
 			FlannelImage:                       model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.9.0", RktPullDocker: false},
 			JournaldCloudWatchLogsImage:        model.Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
@@ -369,9 +373,8 @@ type KubeClusterSettings struct {
 	// Required by kubelet to locate the kube-apiserver
 	ExternalDNSName string `yaml:"externalDNSName,omitempty"`
 	// Required by kubelet to locate the cluster-internal dns hosted on controller nodes in the base cluster
-	DNSServiceIP                 string `yaml:"dnsServiceIP,omitempty"`
-	UseCalico                    bool   `yaml:"useCalico,omitempty"`
-	KubeDashboardAdminPrivileges bool   `yaml:"kubeDashboardAdminPrivileges,omitempty"`
+	DNSServiceIP string `yaml:"dnsServiceIP,omitempty"`
+	UseCalico    bool   `yaml:"useCalico,omitempty"`
 }
 
 // Part of configuration which can't be provided via user input but is computed from user input
@@ -421,7 +424,7 @@ type DeploymentSettings struct {
 	AmazonSsmAgent          `yaml:"amazonSsmAgent,omitempty"`
 	CloudFormationStreaming bool `yaml:"cloudFormationStreaming,omitempty"`
 	KubeDns                 `yaml:"kubeDns,omitempty"`
-
+	KubernetesDashboard     `yaml:"kubernetesDashboard,omitempty"`
 	// Images repository
 	HyperkubeImage                     model.Image `yaml:"hyperkubeImage,omitempty"`
 	AWSCliImage                        model.Image `yaml:"awsCliImage,omitempty"`
@@ -440,9 +443,9 @@ type DeploymentSettings struct {
 	HelmImage                          model.Image `yaml:"helmImage,omitempty"`
 	TillerImage                        model.Image `yaml:"tillerImage,omitempty"`
 	HeapsterImage                      model.Image `yaml:"heapsterImage,omitempty"`
+	MetricsServerImage                 model.Image `yaml:"metricsServerImage,omitempty"`
 	AddonResizerImage                  model.Image `yaml:"addonResizerImage,omitempty"`
-	KubeDashboardImage                 model.Image `yaml:"kubeDashboardImage,omitempty"`
-	KubeDashboardInitImage             model.Image `yaml:"kubeDashboardInitImage,omitempty"`
+	KubernetesDashboardImage           model.Image `yaml:"kubernetesDashboardImage,omitempty"`
 	PauseImage                         model.Image `yaml:"pauseImage,omitempty"`
 	FlannelImage                       model.Image `yaml:"flannelImage,omitempty"`
 	JournaldCloudWatchLogsImage        model.Image `yaml:"journaldCloudWatchLogsImage,omitempty"`
@@ -642,6 +645,11 @@ func (c *KubeDns) MergeIfEmpty(other KubeDns) {
 	if c.NodeLocalResolver == false {
 		c.NodeLocalResolver = other.NodeLocalResolver
 	}
+}
+
+type KubernetesDashboard struct {
+	AdminPrivileges bool `yaml:"adminPrivileges"`
+	InsecureLogin   bool `yaml:"insecureLogin"`
 }
 
 type WaitSignal struct {

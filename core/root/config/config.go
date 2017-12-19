@@ -144,6 +144,7 @@ func ConfigFromBytes(data []byte, plugins []*pluginmodel.Plugin) (*Config, error
 		{c.Addons, "addons"},
 		{c.Addons.Rescheduler, "addons.rescheduler"},
 		{c.Addons.ClusterAutoscaler, "addons.clusterAutoscaler"},
+		{c.Addons.MetricsServer, "addons.metricsServer"},
 	}
 
 	for i, np := range c.Worker.NodePools {

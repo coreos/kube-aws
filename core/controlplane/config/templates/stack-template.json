@@ -26,6 +26,13 @@
         ],
         "MinSize": "{{.MinControllerCount}}",
         "Tags": [
+          {{range $k, $v := $.Controller.InstanceTags -}}
+          {
+            "Key": "{{$k}}",
+            "PropagateAtLaunch": "true",
+            "Value": "{{$v}}"
+          },
+          {{end -}}
           {
             "Key": "kubernetes.io/cluster/{{.ClusterName}}",
             "PropagateAtLaunch": "true",
@@ -547,7 +554,7 @@
         }],
         "HostedZoneTags" : [{
           "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
-          "Value": "true"
+          "Value": "owned"
         }]
       }
     },
@@ -647,10 +654,17 @@
         ],
         "MinSize": "1",
         "Tags": [
+          {{range $k, $v := $.Etcd.InstanceTags -}}
+          {
+            "Key": "{{$k}}",
+            "PropagateAtLaunch": "true",
+            "Value": "{{$v}}"
+          },
+          {{end -}}
           {
             "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
             "PropagateAtLaunch": "true",
-            "Value": "true"
+            "Value": "owned"
           },
           {
             "Key": "Name",
@@ -1716,7 +1730,7 @@
         "Tags": [
           {
             "Key": "kubernetes.io/cluster/{{.ClusterName}}",
-            "Value": "true"
+            "Value": "owned"
           },
           {
             "Key": "Name",

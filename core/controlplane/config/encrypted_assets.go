@@ -464,11 +464,6 @@ func ReadOrEncryptAssets(dirname string, manageCertificates bool, caKeyRequiredO
 }
 
 func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) error {
-	workerCAKeyDefaultSymlinkTo := ""
-	if includeCAKey {
-		workerCAKeyDefaultSymlinkTo = "ca-key.pem"
-	}
-
 	assets := []struct {
 		name             string
 		data             []byte
@@ -477,7 +472,6 @@ func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) error 
 	}{
 		{"ca.pem", r.CACert, true, ""},
 		{"worker-ca.pem", r.WorkerCACert, true, "ca.pem"},
-		{"worker-ca-key.pem", r.WorkerCAKey, true, workerCAKeyDefaultSymlinkTo},
 		{"apiserver.pem", r.APIServerCert, true, ""},
 		{"apiserver-key.pem", r.APIServerKey, true, ""},
 		{"worker.pem", r.WorkerCert, true, ""},
@@ -506,6 +500,13 @@ func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) error 
 			overwrite        bool
 			ifEmptySymlinkTo string
 		}{"ca-key.pem", r.CAKey, true, ""})
+
+		assets = append(assets, struct {
+			name             string
+			data             []byte
+			overwrite        bool
+			ifEmptySymlinkTo string
+		}{"worker-ca-key.pem", r.WorkerCAKey, true, "ca-key.pem"})
 	}
 
 	for _, asset := range assets {
