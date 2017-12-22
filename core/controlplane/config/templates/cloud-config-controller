@@ -2078,7 +2078,7 @@ write_files:
     content: |
         ---
         kind: ClusterRole
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
           name: dex-proxy-access
         rules:
@@ -2088,7 +2088,7 @@ write_files:
           verbs: ["get", "create"]
         ---
         kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
           name: dex-anonymous-auth
           namespace: kube-system
@@ -2103,7 +2103,7 @@ write_files:
           apiGroup: rbac.authorization.k8s.io
         ---
         kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         metadata:
           name: runtimeplatfom
         subjects:
@@ -2120,7 +2120,7 @@ write_files:
   # metrics-server
   - path: /srv/kubernetes/rbac/cluster-role-bindings/metrics-server.yaml
     content: |
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         kind: ClusterRoleBinding
         metadata:
           name: metrics-server:system:auth-delegator
@@ -2148,7 +2148,7 @@ write_files:
 
   - path: /srv/kubernetes/rbac/role-bindings/metrics-server.yaml
     content: |
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         kind: RoleBinding
         metadata:
           name: metrics-server-auth-reader
