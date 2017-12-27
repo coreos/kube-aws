@@ -1362,6 +1362,118 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
+    "SecurityGroupWorkerIngressFromWorkerToControllerKubelet": {
+      "Properties": {
+        "FromPort": 10250,
+        "GroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 10250
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToWorkerKubelet": {
+      "Properties": {
+        "FromPort": 10250,
+        "GroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 10250
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToWorkerCadvisor": {
+      "Properties": {
+        "FromPort": 4194,
+        "GroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 4194
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToControllerCadvisor": {
+      "Properties": {
+        "FromPort": 4194,
+        "GroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 4194
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToWorkerNodeExporter": {
+      "Properties": {
+        "FromPort": 9100,
+        "GroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 9100
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToControllerNodeExporter": {
+      "Properties": {
+        "FromPort": 9100,
+        "GroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 9100
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToControllerControllerManager": {
+      "Properties": {
+        "FromPort": 10252,
+        "GroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 10252
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToControllerScheduleManager": {
+      "Properties": {
+        "FromPort": 10251,
+        "GroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 10251
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
     "SecurityGroupEtcd": {
       "Properties": {
         "GroupDescription": {
