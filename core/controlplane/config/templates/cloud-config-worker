@@ -214,6 +214,8 @@ coreos:
             TimeoutStartSec=120
 
 {{if .FlannelImage.RktPullDocker}}
+    - name: flanneld.service
+      drop-ins:
         - name: 20-flannel-custom-image.conf
           content: |
             [Unit]
@@ -222,7 +224,7 @@ coreos:
 
             [Service]
             Environment="FLANNEL_IMAGE={{.FlannelImage.RktRepo}}"
-            Environment="RKT_RUN_ARGS={{.FlannelImage.Options}}"
+            Environment="RKT_RUN_ARGS={{.FlannelImage.Options}} --uuid-file-save=/var/lib/coreos/flannel-wrapper.uuid"
 
     - name: flannel-docker-opts.service
       drop-ins:
