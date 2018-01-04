@@ -153,7 +153,7 @@ func NewDefaultCluster() *Cluster {
 			},
 			CloudFormationStreaming:            true,
 			HyperkubeImage:                     model.Image{Repo: "k8s.gcr.io/hyperkube-amd64", Tag: k8sVer, RktPullDocker: true},
-			AWSCliImage:                        model.Image{Repo: "gcr.io/kube-aws/awscli", Tag: "master", RktPullDocker: false},
+			AWSCliImage:                        model.Image{Repo: "gcr.io/kube-aws/awscli", Tag: "master", RktPullDocker: true},
 			CalicoNodeImage:                    model.Image{Repo: "gcr.io/kube-aws/node", Tag: "v2.6.5", RktPullDocker: false},
 			CalicoCniImage:                     model.Image{Repo: "gcr.io/kube-aws/cni", Tag: "v1.11.2", RktPullDocker: false},
 			CalicoKubeControllersImage:         model.Image{Repo: "gcr.io/kube-aws/kube-controllers", Tag: "v1.0.2", RktPullDocker: false},
