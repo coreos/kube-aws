@@ -520,7 +520,7 @@ worker:
 #
 #      # Images are taken from controlplane by default, but you can override values for node pools here. E.g.:
 #      AwsCliImage:
-#        repo: quay.io/coreos/awscli
+#        repo: gcr.io/kube-aws/awscli
 #        tag: edge
 #        rktPullDocker: false
 #
@@ -962,25 +962,25 @@ worker:
 
 # AWS CLI image repository to use.
 # awsCliImage:
-#   repo: quay.io/coreos/awscli
+#   repo: gcr.io/kube-aws/awscli
 #   tag: master
 #   rktPullDocker: false
 
 # Calico Node image repository to use.
 #calicoNodeImage:
-#  repo: quay.io/calico/node
+#  repo: gcr.io/kube-aws/node
 #  tag: v3.0.1
 #  rktPullDocker: false
 
 # Calico CNI image repository to use.
 #calicoCniImage:
-#  repo: quay.io/calico/cni
+#  repo: gcr.io/kube-aws/cni
 #  tag: v2.0.0
 #  rktPullDocker: false
 
 # Calico Kube Controllers image repository to use.
 #calicoKubeControllersImage:
-#  repo: quay.io/calico/kube-controllers
+#  repo: gcr.io/kube-aws/kube-controllers
 #  tag: v2.0.0
 #  rktPullDocker: false
 
@@ -1082,7 +1082,7 @@ worker:
 
 # Flannel image repository to use.This allow pulling flannel image from a docker repo.
 #flannelImage:
-#  repo: quay.io/coreos/flannel
+#  repo: gcr.io/kube-aws/flannel
 #  tag: v0.9.1
 #  rktPullDocker: false
 
