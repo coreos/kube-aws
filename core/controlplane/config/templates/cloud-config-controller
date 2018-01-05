@@ -200,6 +200,8 @@ coreos:
             TimeoutStartSec=120
 
 {{if .FlannelImage.RktPullDocker}}
+    - name: flanneld.service
+      drop-ins:
         - name: 20-flannel-custom-image.conf
           content: |
             [Unit]
@@ -208,7 +210,7 @@ coreos:
 
             [Service]
             Environment="FLANNEL_IMAGE={{.FlannelImage.RktRepo}}"
-            Environment="RKT_RUN_ARGS={{.FlannelImage.Options}}"
+            Environment="RKT_RUN_ARGS={{.FlannelImage.Options}} --uuid-file-save=/var/lib/coreos/flannel-wrapper.uuid"
 
     - name: flannel-docker-opts.service
       drop-ins:
@@ -295,7 +297,7 @@ coreos:
         --cloud-provider=aws \
         {{if .Experimental.Admission.Priority.Enabled}}
         --feature-gates=PodPriority=true \
-        {{end}}\
+        {{end}}
         $KUBELET_OPTS
         Restart=always
         RestartSec=10
@@ -846,7 +848,7 @@ write_files:
       applyall "${mfdir}/kubernetes-dashboard-se.yaml"
 
       # Configmaps
-      applyall "${mfdir}"/{kube-dns,kube-proxy}"-cm.yaml"
+      applyall "${mfdir}"/{kube-dns,kube-proxy,heapster-config}"-cm.yaml"
 
       # Service Accounts
       applyall "${mfdir}"/{kube-dns,heapster,kube-proxy,kubernetes-dashboard}"-sa.yaml"
@@ -2305,6 +2307,21 @@ write_files:
           name: kube-dns
           namespace: kube-system
 
+  - path: /srv/kubernetes/manifests/heapster-config-cm.yaml
+    content: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: heapster-config
+          namespace: kube-system
+          labels:
+            kubernetes.io/cluster-service: "true"
+            addonmanager.kubernetes.io/mode: EnsureExists
+        data:
+          NannyConfiguration: |-
+            apiVersion: nannyconfig/v1alpha1
+            kind: NannyConfiguration
+
   - path: /srv/kubernetes/manifests/kube-dns-autoscaler-de.yaml
     content: |
         apiVersion: extensions/v1beta1
@@ -2690,16 +2707,25 @@ write_files:
                       valueFrom:
                         fieldRef:
                           fieldPath: metadata.namespace
+                  volumeMounts:
+                  - name: heapster-config-volume
+                    mountPath: /etc/config
                   command:
                     - /pod_nanny
+                    - --config-dir=/etc/config
                     - --cpu=80m
                     - --extra-cpu=4m
                     - --memory=200Mi
                     - --extra-memory=4Mi
+                    - --threshold=5
                     - --deployment=heapster
                     - --container=heapster
                     - --poll-period=300000
-
+                    - --estimator=exponential
+              volumes:
+                - name: heapster-config-volume
+                  configMap:
+                    name: heapster-config
   - path: /srv/kubernetes/manifests/metrics-server-sa.yaml
     content: |
         apiVersion: v1

@@ -70,7 +70,7 @@ _default_env_from_cmd() {
   done
 }
 
-awscli_docker_image="${ETCDADM_AWSCLI_DOCKER_IMAGE:-quay.io/coreos/awscli}"
+awscli_docker_image="${ETCDADM_AWSCLI_DOCKER_IMAGE:-gcr.io/kube-aws/awscli}"
 awscli_rkt_image="docker://$awscli_docker_image"
 aws_region="${AWS_DEFAULT_REGION:-$(_default_env_from_cmd AWS_DEFAULT_REGION "curl --max-time 3 -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region")}"
 
@@ -503,7 +503,7 @@ member_restore_from_local_snapshot() {
       --volume="$(member_host_snapshots_dir_path)":/"$(member_snapshots_dir_name)" \
       --volume="$(dirname "$restored_dir")":"$(dirname "$restored_dir")" \
       --volume=/var/lib/etcd \
-      quay.io/coreos/etcd:v$etcd_version \
+      gcr.io/kube-aws:v$etcd_version \
         etcdctl \
         --write-out simple \
         --endpoints "$(member_client_url)" snapshot restore \
@@ -795,7 +795,7 @@ member_etcdctl() {
     --volume="$(member_host_snapshots_dir_path)":/"$(member_snapshots_dir_name)" \
     --volume="$(member_data_dir)":/var/lib/etcd \
     --volume "$(member_snapshots_dir_name)":"$(member_host_snapshots_dir_path)" \
-    quay.io/coreos/etcd:v$etcd_version \
+    gcr.io/kube-aws:v$etcd_version \
       etcdctl --endpoints "$(member_client_url)" ${*}
 }
 
