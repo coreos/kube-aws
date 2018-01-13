@@ -179,7 +179,7 @@ func (c *Cluster) NewAssetsOnDisk(dir string, renderCredentialsOpts CredentialsO
 
 	tlsBootstrappingEnabled := c.Experimental.TLSBootstrap.Enabled
 	certsManagedByKubeAws := c.ManageCertificates
-	caKeyRequiredOnController := certsManagedByKubeAws && tlsBootstrappingEnabled
+	caKeyRequiredOnController := certsManagedByKubeAws
 
 	fmt.Printf("--> Summarizing the configuration\n    Kubelet TLS bootstrapping enabled=%v, TLS certificates managed by kube-aws=%v, CA key required on controller nodes=%v\n", tlsBootstrappingEnabled, certsManagedByKubeAws, caKeyRequiredOnController)
 
