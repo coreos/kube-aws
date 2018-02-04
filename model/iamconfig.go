@@ -49,8 +49,8 @@ func (c IAMConfig) Validate() error {
 		return errors.New("failed to parse `iam` config: either you set `role.*` options or `instanceProfile.arn` ones but not both")
 	}
 
-	managedPolicyRegexp := regexp.MustCompile(`arn:aws:iam::((\d{12})|aws):policy/([a-zA-Z0-9-=,\\.@_]{1,128})`)
-	instanceProfileRegexp := regexp.MustCompile(`arn:aws:iam::(\d{12}):instance-profile/([a-zA-Z0-9-=,\\.@_]{1,128})`)
+	managedPolicyRegexp := regexp.MustCompile(`arn:aws|aws-us-gov:iam::((\d{12})|aws):policy/([a-zA-Z0-9-=,\\.@_]{1,128})`)
+	instanceProfileRegexp := regexp.MustCompile(`arn:aws|aws-us-gov:iam::(\d{12}):instance-profile/([a-zA-Z0-9-=,\\.@_]{1,128})`)
 	for _, policy := range c.Role.ManagedPolicies {
 		if !managedPolicyRegexp.MatchString(policy.Arn) {
 			return fmt.Errorf("invalid managed policy arn, your managed policy must match this (=arn:aws:iam::(YOURACCOUNTID|aws):policy/POLICYNAME), provided this (%s)", policy.Arn)
