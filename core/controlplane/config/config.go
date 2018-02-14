@@ -173,6 +173,7 @@ func NewDefaultCluster() *Cluster {
 			CalicoCtlImage:                     model.Image{Repo: "quay.io/calico/ctl", Tag: "v1.6.3", RktPullDocker: false},
 			ClusterAutoscalerImage:             model.Image{Repo: "k8s.gcr.io/cluster-autoscaler", Tag: "v1.1.0", RktPullDocker: false},
 			ClusterProportionalAutoscalerImage: model.Image{Repo: "k8s.gcr.io/cluster-proportional-autoscaler-amd64", Tag: "1.1.2", RktPullDocker: false},
+			KIAMImage:                          model.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.6", RktPullDocker: false},
 			Kube2IAMImage:                      model.Image{Repo: "jtblin/kube2iam", Tag: "0.9.0", RktPullDocker: false},
 			KubeDnsImage:                       model.Image{Repo: "k8s.gcr.io/k8s-dns-kube-dns-amd64", Tag: "1.14.7", RktPullDocker: false},
 			KubeDnsMasqImage:                   model.Image{Repo: "k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64", Tag: "1.14.7", RktPullDocker: false},
@@ -463,6 +464,7 @@ type DeploymentSettings struct {
 	CalicoKubeControllersImage         model.Image `yaml:"calicoKubeControllersImage,omitempty"`
 	ClusterAutoscalerImage             model.Image `yaml:"clusterAutoscalerImage,omitempty"`
 	ClusterProportionalAutoscalerImage model.Image `yaml:"clusterProportionalAutoscalerImage,omitempty"`
+	KIAMImage                          model.Image `yaml:"kiamImage,omitempty"`
 	Kube2IAMImage                      model.Image `yaml:"kube2iamImage,omitempty"`
 	KubeDnsImage                       model.Image `yaml:"kubeDnsImage,omitempty"`
 	KubeDnsMasqImage                   model.Image `yaml:"kubeDnsMasqImage,omitempty"`
@@ -547,6 +549,7 @@ type Experimental struct {
 	TLSBootstrap                TLSBootstrap                   `yaml:"tlsBootstrap"`
 	NodeAuthorizer              NodeAuthorizer                 `yaml:"nodeAuthorizer"`
 	EphemeralImageStorage       EphemeralImageStorage          `yaml:"ephemeralImageStorage"`
+	KIAMSupport                 KIAMSupport                    `yaml:"kiamSupport,omitempty"`
 	Kube2IamSupport             Kube2IamSupport                `yaml:"kube2IamSupport,omitempty"`
 	KubeletOpts                 string                         `yaml:"kubeletOpts,omitempty"`
 	LoadBalancer                LoadBalancer                   `yaml:"loadBalancer"`
@@ -627,6 +630,10 @@ type EphemeralImageStorage struct {
 	Enabled    bool   `yaml:"enabled"`
 	Disk       string `yaml:"disk"`
 	Filesystem string `yaml:"filesystem"`
+}
+
+type KIAMSupport struct {
+	Enabled bool `yaml:"enabled"`
 }
 
 type Kube2IamSupport struct {
@@ -883,7 +890,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions, extra ...[]*pluginmodel.
 	var compactAssets *CompactAssets
 
 	if c.AssetsEncryptionEnabled() {
-		compactAssets, err = ReadOrCreateCompactAssets(opts.AssetsDir, c.ManageCertificates, c.Experimental.TLSBootstrap.Enabled, KMSConfig{
+		compactAssets, err = ReadOrCreateCompactAssets(opts.AssetsDir, c.ManageCertificates, c.Experimental.TLSBootstrap.Enabled, c.Experimental.KIAMSupport.Enabled, KMSConfig{
 			Region:         stackConfig.Config.Region,
 			KMSKeyARN:      c.KMSKeyARN,
 			EncryptService: c.ProvidedEncryptService,
@@ -894,7 +901,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions, extra ...[]*pluginmodel.
 
 		stackConfig.Config.AssetsConfig = compactAssets
 	} else {
-		rawAssets, err := ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir, c.ManageCertificates, c.Experimental.TLSBootstrap.Enabled)
+		rawAssets, err := ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir, c.ManageCertificates, c.Experimental.TLSBootstrap.Enabled, c.Experimental.KIAMSupport.Enabled)
 		if err != nil {
 			return nil, err
 		}

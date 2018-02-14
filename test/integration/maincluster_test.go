@@ -123,6 +123,9 @@ func TestMainClusterConfig(t *testing.T) {
 				Disk:       "xvdb",
 				Filesystem: "xfs",
 			},
+			KIAMSupport: controlplane_config.Kube2IamSupport{
+				Enabled: false,
+			},
 			Kube2IamSupport: controlplane_config.Kube2IamSupport{
 				Enabled: false,
 			},
@@ -1245,6 +1248,8 @@ experimental:
     enabled: true
   ephemeralImageStorage:
     enabled: true
+  kiamSupport:
+    enabled: true
   kube2IamSupport:
     enabled: true
   kubeletOpts: '--image-gc-low-threshold 60 --image-gc-high-threshold 70'
@@ -1327,6 +1332,9 @@ worker:
 							Enabled:    true,
 							Disk:       "xvdb",
 							Filesystem: "xfs",
+						},
+						KIAMSupport: controlplane_config.KIAMSupport{
+							Enabled: true,
 						},
 						Kube2IamSupport: controlplane_config.Kube2IamSupport{
 							Enabled: true,

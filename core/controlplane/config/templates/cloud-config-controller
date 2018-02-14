@@ -783,11 +783,13 @@ write_files:
     content: |
       #!/bin/bash -e
 
+      vols="-v /srv/kubernetes:/srv/kubernetes"
+
       kubectl() {
           # --request-timeout=1s is intended to instruct kubectl to give up discovering unresponsive apiservice(s) in certain periods
           # so that temporal freakiness/unresponsity of specific apiservice until apiserver/controller-manager fully starts doesn't
           # affect the whole controller bootstrap process.
-          /usr/bin/docker run --rm --net=host -v /srv/kubernetes:/srv/kubernetes {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl --request-timeout=1s "$@"
+          /usr/bin/docker run -i --rm $vols --net=host {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl --request-timeout=1s "$@"
       }
 
       ks() {
@@ -804,6 +806,23 @@ write_files:
         echo Waiting until kube-system created.
         sleep 3
       done
+
+      {{if .Experimental.KIAMSupport.Enabled }}
+      kiam_tls_dir=/etc/kubernetes/ssl/kiam
+      vols="${vols} -v $kiam_tls_dir:$kiam_tls_dir"
+
+      kubectl create secret generic kiam-server-tls -n kube-system \
+        --from-file=$kiam_tls_dir/ca.pem \
+        --from-file=$kiam_tls_dir/server.pem \
+        --from-file=$kiam_tls_dir/server-key.pem --dry-run -o yaml | kubectl apply -f -
+      kubectl create secret generic kiam-agent-tls -n kube-system \
+        --from-file=$kiam_tls_dir/ca.pem \
+        --from-file=$kiam_tls_dir/agent.pem \
+        --from-file=$kiam_tls_dir/agent-key.pem --dry-run -o yaml | kubectl apply -f -
+
+      mfdir=/srv/kubernetes/manifests
+      applyall "${mfdir}/kube-system-ns.yaml" "${mfdir}/kiam-all.yaml"
+      {{ end }}
 
       # See https://github.com/kubernetes-incubator/kube-aws/issues/1039#issuecomment-348978375
       if ks get apiservice v1beta1.metrics.k8s.io && ! ps ax | grep '[h]yperkube proxy'; then
@@ -1284,7 +1303,11 @@ write_files:
           -ec \
           'echo decrypting assets
            shopt -s nullglob
-           for encKey in /etc/kubernetes/{ssl,{{ if or (.AssetsConfig.HasAuthTokens) ( and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken) }}auth{{end}}}/*.enc; do
+           for encKey in /etc/kubernetes/{ssl,{{ if or (.AssetsConfig.HasAuthTokens) ( and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken) }}auth{{end}}}/{,kiam/}*.enc; do
+             if [ ! -f $encKey ]; then
+               echo skipping non-existent file: $encKey 1>&2
+               continue
+             fi
              echo decrypting $encKey
              f=$(mktemp $encKey.XXXXXXXX)
              /usr/bin/aws \
@@ -3567,6 +3590,253 @@ write_files:
       - kind: ServiceAccount
         name: kube2iam
         namespace: kube-system
+{{end}}
+
+{{if .Experimental.KIAMSupport.Enabled }}
+  - path: /etc/kubernetes/ssl/kiam/ca.pem
+    encoding: gzip+base64
+    content: {{.AssetsConfig.KIAMCACert}}
+
+  - path: /etc/kubernetes/ssl/kiam/server-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+    encoding: gzip+base64
+    content: {{.AssetsConfig.KIAMServerKey}}
+
+  - path: /etc/kubernetes/ssl/kiam/server.pem
+    encoding: gzip+base64
+    content: {{.AssetsConfig.KIAMServerCert}}
+
+  - path: /etc/kubernetes/ssl/kiam/agent-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+    encoding: gzip+base64
+    content: {{.AssetsConfig.KIAMAgentKey}}
+
+  - path: /etc/kubernetes/ssl/kiam/agent.pem
+    encoding: gzip+base64
+    content: {{.AssetsConfig.KIAMAgentCert}}
+
+  # Without the namespace annotation the pod will be unable to assume any roles
+  - path: /srv/kubernetes/manifests/kube-system-ns.yaml
+    content: |
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: kube-system
+        annotations:
+          iam.amazonaws.com/permitted: ".*"
+  - path: /srv/kubernetes/manifests/kiam-all.yaml
+    content: |
+      apiVersion: extensions/v1beta1
+      kind: DaemonSet
+      metadata:
+        namespace: kube-system
+        name: kiam-server
+      spec:
+        template:
+          metadata:
+            annotations:
+              prometheus.io/scrape: "true"
+              prometheus.io/port: "9620"
+            labels:
+              app: kiam
+              role: server
+          spec:
+            {{if .Experimental.Admission.Priority.Enabled -}}
+            priorityClassName: system-node-critical
+            {{ end -}}
+            tolerations:
+            - operator: Exists
+              effect: NoSchedule
+            - operator: Exists
+              effect: NoExecute
+            - operator: Exists
+              key: CriticalAddonsOnly
+            serviceAccountName: kiam-server
+            nodeSelector:
+              kubernetes.io/role: master
+            volumes:
+              - name: ssl-certs
+                hostPath:
+                  path: /usr/share/ca-certificates
+              - name: tls
+                secret:
+                  secretName: kiam-server-tls
+            containers:
+              - name: kiam
+                image: quay.io/uswitch/kiam:v2.5
+                imagePullPolicy: Always
+                command:
+                  - /server
+                args:
+                  - --json-log
+                  - --bind=0.0.0.0:443
+                  - --cert=/etc/kiam/tls/server.pem
+                  - --key=/etc/kiam/tls/server-key.pem
+                  - --ca=/etc/kiam/tls/ca.pem
+                  - --role-base-arn-autodetect
+                  - --sync=1m
+                  - --prometheus-listen-addr=0.0.0.0:9620
+                  - --prometheus-sync-interval=5s
+                volumeMounts:
+                  - mountPath: /etc/ssl/certs
+                    name: ssl-certs
+                  - mountPath: /etc/kiam/tls
+                    name: tls
+                livenessProbe:
+                  exec:
+                    command:
+                    - /health
+                    - --cert=/etc/kiam/tls/server.pem
+                    - --key=/etc/kiam/tls/server-key.pem
+                    - --ca=/etc/kiam/tls/ca.pem
+                    - --server-address=localhost:443
+                    - --server-address-refresh=2s
+                    - --timeout=5s
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  timeoutSeconds: 10
+                readinessProbe:
+                  exec:
+                    command:
+                    - /health
+                    - --cert=/etc/kiam/tls/server.pem
+                    - --key=/etc/kiam/tls/server-key.pem
+                    - --ca=/etc/kiam/tls/ca.pem
+                    - --server-address=localhost:443
+                    - --server-address-refresh=2s
+                    - --timeout=5s
+                  initialDelaySeconds: 3
+                  periodSeconds: 10
+                  timeoutSeconds: 10
+      ---
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: kiam-server
+        namespace: kube-system
+      spec:
+        clusterIP: None
+        selector:
+          app: kiam
+          role: server
+        ports:
+        - name: grpc
+          port: 443
+          targetPort: 443
+          protocol: TCP
+      ---
+      ---
+      kind: ServiceAccount
+      apiVersion: v1
+      metadata:
+        name: kiam-server
+        namespace: kube-system
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1beta1
+      kind: ClusterRole
+      metadata:
+        name: kiam-read
+      rules:
+      - apiGroups:
+        - ""
+        resources:
+        - namespaces
+        - pods
+        verbs:
+        - watch
+        - get
+        - list
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1beta1
+      kind: ClusterRoleBinding
+      metadata:
+        name: kiam-server
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: kiam-read
+      subjects:
+      - kind: ServiceAccount
+        name: kiam-server
+        namespace: kube-system
+      ---
+      apiVersion: extensions/v1beta1
+      kind: DaemonSet
+      metadata:
+        namespace: kube-system
+        name: kiam-agent
+      spec:
+        template:
+          metadata:
+            annotations:
+              prometheus.io/scrape: "true"
+              prometheus.io/port: "9620"
+            labels:
+              app: kiam
+              role: agent
+          spec:
+            {{if .Experimental.Admission.Priority.Enabled -}}
+            priorityClassName: system-node-critical
+            {{ end -}}
+            tolerations:
+            - operator: Exists
+              effect: NoSchedule
+            - operator: Exists
+              effect: NoExecute
+            - operator: Exists
+              key: CriticalAddonsOnly
+            hostNetwork: true
+            dnsPolicy: ClusterFirstWithHostNet
+            nodeSelector:
+              kubernetes.io/role: node
+            volumes:
+              - name: ssl-certs
+                hostPath:
+                  path: /usr/share/ca-certificates
+              - name: tls
+                secret:
+                  secretName: kiam-agent-tls
+              - name: xtables
+                hostPath:
+                  path: /run/xtables.lock
+            containers:
+              - name: kiam
+                securityContext:
+                  privileged: true
+                image: {{.KIAMImage.RepoWithTag}}
+                command:
+                  - /agent
+                args:
+                  - --iptables
+           {{- if .UseCalico }}
+                  - "--host-interface=cali+"
+           {{else}}
+                  - "--host-interface=cni0"
+           {{- end }}
+                  - --json-log
+                  - --port=8181
+                  - --cert=/etc/kiam/tls/agent.pem
+                  - --key=/etc/kiam/tls/agent-key.pem
+                  - --ca=/etc/kiam/tls/ca.pem
+                  - --server-address=kiam-server:443
+                  - --prometheus-listen-addr=0.0.0.0:9620
+                  - --prometheus-sync-interval=5s
+                env:
+                  - name: HOST_IP
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: status.podIP
+                volumeMounts:
+                  - mountPath: /etc/ssl/certs
+                    name: ssl-certs
+                  - mountPath: /etc/kiam/tls
+                    name: tls
+                  - mountPath: /var/run/xtables.lock
+                    name: xtables
+                livenessProbe:
+                  httpGet:
+                    path: /ping
+                    port: 8181
+                  initialDelaySeconds: 3
+                  periodSeconds: 3
 {{end}}
 
   - path: /opt/bin/retry

@@ -39,6 +39,11 @@ type RawAssetsOnMemory struct {
 	EtcdKey        []byte
 	EtcdClientKey  []byte
 	EtcdTrustedCA  []byte
+	KIAMServerCert []byte
+	KIAMServerKey  []byte
+	KIAMAgentCert  []byte
+	KIAMAgentKey   []byte
+	KIAMCACert     []byte
 
 	// Other assets.
 	AuthTokens        []byte
@@ -62,6 +67,11 @@ type RawAssetsOnDisk struct {
 	EtcdKey        RawCredentialOnDisk
 	EtcdClientKey  RawCredentialOnDisk
 	EtcdTrustedCA  RawCredentialOnDisk
+	KIAMServerCert RawCredentialOnDisk
+	KIAMServerKey  RawCredentialOnDisk
+	KIAMAgentCert  RawCredentialOnDisk
+	KIAMAgentKey   RawCredentialOnDisk
+	KIAMCACert     RawCredentialOnDisk
 
 	// Other assets.
 	AuthTokens        RawCredentialOnDisk
@@ -85,6 +95,11 @@ type EncryptedAssetsOnDisk struct {
 	EtcdKey        EncryptedCredentialOnDisk
 	EtcdClientKey  EncryptedCredentialOnDisk
 	EtcdTrustedCA  EncryptedCredentialOnDisk
+	KIAMServerCert EncryptedCredentialOnDisk
+	KIAMServerKey  EncryptedCredentialOnDisk
+	KIAMAgentCert  EncryptedCredentialOnDisk
+	KIAMAgentKey   EncryptedCredentialOnDisk
+	KIAMCACert     EncryptedCredentialOnDisk
 
 	// Other encrypted assets.
 	AuthTokens        EncryptedCredentialOnDisk
@@ -108,6 +123,11 @@ type CompactAssets struct {
 	EtcdClientKey  string
 	EtcdKey        string
 	EtcdTrustedCA  string
+	KIAMServerCert string
+	KIAMServerKey  string
+	KIAMAgentCert  string
+	KIAMAgentKey   string
+	KIAMCACert     string
 
 	// Encrypted -> gzip -> base64 encoded assets.
 	AuthTokens        string
@@ -140,13 +160,15 @@ type CredentialsOptions struct {
 	GenerateCA bool
 	CaKeyPath  string
 	CaCertPath string
+	// KIAM is set to true when you want kube-aws to render TLS assets for uswitch/kiam
+	KIAM bool
 }
 
-func (c *Cluster) NewAssetsOnDisk(dir string, renderCredentialsOpts CredentialsOptions) (*RawAssetsOnDisk, error) {
+func (c *Cluster) NewAssetsOnDisk(dir string, o CredentialsOptions) (*RawAssetsOnDisk, error) {
 	fmt.Println("Generating credentials...")
 	var caKey *rsa.PrivateKey
 	var caCert *x509.Certificate
-	if renderCredentialsOpts.GenerateCA {
+	if o.GenerateCA {
 		var err error
 		caKey, caCert, err = c.NewTLSCA()
 		if err != nil {
@@ -155,15 +177,15 @@ func (c *Cluster) NewAssetsOnDisk(dir string, renderCredentialsOpts CredentialsO
 		fmt.Printf("-> Generating new TLS CA\n")
 	} else {
 		fmt.Printf("-> Parsing existing TLS CA\n")
-		if caKeyBytes, err := ioutil.ReadFile(renderCredentialsOpts.CaKeyPath); err != nil {
-			return nil, fmt.Errorf("failed reading ca key file %s : %v", renderCredentialsOpts.CaKeyPath, err)
+		if caKeyBytes, err := ioutil.ReadFile(o.CaKeyPath); err != nil {
+			return nil, fmt.Errorf("failed reading ca key file %s : %v", o.CaKeyPath, err)
 		} else {
 			if caKey, err = tlsutil.DecodePrivateKeyPEM(caKeyBytes); err != nil {
 				return nil, fmt.Errorf("failed parsing ca key: %v", err)
 			}
 		}
-		if caCertBytes, err := ioutil.ReadFile(renderCredentialsOpts.CaCertPath); err != nil {
-			return nil, fmt.Errorf("failed reading ca cert file %s : %v", renderCredentialsOpts.CaCertPath, err)
+		if caCertBytes, err := ioutil.ReadFile(o.CaCertPath); err != nil {
+			return nil, fmt.Errorf("failed reading ca cert file %s : %v", o.CaCertPath, err)
 		} else {
 			if caCert, err = tlsutil.DecodeCertificatePEM(caCertBytes); err != nil {
 				return nil, fmt.Errorf("failed parsing ca cert: %v", err)
@@ -172,7 +194,7 @@ func (c *Cluster) NewAssetsOnDisk(dir string, renderCredentialsOpts CredentialsO
 	}
 
 	fmt.Println("-> Generating new assets")
-	assets, err := c.NewAssetsOnMemory(caKey, caCert)
+	assets, err := c.NewAssetsOnMemory(caKey, caCert, o.KIAM)
 	if err != nil {
 		return nil, fmt.Errorf("Error generating default assets: %v", err)
 	}
@@ -184,14 +206,14 @@ func (c *Cluster) NewAssetsOnDisk(dir string, renderCredentialsOpts CredentialsO
 	fmt.Printf("--> Summarizing the configuration\n    Kubelet TLS bootstrapping enabled=%v, TLS certificates managed by kube-aws=%v, CA key required on controller nodes=%v\n", tlsBootstrappingEnabled, certsManagedByKubeAws, caKeyRequiredOnController)
 
 	fmt.Println("--> Writing to the storage")
-	alsoWriteCAKey := renderCredentialsOpts.GenerateCA || caKeyRequiredOnController
-	if err := assets.WriteToDir(dir, alsoWriteCAKey); err != nil {
+	alsoWriteCAKey := o.GenerateCA || caKeyRequiredOnController
+	if err := assets.WriteToDir(dir, alsoWriteCAKey, o.KIAM); err != nil {
 		return nil, fmt.Errorf("Error creating assets: %v", err)
 	}
 
 	{
 		fmt.Println("--> Verifying the result")
-		verified, err := ReadRawAssets(dir, certsManagedByKubeAws, tlsBootstrappingEnabled)
+		verified, err := ReadRawAssets(dir, certsManagedByKubeAws, tlsBootstrappingEnabled, o.KIAM)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed verifying the result: %v", err)
@@ -201,19 +223,19 @@ func (c *Cluster) NewAssetsOnDisk(dir string, renderCredentialsOpts CredentialsO
 	}
 }
 
-func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certificate) (*RawAssetsOnMemory, error) {
+func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certificate, kiamEnabled bool) (*RawAssetsOnMemory, error) {
 	// Convert from days to time.Duration
 	certDuration := time.Duration(c.TLSCertDurationDays) * 24 * time.Hour
 
 	// Generate keys for the various components.
-	keys := make([]*rsa.PrivateKey, 5)
+	keys := make([]*rsa.PrivateKey, 7)
 	var err error
 	for i := range keys {
 		if keys[i], err = tlsutil.NewPrivateKey(); err != nil {
 			return nil, err
 		}
 	}
-	apiServerKey, workerKey, adminKey, etcdKey, etcdClientKey := keys[0], keys[1], keys[2], keys[3], keys[4]
+	apiServerKey, workerKey, adminKey, etcdKey, etcdClientKey, kiamAgentKey, kiamServerKey := keys[0], keys[1], keys[2], keys[3], keys[4], keys[5], keys[6]
 
 	//Compute kubernetesServiceIP from serviceCIDR
 	_, serviceNet, err := net.ParseCIDR(c.ServiceCIDR)
@@ -296,7 +318,7 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 		return nil, err
 	}
 
-	return &RawAssetsOnMemory{
+	r := &RawAssetsOnMemory{
 		CACert:         tlsutil.EncodeCertificatePEM(caCert),
 		APIServerCert:  tlsutil.EncodeCertificatePEM(apiServerCert),
 		WorkerCert:     tlsutil.EncodeCertificatePEM(workerCert),
@@ -312,10 +334,47 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 
 		AuthTokens:        []byte(authTokens),
 		TLSBootstrapToken: []byte(tlsBootstrapToken),
-	}, nil
+	}
+
+	if kiamEnabled {
+		// See https://github.com/uswitch/kiam/blob/master/docs/agent.json
+		agentConfig := tlsutil.ClientCertConfig{
+			CommonName:   "Kiam Agent",
+			Organization: []string{"kiam"},
+			Duration:     certDuration,
+		}
+		kiamAgentCert, err := tlsutil.NewSignedClientCertificate(agentConfig, kiamAgentKey, caCert, caKey)
+		if err != nil {
+			return nil, err
+		}
+		// See https://github.com/uswitch/kiam/blob/master/docs/server.json
+		serverConfig := tlsutil.ServerCertConfig{
+			CommonName: "Kiam Server",
+			DNSNames: append(
+				[]string{
+					"kiam-server:443",
+					"localhost:443",
+					"localhost:9610",
+				},
+			),
+			Duration: certDuration,
+		}
+		kiamServerCert, err := tlsutil.NewSignedServerCertificate(serverConfig, kiamServerKey, caCert, caKey)
+		if err != nil {
+			return nil, err
+		}
+
+		r.KIAMCACert = tlsutil.EncodeCertificatePEM(caCert)
+		r.KIAMAgentCert = tlsutil.EncodeCertificatePEM(kiamAgentCert)
+		r.KIAMAgentKey = tlsutil.EncodePrivateKeyPEM(kiamAgentKey)
+		r.KIAMServerCert = tlsutil.EncodeCertificatePEM(kiamServerCert)
+		r.KIAMServerKey = tlsutil.EncodePrivateKeyPEM(kiamServerKey)
+	}
+
+	return r, nil
 }
 
-func ReadRawAssets(dirname string, manageCertificates bool, caKeyRequiredOnController bool) (*RawAssetsOnDisk, error) {
+func ReadRawAssets(dirname string, manageCertificates bool, caKeyRequiredOnController bool, kiamEnabled bool) (*RawAssetsOnDisk, error) {
 	defaultTokensFile := ""
 	defaultTLSBootstrapToken, err := RandomTLSBootstrapTokenString()
 	if err != nil {
@@ -357,6 +416,14 @@ func ReadRawAssets(dirname string, manageCertificates bool, caKeyRequiredOnContr
 		if caKeyRequiredOnController {
 			files = append(files, entry{"worker-ca-key.pem", &r.WorkerCAKey, nil})
 		}
+
+		if kiamEnabled {
+			files = append(files, entry{"kiam-server-key.pem", &r.KIAMServerKey, nil})
+			files = append(files, entry{"kiam-server.pem", &r.KIAMServerCert, nil})
+			files = append(files, entry{"kiam-agent-key.pem", &r.KIAMAgentKey, nil})
+			files = append(files, entry{"kiam-agent.pem", &r.KIAMAgentCert, nil})
+			files = append(files, entry{"kiam-ca.pem", &r.KIAMCACert, nil})
+		}
 	}
 
 	for _, file := range files {
@@ -372,7 +439,7 @@ func ReadRawAssets(dirname string, manageCertificates bool, caKeyRequiredOnContr
 	return r, nil
 }
 
-func ReadOrEncryptAssets(dirname string, manageCertificates bool, caKeyRequiredOnController bool, encryptor CachedEncryptor) (*EncryptedAssetsOnDisk, error) {
+func ReadOrEncryptAssets(dirname string, manageCertificates bool, caKeyRequiredOnController bool, kiamEnabled bool, encryptor CachedEncryptor) (*EncryptedAssetsOnDisk, error) {
 	defaultTokensFile := ""
 	defaultTLSBootstrapToken, err := RandomTLSBootstrapTokenString()
 	if err != nil {
@@ -413,6 +480,14 @@ func ReadOrEncryptAssets(dirname string, manageCertificates bool, caKeyRequiredO
 		if caKeyRequiredOnController {
 			files = append(files, entry{"worker-ca-key.pem", &r.WorkerCAKey, nil, true})
 		}
+
+		if kiamEnabled {
+			files = append(files, entry{"kiam-server-key.pem", &r.KIAMServerKey, nil, true})
+			files = append(files, entry{"kiam-server.pem", &r.KIAMServerCert, nil, false})
+			files = append(files, entry{"kiam-agent-key.pem", &r.KIAMAgentKey, nil, true})
+			files = append(files, entry{"kiam-agent.pem", &r.KIAMAgentCert, nil, false})
+			files = append(files, entry{"kiam-ca.pem", &r.KIAMCACert, nil, false})
+		}
 	}
 
 	for _, file := range files {
@@ -439,13 +514,14 @@ func ReadOrEncryptAssets(dirname string, manageCertificates bool, caKeyRequiredO
 	return r, nil
 }
 
-func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) error {
-	assets := []struct {
+func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool, kiamEnabled bool) error {
+	type asset struct {
 		name             string
 		data             []byte
 		overwrite        bool
 		ifEmptySymlinkTo string
-	}{
+	}
+	assets := []asset{
 		{"ca.pem", r.CACert, true, ""},
 		{"worker-ca.pem", r.WorkerCACert, true, "ca.pem"},
 		{"apiserver.pem", r.APIServerCert, true, ""},
@@ -468,19 +544,20 @@ func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) error 
 
 	if includeCAKey {
 		// This is required to be linked from worker-ca-key.pem
-		assets = append(assets, struct {
-			name             string
-			data             []byte
-			overwrite        bool
-			ifEmptySymlinkTo string
-		}{"ca-key.pem", r.CAKey, true, ""})
+		assets = append(assets,
+			asset{"ca-key.pem", r.CAKey, true, ""},
+			asset{"worker-ca-key.pem", r.WorkerCAKey, true, "ca-key.pem"},
+		)
+	}
 
-		assets = append(assets, struct {
-			name             string
-			data             []byte
-			overwrite        bool
-			ifEmptySymlinkTo string
-		}{"worker-ca-key.pem", r.WorkerCAKey, true, "ca-key.pem"})
+	if kiamEnabled {
+		assets = append(assets,
+			asset{"kiam-server-key.pem", r.KIAMServerKey, true, ""},
+			asset{"kiam-server.pem", r.KIAMServerCert, true, ""},
+			asset{"kiam-agent-key.pem", r.KIAMAgentKey, true, ""},
+			asset{"kiam-agent.pem", r.KIAMAgentCert, true, ""},
+			asset{"kiam-ca.pem", r.KIAMCACert, true, "ca.pem"},
+		)
 	}
 
 	for _, asset := range assets {
@@ -558,11 +635,12 @@ func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) error 
 	return nil
 }
 
-func (r *EncryptedAssetsOnDisk) WriteToDir(dirname string) error {
-	assets := []struct {
+func (r *EncryptedAssetsOnDisk) WriteToDir(dirname string, kiamEnabled bool) error {
+	type asset struct {
 		name string
 		data EncryptedCredentialOnDisk
-	}{
+	}
+	assets := []asset{
 		{"ca.pem", r.CACert},
 		{"ca-key.pem", r.CAKey},
 		{"worker-ca.pem", r.WorkerCACert},
@@ -582,6 +660,16 @@ func (r *EncryptedAssetsOnDisk) WriteToDir(dirname string) error {
 		{"tokens.csv", r.AuthTokens},
 		{"kubelet-tls-bootstrap-token", r.TLSBootstrapToken},
 	}
+	if kiamEnabled {
+		assets = append(assets,
+			asset{"kiam-server-key.pem", r.KIAMServerKey},
+			asset{"kiam-server.pem", r.KIAMServerCert},
+			asset{"kiam-agent-key.pem", r.KIAMAgentKey},
+			asset{"kiam-agent.pem", r.KIAMAgentCert},
+			asset{"kiam-ca.pem", r.KIAMCACert},
+		)
+	}
+
 	for _, asset := range assets {
 		if asset.name != "ca-key.pem" {
 			if err := asset.data.Persist(); err != nil {
@@ -625,6 +713,11 @@ func (r *RawAssetsOnDisk) Compact() (*CompactAssets, error) {
 		EtcdClientKey:  compact(r.EtcdClientKey),
 		EtcdKey:        compact(r.EtcdKey),
 		EtcdTrustedCA:  compact(r.EtcdTrustedCA),
+		KIAMAgentCert:  compact(r.KIAMAgentCert),
+		KIAMAgentKey:   compact(r.KIAMAgentKey),
+		KIAMServerCert: compact(r.KIAMServerCert),
+		KIAMServerKey:  compact(r.KIAMServerKey),
+		KIAMCACert:     compact(r.KIAMCACert),
 
 		AuthTokens:        compact(r.AuthTokens),
 		TLSBootstrapToken: compact(r.TLSBootstrapToken),
@@ -669,6 +762,11 @@ func (r *EncryptedAssetsOnDisk) Compact() (*CompactAssets, error) {
 		EtcdClientKey:  compact(r.EtcdClientKey),
 		EtcdKey:        compact(r.EtcdKey),
 		EtcdTrustedCA:  compact(r.EtcdTrustedCA),
+		KIAMAgentKey:   compact(r.KIAMAgentKey),
+		KIAMAgentCert:  compact(r.KIAMAgentCert),
+		KIAMServerKey:  compact(r.KIAMServerKey),
+		KIAMServerCert: compact(r.KIAMServerCert),
+		KIAMCACert:     compact(r.KIAMCACert),
 
 		AuthTokens:        compact(r.AuthTokens),
 		TLSBootstrapToken: compact(r.TLSBootstrapToken),
@@ -685,7 +783,7 @@ type KMSConfig struct {
 	KMSKeyARN      string
 }
 
-func ReadOrCreateEncryptedAssets(tlsAssetsDir string, manageCertificates bool, caKeyRequiredOnController bool, kmsConfig KMSConfig) (*EncryptedAssetsOnDisk, error) {
+func ReadOrCreateEncryptedAssets(tlsAssetsDir string, manageCertificates bool, caKeyRequiredOnController bool, kiamEnabled bool, kmsConfig KMSConfig) (*EncryptedAssetsOnDisk, error) {
 	var kmsSvc EncryptService
 
 	// TODO Cleaner way to inject this dependency
@@ -707,11 +805,11 @@ func ReadOrCreateEncryptedAssets(tlsAssetsDir string, manageCertificates bool, c
 		bytesEncryptionService: encryptionSvc,
 	}
 
-	return ReadOrEncryptAssets(tlsAssetsDir, manageCertificates, caKeyRequiredOnController, encryptor)
+	return ReadOrEncryptAssets(tlsAssetsDir, manageCertificates, caKeyRequiredOnController, kiamEnabled, encryptor)
 }
 
-func ReadOrCreateCompactAssets(assetsDir string, manageCertificates bool, caKeyRequiredOnController bool, kmsConfig KMSConfig) (*CompactAssets, error) {
-	encryptedAssets, err := ReadOrCreateEncryptedAssets(assetsDir, manageCertificates, caKeyRequiredOnController, kmsConfig)
+func ReadOrCreateCompactAssets(assetsDir string, manageCertificates bool, caKeyRequiredOnController bool, kiamEnabled bool, kmsConfig KMSConfig) (*CompactAssets, error) {
+	encryptedAssets, err := ReadOrCreateEncryptedAssets(assetsDir, manageCertificates, caKeyRequiredOnController, kiamEnabled, kmsConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read/create encrypted assets: %v", err)
 	}
@@ -724,8 +822,8 @@ func ReadOrCreateCompactAssets(assetsDir string, manageCertificates bool, caKeyR
 	return compactAssets, nil
 }
 
-func ReadOrCreateUnencryptedCompactAssets(assetsDir string, manageCertificates bool, caKeyRequiredOnController bool) (*CompactAssets, error) {
-	unencryptedAssets, err := ReadRawAssets(assetsDir, manageCertificates, caKeyRequiredOnController)
+func ReadOrCreateUnencryptedCompactAssets(assetsDir string, manageCertificates bool, caKeyRequiredOnController bool, kiamEnabled bool) (*CompactAssets, error) {
+	unencryptedAssets, err := ReadRawAssets(assetsDir, manageCertificates, caKeyRequiredOnController, kiamEnabled)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read/create encrypted assets: %v", err)
 	}
