@@ -3630,6 +3630,8 @@ write_files:
         namespace: kube-system
         name: kiam-server
       spec:
+        updateStrategy:
+          type: RollingUpdate
         template:
           metadata:
             annotations:

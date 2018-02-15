@@ -340,7 +340,6 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 		// See https://github.com/uswitch/kiam/blob/master/docs/agent.json
 		agentConfig := tlsutil.ClientCertConfig{
 			CommonName:   "Kiam Agent",
-			Organization: []string{"kiam"},
 			Duration:     certDuration,
 		}
 		kiamAgentCert, err := tlsutil.NewSignedClientCertificate(agentConfig, kiamAgentKey, caCert, caKey)
@@ -348,7 +347,7 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 			return nil, err
 		}
 		// See https://github.com/uswitch/kiam/blob/master/docs/server.json
-		serverConfig := tlsutil.ServerCertConfig{
+		serverConfig := tlsutil.ClientCertConfig{
 			CommonName: "Kiam Server",
 			DNSNames: append(
 				[]string{
@@ -359,7 +358,7 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 			),
 			Duration: certDuration,
 		}
-		kiamServerCert, err := tlsutil.NewSignedServerCertificate(serverConfig, kiamServerKey, caCert, caKey)
+		kiamServerCert, err := tlsutil.NewSignedKIAMCertificate(serverConfig, kiamServerKey, caCert, caKey)
 		if err != nil {
 			return nil, err
 		}
