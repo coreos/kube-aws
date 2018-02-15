@@ -296,8 +296,8 @@ coreos:
         --container-runtime={{.ContainerRuntime}} \
         --rkt-path=/usr/bin/rkt \
         --rkt-stage1-image=coreos.com/rkt/stage1-coreos \
-        --node-labels kubernetes.io/role=node{{if .NodeLabels.Enabled}},{{.NodeLabels.String}} \
-        {{end}}--register-node=true \
+        --node-labels kubernetes.io/role=node{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
+        --register-node=true \
         {{if .Taints}}--register-with-taints={{.Taints.String}}\
         {{end}}--allow-privileged=true \
         {{if .NodeStatusUpdateFrequency}}--node-status-update-frequency={{.NodeStatusUpdateFrequency}} \
