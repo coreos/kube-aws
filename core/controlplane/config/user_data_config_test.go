@@ -63,6 +63,7 @@ func TestCloudConfigTemplating(t *testing.T) {
 
 	opts := CredentialsOptions{
 		GenerateCA: true,
+		KIAM:       true,
 	}
 
 	var compactAssets *CompactAssets

@@ -123,7 +123,7 @@ func TestMainClusterConfig(t *testing.T) {
 				Disk:       "xvdb",
 				Filesystem: "xfs",
 			},
-			KIAMSupport: controlplane_config.Kube2IamSupport{
+			KIAMSupport: controlplane_config.KIAMSupport{
 				Enabled: false,
 			},
 			Kube2IamSupport: controlplane_config.Kube2IamSupport{
