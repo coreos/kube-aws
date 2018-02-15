@@ -339,8 +339,8 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 	if kiamEnabled {
 		// See https://github.com/uswitch/kiam/blob/master/docs/agent.json
 		agentConfig := tlsutil.ClientCertConfig{
-			CommonName:   "Kiam Agent",
-			Duration:     certDuration,
+			CommonName: "Kiam Agent",
+			Duration:   certDuration,
 		}
 		kiamAgentCert, err := tlsutil.NewSignedClientCertificate(agentConfig, kiamAgentKey, caCert, caKey)
 		if err != nil {
