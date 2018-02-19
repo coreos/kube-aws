@@ -268,7 +268,7 @@
                   "Resource": "*"
                 },
                 {{end}}
-                {{if .Experimental.Kube2IamSupport.Enabled }}
+                {{if or .Experimental.Kube2IamSupport.Enabled .Experimental.KIAMSupport.Enabled }}
                 {
                   "Action": "sts:AssumeRole",
                   "Effect":"Allow",
