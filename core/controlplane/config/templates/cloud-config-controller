@@ -2063,7 +2063,7 @@ write_files:
           - --authentication-token-webhook-cache-ttl={{ .Experimental.Authentication.Webhook.CacheTTL }}
           {{ end }}
           - --advertise-address=$private_ipv4
-          - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }}{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.NodeAuthorizer.Enabled}},NodeRestriction{{end}},ResourceQuota{{if .Experimental.Admission.DenyEscalatingExec.Enabled}},DenyEscalatingExec{{end}}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}{{if .Experimental.Admission.Priority.Enabled}},Priority{{end}},DefaultTolerationSeconds
+          - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }}{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.NodeAuthorizer.Enabled}},NodeRestriction{{end}},ResourceQuota{{if .Experimental.Admission.DenyEscalatingExec.Enabled}},DenyEscalatingExec{{end}}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}{{if .Experimental.Admission.Priority.Enabled}},Priority{{end}},DefaultTolerationSeconds{{if .Experimental.Admission.MutatingAdmissionWebhook.Enabled}},MutatingAdmissionWebhook{{end}}{{if .Experimental.Admission.ValidatingAdmissionWebhook.Enabled}},ValidatingAdmissionWebhook{{end}}
           - --anonymous-auth=false
           {{if .Experimental.Oidc.Enabled}}
           - --oidc-issuer-url={{.Experimental.Oidc.IssuerUrl}}

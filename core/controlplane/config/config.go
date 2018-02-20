@@ -58,6 +58,12 @@ func NewDefaultCluster() *Cluster {
 			Priority{
 				Enabled: false,
 			},
+			MutatingAdmissionWebhook{
+				Enabled: false,
+			},
+			ValidatingAdmissionWebhook{
+				Enabled: false,
+			},
 		},
 		AuditLog: AuditLog{
 			Enabled: false,
@@ -559,11 +565,13 @@ type Experimental struct {
 }
 
 type Admission struct {
-	PodSecurityPolicy  PodSecurityPolicy  `yaml:"podSecurityPolicy"`
-	AlwaysPullImages   AlwaysPullImages   `yaml:"alwaysPullImages"`
-	DenyEscalatingExec DenyEscalatingExec `yaml:"denyEscalatingExec"`
-	Initializers       Initializers       `yaml:"initializers"`
-	Priority           Priority           `yaml:"priority"`
+	PodSecurityPolicy          PodSecurityPolicy          `yaml:"podSecurityPolicy"`
+	AlwaysPullImages           AlwaysPullImages           `yaml:"alwaysPullImages"`
+	DenyEscalatingExec         DenyEscalatingExec         `yaml:"denyEscalatingExec"`
+	Initializers               Initializers               `yaml:"initializers"`
+	Priority                   Priority                   `yaml:"priority"`
+	MutatingAdmissionWebhook   MutatingAdmissionWebhook   `yaml:"mutatingAdmissionWebhook"`
+	ValidatingAdmissionWebhook ValidatingAdmissionWebhook `yaml:"validatingAdmissionWebhook"`
 }
 
 type AlwaysPullImages struct {
@@ -583,6 +591,14 @@ type Initializers struct {
 }
 
 type Priority struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type MutatingAdmissionWebhook struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type ValidatingAdmissionWebhook struct {
 	Enabled bool `yaml:"enabled"`
 }
 

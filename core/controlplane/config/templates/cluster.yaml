@@ -1247,6 +1247,10 @@ experimental:
     # featureGate PodPriority:true in the worker
     priority:
       enabled: false
+    mutatingAdmissionWebhook:
+      enabled: false
+    validatingAdmissionWebhook:
+      enabled: false
 
   # Used to provide `/etc/environment` env vars with values from arbitrary CloudFormation refs
   awsEnvironment:

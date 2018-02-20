@@ -93,6 +93,12 @@ func TestMainClusterConfig(t *testing.T) {
 				Priority: controlplane_config.Priority{
 					Enabled: false,
 				},
+				MutatingAdmissionWebhook: controlplane_config.MutatingAdmissionWebhook{
+					Enabled: false,
+				},
+				ValidatingAdmissionWebhook: controlplane_config.ValidatingAdmissionWebhook{
+					Enabled: false,
+				},
 			},
 			AuditLog: controlplane_config.AuditLog{
 				Enabled: false,
@@ -1226,6 +1232,10 @@ experimental:
       enabled: true
     priority:
       enabled: true
+    mutatingAdmissionWebhook:
+      enabled: true
+    validatingAdmissionWebhook
+      enabled: true
   auditLog:
     enabled: true
     maxage: 100
@@ -1293,6 +1303,12 @@ worker:
 								Enabled: true,
 							},
 							Priority: controlplane_config.Priority{
+								Enabled: true,
+							},
+							MutatingAdmissionWebhook: controlplane_config.MutatingAdmissionWebhook{
+								Enabled: true,
+							},
+							ValidatingAdmissionWebhook: controlplane_config.ValidatingAdmissionWebhook{
 								Enabled: true,
 							},
 						},
