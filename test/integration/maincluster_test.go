@@ -1232,9 +1232,9 @@ experimental:
       enabled: true
     priority:
       enabled: true
-    mutatingAdmissionWebhook
+    mutatingAdmissionWebhook:
       enabled: true
-    validatingAdmissionWebhook
+    validatingAdmissionWebhook:
       enabled: true
   auditLog:
     enabled: true
