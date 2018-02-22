@@ -2,16 +2,7 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "kube-aws Kubernetes cluster {{.ClusterName}}",
   "Parameters": {
-    "NotificationTargetARN": {
-      "Type": "String",
-      "Description": "ASG LifecycleHook notification target ARN"
-    },
-    "NotificationRoleARN": {
-      "Type": "String",
-      "Description": "Role to be used by ASG LifecycleHook to publish notification"
-    }
     {{if .CloudWatchLogging.Enabled}}
-    ,
     "CloudWatchLogGroupARN": {
       "Type": "String",
       "Description": "CloudWatch LogGroup to send journald logs to"
@@ -35,6 +26,13 @@
         ],
         "MinSize": "{{.MinControllerCount}}",
         "Tags": [
+          {{range $k, $v := $.Controller.InstanceTags -}}
+          {
+            "Key": "{{$k}}",
+            "PropagateAtLaunch": "true",
+            "Value": "{{$v}}"
+          },
+          {{end -}}
           {
             "Key": "kubernetes.io/cluster/{{.ClusterName}}",
             "PropagateAtLaunch": "true",
@@ -58,7 +56,13 @@
           {{end}}
         ],
         "LoadBalancerNames" : [
-          {{range $i, $ref := .APIEndpoints.ELBRefs -}}
+          {{range $i, $ref := .APIEndpoints.ELBClassicRefs -}}
+          {{- if gt $i 0}},{{end}}
+          {{ $ref }}
+          {{- end}}
+        ],
+        "TargetGroupARNs": [
+          {{range $i, $ref := .APIEndpoints.ELBV2TargetGroupRefs -}}
           {{- if gt $i 0}},{{end}}
           {{ $ref }}
           {{- end}}
@@ -159,19 +163,6 @@
       },
       "Type": "AWS::IAM::InstanceProfile"
     },
-    {{end}}
-    "IAMInstanceProfileEtcd": {
-      "Properties": {
-        "Path": "/",
-        "Roles": [
-          {
-            "Ref": "IAMRoleEtcd"
-          }
-        ]
-      },
-      "Type": "AWS::IAM::InstanceProfile"
-    },
-    {{ if not .Controller.IAMConfig.InstanceProfile.Arn }}
     "IAMManagedPolicyController" : {
       "Type" : "AWS::IAM::ManagedPolicy",
       "Properties" : {
@@ -180,6 +171,13 @@
         "PolicyDocument" :   {
           "Version":"2012-10-17",
           "Statement": [
+                {{range $s := .Controller.IAMConfig.Policy.Statements }}
+                {
+                  "Action": {{toJSON $s.Actions}},
+                  "Effect": {{toJSON $s.Effect}},
+                  "Resource": {{toJSON $s.Resources}}
+                },
+                {{end}}
                 {
                   "Action": "ec2:*",
                   "Effect": "Allow",
@@ -248,20 +246,29 @@
                   "Resource": [ "*" ]
                 },
                 {{end}}
-                {{if .Addons.ClusterAutoscaler.Enabled}}
+                {{if (and .Addons.ClusterAutoscaler.Enabled .Experimental.ClusterAutoscalerSupport.Enabled) }}
                 {
-                "Effect": "Allow",
                   "Action": [
                     "autoscaling:DescribeAutoScalingGroups",
                     "autoscaling:DescribeAutoScalingInstances",
-                    "autoscaling:DescribeTags",
+                    "autoscaling:DescribeTags"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {
+                  "Action": [
                     "autoscaling:SetDesiredCapacity",
                     "autoscaling:TerminateInstanceInAutoScalingGroup"
                   ],
+                  "Condition": {
+                    "Null": { "autoscaling:ResourceTag/kubernetes.io/cluster/{{.ClusterName}}": "false" }
+                  },
+                  "Effect": "Allow",
                   "Resource": "*"
                 },
                 {{end}}
-                {{if .Experimental.Kube2IamSupport.Enabled }}
+                {{if or .Experimental.Kube2IamSupport.Enabled .Experimental.KIAMSupport.Enabled }}
                 {
                   "Action": "sts:AssumeRole",
                   "Effect":"Allow",
@@ -279,7 +286,8 @@
                 {
                   "Action": [
                     "autoscaling:DescribeAutoScalingInstances",
-                    "autoscaling:DescribeLifecycleHooks"
+                    "autoscaling:DescribeLifecycleHooks",
+                    "autoscaling:DescribeAutoScalingGroups"
                   ],
                   "Effect": "Allow",
                   "Resource": "*"
@@ -344,6 +352,165 @@
       "Type": "AWS::IAM::Role"
     },
     {{end}}
+    {{ if not .Etcd.IAMConfig.InstanceProfile.Arn }}
+    "IAMInstanceProfileEtcd": {
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "IAMRoleEtcd"
+          }
+        ]
+      },
+      "Type": "AWS::IAM::InstanceProfile"
+    },
+    "IAMManagedPolicyEtcd" : {
+      "Type" : "AWS::IAM::ManagedPolicy",
+      "Properties" : {
+        "Description" : "Policy for managing kube-aws k8s etcd nodes",
+        "Path" : "/",
+        "PolicyDocument" :   {
+          "Version":"2012-10-17",
+          "Statement": [
+            {{range $s := .Etcd.IAMConfig.Policy.Statements }}
+            {
+              "Action": {{toJSON $s.Actions}},
+              "Effect": {{toJSON $s.Effect}},
+              "Resource": {{toJSON $s.Resources}}
+            },
+            {{end}}
+            {{if .AssetsEncryptionEnabled}}
+            {
+              "Action" : "kms:Decrypt",
+              "Effect" : "Allow",
+              "Resource" : "{{.KMSKeyARN}}"
+            },
+            {{end}}
+            {{if $.Etcd.KMSKeyARN -}}
+            {{/* Required for mounting encrypted data volume */}}
+            {
+            "Action": [
+              "kms:CreateGrant",
+              "kms:Decrypt",
+              "kms:Describe*",
+              "kms:Encrypt",
+              "kms:GenerateDataKey*",
+              "kms:ReEncrypt*"
+            ],
+            "Effect": "Allow",
+            "Resource": "{{ $.Etcd.KMSKeyARN }}"
+            },
+            {{end -}}
+            {
+              "Action": "ec2:DescribeTags",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {{/* Required for cfn-etcd-environment.service to discover the volume */}}
+            {
+              "Action": "ec2:DescribeVolumes",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {{/* Required for cfn-etcd-environment.service to start attaching the volume */}}
+            {
+              "Action": "ec2:AttachVolume",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {{/* Required for cfn-etcd-environment.service to wait until the volume is attached */}}
+            {
+              "Action": "ec2:DescribeVolumeStatus",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {{if $.Etcd.NodeShouldHaveEIP -}}
+            {{/* Required for cfn-etcd-environment.service to associate an EIP */}}
+            {
+              "Action": "ec2:AssociateAddress",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {{end -}}
+            {{if $.Etcd.NodeShouldHaveSecondaryENI -}}
+            {{/* Required for cfn-etcd-environment.service to associate a network interface */}}
+            {
+              "Action": "ec2:AttachNetworkInterface",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {
+              "Action": "ec2:DescribeNetworkInterfaces",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {
+              "Action": "ec2:DescribeNetworkInterfaceAttribute",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {{end -}}
+            {{- if $.UserDataEtcd.Parts.s3 }}
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject"
+              ],
+              "Resource": "arn:{{.Region.Partition}}:s3:::{{ $.UserDataEtcd.Parts.s3.Asset.S3Prefix }}*"
+            },
+            {{- end }}
+            {{/* Required for `etcdadm reconfigure` to check existence of an etcd snapshot in S3 */}}
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:ListBucket"
+              ],
+              "Resource": "arn:{{.Region.Partition}}:s3:::{{$.EtcdSnapshotsS3Bucket}}"
+            },
+            {{if .CloudWatchLogging.Enabled}}
+            {
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:DescribeLogStreams"
+              ],
+              "Resource": [
+                { "Ref": "CloudWatchLogGroupARN" },
+                { "Fn::Join" : [ "", [{ "Ref": "CloudWatchLogGroupARN" }, ":log-stream:*"]] }
+              ]
+            },{{ end }}
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:List*",
+                "s3:GetObject*"
+              ],
+              "Resource": "arn:{{.Region.Partition}}:s3:::{{$.EtcdSnapshotsS3Bucket}}",
+              "Condition": {
+                "StringLike": {
+                  "s3:prefix": { "Fn::Join" : [ "", [{{$.EtcdSnapshotsS3PrefixRef}}, "/*" ]]}
+                }
+              }
+            },
+            {{/* Required for `etcdadm save` to save etcd snapshots in S3 */}}
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:*"
+              ],
+              "Resource": { "Fn::Join" : [ "", ["arn:{{.Region.Partition}}:s3:::", {{$.EtcdSnapshotsS3PathRef}}, "/*" ]]}
+            },
+            {{/* Required for `etcdadm reconfigure` to determine the number of active etcd nodes */}}
+            {
+              "Action": "ec2:DescribeInstances",
+              "Resource": "*",
+              "Effect": "Allow"
+            }
+          ]
+        }
+      }
+    },
     "IAMRoleEtcd": {
       "Properties": {
         "AssumeRolePolicyDocument": {
@@ -363,146 +530,16 @@
           "Version": "2012-10-17"
         },
         "Path": "/",
-        "Policies": [
-          {
-            "PolicyDocument": {
-              "Statement": [{{if .AssetsEncryptionEnabled}}
-                {
-                  "Action" : "kms:Decrypt",
-                  "Effect" : "Allow",
-                  "Resource" : "{{.KMSKeyARN}}"
-                },{{end}}
-                {{if $.Etcd.KMSKeyARN -}}
-                {{/* Required for mounting encrypted data volume */}}
-                {
-                "Action": [
-                  "kms:CreateGrant",
-                  "kms:Decrypt",
-                  "kms:Describe*",
-                  "kms:Encrypt",
-                  "kms:GenerateDataKey*",
-                  "kms:ReEncrypt*"
-                ],
-                "Effect": "Allow",
-                "Resource": "{{ $.Etcd.KMSKeyARN }}"
-                },
-                {{end -}}
-                {
-                  "Action": "ec2:DescribeTags",
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {{/* Required for cfn-etcd-environment.service to discover the volume */}}
-                {
-                  "Action": "ec2:DescribeVolumes",
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {{/* Required for cfn-etcd-environment.service to start attaching the volume */}}
-                {
-                  "Action": "ec2:AttachVolume",
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {{/* Required for cfn-etcd-environment.service to wait until the volume is attached */}}
-                {
-                  "Action": "ec2:DescribeVolumeStatus",
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {{if $.Etcd.NodeShouldHaveEIP -}}
-                {{/* Required for cfn-etcd-environment.service to associate an EIP */}}
-                {
-                  "Action": "ec2:AssociateAddress",
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {{end -}}
-                {{if $.Etcd.NodeShouldHaveSecondaryENI -}}
-                {{/* Required for cfn-etcd-environment.service to associate a network interface */}}
-                {
-                  "Action": "ec2:AttachNetworkInterface",
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {
-                  "Action": "ec2:DescribeNetworkInterfaces",
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {
-                  "Action": "ec2:DescribeNetworkInterfaceAttribute",
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {{end -}}
-                {{- if $.UserDataEtcd.Parts.s3 }}
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "s3:GetObject"
-                  ],
-                  "Resource": "arn:{{.Region.Partition}}:s3:::{{ $.UserDataEtcd.Parts.s3.Asset.S3Prefix }}*"
-                },
-                {{- end }}
-                {{/* Required for `etcdadm reconfigure` to check existence of an etcd snapshot in S3 */}}
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "s3:ListBucket"
-                  ],
-                  "Resource": "arn:{{.Region.Partition}}:s3:::{{$.EtcdSnapshotsS3Bucket}}"
-                },
-                {{if .CloudWatchLogging.Enabled}}
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "logs:CreateLogStream",
-                    "logs:PutLogEvents",
-                    "logs:DescribeLogStreams"
-                  ],
-                  "Resource": [
-                    { "Ref": "CloudWatchLogGroupARN" },
-                    { "Fn::Join" : [ "", [{ "Ref": "CloudWatchLogGroupARN" }, ":log-stream:*"]] }
-                  ]
-                },{{ end }}
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "s3:List*",
-                    "s3:GetObject*"
-                  ],
-                  "Resource": "arn:{{.Region.Partition}}:s3:::{{$.EtcdSnapshotsS3Bucket}}",
-                  "Condition": {
-                    "StringLike": {
-                      "s3:prefix": { "Fn::Join" : [ "", [{{$.EtcdSnapshotsS3PrefixRef}}, "/*" ]]}
-                    }
-                  }
-                },
-                {{/* Required for `etcdadm save` to save etcd snapshots in S3 */}}
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "s3:*"
-                  ],
-                  "Resource": { "Fn::Join" : [ "", ["arn:{{.Region.Partition}}:s3:::", {{$.EtcdSnapshotsS3PathRef}}, "/*" ]]}
-                },
-                {{/* Required for `etcdadm reconfigure` to determine the number of active etcd nodes */}}
-                {
-                  "Action": "ec2:DescribeInstances",
-                  "Resource": "*",
-                  "Effect": "Allow"
-                }
-              ],
-              "Version": "2012-10-17"
-            },
-            "PolicyName": "root"
-          }
+        "ManagedPolicyArns": [
+          {{range $policyIndex, $policyArn := .Etcd.IAMConfig.Role.ManagedPolicies }}
+            "{{$policyArn.Arn}}",
+          {{end}}
+          {"Ref": "IAMManagedPolicyEtcd"}
         ]
       },
-
       "Type": "AWS::IAM::Role"
     },
+    {{end}}
     {{if $.Etcd.HostedZoneManaged}}
     "{{$.Etcd.HostedZoneLogicalName}}": {
       "Type": "AWS::Route53::HostedZone",
@@ -517,7 +554,7 @@
         }],
         "HostedZoneTags" : [{
           "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
-          "Value": "true"
+          "Value": "owned"
         }]
       }
     },
@@ -617,10 +654,17 @@
         ],
         "MinSize": "1",
         "Tags": [
+          {{range $k, $v := $.Etcd.InstanceTags -}}
+          {
+            "Key": "{{$k}}",
+            "PropagateAtLaunch": "true",
+            "Value": "{{$v}}"
+          },
+          {{end -}}
           {
             "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
             "PropagateAtLaunch": "true",
-            "Value": "true"
+            "Value": "owned"
           },
           {
             "Key": "Name",
@@ -694,7 +738,7 @@
                     "{{$.ClusterName}}",
                   "'\n",
                   "ETCDCTL_CACERT='",
-                    "/etc/ssl/certs/ca.pem",
+                    "/etc/ssl/certs/etcd-trusted-ca.pem",
                   "'\n",
                   "ETCDCTL_CERT='",
                     "/etc/ssl/certs/etcd-client.pem",
@@ -703,7 +747,7 @@
                     "/etc/ssl/certs/etcd-client-key.pem",
                   "'\n",
                   "ETCDCTL_CA_FILE='",
-                    "/etc/ssl/certs/ca.pem",
+                    "/etc/ssl/certs/etcd-trusted-ca.pem",
                   "'\n",
                   "ETCDCTL_CERT_FILE='",
                     "/etc/ssl/certs/etcd-client.pem",
@@ -720,11 +764,17 @@
                   "ETCDADM_STATE_FILES_DIR='",
                     "/var/run/coreos/etcdadm",
                   "'\n",
+                  "ETCDADM_MEMBER_ENV_FILE='",
+                    "/var/run/coreos/etcdadm/etcd-member.env",
+                  "'\n",
                   "ETCDADM_MEMBER_COUNT='",
                     "{{$.Etcd.Count}}",
                   "'\n",
                   "ETCDADM_MEMBER_INDEX='",
                     "{{$etcdIndex}}",
+                  "'\n",
+                  "ETCD_VERSION='",
+                    "{{$.Etcd.Version}}",
                   "'\n"
                 ]]}
               }
@@ -768,9 +818,13 @@
           }
           {{end}}
         ],
+        {{if $.Etcd.IAMConfig.InstanceProfile.Arn }}
+        "IamInstanceProfile": "{{$.Etcd.IAMConfig.InstanceProfile.Arn}}",
+        {{else}}
         "IamInstanceProfile": {
           "Ref": "IAMInstanceProfileEtcd"
         },
+        {{end}}
         "ImageId": "{{$.AMI}}",
         "InstanceType": "{{$.Etcd.InstanceType}}",
         {{if $.KeyName}}"KeyName": "{{$.KeyName}}",{{end}}
@@ -794,9 +848,7 @@
         },
         "DefaultResult" : "CONTINUE",
         "HeartbeatTimeout" : "{{.Experimental.NodeDrainer.DrainTimeoutInSeconds}}",
-        "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
-        "NotificationTargetARN" : { "Ref": "NotificationTargetARN" },
-        "RoleARN" : { "Ref": "NotificationRoleARN" }
+        "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING"
       },
       "Type" : "AWS::AutoScaling::LifecycleHook"
     },
@@ -867,6 +919,50 @@
       }
     },
     {{ end -}}
+    {{ if .LoadBalancer.NetworkLoadBalancer }}
+    "{{.LoadBalancer.LogicalName}}TargetGroup": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "HealthCheckIntervalSeconds": "10",
+        "HealthyThresholdCount": "3",
+        "UnhealthyThresholdCount": "3",
+        "Port": "443",
+        "VpcId": {{$.VPCRef}},
+        "Protocol": "TCP"
+      }
+    },
+    "{{.LoadBalancer.LogicalName}}Listener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {"Ref": "{{.LoadBalancer.LogicalName}}TargetGroup"},
+            "Type": "forward"
+          }
+        ],
+        "LoadBalancerArn": {"Ref": "{{.LoadBalancer.LogicalName}}"},
+        "Port": "443",
+        "Protocol": "TCP"
+      }
+    },
+    "{{.LoadBalancer.LogicalName}}" : {
+      "Type" : "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties" : {
+        "Type": "network",
+        "Subnets" : [
+          {{range $index, $subnet := .LoadBalancer.Subnets}}
+          {{if gt $index 0}},{{end}}
+          {{$subnet.Ref}}
+          {{end}}
+        ],
+        {{if .LoadBalancer.Private}}
+        "Scheme": "internal"
+        {{else}}
+        "Scheme": "internet-facing"
+        {{end}}
+      }
+    },
+    {{ else }}
     "{{.LoadBalancer.LogicalName}}" : {
       "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties" : {
@@ -908,6 +1004,7 @@
         ]
       }
     },
+    {{ end }}
     {{if .LoadBalancer.ManageSecurityGroup -}}
     "{{.LoadBalancer.SecurityGroupLogicalName}}" : {
       "Properties": {
@@ -1001,6 +1098,23 @@
             "ToPort": 22
           },
           {{end -}}
+          {{ if $.KubeClusterSettings.APIEndpointConfigs.HasNetworkLoadBalancers }}
+          {{/* Needed for NLB health checks and to allow worker nodes to contact the API servers. */}}
+          {
+            "CidrIp": "{{.VPCCIDR}}",
+            "FromPort": 443,
+            "IpProtocol": "tcp",
+            "ToPort": 443
+          },
+          {{ range $_, $r := $.APIAccessAllowedSourceCIDRsForControllerSG -}}
+          {
+            "CidrIp": "{{$r}}",
+            "FromPort": 443,
+            "IpProtocol": "tcp",
+            "ToPort": 443
+          },
+          {{ end -}}
+          {{ end }}
           {
             "SourceSecurityGroupId" : { "Ref" : "SecurityGroupElbAPIServer" },
             "FromPort": 443,
@@ -1248,6 +1362,120 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
+    {{if .Addons.Prometheus.SecurityGroupsEnabled}}
+    "SecurityGroupWorkerIngressFromWorkerToControllerKubelet": {
+      "Properties": {
+        "FromPort": 10250,
+        "GroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 10250
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToWorkerKubelet": {
+      "Properties": {
+        "FromPort": 10250,
+        "GroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 10250
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToWorkerCadvisor": {
+      "Properties": {
+        "FromPort": 4194,
+        "GroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 4194
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToControllerCadvisor": {
+      "Properties": {
+        "FromPort": 4194,
+        "GroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 4194
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToWorkerNodeExporter": {
+      "Properties": {
+        "FromPort": 9100,
+        "GroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 9100
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToControllerNodeExporter": {
+      "Properties": {
+        "FromPort": 9100,
+        "GroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 9100
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToControllerControllerManager": {
+      "Properties": {
+        "FromPort": 10252,
+        "GroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 10252
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToControllerScheduleManager": {
+      "Properties": {
+        "FromPort": 10251,
+        "GroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 10251
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    {{ end }}
     "SecurityGroupEtcd": {
       "Properties": {
         "GroupDescription": {
@@ -1481,7 +1709,7 @@
     {{end}}
     {{end}}
 
-    {{if not .VPCID}}
+    {{if .VPCManaged}}
     ,
     "{{.InternetGatewayLogicalName}}": {
       "Properties": {
@@ -1504,7 +1732,7 @@
         "Tags": [
           {
             "Key": "kubernetes.io/cluster/{{.ClusterName}}",
-            "Value": "true"
+            "Value": "owned"
           },
           {
             "Key": "Name",
@@ -1522,10 +1750,14 @@
       "Type": "AWS::EC2::VPCGatewayAttachment"
     }
     {{end}}
+    {{range $n, $r := .ExtraCfnResources}}
+    ,
+    {{quote $n}}: {{toJSON $r}}
+    {{end}}
   },
 
   "Outputs": {
-    {{if not .VPCID}}
+    {{if .VPCManaged}}
     "VPC" : {
       "Description" : "The VPC managed by this stack",
       "Value" :  { "Ref" : "{{.VPCLogicalName}}" },

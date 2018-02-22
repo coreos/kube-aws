@@ -21,7 +21,7 @@ func (c WorkerNodePoolConfig) ValidateInputs() error {
 }
 
 func (c WorkerNodePoolConfig) Validate() error {
-	if err := c.NodePoolConfig.Valid(); err != nil {
+	if err := c.NodePoolConfig.Validate(); err != nil {
 		return err
 	}
 	return nil

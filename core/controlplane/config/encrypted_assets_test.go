@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
-	"fmt"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/test/helper"
 	"os"
@@ -26,7 +25,7 @@ func genAssets(t *testing.T) *RawAssetsOnMemory {
 	if err != nil {
 		t.Fatalf("failed generating tls ca: %v", err)
 	}
-	assets, err := cluster.NewAssetsOnMemory(caKey, caCert)
+	assets, err := cluster.NewAssetsOnMemory(caKey, caCert, true)
 	if err != nil {
 		t.Fatalf("failed generating assets: %v", err)
 	}
@@ -69,11 +68,6 @@ func TestTLSGeneration(t *testing.T) {
 			Name:      "etcd",
 			KeyBytes:  assets.EtcdKey,
 			CertBytes: assets.EtcdCert,
-		},
-		{
-			Name:      "dex",
-			KeyBytes:  assets.DexKey,
-			CertBytes: assets.DexCert,
 		},
 	}
 
@@ -126,19 +120,21 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 
 		// See https://github.com/kubernetes-incubator/kube-aws/issues/107
 		t.Run("CachedToPreventUnnecessaryNodeReplacement", func(t *testing.T) {
-			created, err := ReadOrCreateCompactAssets(dir, true, kmsConfig)
+			created, err := ReadOrCreateCompactAssets(dir, true, true, true, kmsConfig)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact assets in %s : %v", dir, err)
+				t.FailNow()
 			}
 
 			// This depends on TestDummyEncryptService which ensures dummy encrypt service to produce different ciphertext for each encryption
 			// created == read means that encrypted assets were loaded from cached files named *.pem.enc, instead of re-encrypting raw assets named *.pem files
 			// TODO Use some kind of mocking framework for tests like this
-			read, err := ReadOrCreateCompactAssets(dir, true, kmsConfig)
+			read, err := ReadOrCreateCompactAssets(dir, true, true, true, kmsConfig)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact assets in %s : %v", dir, err)
+				t.FailNow()
 			}
 
 			if !reflect.DeepEqual(created, read) {
@@ -150,79 +146,63 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 		})
 
 		t.Run("RemoveFilesToRegenerate", func(t *testing.T) {
-			original, err := ReadOrCreateCompactAssets(dir, true, kmsConfig)
+			original, err := ReadOrCreateCompactAssets(dir, true, true, true, kmsConfig)
 
 			if err != nil {
 				t.Errorf("failed to read the original encrypted assets : %v", err)
+				t.FailNow()
 			}
 
 			files := []string{
-				"ca", "admin", "admin-key", "worker", "worker-key", "apiserver", "apiserver-key",
-				"etcd", "etcd-key", "etcd-client", "etcd-client-key", "dex", "dex-key",
+				"admin-key.pem.enc", "worker-key.pem.enc", "apiserver-key.pem.enc",
+				"etcd-key.pem.enc", "etcd-client-key.pem.enc", "worker-ca-key.pem.enc",
+				"kiam-agent-key.pem.enc", "kiam-server-key.pem.enc",
 			}
 
-			for _, f := range files {
-				filename := fmt.Sprintf("%s.pem.enc", f)
+			for _, filename := range files {
 				if err := os.Remove(filepath.Join(dir, filename)); err != nil {
 					t.Errorf("failed to remove %s for test setup : %v", filename, err)
 					t.FailNow()
 				}
 			}
 
-			regenerated, err := ReadOrCreateCompactAssets(dir, true, kmsConfig)
+			regenerated, err := ReadOrCreateCompactAssets(dir, true, true, true, kmsConfig)
 
 			if err != nil {
 				t.Errorf("failed to read the regenerated encrypted assets : %v", err)
+				t.FailNow()
 			}
 
-			if original.AdminCert == regenerated.AdminCert {
-				t.Errorf("AdminCert must change but it didn't : original = %v, regenrated = %v ", original.AdminCert, regenerated.AdminCert)
+			for _, v := range [][]string{
+				{"AdminCert", original.AdminCert, regenerated.AdminCert},
+				{"CACert", original.CACert, regenerated.CACert},
+				{"WorkerCert", original.WorkerCert, regenerated.WorkerCert},
+				{"APIServerCert", original.APIServerCert, regenerated.APIServerCert},
+				{"EtcdClientCert", original.EtcdClientCert, regenerated.EtcdClientCert},
+				{"EtcdCert", original.EtcdCert, regenerated.EtcdCert},
+				{"KIAMAgentCert", original.KIAMAgentCert, regenerated.KIAMAgentCert},
+				{"KIAMServerCert", original.KIAMServerCert, regenerated.KIAMServerCert},
+				{"KIAMCACert", original.KIAMCACert, regenerated.KIAMCACert},
+			} {
+				if v[1] != v[2] {
+					t.Errorf("%s must NOT change but it did : original = %v, regenrated = %v ", v[0], v[1], v[2])
+				}
 			}
 
-			if original.AdminKey == regenerated.AdminKey {
-				t.Errorf("AdminKey must change but it didn't : original = %v, regenrated = %v ", original.AdminKey, regenerated.AdminKey)
+			for _, v := range [][]string{
+				{"AdminKey", original.AdminKey, regenerated.AdminKey},
+				{"WorkerCAKey", original.WorkerCAKey, regenerated.WorkerCAKey},
+				{"WorkerKey", original.WorkerKey, regenerated.WorkerKey},
+				{"APIServerKey", original.APIServerKey, regenerated.APIServerKey},
+				{"EtcdClientKey", original.EtcdClientKey, regenerated.EtcdClientKey},
+				{"EtcdKey", original.EtcdKey, regenerated.EtcdKey},
+				{"KIAMAgentKey", original.KIAMAgentKey, regenerated.KIAMAgentKey},
+				{"KIAMServerKey", original.KIAMServerKey, regenerated.KIAMServerKey},
+			} {
+				if v[1] == v[2] {
+					t.Errorf("%s must change but it didn't : original = %v, regenrated = %v ", v[0], v[1], v[2])
+				}
 			}
-
-			if original.CACert == regenerated.CACert {
-				t.Errorf("CACert must change but it didn't : original = %v, regenrated = %v ", original.CACert, regenerated.CACert)
-			}
-
-			if original.CACert == regenerated.CACert {
-				t.Errorf("CACert must change but it didn't : original = %v, regenrated = %v ", original.CACert, regenerated.CACert)
-			}
-
-			if original.WorkerCert == regenerated.WorkerCert {
-				t.Errorf("WorkerCert must change but it didn't : original = %v, regenrated = %v ", original.WorkerCert, regenerated.WorkerCert)
-			}
-
-			if original.WorkerCert == regenerated.WorkerCert {
-				t.Errorf("WorkerCert must change but it didn't : original = %v, regenrated = %v ", original.WorkerCert, regenerated.WorkerCert)
-			}
-
-			if original.APIServerCert == regenerated.APIServerCert {
-				t.Errorf("APIServerCert must change but it didn't : original = %v, regenrated = %v ", original.APIServerCert, regenerated.APIServerCert)
-			}
-
-			if original.APIServerCert == regenerated.APIServerCert {
-				t.Errorf("APIServerCert must change but it didn't : original = %v, regenrated = %v ", original.APIServerCert, regenerated.APIServerCert)
-			}
-
-			if original.EtcdClientCert == regenerated.EtcdClientCert {
-				t.Errorf("EtcdClientCert must change but it didn't : original = %v, regenrated = %v ", original.EtcdClientCert, regenerated.EtcdClientCert)
-			}
-
-			if original.EtcdClientCert == regenerated.EtcdClientCert {
-				t.Errorf("EtcdClientCert must change but it didn't : original = %v, regenrated = %v ", original.EtcdClientCert, regenerated.EtcdClientCert)
-			}
-
-			if original.EtcdCert == regenerated.EtcdCert {
-				t.Errorf("EtcdCert must change but it didn't : original = %v, regenrated = %v ", original.EtcdCert, regenerated.EtcdCert)
-			}
-
-			if original.EtcdCert == regenerated.EtcdCert {
-				t.Errorf("EtcdCert must change but it didn't : original = %v, regenrated = %v ", original.EtcdCert, regenerated.EtcdCert)
-			}
-
 			if reflect.DeepEqual(original, regenerated) {
 				t.Errorf(`unexpecteed data contained in (possibly) regenerated encrypted assets.
 	encrypted assets must change after regeneration but they didn't:
@@ -234,15 +214,15 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 }
 
 func TestReadOrCreateUnEncryptedCompactAssets(t *testing.T) {
-	helper.WithDummyCredentials(func(dir string) {
+	run := func(dir string, caKeyRequiredOnController bool, t *testing.T) {
 		t.Run("CachedToPreventUnnecessaryNodeReplacementOnUnencrypted", func(t *testing.T) {
-			created, err := ReadOrCreateUnencryptedCompactAssets(dir, true)
+			created, err := ReadOrCreateUnencryptedCompactAssets(dir, true, caKeyRequiredOnController, true)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact assets in %s : %v", dir, err)
 			}
 
-			read, err := ReadOrCreateUnencryptedCompactAssets(dir, true)
+			read, err := ReadOrCreateUnencryptedCompactAssets(dir, true, caKeyRequiredOnController, true)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact assets in %s : %v", dir, err)
@@ -254,6 +234,17 @@ func TestReadOrCreateUnEncryptedCompactAssets(t *testing.T) {
  	created = %v
  	read = %v`, created, read)
 			}
+		})
+	}
+
+	t.Run("WithDummyCredentialsButCAKey", func(t *testing.T) {
+		helper.WithDummyCredentialsButCAKey(func(dir string) {
+			run(dir, false, t)
+		})
+	})
+	t.Run("WithDummyCredentials", func(t *testing.T) {
+		helper.WithDummyCredentials(func(dir string) {
+			run(dir, true, t)
 		})
 	})
 }

@@ -6,6 +6,18 @@ import (
 	"encoding/base64"
 )
 
+func BytesToBytes(d []byte) ([]byte, error) {
+	var buff bytes.Buffer
+	gzw := gzip.NewWriter(&buff)
+	if _, err := gzw.Write(d); err != nil {
+		return []byte{}, err
+	}
+	if err := gzw.Close(); err != nil {
+		return []byte{}, err
+	}
+	return buff.Bytes(), nil
+}
+
 func CompressData(d []byte) (string, error) {
 	var buff bytes.Buffer
 	gzw := gzip.NewWriter(&buff)

@@ -12,14 +12,17 @@ const DefaultRecordSetTTL = 300
 type APIEndpointLB struct {
 	// APIAccessAllowedSourceCIDRs is network ranges of sources you'd like Kubernetes API accesses to be allowed from, in CIDR notation
 	APIAccessAllowedSourceCIDRs CIDRRanges `yaml:"apiAccessAllowedSourceCIDRs,omitempty"`
-	// CreateRecordSet is set to false when you want to disable creation of the record set for this api load balancer
-	CreateRecordSet *bool `yaml:"createRecordSet,omitempty"`
 	// Identifier specifies an existing load-balancer used for load-balancing controller nodes and serving this endpoint
 	Identifier Identifier `yaml:",inline"`
+	// Managed is set to true when want to create an ELB for this API endpoint. It is false by default i.e. considered to be false if nil
+	Managed *bool `yaml:"managed,omitempty"`
 	// Subnets contains all the subnets assigned to this load-balancer. Specified only when this load balancer is not reused but managed one
 	SubnetReferences []SubnetReference `yaml:"subnets,omitempty"`
 	// PrivateSpecified determines the resulting load balancer uses an internal elb for an endpoint
 	PrivateSpecified *bool `yaml:"private,omitempty"`
+	// RecordSetManaged represents if the user wants kube-aws not to create a record set for this API load balancer
+	// i.e. the user wants to configure Route53 or one's own DNS oneself
+	RecordSetManaged *bool `yaml:"recordSetManaged,omitempty"`
 	// RecordSetTTLSpecified is the TTL for the record set to this load balancer. Defaults to 300 if nil
 	RecordSetTTLSpecified *int `yaml:"recordSetTTL,omitempty"`
 	// HostedZone is where the resulting Alias record is created for an endpoint
@@ -28,6 +31,8 @@ type APIEndpointLB struct {
 	//SecurityGroups []SecurityGroup
 	// SecurityGroupIds represents SGs associated to this LB. Required when APIAccessAllowedSourceCIDRs is explicitly set to empty
 	SecurityGroupIds []string `yaml:"securityGroupIds"`
+	// Load balancer type. It is 'classic' by default, but can be changed to 'network'
+	Type *string `yaml:"type,omitempty"`
 }
 
 // UnmarshalYAML unmarshals YAML data to an APIEndpointLB object with defaults
@@ -50,42 +55,104 @@ func (e *APIEndpointLB) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 // ManageELB returns true if an ELB should be managed by kube-aws
 func (e APIEndpointLB) ManageELB() bool {
-	return e.ManageELBRecordSet() || e.CreateRecordSet != nil
+	return e.managedELBImplied() || (e.Managed != nil && *e.Managed)
 }
 
-// ManageELBRecordSet returns tru if kube-aws should create a record set for the ELB
+// ClassicLoadBalancer returns true if the load balancer is a classic ELB
+func (e APIEndpointLB) ClassicLoadBalancer() bool {
+	return e.Type == nil || *e.Type == "classic"
+}
+
+// LoadBalancerV2 returns true if the load balancer is a ELBV2 load balancer (only network load balancer is supported for now)
+func (e APIEndpointLB) LoadBalancerV2() bool {
+	return e.Type != nil && *e.Type != "classic"
+}
+
+// NetworkLoadBalancer returns true if the load balancer is a ELBV2 network load balancer
+func (e APIEndpointLB) NetworkLoadBalancer() bool {
+	return e.Type != nil && *e.Type == "network"
+}
+
+// ManageELBRecordSet returns true if kube-aws should create a record set for the ELB
 func (e APIEndpointLB) ManageELBRecordSet() bool {
-	return e.HostedZone.HasIdentifier() && (e.CreateRecordSet == nil || (e.CreateRecordSet != nil && *e.CreateRecordSet))
+	return e.HostedZone.HasIdentifier()
 }
 
 // ManageSecurityGroup returns true if kube-aws should create a security group for this ELB
 func (e APIEndpointLB) ManageSecurityGroup() bool {
-	return len(e.APIAccessAllowedSourceCIDRs) > 0
+	return !e.NetworkLoadBalancer() && len(e.APIAccessAllowedSourceCIDRs) > 0
 }
 
 // Validate returns an error when there's any user error in the settings of the `loadBalancer` field
 func (e APIEndpointLB) Validate() error {
-	if e.managedRecordSetImplied() && !e.HostedZone.HasIdentifier() {
-		return errors.New("missing hostedZoneId")
+	if e.Identifier.HasIdentifier() {
+		if e.PrivateSpecified != nil || !e.ClassicLoadBalancer() || len(e.SubnetReferences) > 0 || e.HostedZone.HasIdentifier() {
+			return errors.New("type, private, subnets, hostedZone must be omitted when id is specified to reuse an existing ELB")
+		}
+
+		return nil
 	}
-	if e.Identifier.HasIdentifier() && (e.PrivateSpecified != nil || len(e.SubnetReferences) > 0 || e.CreateRecordSet != nil || e.HostedZone.HasIdentifier()) {
-		return errors.New("createRecordSet, private, subnets, hostedZone must be omitted when id is specified to reuse an existing ELB")
+
+	if e.Managed != nil && !*e.Managed {
+		if e.RecordSetTTL() != DefaultRecordSetTTL {
+			return errors.New("recordSetTTL should not be modified when an API endpoint LB is not managed by kube-aws")
+		}
+
+		if e.HostedZone.HasIdentifier() {
+			return errors.New("hostedZone.id should not be specified when an API endpoint LB is not managed by kube-aws")
+		}
+
+		if e.Type != nil && len(*e.Type) > 0 {
+			return errors.New("type should not be specified when an API endpoint LB is not managed by kube-aws")
+		}
+
+		return nil
 	}
-	if e.RecordSetTTLSpecified != nil && *e.RecordSetTTLSpecified < 1 {
-		return errors.New("recordSetTTL must be at least 1 second")
+
+	if e.HostedZone.HasIdentifier() {
+		if e.RecordSetManaged != nil && !*e.RecordSetManaged {
+			return errors.New("hostedZone.id must be omitted when you want kube-aws not to touch Route53")
+		}
+
+		if e.RecordSetTTL() < 1 {
+			return errors.New("recordSetTTL must be at least 1 second")
+		}
+	} else {
+		if e.RecordSetManaged == nil || *e.RecordSetManaged {
+			return errors.New("missing hostedZone.id: hostedZone.id is required when `recordSetManaged` is set to true. If you do want to configure DNS yourself, set it to true")
+		}
+
+		if e.RecordSetTTL() != DefaultRecordSetTTL {
+			return errors.New(
+				"recordSetTTL should not be modified when hostedZone id is nil",
+			)
+		}
 	}
-	if e.managedELBImplied() && len(e.APIAccessAllowedSourceCIDRs) == 0 && len(e.SecurityGroupIds) == 0 {
+
+	if e.ClassicLoadBalancer() && e.ManageELB() && len(e.APIAccessAllowedSourceCIDRs) == 0 && len(e.SecurityGroupIds) == 0 {
 		return errors.New("either apiAccessAllowedSourceCIDRs or securityGroupIds must be present. Try not to explicitly empty apiAccessAllowedSourceCIDRs or set one or more securityGroupIDs")
 	}
+
+	if !e.NetworkLoadBalancer() && !e.ClassicLoadBalancer() {
+		return errors.New("load balancer type must be either 'classic' or 'network'")
+	}
+
+	if e.NetworkLoadBalancer() {
+		if len(e.SecurityGroupIds) > 0 {
+			return errors.New("cannot specify security group IDs for a network load balancer")
+		}
+	}
+
 	return nil
 }
 
-func (e APIEndpointLB) managedRecordSetImplied() bool {
-	return (e.CreateRecordSet == nil && e.managedELBImplied()) || (e.CreateRecordSet != nil && *e.CreateRecordSet)
-}
-
 func (e APIEndpointLB) managedELBImplied() bool {
-	return len(e.SubnetReferences) > 0 || e.explicitlyPrivate() || e.explicitlyPublic()
+	return len(e.SubnetReferences) > 0 ||
+		e.explicitlyPrivate() ||
+		e.explicitlyPublic() ||
+		e.HostedZone.HasIdentifier() ||
+		len(e.SecurityGroupIds) > 0 ||
+		e.RecordSetManaged != nil
 }
 
 func (e APIEndpointLB) explicitlyPrivate() bool {

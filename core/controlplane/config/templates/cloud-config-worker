@@ -1,6 +1,5 @@
-{{ define "instance" -}}
+{{ define "instance-script" -}}
 {{- $S3URI := self.Parts.s3.Asset.S3URL -}}
-#!/bin/bash -xe
  . /etc/environment
 export COREOS_PRIVATE_IPV4 COREOS_PRIVATE_IPV6 COREOS_PUBLIC_IPV4 COREOS_PUBLIC_IPV6
 REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')
@@ -18,18 +17,21 @@ run() {
       sleep 1
   done
 }
-run aws s3 --region $REGION  cp {{ $S3URI }} /var/run/coreos/$USERDATA_FILE
+run bash -c "aws configure set s3.signature_version s3v4; aws s3 --region $REGION cp {{ $S3URI }} /var/run/coreos/$USERDATA_FILE"
 
 INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 
-run /bin/sh -c 'echo {{.StackNameEnvVarName}}=$(aws ec2 describe-tags --region "'$REGION'" --filters \
-  "Name=resource-id,Values='$INSTANCE_ID'" \
-  "Name=key,Values=aws:cloudformation:stack-name" \
-  --output json \
-| jq -r ".Tags[].Value") >> {{.StackNameEnvFileName}}'
-
 exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE
 {{ end }}
+
+{{ define "instance" -}}
+{ "Fn::Base64": { "Fn::Join" : ["", [
+  "#!/bin/bash -xe\n",
+  {"Fn::Join":["",[ "echo '{{.StackNameEnvVarName}}=", { "Ref": "AWS::StackName" }, "' >> {{.StackNameEnvFileName}}\n" ]]},
+  {{ (execTemplate "instance-script" .) | toJSON  }}
+]]}}
+{{ end }}
+
 {{ define "s3" -}}
 #cloud-config
 coreos:
@@ -37,25 +39,41 @@ coreos:
     reboot-strategy: "off"
   flannel:
     interface: $private_ipv4
-    etcd_cafile: /etc/kubernetes/ssl/ca.pem
+    etcd_cafile: /etc/kubernetes/ssl/etcd-trusted-ca.pem
     etcd_certfile: /etc/kubernetes/ssl/etcd-client.pem
     etcd_keyfile: /etc/kubernetes/ssl/etcd-client-key.pem
 
   units:
 {{- range $u := .CustomSystemdUnits}}
     - name: {{$u.Name}}
+      {{- if $u.Command }}
       command: {{ $u.Command }}
+      {{- end}}
       {{- if $u.Enable }}
       enable: {{$u.Enable}}
       {{- end }}
       {{- if $u.Runtime }}
       runtime: {{$u.Runtime}}
       {{- end }}
+      {{- if $u.DropInsPresent }}
+      drop-ins:
+        {{- range $d := $u.DropIns }}
+        - name: {{ $d.Name }}
+          content: |
+            {{- range $i := $d.ContentArray }}
+            {{ $i }}
+            {{- end}}
+        {{- end }}
+      {{- end}}
+      {{- if $u.ContentPresent }}
       content: |
-        {{- range $l := $u.ContentArray}}
+        {{- range $l := $u.ContentArray }}
         {{ $l }}
         {{- end }}
+      {{- end}}
 {{- end}}
+    - name: systemd-modules-load.service
+      command: restart
 {{range $volumeMountSpecIndex, $volumeMountSpec := .VolumeMounts}}
     - name: format-{{$volumeMountSpec.SystemdMountName}}.service
       command: start
@@ -81,6 +99,27 @@ coreos:
         What={{$volumeMountSpec.Device}}
         Where={{$volumeMountSpec.Path}}
 {{end}}
+{{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
+    - name: amazon-ssm-agent.service
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Description=amazon-ssm-agent
+        Requires=network-online.target
+        After=network-online.target
+
+        [Service]
+        Type=simple
+        ExecStartPre=/opt/ssm/bin/install-ssm-agent.sh
+        ExecStart=/opt/ssm/bin/amazon-ssm-agent
+        KillMode=control-group
+        Restart=on-failure
+        RestartSec=1min
+
+        [Install]
+        WantedBy=network-online.target
+{{end}}
 {{if .CloudWatchLogging.Enabled}}
     - name: journald-cloudwatch-logs.service
       command: start
@@ -102,7 +141,9 @@ coreos:
                   --mount volume=journal,target=/var/log/journal \
                   --volume machine-id,kind=host,source=/etc/machine-id,readOnly=true \
                   --mount volume=machine-id,target=/etc/machine-id \
+                  --uuid-file-save=/var/journald-cloudwatch-logs/journald-cloudwatch-logs.uuid \
                   {{ .JournaldCloudWatchLogsImage.RktRepo }} -- {{.ClusterName}}
+        ExecStopPost=/usr/bin/rkt rm --uuid-file=/var/journald-cloudwatch-logs/journald-cloudwatch-logs.uuid
         Restart=always
         RestartSec=60s
 
@@ -207,12 +248,13 @@ coreos:
         After=nvidia-start.service
         {{- end }}
         [Service]
+        EnvironmentFile=/etc/environment
         EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=-/etc/default/kubelet
         Environment=KUBELET_IMAGE_TAG={{.K8sVer}}
         Environment=KUBELET_IMAGE_URL={{.HyperkubeImage.RktRepoWithoutTag}}
         Environment="RKT_RUN_ARGS=--volume dns,kind=host,source=/etc/resolv.conf {{.HyperkubeImage.Options}}\
-        --set-env=ETCD_CA_CERT_FILE=/etc/kubernetes/ssl/ca.pem \
+        --set-env=ETCD_CA_CERT_FILE=/etc/kubernetes/ssl/etcd-trusted-ca.pem \
         --set-env=ETCD_CERT_FILE=/etc/kubernetes/ssl/etcd-client.pem \
         --set-env=ETCD_KEY_FILE=/etc/kubernetes/ssl/etcd-client-key.pem \
         --mount volume=dns,target=/etc/resolv.conf \
@@ -235,15 +277,16 @@ coreos:
         ExecStartPre=/usr/bin/mkdir -p /var/lib/cni
         ExecStartPre=/usr/bin/mkdir -p /var/log/containers
         ExecStartPre=/usr/bin/mkdir -p /opt/cni/bin
+        ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/manifests /etc/kubernetes/cni/net.d/  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
         ExecStartPre=/usr/bin/etcdctl \
-                       --ca-file /etc/kubernetes/ssl/ca.pem \
+                       --ca-file /etc/kubernetes/ssl/etcd-trusted-ca.pem \
                        --key-file /etc/kubernetes/ssl/etcd-client-key.pem \
                        --cert-file /etc/kubernetes/ssl/etcd-client.pem \
                        --endpoints "${ETCD_ENDPOINTS}" \
                        cluster-health
         {{if .UseCalico -}}
-        ExecStartPre=/usr/bin/docker run --rm -e SLEEP=false -v /opt/cni/bin:/host/opt/cni/bin {{ .CalicoCniImage.RepoWithTag }} /install-cni.sh
+        ExecStartPre=/usr/bin/docker run --rm -e SLEEP=false -e KUBERNETES_SERVICE_HOST= -e KUBERNETES_SERVICE_PORT= -v /opt/cni/bin:/host/opt/cni/bin {{ .CalicoCniImage.RepoWithTag }} /install-cni.sh
         {{end -}}
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
@@ -253,25 +296,29 @@ coreos:
         --container-runtime={{.ContainerRuntime}} \
         --rkt-path=/usr/bin/rkt \
         --rkt-stage1-image=coreos.com/rkt/stage1-coreos \
-        {{if .Experimental.NodeLabels.Enabled}}--node-labels {{.NodeLabels.String}} \
-        {{end}}--register-node=true \
-        {{if .Experimental.Taints}}--register-with-taints={{.Experimental.Taints.String}}\
+        --node-labels kubernetes.io/role=node{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
+        --register-node=true \
+        {{if .Taints}}--register-with-taints={{.Taints.String}}\
         {{end}}--allow-privileged=true \
         {{if .NodeStatusUpdateFrequency}}--node-status-update-frequency={{.NodeStatusUpdateFrequency}} \
         {{end}}--pod-manifest-path=/etc/kubernetes/manifests \
-        --cluster-dns={{.DNSServiceIP}} \
-        --cluster-domain=cluster.local \
+        {{ if .KubeDns.NodeLocalResolver }}--cluster-dns=${COREOS_PRIVATE_IPV4} \
+        {{ else }}--cluster-dns={{.DNSServiceIP}} \
+        {{ end }}--cluster-domain=cluster.local \
         --cloud-provider=aws \
         --cert-dir=/etc/kubernetes/ssl \
         {{- if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
-        --experimental-bootstrap-kubeconfig=/etc/kubernetes/worker-bootstrap-kubeconfig.yaml \
+        --experimental-bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \
+        {{- if .Kubelet.RotateCerts.Enabled }}
+        --rotate-certificates \
+        {{- end }}
         {{- else }}
         --tls-cert-file=/etc/kubernetes/ssl/worker.pem \
         --tls-private-key-file=/etc/kubernetes/ssl/worker-key.pem \
         {{- end }}
-        --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml \
-        {{- if .Gpu.Nvidia.IsEnabledOn .InstanceType }}
-        --feature-gates="Accelerators=true" \
+        --kubeconfig=/etc/kubernetes/kubeconfig/worker.yaml \
+        {{- if .FeatureGates.Enabled }}
+        --feature-gates="{{.FeatureGates.String}}" \
         {{- end }}
         --require-kubeconfig \
         $KUBELET_OPTS
@@ -358,6 +405,22 @@ coreos:
         RemainAfterExit=true
         ExecStart=/opt/bin/add-to-load-balancers
 {{end}}
+
+{{if .TargetGroup.Enabled}}
+    - name: add-to-target-groups.service
+      enable: true
+      command: start
+      runtime: true
+      content: |
+        [Unit]
+        Description=Add this spot instance to target groups
+        After=network-online.target
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=true
+        ExecStart=/opt/bin/add-to-target-groups
+{{end}}
 {{end}}
 
 {{ if $.ElasticFileSystemID }}
@@ -410,37 +473,9 @@ coreos:
 
         [Service]
         Type=oneshot
-        RemainAfterExit=true
         ExecStop=/bin/true
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment INSTANCE_ID=$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id)"
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment SECURITY_GROUPS=\"$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/security-groups | tr '\n' ',')\""
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment AUTOSCALINGGROUP=\"$(/usr/bin/docker run --rm --net=host \
-          {{.AWSCliImage.RepoWithTag}} aws \
-          autoscaling describe-auto-scaling-instances \
-          --instance-ids ${INSTANCE_ID} --region {{.Region}} \
-          --query 'AutoScalingInstances[].AutoScalingGroupName' --output text)\""
-        ExecStartPre=/bin/sh -c "/usr/bin/systemctl set-environment \
-          LAUNCHCONFIGURATION=\"$(/usr/bin/docker run --rm --net=host \
-          {{.AWSCliImage.RepoWithTag}} \
-          aws autoscaling describe-auto-scaling-groups \
-          --auto-scaling-group-name $AUTOSCALINGGROUP --region {{.Region}} \
-          --query 'AutoScalingGroups[].LaunchConfigurationName' --output text)\""
-        ExecStart=/usr/bin/docker run --rm -t --net=host \
-          -v /etc/kubernetes:/etc/kubernetes \
-          -v /etc/resolv.conf:/etc/resolv.conf \
-          -e INSTANCE_ID=${INSTANCE_ID} \
-          -e SECURITY_GROUPS=${SECURITY_GROUPS} \
-          -e AUTOSCALINGGROUP=${AUTOSCALINGGROUP} \
-          -e LAUNCHCONFIGURATION=${LAUNCHCONFIGURATION} \
-          {{.HyperkubeImage.RepoWithTag}} /bin/bash \
-            -ec 'echo "placing labels and annotations with additional AWS parameters."; \
-             kctl="/kubectl --server={{.APIEndpointURL}}:443 --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml"; \
-             kctl_label="$kctl label --overwrite nodes/$(hostname)"; \
-             kctl_annotate="$kctl annotate --overwrite nodes/$(hostname)"; \
-             $kctl_label kube-aws.coreos.com/autoscalinggroup=${AUTOSCALINGGROUP}; \
-             $kctl_label kube-aws.coreos.com/launchconfiguration=${LAUNCHCONFIGURATION}; \
-             $kctl_annotate kube-aws.coreos.com/securitygroups=${SECURITY_GROUPS}; \
-             echo "done."'
+        RemainAfterExit=true
+        ExecStart=/opt/bin/kube-node-label
 {{end}}
 
 {{if .Experimental.EphemeralImageStorage.Enabled}}
@@ -542,6 +577,19 @@ users:
 {{end}}
 
 write_files:
+  - path: /etc/ssh/sshd_config
+    permissions: 0600
+    owner: root:root
+    content: |
+      UsePrivilegeSeparation sandbox
+      Subsystem sftp internal-sftp
+      ClientAliveInterval 180
+      UseDNS no
+      UsePAM yes
+      PrintLastLog no # handled by PAM
+      PrintMotd no # handled by PAM
+      PasswordAuthentication no
+      ChallengeResponseAuthentication no
 {{- if .CustomFiles}}
   {{- range $w := .CustomFiles}}
   - path: {{$w.Path}}
@@ -550,6 +598,48 @@ write_files:
     content: {{$w.GzippedBase64Content}}
   {{- end }}
 {{- end }}
+  - path: /etc/modules-load.d/ip_vs.conf
+    content: |
+      ip_vs
+      ip_vs_rr
+      ip_vs_wrr
+      ip_vs_sh
+      nf_conntrack_ipv4
+{{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
+  - path: "/opt/ssm/bin/install-ssm-agent.sh"
+    permissions: 0700
+    content: |
+      #!/bin/bash
+      set -e
+
+      TARGET_DIR=/opt/ssm
+      if [[ -f "${TARGET_DIR}"/bin/amazon-ssm-agent ]]; then
+        exit 0
+      fi
+
+      TMP_DIR=$(mktemp -d)
+      trap "rm -rf ${TMP_DIR}" EXIT
+
+      TAR_FILE=ssm.linux-amd64.tar.gz
+      CHECKSUM_FILE="${TAR_FILE}.sha1"
+
+      echo -n "{{ .AmazonSsmAgent.Sha1Sum }} ${TMP_DIR}/${TAR_FILE}" > "${TMP_DIR}/${CHECKSUM_FILE}"
+
+      curl --silent -L -o "${TMP_DIR}/${TAR_FILE}" "{{ .AmazonSsmAgent.DownloadUrl }}"
+
+      sha1sum --quiet -c "${TMP_DIR}/${CHECKSUM_FILE}"
+
+      tar zfx "${TMP_DIR}"/"${TAR_FILE}" -C "${TMP_DIR}"
+      chown -R root:root "${TMP_DIR}"/ssm
+
+      CONFIG_DIR=/etc/amazon/ssm
+      mkdir -p "${CONFIG_DIR}"
+      mv -f "${TMP_DIR}"/ssm/amazon-ssm-agent.json "${CONFIG_DIR}"/amazon-ssm-agent.json
+      mv -f "${TMP_DIR}"/ssm/seelog_unix.xml "${CONFIG_DIR}"/seelog.xml
+
+      mv -f "${TMP_DIR}"/ssm/* "${TARGET_DIR}"/bin/
+
+{{end}}
 {{if .AwsEnvironment.Enabled}}
   - path: /opt/bin/set-aws-environment
     owner: root:root
@@ -570,7 +660,77 @@ write_files:
           '
             cfn-init -v -c "aws-environment" --region {{.Region}} --resource {{.LogicalName}} --stack '${{.StackNameEnvVarName}}'
           '
+
+      rkt rm --uuid-file=/var/run/coreos/set-aws-environment.uuid || :
 {{end}}
+
+  {{if .Experimental.AwsNodeLabels.Enabled -}}
+  - path: /opt/bin/kube-node-label
+    permissions: 0700
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+      set -ue
+
+      INSTANCE_ID="$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id)"
+      SECURITY_GROUPS="$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/security-groups | tr '\n' ',')"
+      {{if not .SpotFleet.Enabled -}}
+      AUTOSCALINGGROUP="$(/usr/bin/docker run --rm --net=host \
+        {{.AWSCliImage.RepoWithTag}} aws \
+        autoscaling describe-auto-scaling-instances \
+        --instance-ids ${INSTANCE_ID} --region {{.Region}} \
+        --query 'AutoScalingInstances[].AutoScalingGroupName' --output text)"
+      LAUNCHCONFIGURATION="$(/usr/bin/docker run --rm --net=host \
+        {{.AWSCliImage.RepoWithTag}} \
+        aws autoscaling describe-auto-scaling-groups \
+        --auto-scaling-group-name $AUTOSCALINGGROUP --region {{.Region}} \
+        --query 'AutoScalingGroups[].LaunchConfigurationName' --output text)"
+      {{end -}}
+
+      label() {
+        /usr/bin/docker run --rm -t --net=host \
+          -v /etc/kubernetes:/etc/kubernetes \
+          -v /etc/resolv.conf:/etc/resolv.conf \
+          -e INSTANCE_ID=${INSTANCE_ID} \
+          -e SECURITY_GROUPS=${SECURITY_GROUPS} \
+          {{if not .SpotFleet.Enabled -}}
+          -e AUTOSCALINGGROUP=${AUTOSCALINGGROUP} \
+          -e LAUNCHCONFIGURATION=${LAUNCHCONFIGURATION} \
+          {{end -}}
+          {{.HyperkubeImage.RepoWithTag}} /bin/bash \
+            -ec 'echo "placing labels and annotations with additional AWS parameters."; \
+             kctl="/kubectl --server={{.APIEndpointURL}}:443 --kubeconfig=/etc/kubernetes/kubeconfig/worker.yaml"; \
+             kctl_label="$kctl label --overwrite nodes/$(hostname)"; \
+             kctl_annotate="$kctl annotate --overwrite nodes/$(hostname)"; \
+             {{if not .SpotFleet.Enabled -}}
+             $kctl_label kube-aws.coreos.com/autoscalinggroup=${AUTOSCALINGGROUP}; \
+             $kctl_label kube-aws.coreos.com/launchconfiguration=${LAUNCHCONFIGURATION}; \
+             {{end -}}
+             $kctl_annotate kube-aws.coreos.com/securitygroups=${SECURITY_GROUPS}; \
+             echo "done."'
+      }
+
+      set +e
+
+      max_attempts=5
+      attempt_num=0
+      attempt_initial_interval_sec=1
+
+      until label
+      do
+        ((attempt_num++))
+        if (( attempt_num == max_attempts ))
+        then
+            echo "Attempt $attempt_num failed and there are no more attempts left!"
+            return 1
+        else
+            attempt_interval_sec=$((attempt_initial_interval_sec*2**$((attempt_num-1))))
+            echo "Attempt $attempt_num failed! Trying again in $attempt_interval_sec seconds..."
+            sleep $attempt_interval_sec;
+        fi
+      done
+
+  {{end -}}
 
   - path: /opt/bin/cfn-signal
     owner: root:root
@@ -620,7 +780,7 @@ write_files:
     permissions: 0755
     owner: root:root
     content: |
-      KUBELET_OPTS=""
+      KUBELET_OPTS="{{.Experimental.KubeletOpts}}"
 
   - path: /etc/kubernetes/cni/docker_opts_cni.env
     content: |
@@ -644,7 +804,7 @@ write_files:
 
 {{ if .ManageCertificates }}
 
-  - path: /etc/kubernetes/ssl/etcd-client.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/ssl/etcd-client.pem
     encoding: gzip+base64
     content: {{.AssetsConfig.EtcdClientCert}}
 
@@ -652,8 +812,12 @@ write_files:
     encoding: gzip+base64
     content: {{.AssetsConfig.EtcdClientKey}}
 
+  - path: /etc/kubernetes/ssl/etcd-trusted-ca.pem
+    encoding: gzip+base64
+    content: {{.AssetsConfig.EtcdTrustedCA}}
+
 {{ if not .Experimental.TLSBootstrap.Enabled }}
-  - path: /etc/kubernetes/ssl/worker.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/ssl/worker.pem
     encoding: gzip+base64
     content: {{.AssetsConfig.WorkerCert}}
 
@@ -662,19 +826,10 @@ write_files:
     content: {{.AssetsConfig.WorkerKey}}
 {{ end }}
 
-  - path: /etc/kubernetes/ssl/ca.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/kubernetes/ssl/ca.pem
     encoding: gzip+base64
     content: {{.AssetsConfig.CACert}}
 
-{{ if .Experimental.Dex.Enabled }}
-  - path: /etc/kubernetes/ssl/dex.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
-    encoding: gzip+base64
-    content: {{.AssetsConfig.DexCert}}
-
-  - path: /etc/kubernetes/ssl/dex-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
-    encoding: gzip+base64
-    content: {{.AssetsConfig.DexKey}}
-{{ end }}
 {{ end }}
 
 {{ if .AssetsEncryptionEnabled }}
@@ -714,7 +869,7 @@ write_files:
            {{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
            echo injecting token into the kubelet bootstrap kubeconfig file
            bootstrap_token=$(cat /etc/kubernetes/auth/kubelet-tls-bootstrap-token.tmp);
-           sed -i -e "s#\$KUBELET_BOOTSTRAP_TOKEN#$bootstrap_token#g" /etc/kubernetes/worker-bootstrap-kubeconfig.yaml
+           sed -i -e "s#\$KUBELET_BOOTSTRAP_TOKEN#$bootstrap_token#g" /etc/kubernetes/kubeconfig/worker-bootstrap.yaml
            {{ end }}
            echo done.'
 
@@ -731,7 +886,26 @@ write_files:
 
       instance_id=$(curl http://169.254.169.254/latest/meta-data/instance-id)
 
-      sudo rkt run \
+      TAGS=""
+      TAGS="${TAGS}Key=\"kubernetes.io/cluster/{{ .ClusterName }}\",Value=\"owned\" "
+      TAGS="${TAGS}Key=\"kube-aws:node-pool:name\",Value=\"{{.NodePoolName}}\" "
+      TAGS="${TAGS}Key=\"Name\",Value=\"{{.ClusterName}}-{{.StackName}}-kube-aws-worker\" "
+
+      {{if .Autoscaling.ClusterAutoscaler.Enabled -}}
+      TAGS="${TAGS}Key=\"{{.Autoscaling.ClusterAutoscaler.AutoDiscoveryTagKey}}\",Value=\"\" "
+      {{end -}}
+
+      {{range $k, $v := .StackTags -}}
+      TAGS="${TAGS}Key=\"{{$k}}\",Value=\"{{$v}}\" "
+      {{end -}}
+
+      {{range $k, $v := .InstanceTags -}}
+      TAGS="${TAGS}Key=\"{{$k}}\",Value=\"{{$v}}\" "
+      {{end -}}
+
+      echo Tagging this EC2 instance with: "$TAGS"
+
+      rkt run \
         --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
         --mount=volume=ssl,target=/etc/kubernetes/ssl \
         --uuid-file-save=/var/run/coreos/tag-spot-instance.uuid \
@@ -746,10 +920,11 @@ write_files:
            /usr/bin/aws \
              --region {{.Region}} ec2 create-tags \
              --resource $instance_id \
-             --tags '"'"'Key=kubernetes.io/cluster/{{.ClusterName}},Value=""'"'"' '"'"'Key=Name,Value="{{.ClusterName}}-{{.StackName}}-kube-aws-worker"'"'"' '"'"'Key="kube-aws:node-pool:name",Value="{{.NodePoolName}}"'"'"'
+             --tags '"$TAGS"'
            echo done.'
 
-      sudo rkt rm --uuid-file=/var/run/coreos/tag-spot-instance.uuid
+      rkt rm --uuid-file=/var/run/coreos/tag-spot-instance.uuid || :
+
 {{if .Experimental.LoadBalancer.Enabled}}
   - path: /opt/bin/add-to-load-balancers
     owner: root:root
@@ -759,7 +934,7 @@ write_files:
 
       instance_id=$(curl http://169.254.169.254/latest/meta-data/instance-id)
 
-      sudo rkt run \
+      rkt run \
         --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
         --mount=volume=ssl,target=/etc/kubernetes/ssl \
         --uuid-file-save=/var/run/coreos/add-to-load-balancers.uuid \
@@ -771,7 +946,7 @@ write_files:
           -vxec \
           'echo adding this spot instance to load balancers
            instance_id="'$instance_id'"
-           lbs=({{range $i, $lb := .Experimental.LoadBalancer.Names}}"{{$lb}}" {{end}})
+           lbs=({{range $lb := .Experimental.LoadBalancer.Names}}"{{$lb}}" {{end}})
            add_to_lb="/usr/bin/aws --region {{.Region}} elb register-instances-with-load-balancer --instances $instance_id --load-balancer-name"
            for lb in ${lbs[@]}; do
              echo "$lb"
@@ -779,53 +954,65 @@ write_files:
            done
            echo done.'
 
-      sudo rkt rm --uuid-file=/var/run/coreos/add-to-load-balancers.uuid
+      rkt rm --uuid-file=/var/run/coreos/add-to-load-balancers.uuid || :
+{{end}}
+
+{{if .Experimental.TargetGroup.Enabled}}
+  - path: /opt/bin/add-to-target-groups
+    owner: root:root
+    permissions: 0700
+    content: |
+      #!/bin/bash -e
+
+      instance_id=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+
+      rkt run \
+        --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
+        --mount=volume=ssl,target=/etc/kubernetes/ssl \
+        --uuid-file-save=/var/run/coreos/add-to-target-groups.uuid \
+        --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
+        --net=host \
+        --trust-keys-from-https \
+        --insecure-options=ondisk \
+        {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
+          -vxec \
+          'echo adding this spot instance to target groups
+           instance_id="'$instance_id'"
+           tgs=({{range $tg := .Experimental.TargetGroup.Arns}}"{{$tg}}" {{end}})
+           add_to_tg="/usr/bin/aws --region {{.Region}} elbv2 register-targets --targets Id=$instance_id --target-group-arn"
+           for tg in ${tgs[@]}; do
+             echo "$tg"
+             $add_to_tg "$tg"
+           done
+           echo done.'
+
+      rkt rm --uuid-file=/var/run/coreos/add-to-target-groups.uuid || :
 {{end}}
 {{end}}
 
-  - path: /etc/kubernetes/manifests/kube-proxy.yaml
+  # File needed on every node (used by the kube-proxy DaemonSet), including controllers
+  - path: /etc/kubernetes/kubeconfig/kube-proxy.yaml
     content: |
         apiVersion: v1
-        kind: Pod
-        metadata:
-          name: kube-proxy
-          namespace: kube-system
-          annotations:
-            rkt.alpha.kubernetes.io/stage1-name-override: coreos.com/rkt/stage1-fly
-        spec:
-          hostNetwork: true
-          containers:
-          - name: kube-proxy
-            image: {{.HyperkubeImage.RepoWithTag}}
-            command:
-            - /hyperkube
-            - proxy
-            - --master={{.APIEndpointURL}}
-            - --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml
-            securityContext:
-              privileged: true
-            volumeMounts:
-              - mountPath: /etc/ssl/certs
-                name: ssl-certs
-              - mountPath: /etc/kubernetes
-                name: kubeconfig
-                readOnly: true
-              - mountPath: /var/run/dbus
-                name: dbus
-                readOnly: false
-          volumes:
-            - name: ssl-certs
-              hostPath:
-                path: /usr/share/ca-certificates
-            - name: kubeconfig
-              hostPath:
-                path: /etc/kubernetes
-            - name: dbus
-              hostPath:
-                path: /var/run/dbus
+        kind: Config
+        clusters:
+        - name: default
+          cluster:
+            certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            server: {{.APIEndpointURL}}:443
+        users:
+        - name: default
+          user:
+            tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+        contexts:
+        - context:
+            cluster: default
+            user: default
+          name: default
+        current-context: default
 
 {{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
-  - path: /etc/kubernetes/worker-bootstrap-kubeconfig.yaml
+  - path: /etc/kubernetes/kubeconfig/worker-bootstrap.yaml
     content: |
         apiVersion: v1
         kind: Config
@@ -845,7 +1032,7 @@ write_files:
           name: tls-bootstrap-context
         current-context: tls-bootstrap-context
 {{ else }}
-  - path: /etc/kubernetes/worker-kubeconfig.yaml
+  - path: /etc/kubernetes/kubeconfig/worker.yaml
     content: |
         apiVersion: v1
         kind: Config
@@ -890,7 +1077,7 @@ write_files:
           "etcd_endpoints": "#ETCD_ENDPOINTS#",
           "etcd_key_file": "/etc/kubernetes/ssl/etcd-client-key.pem",
           "etcd_cert_file": "/etc/kubernetes/ssl/etcd-client.pem",
-          "etcd_ca_cert_file": "/etc/kubernetes/ssl/ca.pem",
+          "etcd_ca_cert_file": "/etc/kubernetes/ssl/etcd-trusted-ca.pem",
           "log_level": "info",
           "policy": {
             "type": "k8s",
@@ -936,7 +1123,7 @@ write_files:
       set -e
       function is_gpu_enabled(){
         local instance_type=$1
-        [[ -n $instance_type ]] && ([[ $instance_type == p2* ]] || [[ $instance_type ==  g2* ]])
+        [[ -n $instance_type ]] && ([[ $instance_type == p2* ]] || [[ $instance_type == p3* ]] || [[ $instance_type ==  g2* ]] || [[ $instance_type == g3* ]])
       }
 
       INSTANCE_TYPE=$(curl -s http://169.254.169.254/latest/meta-data/instance-type)
@@ -1287,6 +1474,8 @@ write_files:
 
       mkdir -p /etc/ld.so.conf.d/ 2>/dev/null
       echo "/opt/nvidia/current/lib64" > /etc/ld.so.conf.d/nvidia.conf
+      rm /opt/nvidia/current/lib64/libEGL.so.1
+      ln -s /opt/nvidia/current/lib64/libEGL.so.$DRIVER_VERSION /opt/nvidia/current/lib64/libEGL.so.1
       ldconfig
 
   - path: /opt/nvidia-build/util/retry.sh

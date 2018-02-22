@@ -90,38 +90,23 @@ subnets:
 
 func checkControllerASGs(configuredCount *int, configuredMin *int, configuredMax *int, configuredMinInstances *int,
 	expectedMin int, expectedMax int, expectedMinInstances int, expectedError string, t *testing.T) {
-	// Use deprecated keys
 	checkControllerASG(configuredCount, configuredMin, configuredMax, configuredMinInstances,
-		expectedMin, expectedMax, expectedMinInstances, expectedError, true, t)
-	// Don't use deprecated keys
-	checkControllerASG(configuredCount, configuredMin, configuredMax, configuredMinInstances,
-		expectedMin, expectedMax, expectedMinInstances, expectedError, false, t)
+		expectedMin, expectedMax, expectedMinInstances, expectedError, t)
 }
 
 func checkControllerASG(configuredCount *int, configuredMin *int, configuredMax *int, configuredMinInstances *int,
-	expectedMin int, expectedMax int, expectedMinInstances int, expectedError string, useDeprecatedKey bool, t *testing.T) {
+	expectedMin int, expectedMax int, expectedMinInstances int, expectedError string, t *testing.T) {
 	config := testConfig
 
-	if useDeprecatedKey {
-		if configuredCount != nil {
-			config += fmt.Sprintf("controllerCount: %d\n", *configuredCount)
-		}
-		asgConfig := buildASGConfig(configuredMin, configuredMax, configuredMinInstances)
-		if asgConfig != "" {
-			// empty `controller` traps go-yaml to override the whole Controller with a zero-value, which is not what we expect
-			config += "controller:\n" + asgConfig
-		}
-	} else {
-		countConfig := ""
-		if configuredCount != nil {
-			countConfig = fmt.Sprintf("  count: %d\n", *configuredCount)
-		}
-		asgConfig := buildASGConfig(configuredMin, configuredMax, configuredMinInstances)
-		concatConfig := countConfig + asgConfig
-		if concatConfig != "" {
-			// empty `controller` traps go-yaml to override the whole Controller with a zero-value, which is not what we expect
-			config += "controller:\n" + concatConfig
-		}
+	countConfig := ""
+	if configuredCount != nil {
+		countConfig = fmt.Sprintf("  count: %d\n", *configuredCount)
+	}
+	asgConfig := buildASGConfig(configuredMin, configuredMax, configuredMinInstances)
+	concatConfig := countConfig + asgConfig
+	if concatConfig != "" {
+		// empty `controller` traps go-yaml to override the whole Controller with a zero-value, which is not what we expect
+		config += "controller:\n" + concatConfig
 	}
 
 	cluster, err := ClusterFromBytes([]byte(config))
@@ -131,7 +116,7 @@ func checkControllerASG(configuredCount *int, configuredMin *int, configuredMax 
 		}
 	} else {
 		if expectedError != "" {
-			t.Errorf("expeced error \"%s\" not occured", expectedError)
+			t.Errorf("expected error \"%s\" not occurred", expectedError)
 			t.FailNow()
 		}
 

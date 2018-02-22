@@ -1,8 +1,13 @@
 language: go
 go:
-  - 1.7
+  - 1.8.3
 go_import_path: github.com/kubernetes-incubator/kube-aws
 script:
   - make test-with-cover
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+deploy:
+  provider: script
+  script: ci/publish-docs-as-bot.sh
+  on:
+    branch: master

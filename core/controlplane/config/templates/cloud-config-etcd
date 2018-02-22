@@ -19,7 +19,7 @@ run() {
     sleep 1
   done
 }
-run aws s3 --region $REGION  cp {{ $S3URI }}  /var/run/coreos/$USERDATA_FILE
+run bash -c "aws configure set s3.signature_version s3v4; aws s3 --region $REGION cp {{ $S3URI }} /var/run/coreos/$USERDATA_FILE"
 
 INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 
@@ -40,17 +40,31 @@ coreos:
   units:
 {{- range $u := .Etcd.CustomSystemdUnits}}
     - name: {{$u.Name}}
+      {{- if $u.Command }}
       command: {{ $u.Command }}
+      {{- end}}
       {{- if $u.Enable }}
       enable: {{ $u.Enable }}
       {{- end }}
       {{- if $u.Runtime }}
       runtime: {{ $u.Runtime }}
       {{- end }}
+      {{- if $u.DropInsPresent }}
+      drop-ins:
+        {{- range $d := $u.DropIns }}
+        - name: {{ $d.Name }}
+          content: |
+            {{- range $i := $d.ContentArray }}
+            {{ $i }}
+            {{- end}}
+        {{- end }}
+      {{- end}}
+      {{- if $u.ContentPresent }}
       content: |
         {{- range $l := $u.ContentArray}}
         {{ $l }}
         {{- end }}
+      {{- end}}
 {{- end}}
     - name: cfn-etcd-environment.service
       enable: true
@@ -73,6 +87,27 @@ coreos:
 
         [Install]
         RequiredBy=format-etcd2-volume.service
+{{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
+    - name: amazon-ssm-agent.service
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Description=amazon-ssm-agent
+        Requires=network-online.target
+        After=network-online.target
+
+        [Service]
+        Type=simple
+        ExecStartPre=/opt/ssm/bin/install-ssm-agent.sh
+        ExecStart=/opt/ssm/bin/amazon-ssm-agent
+        KillMode=control-group
+        Restart=on-failure
+        RestartSec=1min
+
+        [Install]
+        WantedBy=network-online.target
+{{end}}
 {{if .CloudWatchLogging.Enabled}}
     - name: journald-cloudwatch-logs.service
       command: start
@@ -94,7 +129,9 @@ coreos:
                   --mount volume=journal,target=/var/log/journal \
                   --volume machine-id,kind=host,source=/etc/machine-id,readOnly=true \
                   --mount volume=machine-id,target=/etc/machine-id \
+                  --uuid-file-save=/var/journald-cloudwatch-logs/journald-cloudwatch-logs.uuid \
                   {{ .JournaldCloudWatchLogsImage.RktRepo }} -- {{.ClusterName}}
+        ExecStopPost=/usr/bin/rkt rm --uuid-file=/var/journald-cloudwatch-logs/journald-cloudwatch-logs.uuid
         Restart=always
         RestartSec=60s
 
@@ -234,6 +271,7 @@ coreos:
 
             [Service]
             EnvironmentFile=-/etc/etcd-environment
+            EnvironmentFile=-/var/run/coreos/etcdadm/etcd-member.env
 
             PermissionsStartOnly=true
             ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
@@ -347,6 +385,19 @@ ssh_authorized_keys:
 {{end}}
 
 write_files:
+  - path: /etc/ssh/sshd_config
+    permissions: 0600
+    owner: root:root
+    content: |
+      UsePrivilegeSeparation sandbox
+      Subsystem sftp internal-sftp
+      ClientAliveInterval 180
+      UseDNS no
+      UsePAM yes
+      PrintLastLog no # handled by PAM
+      PrintMotd no # handled by PAM
+      PasswordAuthentication no
+      ChallengeResponseAuthentication no
 {{- if .Etcd.CustomFiles}}
   {{- range $w := .Etcd.CustomFiles}}
   - path: {{$w.Path}}
@@ -355,6 +406,41 @@ write_files:
     content: {{$w.GzippedBase64Content}}
   {{- end }}
 {{- end }}
+{{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
+  - path: "/opt/ssm/bin/install-ssm-agent.sh"
+    permissions: 0700
+    content: |
+      #!/bin/bash
+      set -e
+
+      TARGET_DIR=/opt/ssm
+      if [[ -f "${TARGET_DIR}"/bin/amazon-ssm-agent ]]; then
+        exit 0
+      fi
+
+      TMP_DIR=$(mktemp -d)
+      trap "rm -rf ${TMP_DIR}" EXIT
+
+      TAR_FILE=ssm.linux-amd64.tar.gz
+      CHECKSUM_FILE="${TAR_FILE}.sha1"
+
+      echo -n "{{ .AmazonSsmAgent.Sha1Sum }} ${TMP_DIR}/${TAR_FILE}" > "${TMP_DIR}/${CHECKSUM_FILE}"
+
+      curl --silent -L -o "${TMP_DIR}/${TAR_FILE}" "{{ .AmazonSsmAgent.DownloadUrl }}"
+
+      sha1sum --quiet -c "${TMP_DIR}/${CHECKSUM_FILE}"
+
+      tar zfx "${TMP_DIR}"/"${TAR_FILE}" -C "${TMP_DIR}"
+      chown -R root:root "${TMP_DIR}"/ssm
+
+      CONFIG_DIR=/etc/amazon/ssm
+      mkdir -p "${CONFIG_DIR}"
+      mv -f "${TMP_DIR}"/ssm/amazon-ssm-agent.json "${CONFIG_DIR}"/amazon-ssm-agent.json
+      mv -f "${TMP_DIR}"/ssm/seelog_unix.xml "${CONFIG_DIR}"/seelog.xml
+
+      mv -f "${TMP_DIR}"/ssm/* "${TARGET_DIR}"/bin/
+
+{{end}}
   - path: /opt/bin/cfn-init-etcd-server
     owner: root:root
     permissions: 0700
@@ -603,12 +689,12 @@ write_files:
 
       echo "KUBE_AWS_ASSUMED_HOSTNAME=$advertised_hostname
       ETCD_NAME=$name
-      ETCD_PEER_TRUSTED_CA_FILE=/etc/ssl/certs/ca.pem
+      ETCD_PEER_TRUSTED_CA_FILE=/etc/ssl/certs/etcd-trusted-ca.pem
       ETCD_PEER_CERT_FILE=/etc/ssl/certs/etcd.pem
       ETCD_PEER_KEY_FILE=/etc/ssl/certs/etcd-key.pem
 
       ETCD_CLIENT_CERT_AUTH=true
-      ETCD_TRUSTED_CA_FILE=/etc/ssl/certs/ca.pem
+      ETCD_TRUSTED_CA_FILE=/etc/ssl/certs/etcd-trusted-ca.pem
       ETCD_CERT_FILE=/etc/ssl/certs/etcd.pem
       ETCD_KEY_FILE=/etc/ssl/certs/etcd-key.pem
 
@@ -671,7 +757,7 @@ write_files:
     content: |
       COREOS_PUBLIC_IPV4=$public_ipv4
       COREOS_PRIVATE_IPV4=$private_ipv4
-      ETCDCTL_CA_FILE=/etc/ssl/certs/ca.pem
+      ETCDCTL_CA_FILE=/etc/ssl/certs/etcd-trusted-ca.pem
       ETCDCTL_CERT_FILE=/etc/ssl/certs/etcd-client.pem
       ETCDCTL_KEY_FILE=/etc/ssl/certs/etcd-client-key.pem
       ETCDCTL_ENDPOINT=
@@ -715,19 +801,19 @@ write_files:
 
 {{ if .ManageCertificates }}
 
-  - path: /etc/ssl/certs/ca.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/ssl/certs/etcd-trusted-ca.pem
     encoding: gzip+base64
-    content: {{.AssetsConfig.CACert}}
+    content: {{.AssetsConfig.EtcdTrustedCA}}
 
   - path: /etc/ssl/certs/etcd-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.AssetsConfig.EtcdKey}}
 
-  - path: /etc/ssl/certs/etcd.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/ssl/certs/etcd.pem
     encoding: gzip+base64
     content: {{.AssetsConfig.EtcdCert}}
 
-  - path: /etc/ssl/certs/etcd-client.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+  - path: /etc/ssl/certs/etcd-client.pem
     encoding: gzip+base64
     content: {{.AssetsConfig.EtcdClientCert}}
 

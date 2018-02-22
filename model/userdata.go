@@ -65,7 +65,7 @@ func NewUserData(templateFile string, context interface{}, opts ...UserDataOptio
 		"extra": func() (r string) { panic("[bug] Stub 'extra' was not replaced") },
 	}
 
-	tmpl, err := texttemplate.Parse(templateFile, funcs)
+	tmpl, err := texttemplate.ParseFile(templateFile, funcs)
 	if err != nil {
 		return UserData{}, err
 	}

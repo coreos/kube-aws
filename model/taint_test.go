@@ -18,7 +18,7 @@ func TestTaintString(t *testing.T) {
 	}
 }
 
-func TestTaintValid(t *testing.T) {
+func TestTaintValidate(t *testing.T) {
 	testCases := []struct {
 		key     string
 		effect  string
@@ -53,7 +53,7 @@ func TestTaintValid(t *testing.T) {
 			Effect: testCase.effect,
 		}
 
-		err := taint.Valid()
+		err := taint.Validate()
 
 		if testCase.isValid && err != nil {
 			t.Errorf("Expected taint to be valid, but got error: %v", err)
@@ -86,7 +86,7 @@ func TestTaintsString(t *testing.T) {
 	}
 }
 
-func TestTaintsValid(t *testing.T) {
+func TestTaintsValidate(t *testing.T) {
 	testCases := []struct {
 		taints  Taints
 		isValid bool
@@ -134,7 +134,7 @@ func TestTaintsValid(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		err := testCase.taints.Valid()
+		err := testCase.taints.Validate()
 
 		if testCase.isValid && err != nil {
 			t.Errorf("Expected taint to be valid, but got error: %v", err)

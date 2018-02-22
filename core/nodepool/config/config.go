@@ -39,9 +39,12 @@ type ProvidedConfig struct {
 	WorkerNodePoolConfig    `yaml:",inline"`
 	DeploymentSettings      `yaml:",inline"`
 	cfg.Experimental        `yaml:",inline"`
-	Private                 bool   `yaml:"private,omitempty"`
-	NodePoolName            string `yaml:"name,omitempty"`
+	cfg.Kubelet             `yaml:",inline"`
+	Plugins                 model.PluginConfigs `yaml:"kubeAwsPlugins,omitempty"`
+	Private                 bool                `yaml:"private,omitempty"`
+	NodePoolName            string              `yaml:"name,omitempty"`
 	ProvidedEncryptService  cfg.EncryptService
+	model.UnknownKeys       `yaml:",inline"`
 }
 
 type DeploymentSettings struct {
@@ -71,14 +74,17 @@ func (c ProvidedConfig) NestedStackName() string {
 
 func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
 	var err error
-	stackConfig := StackConfig{}
+	stackConfig := StackConfig{
+		ExtraCfnResources: map[string]interface{}{},
+	}
 
 	if stackConfig.ComputedConfig, err = c.Config(); err != nil {
 		return nil, fmt.Errorf("failed to generate config : %v", err)
 	}
 
+	tlsBootstrappingEnabled := c.Experimental.TLSBootstrap.Enabled
 	if stackConfig.ComputedConfig.AssetsEncryptionEnabled() {
-		compactAssets, err := cfg.ReadOrCreateCompactAssets(opts.AssetsDir, c.ManageCertificates, cfg.KMSConfig{
+		compactAssets, err := cfg.ReadOrCreateCompactAssets(opts.AssetsDir, c.ManageCertificates, tlsBootstrappingEnabled, false, cfg.KMSConfig{
 			Region:         stackConfig.ComputedConfig.Region,
 			KMSKeyARN:      c.KMSKeyARN,
 			EncryptService: c.ProvidedEncryptService,
@@ -88,7 +94,7 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 		}
 		stackConfig.ComputedConfig.AssetsConfig = compactAssets
 	} else {
-		rawAssets, _ := cfg.ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir, c.ManageCertificates)
+		rawAssets, _ := cfg.ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir, c.ManageCertificates, tlsBootstrappingEnabled, false)
 		stackConfig.ComputedConfig.AssetsConfig = rawAssets
 	}
 
@@ -143,25 +149,6 @@ func (c *ProvidedConfig) UnmarshalYAML(unmarshal func(interface{}) error) error 
 	}
 	*c = ProvidedConfig(work)
 
-	// TODO Remove deprecated keys in v0.9.7
-	if c.DeprecatedRootVolumeIOPS != nil {
-		fmt.Println("WARN: worker.nodePools[].rootVolumeIOPS is deprecated and will be removed in v0.9.7. Please use worker.nodePools[].rootVolume.iops instead")
-		c.RootVolume.IOPS = *c.DeprecatedRootVolumeIOPS
-	}
-
-	if c.WorkerNodePoolConfig.DeprecatedNodePoolManagedIamRoleName != "" {
-		fmt.Println("WARN: worker.nodePools[].managedIamRoleName is deprecated and will be removed in v0.9.7. Please use worker.nodePools[].iam.managedRoleName instead")
-		c.IAMConfig.Role.Name = c.WorkerNodePoolConfig.DeprecatedNodePoolManagedIamRoleName
-	}
-	if c.DeprecatedRootVolumeSize != nil {
-		fmt.Println("WARN: worker.nodePools[].rootVolumeSize is deprecated and will be removed in v0.9.7. Please use worker.nodePools[].rootVolume.size instead")
-		c.RootVolume.Size = *c.DeprecatedRootVolumeSize
-	}
-	if c.DeprecatedRootVolumeType != nil {
-		fmt.Println("WARN: worker.nodePools[].rootVolumeType is deprecated and will be removed in v0.9.7. Please use worker.nodePools[].rootVolume.type instead")
-		c.RootVolume.Type = *c.DeprecatedRootVolumeType
-	}
-
 	return nil
 }
 
@@ -178,9 +165,16 @@ func (c *ProvidedConfig) Load(main *cfg.Config) error {
 	c.KubeClusterSettings = main.KubeClusterSettings
 	c.Experimental.TLSBootstrap = main.DeploymentSettings.Experimental.TLSBootstrap
 	c.Experimental.NodeDrainer = main.DeploymentSettings.Experimental.NodeDrainer
+	c.Kubelet.RotateCerts = main.DeploymentSettings.Kubelet.RotateCerts
+
+	if c.Experimental.ClusterAutoscalerSupport.Enabled {
+		if !main.Addons.ClusterAutoscaler.Enabled {
+			return fmt.Errorf("clusterAutoscalerSupport can't be enabled on node pools when cluster-autoscaler is not going to be deployed to the cluster")
+		}
+	}
 
 	// Validate whole the inputs including inherited ones
-	if err := c.valid(); err != nil {
+	if err := c.validate(); err != nil {
 		return err
 	}
 
@@ -286,6 +280,25 @@ func (c ProvidedConfig) Config() (*ComputedConfig, error) {
 	return &config, nil
 }
 
+func (c ProvidedConfig) NodeLabels() model.NodeLabels {
+	labels := c.NodeSettings.NodeLabels
+	if c.ClusterAutoscalerSupport.Enabled {
+		labels["kube-aws.coreos.com/cluster-autoscaler-supported"] = "true"
+	}
+	return labels
+}
+
+func (c ProvidedConfig) FeatureGates() model.FeatureGates {
+	gates := c.NodeSettings.FeatureGates
+	if c.Gpu.Nvidia.IsEnabledOn(c.InstanceType) {
+		gates["Accelerators"] = "true"
+	}
+	if c.Kubelet.RotateCerts.Enabled {
+		gates["RotateKubeletClientCertificate"] = "true"
+	}
+	return gates
+}
+
 func (c ProvidedConfig) WorkerDeploymentSettings() WorkerDeploymentSettings {
 	return WorkerDeploymentSettings{
 		WorkerNodePoolConfig: c.WorkerNodePoolConfig,
@@ -311,8 +324,8 @@ func (c ProvidedConfig) ValidateInputs() error {
 	return nil
 }
 
-func (c ProvidedConfig) valid() error {
-	if _, err := c.KubeClusterSettings.Valid(); err != nil {
+func (c ProvidedConfig) validate() error {
+	if _, err := c.KubeClusterSettings.Validate(); err != nil {
 		return err
 	}
 
@@ -320,15 +333,19 @@ func (c ProvidedConfig) valid() error {
 		return err
 	}
 
-	if err := c.DeploymentSettings.Valid(); err != nil {
+	if err := c.DeploymentSettings.Validate(); err != nil {
 		return err
 	}
 
-	if err := c.WorkerDeploymentSettings().Valid(); err != nil {
+	if err := c.WorkerDeploymentSettings().Validate(); err != nil {
 		return err
 	}
 
-	if err := c.Experimental.Valid(); err != nil {
+	if err := c.Experimental.Validate(); err != nil {
+		return err
+	}
+
+	if err := c.NodeSettings.Validate(); err != nil {
 		return err
 	}
 
@@ -341,8 +358,14 @@ func (c ProvidedConfig) valid() error {
 		return fmt.Errorf("awsNodeLabels can't be enabled for node pool because the total number of characters in clusterName(=\"%s\") + node pool's name(=\"%s\") exceeds the limit of %d", c.ClusterName, c.NodePoolName, limit)
 	}
 
-	if e := cfnresource.ValidateRoleNameLength(c.ClusterName, c.NestedStackName(), c.WorkerNodePoolConfig.IAMConfig.Role.Name, c.Region.String()); e != nil {
-		return e
+	if len(c.WorkerNodePoolConfig.IAMConfig.Role.Name) > 0 {
+		if e := cfnresource.ValidateStableRoleNameLength(c.WorkerNodePoolConfig.IAMConfig.Role.Name, c.Region.String()); e != nil {
+			return e
+		}
+	} else {
+		if e := cfnresource.ValidateUnstableRoleNameLength(c.ClusterName, c.NestedStackName(), c.WorkerNodePoolConfig.IAMConfig.Role.Name, c.Region.String()); e != nil {
+			return e
+		}
 	}
 
 	return nil
@@ -364,12 +387,16 @@ func (c ProvidedConfig) StackNameEnvVarName() string {
 	return "KUBE_AWS_STACK_NAME"
 }
 
-func (c ProvidedConfig) VPCRef() string {
-	//This means this VPC already exists, and we can reference it directly by ID
-	if c.VPCID != "" {
-		return fmt.Sprintf("%q", c.VPCID)
+func (c ProvidedConfig) VPCRef() (string, error) {
+	igw := c.InternetGateway
+	// When HasIdentifier returns true, it means the VPC already exists, and we can reference it directly by ID
+	if !c.VPC.HasIdentifier() {
+		// Otherwise import the VPC ID from the control-plane stack
+		igw.IDFromStackOutput = `{"Fn::Sub" : "${ControlPlaneStackName}-VPC"}`
 	}
-	return `{"Fn::ImportValue" : {"Fn::Sub" : "${ControlPlaneStackName}-VPC"}}`
+	return igw.RefOrError(func() (string, error) {
+		return "", fmt.Errorf("[BUG] Tried to reference VPC by its logical name")
+	})
 }
 
 func (c ProvidedConfig) SecurityGroupRefs() []string {
@@ -389,14 +416,6 @@ type WorkerDeploymentSettings struct {
 	WorkerNodePoolConfig
 	cfg.Experimental
 	DeploymentSettings
-}
-
-func (c WorkerDeploymentSettings) NodeLabels() model.NodeLabels {
-	labels := c.Experimental.NodeLabels
-	if c.ClusterAutoscalerSupport.Enabled {
-		labels["kube-aws.coreos.com/cluster-autoscaler-supported"] = "true"
-	}
-	return labels
 }
 
 func (c WorkerDeploymentSettings) WorkerSecurityGroupRefs() []string {
@@ -431,7 +450,7 @@ func (c WorkerDeploymentSettings) StackTags() map[string]string {
 	return tags
 }
 
-func (c WorkerDeploymentSettings) Valid() error {
+func (c WorkerDeploymentSettings) Validate() error {
 	sgRefs := c.WorkerSecurityGroupRefs()
 	numSGs := len(sgRefs)
 

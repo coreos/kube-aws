@@ -10,6 +10,8 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"text/tabwriter"
 )
 
@@ -64,17 +66,44 @@ func NewClusterRef(cfg *config.ProvidedConfig, awsDebug bool) *ClusterRef {
 	}
 }
 
-func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOptions, awsDebug bool) (*Cluster, error) {
+func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOptions, plugins []*pluginmodel.Plugin, awsDebug bool) (*Cluster, error) {
 	stackConfig, err := provided.StackConfig(opts)
 	if err != nil {
 		return nil, err
 	}
-	ref := NewClusterRef(provided, awsDebug)
+
+	clusterRef := NewClusterRef(provided, awsDebug)
+
 	c := &Cluster{
 		StackConfig: stackConfig,
-		ClusterRef:  ref,
+		ClusterRef:  clusterRef,
 	}
+
+	extras := clusterextension.NewExtrasFromPlugins(plugins, c.Plugins)
+
+	extraStack, err := extras.NodePoolStack()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load node pool stack extras from plugins: %v", err)
+	}
+	c.StackConfig.ExtraCfnResources = extraStack.Resources
+
+	extraWorker, err := extras.Worker()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load controller node extras from plugins: %v", err)
+	}
+	c.StackConfig.CustomSystemdUnits = append(c.StackConfig.CustomSystemdUnits, extraWorker.SystemdUnits...)
+	c.StackConfig.CustomFiles = append(c.StackConfig.CustomFiles, extraWorker.Files...)
+	c.StackConfig.IAMConfig.Policy.Statements = append(c.StackConfig.IAMConfig.Policy.Statements, extraWorker.IAMPolicyStatements...)
+
+	for k, v := range extraWorker.NodeLabels {
+		c.NodeSettings.NodeLabels[k] = v
+	}
+	for k, v := range extraWorker.FeatureGates {
+		c.NodeSettings.FeatureGates[k] = v
+	}
+
 	c.assets, err = c.buildAssets()
+
 	return c, err
 }
 
@@ -123,7 +152,7 @@ func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
   ]
 }`
 
-	return cfnstack.NewProvisioner(c.StackName(), c.WorkerDeploymentSettings().StackTags(), c.S3URI, c.Region, stackPolicyBody, c.session())
+	return cfnstack.NewProvisioner(c.StackName(), c.WorkerDeploymentSettings().StackTags(), c.S3URI, c.Region, stackPolicyBody, c.session(), c.CloudFormation.RoleARN)
 }
 
 func (c *Cluster) session() *session.Session {
@@ -196,5 +225,5 @@ func (c *ClusterRef) Info() (*Info, error) {
 }
 
 func (c *ClusterRef) Destroy() error {
-	return cfnstack.NewDestroyer(c.StackName(), c.session).Destroy()
+	return cfnstack.NewDestroyer(c.StackName(), c.session, c.CloudFormation.RoleARN).Destroy()
 }

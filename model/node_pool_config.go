@@ -1,27 +1,25 @@
 package model
 
 import (
-	"errors"
 	"fmt"
 )
 
 type NodePoolConfig struct {
-	Autoscaling                          Autoscaling      `yaml:"autoscaling,omitempty"`
-	AutoScalingGroup                     AutoScalingGroup `yaml:"autoScalingGroup,omitempty"`
-	SpotFleet                            SpotFleet        `yaml:"spotFleet,omitempty"`
-	EC2Instance                          `yaml:",inline"`
-	IAMConfig                            IAMConfig `yaml:"iam,omitempty"`
-	DeprecatedNodePoolManagedIamRoleName string    `yaml:"managedIamRoleName,omitempty"`
-	DeprecatedRootVolume                 `yaml:",inline"`
-	SpotPrice                            string                 `yaml:"spotPrice,omitempty"`
-	SecurityGroupIds                     []string               `yaml:"securityGroupIds,omitempty"`
-	CustomSettings                       map[string]interface{} `yaml:"customSettings,omitempty"`
-	VolumeMounts                         []VolumeMount          `yaml:"volumeMounts,omitempty"`
-	UnknownKeys                          `yaml:",inline"`
-	NodeStatusUpdateFrequency            string              `yaml:"nodeStatusUpdateFrequency"`
-	CustomFiles                          []CustomFile        `yaml:"customFiles,omitempty"`
-	CustomSystemdUnits                   []CustomSystemdUnit `yaml:"customSystemdUnits,omitempty"`
-	Gpu                                  Gpu                 `yaml:"gpu"`
+	Autoscaling               Autoscaling      `yaml:"autoscaling,omitempty"`
+	AutoScalingGroup          AutoScalingGroup `yaml:"autoScalingGroup,omitempty"`
+	SpotFleet                 SpotFleet        `yaml:"spotFleet,omitempty"`
+	EC2Instance               `yaml:",inline"`
+	IAMConfig                 IAMConfig              `yaml:"iam,omitempty"`
+	SpotPrice                 string                 `yaml:"spotPrice,omitempty"`
+	SecurityGroupIds          []string               `yaml:"securityGroupIds,omitempty"`
+	CustomSettings            map[string]interface{} `yaml:"customSettings,omitempty"`
+	VolumeMounts              []VolumeMount          `yaml:"volumeMounts,omitempty"`
+	UnknownKeys               `yaml:",inline"`
+	NodeSettings              `yaml:",inline"`
+	NodeStatusUpdateFrequency string              `yaml:"nodeStatusUpdateFrequency"`
+	CustomFiles               []CustomFile        `yaml:"customFiles,omitempty"`
+	CustomSystemdUnits        []CustomSystemdUnit `yaml:"customSystemdUnits,omitempty"`
+	Gpu                       Gpu                 `yaml:"gpu"`
 }
 
 type ClusterAutoscaler struct {
@@ -47,6 +45,7 @@ func NewDefaultNodePoolConfig() NodePoolConfig {
 			},
 			Tenancy: "default",
 		},
+		NodeSettings:     newNodeSettings(),
 		SecurityGroupIds: []string{},
 		Gpu:              newDefaultGpu(),
 	}
@@ -68,13 +67,13 @@ func (c NodePoolConfig) LogicalName() string {
 	return "Workers"
 }
 
-func (c NodePoolConfig) Valid() error {
+func (c NodePoolConfig) Validate() error {
 	// one is the default WorkerCount
 	if c.Count != 1 && (c.AutoScalingGroup.MinSize != nil && *c.AutoScalingGroup.MinSize != 0 || c.AutoScalingGroup.MaxSize != 0) {
 		return fmt.Errorf("`worker.autoScalingGroup.minSize` and `worker.autoScalingGroup.maxSize` can only be specified without `count`=%d", c.Count)
 	}
 
-	if err := c.AutoScalingGroup.Valid(); err != nil {
+	if err := c.AutoScalingGroup.Validate(); err != nil {
 		return err
 	}
 
@@ -90,7 +89,7 @@ func (c NodePoolConfig) Valid() error {
 		return err
 	}
 
-	if err := c.SpotFleet.Valid(); c.SpotFleet.Enabled() && err != nil {
+	if err := c.SpotFleet.Validate(); c.SpotFleet.Enabled() && err != nil {
 		return err
 	}
 
@@ -102,17 +101,11 @@ func (c NodePoolConfig) Valid() error {
 		fmt.Println(`WARNING: instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/kubernetes-incubator/kube-aws/issues/258 for more information`)
 	}
 
-	if c.IAMConfig.InstanceProfile.Arn != "" && (c.IAMConfig.Role.Name != "" || c.DeprecatedNodePoolManagedIamRoleName != "") {
-		return errors.New("failed to parse `iam` config: either you set `role.*` options or `instanceProfile.arn` ones but not both")
-	}
-	if c.IAMConfig.InstanceProfile.Arn != "" && len(c.IAMConfig.Role.ManagedPolicies) > 0 {
-		return errors.New("failed to parse `iam` config: either you set `role.*` options or `instanceProfile.arn` ones but not both")
-	}
 	if err := c.IAMConfig.Validate(); err != nil {
 		return err
 	}
 
-	if err := c.Gpu.Valid(c.InstanceType); err != nil {
+	if err := c.Gpu.Validate(c.InstanceType); err != nil {
 		return err
 	}
 

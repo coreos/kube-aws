@@ -10,30 +10,24 @@ func (c DeploymentSettings) ValidateInputs() error {
 	// By design, kube-aws doesn't allow customizing the following settings among node pools.
 	//
 	// Every node pool imports subnets from the main stack and therefore there's no need for setting:
-	// * VPCID
-	// * InternetGatewayID
+	// * VPC.ID(FromStackOutput)
+	// * InternetGateway.ID(FromStackOutput)
 	// * RouteTableID
 	// * VPCCIDR
 	// * InstanceCIDR
 	// * MapPublicIPs
 	// * ElasticFileSystemID
-	if c.VPCID != "" {
-		return fmt.Errorf("although you can't customize `vpcId` per node pool but you did specify \"%s\" in your cluster.yaml", c.VPCID)
+	if c.VPC.HasIdentifier() {
+		return fmt.Errorf("although you can't customize VPC per node pool but you did specify \"%v\" in your cluster.yaml", c.VPC)
 	}
-	if c.InternetGatewayID != "" {
-		return fmt.Errorf("although you can't customize `internetGatewayId` per node pool but you did specify \"%s\" in your cluster.yaml", c.InternetGatewayID)
-	}
-	if c.RouteTableID != "" {
-		return fmt.Errorf("although you can't customize `routeTableId` per node pool but you did specify \"%s\" in your cluster.yaml", c.RouteTableID)
+	if c.InternetGateway.HasIdentifier() {
+		return fmt.Errorf("although you can't customize internet gateway per node pool but you did specify \"%v\" in your cluster.yaml", c.InternetGateway)
 	}
 	if c.VPCCIDR != "" {
 		return fmt.Errorf("although you can't customize `vpcCIDR` per node pool but you did specify \"%s\" in your cluster.yaml", c.VPCCIDR)
 	}
 	if c.InstanceCIDR != "" {
 		return fmt.Errorf("although you can't customize `instanceCIDR` per node pool but you did specify \"%s\" in your cluster.yaml", c.InstanceCIDR)
-	}
-	if c.MapPublicIPs {
-		return fmt.Errorf("although you can't customize `mapPublicIPs` per node pool but you did specify %v in your cluster.yaml", c.MapPublicIPs)
 	}
 	if c.ElasticFileSystemID != "" {
 		return fmt.Errorf("although you can't customize `elasticFileSystemId` per node pool but you did specify \"%s\" in your cluster.yaml", c.ElasticFileSystemID)
@@ -54,15 +48,15 @@ func (c DeploymentSettings) ValidateInputs() error {
 		return fmt.Errorf("although you can't customize `kmsKeyArn` per node pool but you did specify \"%s\" in your cluster.yaml", c.KMSKeyARN)
 	}
 
-	if err := c.Experimental.Valid(); err != nil {
+	if err := c.Experimental.Validate(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s DeploymentSettings) Valid() error {
-	if err := s.Experimental.Valid(); err != nil {
+func (s DeploymentSettings) Validate() error {
+	if err := s.Experimental.Validate(); err != nil {
 		return err
 	}
 	return nil
@@ -78,12 +72,15 @@ func (c DeploymentSettings) WithDefaultsFrom(main cfg.DeploymentSettings) Deploy
 
 	// No defaulting for AvailabilityZone: It must be set explicitly for high availability
 
+	// If there was a specific release channel specified for this node pool,
+	// the user would want to use the latest AMI for the channel, not the latest AMI for the default release channel
+	// specified in the top level of cluster.yaml
 	if c.ReleaseChannel == "" {
 		c.ReleaseChannel = main.ReleaseChannel
-	}
 
-	if c.AmiId == "" {
-		c.AmiId = main.AmiId
+		if c.AmiId == "" {
+			c.AmiId = main.AmiId
+		}
 	}
 
 	if c.K8sVer == "" {
@@ -98,6 +95,7 @@ func (c DeploymentSettings) WithDefaultsFrom(main cfg.DeploymentSettings) Deploy
 	c.CalicoCniImage.MergeIfEmpty(main.CalicoCniImage)
 	c.PauseImage.MergeIfEmpty(main.PauseImage)
 	c.FlannelImage.MergeIfEmpty(main.FlannelImage)
+	c.JournaldCloudWatchLogsImage.MergeIfEmpty(main.JournaldCloudWatchLogsImage)
 
 	// Inherit main TLS bootstrap config
 	c.Experimental.TLSBootstrap = main.Experimental.TLSBootstrap
@@ -123,6 +121,15 @@ func (c DeploymentSettings) WithDefaultsFrom(main cfg.DeploymentSettings) Deploy
 	if c.ElasticFileSystemID == "" {
 		c.ElasticFileSystemID = main.ElasticFileSystemID
 	}
+
+	// Inherit main CloudWatchLogging config
+	c.CloudWatchLogging.MergeIfEmpty(main.CloudWatchLogging)
+
+	// Inherit main AmazonSsmAgent config
+	c.AmazonSsmAgent = main.AmazonSsmAgent
+
+	//Inherit main KubeDns config
+	c.KubeDns.MergeIfEmpty(main.KubeDns)
 
 	return c
 }

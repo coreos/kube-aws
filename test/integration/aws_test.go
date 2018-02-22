@@ -76,7 +76,12 @@ func newKubeAwsSettingsFromEnv(t *testing.T) kubeAwsSettings {
 
 func (s kubeAwsSettings) mainClusterYaml() string {
 	return fmt.Sprintf(`clusterName: %s
-externalDNSName: "%s"
+apiEndpoints:
+- name: public
+  dnsName: "%s"
+  loadBalancer:
+    hostedZone:
+      id: hostedzone-xxxx
 keyName: "%s"
 kmsKeyArn: "%s"
 region: "%s"
@@ -89,7 +94,7 @@ region: "%s"
 	)
 }
 
-func (s kubeAwsSettings) mainClusterYamlWithoutExternalDNS() string {
+func (s kubeAwsSettings) mainClusterYamlWithoutAPIEndpoint() string {
 	return fmt.Sprintf(`clusterName: %s
 keyName: "%s"
 kmsKeyArn: "%s"
@@ -107,9 +112,15 @@ func (s kubeAwsSettings) minimumValidClusterYaml() string {
 }
 
 func (s kubeAwsSettings) minimumValidClusterYamlWithAZ(suffix string) string {
-	return s.mainClusterYaml() + fmt.Sprintf(`
+	return s.mainClusterYamlWithoutAPIEndpoint() + fmt.Sprintf(`
 availabilityZone: %s
-`, s.region+suffix)
+apiEndpoints:
+- name: public
+  dnsName: "%s"
+  loadBalancer:
+    hostedZone:
+      id: hostedzone-xxxx
+`, s.region+suffix, s.externalDNSName)
 }
 
 func (s kubeAwsSettings) withClusterName(n string) kubeAwsSettings {

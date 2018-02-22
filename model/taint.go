@@ -17,12 +17,12 @@ func (t Taints) String() string {
 	return strings.Join(ts, ",")
 }
 
-// Valid returns an error if the list of taints are invalid as a group
-func (t Taints) Valid() error {
+// Validate returns an error if the list of taints are invalid as a group
+func (t Taints) Validate() error {
 	keyEffects := map[string]int{}
 
 	for _, taint := range t {
-		if err := taint.Valid(); err != nil {
+		if err := taint.Validate(); err != nil {
 			return err
 		}
 
@@ -49,8 +49,8 @@ func (t Taint) String() string {
 	return fmt.Sprintf("%s=%s:%s", t.Key, t.Value, t.Effect)
 }
 
-// Valid returns an error if the taint is invalid
-func (t Taint) Valid() error {
+// Validate returns an error if the taint is invalid
+func (t Taint) Validate() error {
 	if len(t.Key) == 0 {
 		return fmt.Errorf("expected taint key to be a non-empty string")
 	}

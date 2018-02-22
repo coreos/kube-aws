@@ -34,23 +34,28 @@ func (e CachedEncryptor) EncryptedBytes(raw []byte) ([]byte, error) {
 }
 
 func (e CachedEncryptor) EncryptedCredentialFromPath(filePath string, defaultValue *string) (*EncryptedCredentialOnDisk, error) {
-	raw, err := RawCredentialFileFromPath(filePath, defaultValue)
+	raw, errRaw := RawCredentialFileFromPath(filePath, defaultValue)
+	cache, err := EncryptedCredentialCacheFromPath(filePath, errRaw == nil)
 	if err != nil {
-		return nil, err
-	}
-
-	cache, err := EncryptedCredentialCacheFromPath(filePath)
-	if err != nil {
+		if errRaw != nil { // if neither .enc nor raw is there, it is an error
+			return nil, fmt.Errorf("Error reading raw file: %v", errRaw)
+		}
 		cache, err = EncryptedCredentialCacheFromRawCredential(raw, e.bytesEncryptionService)
 		if err != nil {
 			return nil, err
 		}
 		fmt.Printf("INFO: generated \"%s\" by encrypting \"%s\"\n", cache.filePath, raw.filePath)
-	} else if raw.Fingerprint() != cache.Fingerprint() {
-		fmt.Printf("INFO: \"%s\" is not up-to-date. kube-aws is regenerating it from \"%s\"\n", cache.filePath, raw.filePath)
-		cache, err = EncryptedCredentialCacheFromRawCredential(raw, e.bytesEncryptionService)
-		if err != nil {
-			return nil, err
+	} else {
+		// we verify fingreprints only if non .enc version is present, so there is something there to compare against
+		// otherwise we assume that user provided correct .enc files to be used as-is
+		if errRaw == nil && raw.Fingerprint() != cache.Fingerprint() {
+			fmt.Printf("INFO: \"%s\" is not up-to-date. kube-aws is regenerating it from \"%s\"\n", cache.filePath, raw.filePath)
+			cache, err = EncryptedCredentialCacheFromRawCredential(raw, e.bytesEncryptionService)
+			if err != nil {
+				return nil, err
+			}
+		} else if errRaw != nil && !os.IsNotExist(errRaw) {
+			return nil, fmt.Errorf("Error reading existing raw file: %v", errRaw)
 		}
 	}
 
@@ -75,7 +80,10 @@ func EncryptedCredentialCacheFromRawCredential(raw *RawCredentialOnDisk, bytesEn
 }
 
 func RawCredentialFileFromPath(filePath string, defaultValue *string) (*RawCredentialOnDisk, error) {
-	if _, err := os.Stat(filePath); os.IsNotExist(err) && defaultValue != nil {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		if defaultValue == nil {
+			return nil, fmt.Errorf("%s must exist. Please confirm that you have not deleted the file manually", filePath)
+		}
 		if err := ioutil.WriteFile(filePath, []byte(*defaultValue), 0644); err != nil {
 			return nil, err
 		}
@@ -97,6 +105,9 @@ func (c *RawCredentialOnDisk) Fingerprint() string {
 }
 
 func (c *RawCredentialOnDisk) Persist() error {
+	if len(c.content) == 0 {
+		return fmt.Errorf("%s is going to be empty. Maybe a bug", c.filePath)
+	}
 	if err := ioutil.WriteFile(c.filePath, c.content, 0600); err != nil {
 		return err
 	}
@@ -115,22 +126,26 @@ func fingerprintFilePath(rawCredFilePath string) string {
 	return fmt.Sprintf("%s.%s", rawCredFilePath, FingerprintFileExtension)
 }
 
-func EncryptedCredentialCacheFromPath(filePath string) (*EncryptedCredentialOnDisk, error) {
+func EncryptedCredentialCacheFromPath(filePath string, doLoadFingerprint bool) (*EncryptedCredentialOnDisk, error) {
 	cachePath := cacheFilePath(filePath)
 	credential, cacheErr := ioutil.ReadFile(cachePath)
 	if cacheErr != nil {
 		return nil, cacheErr
 	}
-	fingerprintPath := fingerprintFilePath(filePath)
-	fingerprint, fingerprintErr := loadFingerprint(fingerprintPath)
-	if fingerprintErr != nil {
-		fmt.Printf("WARNING: \"%s\" does not exist. Did you explicitly removed it or upgrading from old kube-aws? Anyway, kube-aws is generating one for you from \"%s\" to automatically detect updates to it and recreate \"%s\" if necessary\n", fingerprintPath, filePath, cachePath)
-		raw, rawErr := RawCredentialFileFromPath(filePath, nil)
-		if rawErr != nil {
-			return nil, rawErr
-		}
 
-		fingerprint = raw.Fingerprint()
+	fingerprintPath := fingerprintFilePath(filePath)
+	var fingerprint string
+	if doLoadFingerprint {
+		var err error
+		if fingerprint, err = loadFingerprint(fingerprintPath); err != nil {
+			fmt.Printf("WARNING: \"%s\" does not exist. Did you explicitly removed it or upgrading from old kube-aws? Anyway, kube-aws is generating one for you from \"%s\" to automatically detect updates to it and recreate \"%s\" if necessary\n", fingerprintPath, filePath, cachePath)
+			raw, rawErr := RawCredentialFileFromPath(filePath, nil)
+			if rawErr != nil {
+				return nil, rawErr
+			}
+
+			fingerprint = raw.Fingerprint()
+		}
 	}
 	return &EncryptedCredentialOnDisk{
 		filePath:            cachePath,
@@ -148,8 +163,8 @@ func (c *EncryptedCredentialOnDisk) Persist() error {
 	if err := ioutil.WriteFile(c.filePath, c.content, 0600); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(c.fingerprintFilePath, []byte(c.fingerprint), 0600); err != nil {
-		return err
+	if c.fingerprint != "" {
+		return ioutil.WriteFile(c.fingerprintFilePath, []byte(c.fingerprint), 0600)
 	}
 	return nil
 }

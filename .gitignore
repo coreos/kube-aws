@@ -8,4 +8,11 @@
 .envrc
 coverage.txt
 profile.out
-/.glide
+
+# gitbook docs
+_book
+.grunt
+*.epub
+*.mobi
+*.pdf
+node_modules

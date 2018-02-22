@@ -2,18 +2,23 @@ package texttemplate
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/Masterminds/sprig"
 	"io/ioutil"
 	"text/template"
 )
 
-func Parse(filename string, funcs template.FuncMap) (*template.Template, error) {
+func ParseFile(filename string, funcs template.FuncMap) (*template.Template, error) {
 	raw, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
+	return Parse(filename, string(raw), funcs)
+}
+
+func Parse(name string, raw string, funcs template.FuncMap) (*template.Template, error) {
 	funcs2 := template.FuncMap{
 		"checkSizeLessThan": func(size int, content string) (string, error) {
 			if len(content) >= size {
@@ -21,13 +26,30 @@ func Parse(filename string, funcs template.FuncMap) (*template.Template, error) 
 			}
 			return content, nil
 		},
+		"toJSON": func(v interface{}) (string, error) {
+			data, err := json.Marshal(v)
+			return string(data), err
+		},
+		"execTemplate": func(name string, ctx interface{}) (string, error) {
+			panic("[bug] Stub 'execTemplate' was not replaced")
+		},
 	}
 
-	return template.New(filename).Funcs(sprig.HermeticTxtFuncMap()).Funcs(funcs).Funcs(funcs2).Parse(string(raw))
+	t, err := template.New(name).Funcs(sprig.HermeticTxtFuncMap()).Funcs(funcs).Funcs(funcs2).Parse(raw)
+	if err == nil {
+		t = t.Funcs(template.FuncMap{
+			"execTemplate": func(name string, ctx interface{}) (string, error) {
+				b := bytes.Buffer{}
+				err := t.ExecuteTemplate(&b, name, ctx)
+				return b.String(), err
+			},
+		})
+	}
+	return t, err
 }
 
 func GetBytesBuffer(filename string, data interface{}) (*bytes.Buffer, error) {
-	tmpl, err := Parse(filename, nil)
+	tmpl, err := ParseFile(filename, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var GPUEnabledInstanceFamily = []string{"p2", "g2"}
+var GPUEnabledInstanceFamily = []string{"p2", "p3", "g2", "g3"}
 
 type Gpu struct {
 	Nvidia NvidiaSetting `yaml:"nvidia"`
@@ -40,7 +40,7 @@ func (c NvidiaSetting) IsEnabledOn(instanceType string) bool {
 	return isGpuEnabledInstanceType(instanceType) && c.Enabled
 }
 
-func (c Gpu) Valid(instanceType string) error {
+func (c Gpu) Validate(instanceType string) error {
 	if c.Nvidia.Enabled && !isGpuEnabledInstanceType(instanceType) {
 		return errors.New(fmt.Sprintf("instance type %v doesn't support GPU. You can enable Nvidia driver intallation support only when use %v instance family.", instanceType, GPUEnabledInstanceFamily))
 

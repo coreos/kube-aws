@@ -88,12 +88,23 @@ func (e APIEndpoints) FindByName(name string) (*APIEndpoint, error) {
 	return nil, fmt.Errorf("no API endpoint named \"%s\" defined under the `apiEndpoints[]`. The name must be one of: %s", name, strings.Join(apiEndpointNames, ", "))
 }
 
-// ELBRefs returns the names of all the ELBs to which controller nodes should be associated
-func (e APIEndpoints) ELBRefs() []string {
+// ELBClassicRefs returns the names of all the Classic ELBs to which controller nodes should be associated
+func (e APIEndpoints) ELBClassicRefs() []string {
 	refs := []string{}
 	for _, endpoint := range e {
-		if endpoint.LoadBalancer.Enabled() {
+		if endpoint.LoadBalancer.Enabled() && endpoint.LoadBalancer.ClassicLoadBalancer() {
 			refs = append(refs, endpoint.LoadBalancer.Ref())
+		}
+	}
+	return refs
+}
+
+// ELBV2TargetGroupRefs returns the names of all the Load Balancers v2 to which controller nodes should be associated
+func (e APIEndpoints) ELBV2TargetGroupRefs() []string {
+	refs := []string{}
+	for _, endpoint := range e {
+		if endpoint.LoadBalancer.Enabled() && endpoint.LoadBalancer.LoadBalancerV2() {
+			refs = append(refs, endpoint.LoadBalancer.TargetGroupRef())
 		}
 	}
 	return refs

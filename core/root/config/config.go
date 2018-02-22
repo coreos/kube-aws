@@ -11,6 +11,8 @@ import (
 	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/plugin"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"gopkg.in/yaml.v2"
 )
 
@@ -30,6 +32,7 @@ type Config struct {
 	*controlplane.Cluster
 	NodePools         []*nodepool.ProvidedConfig
 	model.UnknownKeys `yaml:",inline"`
+	Plugins           []*pluginmodel.Plugin
 }
 
 type unknownKeysSupport interface {
@@ -50,7 +53,7 @@ func newDefaultUnmarshalledConfig() *UnmarshalledConfig {
 	}
 }
 
-func ConfigFromBytes(data []byte) (*Config, error) {
+func ConfigFromBytes(data []byte, plugins []*pluginmodel.Plugin) (*Config, error) {
 	c := newDefaultUnmarshalledConfig()
 	if err := yaml.Unmarshal(data, c); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
@@ -62,7 +65,7 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 		return nil, err
 	}
 
-	cpConfig, err := cpCluster.Config()
+	cpConfig, err := cpCluster.Config(plugins)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +91,10 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 	}
 
 	for i, np := range nodePools {
-		if err := np.Experimental.Taints.Valid(); err != nil {
+		if np == nil {
+			return nil, fmt.Errorf("Empty nodepool definition found at index %d", i)
+		}
+		if err := np.Taints.Validate(); err != nil {
 			return nil, fmt.Errorf("invalid taints for node pool at index %d: %v", i, err)
 		}
 
@@ -138,6 +144,7 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 		{c.Addons, "addons"},
 		{c.Addons.Rescheduler, "addons.rescheduler"},
 		{c.Addons.ClusterAutoscaler, "addons.clusterAutoscaler"},
+		{c.Addons.MetricsServer, "addons.metricsServer"},
 	}
 
 	for i, np := range c.Worker.NodePools {
@@ -154,6 +161,8 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 		return nil, err
 	}
 
+	cfg.Plugins = plugins
+
 	return cfg, nil
 }
 
@@ -166,8 +175,8 @@ func failFastWhenUnknownKeysFound(vs []unknownKeyValidation) error {
 	return nil
 }
 
-func ConfigFromBytesWithEncryptService(data []byte, encryptService controlplane.EncryptService) (*Config, error) {
-	c, err := ConfigFromBytes(data)
+func ConfigFromBytesWithEncryptService(data []byte, plugins []*pluginmodel.Plugin, encryptService controlplane.EncryptService) (*Config, error) {
+	c, err := ConfigFromBytes(data, plugins)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +196,12 @@ func ConfigFromFile(configPath string) (*Config, error) {
 		return nil, err
 	}
 
-	c, err := ConfigFromBytes(data)
+	plugins, err := plugin.LoadAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load plugins: %v", err)
+	}
+
+	c, err := ConfigFromBytes(data, plugins)
 	if err != nil {
 		return nil, fmt.Errorf("file %s: %v", configPath, err)
 	}

@@ -2,6 +2,12 @@
 #  https://github.com/kubernetes/community/blob/master/contributors/devel/owners.md
 
 reviewers:
+- c-knowles
+- danielfm
 - mumoshu
+- redbaron
 approvers:
+- c-knowles
+- danielfm
 - mumoshu
+- redbaron

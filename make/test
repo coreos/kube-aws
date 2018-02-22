@@ -3,14 +3,14 @@ set -euo pipefail
 
 default() {
   test -z "$(find . -path ./vendor -prune -type f -o -name '*.go' -exec gofmt -d {} + | tee /dev/stderr)"
-  go test -v $(go list ./... | grep -v '/vendor/')
+  go test -v $(go list ./... | grep -v '/vendor/' | grep -v '/hack')
   go vet $(go list ./... | grep -v '/vendor/')
 }
 
 with-cover() {
   test -z "$(find . -path ./vendor -prune -type f -o -name '*.go' -exec gofmt -d {} + | tee /dev/stderr)"
-  for d in $(go list ./... | grep -v '/vendor/'); do
-    go test -timeout 15m -v --race -coverprofile=profile.out -covermode=atomic $d
+  for d in $(go list ./... | grep -v '/vendor/' | grep -v '/hack'); do
+    go test -timeout 25m -v --race -coverprofile=profile.out -covermode=atomic $d
     if [ -f profile.out ]; then
       cat profile.out >> coverage.txt
       rm profile.out

@@ -34,7 +34,7 @@ func TestDrainTimeoutInSeconds(t *testing.T) {
 	}
 }
 
-func TestValid(t *testing.T) {
+func TestValidate(t *testing.T) {
 	testCases := []struct {
 		enabled      bool
 		drainTimeout int
@@ -82,7 +82,7 @@ func TestValid(t *testing.T) {
 			DrainTimeout: testCase.drainTimeout,
 		}
 
-		err := drainer.Valid()
+		err := drainer.Validate()
 		if testCase.isValid && err != nil {
 			t.Errorf("Expected node drainer to be valid, but it was not: %v", err)
 		}

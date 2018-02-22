@@ -13,6 +13,8 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 )
 
 // VERSION set by build script
@@ -54,24 +56,32 @@ type ec2Service interface {
 }
 
 func (c *ClusterRef) validateExistingVPCState(ec2Svc ec2Service) error {
-	if c.VPCID == "" {
+	if !c.VPC.HasIdentifier() {
 		//The VPC will be created. No existing state to validate
 		return nil
 	}
 
+	// TODO kube-aws should de-reference the vpc id from the stack output and continue validating with it
+	if c.VPC.IDFromStackOutput != "" {
+		fmt.Printf("kube-aws doesn't support validating the vpc referenced by the stack output `%s`. Skipped validation of existing vpc state. The cluster creation may fail afterwards if the VPC isn't configured properly.", c.VPC.IDFromStackOutput)
+		return nil
+	}
+
+	vpcId := c.VPC.ID
+
 	describeVpcsInput := ec2.DescribeVpcsInput{
-		VpcIds: []*string{aws.String(c.VPCID)},
+		VpcIds: []*string{aws.String(vpcId)},
 	}
 	vpcOutput, err := ec2Svc.DescribeVpcs(&describeVpcsInput)
 	if err != nil {
 		return fmt.Errorf("error describing existing vpc: %v", err)
 	}
 	if len(vpcOutput.Vpcs) == 0 {
-		return fmt.Errorf("could not find vpc %s in region %s", c.VPCID, c.Region)
+		return fmt.Errorf("could not find vpc %s in region %s", vpcId, c.Region)
 	}
 	if len(vpcOutput.Vpcs) > 1 {
 		//Theoretically this should never happen. If it does, we probably want to know.
-		return fmt.Errorf("found more than one vpc with id %s. this is NOT NORMAL", c.VPCID)
+		return fmt.Errorf("found more than one vpc with id %s. this is NOT NORMAL", vpcId)
 	}
 
 	existingVPC := vpcOutput.Vpcs[0]
@@ -111,21 +121,56 @@ func (c *ClusterRef) validateExistingVPCState(ec2Svc ec2Service) error {
 	return nil
 }
 
-func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, awsDebug bool) (*Cluster, error) {
-	cluster := NewClusterRef(cfg, awsDebug)
+func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins []*pluginmodel.Plugin, awsDebug bool) (*Cluster, error) {
+	clusterRef := NewClusterRef(cfg, awsDebug)
 	// TODO Do this in a cleaner way e.g. in config.go
-	cluster.KubeResourcesAutosave.S3Path = model.NewS3Folders(opts.S3URI, cluster.ClusterName).ClusterBackups().Path()
-	stackConfig, err := cluster.StackConfig(opts)
+	clusterRef.KubeResourcesAutosave.S3Path = model.NewS3Folders(opts.S3URI, clusterRef.ClusterName).ClusterBackups().Path()
+
+	stackConfig, err := clusterRef.StackConfig(opts, plugins)
 	if err != nil {
 		return nil, err
 	}
 
 	c := &Cluster{
-		ClusterRef:  cluster,
+		ClusterRef:  clusterRef,
 		StackConfig: stackConfig,
 	}
 
+	// Notes:
+	// * `c.StackConfig.CustomSystemdUnits` results in an `ambiguous selector ` error
+	// * `c.Controller.CustomSystemdUnits = controllerUnits` and `c.ClusterRef.Controller.CustomSystemdUnits = controllerUnits` results in modifying invisible/duplicate CustomSystemdSettings
+	extras := clusterextension.NewExtrasFromPlugins(plugins, c.PluginConfigs)
+
+	extraStack, err := extras.ControlPlaneStack()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load control-plane stack extras from plugins: %v", err)
+	}
+	c.StackConfig.ExtraCfnResources = extraStack.Resources
+
+	extraController, err := extras.Controller()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load controller node extras from plugins: %v", err)
+	}
+	c.StackConfig.Config.APIServerFlags = append(c.StackConfig.Config.APIServerFlags, extraController.APIServerFlags...)
+	c.StackConfig.Config.APIServerVolumes = append(c.StackConfig.Config.APIServerVolumes, extraController.APIServerVolumes...)
+	c.StackConfig.Controller.CustomSystemdUnits = append(c.StackConfig.Controller.CustomSystemdUnits, extraController.SystemdUnits...)
+	c.StackConfig.Controller.CustomFiles = append(c.StackConfig.Controller.CustomFiles, extraController.Files...)
+	c.StackConfig.Controller.IAMConfig.Policy.Statements = append(c.StackConfig.Controller.IAMConfig.Policy.Statements, extraController.IAMPolicyStatements...)
+
+	for k, v := range extraController.NodeLabels {
+		c.StackConfig.Controller.NodeLabels[k] = v
+	}
+
+	extraEtcd, err := extras.Etcd()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load controller node extras from plugins: %v", err)
+	}
+	c.StackConfig.Etcd.CustomSystemdUnits = append(c.StackConfig.Etcd.CustomSystemdUnits, extraEtcd.SystemdUnits...)
+	c.StackConfig.Etcd.CustomFiles = append(c.StackConfig.Etcd.CustomFiles, extraEtcd.Files...)
+	c.StackConfig.Etcd.IAMConfig.Policy.Statements = append(c.StackConfig.Etcd.IAMConfig.Policy.Statements, extraEtcd.IAMPolicyStatements...)
+
 	c.assets, err = c.buildAssets()
+
 	return c, err
 }
 
@@ -199,7 +244,9 @@ func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
 		c.ClusterExportedStacksS3URI(),
 		c.Region,
 		stackPolicyBody,
-		c.session)
+		c.session,
+		c.CloudFormation.RoleARN,
+	)
 }
 
 func (c *Cluster) Validate() error {
@@ -230,7 +277,7 @@ func (c *Cluster) String() string {
 }
 
 func (c *ClusterRef) Destroy() error {
-	return cfnstack.NewDestroyer(c.StackName(), c.session).Destroy()
+	return cfnstack.NewDestroyer(c.StackName(), c.session, c.CloudFormation.RoleARN).Destroy()
 }
 
 func (c *ClusterRef) validateKeyPair(ec2Svc ec2Service) error {
@@ -255,10 +302,11 @@ type r53Service interface {
 	GetHostedZone(*route53.GetHostedZoneInput) (*route53.GetHostedZoneOutput, error)
 }
 
+// TODO validateDNSConfig seems to be called from nowhere but should be called while validating `apiEndpoints` config
 func (c *ClusterRef) validateDNSConfig(r53 r53Service) error {
-	if !c.CreateRecordSet {
-		return nil
-	}
+	//if !c.CreateRecordSet {
+	//	return nil
+	//}
 
 	hzOut, err := r53.GetHostedZone(&route53.GetHostedZoneInput{Id: aws.String(c.HostedZoneID)})
 	if err != nil {

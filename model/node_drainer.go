@@ -6,15 +6,16 @@ import (
 )
 
 type NodeDrainer struct {
-	Enabled      bool `yaml:"enabled"`
-	DrainTimeout int  `yaml:"drainTimeout"`
+	Enabled      bool    `yaml:"enabled"`
+	DrainTimeout int     `yaml:"drainTimeout"`
+	IAMRole      IAMRole `yaml:"iamRole,omitempty"`
 }
 
 func (nd *NodeDrainer) DrainTimeoutInSeconds() int {
 	return int((time.Duration(nd.DrainTimeout) * time.Minute) / time.Second)
 }
 
-func (nd *NodeDrainer) Valid() error {
+func (nd *NodeDrainer) Validate() error {
 	if !nd.Enabled {
 		return nil
 	}

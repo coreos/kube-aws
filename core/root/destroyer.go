@@ -42,7 +42,7 @@ func ClusterDestroyerFromFile(configPath string, opts DestroyOptions) (ClusterDe
 		return nil, fmt.Errorf("failed to establish aws session: %v", err)
 	}
 
-	cfnDestroyer := cfnstack.NewDestroyer(stackName, session)
+	cfnDestroyer := cfnstack.NewDestroyer(stackName, session, cfg.CloudFormation.RoleARN)
 	return clusterDestroyerImpl{
 		underlying: cfnDestroyer,
 	}, nil

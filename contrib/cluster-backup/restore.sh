@@ -141,7 +141,7 @@ main() {
     for ns in ${NAMESPACES}; do
         if [ -e "${TEMP_DIR}/${ns}" ] && [ -d "${TEMP_DIR}/${ns}" ]; then
         echo "Restoring resources for '${ns}' Namespace..."
-        kubectl create -f <(echo $(cat ${TEMP_DIR}/namespaces.json | jq -r --arg NS "$ns" 'select( .items[].metadata.name | contains($NS))'))
+        kubectl create -f <(echo $(cat ${TEMP_DIR}/namespaces.json | jq -r --arg NS "$ns" '.items[] | select(.metadata.name == ($NS))'))
             for r in ${RESTORATION_ORDER_NS[@]}; do
                 createResource "${r}" "${ns}"
             done

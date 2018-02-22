@@ -9,12 +9,14 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/model"
 )
 
+// StackConfig contains configuration parameters available when rendering CFN stack template from golang text templates
 type StackConfig struct {
 	*Config
 	StackTemplateOptions
 	UserDataController    model.UserData
 	UserDataEtcd          model.UserData
 	ControllerSubnetIndex int
+	ExtraCfnResources     map[string]interface{}
 }
 
 func (c *StackConfig) s3Folders() model.S3Folders {

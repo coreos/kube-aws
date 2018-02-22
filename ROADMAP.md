@@ -55,10 +55,46 @@ Please file an issue to make suggestions on this roadmap!
       * Dynamic reconfiguration of cluster-autoscaler
       * Automatic discovery of target node pools for cluster-autoscaler
     * Requires much work on CA side
-  
-## v0.9.x
 
-  * Migrate from coreos-cloudinit to ignition for node bootstrapping
-  * YAML CloudFormation templates
+## v0.9.8
+
+  * Kubernetes 1.7
+  * More and [more RBAC support](https://github.com/kubernetes-incubator/kube-aws/pull/675#issuecomment-303660360) (@camilb, @c-knowles)
+  * Experimental support for kube-aws plugins
+  * Tiller installed by default
+    * For use from the plugin support
+  * Scalability improvements
+    * More efficient node draining(@danielfm)
+  * Cluster-provisioning observability improvements
+    * Streaming stack events & journald logs (@jollinshead)
+
+## v0.9.9
+
+  * Kubernetes 1.8
+  * RBAC enabled by default
+  * Security improvements
+    * NodeRestriction admission controller + Node authorizer + Kubelet’s credential rotation (@danielfm)
+  * [Optional] Several kube-aws core features as plugins
+
+## v0.9.10
+
+  * kubeadm support to simplify k8s components configuration (#654)
+    * Reduces the amount of code required in kube-aws
+    * To better follow upstream improvements on how k8s components are deployed
+  * [More manageable Calico + Flannel](https://github.com/kubernetes-incubator/kube-aws/pull/675#issuecomment-303669142) (@redbaron)
+  * istio integration
+    * Probably after k8s supported injecting init containers from PodPreset
+      * [Upstream issue](https://github.com/kubernetes/kubernetes/issues/43874)
+
+## v0.9.11
+
+  * Migrate from coreos-cloudinit to ignition for node bootstrapping (@redbaron)
+
+## v0.9.12
+
   * Bootkube switch
     * `kube-aws` can largely go into maintenance mode when k8s upgrades can be safely achieved on self-hosted clusters.
+
+## v0.9.x
+
+  * YAML CloudFormation templates

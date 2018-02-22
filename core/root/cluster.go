@@ -1,10 +1,12 @@
 package root
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
@@ -14,10 +16,14 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root/defaults"
 	"github.com/kubernetes-incubator/kube-aws/filereader/jsontemplate"
+	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
@@ -103,6 +109,8 @@ type Cluster interface {
 	ValidateStack() (string, error)
 	ValidateTemplates() error
 	ControlPlane() *controlplane.Cluster
+	NodePools() []*nodepool.Cluster
+	RenderStackTemplateAsString() (string, error)
 }
 
 func ClusterFromFile(configPath string, opts options, awsDebug bool) (Cluster, error) {
@@ -114,6 +122,8 @@ func ClusterFromFile(configPath string, opts options, awsDebug bool) (Cluster, e
 }
 
 func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster, error) {
+	plugins := cfg.Plugins
+
 	cpOpts := controlplane_cfg.StackTemplateOptions{
 		AssetsDir:             opts.AssetsDir,
 		ControllerTmplFile:    opts.ControllerTmplFile,
@@ -123,7 +133,7 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 		S3URI:                 opts.S3URI,
 		SkipWait:              opts.SkipWait,
 	}
-	cp, err := controlplane.NewCluster(cfg.Cluster, cpOpts, awsDebug)
+	cp, err := controlplane.NewCluster(cfg.Cluster, cpOpts, plugins, awsDebug)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +147,7 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 			S3URI:                 opts.S3URI,
 			SkipWait:              opts.SkipWait,
 		}
-		np, err := nodepool.NewCluster(c, npOpts, awsDebug)
+		np, err := nodepool.NewCluster(c, npOpts, plugins, awsDebug)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load node pool #%d: %v", i, err)
 		}
@@ -155,23 +165,38 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 	if err != nil {
 		return nil, fmt.Errorf("failed to establish aws session: %v", err)
 	}
-	return clusterImpl{
-		opts:         opts,
-		controlPlane: cp,
-		nodePools:    nodePools,
-		session:      session,
-	}, nil
+
+	extras := clusterextension.NewExtrasFromPlugins(plugins, cp.PluginConfigs)
+	extra, err := extras.RootStack()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load root stack extras from plugins: %v", err)
+	}
+
+	c := clusterImpl{
+		opts:              opts,
+		controlPlane:      cp,
+		nodePools:         nodePools,
+		session:           session,
+		ExtraCfnResources: extra.Resources,
+	}
+
+	return c, nil
 }
 
 type clusterImpl struct {
-	controlPlane *controlplane.Cluster
-	nodePools    []*nodepool.Cluster
-	opts         options
-	session      *session.Session
+	controlPlane      *controlplane.Cluster
+	nodePools         []*nodepool.Cluster
+	opts              options
+	session           *session.Session
+	ExtraCfnResources map[string]interface{}
 }
 
 func (c clusterImpl) ControlPlane() *controlplane.Cluster {
 	return c.controlPlane
+}
+
+func (c clusterImpl) NodePools() []*nodepool.Cluster {
+	return c.nodePools
 }
 
 func (c clusterImpl) Create() error {
@@ -182,12 +207,23 @@ func (c clusterImpl) Create() error {
 		return err
 	}
 
+	q := make(chan struct{}, 1)
+	defer func() { q <- struct{}{} }()
+
+	if c.controlPlane.CloudWatchLogging.Enabled && c.controlPlane.CloudWatchLogging.LocalStreaming.Enabled {
+		go streamJournaldLogs(c, q)
+	}
+
+	if c.controlPlane.CloudFormationStreaming {
+		go streamStackEvents(c, cfSvc, q)
+	}
+
 	return c.stackProvisioner().CreateStackAtURLAndWait(cfSvc, stackTemplateURL)
 }
 
 func (c clusterImpl) Info() (*Info, error) {
 	// TODO Cleaner way to obtain this dependency
-	cpConfig, err := c.controlPlane.Cluster.Config()
+	cpConfig, err := c.controlPlane.Cluster.Config([]*pluginmodel.Plugin{})
 	if err != nil {
 		return nil, err
 	}
@@ -252,6 +288,10 @@ func (c clusterImpl) templateParams() TemplateParams {
 	return params
 }
 
+func (c clusterImpl) RenderStackTemplateAsString() (string, error) {
+	return c.renderTemplateAsString()
+}
+
 func (c clusterImpl) renderTemplateAsString() (string, error) {
 	template, err := jsontemplate.GetString(c.templatePath(), c.templateParams(), c.opts.PrettyPrint)
 	if err != nil {
@@ -277,7 +317,9 @@ func (c clusterImpl) stackProvisioner() *cfnstack.Provisioner {
 		c.opts.S3URI,
 		c.controlPlane.Region,
 		stackPolicyBody,
-		c.session)
+		c.session,
+		c.controlPlane.CloudFormation.RoleARN,
+	)
 }
 
 func (c clusterImpl) stackName() string {
@@ -294,6 +336,17 @@ func (c clusterImpl) Update() (string, error) {
 	templateUrl, err := c.prepareTemplateWithAssets()
 	if err != nil {
 		return "", err
+	}
+
+	q := make(chan struct{}, 1)
+	defer func() { q <- struct{}{} }()
+
+	if c.controlPlane.CloudWatchLogging.Enabled && c.controlPlane.CloudWatchLogging.LocalStreaming.Enabled {
+		go streamJournaldLogs(c, q)
+	}
+
+	if c.controlPlane.CloudFormationStreaming {
+		go streamStackEvents(c, cfSvc, q)
 	}
 
 	return c.stackProvisioner().UpdateStackAtURLAndWait(cfSvc, templateUrl)
@@ -347,4 +400,52 @@ func (c clusterImpl) ValidateStack() (string, error) {
 	}
 
 	return strings.Join(reports, "\n"), nil
+}
+
+func streamJournaldLogs(c clusterImpl, q chan struct{}) error {
+	fmt.Printf("Streaming filtered Journald logs for log group '%s'...\nNOTE: Due to high initial entropy, '.service' failures may occur during the early stages of booting.\n", c.controlPlane.ClusterName)
+	cwlSvc := cloudwatchlogs.New(c.session)
+	s := time.Now().Unix() * 1E3
+	t := s
+	in := cloudwatchlogs.FilterLogEventsInput{
+		LogGroupName:  &c.controlPlane.ClusterName,
+		FilterPattern: &c.controlPlane.CloudWatchLogging.LocalStreaming.Filter,
+		StartTime:     &s}
+	ms := make(map[string]int64)
+
+	for {
+		select {
+		case <-q:
+			return nil
+		case <-time.After(1 * time.Second):
+			out, err := cwlSvc.FilterLogEvents(&in)
+			if err != nil {
+				continue
+			}
+			if len(out.Events) > 1 {
+				s = *out.Events[len(out.Events)-1].Timestamp
+				for _, event := range out.Events {
+					if *event.Timestamp > ms[*event.Message]+c.controlPlane.CloudWatchLogging.LocalStreaming.Interval() {
+						ms[*event.Message] = *event.Timestamp
+						res := model.SystemdMessageResponse{}
+						json.Unmarshal([]byte(*event.Message), &res)
+						s := int(((*event.Timestamp) - t) / 1E3)
+						d := fmt.Sprintf("+%.2d:%.2d:%.2d", s/3600, (s/60)%60, s%60)
+						fmt.Printf("%s\t%s: \"%s\"\n", d, res.Hostname, res.Message)
+					}
+				}
+			}
+			in = cloudwatchlogs.FilterLogEventsInput{
+				LogGroupName:  &c.controlPlane.ClusterName,
+				FilterPattern: &c.controlPlane.CloudWatchLogging.LocalStreaming.Filter,
+				NextToken:     out.NextToken,
+				StartTime:     &s}
+		}
+	}
+}
+
+// streamStackEvents streams all the events from the root, the control-plane, and worker node pool stacks using StreamEventsNested
+func streamStackEvents(c clusterImpl, cfSvc *cloudformation.CloudFormation, q chan struct{}) error {
+	fmt.Printf("Streaming CloudFormation events for the cluster '%s'...\n", c.controlPlane.ClusterName)
+	return c.stackProvisioner().StreamEventsNested(q, cfSvc, c.controlPlane.ClusterName, c.controlPlane.ClusterName, time.Now())
 }

@@ -9,6 +9,7 @@ type StackConfig struct {
 	*ComputedConfig
 	UserDataWorker model.UserData
 	StackTemplateOptions
+	ExtraCfnResources map[string]interface{}
 }
 
 func (c *StackConfig) RenderStackTemplateAsBytes() ([]byte, error) {

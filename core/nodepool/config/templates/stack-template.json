@@ -101,7 +101,7 @@
               {{end}}
             ],
             "SubnetId": {{$workerSubnet.Ref}},
-            "UserData": {{ $.UserDataWorker.Parts.instance.Base64 true | checkSizeLessThan 16384 | quote }}
+            "UserData": {{ $.UserDataWorker.Parts.instance.Template }}
           }
           {{end}}
           {{end}}
@@ -134,10 +134,17 @@
             "Value": ""
           },
           {{end}}
+          {{range $k, $v := .InstanceTags -}}
+          {
+            "Key": "{{$k}}",
+            "PropagateAtLaunch": "true",
+            "Value": "{{$v}}"
+          },
+          {{end -}}
           {
             "Key": "kubernetes.io/cluster/{{ .ClusterName }}",
             "PropagateAtLaunch": "true",
-            "Value": "true"
+            "Value": "owned"
           },
           {
             "Key": "kube-aws:node-pool:name",
@@ -210,9 +217,7 @@
         },
         "DefaultResult" : "CONTINUE",
         "HeartbeatTimeout" : "{{.NodeDrainer.DrainTimeoutInSeconds}}",
-        "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING",
-        "NotificationTargetARN" : { "Ref": "NotificationTargetARN" },
-        "RoleARN" : { "Ref": "NotificationRoleARN" }
+        "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING"
       },
       "Type" : "AWS::AutoScaling::LifecycleHook"
     },
@@ -261,7 +266,7 @@
         {{else}}
         "PlacementTenancy": "{{.Tenancy}}",
         {{end}}
-        "UserData": {{ .UserDataWorker.Parts.instance.Base64 true | checkSizeLessThan 16384 | quote }}
+        "UserData": {{ .UserDataWorker.Parts.instance.Template }}
       },
       "Type": "AWS::AutoScaling::LaunchConfiguration"
     {{if not .IAMConfig.InstanceProfile.Arn}}
@@ -290,6 +295,13 @@
         "PolicyDocument" :   {
           "Version":"2012-10-17",
           "Statement": [
+                {{range $s := .IAMConfig.Policy.Statements }}
+                {
+                  "Action": {{toJSON $s.Actions}},
+                  "Effect": {{toJSON $s.Effect}},
+                  "Resource": {{toJSON $s.Resources}}
+                },
+                {{end}}
                 {
                   "Action": "ec2:Describe*",
                   "Effect": "Allow",
@@ -374,12 +386,12 @@
                   "Resource": [ "*" ]
                 },
                 {{end}}
-                {{if .Addons.ClusterAutoscaler.Enabled}}
+                {{if .ClusterAutoscalerSupport.Enabled}}
                 {
                   "Action": [
                     "autoscaling:DescribeAutoScalingGroups",
                     "autoscaling:DescribeAutoScalingInstances",
-                    "autoscaling:DescribeTags",
+                    "autoscaling:DescribeTags"
                   ],
                   "Effect": "Allow",
                   "Resource": "*"
@@ -486,14 +498,6 @@
     "ControlPlaneStackName": {
       "Type": "String",
       "Description": "The name of a control-plane stack used to import values into this stack"
-    },
-    "NotificationTargetARN": {
-      "Type": "String",
-      "Description": "ASG LifecycleHook notification target ARN"
-    },
-    "NotificationRoleARN": {
-      "Type": "String",
-      "Description": "Role to be used by ASG LifecycleHook to publish notification"
     }
     {{if .CloudWatchLogging.Enabled}}
     ,
@@ -511,6 +515,10 @@
     {{end}}
     {{if not .IAMConfig.InstanceProfile.Arn}}
     {{template "IAMRole" .}}
+    {{end}}
+    {{range $n, $r := .ExtraCfnResources}}
+    ,
+    {{quote $n}}: {{toJSON $r}}
     {{end}}
   },
   "Outputs": {

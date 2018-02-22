@@ -12,7 +12,7 @@ type AutoScalingGroup struct {
 	UnknownKeys                        `yaml:",inline"`
 }
 
-func (asg AutoScalingGroup) Valid() error {
+func (asg AutoScalingGroup) Validate() error {
 	if asg.MinSize != nil && *asg.MinSize < 0 {
 		return fmt.Errorf("`autoScalingGroup.minSize` must be zero or greater if specified")
 	}

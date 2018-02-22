@@ -2,10 +2,11 @@ package integration
 
 import (
 	"fmt"
-	cfg "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
-	"github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"strings"
 	"testing"
+
+	cfg "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	"github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 )
 
 const nodepoolInsufficientConfigYaml = `clusterName: mycluster
@@ -58,7 +59,12 @@ etcdEndpoints: "10.0.0.1"
 	mainClusterYaml := `
 region: ap-northeast-1
 availabilityZone: ap-northeast-1a
-externalDNSName: kubeawstest.example.com
+apiEndpoints:
+- name: public
+  dnsName: kubeawstest.example.com
+  loadBalancer:
+    hostedZone:
+      id: hostedzone-xxxx
 sshAuthorizedKeys:
 - mydummysshpublickey
 kmsKeyArn: mykmskeyarn
@@ -119,7 +125,7 @@ spotFleet:
     instanceType: c4.large
     rootVolume:
       type: io1
-      # must be 100~2000
+      # must be 100~20000
       iops: 50
 `,
 		},
