@@ -39,6 +39,7 @@ type ProvidedConfig struct {
 	WorkerNodePoolConfig    `yaml:",inline"`
 	DeploymentSettings      `yaml:",inline"`
 	cfg.Experimental        `yaml:",inline"`
+	cfg.Kubelet             `yaml:",inline"`
 	Plugins                 model.PluginConfigs `yaml:"kubeAwsPlugins,omitempty"`
 	Private                 bool                `yaml:"private,omitempty"`
 	NodePoolName            string              `yaml:"name,omitempty"`
@@ -83,7 +84,7 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 
 	tlsBootstrappingEnabled := c.Experimental.TLSBootstrap.Enabled
 	if stackConfig.ComputedConfig.AssetsEncryptionEnabled() {
-		compactAssets, err := cfg.ReadOrCreateCompactAssets(opts.AssetsDir, c.ManageCertificates, tlsBootstrappingEnabled, cfg.KMSConfig{
+		compactAssets, err := cfg.ReadOrCreateCompactAssets(opts.AssetsDir, c.ManageCertificates, tlsBootstrappingEnabled, false, cfg.KMSConfig{
 			Region:         stackConfig.ComputedConfig.Region,
 			KMSKeyARN:      c.KMSKeyARN,
 			EncryptService: c.ProvidedEncryptService,
@@ -93,7 +94,7 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 		}
 		stackConfig.ComputedConfig.AssetsConfig = compactAssets
 	} else {
-		rawAssets, _ := cfg.ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir, c.ManageCertificates, tlsBootstrappingEnabled)
+		rawAssets, _ := cfg.ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir, c.ManageCertificates, tlsBootstrappingEnabled, false)
 		stackConfig.ComputedConfig.AssetsConfig = rawAssets
 	}
 
@@ -164,6 +165,7 @@ func (c *ProvidedConfig) Load(main *cfg.Config) error {
 	c.KubeClusterSettings = main.KubeClusterSettings
 	c.Experimental.TLSBootstrap = main.DeploymentSettings.Experimental.TLSBootstrap
 	c.Experimental.NodeDrainer = main.DeploymentSettings.Experimental.NodeDrainer
+	c.Kubelet.RotateCerts = main.DeploymentSettings.Kubelet.RotateCerts
 
 	if c.Experimental.ClusterAutoscalerSupport.Enabled {
 		if !main.Addons.ClusterAutoscaler.Enabled {
@@ -290,6 +292,9 @@ func (c ProvidedConfig) FeatureGates() model.FeatureGates {
 	gates := c.NodeSettings.FeatureGates
 	if c.Gpu.Nvidia.IsEnabledOn(c.InstanceType) {
 		gates["Accelerators"] = "true"
+	}
+	if c.Kubelet.RotateCerts.Enabled {
+		gates["RotateKubeletClientCertificate"] = "true"
 	}
 	return gates
 }

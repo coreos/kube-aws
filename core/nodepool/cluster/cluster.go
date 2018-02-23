@@ -152,7 +152,7 @@ func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
   ]
 }`
 
-	return cfnstack.NewProvisioner(c.StackName(), c.WorkerDeploymentSettings().StackTags(), c.S3URI, c.Region, stackPolicyBody, c.session())
+	return cfnstack.NewProvisioner(c.StackName(), c.WorkerDeploymentSettings().StackTags(), c.S3URI, c.Region, stackPolicyBody, c.session(), c.CloudFormation.RoleARN)
 }
 
 func (c *Cluster) session() *session.Session {
@@ -225,5 +225,5 @@ func (c *ClusterRef) Info() (*Info, error) {
 }
 
 func (c *ClusterRef) Destroy() error {
-	return cfnstack.NewDestroyer(c.StackName(), c.session).Destroy()
+	return cfnstack.NewDestroyer(c.StackName(), c.session, c.CloudFormation.RoleARN).Destroy()
 }

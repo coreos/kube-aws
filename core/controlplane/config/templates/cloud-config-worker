@@ -296,8 +296,8 @@ coreos:
         --container-runtime={{.ContainerRuntime}} \
         --rkt-path=/usr/bin/rkt \
         --rkt-stage1-image=coreos.com/rkt/stage1-coreos \
-        {{if .NodeLabels.Enabled}}--node-labels {{.NodeLabels.String}} \
-        {{end}}--register-node=true \
+        --node-labels kubernetes.io/role=node{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
+        --register-node=true \
         {{if .Taints}}--register-with-taints={{.Taints.String}}\
         {{end}}--allow-privileged=true \
         {{if .NodeStatusUpdateFrequency}}--node-status-update-frequency={{.NodeStatusUpdateFrequency}} \
@@ -309,6 +309,9 @@ coreos:
         --cert-dir=/etc/kubernetes/ssl \
         {{- if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
         --experimental-bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \
+        {{- if .Kubelet.RotateCerts.Enabled }}
+        --rotate-certificates \
+        {{- end }}
         {{- else }}
         --tls-cert-file=/etc/kubernetes/ssl/worker.pem \
         --tls-private-key-file=/etc/kubernetes/ssl/worker-key.pem \

@@ -425,7 +425,7 @@ region operations (#1127)
 * `service/rds`: Enables cross region for `CopyDBClusterSnapshot` and
 `CreateDBCluster` (#1128)
 
-Release v1.7.7 (2017-03-10)
+Release v1.7.8 (2017-03-10)
 ===
 
 Service Client Updates

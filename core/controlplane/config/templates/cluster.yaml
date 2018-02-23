@@ -9,6 +9,7 @@ clusterName: {{.ClusterName}}
 
 # The AMI ID of CoreOS.
 # If omitted, the latest AMI for the releaseChannel is used.
+# This happens every time 'kube-aws update' is run, potentially replacing all instances with a newer version
 {{if .AmiId -}}
 amiId: "{{.AmiId}}"
 {{else -}}
@@ -546,6 +547,9 @@ worker:
 #            Description=Example Custom Service
 #            [Service]
 #            ExecStart=/bin/rkt run --set-env TAGS=Controller ...
+#      # Enable PodPriority (it only makes sense if you enabled priority admission control in experimental section)
+#      featureGates:
+#        PodPriority: true
 
 # Maximum time to wait for worker creation
 #workerCreateTimeout: PT15M
@@ -643,7 +647,7 @@ worker:
 #      arn: "arn:aws:iam::YOURACCOUNTID:instance-profile/INSTANCEPROFILENAME"
 #
 #  # The version of etcd to be used. Set to e.g. "3.2.1" to use etcd3
-#  version: 3.2.10
+#  version: 3.2.13
 #
 #  snapshot:
 #    # Set to true to periodically take an etcd snapshot
@@ -950,12 +954,12 @@ worker:
 # and pulling from quay or dockerhub is slow and you get many timeouts.
 
 # Version of hyperkube image to use. This is the tag for the hyperkube image repository.
-# kubernetesVersion: v1.8.4_coreos.0
+# kubernetesVersion: v1.9.1
 
 # Hyperkube image repository to use.
 # hyperkubeImage:
-#   repo: quay.io/coreos/hyperkube
-#   rktPullDocker: false
+#   repo: k8s.gcr.io/hyperkube-amd64
+#   rktPullDocker: true
 
 # AWS CLI image repository to use.
 # awsCliImage:
@@ -966,66 +970,66 @@ worker:
 # Calico Node image repository to use.
 #calicoNodeImage:
 #  repo: quay.io/calico/node
-#  tag: v2.6.1
+#  tag: v2.6.5
 #  rktPullDocker: false
 
 # Calico CNI image repository to use.
 #calicoCniImage:
 #  repo: quay.io/calico/cni
-#  tag: v1.11.0
+#  tag: v1.11.2
 #  rktPullDocker: false
 
 # Calico Kube Controllers image repository to use.
 #calicoKubeControllersImage:
 #  repo: quay.io/calico/kube-controllers
-#  tag: v1.0.0
+#  tag: v1.0.2
 #  rktPullDocker: false
 
 # Cluster Autoscaler image repository to use.
 #clusterAutoscalerImage:
-#  repo: gcr.io/google_containers/cluster-autoscaler
-#  tag: v1.0.3
+#  repo: k8s.gcr.io/cluster-autoscaler
+#  tag: v1.1.0
 #  rktPullDocker: false
 
 # Cluster Proportional Autoscaler image repository to use.
 #clusterProportionalAutoscalerImage:
-#  repo: gcr.io/google_containers/cluster-proportional-autoscaler-amd64
+#  repo: k8s.gcr.io/cluster-proportional-autoscaler-amd64
 #  tag: 1.1.2
 #  rktPullDocker: false
 
 # kube2iam image repository to use.
 #kube2iamImage:
 #  repo: jtblin/kube2iam
-#  tag: 0.8.1
+#  tag: 0.9.0
 #  rktPullDocker: false
 
 # kube DNS image repository to use.
 #kubeDnsImage:
-#  repo: gcr.io/google_containers/k8s-dns-kube-dns-amd64
+#  repo: k8s.gcr.io/k8s-dns-kube-dns-amd64
 #  tag: 1.14.7
 #  rktPullDocker: false
 
 # kube DNS Masq image repository to use.
 #kubeDnsMasqImage:
-#  repo: gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64
+#  repo: k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64
 #  tag: 1.14.7
 #  rktPullDocker: false
 
 # kube rescheduler image repository to use.
 #kubeReschedulerImage:
-#  repo: gcr.io/google-containers/rescheduler
-#  tag: v0.3.1
+#  repo: k8s.gcr.io/rescheduler-amd64
+#  tag: v0.3.2
 #  rktPullDocker: false
 
 # DNS Masq metrics image repository to use.
 #dnsMasqMetricsImage:
-#  repo: gcr.io/google_containers/k8s-dns-sidecar-amd64
-#  tag: 1.14.6
+#  repo: k8s.gcr.io/k8s-dns-sidecar-amd64
+#  tag: 1.14.7
 #  rktPullDocker: false
 
 # Exec Healthz image repository to use.
 #execHealthzImage:
-#  repo: gcr.io/google_containers/exechealthz-amd64
+#  repo: k8s.gcr.io/exechealthz-amd64
 #  tag: 1.2
 #  rktPullDocker: false
 
@@ -1043,44 +1047,44 @@ worker:
 
 # Heapster image repository to use.
 #heapsterImage:
-#  repo: gcr.io/google_containers/heapster
-#  tag: v1.4.3
+#  repo: k8s.gcr.io/heapster
+#  tag: v1.5.0
 #  rktPullDocker: false
 
 # Metrics Server image repository to use.
 #metricsServerImage:
-#  repo: gcr.io/google_containers/metrics-server-amd64
-#  tag: v0.2.0
+#  repo: k8s.gcr.io/metrics-server-amd64
+#  tag: v0.2.1
 #  rktPullDocker: false
 
 # Addon Resizer image repository to use.
 #addonResizerImage:
-#  repo: gcr.io/google_containers/addon-resizer
-#  tag: 2.1
+#  repo: k8s.gcr.io/addon-resizer
+#  tag: 1.8.1
 #  rktPullDocker: false
 
 # Kube Dashboard image repository to use.
-#kubeDashboardImage:
-#  repo: gcr.io/google_containers/kubernetes-dashboard-amd64
-#  tag: v1.8.0
+#kubernetesDashboardImage:
+#  repo: k8s.gcr.io/kubernetes-dashboard-amd64
+#  tag: v1.8.1
 #  rktPullDocker: false
 
 # Calico Controller image repository to use.
 #calicoCtlImage:
 #  repo: calico/ctl
-#  tag: v1.6.1
+#  tag: v1.6.3
 #  rktPullDocker: false
 
 # Pause image repository to use.This works only if you are deploying your cluster in "cn-north-1" region.
 #pauseImage:
-#  repo: gcr.io/google_containers/pause-amd64
-#  tag: 3.0
+#  repo: k8s.gcr.io/pause-amd64
+#  tag: 3.1
 #  rktPullDocker: false
 
 # Flannel image repository to use.This allow pulling flannel image from a docker repo.
 #flannelImage:
 #  repo: quay.io/coreos/flannel
-#  tag: v0.9.0
+#  tag: v0.9.1
 #  rktPullDocker: false
 
 # JournaldCloudWatchLogsImage image repository to use. This sends journald logs to CloudWatch.
@@ -1171,10 +1175,30 @@ kubernetesDashboard:
 #  downloadUrl: https://github.com/DailyHotel/amazon-ssm-agent/releases/download/v2.0.805.1/ssm.linux-amd64.tar.gz
 #  sha1sum: a6fff8f9839d5905934e7e3df3123b54020a1f5e
 
+
+kubeDns:
 # When enabled, will enable a DNS-masq DaemonSet to make PODs to resolve DNS names via locally running dnsmasq
 # It is disabled by default.
-#kubeDns:
 # nodeLocalResolver: false
+# When enabled, will deploy kube-dns to K8s controllers instead of workers.
+# deployToControllers: false
+  autoscaler:
+    coresPerReplica: 256
+    nodesPerReplica: 16
+    min: 2
+
+kubeProxy:
+  # Use IPVS kube-proxy mode instead of [default] iptables one (requires Kubernetes 1.9.0+ to work reliably)
+  # This is intended to address performance issues of iptables mode for clusters with big number of nodes and services
+  # FIXME For those who use hyperkube version 'v1.9.0' / 'v1.9.0_coreos.0', your image may lack `ipset` utility
+  # FIXME Please see: https://github.com/kubernetes/kubernetes/issues/57321 (next Kubernetes release will have a fix)
+  # FIXME https://github.com/kubernetes/kubernetes/commit/787a55bb67ccd2da14aa6e7f91289c859beecb5f#diff-bf0f8d724d18f700f3c821aa5a74f4cf
+  # FIXME IPVS integration is still green, proceed with care! You may get fixed hyperkube image from 'ivanilves/hyperkube' Docker repo
+  ipvsMode:
+    enabled: false
+    scheduler: rr
+    syncPeriod: 300s
+    minSyncPeriod: 60s
 
 # When enabled, CloudFormation events will stream to stdout during kube-aws 'update | up'.
 # It is enabled by default.
@@ -1198,6 +1222,11 @@ addons:
   metricsServer:
     enabled: false
 
+  # When set to true this configures security groups for prometheus between nodes.
+  # This includes the following ports: 10252, 10251, 10250, 9100, and 4194
+  prometheus:
+    securityGroupsEnabled: false
+
 # Experimental features will change in backward-incompatible ways
 experimental:
   # Enable admission controllers
@@ -1213,6 +1242,14 @@ experimental:
     denyEscalatingExec:
       enabled: false
     initializers:
+      enabled: false
+    # Priority enables PodPriority in the API server, scheduler and kubelet. you need to manually add the
+    # featureGate PodPriority:true in the worker
+    priority:
+      enabled: false
+    mutatingAdmissionWebhook:
+      enabled: false
+    validatingAdmissionWebhook:
       enabled: false
 
   # Used to provide `/etc/environment` env vars with values from arbitrary CloudFormation refs
@@ -1267,6 +1304,10 @@ experimental:
     enabled: false
     # Maximum time to wait, in minutes, for the node to be completely drained. Must be an integer between 1 and 60.
     drainTimeout: 5
+    # IAM role to assume with kube2iam for the pod in "kube-node-drainer-asg-status-updater" deployment.
+    iamRole:
+      # Empty, inactive by default. Set it to valid ARN "arn: arn:aws:iam::0123456789012:role/roleName" to activate.
+      arn: ""
 
   # Configure OpenID Connect token authenticator plugin in Kubernetes API server.
   # For using Dex as a custom OIDC provider, please check "contrib/dex/README.md".
@@ -1288,6 +1329,12 @@ experimental:
   # This is the amount of time which we allow running Node to be unresponsive before marking it unhealthy.
   # Must be N times more than kubelet's nodeStatusUpdateFrequency (default 10s).
 #   nodeMonitorGracePeriod: "40s"
+
+kubelet:
+  # Tell Kubelet to renew its certificate as its expiration time is approaching
+  # Requires Experimental.tlsBootstrap to be enabled
+  RotateCerts:
+    enabled: true
 
 # AWS Tags for cloudformation stack resources
 #stackTags:

@@ -374,6 +374,9 @@ coreos:
         {{ else }}--cluster-dns={{.DNSServiceIP}} \
         {{ end }}--cluster-domain=cluster.local \
         --cloud-provider=aws \
+        {{if .Experimental.Admission.Priority.Enabled}}
+        --feature-gates=PodPriority=true \
+        {{end}}\
         $KUBELET_OPTS
         Restart=always
         RestartSec=10
@@ -981,13 +984,15 @@ write_files:
     content: |
       #!/bin/bash -e
 
+{{/* RUN-578 Introduce Dex */}}
+      vols="-v /srv/kubernetes:/srv/kubernetes -v /etc/kubernetes:/etc/kubernetes"
+{{/* RUN-578 Introduce Dex */}}
+
       kubectl() {
           # --request-timeout=1s is intended to instruct kubectl to give up discovering unresponsive apiservice(s) in certain periods
           # so that temporal freakiness/unresponsity of specific apiservice until apiserver/controller-manager fully starts doesn't
           # affect the whole controller bootstrap process.
-{{/* RUN-578 Introduce Dex */}}
-          /usr/bin/docker run --rm -i --net=host -v /etc/kubernetes:/etc/kubernetes -v /srv/kubernetes:/srv/kubernetes {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl --request-timeout=1s "$@"
-{{/* RUN-578 Introduce Dex */}}
+          /usr/bin/docker run -i --rm $vols --net=host {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl --request-timeout=1s "$@"
       }
 
       ks() {
@@ -1004,6 +1009,23 @@ write_files:
         echo Waiting until kube-system created.
         sleep 3
       done
+
+      {{if .Experimental.KIAMSupport.Enabled }}
+      kiam_tls_dir=/etc/kubernetes/ssl/kiam
+      vols="${vols} -v $kiam_tls_dir:$kiam_tls_dir"
+
+      kubectl create secret generic kiam-server-tls -n kube-system \
+        --from-file=$kiam_tls_dir/ca.pem \
+        --from-file=$kiam_tls_dir/server.pem \
+        --from-file=$kiam_tls_dir/server-key.pem --dry-run -o yaml | kubectl apply -f -
+      kubectl create secret generic kiam-agent-tls -n kube-system \
+        --from-file=$kiam_tls_dir/ca.pem \
+        --from-file=$kiam_tls_dir/agent.pem \
+        --from-file=$kiam_tls_dir/agent-key.pem --dry-run -o yaml | kubectl apply -f -
+
+      mfdir=/srv/kubernetes/manifests
+      applyall "${mfdir}/kube-system-ns.yaml" "${mfdir}/kiam-all.yaml"
+      {{ end }}
 
       # See https://github.com/kubernetes-incubator/kube-aws/issues/1039#issuecomment-348978375
       if ks get apiservice v1beta1.metrics.k8s.io && ! ps ax | grep '[h]yperkube proxy'; then
@@ -1046,7 +1068,7 @@ write_files:
       applyall "${mfdir}/kubernetes-dashboard-se.yaml"
 
       # Configmaps
-      applyall "${mfdir}"/{kube-dns,kube-proxy}"-cm.yaml"
+      applyall "${mfdir}"/{kube-dns,kube-proxy,heapster-config}"-cm.yaml"
 
       # Service Accounts
       applyall "${mfdir}"/{kube-dns,heapster,kube-proxy,kubernetes-dashboard}"-sa.yaml"
@@ -1252,6 +1274,9 @@ write_files:
             annotations:
               scheduler.alpha.kubernetes.io/critical-pod: ''
           spec:
+            {{if .Experimental.Admission.Priority.Enabled -}}
+            priorityClassName: system-node-critical
+            {{ end -}}
             tolerations:
             - operator: Exists
               effect: NoSchedule
@@ -1351,6 +1376,9 @@ write_files:
             labels:
               k8s-app: calico-policy
           spec:
+            {{if .Experimental.Admission.Priority.Enabled -}}
+            priorityClassName: system-node-critical
+            {{ end -}}
             tolerations:
             - key: "node.alpha.kubernetes.io/role"
               operator: "Equal"
@@ -1433,6 +1461,9 @@ write_files:
             labels:
               k8s-app: kube-resources-autosave-policy
           spec:
+            {{if .Experimental.Admission.Priority.Enabled -}}
+            priorityClassName: system-node-critical
+            {{ end -}}
             containers:
             - name: kube-resources-autosave-dumper
               image: {{.HyperkubeImage.RepoWithTag}}
@@ -1441,6 +1472,7 @@ write_files:
                 - |
                     set -x ;
                     DUMP_DIR_COMPLETE=/kube-resources-autosave/complete ;
+                    aws configure set s3.signature_version s3v4 ;
                     mkdir -p ${DUMP_DIR_COMPLETE} ;
                     while true; do
                       TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
@@ -1542,7 +1574,11 @@ write_files:
           -ec \
           'echo decrypting assets
            shopt -s nullglob
-           for encKey in /etc/kubernetes/{ssl,{{ if or (.AssetsConfig.HasAuthTokens) ( and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken) }}auth{{end}}}/*.enc; do
+           for encKey in /etc/kubernetes/{ssl,{{ if or (.AssetsConfig.HasAuthTokens) ( and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken) }}auth{{end}}}/{,kiam/}*.enc; do
+             if [ ! -f $encKey ]; then
+               echo skipping non-existent file: $encKey 1>&2
+               continue
+             fi
              echo decrypting $encKey
              f=$(mktemp $encKey.XXXXXXXX)
              /usr/bin/aws \
@@ -1590,7 +1626,13 @@ write_files:
                 k8s-app: kube-node-drainer-asg-status-updater
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
+                {{if ne .Experimental.NodeDrainer.IAMRole.ARN.Arn "" -}}
+                iam.amazonaws.com/role: {{ .Experimental.NodeDrainer.IAMRole.ARN.Arn }}
+                {{ end }}
             spec:
+              {{if .Experimental.Admission.Priority.Enabled -}}
+              priorityClassName: system-node-critical
+              {{ end -}}
               initContainers:
                 - name: hyperkube
                   image: {{.HyperkubeImage.RepoWithTag}}
@@ -1614,7 +1656,7 @@ write_files:
                   - /bin/sh
                   - -xec
                   - |
-                    metadata() { wget -O - -q http://169.254.169.254/2016-09-02/"$1"; }
+                    metadata() { curl -s -S -f http://169.254.169.254/2016-09-02/"$1"; }
                     asg()      { aws --region="${REGION}" autoscaling "$@"; }
 
                     # Hyperkube binary is not statically linked, so we need to use
@@ -1673,6 +1715,9 @@ write_files:
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
             spec:
+              {{if .Experimental.Admission.Priority.Enabled -}}
+              priorityClassName: system-node-critical
+              {{ end -}}
               tolerations:
               - operator: Exists
                 effect: NoSchedule
@@ -1703,7 +1748,7 @@ write_files:
                   - /bin/sh
                   - -xec
                   - |
-                    metadata() { wget -O - -q http://169.254.169.254/2016-09-02/"$1"; }
+                    metadata() { curl -s -S -f http://169.254.169.254/2016-09-02/"$1"; }
                     asg()      { aws --region="${REGION}" autoscaling "$@"; }
 
                     # Hyperkube binary is not statically linked, so we need to use
@@ -2370,12 +2415,20 @@ write_files:
         namespace: kube-system
       data:
         kube-proxy-config.yaml: |
-          apiVersion: componentconfig/v1alpha1
+          apiVersion: {{if ge .K8sVer "v1.9"}}kubeproxy.config.k8s.io{{else}}componentconfig{{end}}/v1alpha1
           kind: KubeProxyConfiguration
           bindAddress: 0.0.0.0
           clientConnection:
             kubeconfig: /etc/kubernetes/kubeconfig/kube-proxy.yaml
           clusterCIDR: {{.PodCIDR}}
+          {{if .KubeProxy.IPVSMode.Enabled -}}
+          featureGates: "SupportIPVSProxyMode=true"
+          mode: ipvs
+          ipvs:
+            scheduler: {{.KubeProxy.IPVSMode.Scheduler}}
+            syncPeriod: {{.KubeProxy.IPVSMode.SyncPeriod}}
+            minSyncPeriod: {{.KubeProxy.IPVSMode.MinSyncPeriod}}
+          {{end}}
 
   - path: /srv/kubernetes/manifests/kube-proxy-ds.yaml
     content: |
@@ -2398,6 +2451,9 @@ write_files:
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
             spec:
+              {{if .Experimental.Admission.Priority.Enabled -}}
+              priorityClassName: system-node-critical
+              {{ end -}}
               serviceAccountName: kube-proxy
               tolerations:
               - operator: Exists
@@ -2417,6 +2473,11 @@ write_files:
                 securityContext:
                   privileged: true
                 volumeMounts:
+                {{if .KubeProxy.IPVSMode.Enabled -}}
+                - mountPath: /lib/modules
+                  name: lib-modules
+                  readOnly: true
+                {{end -}}
                 - mountPath: /etc/kubernetes/kubeconfig
                   name: kubeconfig
                   readOnly: true
@@ -2424,6 +2485,11 @@ write_files:
                   name: kube-proxy-config
                   readOnly: true
               volumes:
+              {{if .KubeProxy.IPVSMode.Enabled -}}
+              - name: lib-modules
+                hostPath:
+                  path: /lib/modules
+              {{end -}}
               - name: kubeconfig
                 hostPath:
                   path: /etc/kubernetes/kubeconfig
@@ -2481,7 +2547,7 @@ write_files:
           - --authentication-token-webhook-cache-ttl={{ .Experimental.Authentication.Webhook.CacheTTL }}
           {{ end }}
           - --advertise-address=$private_ipv4
-          - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }}{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.NodeAuthorizer.Enabled}},NodeRestriction{{end}},ResourceQuota{{if .Experimental.Admission.DenyEscalatingExec.Enabled}},DenyEscalatingExec{{end}}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}
+          - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }}{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.NodeAuthorizer.Enabled}},NodeRestriction{{end}},ResourceQuota{{if .Experimental.Admission.DenyEscalatingExec.Enabled}},DenyEscalatingExec{{end}}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}{{if .Experimental.Admission.Priority.Enabled}},Priority{{end}},DefaultTolerationSeconds{{if .Experimental.Admission.MutatingAdmissionWebhook.Enabled}},MutatingAdmissionWebhook{{end}}{{if .Experimental.Admission.ValidatingAdmissionWebhook.Enabled}},ValidatingAdmissionWebhook{{end}}
 {{/* RUN-578 Introduce Dex */}}
           {{if .Experimental.Oidc.Enabled}}
           - --anonymous-auth=true
@@ -2509,7 +2575,10 @@ write_files:
 {{/* RUN-509 Remove vault-based certs DO NOT TOUCH THIS LINE */}}
           - --service-account-key-file=/etc/kubernetes/ssl/serviceaccount-key.pem.apiserver
 {{/* RUN-509 Remove vault-based certs DO NOT TOUCH THIS LINE */}}
-          - --runtime-config=extensions/v1beta1/networkpolicies=true,batch/v2alpha1=true{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},extensions/v1beta1/podsecuritypolicy=true{{ end }}{{if .Experimental.Admission.Initializers.Enabled}},admissionregistration.k8s.io/v1alpha1{{end}}
+          - --runtime-config=extensions/v1beta1/networkpolicies=true,batch/v2alpha1=true{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},extensions/v1beta1/podsecuritypolicy=true{{ end }}{{if .Experimental.Admission.Initializers.Enabled}},admissionregistration.k8s.io/v1alpha1{{end}}{{if .Experimental.Admission.Priority.Enabled}},scheduling.k8s.io/v1alpha1=true{{end}}
+         {{if .Experimental.Admission.Priority.Enabled}}
+          - --feature-gates=PodPriority=true
+         {{end}}
           - --cloud-provider=aws
 {{/* RUN Attempt to prevent apiserver->etcd lockups. https://github.com/kubernetes/kubernetes/issues/47131#issuecomment-338166775 */}}
           - --service-account-lookup=false
@@ -2684,6 +2753,9 @@ write_files:
           - scheduler
           - --master=http://127.0.0.1:8080
           - --leader-elect=true
+         {{if .Experimental.Admission.Priority.Enabled}}
+          - --feature-gates=PodPriority=true
+         {{end}}
           resources:
             requests:
               cpu: 100m
@@ -2716,6 +2788,9 @@ write_files:
             annotations:
               scheduler.alpha.kubernetes.io/critical-pod: ''
           spec:
+            {{if .Experimental.Admission.Priority.Enabled -}}
+            priorityClassName: system-node-critical
+            {{ end -}}
             tolerations:
             - key: "CriticalAddonsOnly"
               operator: "Exists"
@@ -2757,6 +2832,21 @@ write_files:
           name: kube-dns
           namespace: kube-system
 
+  - path: /srv/kubernetes/manifests/heapster-config-cm.yaml
+    content: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: heapster-config
+          namespace: kube-system
+          labels:
+            kubernetes.io/cluster-service: "true"
+            addonmanager.kubernetes.io/mode: EnsureExists
+        data:
+          NannyConfiguration: |-
+            apiVersion: nannyconfig/v1alpha1
+            kind: NannyConfiguration
+
   - path: /srv/kubernetes/manifests/kube-dns-autoscaler-de.yaml
     content: |
         apiVersion: extensions/v1beta1
@@ -2775,6 +2865,9 @@ write_files:
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
             spec:
+              {{if .Experimental.Admission.Priority.Enabled -}}
+              priorityClassName: system-node-critical
+              {{ end -}}
               tolerations:
               - key: "CriticalAddonsOnly"
                 operator: "Exists"
@@ -2790,7 +2883,7 @@ write_files:
                   - --namespace=kube-system
                   - --configmap=kube-dns-autoscaler
                   - --target=Deployment/kube-dns
-                  - --default-params={"linear":{"coresPerReplica":256,"nodesPerReplica":16,"min":2}}
+                  - --default-params={"linear":{"coresPerReplica":{{ .KubeDns.Autoscaler.CoresPerReplica }},"nodesPerReplica":{{ .KubeDns.Autoscaler.NodesPerReplica }},"min":{{ .KubeDns.Autoscaler.Min}}}}
                   - --logtostderr=true
                   - --v=2
 
@@ -2814,6 +2907,9 @@ write_files:
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
             spec:
+              {{if .Experimental.Admission.Priority.Enabled -}}
+              priorityClassName: system-node-critical
+              {{ end -}}
               tolerations:
               - operator: Exists
                 effect: NoSchedule
@@ -2921,14 +3017,36 @@ write_files:
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
             spec:
+              {{if .Experimental.Admission.Priority.Enabled -}}
+              priorityClassName: system-node-critical
+              {{ end -}}
               volumes:
               - name: kube-dns-config
                 configMap:
                   name: kube-dns
                   optional: true
+              {{ if .KubeDns.DeployToControllers -}}
+              affinity:
+                nodeAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: node-role.kubernetes.io/master
+                        operator: In
+                        values:
+                        - ""
+              tolerations:
+               - key: "CriticalAddonsOnly"
+                 operator: "Exists"
+               - key: "node.alpha.kubernetes.io/role"
+                 operator: "Equal"
+                 value: "master"
+                 effect: "NoSchedule" 
+              {{ else -}}
               tolerations:
               - key: "CriticalAddonsOnly"
                 operator: "Exists"
+              {{ end -}}
               containers:
               - name: kubedns
                 image: {{ .KubeDnsImage.RepoWithTag }}
@@ -3085,21 +3203,24 @@ write_files:
           labels:
             k8s-app: heapster
             kubernetes.io/cluster-service: "true"
-            version: v1.4.1
+            version: v1.5.0
         spec:
           replicas: 1
           selector:
             matchLabels:
               k8s-app: heapster
-              version: v1.4.1
+              version: v1.5.0
           template:
             metadata:
               labels:
                 k8s-app: heapster
-                version: v1.4.1
+                version: v1.5.0
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
             spec:
+              {{if .Experimental.Admission.Priority.Enabled -}}
+              priorityClassName: system-node-critical
+              {{ end -}}
               tolerations:
               - key: "CriticalAddonsOnly"
                 operator: "Exists"
@@ -3142,15 +3263,25 @@ write_files:
                       valueFrom:
                         fieldRef:
                           fieldPath: metadata.namespace
+                  volumeMounts:
+                  - name: heapster-config-volume
+                    mountPath: /etc/config
                   command:
                     - /pod_nanny
+                    - --config-dir=/etc/config
                     - --cpu=80m
                     - --extra-cpu=4m
                     - --memory=200Mi
                     - --extra-memory=4Mi
+                    - --threshold=5
                     - --deployment=heapster
                     - --container=heapster
                     - --poll-period=300000
+                    - --estimator=exponential
+              volumes:
+                - name: heapster-config-volume
+                  configMap:
+                    name: heapster-config
 
   - path: /srv/kubernetes/manifests/metrics-server-sa.yaml
     content: |
@@ -3182,6 +3313,9 @@ write_files:
               labels:
                 k8s-app: metrics-server
             spec:
+              {{if .Experimental.Admission.Priority.Enabled -}}
+              priorityClassName: system-node-critical
+              {{ end -}}
               serviceAccountName: metrics-server
               containers:
               - name: metrics-server
@@ -3257,6 +3391,9 @@ write_files:
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
             spec:
+              {{if .Experimental.Admission.Priority.Enabled -}}
+              priorityClassName: system-node-critical
+              {{ end -}}
               affinity:
                 nodeAffinity:
                   requiredDuringSchedulingIgnoredDuringExecution:
@@ -3356,6 +3493,9 @@ write_files:
               labels:
                 k8s-app: kubernetes-dashboard
             spec:
+              {{if .Experimental.Admission.Priority.Enabled -}}
+              priorityClassName: system-node-critical
+              {{ end -}}
               containers:
               - name: kubernetes-dashboard
                 image: {{ .KubernetesDashboardImage.RepoWithTag }}
@@ -3459,6 +3599,9 @@ write_files:
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
             spec:
+              {{if .Experimental.Admission.Priority.Enabled -}}
+              priorityClassName: system-node-critical
+              {{ end -}}
               tolerations:
               # Additions to the default tiller deployment for allowing to schedule tiller onto controller nodes
               # so that helm can be used to install pods running only on controller nodes
@@ -3933,6 +4076,9 @@ write_files:
             labels:
               name: kube2iam
           spec:
+            {{if .Experimental.Admission.Priority.Enabled -}}
+            priorityClassName: system-node-critical
+            {{ end -}}
             serviceAccountName: kube2iam
             hostNetwork: true
             tolerations:
@@ -4015,6 +4161,255 @@ write_files:
       - kind: ServiceAccount
         name: kube2iam
         namespace: kube-system
+{{end}}
+
+{{if .Experimental.KIAMSupport.Enabled }}
+  - path: /etc/kubernetes/ssl/kiam/ca.pem
+    encoding: gzip+base64
+    content: {{.AssetsConfig.KIAMCACert}}
+
+  - path: /etc/kubernetes/ssl/kiam/server-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+    encoding: gzip+base64
+    content: {{.AssetsConfig.KIAMServerKey}}
+
+  - path: /etc/kubernetes/ssl/kiam/server.pem
+    encoding: gzip+base64
+    content: {{.AssetsConfig.KIAMServerCert}}
+
+  - path: /etc/kubernetes/ssl/kiam/agent-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+    encoding: gzip+base64
+    content: {{.AssetsConfig.KIAMAgentKey}}
+
+  - path: /etc/kubernetes/ssl/kiam/agent.pem
+    encoding: gzip+base64
+    content: {{.AssetsConfig.KIAMAgentCert}}
+
+  # Without the namespace annotation the pod will be unable to assume any roles
+  - path: /srv/kubernetes/manifests/kube-system-ns.yaml
+    content: |
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: kube-system
+        annotations:
+          iam.amazonaws.com/permitted: ".*"
+  - path: /srv/kubernetes/manifests/kiam-all.yaml
+    content: |
+      apiVersion: extensions/v1beta1
+      kind: DaemonSet
+      metadata:
+        namespace: kube-system
+        name: kiam-server
+      spec:
+        updateStrategy:
+          type: RollingUpdate
+        template:
+          metadata:
+            annotations:
+              prometheus.io/scrape: "true"
+              prometheus.io/port: "9620"
+            labels:
+              app: kiam
+              role: server
+          spec:
+            {{if .Experimental.Admission.Priority.Enabled -}}
+            priorityClassName: system-node-critical
+            {{ end -}}
+            tolerations:
+            - operator: Exists
+              effect: NoSchedule
+            - operator: Exists
+              effect: NoExecute
+            - operator: Exists
+              key: CriticalAddonsOnly
+            serviceAccountName: kiam-server
+            nodeSelector:
+              node-role.kubernetes.io/master: ""
+            volumes:
+              - name: ssl-certs
+                hostPath:
+                  path: /usr/share/ca-certificates
+              - name: tls
+                secret:
+                  secretName: kiam-server-tls
+            containers:
+              - name: kiam
+                image: quay.io/uswitch/kiam:v2.5
+                imagePullPolicy: Always
+                command:
+                  - /server
+                args:
+                  - --json-log
+                  - --bind=0.0.0.0:443
+                  - --cert=/etc/kiam/tls/server.pem
+                  - --key=/etc/kiam/tls/server-key.pem
+                  - --ca=/etc/kiam/tls/ca.pem
+                  - --role-base-arn-autodetect
+                  - --sync=1m
+                  - --prometheus-listen-addr=0.0.0.0:9620
+                  - --prometheus-sync-interval=5s
+                volumeMounts:
+                  - mountPath: /etc/ssl/certs
+                    name: ssl-certs
+                  - mountPath: /etc/kiam/tls
+                    name: tls
+                livenessProbe:
+                  exec:
+                    command:
+                    - /health
+                    - --cert=/etc/kiam/tls/server.pem
+                    - --key=/etc/kiam/tls/server-key.pem
+                    - --ca=/etc/kiam/tls/ca.pem
+                    - --server-address=localhost:443
+                    - --server-address-refresh=2s
+                    - --timeout=5s
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  timeoutSeconds: 10
+                readinessProbe:
+                  exec:
+                    command:
+                    - /health
+                    - --cert=/etc/kiam/tls/server.pem
+                    - --key=/etc/kiam/tls/server-key.pem
+                    - --ca=/etc/kiam/tls/ca.pem
+                    - --server-address=localhost:443
+                    - --server-address-refresh=2s
+                    - --timeout=5s
+                  initialDelaySeconds: 3
+                  periodSeconds: 10
+                  timeoutSeconds: 10
+      ---
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: kiam-server
+        namespace: kube-system
+      spec:
+        clusterIP: None
+        selector:
+          app: kiam
+          role: server
+        ports:
+        - name: grpc
+          port: 443
+          targetPort: 443
+          protocol: TCP
+      ---
+      ---
+      kind: ServiceAccount
+      apiVersion: v1
+      metadata:
+        name: kiam-server
+        namespace: kube-system
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1beta1
+      kind: ClusterRole
+      metadata:
+        name: kiam-read
+      rules:
+      - apiGroups:
+        - ""
+        resources:
+        - namespaces
+        - pods
+        verbs:
+        - watch
+        - get
+        - list
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1beta1
+      kind: ClusterRoleBinding
+      metadata:
+        name: kiam-server
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: kiam-read
+      subjects:
+      - kind: ServiceAccount
+        name: kiam-server
+        namespace: kube-system
+      ---
+      apiVersion: extensions/v1beta1
+      kind: DaemonSet
+      metadata:
+        namespace: kube-system
+        name: kiam-agent
+      spec:
+        template:
+          metadata:
+            annotations:
+              prometheus.io/scrape: "true"
+              prometheus.io/port: "9620"
+            labels:
+              app: kiam
+              role: agent
+          spec:
+            {{if .Experimental.Admission.Priority.Enabled -}}
+            priorityClassName: system-node-critical
+            {{ end -}}
+            tolerations:
+            - operator: Exists
+              effect: NoSchedule
+            - operator: Exists
+              effect: NoExecute
+            - operator: Exists
+              key: CriticalAddonsOnly
+            hostNetwork: true
+            dnsPolicy: ClusterFirstWithHostNet
+            nodeSelector:
+              kubernetes.io/role: node
+            volumes:
+              - name: ssl-certs
+                hostPath:
+                  path: /usr/share/ca-certificates
+              - name: tls
+                secret:
+                  secretName: kiam-agent-tls
+              - name: xtables
+                hostPath:
+                  path: /run/xtables.lock
+            containers:
+              - name: kiam
+                securityContext:
+                  privileged: true
+                image: {{.KIAMImage.RepoWithTag}}
+                command:
+                  - /agent
+                args:
+                  - --iptables
+           {{- if .UseCalico }}
+                  - "--host-interface=cali+"
+           {{else}}
+                  - "--host-interface=cni0"
+           {{- end }}
+                  - --json-log
+                  - --port=8181
+                  - --cert=/etc/kiam/tls/agent.pem
+                  - --key=/etc/kiam/tls/agent-key.pem
+                  - --ca=/etc/kiam/tls/ca.pem
+                  - --server-address=kiam-server:443
+                  - --prometheus-listen-addr=0.0.0.0:9620
+                  - --prometheus-sync-interval=5s
+                env:
+                  - name: HOST_IP
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: status.podIP
+                volumeMounts:
+                  - mountPath: /etc/ssl/certs
+                    name: ssl-certs
+                  - mountPath: /etc/kiam/tls
+                    name: tls
+                  - mountPath: /var/run/xtables.lock
+                    name: xtables
+                livenessProbe:
+                  httpGet:
+                    path: /ping
+                    port: 8181
+                  initialDelaySeconds: 3
+                  periodSeconds: 3
 {{end}}
 
   - path: /opt/bin/retry

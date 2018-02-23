@@ -18,11 +18,12 @@ type Provisioner struct {
 	stackPolicyBody string
 	session         *session.Session
 	s3URI           string
+	roleARN         string
 	region          model.Region
 }
 
-func NewProvisioner(name string, stackTags map[string]string, s3URI string, region model.Region, stackPolicyBody string, session *session.Session) *Provisioner {
-	return &Provisioner{
+func NewProvisioner(name string, stackTags map[string]string, s3URI string, region model.Region, stackPolicyBody string, session *session.Session, options ...string) *Provisioner {
+	p := &Provisioner{
 		stackName:       name,
 		stackTags:       stackTags,
 		stackPolicyBody: stackPolicyBody,
@@ -30,6 +31,13 @@ func NewProvisioner(name string, stackTags map[string]string, s3URI string, regi
 		s3URI:           s3URI,
 		region:          region,
 	}
+
+	if len(options) > 0 {
+		roleARN := options[0]
+		p.roleARN = roleARN
+	}
+
+	return p
 }
 
 func (c *Provisioner) uploadAsset(s3Svc S3ObjectPutterService, asset model.Asset) error {
@@ -129,13 +137,19 @@ func (c *Provisioner) baseCreateStackInput() *cloudformation.CreateStackInput {
 		tags = append(tags, &cloudformation.Tag{Key: &key, Value: &value})
 	}
 
-	return &cloudformation.CreateStackInput{
+	input := &cloudformation.CreateStackInput{
 		StackName:       aws.String(c.stackName),
 		OnFailure:       aws.String(cloudformation.OnFailureDoNothing),
 		Capabilities:    []*string{aws.String(cloudformation.CapabilityCapabilityIam), aws.String(cloudformation.CapabilityCapabilityNamedIam)},
 		Tags:            tags,
 		StackPolicyBody: aws.String(c.stackPolicyBody),
 	}
+
+	if c.roleARN != "" {
+		input = input.SetRoleARN(c.roleARN)
+	}
+
+	return input
 }
 
 func (c *Provisioner) createStackFromTemplateURL(cfSvc CreationService, stackTemplateURL string) (*cloudformation.CreateStackOutput, error) {
@@ -145,10 +159,14 @@ func (c *Provisioner) createStackFromTemplateURL(cfSvc CreationService, stackTem
 }
 
 func (c *Provisioner) baseUpdateStackInput() *cloudformation.UpdateStackInput {
-	return &cloudformation.UpdateStackInput{
+	input := &cloudformation.UpdateStackInput{
 		Capabilities: []*string{aws.String(cloudformation.CapabilityCapabilityIam), aws.String(cloudformation.CapabilityCapabilityNamedIam)},
 		StackName:    aws.String(c.stackName),
 	}
+	if c.roleARN != "" {
+		input = input.SetRoleARN(c.roleARN)
+	}
+	return input
 }
 
 func (c *Provisioner) updateStackWithTemplateURL(cfSvc UpdateService, templateURL string) (*cloudformation.UpdateStackOutput, error) {
@@ -212,14 +230,16 @@ func (c *Provisioner) ValidateStackAtURL(templateURL string) (string, error) {
 }
 
 type Destroyer struct {
+	roleARN   string
 	stackName string
 	session   *session.Session
 }
 
-func NewDestroyer(stackName string, session *session.Session) *Destroyer {
+func NewDestroyer(stackName string, session *session.Session, roleARN string) *Destroyer {
 	return &Destroyer{
 		stackName: stackName,
 		session:   session,
+		roleARN:   roleARN,
 	}
 }
 
@@ -227,6 +247,9 @@ func (c *Destroyer) Destroy() error {
 	cfSvc := cloudformation.New(c.session)
 	dreq := &cloudformation.DeleteStackInput{
 		StackName: aws.String(c.stackName),
+	}
+	if c.roleARN != "" {
+		dreq = dreq.SetRoleARN(c.roleARN)
 	}
 	_, err := cfSvc.DeleteStack(dreq)
 	return err

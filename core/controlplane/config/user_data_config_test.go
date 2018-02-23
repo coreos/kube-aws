@@ -63,6 +63,7 @@ func TestCloudConfigTemplating(t *testing.T) {
 
 	opts := CredentialsOptions{
 		GenerateCA: true,
+		KIAM:       true,
 	}
 
 	var compactAssets *CompactAssets
@@ -77,7 +78,7 @@ func TestCloudConfigTemplating(t *testing.T) {
 			t.Fatalf("Error generating default assets: %v", err)
 		}
 
-		encryptedAssets, err := ReadOrEncryptAssets(dir, true, true, cachedEncryptor)
+		encryptedAssets, err := ReadOrEncryptAssets(dir, true, true, true, cachedEncryptor)
 		if err != nil {
 			t.Fatalf("failed to compress assets: %v", err)
 		}

@@ -268,7 +268,7 @@
                   "Resource": "*"
                 },
                 {{end}}
-                {{if .Experimental.Kube2IamSupport.Enabled }}
+                {{if or .Experimental.Kube2IamSupport.Enabled .Experimental.KIAMSupport.Enabled }}
                 {
                   "Action": "sts:AssumeRole",
                   "Effect":"Allow",
@@ -1362,6 +1362,7 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
+    {{if .Addons.Prometheus.SecurityGroupsEnabled}}
     "SecurityGroupWorkerIngressFromWorkerToControllerKubelet": {
       "Properties": {
         "FromPort": 10250,
@@ -1474,6 +1475,7 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
+    {{ end }}
     "SecurityGroupEtcd": {
       "Properties": {
         "GroupDescription": {

@@ -9,8 +9,5 @@ docker run --rm -i \
     --entrypoint /bin/bash golang:1.8.3  <<EOF
 #!/bin/bash
 set -euo pipefail
-wget -O /tmp/glide.tgz https://github.com/Masterminds/glide/releases/download/v0.12.3/glide-v0.12.3-linux-amd64.tar.gz
-tar -zxvf /tmp/glide.tgz -C /tmp
-mv /tmp/linux-amd64/glide /usr/local/bin
 ./build-release-binaries
 EOF
