@@ -236,14 +236,16 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 	certDuration := time.Duration(c.TLSCertDurationDays) * 24 * time.Hour
 
 	// Generate keys for the various components.
-	keys := make([]*rsa.PrivateKey, 7)
+	keys := make([]*rsa.PrivateKey, 8)
 	var err error
 	for i := range keys {
 		if keys[i], err = tlsutil.NewPrivateKey(); err != nil {
 			return nil, err
 		}
 	}
-	apiServerKey, workerKey, adminKey, etcdKey, etcdClientKey, kiamAgentKey, kiamServerKey := keys[0], keys[1], keys[2], keys[3], keys[4], keys[5], keys[6]
+{{/* RUN-578 Introduce Dex */}}
+	apiServerKey, workerKey, adminKey, etcdKey, etcdClientKey, kiamAgentKey, kiamServerKey, oidcKey := keys[0], keys[1], keys[2], keys[3], keys[4], keys[5], keys[6], keys[7]
+{{/* RUN-578 Introduce Dex */}}
 
 	//Compute kubernetesServiceIP from serviceCIDR
 	_, serviceNet, err := net.ParseCIDR(c.ServiceCIDR)
