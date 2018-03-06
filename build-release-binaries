@@ -5,7 +5,7 @@
 # for every combination of $os and $arch
 
 # Add OS support here
-for os in linux darwin;do
+for os in linux darwin windows;do
     # Add architecture support here
     for arch in amd64;do
 	output_folder="${os}-${arch}"
