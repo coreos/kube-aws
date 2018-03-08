@@ -1017,11 +1017,11 @@ write_files:
       kubectl create secret generic kiam-server-tls -n kube-system \
         --from-file=$kiam_tls_dir/ca.pem \
         --from-file=$kiam_tls_dir/server.pem \
-        --from-file=$kiam_tls_dir/server-key.pem --dry-run -o yaml | kubectl apply -f -
+        --from-file=$kiam_tls_dir/server-key.pem --dry-run -o yaml | kubectl apply -n kube-system -f -
       kubectl create secret generic kiam-agent-tls -n kube-system \
         --from-file=$kiam_tls_dir/ca.pem \
         --from-file=$kiam_tls_dir/agent.pem \
-        --from-file=$kiam_tls_dir/agent-key.pem --dry-run -o yaml | kubectl apply -f -
+        --from-file=$kiam_tls_dir/agent-key.pem --dry-run -o yaml | kubectl apply -n kube-system -f -
 
       mfdir=/srv/kubernetes/manifests
       applyall "${mfdir}/kube-system-ns.yaml" "${mfdir}/kiam-all.yaml"
@@ -1531,7 +1531,7 @@ write_files:
                 readOnly: false
             - name: kube-resources-autosave-pusher
               image: {{.AWSCliImage.RepoWithTag}}
-              command: ["/bin/bash", "-c" ]
+              command: ["/bin/sh", "-c" ]
               args:
                 - |
                     set -x ;
@@ -1544,7 +1544,7 @@ write_files:
                     done
               livenessProbe:
                 exec:
-                  command: ["/bin/bash", "-c", "(( $(date +%s) - $(stat -c%Y /probe-token) < 25*60*60 ))" ]
+                  command: ["/bin/sh", "-c",  "AGE=$(( $(date +%s) - $(stat -c%Y /probe-token) < 25*60*60 ));  [ $AGE -gt 0 ]" ]
                 initialDelaySeconds: 240
                 periodSeconds: 10
               volumeMounts:
