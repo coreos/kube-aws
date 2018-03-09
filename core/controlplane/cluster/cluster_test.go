@@ -30,6 +30,7 @@ func defaultConfigValues(t *testing.T, configYaml string) string {
 	defaultYaml := `
 externalDNSName: test.staging.core-os.net
 keyName: test-key-name
+s3URI: s3://mybucket/mydir
 region: us-west-1
 clusterName: test-cluster-name
 kmsKeyArn: "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
@@ -748,6 +749,7 @@ func newDefaultClusterWithDeps(opts config.StackTemplateOptions) (*Cluster, erro
 	}
 	cluster.ExternalDNSName = "foo.example.com"
 	cluster.KeyName = "mykey"
+	cluster.S3URI = "s3://mybucket/mydir"
 	cluster.KMSKeyARN = "mykmskey"
 	if err := cluster.Load(); err != nil {
 		return &Cluster{}, err

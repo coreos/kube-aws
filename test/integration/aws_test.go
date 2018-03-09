@@ -2,11 +2,12 @@ package integration
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/test/helper"
-	"os"
-	"testing"
 )
 
 type testEnv struct {
@@ -30,6 +31,7 @@ func useRealAWS() bool {
 
 type kubeAwsSettings struct {
 	clusterName                   string
+	s3URI                         string
 	etcdNodeDefaultInternalDomain string
 	externalDNSName               string
 	keyName                       string
@@ -48,13 +50,21 @@ func newKubeAwsSettingsFromEnv(t *testing.T) kubeAwsSettings {
 		t.Logf(`Falling back clusterName to a stub value "%s" for tests of validating stack templates. No assets will actually be uploaded to S3 and no clusters will be created with CloudFormation`, clusterName)
 	}
 
+	s3URI, s3URIExists := os.LookupEnv("KUBE_AWS_S3_DIR_URI")
+
+	if !s3URIExists || s3URI == "" {
+		s3URI = "s3://mybucket/mydir"
+		t.Logf(`Falling back s3URI to a stub value "%s" for tests of validating stack templates. No assets will actually be uploaded to S3 and no clusters will be created with CloudFormation`, s3URI)
+	}
+
 	if useRealAWS() {
 		externalDnsName := fmt.Sprintf("%s.%s", clusterName, env.get("KUBE_AWS_DOMAIN"))
 		keyName := env.get("KUBE_AWS_KEY_NAME")
 		kmsKeyArn := env.get("KUBE_AWS_KMS_KEY_ARN")
 		region := env.get("KUBE_AWS_REGION")
 		return kubeAwsSettings{
-			clusterName:                   clusterName,
+			clusterName: clusterName,
+			s3URI:       s3URI,
 			etcdNodeDefaultInternalDomain: model.RegionForName(region).PrivateDomainName(),
 			externalDNSName:               externalDnsName,
 			keyName:                       keyName,
@@ -63,7 +73,8 @@ func newKubeAwsSettingsFromEnv(t *testing.T) kubeAwsSettings {
 		}
 	} else {
 		return kubeAwsSettings{
-			clusterName:                   clusterName,
+			clusterName: clusterName,
+			s3URI:       s3URI,
 			etcdNodeDefaultInternalDomain: model.RegionForName("us-west-1").PrivateDomainName(),
 			externalDNSName:               "test.staging.core-os.net",
 			keyName:                       "test-key-name",
@@ -76,6 +87,7 @@ func newKubeAwsSettingsFromEnv(t *testing.T) kubeAwsSettings {
 
 func (s kubeAwsSettings) mainClusterYaml() string {
 	return fmt.Sprintf(`clusterName: %s
+s3URI: %s
 apiEndpoints:
 - name: public
   dnsName: "%s"
@@ -87,6 +99,7 @@ kmsKeyArn: "%s"
 region: "%s"
 `,
 		s.clusterName,
+		s.s3URI,
 		s.externalDNSName,
 		s.keyName,
 		s.kmsKeyArn,
@@ -97,11 +110,13 @@ region: "%s"
 func (s kubeAwsSettings) mainClusterYamlWithoutAPIEndpoint() string {
 	return fmt.Sprintf(`clusterName: %s
 keyName: "%s"
+s3URI: "%s"
 kmsKeyArn: "%s"
 region: "%s"
 `,
 		s.clusterName,
 		s.keyName,
+		s.s3URI,
 		s.kmsKeyArn,
 		s.region,
 	)

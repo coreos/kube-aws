@@ -3,6 +3,9 @@
 # name must not conflict with an existing cluster.
 clusterName: {{.ClusterName}}
 
+# The URI of the S3 bucket for the cluster
+s3URI: {{.S3URI}}
+
 # CoreOS release channel to use. Currently supported options: alpha, beta, stable
 # See coreos.com/releases for more information
 #releaseChannel: stable

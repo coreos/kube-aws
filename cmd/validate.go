@@ -32,16 +32,10 @@ func init() {
 		false,
 		"Log debug information from aws-sdk-go library",
 	)
-	cmdValidate.Flags().StringVar(
-		&validateOpts.s3URI,
-		"s3-uri",
-		"",
-		"When your template is bigger than the cloudformation limit of 51200 bytes, upload the template to the specified location in S3. S3 location expressed as s3://<bucket>/path/to/dir",
-	)
 }
 
 func runCmdValidate(cmd *cobra.Command, args []string) error {
-	opts := root.NewOptions(validateOpts.s3URI, validateOpts.awsDebug, validateOpts.skipWait)
+	opts := root.NewOptions(validateOpts.awsDebug, validateOpts.skipWait)
 
 	cluster, err := root.ClusterFromFile(configPath, opts, validateOpts.awsDebug)
 	if err != nil {

@@ -18,12 +18,14 @@ const availabilityZoneConfig = `availabilityZone: us-west-1c
 
 const apiEndpointMinimalConfigYaml = `keyName: test-key-name
 region: us-west-1
+s3URI: s3://mybucket/mydir
 clusterName: test-cluster-name
 kmsKeyArn: "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
 `
 
 const chinaAPIEndpointMinimalConfigYaml = `keyName: test-key-name
 region: cn-north-1
+s3URI: s3://mybucket/mydir
 availabilityZone: cn-north-1a
 clusterName: test-cluster-name
 `
