@@ -214,7 +214,7 @@ func (c *ClusterRef) getWorkerRootVolumeConfig() *ec2.CreateVolumeInput {
 	var workerRootVolume = &ec2.CreateVolumeInput{}
 
 	switch c.RootVolume.Type {
-	case "standard":
+	case "standard", "gp2":
 		workerRootVolume = &ec2.CreateVolumeInput{
 			DryRun:           aws.Bool(true),
 			AvailabilityZone: aws.String(c.Subnets[0].AvailabilityZone),
@@ -226,13 +226,6 @@ func (c *ClusterRef) getWorkerRootVolumeConfig() *ec2.CreateVolumeInput {
 			DryRun:           aws.Bool(true),
 			AvailabilityZone: aws.String(c.Subnets[0].AvailabilityZone),
 			Iops:             aws.Int64(int64(c.RootVolume.IOPS)),
-			Size:             aws.Int64(int64(c.RootVolume.Size)),
-			VolumeType:       aws.String(c.RootVolume.Type),
-		}
-	case "gp2":
-		workerRootVolume = &ec2.CreateVolumeInput{
-			DryRun:           aws.Bool(true),
-			AvailabilityZone: aws.String(c.Subnets[0].AvailabilityZone),
 			Size:             aws.Int64(int64(c.RootVolume.Size)),
 			VolumeType:       aws.String(c.RootVolume.Type),
 		}
