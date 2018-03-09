@@ -2,6 +2,7 @@ package root
 
 import (
 	"fmt"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
@@ -10,6 +11,7 @@ import (
 
 type DestroyOptions struct {
 	AwsDebug bool
+	Force    bool
 }
 
 type ClusterDestroyer interface {
