@@ -56,8 +56,7 @@ worker:
 Launch the secondary node pool by running `kube-aws update`:
 
 ```
-$ kube-aws update \
-  --s3-uri s3://<my-bucket>/<optional-prefix>
+$ kube-aws update
 ```
 
 Beware that you have to associate only 1 AZ to a node pool or cluster-autoscaler may end up failing to reliably add nodes on demand due to the fact

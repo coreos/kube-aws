@@ -384,7 +384,7 @@ The `validate` command check the validity of your changes to the cloud-config us
 This is an important step to make sure your stack will launch successfully:
 
 ```sh
-$ kube-aws validate --s3-uri s3://<your-bucket-name>/<prefix>
+$ kube-aws validate
 ```
 
 If your files are valid, you are ready to [launch your cluster][getting-started-step-3].
