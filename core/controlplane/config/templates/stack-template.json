@@ -251,7 +251,8 @@
                   "Action": [
                     "autoscaling:DescribeAutoScalingGroups",
                     "autoscaling:DescribeAutoScalingInstances",
-                    "autoscaling:DescribeTags"
+                    "autoscaling:DescribeTags",
+                    "autoscaling:DescribeAutoScalingGroups"
                   ],
                   "Effect": "Allow",
                   "Resource": "*"

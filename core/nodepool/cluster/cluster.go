@@ -197,13 +197,7 @@ func (c *ClusterRef) validateKeyPair(ec2Svc ec2DescribeKeyPairsService) error {
 func (c *ClusterRef) validateWorkerRootVolume(ec2Svc ec2CreateVolumeService) error {
 
 	//Send a dry-run request to validate the worker root volume parameters
-	workerRootVolume := &ec2.CreateVolumeInput{
-		DryRun:           aws.Bool(true),
-		AvailabilityZone: aws.String(c.Subnets[0].AvailabilityZone),
-		Iops:             aws.Int64(int64(c.RootVolume.IOPS)),
-		Size:             aws.Int64(int64(c.RootVolume.Size)),
-		VolumeType:       aws.String(c.RootVolume.Type),
-	}
+	workerRootVolume := c.getWorkerRootVolumeConfig()
 
 	if _, err := ec2Svc.CreateVolume(workerRootVolume); err != nil {
 		operr, ok := err.(awserr.Error)
@@ -214,6 +208,37 @@ func (c *ClusterRef) validateWorkerRootVolume(ec2Svc ec2CreateVolumeService) err
 	}
 
 	return nil
+}
+
+func (c *ClusterRef) getWorkerRootVolumeConfig() *ec2.CreateVolumeInput {
+	var workerRootVolume = &ec2.CreateVolumeInput{}
+
+	switch c.RootVolume.Type {
+	case "standard", "gp2":
+		workerRootVolume = &ec2.CreateVolumeInput{
+			DryRun:           aws.Bool(true),
+			AvailabilityZone: aws.String(c.Subnets[0].AvailabilityZone),
+			Size:             aws.Int64(int64(c.RootVolume.Size)),
+			VolumeType:       aws.String(c.RootVolume.Type),
+		}
+	case "io1":
+		workerRootVolume = &ec2.CreateVolumeInput{
+			DryRun:           aws.Bool(true),
+			AvailabilityZone: aws.String(c.Subnets[0].AvailabilityZone),
+			Iops:             aws.Int64(int64(c.RootVolume.IOPS)),
+			Size:             aws.Int64(int64(c.RootVolume.Size)),
+			VolumeType:       aws.String(c.RootVolume.Type),
+		}
+	default:
+		workerRootVolume = &ec2.CreateVolumeInput{
+			DryRun:           aws.Bool(true),
+			AvailabilityZone: aws.String(c.Subnets[0].AvailabilityZone),
+			Size:             aws.Int64(int64(c.RootVolume.Size)),
+			VolumeType:       aws.String(c.RootVolume.Type),
+		}
+	}
+
+	return workerRootVolume
 }
 
 func (c *ClusterRef) Info() (*Info, error) {

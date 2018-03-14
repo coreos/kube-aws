@@ -165,7 +165,7 @@ func (e ClusterExtension) ControlPlaneStack() (*stack, error) {
 			{
 				m, err := render.MapFromContents(p.Spec.CloudFormation.Stacks.ControlPlane.Resources.Append.Contents)
 				if err != nil {
-					return nil, fmt.Errorf("failed to load additioanl resources for control-plane stack: %v", err)
+					return nil, fmt.Errorf("failed to load additional resources for control-plane stack: %v", err)
 				}
 				for k, v := range m {
 					resources[k] = v
