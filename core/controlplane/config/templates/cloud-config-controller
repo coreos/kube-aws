@@ -1456,6 +1456,10 @@ write_files:
         replicas: 1
         template:
           metadata:
+            {{if .Experimental.KIAMSupport.Enabled -}}
+            annotations:
+              iam.amazonaws.com/role: "{{$.ClusterName}}-IAMRoleResourcesAutoSave"
+            {{ end -}}
             name: kube-resources-autosave
             namespace: kube-system
             labels:
