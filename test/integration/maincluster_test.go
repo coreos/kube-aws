@@ -3045,7 +3045,7 @@ worker:
 				hasDefaultExperimentalFeatures,
 				func(c *config.Config, t *testing.T) {
 					if len(c.NodePools[0].IAMConfig.Role.ManagedPolicies) < 2 {
-						t.Errorf("iam.role.managedPolicies: incorrect number of policies expected=2 actual=%s", len(c.NodePools[0].IAMConfig.Role.ManagedPolicies))
+						t.Errorf("iam.role.managedPolicies: incorrect number of policies expected=2 actual=%d", len(c.NodePools[0].IAMConfig.Role.ManagedPolicies))
 					}
 					if c.NodePools[0].IAMConfig.Role.ManagedPolicies[0].Arn != "arn:aws:iam::aws:policy/AdministratorAccess" {
 						t.Errorf("iam.role.managedPolicies: expected=arn:aws:iam::aws:policy/AdministratorAccess actual=%s", c.NodePools[0].IAMConfig.Role.ManagedPolicies[0].Arn)
@@ -3410,12 +3410,12 @@ worker:
 			helper.WithDummyCredentials(func(dummyAssetsDir string) {
 				var stackTemplateOptions = root.NewOptions(s3URI, false, false)
 				stackTemplateOptions.AssetsDir = dummyAssetsDir
-				stackTemplateOptions.ControllerTmplFile = "../../core/controlplane/config/templates/cloud-config-controller"
-				stackTemplateOptions.WorkerTmplFile = "../../core/controlplane/config/templates/cloud-config-worker"
-				stackTemplateOptions.EtcdTmplFile = "../../core/controlplane/config/templates/cloud-config-etcd"
-				stackTemplateOptions.RootStackTemplateTmplFile = "../../core/root/config/templates/stack-template.json"
-				stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../core/nodepool/config/templates/stack-template.json"
-				stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/templates/stack-template.json"
+				stackTemplateOptions.ControllerTmplFile = "../../core/controlplane/config/testdata/cloud-config-controller"
+				stackTemplateOptions.WorkerTmplFile = "../../core/controlplane/config/testdata/cloud-config-worker"
+				stackTemplateOptions.EtcdTmplFile = "../../core/controlplane/config/testdata/cloud-config-etcd"
+				stackTemplateOptions.RootStackTemplateTmplFile = "../../core/root/config/testdata/stack-template.json"
+				stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../core/nodepool/config/testdata/stack-template.json"
+				stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/testdata/stack-template.json"
 
 				cluster, err := root.ClusterFromConfig(providedConfig, stackTemplateOptions, false)
 				if err != nil {

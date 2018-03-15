@@ -18,10 +18,6 @@ fi
 
 echo Building kube-aws ${VERSION}
 
-go generate ./core/controlplane/config
-go generate ./core/nodepool/config
-go generate ./core/root/config
-
 if [[ ! "${BUILD_GOOS:-}" == "" ]];then
   export GOOS=$BUILD_GOOS
 fi

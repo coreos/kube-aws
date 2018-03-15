@@ -486,12 +486,12 @@ spec:
 				helper.WithDummyCredentials(func(dummyAssetsDir string) {
 					var stackTemplateOptions = root.NewOptions(s3URI, false, false)
 					stackTemplateOptions.AssetsDir = dummyAssetsDir
-					stackTemplateOptions.ControllerTmplFile = "../../core/controlplane/config/templates/cloud-config-controller"
-					stackTemplateOptions.WorkerTmplFile = "../../core/controlplane/config/templates/cloud-config-worker"
-					stackTemplateOptions.EtcdTmplFile = "../../core/controlplane/config/templates/cloud-config-etcd"
-					stackTemplateOptions.RootStackTemplateTmplFile = "../../core/root/config/templates/stack-template.json"
-					stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../core/nodepool/config/templates/stack-template.json"
-					stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/templates/stack-template.json"
+					stackTemplateOptions.ControllerTmplFile = "../../core/controlplane/config/testdata/cloud-config-controller"
+					stackTemplateOptions.WorkerTmplFile = "../../core/controlplane/config/testdata/cloud-config-worker"
+					stackTemplateOptions.EtcdTmplFile = "../../core/controlplane/config/testdata/cloud-config-etcd"
+					stackTemplateOptions.RootStackTemplateTmplFile = "../../core/root/config/testdata/stack-template.json"
+					stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../core/nodepool/config/testdata/stack-template.json"
+					stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/testdata/stack-template.json"
 
 					cluster, err := root.ClusterFromConfig(providedConfig, stackTemplateOptions, false)
 					if err != nil {

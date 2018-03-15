@@ -482,9 +482,9 @@ stackTags:
 		helper.WithDummyCredentials(func(dummyAssetsDir string) {
 			var stackTemplateOptions = config.StackTemplateOptions{
 				AssetsDir:             dummyAssetsDir,
-				ControllerTmplFile:    "../config/templates/cloud-config-controller",
-				EtcdTmplFile:          "../config/templates/cloud-config-etcd",
-				StackTemplateTmplFile: "../config/templates/stack-template.json",
+				ControllerTmplFile:    "../config/testdata/cloud-config-controller",
+				EtcdTmplFile:          "../config/testdata/cloud-config-etcd",
+				StackTemplateTmplFile: "../config/testdata/stack-template.json",
 				S3URI: "s3://test-bucket/foo/bar",
 			}
 
@@ -759,9 +759,9 @@ func TestRenderStackTemplate(t *testing.T) {
 	helper.WithDummyCredentials(func(dir string) {
 		var stackTemplateOptions = config.StackTemplateOptions{
 			AssetsDir:             dir,
-			ControllerTmplFile:    "../config/templates/cloud-config-controller",
-			EtcdTmplFile:          "../config/templates/cloud-config-etcd",
-			StackTemplateTmplFile: "../config/templates/stack-template.json",
+			ControllerTmplFile:    "../config/testdata/cloud-config-controller",
+			EtcdTmplFile:          "../config/testdata/cloud-config-etcd",
+			StackTemplateTmplFile: "../config/testdata/stack-template.json",
 			S3URI: "s3://test-bucket/foo/bar",
 		}
 		cluster, err := newDefaultClusterWithDeps(stackTemplateOptions)
