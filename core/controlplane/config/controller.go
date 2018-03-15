@@ -1179,6 +1179,10 @@ write_files:
       apiVersion: extensions/v1beta1
       kind: Deployment
       metadata:
+        {{if .Experimental.KIAMSupport.Enabled -}}
+        annotations:
+          iam.amazonaws.com/role: "{{$.ClusterName}}-IAMRoleResourcesAutoSave"
+        {{ end -}}
         name: kube-resources-autosave
         namespace: kube-system
         labels:
