@@ -328,6 +328,21 @@ worker:
 #        device: "/dev/xvdf"
 #        path: "/ebs"
 #
+#      # Additional Raid0 EBS backed volumes mounted on the worker
+#      # No additional Raid0 volumes by default. All parameter values do not default - they must be explicitly defined
+#      raid0Mounts:
+#      - type: "gp2"
+#        iops: 0
+#        # size of each device. As below shows 4 devices, total size is 4 * 214G or 896G.
+#        size: 214
+#        # Follow the aws convention of '/dev/xvd*' where '*' is a single letter from 'f' to 'z'
+#        devices:
+#        - "/dev/xvdg"
+#        - "/dev/xvdh"
+#        - "/dev/xvdi"
+#        - "/dev/xvdj"
+#        path: "/data"
+#
 #      # Specifies how often kubelet posts node status to master. Note: be cautious when changing the constant, it must work with nodeMonitorGracePeriod in nodecontroller.
 #      # nodeStatusUpdateFrequency: "10s"
 #

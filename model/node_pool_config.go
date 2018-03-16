@@ -14,6 +14,7 @@ type NodePoolConfig struct {
 	SecurityGroupIds          []string               `yaml:"securityGroupIds,omitempty"`
 	CustomSettings            map[string]interface{} `yaml:"customSettings,omitempty"`
 	VolumeMounts              []VolumeMount          `yaml:"volumeMounts,omitempty"`
+	Raid0Mounts               []Raid0Mount           `yaml:"raid0Mounts,omitempty"`
 	UnknownKeys               `yaml:",inline"`
 	NodeSettings              `yaml:",inline"`
 	NodeStatusUpdateFrequency string              `yaml:"nodeStatusUpdateFrequency"`
@@ -94,6 +95,11 @@ func (c NodePoolConfig) Validate(experimentalGpuSupportEnabled bool) error {
 	}
 
 	if err := ValidateVolumeMounts(c.VolumeMounts); err != nil {
+		return err
+	}
+
+	// c.VolumeMounts are supplied to check for device and path overlaps with contents of c.Raid0Mounts.
+	if err := ValidateRaid0Mounts(c.VolumeMounts, c.Raid0Mounts); err != nil {
 		return err
 	}
 

@@ -95,7 +95,7 @@ coreos:
 
         [Service]
         Type=oneshot
-        ExecStart=-/usr/sbin/mkfs.xfs {{$volumeMountSpec.Device}}
+        ExecStart=-/usr/sbin/mkfs.{{$volumeMountSpec.FilesystemType}} {{$volumeMountSpec.Device}}
 
         [Install]
         WantedBy=local-fs-pre.target
@@ -109,6 +109,62 @@ coreos:
         [Mount]
         What={{$volumeMountSpec.Device}}
         Where={{$volumeMountSpec.Path}}
+
+{{if $volumeMountSpec.CreateTmp}}
+    - name: mkdir-{{$volumeMountSpec.SystemdMountName}}-tmp.service
+      command: start
+      content: |
+        [Unit]
+        Description=mkdir {{$volumeMountSpec.Path}}/tmp
+        Requires={{$volumeMountSpec.SystemdMountName}}.mount
+        After={{$volumeMountSpec.SystemdMountName}}.mount
+
+        [Service]
+        Type=oneshot
+        ExecStart=/usr/bin/mkdir -m 1777 -p {{$volumeMountSpec.Path}}/tmp
+{{end}}
+{{end}}
+{{range $raid0MountSpecIndex, $raid0MountSpec := .Raid0Mounts}}
+    - name: format-{{$raid0MountSpec.SystemdMountName}}.service
+      command: start
+      content: |
+        [Unit]
+        Description=Assembles and Formats the Raid0 EBS backed persistent volume mounted on {{$raid0MountSpec.Path}}
+        Before=local-fs-pre.target
+
+        [Service]
+        Type=oneshot
+        ExecStartPre=/usr/sbin/pvcreate {{$raid0MountSpec.DeviceList}}
+        ExecStartPre=/usr/sbin/vgcreate {{$raid0MountSpec.SystemdMountName}}_group {{$raid0MountSpec.DeviceList}}
+        ExecStartPre=/usr/sbin/lvcreate -l 100%VG --stripes {{$raid0MountSpec.NumDevices}} --stripesize 256 -n {{$raid0MountSpec.SystemdMountName}}_vol {{$raid0MountSpec.SystemdMountName}}_group
+        ExecStart=-/usr/sbin/mkfs.ext4 /dev/{{$raid0MountSpec.SystemdMountName}}_group/{{$raid0MountSpec.SystemdMountName}}_vol
+
+        [Install]
+        WantedBy=local-fs-pre.target
+
+    - name: {{$raid0MountSpec.SystemdMountName}}.mount
+      command: start
+      content: |
+        [Unit]
+        Description=Mount raid0 to {{$raid0MountSpec.Path}}
+
+        [Mount]
+        What=/dev/{{$raid0MountSpec.SystemdMountName}}_group/{{$raid0MountSpec.SystemdMountName}}_vol
+        Where={{$raid0MountSpec.Path}}
+
+{{if $raid0MountSpec.CreateTmp}}
+    - name: mkdir-{{$raid0MountSpec.SystemdMountName}}-tmp.service
+      command: start
+      content: |
+        [Unit]
+        Description=mkdir {{$raid0MountSpec.Path}}/tmp
+        Requires={{$raid0MountSpec.SystemdMountName}}.mount
+        After={{$raid0MountSpec.SystemdMountName}}.mount
+
+        [Service]
+        Type=oneshot
+        ExecStart=/usr/bin/mkdir -m 1777 -p {{$raid0MountSpec.Path}}/tmp
+{{end}}
 {{end}}
 {{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
     - name: amazon-ssm-agent.service
