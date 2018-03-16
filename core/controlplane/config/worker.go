@@ -1374,134 +1374,134 @@ write_files:
       # Get the major device number for nvidia-uvm and create the node
       echo "Set up NVIDIA UVM"
       major=` + "`grep nvidia-uvm /proc/devices | awk '{print $1}'`" + `
-if [ -n "$major" ]; then
-mknod -m 666 /dev/nvidia-uvm c $major 0
-fi
+      if [ -n "$major" ]; then
+          mknod -m 666 /dev/nvidia-uvm c $major 0
+      fi
 
-- path: /opt/nvidia-build/nvidia-insmod.sh
-owner: root:root
-permissions: 0755
-content: |
-#!/bin/sh
-# This script is borrowed from https://github.com/Clarifai/coreos-nvidia/pull/4
-/usr/sbin/insmod /opt/nvidia/current/lib/modules/$(uname -r)/video/$1
+  - path: /opt/nvidia-build/nvidia-insmod.sh
+    owner: root:root
+    permissions: 0755
+    content: |
+      #!/bin/sh
+      # This script is borrowed from https://github.com/Clarifai/coreos-nvidia/pull/4
+      /usr/sbin/insmod /opt/nvidia/current/lib/modules/$(uname -r)/video/$1
 
-- path: /opt/nvidia-build/nvidia-start.sh
-owner: root:root
-permissions: 0755
-content: |
-#!/bin/sh
-# This script is borrowed from https://github.com/Clarifai/coreos-nvidia/pull/4
+  - path: /opt/nvidia-build/nvidia-start.sh
+    owner: root:root
+    permissions: 0755
+    content: |
+      #!/bin/sh
+      # This script is borrowed from https://github.com/Clarifai/coreos-nvidia/pull/4
 
-/opt/nvidia/current/bin/nvidia-insmod.sh nvidia.ko
+      /opt/nvidia/current/bin/nvidia-insmod.sh nvidia.ko
 
-# Start the first devices
-/usr/bin/mknod -m 666 /dev/nvidiactl c 195 255 2>/dev/null
-NVDEVS=` + "`lspci | grep -i NVIDIA`" + `
-N3D=` + "`echo \"$NVDEVS\" | grep \"3D controller\" | wc -l`" + `
-NVGA=` + "`echo \"$NVDEVS\" | grep \"VGA compatible controller\" | wc -l`" + `
-N=` + "`expr $N3D + $NVGA - 1`" + `
-for i in ` + "`seq 0 $N`" + `; do
-mknod -m 666 /dev/nvidia$i c 195 $i
-done
+      # Start the first devices
+      /usr/bin/mknod -m 666 /dev/nvidiactl c 195 255 2>/dev/null
+      NVDEVS=` + "`lspci | grep -i NVIDIA`" + `
+      N3D=` + "`echo \"$NVDEVS\" | grep \"3D controller\" | wc -l`" + `
+      NVGA=` + "`echo \"$NVDEVS\" | grep \"VGA compatible controller\" | wc -l`" + `
+      N=` + "`expr $N3D + $NVGA - 1`" + `
+      for i in ` + "`seq 0 $N`" + `; do
+        mknod -m 666 /dev/nvidia$i c 195 $i
+      done
 
-/opt/nvidia/current/bin/set-gpu-name-to-kubelet-opts.sh
+      /opt/nvidia/current/bin/set-gpu-name-to-kubelet-opts.sh
 
-- path: /opt/nvidia-build/set-gpu-name-to-kubelet-opts.sh
-owner: root:root
-permissions: 0755
-content: |
-#!/bin/bash
-# Register GPU model name to node label
-# Currently, we assume all GPU devices in a node are homogeneous (the same model).
-[ -e /etc/default/kubelet ] || echo "KUBELET_OPTS=\"\"" > /etc/default/kubelet
-source /etc/default/kubelet
-if [ ! "$KUBELET_OPTS" == *nvidia-gpu-name* ]; then
-NVIDIA_GPU_NAME=$(/opt/nvidia/current/bin/nvidia-smi --query-gpu=gpu_name --format=csv,noheader --id=0 | sed -E 's/ +/_/g')
-KUBELET_OPTS="--node-labels='alpha.kubernetes.io/nvidia-gpu-name=$NVIDIA_GPU_NAME' $KUBELET_OPTS"
-KUBELET_OPTS="--node-labels='kube-aws.coreos.com/gpu=nvidia' $KUBELET_OPTS"
-KUBELET_OPTS="--node-labels='kube-aws.coreos.com/nvidia-gpu-version={{.Gpu.Nvidia.Version}}' $KUBELET_OPTS"
-echo "KUBELET_OPTS=\"$KUBELET_OPTS\"" > /etc/default/kubelet
-fi
+  - path: /opt/nvidia-build/set-gpu-name-to-kubelet-opts.sh
+    owner: root:root
+    permissions: 0755
+    content: |
+      #!/bin/bash
+      # Register GPU model name to node label
+      # Currently, we assume all GPU devices in a node are homogeneous (the same model).
+      [ -e /etc/default/kubelet ] || echo "KUBELET_OPTS=\"\"" > /etc/default/kubelet
+      source /etc/default/kubelet
+      if [ ! "$KUBELET_OPTS" == *nvidia-gpu-name* ]; then
+        NVIDIA_GPU_NAME=$(/opt/nvidia/current/bin/nvidia-smi --query-gpu=gpu_name --format=csv,noheader --id=0 | sed -E 's/ +/_/g')
+        KUBELET_OPTS="--node-labels='alpha.kubernetes.io/nvidia-gpu-name=$NVIDIA_GPU_NAME' $KUBELET_OPTS"
+        KUBELET_OPTS="--node-labels='kube-aws.coreos.com/gpu=nvidia' $KUBELET_OPTS"
+        KUBELET_OPTS="--node-labels='kube-aws.coreos.com/nvidia-gpu-version={{.Gpu.Nvidia.Version}}' $KUBELET_OPTS"
+        echo "KUBELET_OPTS=\"$KUBELET_OPTS\"" > /etc/default/kubelet
+      fi
 
-- path: /opt/nvidia-build/nvidia-install.sh
-owner: root:root
-permissions: 0755
-content: |
-#!/bin/bash
-# This script is borrowed from https://github.com/Clarifai/coreos-nvidia/pull/4
+  - path: /opt/nvidia-build/nvidia-install.sh
+    owner: root:root
+    permissions: 0755
+    content: |
+      #!/bin/bash
+      # This script is borrowed from https://github.com/Clarifai/coreos-nvidia/pull/4
 
-if [[ $(uname -r) != *"-coreos"* ]]; then
-echo "OS is not CoreOS"
-exit 1
-fi
+      if [[ $(uname -r) != *"-coreos"* ]]; then
+          echo "OS is not CoreOS"
+          exit 1
+      fi
 
-# If we are on CoreOS by default use the current CoreOS version
-if [[ -f /etc/lsb-release && -f /etc/coreos/update.conf ]]; then
-source /etc/lsb-release
-source /etc/coreos/update.conf
+      # If we are on CoreOS by default use the current CoreOS version
+      if [[ -f /etc/lsb-release && -f /etc/coreos/update.conf ]]; then
+          source /etc/lsb-release
+          source /etc/coreos/update.conf
 
-COREOS_TRACK_DEFAULT=$GROUP
-COREOS_VERSION_DEFAULT=$DISTRIB_RELEASE
-if [[ $DISTRIB_ID != *"CoreOS"* ]]; then
-echo "Distribution is not CoreOS"
-exit 1
-fi
-fi
+          COREOS_TRACK_DEFAULT=$GROUP
+          COREOS_VERSION_DEFAULT=$DISTRIB_RELEASE
+          if [[ $DISTRIB_ID != *"CoreOS"* ]]; then
+              echo "Distribution is not CoreOS"
+              exit 1
+          fi
+      fi
 
-DRIVER_VERSION=${1:-{{.Gpu.Nvidia.Version}}}
-COREOS_TRACK=${2:-$COREOS_TRACK_DEFAULT}
-COREOS_VERSION=${3:-$COREOS_VERSION_DEFAULT}
+      DRIVER_VERSION=${1:-{{.Gpu.Nvidia.Version}}}
+      COREOS_TRACK=${2:-$COREOS_TRACK_DEFAULT}
+      COREOS_VERSION=${3:-$COREOS_VERSION_DEFAULT}
 
-# this is where the modules go
-release=$(uname -r)
+      # this is where the modules go
+      release=$(uname -r)
 
-mkdir -p /opt/nvidia/$DRIVER_VERSION/lib64 2>/dev/null
-mkdir -p /opt/nvidia/$DRIVER_VERSION/bin 2>/dev/null
-ln -sfT lib64 /opt/nvidia/$DRIVER_VERSION/lib 2>/dev/null
-mkdir -p /opt/nvidia/$DRIVER_VERSION/lib64/modules/$release/video/
+      mkdir -p /opt/nvidia/$DRIVER_VERSION/lib64 2>/dev/null
+      mkdir -p /opt/nvidia/$DRIVER_VERSION/bin 2>/dev/null
+      ln -sfT lib64 /opt/nvidia/$DRIVER_VERSION/lib 2>/dev/null
+      mkdir -p /opt/nvidia/$DRIVER_VERSION/lib64/modules/$release/video/
 
-tar xvf libraries-$DRIVER_VERSION.tar.bz2 -C /opt/nvidia/$DRIVER_VERSION/lib64/
-tar xvf modules-$COREOS_VERSION-$DRIVER_VERSION.tar.bz2 -C /opt/nvidia/$DRIVER_VERSION/lib64/modules/$release/video/
-tar xvf tools-$DRIVER_VERSION.tar.bz2 -C /opt/nvidia/$DRIVER_VERSION/bin/
+      tar xvf libraries-$DRIVER_VERSION.tar.bz2 -C /opt/nvidia/$DRIVER_VERSION/lib64/
+      tar xvf modules-$COREOS_VERSION-$DRIVER_VERSION.tar.bz2 -C /opt/nvidia/$DRIVER_VERSION/lib64/modules/$release/video/
+      tar xvf tools-$DRIVER_VERSION.tar.bz2 -C /opt/nvidia/$DRIVER_VERSION/bin/
 
-install -m 755 create-uvm-dev-node.sh /opt/nvidia/$DRIVER_VERSION/bin/
-install -m 755 nvidia-start.sh /opt/nvidia/$DRIVER_VERSION/bin/
-install -m 755 nvidia-insmod.sh /opt/nvidia/$DRIVER_VERSION/bin/
-install -m 755 set-gpu-name-to-kubelet-opts.sh /opt/nvidia/$DRIVER_VERSION/bin/
-ln -sfT $DRIVER_VERSION /opt/nvidia/current 2>/dev/null
+      install -m 755 create-uvm-dev-node.sh /opt/nvidia/$DRIVER_VERSION/bin/
+      install -m 755 nvidia-start.sh /opt/nvidia/$DRIVER_VERSION/bin/
+      install -m 755 nvidia-insmod.sh /opt/nvidia/$DRIVER_VERSION/bin/
+      install -m 755 set-gpu-name-to-kubelet-opts.sh /opt/nvidia/$DRIVER_VERSION/bin/
+      ln -sfT $DRIVER_VERSION /opt/nvidia/current 2>/dev/null
 
-cp -f 71-nvidia.rules /etc/udev/rules.d/
-udevadm control --reload-rules
+      cp -f 71-nvidia.rules /etc/udev/rules.d/
+      udevadm control --reload-rules
 
-mkdir -p /etc/ld.so.conf.d/ 2>/dev/null
-echo "/opt/nvidia/current/lib64" > /etc/ld.so.conf.d/nvidia.conf
-rm /opt/nvidia/current/lib64/libEGL.so.1
-ln -s /opt/nvidia/current/lib64/libEGL.so.$DRIVER_VERSION /opt/nvidia/current/lib64/libEGL.so.1
-ldconfig
+      mkdir -p /etc/ld.so.conf.d/ 2>/dev/null
+      echo "/opt/nvidia/current/lib64" > /etc/ld.so.conf.d/nvidia.conf
+      rm /opt/nvidia/current/lib64/libEGL.so.1
+      ln -s /opt/nvidia/current/lib64/libEGL.so.$DRIVER_VERSION /opt/nvidia/current/lib64/libEGL.so.1
+      ldconfig
 
-- path: /opt/nvidia-build/util/retry.sh
-owner: root:root
-permissions: 0755
-content: |
-#! /bin/bash
-max_attempts="$1"; shift
-cmd="$@"
-attempt_num=1
-attempt_interval_sec=3
+  - path: /opt/nvidia-build/util/retry.sh
+    owner: root:root
+    permissions: 0755
+    content: |
+      #! /bin/bash
+      max_attempts="$1"; shift
+      cmd="$@"
+      attempt_num=1
+      attempt_interval_sec=3
 
-until $cmd
-do
-if (( attempt_num == max_attempts ))
-then
-echo "Attempt $attempt_num failed and there are no more attempts left!"
-return 1
-else
-echo "Attempt $attempt_num failed! Trying again in $attempt_interval_sec seconds..."
-((attempt_num++))
-sleep $attempt_interval_sec;
-fi
-done
+      until $cmd
+      do
+          if (( attempt_num == max_attempts ))
+          then
+              echo "Attempt $attempt_num failed and there are no more attempts left!"
+              return 1
+          else
+              echo "Attempt $attempt_num failed! Trying again in $attempt_interval_sec seconds..."
+              ((attempt_num++))
+              sleep $attempt_interval_sec;
+          fi
+      done
 
 {{ end }}
 {{ end }}`)

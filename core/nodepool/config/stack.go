@@ -1,6 +1,7 @@
 package config
 
-var StackTemplateTemplate = []byte(`{
+var StackTemplateTemplate = []byte(`{{define "Metadata"}}
+{
   "AWS::CloudFormation::Init" : {
     "configSets" : {
       "etcd-client": [ "etcd-client-env" ]{{ if .AwsEnvironment.Enabled }},

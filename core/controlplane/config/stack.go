@@ -254,7 +254,7 @@ var StackTemplateTemplate = []byte(`{
                     "autoscaling:DescribeAutoScalingGroups",
                     "autoscaling:DescribeAutoScalingInstances",
                     "autoscaling:DescribeTags",
-                    "autoscaling:DescribeAutoScalingGroups"
+                    "autoscaling:DescribeLaunchConfigurations"
                   ],
                   "Effect": "Allow",
                   "Resource": "*"
