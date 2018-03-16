@@ -18,9 +18,23 @@ fi
 
 echo Building kube-aws ${VERSION}
 
-go generate ./core/controlplane/config
-go generate ./core/nodepool/config
-go generate ./core/root/config
+# generate controlplane templates
+pushd core/controlplane/config
+go run ../../../codegen/templates_gen.go CloudConfigController=cloud-config-controller CloudConfigWorker=cloud-config-worker CloudConfigEtcd=cloud-config-etcd DefaultClusterConfig=cluster.yaml KubeConfigTemplate=kubeconfig.tmpl StackTemplateTemplate=stack-template.json
+gofmt -w templates.go
+go run ../../../codegen/files_gen.go Etcdadm=../../../etcdadm/etcdadm
+gofmt -w files.go
+popd
+
+pushd core/nodepool/config
+go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json
+gofmt -w templates.go
+popd
+
+pushd core/root/config
+go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json
+gofmt -w templates.go
+popd
 
 if [[ ! "${BUILD_GOOS:-}" == "" ]];then
   export GOOS=$BUILD_GOOS
