@@ -27,7 +27,7 @@ func TestMainClusterConfig(t *testing.T) {
 	s3URI, s3URIExists := os.LookupEnv("KUBE_AWS_S3_DIR_URI")
 
 	if !s3URIExists || s3URI == "" {
-		s3URI = "s3://examplebucket/exampledir"
+		s3URI = "s3://mybucket/mydir"
 		t.Logf(`Falling back s3URI to a stub value "%s" for tests of validating stack templates. No assets will actually be uploaded to S3`, s3URI)
 	}
 
@@ -399,7 +399,6 @@ func TestMainClusterConfig(t *testing.T) {
 
 	mainClusterYaml := kubeAwsSettings.mainClusterYaml()
 	minimalValidConfigYaml := kubeAwsSettings.minimumValidClusterYamlWithAZ("c")
-
 	configYamlWithoutExernalDNSName := kubeAwsSettings.mainClusterYamlWithoutAPIEndpoint() + `
 availabilityZone: us-west-1c
 `
@@ -3408,7 +3407,7 @@ worker:
 			})
 
 			helper.WithDummyCredentials(func(dummyAssetsDir string) {
-				var stackTemplateOptions = root.NewOptions(s3URI, false, false)
+				var stackTemplateOptions = root.NewOptions(false, false)
 				stackTemplateOptions.AssetsDir = dummyAssetsDir
 				stackTemplateOptions.ControllerTmplFile = "../../core/controlplane/config/templates/cloud-config-controller"
 				stackTemplateOptions.WorkerTmplFile = "../../core/controlplane/config/templates/cloud-config-worker"

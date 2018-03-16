@@ -1,8 +1,9 @@
 package config
 
 import (
-	cfg "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"testing"
+
+	cfg "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 )
 
 const cluster_config = `
@@ -10,6 +11,7 @@ availabilityZone: us-west-1c
 keyName: test-key-name
 region: us-west-1
 clusterName: test-cluster-name
+s3URI: s3://bucket/demo
 kmsKeyArn: "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
 apiEndpoints:
 - name: public

@@ -31,6 +31,7 @@ Generate `cluster.yaml`:
 $ mkdir my-cluster
 $ cd my-cluster
 $ kube-aws init --cluster-name=my-cluster \
+--s3-uri=s3://examplebucket/mydir \
 --external-dns-name=<my-cluster-endpoint> \
 --region=us-west-1 \
 --availability-zone=us-west-1c \
@@ -51,16 +52,16 @@ $ kube-aws render stack
 Validate configuration:
 
 ```
-$ kube-aws validate --s3-uri s3://<your-bucket>/<optional-prefix>
+$ kube-aws validate
 ```
 
 Launch:
 
 ```
-$ kube-aws up --s3-uri s3://<your-bucket>/<optional-prefix>
+$ kube-aws up 
 
 # Or export your cloudformation stack and dependent assets into the `exported/` directory
-$ kube-aws up --s3-uri s3://<your-bucket>/<optional-prefix> --export
+$ kube-aws up --export
 
 # Access the cluster
 $ KUBECONFIG=kubeconfig kubectl get nodes --show-labels
@@ -71,7 +72,7 @@ Update:
 ```
 $ $EDITOR cluster.yaml
 # Update all the cfn stacks including the one for control-plane and the ones for worker node pools
-$ kube-aws update --s3-uri s3://<your-bucket>/<optional-prefix>
+$ kube-aws update 
 ```
 
 Destroy:

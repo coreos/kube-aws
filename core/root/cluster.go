@@ -3,6 +3,12 @@ package root
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -19,11 +25,6 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 const (
@@ -130,7 +131,7 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 		EtcdTmplFile:          opts.EtcdTmplFile,
 		StackTemplateTmplFile: opts.ControlPlaneStackTemplateTmplFile,
 		PrettyPrint:           opts.PrettyPrint,
-		S3URI:                 opts.S3URI,
+		S3URI:                 cfg.DeploymentSettings.S3URI,
 		SkipWait:              opts.SkipWait,
 	}
 	cp, err := controlplane.NewCluster(cfg.Cluster, cpOpts, plugins, awsDebug)
@@ -144,7 +145,7 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 			WorkerTmplFile:        opts.WorkerTmplFile,
 			StackTemplateTmplFile: opts.NodePoolStackTemplateTmplFile,
 			PrettyPrint:           opts.PrettyPrint,
-			S3URI:                 opts.S3URI,
+			S3URI:                 cfg.DeploymentSettings.S3URI,
 			SkipWait:              opts.SkipWait,
 		}
 		np, err := nodepool.NewCluster(c, npOpts, plugins, awsDebug)
@@ -193,6 +194,10 @@ type clusterImpl struct {
 
 func (c clusterImpl) ControlPlane() *controlplane.Cluster {
 	return c.controlPlane
+}
+
+func (c clusterImpl) s3URI() string {
+	return c.controlPlane.S3URI
 }
 
 func (c clusterImpl) NodePools() []*nodepool.Cluster {
@@ -260,7 +265,7 @@ func (c clusterImpl) Assets() (cfnstack.Assets, error) {
 		return nil, fmt.Errorf("Error while rendering template : %v", err)
 	}
 	s3URI := fmt.Sprintf("%s/kube-aws/clusters/%s/exported/stacks",
-		strings.TrimSuffix(c.opts.S3URI, "/"),
+		strings.TrimSuffix(c.s3URI(), "/"),
 		c.controlPlane.ClusterName,
 	)
 
@@ -314,7 +319,7 @@ func (c clusterImpl) stackProvisioner() *cfnstack.Provisioner {
 	return cfnstack.NewProvisioner(
 		c.stackName(),
 		c.tags(),
-		c.opts.S3URI,
+		c.s3URI(),
 		c.controlPlane.Region,
 		stackPolicyBody,
 		c.session,

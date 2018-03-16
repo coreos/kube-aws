@@ -23,6 +23,7 @@ var (
 
 func init() {
 	RootCmd.AddCommand(cmdInit)
+	cmdInit.Flags().StringVar(&initOpts.S3URI, "s3-uri", "", "The URI of the S3 bucket")
 	cmdInit.Flags().StringVar(&initOpts.ClusterName, "cluster-name", "", "The name of this cluster. This will be the name of the cloudformation stack")
 	cmdInit.Flags().StringVar(&initOpts.ExternalDNSName, "external-dns-name", "", "The hostname that will route to the api server")
 	cmdInit.Flags().StringVar(&initOpts.HostedZoneID, "hosted-zone-id", "", "The hosted zone in which a Route53 record set for a k8s API endpoint is created")
@@ -37,6 +38,7 @@ func init() {
 func runCmdInit(cmd *cobra.Command, args []string) error {
 	// Validate flags.
 	if err := validateRequired(
+		flag{"--s3-uri", initOpts.S3URI},
 		flag{"--cluster-name", initOpts.ClusterName},
 		flag{"--external-dns-name", initOpts.ExternalDNSName},
 		flag{"--region", initOpts.Region.Name},
