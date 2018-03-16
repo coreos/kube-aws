@@ -429,6 +429,7 @@ type DeploymentSettings struct {
 	ComputedDeploymentSettings
 	CloudFormation              model.CloudFormation  `yaml:"cloudformation,omitempty"`
 	ClusterName                 string                `yaml:"clusterName,omitempty"`
+	S3URI                       string                `yaml:"s3URI,omitempty"`
 	KeyName                     string                `yaml:"keyName,omitempty"`
 	Region                      model.Region          `yaml:",inline"`
 	AvailabilityZone            string                `yaml:"availabilityZone,omitempty"`
@@ -946,6 +947,7 @@ type InitialConfig struct {
 	KeyName          string
 	NoRecordSet      bool
 	Region           model.Region
+	S3URI            string
 }
 
 // Config contains configuration parameters available when rendering userdata injected into a controller or an etcd node from golang text templates
@@ -1226,6 +1228,9 @@ func (c DeploymentSettings) Validate() (*DeploymentValidationResult, error) {
 	}
 	if c.ClusterName == "" {
 		return nil, errors.New("clusterName must be set")
+	}
+	if c.S3URI == "" {
+		return nil, errors.New("s3URI must be set")
 	}
 	if c.KMSKeyARN == "" && c.AssetsEncryptionEnabled() {
 		return nil, errors.New("kmsKeyArn must be set")

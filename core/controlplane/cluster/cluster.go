@@ -124,7 +124,7 @@ func (c *ClusterRef) validateExistingVPCState(ec2Svc ec2Service) error {
 func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins []*pluginmodel.Plugin, awsDebug bool) (*Cluster, error) {
 	clusterRef := NewClusterRef(cfg, awsDebug)
 	// TODO Do this in a cleaner way e.g. in config.go
-	clusterRef.KubeResourcesAutosave.S3Path = model.NewS3Folders(opts.S3URI, clusterRef.ClusterName).ClusterBackups().Path()
+	clusterRef.KubeResourcesAutosave.S3Path = model.NewS3Folders(cfg.DeploymentSettings.S3URI, clusterRef.ClusterName).ClusterBackups().Path()
 
 	stackConfig, err := clusterRef.StackConfig(opts, plugins)
 	if err != nil {

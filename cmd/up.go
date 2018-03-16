@@ -27,19 +27,11 @@ func init() {
 	cmdUp.Flags().BoolVar(&upOpts.export, "export", false, "Don't create cluster, instead export cloudformation stack file")
 	cmdUp.Flags().BoolVar(&upOpts.prettyPrint, "pretty-print", false, "Pretty print the resulting CloudFormation")
 	cmdUp.Flags().BoolVar(&upOpts.awsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
-	cmdUp.Flags().StringVar(&upOpts.s3URI, "s3-uri", "", "When your template is bigger than the cloudformation limit of 51200 bytes, upload the template to the specified location in S3. S3 location expressed as s3://<bucket>/path/to/dir")
 	cmdUp.Flags().BoolVar(&upOpts.skipWait, "skip-wait", false, "Don't wait for the cluster components be ready")
 }
 
 func runCmdUp(cmd *cobra.Command, args []string) error {
-	// s3URI is required in order to render stack templates because the URI is parsed, combined and then included in the stack templates as
-	// (1) URLs to actual worker/controller cloud-configs in S3 and
-	// (2) URLs to nested stack templates referenced from the root stack template
-	if err := validateRequired(flag{"--s3-uri", upOpts.s3URI}); err != nil {
-		return err
-	}
-
-	opts := root.NewOptions(upOpts.s3URI, upOpts.prettyPrint, upOpts.skipWait)
+	opts := root.NewOptions(upOpts.prettyPrint, upOpts.skipWait)
 
 	cluster, err := root.ClusterFromFile(configPath, opts, upOpts.awsDebug)
 	if err != nil {

@@ -7,7 +7,7 @@ This is the [third step of running Kubernetes on AWS](README.md). We're ready to
 Now for the exciting part, creating your cluster:
 
 ```sh
-$ kube-aws up --s3-uri s3://<your-bucket-name>/<prefix>
+$ kube-aws up
 ```
 
 **NOTE**: It can take some time after `kube-aws up` completes before the cluster is available. When the cluster is first being launched, it must download all container images for the cluster components (Kubernetes, dns, heapster, etc). Depending on the speed of your connection, it can take a few minutes before the Kubernetes api-server is available.

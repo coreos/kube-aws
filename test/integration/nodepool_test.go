@@ -68,6 +68,7 @@ apiEndpoints:
 sshAuthorizedKeys:
 - mydummysshpublickey
 kmsKeyArn: mykmskeyarn
+s3URI: s3//bucket/emptyDir
 `
 	mainCluster, err := cfg.ClusterFromBytes([]byte(mainClusterYaml))
 	if err != nil {

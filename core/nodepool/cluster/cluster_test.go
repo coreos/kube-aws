@@ -94,6 +94,7 @@ func (svc dummyEC2DescribeKeyPairsService) DescribeKeyPairs(input *ec2.DescribeK
 
 func TestValidateKeyPair(t *testing.T) {
 	main, err := controlplane.ConfigFromBytes([]byte(`clusterName: test-cluster
+s3URI: s3://mybucket/mydir
 apiEndpoints:
 - name: public
   dnsName: test-cluster.example.com
@@ -134,6 +135,7 @@ const minimalYaml = `name: pool1
 
 func TestValidateWorkerRootVolume(t *testing.T) {
 	main, err := controlplane.ConfigFromBytes([]byte(`clusterName: test-cluster
+s3URI: s3://mybucket/mydir
 apiEndpoints:
 - name: public
   dnsName: test-cluster.example.com
@@ -224,6 +226,7 @@ apiEndpoints:
 keyName: test-key-name
 region: us-west-1
 clusterName: test-cluster-name
+s3URI: s3://mybucket/mydir
 kmsKeyArn: "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
 availabilityZone: us-west-1a
 `

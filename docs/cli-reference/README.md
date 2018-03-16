@@ -73,8 +73,7 @@ Validate cluster assets prior to deployment.
 ### `validate` example
 
 ```bash
-$ kube-aws validate \
-  --s3-uri=s3://my-kube-aws-assets-bucket
+$ kube-aws validate
 ```
 
 # `up`
@@ -92,8 +91,7 @@ Deploy a new Kubernetes cluster.
 ### `up` example
 
 ```bash
-$ kube-aws up \
-  --s3-uri=s3://my-kube-aws-assets-bucket
+$ kube-aws up 
 ```
 
 # `update`
@@ -110,8 +108,7 @@ Update an existing Kubernetes cluster that was created by kube-aws.
 ### `update` example
 
 ```bash
-$ kube-aws update \
-  --s3-uri=s3://my-kube-aws-assets-bucket
+$ kube-aws update
 ```
 
 # `destroy`
