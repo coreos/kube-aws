@@ -72,11 +72,7 @@ make format
 
 # Modifying Templates
 
-The various templates are located in the `core/controlplane/config/templates/` and the `core/nodepool/config/templates/` directory of the source repo. `go generate` is used to pack these templates into the source code. In order for changes to templates to be reflected in the source code:
-
-```bash
-make build
-```
+The various templates are part of the go code so it is easy to import this project as dependency if users require custom features. They are located in the `core/controlplane/config/[cluster|controller|etcd|etcdam|kube|stack|worker].go` and the `core/nodepool/config/stack.go` files of the source repo.
 
 # Documentation
 

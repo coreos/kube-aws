@@ -1,0 +1,98 @@
+package config
+
+var StackTemplateTemplate = []byte(`{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "kube-aws Kubernetes cluster {{.ClusterName}}",
+  "Resources": {
+    {{if .CloudWatchLogging.Enabled}}
+      "CloudWatchLogGroup": {
+      "Type" : "AWS::Logs::LogGroup",
+      "Properties" : {
+        "LogGroupName" : "{{.ClusterName}}",
+        "RetentionInDays" : {{.CloudWatchLogging.RetentionInDays}}
+      }
+    },{{ end }}
+    "{{.ControlPlane.Name}}": {
+      "Type" : "AWS::CloudFormation::Stack",
+      "Properties" : {
+        "Parameters": {
+          {{if .CloudWatchLogging.Enabled}}
+          "CloudWatchLogGroupARN": { "Fn::GetAtt": [ "CloudWatchLogGroup", "Arn" ] }
+          {{ end }}
+        },
+        "Tags" : [
+          {
+            "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
+            "Value": "true"
+          }{{range $k, $v := $.ControlPlane.Tags}},
+          {
+            "Key":"{{$k}}",
+            "Value":"{{$v}}"
+          }{{end}}
+        ],
+        "TemplateURL" : "{{$.ControlPlane.TemplateURL}}"
+      }
+    }{{range $_, $p := .NodePools}},
+    "{{$p.Name}}": {
+      "Type" : "AWS::CloudFormation::Stack",
+      "Properties" : {
+        "Parameters": {
+          "ControlPlaneStackName": {"Fn::GetAtt" : [ "{{$.ControlPlane.Name}}" , "Outputs.StackName" ]}
+          {{if .CloudWatchLogging.Enabled}}
+          ,
+          "CloudWatchLogGroupARN": { "Fn::GetAtt": [ "CloudWatchLogGroup", "Arn" ] }
+          {{ end }}
+        },
+        "Tags" : [
+          {
+            "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
+            "Value": "true"
+          }{{range $k, $v := $p.Tags}},
+          {
+            "Key":"{{$k}}",
+            "Value":"{{$v}}"
+          }{{end}}
+        ],
+        "TemplateURL" : "{{$p.TemplateURL}}"
+      },
+      "DependsOn": [
+        "{{$.ControlPlane.Name}}"
+      ]
+    }{{end}}
+    {{range $n, $r := .ExtraCfnResources}}
+    ,
+    {{quote $n}}: {{toJSON $r}}
+    {{end}}
+  },
+  "Outputs": {
+    "KubeAwsVersion": {
+      "Description": "The version number of kube-aws which was used to create this cluster",
+      "Value": "{{$.KubeAwsVersion}}",
+      "Export": { "Name": { "Fn::Sub": "${AWS::StackName}-KubeAwsVersion" } }
+    },
+    {{ if $.ControlPlane.NeedToExportIAMroles }}
+    "ControllerIAMRoleArn": {
+      "Description": "The IAM Role ARN for controller nodes",
+      "Value": {"Fn::GetAtt" : [ "{{$.ControlPlane.Name}}" , "Outputs.ControllerIAMRoleArn" ]},
+      "Export": { "Name": { "Fn::Sub": "${AWS::StackName}-ControllerIAMRoleArn" } }
+    },
+    {{end}}
+    "ControlPlaneStackName": {
+      "Description": "The name of the control plane stack",
+      "Value": {"Fn::GetAtt" : [ "{{$.ControlPlane.Name}}" , "Outputs.StackName" ]}
+    }{{range $_, $p := .NodePools}},
+    {{ if $p.NeedToExportIAMroles }}
+    "NodePool{{ $p.Name }}WorkerIAMRoleArn": {
+      "Description": "The IAM Role ARN for workers in the {{$p.Name}} node pool stack",
+      "Value": {"Fn::GetAtt" : [ "{{$p.Name}}", "Outputs.WorkerIAMRoleArn" ]},
+      "Export": { "Name": { "Fn::Sub": "${AWS::StackName}-NodePool{{$p.Name}}WorkerIAMRoleArn" } }
+    },
+    {{end}}
+    "NodePool{{ $p.Name }}StackName": {
+      "Description": "The name of the {{$p.Name}} node pool stack",
+      "Value": {"Fn::GetAtt" : [ "{{$p.Name}}", "Outputs.StackName" ]},
+      "Export": { "Name": { "Fn::Sub": "${AWS::StackName}-NodePool{{$p.Name}}StackName" } }
+    }
+    {{end}}
+  }
+}`)
