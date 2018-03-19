@@ -104,6 +104,15 @@ func NewDefaultCluster() *Cluster {
 			UsernameClaim: "email",
 			GroupsClaim:   "groups",
 		},
+		NetworkingDaemonSets: NetworkingDaemonSets{
+			Enabled:         false,
+			Typha:           false,
+			CalicoNodeImage: model.Image{Repo: "quay.io/calico/node", Tag: "v3.0.3", RktPullDocker: false},
+			CalicoCniImage:  model.Image{Repo: "quay.io/calico/cni", Tag: "v2.0.1", RktPullDocker: false},
+			FlannelImage:    model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.9.1", RktPullDocker: false},
+			FlannelCniImage: model.Image{Repo: "quay.io/coreos/flannel-cni", Tag: "v0.3.0", RktPullDocker: false},
+			TyphaImage:      model.Image{Repo: "quay.io/calico/typha", Tag: "v0.6.2", RktPullDocker: false},
+		},
 	}
 
 	return &Cluster{
@@ -141,18 +150,18 @@ func NewDefaultCluster() *Cluster {
 			CloudFormationStreaming:            true,
 			HyperkubeImage:                     model.Image{Repo: "quay.io/coreos/hyperkube", Tag: k8sVer, RktPullDocker: false},
 			AWSCliImage:                        model.Image{Repo: "quay.io/coreos/awscli", Tag: "master", RktPullDocker: false},
-			CalicoNodeImage:                    model.Image{Repo: "quay.io/calico/node", Tag: "v2.6.1", RktPullDocker: false},
-			CalicoCniImage:                     model.Image{Repo: "quay.io/calico/cni", Tag: "v1.11.0", RktPullDocker: false},
-			CalicoKubeControllersImage:         model.Image{Repo: "quay.io/calico/kube-controllers", Tag: "v1.0.0", RktPullDocker: false},
-			CalicoCtlImage:                     model.Image{Repo: "quay.io/calico/ctl", Tag: "v1.6.1", RktPullDocker: false},
-			ClusterAutoscalerImage:             model.Image{Repo: "gcr.io/google_containers/cluster-autoscaler", Tag: "v1.0.3", RktPullDocker: false},
-			ClusterProportionalAutoscalerImage: model.Image{Repo: "gcr.io/google_containers/cluster-proportional-autoscaler-amd64", Tag: "1.1.2", RktPullDocker: false},
-			Kube2IAMImage:                      model.Image{Repo: "jtblin/kube2iam", Tag: "0.8.1", RktPullDocker: false},
-			KubeDnsImage:                       model.Image{Repo: "gcr.io/google_containers/k8s-dns-kube-dns-amd64", Tag: "1.14.7", RktPullDocker: false},
-			KubeDnsMasqImage:                   model.Image{Repo: "gcr.io/google_containers/k8s-dns-dnsmasq-nanny-amd64", Tag: "1.14.7", RktPullDocker: false},
-			KubeReschedulerImage:               model.Image{Repo: "gcr.io/google-containers/rescheduler", Tag: "v0.3.1", RktPullDocker: false},
-			DnsMasqMetricsImage:                model.Image{Repo: "gcr.io/google_containers/k8s-dns-sidecar-amd64", Tag: "1.14.6", RktPullDocker: false},
-			ExecHealthzImage:                   model.Image{Repo: "gcr.io/google_containers/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
+			CalicoNodeImage:                    model.Image{Repo: "quay.io/calico/node", Tag: "v2.6.5", RktPullDocker: false},
+			CalicoCniImage:                     model.Image{Repo: "quay.io/calico/cni", Tag: "v1.11.2", RktPullDocker: false},
+			CalicoKubeControllersImage:         model.Image{Repo: "quay.io/calico/kube-controllers", Tag: "v1.0.2", RktPullDocker: false},
+			CalicoCtlImage:                     model.Image{Repo: "quay.io/calico/ctl", Tag: "v1.6.3", RktPullDocker: false},
+			ClusterAutoscalerImage:             model.Image{Repo: "k8s.gcr.io/cluster-autoscaler", Tag: "v1.1.0", RktPullDocker: false},
+			ClusterProportionalAutoscalerImage: model.Image{Repo: "k8s.gcr.io/cluster-proportional-autoscaler-amd64", Tag: "1.1.2", RktPullDocker: false},
+			Kube2IAMImage:                      model.Image{Repo: "jtblin/kube2iam", Tag: "0.9.0", RktPullDocker: false},
+			KubeDnsImage:                       model.Image{Repo: "k8s.gcr.io/k8s-dns-kube-dns-amd64", Tag: "1.14.7", RktPullDocker: false},
+			KubeDnsMasqImage:                   model.Image{Repo: "k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64", Tag: "1.14.7", RktPullDocker: false},
+			KubeReschedulerImage:               model.Image{Repo: "k8s.gcr.io/rescheduler-amd64", Tag: "v0.3.2", RktPullDocker: false},
+			DnsMasqMetricsImage:                model.Image{Repo: "k8s.gcr.io/k8s-dns-sidecar-amd64", Tag: "1.14.7", RktPullDocker: false},
+			ExecHealthzImage:                   model.Image{Repo: "k8s.gcr.io/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
 			HelmImage:                          model.Image{Repo: "quay.io/kube-aws/helm", Tag: "v2.6.0", RktPullDocker: false},
 			TillerImage:                        model.Image{Repo: "gcr.io/kubernetes-helm/tiller", Tag: "v2.7.2", RktPullDocker: false},
 			HeapsterImage:                      model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.4.3", RktPullDocker: false},
@@ -160,7 +169,7 @@ func NewDefaultCluster() *Cluster {
 			AddonResizerImage:                  model.Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "2.1", RktPullDocker: false},
 			KubernetesDashboardImage:           model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.8.0", RktPullDocker: false},
 			PauseImage:                         model.Image{Repo: "gcr.io/google_containers/pause-amd64", Tag: "3.0", RktPullDocker: false},
-			FlannelImage:                       model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.9.0", RktPullDocker: false},
+			FlannelImage:                       model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.9.1", RktPullDocker: false},
 			JournaldCloudWatchLogsImage:        model.Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
 		},
 		KubeClusterSettings: KubeClusterSettings{
@@ -426,9 +435,11 @@ type DeploymentSettings struct {
 	KubeDns                 `yaml:"kubeDns,omitempty"`
 	KubernetesDashboard     `yaml:"kubernetesDashboard,omitempty"`
 	// Images repository
-	HyperkubeImage                     model.Image `yaml:"hyperkubeImage,omitempty"`
-	AWSCliImage                        model.Image `yaml:"awsCliImage,omitempty"`
-	CalicoNodeImage                    model.Image `yaml:"calicoNodeImage,omitempty"`
+	HyperkubeImage model.Image `yaml:"hyperkubeImage,omitempty"`
+	AWSCliImage    model.Image `yaml:"awsCliImage,omitempty"`
+
+	CalicoNodeImage model.Image `yaml:"calicoNodeImage,omitempty"`
+
 	CalicoCniImage                     model.Image `yaml:"calicoCniImage,omitempty"`
 	CalicoCtlImage                     model.Image `yaml:"calicoCtlImage,omitempty"`
 	CalicoKubeControllersImage         model.Image `yaml:"calicoKubeControllersImage,omitempty"`
@@ -449,6 +460,9 @@ type DeploymentSettings struct {
 	PauseImage                         model.Image `yaml:"pauseImage,omitempty"`
 	FlannelImage                       model.Image `yaml:"flannelImage,omitempty"`
 	JournaldCloudWatchLogsImage        model.Image `yaml:"journaldCloudWatchLogsImage,omitempty"`
+	EtcdlessCalicoNodeImage            model.Image `yaml:"etcdlessCalicoNodeImage,omitempty"`
+	EtcdlessCalicoCniImage             model.Image `yaml:"etcdlessCalicoCniImage,omitempty"`
+	EtcdlessFlannelCniImage            model.Image `yaml:"etcdlessFlannelCniImage,omitempty"`
 }
 
 // Part of configuration which is specific to worker nodes
@@ -522,6 +536,7 @@ type Experimental struct {
 	DisableSecurityGroupIngress bool                           `yaml:"disableSecurityGroupIngress"`
 	NodeMonitorGracePeriod      string                         `yaml:"nodeMonitorGracePeriod"`
 	model.UnknownKeys           `yaml:",inline"`
+	NetworkingDaemonSets        NetworkingDaemonSets `yaml:"networkingDaemonSets"`
 }
 
 type Admission struct {
@@ -611,6 +626,16 @@ type LocalStreaming struct {
 	Enabled  bool   `yaml:"enabled"`
 	Filter   string `yaml:"filter"`
 	interval int    `yaml:"interval"`
+}
+
+type NetworkingDaemonSets struct {
+	Enabled         bool        `yaml:"enabled"`
+	Typha           bool        `yaml:"typha"`
+	CalicoNodeImage model.Image `yaml:"calico-node-image"`
+	CalicoCniImage  model.Image `yaml:"calico-cni-image"`
+	FlannelImage    model.Image `yaml:"flannel-image"`
+	FlannelCniImage model.Image `yaml:"flannel-cni-image"`
+	TyphaImage      model.Image `yaml:"typha-image"`
 }
 
 func (c *LocalStreaming) Interval() int64 {

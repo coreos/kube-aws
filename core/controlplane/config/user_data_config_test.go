@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"fmt"
+
 	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/coreos/coreos-cloudinit/config/validate"
 	"github.com/kubernetes-incubator/kube-aws/model"

@@ -1,6 +1,8 @@
 package model
 
 import (
+	"log"
+
 	"github.com/coreos/coreos-cloudinit/config/validate"
 	"github.com/kubernetes-incubator/kube-aws/filereader/texttemplate"
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
@@ -8,6 +10,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"text/template"
 )
@@ -67,6 +70,9 @@ func NewUserData(templateFile string, context interface{}, opts ...UserDataOptio
 
 	tmpl, err := texttemplate.ParseFile(templateFile, funcs)
 	if err != nil {
+		if tf, e := ioutil.ReadFile(templateFile); e == nil {
+			log.Printf("Bad Template:-\n%s\n", tf)
+		}
 		return UserData{}, err
 	}
 
@@ -139,6 +145,7 @@ func validateCoreosCloudInit(content []byte) error {
 		errors = append(errors, fmt.Sprintf("%+v", entry))
 	}
 	if len(errors) > 0 {
+		log.Printf("Bad cloud-config:-\n%s\n", content)
 		return fmt.Errorf("cloud-config validation errors:\n%s\n", strings.Join(errors, "\n"))
 	}
 	return nil
