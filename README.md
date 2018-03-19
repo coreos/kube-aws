@@ -77,7 +77,7 @@ $ kube-aws update --s3-uri s3://<your-bucket>/<optional-prefix>
 Destroy:
 
 ```
-# Destroy all the cfn stacks including the one for control-plane and the ones for worker node pools
+# Destroy all the cfn stacks including the one for control-plane and the ones for worker node pools. Use `--force` for skip confirmation. 
 $ kube-aws destroy
 ```
 

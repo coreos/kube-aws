@@ -1,14 +1,14 @@
 ## Configure Dex as a custom provider in cluster.yaml
 
 Example: 
-
+```
        oidc:
          enabled: true
          issuerUrl: "https://dex.example.com"
          clientId: "example-app"
          usernameClaim: "email"
          groupsClaim: "groups"
-
+```
 
 ## Deploy Dex
 
@@ -16,12 +16,12 @@ Example:
  If you have a different setup, please check [Dex's documentation](https://github.com/coreos/dex/tree/master/Documentation)
  
  2. Create a secret containing your [GitHub OAuth2 client credentials](https://github.com/settings/applications/new)
- 
+ ```
      kubectl create secret \
          generic github-client \
          --from-literal=client-id=$GITHUB_CLIENT_ID \
          --from-literal=client-secret=$GITHUB_CLIENT_SECRET
-         
+ ```        
  3. Deploy Dex: `kubectl apply -f contrib/dex/dex.de.yaml`
  
  **Deploy Dex using Helm**
@@ -45,11 +45,11 @@ Examples are provided in `contrib/dex/elb` directory.
 An example that works with [nginx-controller](https://github.com/nginxinc/kubernetes-ingress/tree/master/nginx-controller) + [kube-lego](https://github.com/jetstack/kube-lego)  is provided in `contrib/dex/ingress`. 
 
 
-##Configure `kubectl` for token authentication
+## Configure `kubectl` for token authentication
 
 * `kubectl` config using command line example:
 
-
+```
     kubectl config set-credentials admin@example.com  \
     --auth-provider=oidc \   
     --auth-provider-arg=idp-issuer-url=https://dex.example.com \
@@ -59,10 +59,11 @@ An example that works with [nginx-controller](https://github.com/nginxinc/kubern
     --auth-provider-arg=idp-certificate-authority=/etc/kubernetes/ssl/ca.pem \   
     --auth-provider-arg=id-token=id_token \
     --auth-provider-arg=extra-scopes=groups
+```
 
 * `kubectl` config file example:
 
-
+```
     apiVersion: v1
     clusters:
     - cluster:
@@ -90,4 +91,4 @@ An example that works with [nginx-controller](https://github.com/nginxinc/kubern
             idp-issuer-url: https://dex.example.com
             refresh-token: refresh_token
           name: oidc
-          
+```

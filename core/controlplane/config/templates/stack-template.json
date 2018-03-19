@@ -251,7 +251,8 @@
                   "Action": [
                     "autoscaling:DescribeAutoScalingGroups",
                     "autoscaling:DescribeAutoScalingInstances",
-                    "autoscaling:DescribeTags"
+                    "autoscaling:DescribeTags",
+                    "autoscaling:DescribeAutoScalingGroups"
                   ],
                   "Effect": "Allow",
                   "Resource": "*"
@@ -268,7 +269,7 @@
                   "Resource": "*"
                 },
                 {{end}}
-                {{if .Experimental.Kube2IamSupport.Enabled }}
+                {{if or .Experimental.Kube2IamSupport.Enabled .Experimental.KIAMSupport.Enabled }}
                 {
                   "Action": "sts:AssumeRole",
                   "Effect":"Allow",
@@ -320,6 +321,64 @@
         }
       }
     },
+    {{if and .Experimental.KIAMSupport.Enabled .KubeResourcesAutosave.Enabled }}
+    "IAMManagedPolicyResourcesAutoSave" : {
+      "Type" : "AWS::IAM::ManagedPolicy",
+      "Properties" : {
+        "Description" : "Policy for managing Resources Auto Save",
+        "Path" : "/",
+        "PolicyDocument" :   {
+          "Version":"2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:PutObject"
+              ],
+              "Resource": "arn:{{.Region.Partition}}:s3:::{{ .KubeResourcesAutosave.S3Path }}/*"
+            }
+          ]
+        }
+      }
+    },
+    "IAMRoleResourcesAutoSave": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sts:AssumeRole"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.{{.Region.PublicDomainName}}"
+                ]
+              }
+            },
+            {
+              "Action": [
+                "sts:AssumeRole"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  {"Fn::GetAtt": ["IAMRoleController", "Arn"]}
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Path": "/",
+        "RoleName":  "{{$.ClusterName}}-IAMRoleResourcesAutoSave",
+        "ManagedPolicyArns": [
+          {"Ref": "IAMManagedPolicyResourcesAutoSave"}
+        ]
+      },
+      "Type": "AWS::IAM::Role"
+    },
+    {{end}}
     "IAMRoleController": {
       "Properties": {
         "AssumeRolePolicyDocument": {
@@ -1390,6 +1449,7 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
+    {{if .Addons.Prometheus.SecurityGroupsEnabled}}
     "SecurityGroupWorkerIngressFromWorkerToControllerKubelet": {
       "Properties": {
         "FromPort": 10250,
@@ -1502,6 +1562,7 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
+    {{ end }}
     "SecurityGroupEtcd": {
       "Properties": {
         "GroupDescription": {

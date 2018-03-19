@@ -8,7 +8,6 @@
 .envrc
 coverage.txt
 profile.out
-/.glide
 
 # gitbook docs
 _book

@@ -317,7 +317,9 @@ func (c clusterImpl) stackProvisioner() *cfnstack.Provisioner {
 		c.opts.S3URI,
 		c.controlPlane.Region,
 		stackPolicyBody,
-		c.session)
+		c.session,
+		c.controlPlane.CloudFormation.RoleARN,
+	)
 }
 
 func (c clusterImpl) stackName() string {

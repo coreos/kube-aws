@@ -78,16 +78,25 @@ Please file an issue to make suggestions on this roadmap!
 
 ## v0.9.10
 
-  * kubeadm support to simplify k8s components configuration (#654)
-    * Reduces the amount of code required in kube-aws
-    * To better follow upstream improvements on how k8s components are deployed
-  * [More manageable Calico + Flannel](https://github.com/kubernetes-incubator/kube-aws/pull/675#issuecomment-303669142) (@redbaron)
-  * istio integration
-    * Probably after k8s supported injecting init containers from PodPreset
-      * [Upstream issue](https://github.com/kubernetes/kubernetes/issues/43874)
+  * Kubernetes 1.9.x
+  * Security+Usability improvements
+    * [kiam](https://github.com/uswitch/kiam/) integration (#1055)
+    * [authenticator](https://github.com/heptio/authenticator) integration (#1153)
+    * Support for pregenerating IAM roles used by kube2iam/kiam (#1145, #1150)
+  * Operatability improvements
+    * [More manageable Calico + Flannel](https://github.com/kubernetes-incubator/kube-aws/pull/675#issuecomment-303669142) (@redbaron) (#909)
+    * Graduate from relying on CloudFormation nested stacks (#1112)
+    * Ease certificate rotation (#1146)
 
 ## v0.9.11
 
+  * Kubernetes 1.10
+  * (After easy H/A controller support) kubeadm support to simplify k8s components configuration (#654)
+    * Reduces the amount of code required in kube-aws
+    * To better follow upstream improvements on how k8s components are deployed
+  * (After scalability/reliability/upgradability cleared) istio integration
+    * Probably after k8s supported injecting init containers from PodPreset
+      * [Upstream issue](https://github.com/kubernetes/kubernetes/issues/43874)
   * Migrate from coreos-cloudinit to ignition for node bootstrapping (@redbaron)
 
 ## v0.9.12
@@ -97,4 +106,4 @@ Please file an issue to make suggestions on this roadmap!
 
 ## v0.9.x
 
-  * YAML CloudFormation templates
+  * YAML CloudFormation templates?

@@ -244,7 +244,9 @@ func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
 		c.ClusterExportedStacksS3URI(),
 		c.Region,
 		stackPolicyBody,
-		c.session)
+		c.session,
+		c.CloudFormation.RoleARN,
+	)
 }
 
 func (c *Cluster) Validate() error {
@@ -275,7 +277,7 @@ func (c *Cluster) String() string {
 }
 
 func (c *ClusterRef) Destroy() error {
-	return cfnstack.NewDestroyer(c.StackName(), c.session).Destroy()
+	return cfnstack.NewDestroyer(c.StackName(), c.session, c.CloudFormation.RoleARN).Destroy()
 }
 
 func (c *ClusterRef) validateKeyPair(ec2Svc ec2Service) error {

@@ -131,3 +131,38 @@ func NewSignedClientCertificate(cfg ClientCertConfig, key *rsa.PrivateKey, caCer
 	}
 	return x509.ParseCertificate(certDERBytes)
 }
+
+func NewSignedKIAMCertificate(cfg ClientCertConfig, key *rsa.PrivateKey, caCert *x509.Certificate, caKey *rsa.PrivateKey) (*x509.Certificate, error) {
+	ips := make([]net.IP, len(cfg.IPAddresses))
+	for i, ipStr := range cfg.IPAddresses {
+		ips[i] = net.ParseIP(ipStr)
+	}
+
+	serial, err := rand.Int(rand.Reader, new(big.Int).SetInt64(math.MaxInt64))
+	if err != nil {
+		return nil, err
+	}
+
+	if cfg.Duration <= 0 {
+		return nil, errors.New("Signed client cert duration must not be negative or zero.")
+	}
+
+	certTmpl := x509.Certificate{
+		Subject: pkix.Name{
+			CommonName:   cfg.CommonName,
+			Organization: append(caCert.Subject.Organization, cfg.Organization...),
+		},
+		DNSNames:     cfg.DNSNames,
+		IPAddresses:  ips,
+		SerialNumber: serial,
+		NotBefore:    caCert.NotBefore,
+		NotAfter:     time.Now().Add(cfg.Duration).UTC(),
+		KeyUsage:     x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+	}
+	certDERBytes, err := x509.CreateCertificate(rand.Reader, &certTmpl, caCert, key.Public(), caKey)
+	if err != nil {
+		return nil, err
+	}
+	return x509.ParseCertificate(certDERBytes)
+}

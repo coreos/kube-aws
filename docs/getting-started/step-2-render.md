@@ -110,6 +110,8 @@ There will now be a `cluster.yaml` file in the asset directory. This is the main
   $ kube-aws render credentials --ca-cert-path=/path/to/ca-cert.pem --ca-key-path=/path/to/ca-key.pem
   ```
 
+  If the CA key is encrypted (which it should), you will be prompted for the key passphrase. Although not recommended, `KUBE_AWS_CA_KEY_PASSPHRASE` environment variable can be set to automate this process.
+
   For more information on operating your own CA, check out this [awesome guide](https://jamielinux.com/docs/openssl-certificate-authority/).
 
 * In certain cases, such as users with advanced pre-existing PKI infrastructure, the operator may wish to pre-generate all cluster TLS assets. In this case, you can run `kube-aws render stack` and copy in your TLS assets into the `credentials/` folder before running `kube-aws up`.

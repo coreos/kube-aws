@@ -29,13 +29,18 @@ import (
 )
 
 const (
-	k8sVer = "v1.8.4_coreos.0"
+	k8sVer = "v1.9.1"
 
 	credentialsDir = "credentials"
 	userDataDir    = "userdata"
 )
 
 func NewDefaultCluster() *Cluster {
+	kubelet := Kubelet{
+		RotateCerts: RotateCerts{
+			Enabled: false,
+		},
+	}
 	experimental := Experimental{
 		Admission: Admission{
 			PodSecurityPolicy{
@@ -48,6 +53,15 @@ func NewDefaultCluster() *Cluster {
 				Enabled: false,
 			},
 			Initializers{
+				Enabled: false,
+			},
+			Priority{
+				Enabled: false,
+			},
+			MutatingAdmissionWebhook{
+				Enabled: false,
+			},
+			ValidatingAdmissionWebhook{
 				Enabled: false,
 			},
 		},
@@ -96,6 +110,7 @@ func NewDefaultCluster() *Cluster {
 		NodeDrainer: model.NodeDrainer{
 			Enabled:      false,
 			DrainTimeout: 5,
+			IAMRole:      model.IAMRole{},
 		},
 		Oidc: model.Oidc{
 			Enabled:       false,
@@ -115,6 +130,13 @@ func NewDefaultCluster() *Cluster {
 		},
 	}
 
+	ipvsMode := IPVSMode{
+		Enabled:       false,
+		Scheduler:     "rr",
+		SyncPeriod:    "60s",
+		MinSyncPeriod: "10s",
+	}
+
 	return &Cluster{
 		DeploymentSettings: DeploymentSettings{
 			ClusterName:        "kubernetes",
@@ -125,6 +147,7 @@ func NewDefaultCluster() *Cluster {
 			Subnets:            []model.Subnet{},
 			EIPAllocationIDs:   []string{},
 			Experimental:       experimental,
+			Kubelet:            kubelet,
 			ManageCertificates: true,
 			AmazonSsmAgent: AmazonSsmAgent{
 				Enabled:     false,
@@ -140,15 +163,24 @@ func NewDefaultCluster() *Cluster {
 					interval: 60,
 				},
 			},
+			KubeProxy: KubeProxy{
+				IPVSMode: ipvsMode,
+			},
 			KubeDns: KubeDns{
-				NodeLocalResolver: false,
+				NodeLocalResolver:   false,
+				DeployToControllers: false,
+				Autoscaler: KubeDnsAutoscaler{
+					CoresPerReplica: 256,
+					NodesPerReplica: 16,
+					Min:             2,
+				},
 			},
 			KubernetesDashboard: KubernetesDashboard{
 				AdminPrivileges: true,
 				InsecureLogin:   false,
 			},
 			CloudFormationStreaming:            true,
-			HyperkubeImage:                     model.Image{Repo: "quay.io/coreos/hyperkube", Tag: k8sVer, RktPullDocker: false},
+			HyperkubeImage:                     model.Image{Repo: "k8s.gcr.io/hyperkube-amd64", Tag: k8sVer, RktPullDocker: true},
 			AWSCliImage:                        model.Image{Repo: "quay.io/coreos/awscli", Tag: "master", RktPullDocker: false},
 			CalicoNodeImage:                    model.Image{Repo: "quay.io/calico/node", Tag: "v2.6.5", RktPullDocker: false},
 			CalicoCniImage:                     model.Image{Repo: "quay.io/calico/cni", Tag: "v1.11.2", RktPullDocker: false},
@@ -156,6 +188,7 @@ func NewDefaultCluster() *Cluster {
 			CalicoCtlImage:                     model.Image{Repo: "quay.io/calico/ctl", Tag: "v1.6.3", RktPullDocker: false},
 			ClusterAutoscalerImage:             model.Image{Repo: "k8s.gcr.io/cluster-autoscaler", Tag: "v1.1.0", RktPullDocker: false},
 			ClusterProportionalAutoscalerImage: model.Image{Repo: "k8s.gcr.io/cluster-proportional-autoscaler-amd64", Tag: "1.1.2", RktPullDocker: false},
+			KIAMImage:                          model.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.6", RktPullDocker: false},
 			Kube2IAMImage:                      model.Image{Repo: "jtblin/kube2iam", Tag: "0.9.0", RktPullDocker: false},
 			KubeDnsImage:                       model.Image{Repo: "k8s.gcr.io/k8s-dns-kube-dns-amd64", Tag: "1.14.7", RktPullDocker: false},
 			KubeDnsMasqImage:                   model.Image{Repo: "k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64", Tag: "1.14.7", RktPullDocker: false},
@@ -164,11 +197,11 @@ func NewDefaultCluster() *Cluster {
 			ExecHealthzImage:                   model.Image{Repo: "k8s.gcr.io/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
 			HelmImage:                          model.Image{Repo: "quay.io/kube-aws/helm", Tag: "v2.6.0", RktPullDocker: false},
 			TillerImage:                        model.Image{Repo: "gcr.io/kubernetes-helm/tiller", Tag: "v2.7.2", RktPullDocker: false},
-			HeapsterImage:                      model.Image{Repo: "gcr.io/google_containers/heapster", Tag: "v1.4.3", RktPullDocker: false},
-			MetricsServerImage:                 model.Image{Repo: "gcr.io/google_containers/metrics-server-amd64", Tag: "v0.2.0", RktPullDocker: false},
-			AddonResizerImage:                  model.Image{Repo: "gcr.io/google_containers/addon-resizer", Tag: "2.1", RktPullDocker: false},
-			KubernetesDashboardImage:           model.Image{Repo: "gcr.io/google_containers/kubernetes-dashboard-amd64", Tag: "v1.8.0", RktPullDocker: false},
-			PauseImage:                         model.Image{Repo: "gcr.io/google_containers/pause-amd64", Tag: "3.0", RktPullDocker: false},
+			HeapsterImage:                      model.Image{Repo: "k8s.gcr.io/heapster", Tag: "v1.5.0", RktPullDocker: false},
+			MetricsServerImage:                 model.Image{Repo: "k8s.gcr.io/metrics-server-amd64", Tag: "v0.2.1", RktPullDocker: false},
+			AddonResizerImage:                  model.Image{Repo: "k8s.gcr.io/addon-resizer", Tag: "1.8.1", RktPullDocker: false},
+			KubernetesDashboardImage:           model.Image{Repo: "k8s.gcr.io/kubernetes-dashboard-amd64", Tag: "v1.8.1", RktPullDocker: false},
+			PauseImage:                         model.Image{Repo: "k8s.gcr.io/pause-amd64", Tag: "3.1", RktPullDocker: false},
 			FlannelImage:                       model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.9.1", RktPullDocker: false},
 			JournaldCloudWatchLogsImage:        model.Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
 		},
@@ -403,6 +436,7 @@ type ComputedDeploymentSettings struct {
 // Though it is highly configurable, it's basically users' responsibility to provide `correct` values if they're going beyond the defaults.
 type DeploymentSettings struct {
 	ComputedDeploymentSettings
+	CloudFormation              model.CloudFormation  `yaml:"cloudformation,omitempty"`
 	ClusterName                 string                `yaml:"clusterName,omitempty"`
 	KeyName                     string                `yaml:"keyName,omitempty"`
 	Region                      model.Region          `yaml:",inline"`
@@ -427,11 +461,13 @@ type DeploymentSettings struct {
 	SSHAuthorizedKeys       []string          `yaml:"sshAuthorizedKeys,omitempty"`
 	Addons                  model.Addons      `yaml:"addons"`
 	Experimental            Experimental      `yaml:"experimental"`
+	Kubelet                 Kubelet           `yaml:"kubelet"`
 	ManageCertificates      bool              `yaml:"manageCertificates,omitempty"`
 	WaitSignal              WaitSignal        `yaml:"waitSignal"`
 	CloudWatchLogging       `yaml:"cloudWatchLogging,omitempty"`
 	AmazonSsmAgent          `yaml:"amazonSsmAgent,omitempty"`
 	CloudFormationStreaming bool `yaml:"cloudFormationStreaming,omitempty"`
+	KubeProxy               `yaml:"kubeProxy,omitempty"`
 	KubeDns                 `yaml:"kubeDns,omitempty"`
 	KubernetesDashboard     `yaml:"kubernetesDashboard,omitempty"`
 	// Images repository
@@ -445,6 +481,7 @@ type DeploymentSettings struct {
 	CalicoKubeControllersImage         model.Image `yaml:"calicoKubeControllersImage,omitempty"`
 	ClusterAutoscalerImage             model.Image `yaml:"clusterAutoscalerImage,omitempty"`
 	ClusterProportionalAutoscalerImage model.Image `yaml:"clusterProportionalAutoscalerImage,omitempty"`
+	KIAMImage                          model.Image `yaml:"kiamImage,omitempty"`
 	Kube2IAMImage                      model.Image `yaml:"kube2iamImage,omitempty"`
 	KubeDnsImage                       model.Image `yaml:"kubeDnsImage,omitempty"`
 	KubeDnsMasqImage                   model.Image `yaml:"kubeDnsMasqImage,omitempty"`
@@ -515,6 +552,11 @@ type Cluster struct {
 	KubeResourcesAutosave       `yaml:"kubeResourcesAutosave,omitempty"`
 }
 
+// Kubelet options
+type Kubelet struct {
+	RotateCerts RotateCerts `yaml:"rotateCerts"`
+}
+
 type Experimental struct {
 	Admission      Admission      `yaml:"admission"`
 	AuditLog       AuditLog       `yaml:"auditLog"`
@@ -527,6 +569,7 @@ type Experimental struct {
 	TLSBootstrap                TLSBootstrap                   `yaml:"tlsBootstrap"`
 	NodeAuthorizer              NodeAuthorizer                 `yaml:"nodeAuthorizer"`
 	EphemeralImageStorage       EphemeralImageStorage          `yaml:"ephemeralImageStorage"`
+	KIAMSupport                 KIAMSupport                    `yaml:"kiamSupport,omitempty"`
 	Kube2IamSupport             Kube2IamSupport                `yaml:"kube2IamSupport,omitempty"`
 	KubeletOpts                 string                         `yaml:"kubeletOpts,omitempty"`
 	LoadBalancer                LoadBalancer                   `yaml:"loadBalancer"`
@@ -540,10 +583,13 @@ type Experimental struct {
 }
 
 type Admission struct {
-	PodSecurityPolicy  PodSecurityPolicy  `yaml:"podSecurityPolicy"`
-	AlwaysPullImages   AlwaysPullImages   `yaml:"alwaysPullImages"`
-	DenyEscalatingExec DenyEscalatingExec `yaml:"denyEscalatingExec"`
-	Initializers       Initializers       `yaml:"initializers"`
+	PodSecurityPolicy          PodSecurityPolicy          `yaml:"podSecurityPolicy"`
+	AlwaysPullImages           AlwaysPullImages           `yaml:"alwaysPullImages"`
+	DenyEscalatingExec         DenyEscalatingExec         `yaml:"denyEscalatingExec"`
+	Initializers               Initializers               `yaml:"initializers"`
+	Priority                   Priority                   `yaml:"priority"`
+	MutatingAdmissionWebhook   MutatingAdmissionWebhook   `yaml:"mutatingAdmissionWebhook"`
+	ValidatingAdmissionWebhook ValidatingAdmissionWebhook `yaml:"validatingAdmissionWebhook"`
 }
 
 type AlwaysPullImages struct {
@@ -559,6 +605,18 @@ type DenyEscalatingExec struct {
 }
 
 type Initializers struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type Priority struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type MutatingAdmissionWebhook struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type ValidatingAdmissionWebhook struct {
 	Enabled bool `yaml:"enabled"`
 }
 
@@ -591,6 +649,10 @@ type TLSBootstrap struct {
 	Enabled bool `yaml:"enabled"`
 }
 
+type RotateCerts struct {
+	Enabled bool `yaml:"enabled"`
+}
+
 type NodeAuthorizer struct {
 	Enabled bool `yaml:"enabled"`
 }
@@ -599,6 +661,10 @@ type EphemeralImageStorage struct {
 	Enabled    bool   `yaml:"enabled"`
 	Disk       string `yaml:"disk"`
 	Filesystem string `yaml:"filesystem"`
+}
+
+type KIAMSupport struct {
+	Enabled bool `yaml:"enabled"`
 }
 
 type Kube2IamSupport struct {
@@ -662,13 +728,33 @@ type TargetGroup struct {
 	SecurityGroupIds []string `yaml:"securityGroupIds"`
 }
 
+type KubeProxy struct {
+	IPVSMode IPVSMode `yaml:"ipvsMode"`
+}
+
+type IPVSMode struct {
+	Enabled       bool   `yaml:"enabled"`
+	Scheduler     string `yaml:"scheduler"`
+	SyncPeriod    string `yaml:"syncPeriod"`
+	MinSyncPeriod string `yaml:"minSyncPeriod"`
+}
+
+type KubeDnsAutoscaler struct {
+	CoresPerReplica int `yaml:"coresPerReplica"`
+	NodesPerReplica int `yaml:"nodesPerReplica"`
+	Min             int `yaml:"min"`
+}
+
 type KubeDns struct {
-	NodeLocalResolver bool `yaml:"nodeLocalResolver"`
+	NodeLocalResolver   bool              `yaml:"nodeLocalResolver"`
+	DeployToControllers bool              `yaml:"deployToControllers"`
+	Autoscaler          KubeDnsAutoscaler `yaml:"autoscaler"`
 }
 
 func (c *KubeDns) MergeIfEmpty(other KubeDns) {
-	if c.NodeLocalResolver == false {
+	if c.NodeLocalResolver == false && c.DeployToControllers == false {
 		c.NodeLocalResolver = other.NodeLocalResolver
+		c.DeployToControllers = other.DeployToControllers
 	}
 }
 
@@ -845,7 +931,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions, extra ...[]*pluginmodel.
 	var compactAssets *CompactAssets
 
 	if c.AssetsEncryptionEnabled() {
-		compactAssets, err = ReadOrCreateCompactAssets(opts.AssetsDir, c.ManageCertificates, c.Experimental.TLSBootstrap.Enabled, KMSConfig{
+		compactAssets, err = ReadOrCreateCompactAssets(opts.AssetsDir, c.ManageCertificates, c.Experimental.TLSBootstrap.Enabled, c.Experimental.KIAMSupport.Enabled, KMSConfig{
 			Region:         stackConfig.Config.Region,
 			KMSKeyARN:      c.KMSKeyARN,
 			EncryptService: c.ProvidedEncryptService,
@@ -856,7 +942,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions, extra ...[]*pluginmodel.
 
 		stackConfig.Config.AssetsConfig = compactAssets
 	} else {
-		rawAssets, err := ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir, c.ManageCertificates, c.Experimental.TLSBootstrap.Enabled)
+		rawAssets, err := ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir, c.ManageCertificates, c.Experimental.TLSBootstrap.Enabled, c.Experimental.KIAMSupport.Enabled)
 		if err != nil {
 			return nil, err
 		}

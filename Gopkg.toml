@@ -1,0 +1,36 @@
+# Instruct `dep ensure` to not scan deps of the packages which are not part of kube-aws
+# See https://github.com/golang/dep/issues/1329#issuecomment-340435818
+ignored = ["github.com/kubernetes-incubator/kube-aws/hack*"]
+
+[[constraint]]
+  name = "github.com/Masterminds/sprig"
+  version = "2.10.0"
+
+[[constraint]]
+  name = "github.com/aws/aws-sdk-go"
+  version = "1.7.8"
+
+[[constraint]]
+  name = "github.com/coreos/coreos-cloudinit"
+  version = "1.12.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/google/go-github"
+
+[[constraint]]
+  name = "github.com/spf13/cobra"
+
+[[constraint]]
+  name = "github.com/stretchr/testify"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/net"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/oauth2"
+
+[[constraint]]
+  name = "gopkg.in/yaml.v2"

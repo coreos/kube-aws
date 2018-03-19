@@ -1,6 +1,6 @@
 # Known Limitations
 
-## hostPort doesn't work
+## hostPort doesn't work before Kubernetes 1.7.0
 
 This is a known issue with Kubernetes while using CNI with no available workaround for kube-aws. `hostPort` does not work if `hostNetwork: false`.
 
@@ -13,6 +13,8 @@ spec:
    - image: gcr.io/google_containers/nginx-ingress-controller:0.8.3
      name: nginx-ingress-lb
 ```
+
+This is fixed in Kubernetes 1.7.0 and later.
 
 Relevant kube-aws issue: [does hostPort not work on kube-aws/CoreOS?](https://github.com/kubernetes-incubator/kube-aws/issues/91)
 
