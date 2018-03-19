@@ -493,9 +493,6 @@ type DeploymentSettings struct {
 	PauseImage                         model.Image `yaml:"pauseImage,omitempty"`
 	FlannelImage                       model.Image `yaml:"flannelImage,omitempty"`
 	JournaldCloudWatchLogsImage        model.Image `yaml:"journaldCloudWatchLogsImage,omitempty"`
-	EtcdlessCalicoNodeImage            model.Image `yaml:"etcdlessCalicoNodeImage,omitempty"`
-	EtcdlessCalicoCniImage             model.Image `yaml:"etcdlessCalicoCniImage,omitempty"`
-	EtcdlessFlannelCniImage            model.Image `yaml:"etcdlessFlannelCniImage,omitempty"`
 }
 
 // Part of configuration which is specific to worker nodes
