@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"strings"
 	"text/template"
 )
@@ -70,9 +69,6 @@ func NewUserData(templateFile string, context interface{}, opts ...UserDataOptio
 
 	tmpl, err := texttemplate.ParseFile(templateFile, funcs)
 	if err != nil {
-		if tf, e := ioutil.ReadFile(templateFile); e == nil {
-			log.Printf("Bad Template:-\n%s\n", tf)
-		}
 		return UserData{}, err
 	}
 
