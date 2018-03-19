@@ -1,6 +1,8 @@
 package model
 
 import (
+	"log"
+
 	"github.com/coreos/coreos-cloudinit/config/validate"
 	"github.com/kubernetes-incubator/kube-aws/filereader/texttemplate"
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
@@ -139,6 +141,7 @@ func validateCoreosCloudInit(content []byte) error {
 		errors = append(errors, fmt.Sprintf("%+v", entry))
 	}
 	if len(errors) > 0 {
+		log.Printf("Bad cloud-config:-\n%s\n", content)
 		return fmt.Errorf("cloud-config validation errors:\n%s\n", strings.Join(errors, "\n"))
 	}
 	return nil

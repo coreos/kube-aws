@@ -28,6 +28,12 @@ const (
 
 	credentialsDir = "credentials"
 	userDataDir    = "userdata"
+
+	NdsDefaultCalicoNodeImageTag = "v3.0.3"
+	NdsDefaultCalicoCniImageTag  = "v2.0.1"
+	NdsDefaultFlannelImageTag    = "v0.9.1"
+	NdsDefaultFlannelCniImageTag = "v0.3.0"
+	NdsDefaultTyphaImageTag      = "v0.6.2"
 )
 
 func NewDefaultCluster() *Cluster {
@@ -113,6 +119,15 @@ func NewDefaultCluster() *Cluster {
 			ClientId:      "kubernetes",
 			UsernameClaim: "email",
 			GroupsClaim:   "groups",
+		},
+		NetworkingDaemonSets: NetworkingDaemonSets{
+			Enabled:         false,
+			Typha:           false,
+			CalicoNodeImage: model.Image{Repo: "quay.io/calico/node", Tag: NdsDefaultCalicoNodeImageTag, RktPullDocker: false},
+			CalicoCniImage:  model.Image{Repo: "quay.io/calico/cni", Tag: NdsDefaultCalicoCniImageTag, RktPullDocker: false},
+			FlannelImage:    model.Image{Repo: "quay.io/coreos/flannel", Tag: NdsDefaultFlannelImageTag, RktPullDocker: false},
+			FlannelCniImage: model.Image{Repo: "quay.io/coreos/flannel-cni", Tag: NdsDefaultFlannelCniImageTag, RktPullDocker: false},
+			TyphaImage:      model.Image{Repo: "quay.io/calico/typha", Tag: NdsDefaultTyphaImageTag, RktPullDocker: false},
 		},
 	}
 
@@ -458,9 +473,11 @@ type DeploymentSettings struct {
 	KubeDns                 `yaml:"kubeDns,omitempty"`
 	KubernetesDashboard     `yaml:"kubernetesDashboard,omitempty"`
 	// Images repository
-	HyperkubeImage                     model.Image `yaml:"hyperkubeImage,omitempty"`
-	AWSCliImage                        model.Image `yaml:"awsCliImage,omitempty"`
-	CalicoNodeImage                    model.Image `yaml:"calicoNodeImage,omitempty"`
+	HyperkubeImage model.Image `yaml:"hyperkubeImage,omitempty"`
+	AWSCliImage    model.Image `yaml:"awsCliImage,omitempty"`
+
+	CalicoNodeImage model.Image `yaml:"calicoNodeImage,omitempty"`
+
 	CalicoCniImage                     model.Image `yaml:"calicoCniImage,omitempty"`
 	CalicoCtlImage                     model.Image `yaml:"calicoCtlImage,omitempty"`
 	CalicoKubeControllersImage         model.Image `yaml:"calicoKubeControllersImage,omitempty"`
@@ -561,6 +578,7 @@ type Experimental struct {
 	DisableSecurityGroupIngress bool                           `yaml:"disableSecurityGroupIngress"`
 	NodeMonitorGracePeriod      string                         `yaml:"nodeMonitorGracePeriod"`
 	model.UnknownKeys           `yaml:",inline"`
+	NetworkingDaemonSets        NetworkingDaemonSets `yaml:"networkingDaemonSets"`
 }
 
 type Admission struct {
@@ -673,6 +691,16 @@ type LocalStreaming struct {
 	Enabled  bool   `yaml:"enabled"`
 	Filter   string `yaml:"filter"`
 	interval int    `yaml:"interval"`
+}
+
+type NetworkingDaemonSets struct {
+	Enabled         bool        `yaml:"enabled"`
+	Typha           bool        `yaml:"typha"`
+	CalicoNodeImage model.Image `yaml:"calico-node-image"`
+	CalicoCniImage  model.Image `yaml:"calico-cni-image"`
+	FlannelImage    model.Image `yaml:"flannel-image"`
+	FlannelCniImage model.Image `yaml:"flannel-cni-image"`
+	TyphaImage      model.Image `yaml:"typha-image"`
 }
 
 func (c *LocalStreaming) Interval() int64 {

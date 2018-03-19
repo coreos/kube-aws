@@ -37,12 +37,13 @@ exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE
 coreos:
   update:
     reboot-strategy: "off"
+  {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
   flannel:
     interface: $private_ipv4
     etcd_cafile: /etc/kubernetes/ssl/etcd-trusted-ca.pem
     etcd_certfile: /etc/kubernetes/ssl/etcd-client.pem
     etcd_keyfile: /etc/kubernetes/ssl/etcd-client-key.pem
-
+  {{- end }}
   units:
 {{- range $u := .CustomSystemdUnits}}
     - name: {{$u.Name}}
@@ -150,6 +151,7 @@ coreos:
         [Install]
         WantedBy=multi-user.target
 {{end}}
+    {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
     - name: cfn-etcd-environment.service
       enable: true
       command: start
@@ -165,7 +167,7 @@ coreos:
         RemainAfterExit=true
         ExecStartPre=/opt/bin/cfn-etcd-environment
         ExecStart=/usr/bin/mv -f /var/run/coreos/etcd-environment /etc/etcd-environment
-
+    {{ end }}
     - name: docker.service
       drop-ins:
 {{if .Experimental.EphemeralImageStorage.Enabled}}
@@ -181,6 +183,12 @@ coreos:
             RestartSec=10
             ExecStartPost=/usr/bin/docker pull {{.PauseImage.RepoWithTag}}
 
+        - name: 60-logfilelimit.conf
+          content: |
+            [Service]
+            Environment="DOCKER_OPTS=--log-opt max-size=50m --log-opt max-file=3"
+
+        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
         - name: 40-flannel.conf
           content: |
             [Unit]
@@ -188,12 +196,25 @@ coreos:
             [Service]
             EnvironmentFile=/etc/kubernetes/cni/docker_opts_cni.env
             ExecStartPre=/usr/bin/systemctl is-active flanneld.service
+        {{- end }}
+    
+    {{ if .Experimental.NetworkingDaemonSets.Enabled -}}
+    - name: flanneld.service
+      enable: false
+    {{ if .AssetsEncryptionEnabled -}}
+    - name: decrypt-assets.service
+      enable: true
+      command: start
+      content: |
+        [Unit]
+        Description=Convert encrypted credentials
 
-        - name: 60-logfilelimit.conf
-          content: |
-            [Service]
-            Environment="DOCKER_OPTS=--log-opt max-size=50m --log-opt max-file=3"
-
+        [Service]
+        Type=oneshot
+        RemainAfterExit=true
+        ExecStart=/opt/bin/decrypt-assets
+    {{ end -}}
+    {{ else -}}
     - name: flanneld.service
       drop-ins:
         - name: 10-etcd.conf
@@ -236,27 +257,38 @@ coreos:
             Environment="FLANNEL_IMAGE={{.FlannelImage.RktRepo}}"
             Environment="RKT_RUN_ARGS={{.FlannelImage.Options}} --uuid-file-save=/var/lib/coreos/flannel-wrapper2.uuid"
 {{end}}
+    {{- end}}
     - name: kubelet.service
       command: start
       runtime: true
       content: |
         [Unit]
+        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
         Wants=flanneld.service cfn-etcd-environment.service
         After=cfn-etcd-environment.service
+        {{ else -}}
+        Wants=decrypt-assets.service
+        After=decrypt-assets.service
+        {{- end }}
         {{- if .Gpu.Nvidia.IsEnabledOn .InstanceType }}
         Requires=nvidia-start.service
         After=nvidia-start.service
         {{- end }}
+        
         [Service]
         EnvironmentFile=/etc/environment
-        EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=-/etc/default/kubelet
+        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+        EnvironmentFile=-/etc/etcd-environment
+        {{- end }}
         Environment=KUBELET_IMAGE_TAG={{.K8sVer}}
         Environment=KUBELET_IMAGE_URL={{.HyperkubeImage.RktRepoWithoutTag}}
         Environment="RKT_RUN_ARGS=--volume dns,kind=host,source=/etc/resolv.conf {{.HyperkubeImage.Options}}\
+        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
         --set-env=ETCD_CA_CERT_FILE=/etc/kubernetes/ssl/etcd-trusted-ca.pem \
         --set-env=ETCD_CERT_FILE=/etc/kubernetes/ssl/etcd-client.pem \
         --set-env=ETCD_KEY_FILE=/etc/kubernetes/ssl/etcd-client-key.pem \
+        {{ end -}}
         --mount volume=dns,target=/etc/resolv.conf \
         {{ if eq .ContainerRuntime "rkt" -}}
         --volume rkt,kind=host,source=/opt/bin/host-rkt \
@@ -269,15 +301,25 @@ coreos:
         --volume var-lib-cni,kind=host,source=/var/lib/cni \
         --mount volume=var-lib-cni,target=/var/lib/cni \
         --volume var-log,kind=host,source=/var/log \
-        --mount volume=var-log,target=/var/log{{ if .UseCalico }} \
+        --mount volume=var-log,target=/var/log \
         --volume cni-bin,kind=host,source=/opt/cni/bin \
-        --mount volume=cni-bin,target=/opt/cni/bin{{ end }}"
+        --mount volume=cni-bin,target=/opt/cni/bin"
+        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
         ExecStartPre=/usr/bin/systemctl is-active flanneld.service
         ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
+        ExecStartPre=/usr/bin/etcdctl \
+                --ca-file /etc/kubernetes/ssl/etcd-trusted-ca.pem \
+                --key-file /etc/kubernetes/ssl/etcd-client-key.pem \
+                --cert-file /etc/kubernetes/ssl/etcd-client.pem \
+                --endpoints "${ETCD_ENDPOINTS}" \
+                cluster-health
+        {{ end -}}
         ExecStartPre=/usr/bin/mkdir -p /var/lib/cni
         ExecStartPre=/usr/bin/mkdir -p /var/log/containers
         ExecStartPre=/usr/bin/mkdir -p /opt/cni/bin
         ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
+        ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/cni/net.d
+        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/manifests /etc/kubernetes/cni/net.d/  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
         ExecStartPre=/usr/bin/etcdctl \
                        --ca-file /etc/kubernetes/ssl/etcd-trusted-ca.pem \
@@ -287,7 +329,8 @@ coreos:
                        cluster-health
         {{if .UseCalico -}}
         ExecStartPre=/usr/bin/docker run --rm -e SLEEP=false -e KUBERNETES_SERVICE_HOST= -e KUBERNETES_SERVICE_PORT= -v /opt/cni/bin:/host/opt/cni/bin {{ .CalicoCniImage.RepoWithTag }} /install-cni.sh
-        {{end -}}
+        {{ end -}}
+        {{- end }}
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
         {{/* Work-around until https://github.com/kubernetes/kubernetes/issues/43967 is fixed via https://github.com/kubernetes/kubernetes/pull/43995 */ -}}
@@ -296,7 +339,7 @@ coreos:
         --container-runtime={{.ContainerRuntime}} \
         --rkt-path=/usr/bin/rkt \
         --rkt-stage1-image=coreos.com/rkt/stage1-coreos \
-        --node-labels kubernetes.io/role=node{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
+        --node-labels=kubernetes.io/role=node{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
         --register-node=true \
         {{if .Taints}}--register-with-taints={{.Taints.String}}\
         {{end}}--allow-privileged=true \
@@ -454,9 +497,9 @@ coreos:
         Type=oneshot
         EnvironmentFile={{.StackNameEnvFileName}}
         ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl  --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null ; then break ; fi;  done"
-        {{ if .UseCalico }}
+        {{ if (and (not .Experimental.NetworkingDaemonSets.Enabled) .UseCalico) -}}
         ExecStartPre=/usr/bin/bash -c "until /usr/bin/docker run --net=host --pid=host --rm {{ .CalicoCtlImage.RepoWithTag }} node status > /dev/null; do sleep 3; done && echo Calico running"
-        {{ end }}
+        {{- end }}
         ExecStart=/opt/bin/cfn-signal
 {{end}}
 
@@ -754,6 +797,7 @@ write_files:
 
       rkt rm --uuid-file=/var/run/coreos/cfn-signal.uuid || :
 
+  {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
   - path: /opt/bin/cfn-etcd-environment
     owner: root:root
     permissions: 0700
@@ -775,6 +819,7 @@ write_files:
           '
 
       rkt rm --uuid-file=/var/run/coreos/cfn-etcd-environment.uuid || :
+  {{- end }}
 
   - path: /etc/default/kubelet
     permissions: 0755
@@ -1054,6 +1099,7 @@ write_files:
         current-context: kubelet-context
 {{ end }}
 
+{{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
 {{ if not .UseCalico }}
   - path: /etc/kubernetes/cni/net.d/10-flannel.conf
     content: |
@@ -1094,6 +1140,7 @@ write_files:
         }
       }
 {{ end }}
+{{- end }}
 
 {{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
   - path: /etc/kubernetes/auth/kubelet-tls-bootstrap-token.tmp{{if .AssetsEncryptionEnabled}}.enc{{end}}

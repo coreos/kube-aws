@@ -149,6 +149,15 @@ func TestMainClusterConfig(t *testing.T) {
 				Enabled:      false,
 				DrainTimeout: 5,
 			},
+			NetworkingDaemonSets: controlplane_config.NetworkingDaemonSets{
+				Enabled:         false,
+				Typha:           false,
+				CalicoNodeImage: model.Image{Repo: "quay.io/calico/node", Tag: controlplane_config.NdsDefaultCalicoNodeImageTag, RktPullDocker: false},
+				CalicoCniImage:  model.Image{Repo: "quay.io/calico/cni", Tag: controlplane_config.NdsDefaultCalicoCniImageTag, RktPullDocker: false},
+				FlannelImage:    model.Image{Repo: "quay.io/coreos/flannel", Tag: controlplane_config.NdsDefaultFlannelImageTag, RktPullDocker: false},
+				FlannelCniImage: model.Image{Repo: "quay.io/coreos/flannel-cni", Tag: controlplane_config.NdsDefaultFlannelCniImageTag, RktPullDocker: false},
+				TyphaImage:      model.Image{Repo: "quay.io/calico/typha", Tag: controlplane_config.NdsDefaultTyphaImageTag, RktPullDocker: false},
+			},
 		}
 
 		actual := c.Experimental
@@ -1375,6 +1384,15 @@ worker:
 						NodeDrainer: model.NodeDrainer{
 							Enabled:      true,
 							DrainTimeout: 3,
+						},
+						NetworkingDaemonSets: controlplane_config.NetworkingDaemonSets{
+							Enabled:         false,
+							Typha:           false,
+							CalicoNodeImage: model.Image{Repo: "quay.io/calico/node", Tag: controlplane_config.NdsDefaultCalicoNodeImageTag, RktPullDocker: false},
+							CalicoCniImage:  model.Image{Repo: "quay.io/calico/cni", Tag: controlplane_config.NdsDefaultCalicoCniImageTag, RktPullDocker: false},
+							FlannelImage:    model.Image{Repo: "quay.io/coreos/flannel", Tag: controlplane_config.NdsDefaultFlannelImageTag, RktPullDocker: false},
+							FlannelCniImage: model.Image{Repo: "quay.io/coreos/flannel-cni", Tag: controlplane_config.NdsDefaultFlannelCniImageTag, RktPullDocker: false},
+							TyphaImage:      model.Image{Repo: "quay.io/calico/typha", Tag: controlplane_config.NdsDefaultTyphaImageTag, RktPullDocker: false},
 						},
 					}
 
