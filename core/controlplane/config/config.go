@@ -1,10 +1,5 @@
 package config
 
-//go:generate go run ../../../codegen/templates_gen.go CloudConfigController=cloud-config-controller CloudConfigWorker=cloud-config-worker CloudConfigEtcd=cloud-config-etcd DefaultClusterConfig=cluster.yaml KubeConfigTemplate=kubeconfig.tmpl StackTemplateTemplate=stack-template.json
-//go:generate gofmt -w templates.go
-//go:generate go run ../../../codegen/files_gen.go Etcdadm=../../../etcdadm/etcdadm
-//go:generate gofmt -w files.go
-
 import (
 	"encoding/json"
 	"errors"
