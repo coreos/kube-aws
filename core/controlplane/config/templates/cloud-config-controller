@@ -4466,7 +4466,7 @@ write_files:
       retries=5
 
       kubectl() {
-        docker run --rm -i --net=host -v /etc/kubernetes:/etc/kubernetes:ro -v /etc/resolv.conf:/etc/resolv.conf:ro quay.io/coreos/hyperkube:v1.8.7_coreos.0 /kubectl "$@"
+        docker run --rm -i --net=host -v /etc/kubernetes:/etc/kubernetes:ro -v /etc/resolv.conf:/etc/resolv.conf:ro {{.HyperkubeImage.RepoWithTag}} /kubectl "$@"
       }
 
       log() {
