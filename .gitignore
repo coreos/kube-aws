@@ -16,3 +16,4 @@ _book
 *.mobi
 *.pdf
 node_modules
+kube-aws

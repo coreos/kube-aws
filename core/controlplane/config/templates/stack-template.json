@@ -1295,6 +1295,34 @@
       },
       "Type": "AWS::EC2::SecurityGroup"
     },
+    "SecurityGroupWorkerIngressFromControllerToTypha": {
+      "Properties": {
+        "FromPort": 5473,
+        "GroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "ToPort": 5473
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToTypha": {
+      "Properties": {
+        "FromPort": 5473,
+        "GroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 5473
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
     "SecurityGroupWorkerIngressFromControllerToFlannel": {
       "Properties": {
         "FromPort": 8472,
