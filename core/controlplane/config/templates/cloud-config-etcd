@@ -154,6 +154,8 @@ coreos:
         Type=oneshot
         RemainAfterExit=yes
         RestartSec=5
+        Environment=ETCDADM_MEMBER_ENV_FILE=/var/run/coreos/etcdadm/etcd-member.env
+        Environment=ETCD_VERSION={{ .Etcd.Version }}
         EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=-/var/run/coreos/etcdadm-environment
         ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
@@ -284,6 +286,7 @@ coreos:
           content: |
             [Service]
             Environment="ETCD_IMAGE_TAG=v{{.Etcd.Version}}"
+            EnvironmentFile=-/var/run/coreos/etcdadm/etcd-member.env
         {{end}}
       enable: true
       command: start

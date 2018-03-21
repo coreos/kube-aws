@@ -1376,6 +1376,15 @@ worker:
 							Enabled:      true,
 							DrainTimeout: 3,
 						},
+						NetworkingDaemonSets: controlplane_config.NetworkingDaemonSets{
+							Enabled:         false,
+							Typha:           false,
+							CalicoNodeImage: model.Image{Repo: "quay.io/calico/node", Tag: "v3.0.3", RktPullDocker: false},
+							CalicoCniImage:  model.Image{Repo: "quay.io/calico/cni", Tag: "v2.0.1", RktPullDocker: false},
+							FlannelImage:    model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.9.1", RktPullDocker: false},
+							FlannelCniImage: model.Image{Repo: "quay.io/coreos/flannel-cni", Tag: "v0.3.0", RktPullDocker: false},
+							TyphaImage:      model.Image{Repo: "quay.io/calico/typha", Tag: "v0.6.2", RktPullDocker: false},
+						},
 					}
 
 					actual := c.Experimental

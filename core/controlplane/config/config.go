@@ -114,6 +114,15 @@ func NewDefaultCluster() *Cluster {
 			UsernameClaim: "email",
 			GroupsClaim:   "groups",
 		},
+		NetworkingDaemonSets: NetworkingDaemonSets{
+			Enabled:         false,
+			Typha:           false,
+			CalicoNodeImage: model.Image{Repo: "quay.io/calico/node", Tag: "v3.0.3", RktPullDocker: false},
+			CalicoCniImage:  model.Image{Repo: "quay.io/calico/cni", Tag: "v2.0.1", RktPullDocker: false},
+			FlannelImage:    model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.9.1", RktPullDocker: false},
+			FlannelCniImage: model.Image{Repo: "quay.io/coreos/flannel-cni", Tag: "v0.3.0", RktPullDocker: false},
+			TyphaImage:      model.Image{Repo: "quay.io/calico/typha", Tag: "v0.6.2", RktPullDocker: false},
+		},
 	}
 
 	ipvsMode := IPVSMode{
@@ -458,9 +467,11 @@ type DeploymentSettings struct {
 	KubeDns                 `yaml:"kubeDns,omitempty"`
 	KubernetesDashboard     `yaml:"kubernetesDashboard,omitempty"`
 	// Images repository
-	HyperkubeImage                     model.Image `yaml:"hyperkubeImage,omitempty"`
-	AWSCliImage                        model.Image `yaml:"awsCliImage,omitempty"`
-	CalicoNodeImage                    model.Image `yaml:"calicoNodeImage,omitempty"`
+	HyperkubeImage model.Image `yaml:"hyperkubeImage,omitempty"`
+	AWSCliImage    model.Image `yaml:"awsCliImage,omitempty"`
+
+	CalicoNodeImage model.Image `yaml:"calicoNodeImage,omitempty"`
+
 	CalicoCniImage                     model.Image `yaml:"calicoCniImage,omitempty"`
 	CalicoCtlImage                     model.Image `yaml:"calicoCtlImage,omitempty"`
 	CalicoKubeControllersImage         model.Image `yaml:"calicoKubeControllersImage,omitempty"`
@@ -561,6 +572,7 @@ type Experimental struct {
 	DisableSecurityGroupIngress bool                           `yaml:"disableSecurityGroupIngress"`
 	NodeMonitorGracePeriod      string                         `yaml:"nodeMonitorGracePeriod"`
 	model.UnknownKeys           `yaml:",inline"`
+	NetworkingDaemonSets        NetworkingDaemonSets `yaml:"networkingDaemonSets"`
 }
 
 type Admission struct {
@@ -673,6 +685,16 @@ type LocalStreaming struct {
 	Enabled  bool   `yaml:"enabled"`
 	Filter   string `yaml:"filter"`
 	interval int    `yaml:"interval"`
+}
+
+type NetworkingDaemonSets struct {
+	Enabled         bool        `yaml:"enabled"`
+	Typha           bool        `yaml:"typha"`
+	CalicoNodeImage model.Image `yaml:"calico-node-image"`
+	CalicoCniImage  model.Image `yaml:"calico-cni-image"`
+	FlannelImage    model.Image `yaml:"flannel-image"`
+	FlannelCniImage model.Image `yaml:"flannel-cni-image"`
+	TyphaImage      model.Image `yaml:"typha-image"`
 }
 
 func (c *LocalStreaming) Interval() int64 {
