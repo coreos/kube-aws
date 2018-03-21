@@ -85,6 +85,21 @@ coreos:
 {{- end}}
     - name: systemd-modules-load.service
       command: restart
+
+    - name: legacy-device.service
+      command: start
+      content: |
+        [Unit]
+        Description=creates the block devices as specified in ebs volume creation
+
+        [Service]
+        Type=oneshot
+{{if .EC2Instance.HasNvmeDevices}}
+        ExecStart=-/opt/nvme-hack/ebs-nvme-mapping
+{{else}}
+        ExecStart=-/bin/true
+{{end}}
+
 {{range $volumeMountSpecIndex, $volumeMountSpec := .VolumeMounts}}
     - name: format-{{$volumeMountSpec.SystemdMountName}}.service
       command: start
@@ -92,6 +107,7 @@ coreos:
         [Unit]
         Description=Formats the EBS persistent volume drive for {{$volumeMountSpec.Device}}
         Before=local-fs-pre.target
+        Requires=legacy-device.service
 
         [Service]
         Type=oneshot
@@ -131,6 +147,7 @@ coreos:
         [Unit]
         Description=Assembles and Formats the Raid0 EBS backed persistent volume mounted on {{$raid0MountSpec.Path}}
         Before=local-fs-pre.target
+        Requires=legacy-device.service
 
         [Service]
         Type=oneshot
@@ -1640,6 +1657,34 @@ write_files:
               sleep $attempt_interval_sec;
           fi
       done
+
+{{ end }}
+{{ if .EC2Instance.HasNvmeDevices }}
+  - path: /opt/nvme-hack/ebs-nvme-mapping
+    owner: root:root
+    permissions: 0755
+    content: |
+      #! /bin/bash
+      PATH="${PATH}:/usr/sbin"
+
+      for blkdev in $( nvme list | awk '/^\/dev/ { print $1 }' ) ; do
+        mapping=$(nvme id-ctrl --raw-binary "${blkdev}" | cut -c3073-3104 | tr -s ' ' | sed 's/ $//g')
+        if [[ "${mapping}" == /dev/* ]]; then
+          ( test -b "${blkdev}" && test -L "${mapping}" ) || ln -s "${blkdev}" "${mapping}"
+        else
+          mapping="/dev/${mapping}"
+          if [[ "${mapping}" == /dev/* ]]; then
+            ( test -b "${blkdev}" && test -L "${mapping}" ) || ln -s "${blkdev}" "${mapping}"
+          fi
+        fi
+      done
+
+  - path: /opt/nvme-hack/99-aws-ebs-nvme.rules
+    owner: root:root
+    permissions: 0644
+    content: |
+      # Create the legacy device node for the volume mount and raid0 startup
+      ACTION=="add", SUBSYSTEM=="block", KERNEL=="nvme[1-26]n1", ATTRS{model}=="Amazon Elastic Block Store              ", RUN+="/opt/nvme-hack/ebs-nvme-mapping"
 
 {{ end }}
 {{ end }}
