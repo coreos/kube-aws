@@ -1333,15 +1333,15 @@ experimental:
   # Must be N times more than kubelet's nodeStatusUpdateFrequency (default 10s).
   # nodeMonitorGracePeriod: "40s"
 
-  # Configure Calico and Flannel networking to deployed as daemonset which use the kubernetes API as their backing stores.
-  # This removes the need for nodes (except controllers) to connect to etcd for managing cluster networking and
-  # addresses cluster role issue: https://github.com/coreos/flannel/issues/954
+  # Configure Calico and Flannel networking to deployed as a daemonset with kubernetes API as their backing stores.
+  # This removes the need for nodes (except controllers) connecting to etcd and frees up node podCIDR leases faster -
+  # addressing cluster role issue: https://github.com/coreos/flannel/issues/954.
   # Use the top level cluster.yaml setting 'useCalico' to switch between calico+flannel or flannel.
   # Consider enabling Typha if you have more than 50 Kubernetes nodes in your cluster. 
   # Without Typha, the load on the API server and Felix’s CPU usage increases substantially as the number of nodes is increased.
-  # WARNING: Migration to networking daemonsets can be deployed to an existing cluster with no more disruption than a regular
-  # cluster role where worker nodes are rolled, but rolling back or susequently disabling networkingDaemonSets will cause 
-  # a major disruption of services until all of the existing nodes have been rolled/replaced.
+  # WARNING: Migration to networking daemonsets can be cleanly deployed into an existing cluster with no more disruption than a regular
+  # cluster role, but rolling back or susequently disabling networkingDaemonSets will cause a major disruption of services until 
+  # all of the nodes have been rolled/replaced.
   
   # Settings with their default values: -
   #networkingDaemonSets:
