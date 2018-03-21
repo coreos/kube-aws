@@ -35,6 +35,60 @@ coreos:
     etcd_keyfile: /etc/kubernetes/ssl/etcd-client-key.pem
   {{- end }}
   units:
+{{/* RUN-509 Remove vault-based certs */}}
+    - name: refresh-sa-secret.service
+      enable: true
+      command: start
+      content: |
+        [Unit]
+        Description=Generates and updates ServiceAccount keys
+        After=bootstrap-serviceaccount-key.service kubelet.service network-online.target
+        Wants=kubelet.service
+
+        [Service]
+        Type=simple
+        Restart=on-failure
+        RestartSec=30
+        # keys expire every 30 days
+        Environment=KEY_EXPIRE_PERIOD_SEC=2592000
+        # attempt to renew keys 5 days before expire time
+        Environment=KEY_RENEW_THRESHOLD_SEC=432000
+        ExecStartPre=/usr/bin/systemctl is-active kubelet
+        ExecStartPre=/opt/bin/refresh-sa-secret /etc/kubernetes/ssl/serviceaccount-key.pem
+        ExecStart=/bin/true
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: refresh-sa-secret.timer
+      enable: true
+      command: start
+      content: |
+        [Timer]
+        OnUnitInactiveSec=10m
+
+    - name: bootstrap-serviceaccount-key.service
+      enable: true
+      command: start
+      content: |
+        [Unit]
+        # This key is actually never used to create ServiceAccount secret, because
+        # SA secret creation is done in controller-manager which will be failing to start
+        # until serviceaccount-key.pem.controller is created by 'refresh-sa-secret.service'
+        # So whole purpose of this file is to allow APIserver to start and let `refresh-sa-secret.service`
+        # to do it's job
+        Description=Creates initial SA key to allow apiserver to start on first boot
+        Before=kubelet.service
+        Requires=network-online.target
+
+        [Service]
+        Type=oneshot
+        ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/ssl
+        ExecStart=/bin/sh -ec '[ -f /etc/kubernetes/ssl/serviceaccount-key.pem.apiserver ] || openssl ecparam -name prime256v1 -genkey -out /etc/kubernetes/ssl/serviceaccount-key.pem.apiserver'
+        [Install]
+        WantedBy=kubelet.service
+
+{{/* RUN-509 Remove vault-based certs */}}
 {{- range $u := .Controller.CustomSystemdUnits}}
     - name: {{$u.Name}}
       {{- if $u.Command }}
@@ -550,6 +604,176 @@ write_files:
       PrintMotd no # handled by PAM
       PasswordAuthentication no
       ChallengeResponseAuthentication no
+{{/* RUN-509 Remove vault-based certs */}}  
+  - path: /opt/bin/refresh-sa-secret
+    permissions: 0755
+    content: |
+      #!/bin/bash
+      set -ue
+
+      # Script tries to coordinate secret update/creation among multiple independend nodes. Only coordination
+      # primitive it is using is `kubectl create` which is assumed to be atomic and race-free (==
+      # if simultaneous `kubectl create` commands issued, only one can possibly return success)
+
+      # Script need to be careful to maintain following MUST HAVE properties:
+      #  1. Every cert written to secrets must stay there and never overwriten by a new one.
+      #     So if we have 2 active certs [A,B], there can never be update [A,B,C], followed up
+      #     with [A,B,C']. If that happens, "C" cert, no matter how little time it
+      #     stayed in secrets, can possibly be used to generate service account tokens, therefore
+      #     overwriting it with "C'" would break all pods which were started
+      #
+
+      : ${LOCK_EXPIRE_TIMEOUT_SECONDS:=20}  # maximum time any operation under lock can take
+      : ${KEY_EXPIRE_PERIOD_SEC:=$(( 60*60*24*365*2 ))} # 2 years
+      : ${KEY_RENEW_THRESHOLD_SEC:=$(( $KEY_EXPIRE_PERIOD_SEC - 30 ))}  # time left before expire, when to attempt key renew
+      KEY_EXPIRE_THRESHOLD_SECONDS=$(( KEY_EXPIRE_PERIOD_SEC - KEY_RENEW_THRESHOLD_SEC ))
+      UPDATE_OPERATION_TIMEOUT=$(( LOCK_EXPIRE_TIMEOUT_SECONDS / 2 ))
+
+      P=serviceaccount-keys
+
+      # produces secret resource definition. .
+      # second argument is optional and goes into 'data' field and must be a string value
+      secret() {
+        local name=$1
+        if (( $# > 1 )); then
+            local T=$(mktemp /tmp/sakey/tmp.XXXXXXX)
+            echo "$2" >$T
+            kubectl --namespace=kube-system create secret generic "${name}" --from-file="keypairs=$T" --dry-run -o json
+            rm $T
+        else
+            kubectl --namespace=kube-system create secret generic "${name}" --dry-run -o json
+        fi
+      }
+
+      kubectl() {
+        docker run --rm -i --net=host -v /tmp/sakey:/tmp/sakey -v /etc/kubernetes:/etc/kubernetes:ro -v /etc/resolv.conf:/etc/resolv.conf:ro {{.HyperkubeImage.RepoWithTag}} /kubectl "$@"
+      }
+
+      log() {
+        >&2 echo "$@"
+      }
+
+      gen_new_key() {
+        openssl ecparam -name prime256v1 -genkey -noout
+      }
+
+      get_key() {
+        local name=$1
+        kubectl --namespace=kube-system get -o json secret "${name}"
+      }
+
+      init_key() {
+        local name=$1
+        secret "${name}" '[]' | kubectl --namespace=kube-system create -f -
+      }
+
+      # caller MUST guarantee that it has right to update this key == no other servers will try to update it
+      update_secret() {
+          local name=$1
+          local data=$2
+          local new_keypairs new_secret
+
+          local new_keypairs keypairs_b64
+          new_keypairs=$(get_key "${name}" \
+            | jq -er '.data.keypairs' \
+            | base64 -d \
+            | jq --arg new_key "${data}" -er \
+              '([ {key: $new_key, createdAt: now} ] + .) | tojson')
+          new_secret=$(secret "${name}" "${new_keypairs}")
+          have_good_secret "${new_secret}" || {
+              log "** ERROR/BUG: We generated a key, but didn't produce result which passes 'have_good_secret' check. K8S secret will not be updated"
+              return 1
+          }
+          kubectl --namespace=kube-system --request-timeout="${UPDATE_OPERATION_TIMEOUT}s" replace -f - <<<"${new_secret}"
+      }
+
+      # expects a single arg `secret_json`, which is a content of secret in k8s
+      # it examines certs stored in it and identifies if it is a good one to be used, or
+      # we need a better one
+      have_good_secret() {
+          local secret=$1
+          log "Check that first key doesn't expire within threshold=${KEY_EXPIRE_THRESHOLD_SECONDS} seconds"
+          [[ -n "${secret}" ]] || return $?
+          jq -er '.data.keypairs' <<<"${secret}" | base64 -d | jq --arg expire_threshold ${KEY_EXPIRE_THRESHOLD_SECONDS} -e \
+            '.[0].createdAt as $createdAt
+            | $createdAt != null
+              and now - $createdAt < ($expire_threshold|tonumber)'
+      }
+
+      release_lock() {
+        local name=$1
+        kubectl --namespace=kube-system delete secret/"${name}"
+      }
+
+      # "Lock" here is an atomically created sa-key-lock secret
+      acquire_lock() {
+          local name=$1
+          log "acquire_lock ${name}"
+          secret "${name}" | kubectl --namespace=kube-system create -f - || {
+              log -n "acquire_lock failed, checking if lock is stale"
+              get_key "${name}" | jq -e "now - (.metadata.creationTimestamp|fromdate) < $LOCK_EXPIRE_TIMEOUT_SECONDS" >/dev/null || {
+                  log "${name} is a stale lock, deleting it so it can be reacquired"
+                  release_lock ${name} || log "Lock deletion failed, but we ignore this error as it is racey"
+              }
+              return 1  # need to return error, to indicate we failed to aquire lock, so that caller can try again
+          }
+      }
+
+      update_key() {
+        local key=$1
+        local new_secret=$2
+        local filter=$3
+        local updated="false"
+
+        local new_keys=$(jq -er '.data.keypairs' <<<"${new_secret}" | base64 -d | jq -er '.[].key') || :       
+
+        if [[ ! -f "${key}" ]]; then
+          log "creating missing file ${key}"
+          echo "${new_keys}" >$key
+          updated="true"
+        else
+          if [[ "$(cat ${key})" != "${new_keys}" ]]; then
+            log "${key} is out of date, updating..."
+            echo "${new_keys}" >$key
+            updated="true"
+          else
+            log "ok - ${key} matches - ok, nothing to do"
+          fi
+        fi
+
+        if [[ "${updated}" == "true" ]]; then
+          log "killing docker container matching ${filter}"
+          docker ps --filter name=$filter -q | xargs --no-run-if-empty docker rm -f
+        fi
+      }
+
+      # MAIN
+
+      init_key "$P" &>/dev/null || :  # ignore errors if key can't be created if it was by someone else
+      SECRET_JSON=$(get_key "$P") || :
+
+      while ! have_good_secret "$SECRET_JSON"; do
+        log "Secret not good: ${SECRET_JSON}"
+        : ${new_key_json:=$(gen_new_key)}
+        if acquire_lock "${P}-lock"; then
+          echo "Successfully aquired lock, updating secret."
+          update_secret "$P" "$new_key_json" || { release_lock "${P}-lock"; exit 1; } # populate_key_with_data is guaranteed to complete in < LOCK_EXPIRE time
+          release_lock "${P}-lock"
+          SECRET_JSON=$(get_key "$P") || :
+          break
+        else
+          log "Error or somebody else acquired lock, waiting sleeping for 10 seconds"
+          sleep 10
+        fi
+        SECRET_JSON=$(get_key "$P") || :
+      done
+
+      # Once we have run it is ok for apiservers to bind to 0.0.0.0
+      sed -e 's/bind-address=127.0.0.1/bind-address=0.0.0.0/g' -i /etc/kubernetes/manifests/kube-apiserver.yaml
+      update_key "$1.apiserver" "${SECRET_JSON}" "k8s_kube-apiserver*"
+      update_key "$1.controller" "${SECRET_JSON}" "k8s_kube-controller-manager*"
+
+{{/* RUN-509 Remove vault-based certs */}}
 {{- if .Controller.CustomFiles}}
   {{- range $w := .Controller.CustomFiles}}
   - path: {{$w.Path}}
@@ -817,7 +1041,9 @@ write_files:
     content: |
       #!/bin/bash -e
 
-      vols="-v /srv/kubernetes:/srv/kubernetes"
+{{/* RUN-578 Introduce Dex */}}
+      vols="-v /srv/kubernetes:/srv/kubernetes -v /etc/kubernetes:/etc/kubernetes"
+{{/* RUN-578 Introduce Dex */}}
 
       kubectl() {
           # --request-timeout=1s is intended to instruct kubectl to give up discovering unresponsive apiservice(s) in certain periods
@@ -936,6 +1162,12 @@ write_files:
 
       # Deployments
       applyall "${mfdir}"/{kube-dns,kube-dns-autoscaler,kubernetes-dashboard,{{ if .Addons.ClusterAutoscaler.Enabled }}cluster-autoscaler,{{ end }}heapster{{ if .KubeResourcesAutosave.Enabled }},kube-resources-autosave{{ end }}}"-de.yaml"
+
+{{/* RUN-605 Add Flyte */}}
+      {{ if .CustomSettings.Flyte.Enabled }}
+      kubectl apply -f "${mfdir}/flyte-konveyor.yaml"
+      {{ end }}
+{{/* RUN-605 Add Flyte */}}
 
       # Daemonsets
       applyall "${mfdir}"/kube-proxy"-ds.yaml"
@@ -1864,6 +2096,893 @@ write_files:
         name: nds-canal
         namespace: kube-system
 
+<<<<<<< HEAD
+=======
+  - path: /opt/bin/host-rkt
+    permissions: 0755
+    owner: root:root
+    content: |
+      #!/bin/sh
+      # This is bind mounted into the kubelet rootfs and all rkt shell-outs go
+      # through this rkt wrapper. It essentially enters the host mount namespace
+      # (which it is already in) only for the purpose of breaking out of the chroot
+      # before calling rkt. It makes things like rkt gc work and avoids bind mounting
+      # in certain rkt filesystem dependancies into the kubelet rootfs. This can
+      # eventually be obviated when the write-api stuff gets upstream and rkt gc is
+      # through the api-server. Related issue:
+      # https://github.com/coreos/rkt/issues/2878
+      exec nsenter -m -u -i -n -p -t 1 -- /usr/bin/rkt "$@"
+
+  - path: /srv/kubernetes/manifests/canal.yaml
+    content: |
+      # Canal Version v3.0.3
+      # https://docs.projectcalico.org/v3.0/releases#v3.0.3
+      # This manifest includes the following component versions:
+      #   calico/node:v3.0.3
+      #   calico/cni:v2.0.1
+      #   coreos/flannel:
+
+      # This ConfigMap can be used to configure a self-hosted Canal installation.
+      kind: ConfigMap
+      apiVersion: v1
+      metadata:
+        name: nds-canal-config
+        namespace: kube-system
+      data:
+        # The interface used by canal for host <-> host communication.
+        # If left blank, then the interface is chosen using the node's
+        # default route.
+        canal_iface: ""
+
+        # Whether or not to masquerade traffic to destinations not within
+        # the pod network.
+        masquerade: "true"
+
+        # To enable Typha, set this to "calico-typha" *and* set a non-zero value for Typha replicas
+        # below.  We recommend using Typha if you have more than 50 nodes. Above 100 nodes it is
+        # essential.
+        {{ if .Experimental.NetworkingDaemonSets.Typha -}}
+        typha_service_name: "calico-typha"
+        {{ else -}}
+        typha_service_name: "none"
+        {{- end }}
+
+        # The CNI network configuration to install on each node.
+        cni_network_config: |-
+          {
+              "name": "k8s-pod-network",
+              "cniVersion": "0.3.0",
+              "plugins": [
+                  {
+                      "type": "calico",
+                      "log_level": "info",
+                      "datastore_type": "kubernetes",
+                      "nodename": "__KUBERNETES_NODE_NAME__",
+                      "ipam": {
+                          "type": "host-local",
+                          "subnet": "usePodCidr"
+                      },
+                      "policy": {
+                          "type": "k8s",
+                          "k8s_auth_token": "__SERVICEACCOUNT_TOKEN__"
+                      },
+                      "kubernetes": {
+                          "k8s_api_root": "https://__KUBERNETES_SERVICE_HOST__:__KUBERNETES_SERVICE_PORT__",
+                          "kubeconfig": "__KUBECONFIG_FILEPATH__"
+                      }
+                  },
+                  {
+                      "type": "portmap",
+                      "capabilities": {"portMappings": true},
+                      "snat": true
+                  }
+              ]
+          }
+
+        # Flannel network configuration. Mounted into the flannel container.
+        net-conf.json: |
+          {
+            "Network": "{{ .PodCIDR }}",
+            "Backend": {
+              "Type": "vxlan"
+            }
+          }
+
+{{- if .Experimental.NetworkingDaemonSets.Typha }}
+      ---
+      # This manifest creates a Service, which will be backed by Calico's Typha daemon.
+      # Typha sits in between Felix and the API server, reducing Calico's load on the API server.
+
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: calico-typha
+        namespace: kube-system
+        labels:
+          k8s-app: calico-typha
+      spec:
+        ports:
+          - port: 5473
+            protocol: TCP
+            targetPort: calico-typha
+            name: calico-typha
+        selector:
+          k8s-app: calico-typha
+      
+      ---
+      # This manifest creates a Deployment of Typha to back the above service.
+
+      apiVersion: apps/v1beta1
+      kind: Deployment
+      metadata:
+        name: calico-typha
+        namespace: kube-system
+        labels:
+          k8s-app: calico-typha
+      spec:
+        # Number of Typha replicas.  To enable Typha, set this to a non-zero value *and* set the
+        # typha_service_name variable in the calico-config ConfigMap above.
+        #
+        # We recommend using Typha if you have more than 50 nodes.  Above 100 nodes it is essential
+        # (when using the Kubernetes datastore).  Use one replica for every 100-200 nodes.  In
+        # production, we recommend running at least 3 replicas to reduce the impact of rolling upgrade.
+        replicas: 3
+        revisionHistoryLimit: 2
+        template:
+          metadata:
+            labels:
+              k8s-app: calico-typha
+            annotations:
+              # This, along with the CriticalAddonsOnly toleration below, marks the pod as a critical
+              # add-on, ensuring it gets priority scheduling and that its resources are reserved
+              # if it ever gets evicted.
+              scheduler.alpha.kubernetes.io/critical-pod: ''
+          spec:
+            tolerations:
+            - key: CriticalAddonsOnly
+              operator: Exists
+            # Since Calico can't network a pod until Typha is up, we need to run Typha itself
+            # as a host-networked pod.
+            hostNetwork: true
+            serviceAccountName: nds-canal
+            initContainers:
+            - name: wait-for-default-clusterinformation
+              image: {{.HyperkubeImage.RepoWithTag}}
+              command: ["/bin/sh", "-c" ]
+              args:
+                - |
+                    set -x ;
+                    while true; do
+                      if /kubectl get clusterinformation default; then
+                        echo "Calcio clusterinformation default exists, can continue..."
+                        exit 0
+                      fi
+                      echo "Waiting for Calcio clusterinformation default..."
+                      sleep 5
+                    done
+            containers:
+            - image: {{ .Experimental.NetworkingDaemonSets.TyphaImage.RepoWithTag }}
+              name: typha
+              ports:
+              - containerPort: 5473
+                name: calico-typha
+                protocol: TCP
+              env:
+                # Enable "info" logging by default.  Can be set to "debug" to increase verbosity.
+                - name: TYPHA_LOGSEVERITYSCREEN
+                  value: "info"
+                # Disable logging to file and syslog since those don't make sense in Kubernetes.
+                - name: TYPHA_LOGFILEPATH
+                  value: "none"
+                - name: TYPHA_LOGSEVERITYSYS
+                  value: "none"
+                # Monitor the Kubernetes API to find the number of running instances and rebalance
+                # connections.
+                - name: TYPHA_CONNECTIONREBALANCINGMODE
+                  value: "kubernetes"
+                - name: TYPHA_DATASTORETYPE
+                  value: "kubernetes"
+                - name: TYPHA_HEALTHENABLED
+                  value: "true"
+                # Uncomment these lines to enable prometheus metrics.  Since Typha is host-networked,
+                # this opens a port on the host, which may need to be secured.
+                #- name: TYPHA_PROMETHEUSMETRICSENABLED
+                #  value: "true"
+                #- name: TYPHA_PROMETHEUSMETRICSPORT
+                #  value: "9093"
+              livenessProbe:
+                httpGet:
+                  path: /liveness
+                  port: 9098
+                periodSeconds: 30
+                initialDelaySeconds: 30
+              readinessProbe:
+                httpGet:
+                  path: /readiness
+                  port: 9098
+                periodSeconds: 10
+{{- end }}
+      # Canal Daemonset targetting masters/controllers
+      # They will never use Typha to proxy the kube-apiserver.
+      # Resolves Two bugs when Typha is enabled:
+      # 1. Masters depend on Typha to start on the nodes for their networking.
+      # 2. Typha will not start up without existing calico api objects.
+      ---
+      # This manifest installs the calico/node container, as well
+      # as the Calico CNI plugins and network config on
+      # each master and worker node in a Kubernetes cluster.
+      kind: DaemonSet
+      apiVersion: extensions/v1beta1
+      metadata:
+        name: nds-canal-master
+        namespace: kube-system
+        labels:
+          k8s-app: nds-canal-master
+      spec:
+        selector:
+          matchLabels:
+            k8s-app: nds-canal-master
+        updateStrategy:
+          type: RollingUpdate
+          rollingUpdate:
+            maxUnavailable: 1
+        template:
+          metadata:
+            labels:
+              k8s-app: nds-canal-master
+            annotations:
+              scheduler.alpha.kubernetes.io/critical-pod: ''
+          spec:
+            # Ensure that canal-master only targets our masters.
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                  - matchExpressions:
+                    - key: node-role.kubernetes.io/master
+                      operator: Exists
+            hostNetwork: true
+            serviceAccountName: nds-canal
+            tolerations:
+              # Tolerate this effect so the pods will be schedulable at all times
+              - effect: NoSchedule
+                operator: Exists
+              # Mark the pod as a critical add-on for rescheduling.
+              - key: CriticalAddonsOnly
+                operator: Exists
+              - effect: NoExecute
+                operator: Exists
+            # Minimize downtime during a rolling upgrade or deletion; tell Kubernetes to do a "force
+            # deletion": https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.
+            terminationGracePeriodSeconds: 0
+            initContainers:
+              - name: disable-flannelds-cni
+                image: alpine:latest
+                command:
+                - /bin/rm
+                - -rf
+                - /etc/kubernetes/cni/net.d/10-flannel.conflist
+                volumeMounts:
+                - mountPath: /etc/kubernetes/cni/net.d
+                  name: cni-net-dir
+              - name: disable-legacycalico-cni
+                image: alpine:latest
+                command:
+                - /bin/rm
+                - -rf
+                - /etc/kubernetes/cni/net.d/10-calico.conf
+                volumeMounts:
+                - mountPath: /etc/kubernetes/cni/net.d
+                  name: cni-net-dir
+            containers:
+              # Runs calico/node container on each Kubernetes node.  This
+              # container programs network policy and routes on each
+              # host.
+              - name: calico-node
+                image: {{ .Experimental.NetworkingDaemonSets.CalicoNodeImage.RepoWithTag }}
+                env:
+                  # Use Kubernetes API as the backing datastore.
+                  - name: DATASTORE_TYPE
+                    value: "kubernetes"
+                  # Enable felix logging.
+                  - name: FELIX_LOGSEVERITYSYS
+                    value: "info"
+                  # Don't enable BGP.
+                  - name: CALICO_NETWORKING_BACKEND
+                    value: "none"
+                  # Cluster type to identify the deployment type
+                  - name: CLUSTER_TYPE
+                    value: "k8s,canal"
+                  # Disable file logging so `kubectl logs` works.
+                  - name: CALICO_DISABLE_FILE_LOGGING
+                    value: "true"
+                  # Period, in seconds, at which felix re-applies all iptables state
+                  - name: FELIX_IPTABLESREFRESHINTERVAL
+                    value: "60"
+                  # Disable IPV6 support in Felix.
+                  - name: FELIX_IPV6SUPPORT
+                    value: "false"
+                  # Wait for the datastore.
+                  - name: WAIT_FOR_DATASTORE
+                    value: "true"
+                  # No IP address needed.
+                  - name: IP
+                    value: ""
+                  # Typha support: is never enabled on masters
+                  - name: FELIX_TYPHAK8SSERVICENAME
+                    value: "none"
+                  - name: NODENAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: spec.nodeName
+                  # Set Felix endpoint to host default action to ACCEPT.
+                  - name: FELIX_DEFAULTENDPOINTTOHOSTACTION
+                    value: "ACCEPT"
+                  - name: FELIX_HEALTHENABLED
+                    value: "true"
+                securityContext:
+                  privileged: true
+                resources:
+                  requests:
+                    cpu: 250m
+                livenessProbe:
+                  httpGet:
+                    path: /liveness
+                    port: 9099
+                  periodSeconds: 10
+                  initialDelaySeconds: 10
+                  failureThreshold: 6
+                readinessProbe:
+                  httpGet:
+                    path: /readiness
+                    port: 9099
+                  periodSeconds: 10
+                volumeMounts:
+                  - mountPath: /lib/modules
+                    name: lib-modules
+                    readOnly: true
+                  - mountPath: /var/run/calico
+                    name: var-run-calico
+                    readOnly: false
+              # This container installs the Calico CNI binaries
+              # and CNI network config file on each node.
+              - name: install-cni
+                image: {{ .Experimental.NetworkingDaemonSets.CalicoCniImage.RepoWithTag }}
+                command: ["/install-cni.sh"]
+                env:
+                  - name: CNI_NET_DIR
+                    value: "/etc/kubernetes/cni/net.d"
+                  - name: CNI_CONF_NAME
+                    value: "10-calico.conflist"
+                  # The CNI network config to install on each node.
+                  - name: CNI_NETWORK_CONFIG
+                    valueFrom:
+                      configMapKeyRef:
+                        name: nds-canal-config
+                        key: cni_network_config
+                  - name: KUBERNETES_NODE_NAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: spec.nodeName
+                volumeMounts:
+                  - mountPath: /host/opt/cni/bin
+                    name: cni-bin-dir
+                  - mountPath: /host/etc/cni/net.d
+                    name: cni-net-dir
+              # This container runs flannel using the kube-subnet-mgr backend
+              # for allocating subnets.
+              - name: flannel
+                image: {{ .FlannelImage.RepoWithTag }}
+                command: [ "/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr" ]
+                securityContext:
+                  privileged: true
+                env:
+                  - name: POD_NAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.name
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.namespace
+                  - name: FLANNELD_IFACE
+                    valueFrom:
+                      configMapKeyRef:
+                        name: nds-canal-config
+                        key: canal_iface
+                  - name: FLANNELD_IP_MASQ
+                    valueFrom:
+                      configMapKeyRef:
+                        name: nds-canal-config
+                        key: masquerade
+                volumeMounts:
+                - name: run
+                  mountPath: /run
+                - name: flannel-cfg
+                  mountPath: /etc/kube-flannel/
+            volumes:
+              # Used by calico/node.
+              - name: lib-modules
+                hostPath:
+                  path: /lib/modules
+              - name: var-run-calico
+                hostPath:
+                  path: /var/run/calico
+              # Used to install CNI.
+              - name: cni-bin-dir
+                hostPath:
+                  path: /opt/cni/bin
+              - name: cni-net-dir
+                hostPath:
+                  path: /etc/kubernetes/cni/net.d
+              # Used by flannel.
+              - name: run
+                hostPath:
+                  path: /run
+              - name: flannel-cfg
+                configMap:
+                  name: nds-canal-config
+      
+      # Canal DaemonSet for Nodes - Typha can be enabled.
+      ---
+      # This manifest installs the calico/node container, as well 
+      # as the Calico CNI plugins and network config on
+      # each master and worker node in a Kubernetes cluster.
+      kind: DaemonSet
+      apiVersion: extensions/v1beta1
+      metadata:
+        name: nds-canal-node
+        namespace: kube-system
+        labels:
+          k8s-app: nds-canal-node
+      spec:
+        selector:
+          matchLabels:
+            k8s-app: nds-canal-node
+        updateStrategy:
+          type: RollingUpdate
+          rollingUpdate:
+            maxUnavailable: 1
+        template:
+          metadata:
+            labels:
+              k8s-app: nds-canal-node
+            annotations:
+              scheduler.alpha.kubernetes.io/critical-pod: ''
+          spec:
+            hostNetwork: true
+            serviceAccountName: nds-canal
+            # Minimize downtime during a rolling upgrade or deletion; tell Kubernetes to do a "force
+            # deletion": https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.
+            terminationGracePeriodSeconds: 0
+            initContainers:
+              - name: disable-flannelds-cni
+                image: alpine:latest
+                command:
+                - /bin/rm
+                - -rf
+                - /etc/kubernetes/cni/net.d/10-flannel.conflist
+                volumeMounts:
+                - mountPath: /etc/kubernetes/cni/net.d
+                  name: cni-net-dir
+              - name: disable-legacycalico-cni
+                image: alpine:latest
+                command:
+                - /bin/rm
+                - -rf
+                - /etc/kubernetes/cni/net.d/10-calico.conf
+                volumeMounts:
+                - mountPath: /etc/kubernetes/cni/net.d
+                  name: cni-net-dir
+            containers:
+              # Runs calico/node container on each Kubernetes node.  This
+              # container programs network policy and routes on each
+              # host.
+              - name: calico-node
+                image: {{ .Experimental.NetworkingDaemonSets.CalicoNodeImage.RepoWithTag }}
+                env:
+                  # Use Kubernetes API as the backing datastore.
+                  - name: DATASTORE_TYPE
+                    value: "kubernetes"
+                  # Enable felix logging.
+                  - name: FELIX_LOGSEVERITYSYS
+                    value: "info"
+                  # Don't enable BGP.
+                  - name: CALICO_NETWORKING_BACKEND
+                    value: "none"
+                  # Cluster type to identify the deployment type
+                  - name: CLUSTER_TYPE
+                    value: "k8s,canal"
+                  # Disable file logging so `kubectl logs` works.
+                  - name: CALICO_DISABLE_FILE_LOGGING
+                    value: "true"
+                  # Period, in seconds, at which felix re-applies all iptables state
+                  - name: FELIX_IPTABLESREFRESHINTERVAL
+                    value: "60"
+                  # Disable IPV6 support in Felix.
+                  - name: FELIX_IPV6SUPPORT
+                    value: "false"
+                  # Wait for the datastore.
+                  - name: WAIT_FOR_DATASTORE
+                    value: "true"
+                  # No IP address needed.
+                  - name: IP
+                    value: ""
+                  # Typha support: controlled by the ConfigMap.
+                  - name: FELIX_TYPHAK8SSERVICENAME
+                    valueFrom:
+                      configMapKeyRef:
+                        name: nds-canal-config
+                        key: typha_service_name
+                  - name: NODENAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: spec.nodeName
+                  # Set Felix endpoint to host default action to ACCEPT.
+                  - name: FELIX_DEFAULTENDPOINTTOHOSTACTION
+                    value: "ACCEPT"
+                  - name: FELIX_HEALTHENABLED
+                    value: "true"
+                securityContext:
+                  privileged: true
+                resources:
+                  requests:
+                    cpu: 250m
+                livenessProbe:
+                  httpGet:
+                    path: /liveness
+                    port: 9099
+                  periodSeconds: 10
+                  initialDelaySeconds: 10
+                  failureThreshold: 6
+                readinessProbe:
+                  httpGet:
+                    path: /readiness
+                    port: 9099
+                  periodSeconds: 10
+                volumeMounts:
+                  - mountPath: /lib/modules
+                    name: lib-modules
+                    readOnly: true
+                  - mountPath: /var/run/calico
+                    name: var-run-calico
+                    readOnly: false
+              # This container installs the Calico CNI binaries
+              # and CNI network config file on each node.
+              - name: install-cni
+                image: {{ .Experimental.NetworkingDaemonSets.CalicoCniImage.RepoWithTag }}
+                command: ["/install-cni.sh"]
+                env:
+                  - name: CNI_NET_DIR
+                    value: "/etc/kubernetes/cni/net.d"
+                  - name: CNI_CONF_NAME
+                    value: "10-calico.conflist"
+                  # The CNI network config to install on each node.
+                  - name: CNI_NETWORK_CONFIG
+                    valueFrom:
+                      configMapKeyRef:
+                        name: nds-canal-config
+                        key: cni_network_config
+                  - name: KUBERNETES_NODE_NAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: spec.nodeName
+                volumeMounts:
+                  - mountPath: /host/opt/cni/bin
+                    name: cni-bin-dir
+                  - mountPath: /host/etc/cni/net.d
+                    name: cni-net-dir
+              # This container runs flannel using the kube-subnet-mgr backend
+              # for allocating subnets.
+              - name: flannel
+                image: {{ .FlannelImage.RepoWithTag }}
+                command: [ "/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr" ]
+                securityContext:
+                  privileged: true
+                env:
+                  - name: POD_NAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.name
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.namespace
+                  - name: FLANNELD_IFACE
+                    valueFrom:
+                      configMapKeyRef:
+                        name: nds-canal-config
+                        key: canal_iface
+                  - name: FLANNELD_IP_MASQ
+                    valueFrom:
+                      configMapKeyRef:
+                        name: nds-canal-config
+                        key: masquerade
+                volumeMounts:
+                - name: run
+                  mountPath: /run
+                - name: flannel-cfg
+                  mountPath: /etc/kube-flannel/
+            volumes:
+              # Used by calico/node.
+              - name: lib-modules
+                hostPath:
+                  path: /lib/modules
+              - name: var-run-calico
+                hostPath:
+                  path: /var/run/calico
+              # Used to install CNI.
+              - name: cni-bin-dir
+                hostPath:
+                  path: /opt/cni/bin
+              - name: cni-net-dir
+                hostPath:
+                  path: /etc/kubernetes/cni/net.d
+              # Used by flannel.
+              - name: run
+                hostPath:
+                  path: /run
+              - name: flannel-cfg
+                configMap:
+                  name: nds-canal-config
+
+      # Create all the CustomResourceDefinitions needed for
+      # Calico policy-only mode.
+      ---
+
+      apiVersion: apiextensions.k8s.io/v1beta1
+      description: Calico Felix Configuration
+      kind: CustomResourceDefinition
+      metadata:
+        name: felixconfigurations.crd.projectcalico.org
+      spec:
+        scope: Cluster
+        group: crd.projectcalico.org
+        version: v1
+        names:
+          kind: FelixConfiguration
+          plural: felixconfigurations
+          singular: felixconfiguration
+
+      ---
+
+      apiVersion: apiextensions.k8s.io/v1beta1
+      description: Calico BGP Configuration
+      kind: CustomResourceDefinition
+      metadata:
+        name: bgpconfigurations.crd.projectcalico.org
+      spec:
+        scope: Cluster
+        group: crd.projectcalico.org
+        version: v1
+        names:
+          kind: BGPConfiguration
+          plural: bgpconfigurations
+          singular: bgpconfiguration
+
+      ---
+
+      apiVersion: apiextensions.k8s.io/v1beta1
+      description: Calico IP Pools
+      kind: CustomResourceDefinition
+      metadata:
+        name: ippools.crd.projectcalico.org
+      spec:
+        scope: Cluster
+        group: crd.projectcalico.org
+        version: v1
+        names:
+          kind: IPPool
+          plural: ippools
+          singular: ippool
+
+      ---
+
+      apiVersion: apiextensions.k8s.io/v1beta1
+      description: Calico Cluster Information
+      kind: CustomResourceDefinition
+      metadata:
+        name: clusterinformations.crd.projectcalico.org
+      spec:
+        scope: Cluster
+        group: crd.projectcalico.org
+        version: v1
+        names:
+          kind: ClusterInformation
+          plural: clusterinformations
+          singular: clusterinformation
+
+      ---
+
+      apiVersion: apiextensions.k8s.io/v1beta1
+      description: Calico Global Network Policies
+      kind: CustomResourceDefinition
+      metadata:
+        name: globalnetworkpolicies.crd.projectcalico.org
+      spec:
+        scope: Cluster
+        group: crd.projectcalico.org
+        version: v1
+        names:
+          kind: GlobalNetworkPolicy
+          plural: globalnetworkpolicies
+          singular: globalnetworkpolicy
+
+      ---
+
+      apiVersion: apiextensions.k8s.io/v1beta1
+      description: Calico Network Policies
+      kind: CustomResourceDefinition
+      metadata:
+        name: networkpolicies.crd.projectcalico.org
+      spec:
+        scope: Namespaced
+        group: crd.projectcalico.org
+        version: v1
+        names:
+          kind: NetworkPolicy
+          plural: networkpolicies
+          singular: networkpolicy
+  
+  - path: /srv/kubernetes/rbac/network-daemonsets.yaml
+    content: |
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: nds-canal
+        namespace: kube-system
+
+      ---
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: nds-flannel
+        namespace: kube-system
+
+      ---
+      # Calico Version v3.0.2
+      # https://docs.projectcalico.org/v3.0/releases#v3.0.2
+      kind: ClusterRole
+      apiVersion: rbac.authorization.k8s.io/v1beta1
+      metadata:
+        name: nds-calico
+      rules:
+        - apiGroups: [""]
+          resources:
+            - namespaces
+          verbs:
+            - get
+            - list
+            - watch
+        - apiGroups: [""]
+          resources:
+            - pods/status
+          verbs:
+            - update
+        - apiGroups: [""]
+          resources:
+            - pods
+          verbs:
+            - get
+            - list
+            - watch
+            - patch
+        - apiGroups: [""]
+          resources:
+            - services
+          verbs:
+            - get
+        - apiGroups: [""]
+          resources:
+            - endpoints
+          verbs:
+            - get
+        - apiGroups: [""]
+          resources:
+            - nodes
+          verbs:
+            - get
+            - list
+            - update
+            - watch
+        - apiGroups: ["extensions"]
+          resources:
+            - networkpolicies
+          verbs:
+            - get
+            - list
+            - watch
+        - apiGroups: ["crd.projectcalico.org"]
+          resources:
+            - globalfelixconfigs
+            - felixconfigurations
+            - bgppeers
+            - globalbgpconfigs
+            - bgpconfigurations
+            - ippools
+            - globalnetworkpolicies
+            - networkpolicies
+            - clusterinformations
+          verbs:
+            - create
+            - get
+            - list
+            - update
+            - watch
+
+      ---
+      # Flannel roles
+      # Pulled from https://github.com/coreos/flannel/blob/master/Documentation/kube-flannel-rbac.yml
+      kind: ClusterRole
+      apiVersion: rbac.authorization.k8s.io/v1beta1
+      metadata:
+        name: nds-flannel
+      rules:
+        - apiGroups:
+            - ""
+          resources:
+            - pods
+          verbs:
+            - get
+        - apiGroups:
+            - ""
+          resources:
+            - nodes
+          verbs:
+            - list
+            - watch
+        - apiGroups:
+            - ""
+          resources:
+            - nodes/status
+          verbs:
+            - patch
+      
+      ---
+      kind: ClusterRoleBinding
+      apiVersion: rbac.authorization.k8s.io/v1beta1
+      metadata:
+        name: nds-flannel
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: nds-flannel
+      subjects:
+      - kind: ServiceAccount
+        name: nds-flannel
+        namespace: kube-system
+
+      ---
+      # Bind the flannel ClusterRole to the canal ServiceAccount.
+      kind: ClusterRoleBinding
+      apiVersion: rbac.authorization.k8s.io/v1beta1
+      metadata:
+        name: nds-canal-flannel
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: nds-flannel
+      subjects:
+      - kind: ServiceAccount
+        name: nds-canal
+        namespace: kube-system
+
+      ---
+      # Bind the calico ClusterRole to the canal ServiceAccount.
+      apiVersion: rbac.authorization.k8s.io/v1beta1
+      kind: ClusterRoleBinding
+      metadata:
+        name: nds-canal-calico
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: nds-calico
+      subjects:
+      - kind: ServiceAccount
+        name: nds-canal
+        namespace: kube-system
+
+>>>>>>> bug/networking-daemonsets
   - path: /srv/kubernetes/manifests/flannel.yaml
     content: |
       ---
@@ -2142,6 +3261,10 @@ write_files:
                     value: "kubeaws,canal"
                   - name: CALICO_DISABLE_FILE_LOGGING
                     value: "true"
+{{/* RUN-449 Open Node IpTables */}}
+                  - name: FELIX_DEFAULTENDPOINTTOHOSTACTION
+                    value: "ACCEPT"
+{{/* RUN-449 Open Node IpTables */}}
                   - name: NO_DEFAULT_POOLS
                     value: "true"
                   - name: ETCD_CA_CERT_FILE
@@ -2267,7 +3390,10 @@ write_files:
     content: |
       #!/bin/bash -e
 
-      etcd_ca=$(cat /etc/kubernetes/ssl/etcd-trusted-ca.pem | base64 | tr -d '\n')
+{{/* RUN-509 Remove vault-based certs */}}
+      # we read ca.pem instead of etcd-trusted-ca.pem as former completes full chain and that is what required by python ssl used in calico-policy controller
+      etcd_ca=$(cat /etc/kubernetes/ssl/ca.pem | base64 | tr -d '\n')
+{{/* RUN-509 Remove vault-based certs */}}
       etcd_key=$(cat /etc/kubernetes/ssl/etcd-client-key.pem | base64 | tr -d '\n')
       etcd_cert=$(cat /etc/kubernetes/ssl/etcd-client.pem | base64 | tr -d '\n')
 
@@ -2812,11 +3938,198 @@ write_files:
         - kind: ServiceAccount
           name: heapster
           namespace: kube-system
+{{/* RUN-578 Introduce Dex */}}
+{{if .Experimental.Oidc.Enabled}}
+  - path: /srv/kubernetes/manifests/dex-deployment.yaml.tmpl
+    content: |
+      apiVersion: extensions/v1beta1
+      kind: Deployment
+      metadata:
+        name: dex
+        namespace: kube-system
+        labels:
+          app: dex
+          component: identity
+        annotations:
+          scheduler.alpha.kubernetes.io/critical-pod: ''
+      spec:
+        replicas: 1
+        minReadySeconds: 30
+        strategy:
+          rollingUpdate:
+            maxUnavailable: 0
+        template:
+          metadata:
+            name: dex
+            labels:
+              app: dex
+              component: identity
+            annotations:
+              hcom-dex-configmap-hash: ''
+          spec:
+            volumes:
+            - name: config
+              configMap:
+                name: dex
+                items:
+                - key: config.yaml
+                  path: config.yaml
+            - name: tls
+              secret:
+                secretName: dex.kube-system.tls
+            containers:
+            - name: dex
+              imagePullPolicy: IfNotPresent
+              image: {{ default "181651482125.dkr.ecr.us-west-2.amazonaws.com/hotels/dex:2.7.0" .CustomSettings.Dex.ImageWithTag }}
+              command: ["/usr/local/bin/dex", "serve", "/etc/dex/config.yaml"]
+              volumeMounts:
+              - name: config
+                mountPath: /etc/dex
+              - name: tls
+                mountPath: /etc/dex/tls
+              ports:
+              - name: https
+                containerPort: 5556
+                protocol: TCP
+              env:
+              - name: D
+                value: 'Yerecharu$-qU5!C'
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 50Mi
+                limits:
+                  cpu: 100m
+                  memory: 50Mi
+
+  - path: /srv/kubernetes/manifests/dex-svc.yaml
+    content: |
+      ---
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: dex
+        namespace: kube-system
+      spec:
+        type: NodePort
+        ports:
+          - name: dex
+            port: 5556
+            protocol: TCP
+            targetPort: 5556
+            nodePort: 31000
+        selector:
+          app: dex
+
+  - path: /srv/kubernetes/manifests/dex-cm.yaml
+    content: |
+      kind: ConfigMap
+      apiVersion: v1
+      metadata:
+        name: dex
+        namespace: kube-system
+      data:
+        config.yaml: |
+          issuer: {{.Experimental.Oidc.IssuerUrl}}
+          storage:
+            type: kubernetes
+            config:
+              inCluster: true
+              {{- if .CustomSettings.Dex.UseTPR }}
+              useTPR: true
+              {{- end }}
+          web:
+            https: 0.0.0.0:5556
+            routePrefix: /dex
+            tlsCert: /etc/dex/tls/tls.crt
+            tlsKey: /etc/dex/tls/tls.key
+          logger:
+            level: "debug"
+            format: "json"
+
+          connectors:
+          - type: ldap
+            name: OpenLDAP
+            id: ldap
+            config:
+              host: {{ .CustomSettings.Dex.LDAPServerWithPort }}
+              # No TLS for this setup.
+              insecureNoSSL: true
+
+              # This would normally be a read-only user.
+              bindDN: {{ .CustomSettings.Dex.BindDN }}
+              bindPW: ${D}
+
+              userSearch:
+                baseDN: {{ .CustomSettings.Dex.UserSearchBaseDN }}
+                filter: "(objectClass=user)"
+                username: sAMAccountName
+                idAttr: DN
+                emailAttr: mail
+                nameAttr: sAMAccountName
+              groupSearch:
+                baseDN: {{ .CustomSettings.Dex.GroupSearchBaseDN }}
+                filter: "(objectClass=group)"
+                userAttr: DN
+                groupAttr: member
+                nameAttr: cn
+          oauth2:
+              skipApprovalScreen: true
+
+          staticClients:
+          - id: konveyor
+            redirectURIs:
+              - 'http://127.0.0.1:0/callback'
+            name: 'konveyor'
+            secret: ZXhhbXBsZS1hcHAtc2VjcmV1
+
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/dex.yaml
+    content: |
+        ---
+        kind: ClusterRole
+        apiVersion: rbac.authorization.k8s.io/v1
+        metadata:
+          name: dex-proxy-access
+        rules:
+        - apiGroups: [""]
+          resources:
+          - services/proxy
+          verbs: ["get", "create"]
+        ---
+        kind: ClusterRoleBinding
+        apiVersion: rbac.authorization.k8s.io/v1
+        metadata:
+          name: dex-anonymous-auth
+          namespace: kube-system
+        subjects:
+        - kind: Group
+          name: system:unauthenticated
+          namespace: kube-system
+          apiGroup: rbac.authorization.k8s.io
+        roleRef:
+          kind: ClusterRole
+          name: dex-proxy-access
+          apiGroup: rbac.authorization.k8s.io
+        ---
+        kind: ClusterRoleBinding
+        apiVersion: rbac.authorization.k8s.io/v1
+        metadata:
+          name: runtimeplatfom
+        subjects:
+        - kind: Group
+          name: Hcom Tech RuntimePlatform
+          apiGroup: rbac.authorization.k8s.io
+        roleRef:
+          kind: ClusterRole
+          name: cluster-admin
+          apiGroup: rbac.authorization.k8s.io
+{{ end }}
+{{/* RUN-578 Introduce Dex */}}
 
   # metrics-server
   - path: /srv/kubernetes/rbac/cluster-role-bindings/metrics-server.yaml
     content: |
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         kind: ClusterRoleBinding
         metadata:
           name: metrics-server:system:auth-delegator
@@ -2844,7 +4157,7 @@ write_files:
 
   - path: /srv/kubernetes/rbac/role-bindings/metrics-server.yaml
     content: |
-        apiVersion: rbac.authorization.k8s.io/v1beta1
+        apiVersion: rbac.authorization.k8s.io/v1
         kind: RoleBinding
         metadata:
           name: metrics-server-auth-reader
@@ -3165,8 +4478,13 @@ write_files:
           command:
           - /hyperkube
           - apiserver
+{{/* RUN Enable verbose logging */}}
+          - --v=3
+{{/* RUN Enable verbose logging */}}
           - --apiserver-count={{if .MinControllerCount}}{{ .MinControllerCount }}{{else}}{{ .ControllerCount }}{{end}}
-          - --bind-address=0.0.0.0
+{{/* RUN 935 start up with bind address of 127.0.0.1 until SA keys have been properly updated */}}
+          - --bind-address=127.0.0.1
+{{/* RUN 935 start up with bind address of 127.0.0.1 until SA keys have been properly updated */}}
           - --etcd-servers=#ETCD_ENDPOINTS#
           - --etcd-cafile=/etc/kubernetes/ssl/etcd-trusted-ca.pem
           - --etcd-certfile=/etc/kubernetes/ssl/etcd-client.pem
@@ -3196,7 +4514,13 @@ write_files:
           {{ end }}
           - --advertise-address=$private_ipv4
           - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }}{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.NodeAuthorizer.Enabled}},NodeRestriction{{end}},ResourceQuota{{if .Experimental.Admission.DenyEscalatingExec.Enabled}},DenyEscalatingExec{{end}}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}{{if .Experimental.Admission.Priority.Enabled}},Priority{{end}},DefaultTolerationSeconds{{if .Experimental.Admission.MutatingAdmissionWebhook.Enabled}},MutatingAdmissionWebhook{{end}}{{if .Experimental.Admission.ValidatingAdmissionWebhook.Enabled}},ValidatingAdmissionWebhook{{end}}
+{{/* RUN-578 Introduce Dex */}}
+          {{if .Experimental.Oidc.Enabled}}
+          - --anonymous-auth=true
+          {{else}}
           - --anonymous-auth=false
+          {{ end -}}
+{{/* RUN-578 Introduce Dex */}}
           {{if .Experimental.Oidc.Enabled}}
           - --oidc-issuer-url={{.Experimental.Oidc.IssuerUrl}}
           - --oidc-client-id={{.Experimental.Oidc.ClientId}}
@@ -3206,17 +4530,25 @@ write_files:
           {{if .Experimental.Oidc.GroupsClaim}}
           - --oidc-groups-claim={{.Experimental.Oidc.GroupsClaim}}
           {{ end -}}
+          {{ if .ManageCertificates}}
+          - --oidc-ca-file=/etc/kubernetes/ssl/ca.pem
+          {{ end -}}
           {{ end -}}
           - --cert-dir=/etc/kubernetes/ssl
           - --tls-cert-file=/etc/kubernetes/ssl/apiserver.pem
           - --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
           - --client-ca-file=/etc/kubernetes/ssl/ca.pem
-          - --service-account-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+{{/* RUN-509 Remove vault-based certs DO NOT TOUCH THIS LINE */}}
+          - --service-account-key-file=/etc/kubernetes/ssl/serviceaccount-key.pem.apiserver
+{{/* RUN-509 Remove vault-based certs DO NOT TOUCH THIS LINE */}}
           - --runtime-config=extensions/v1beta1/networkpolicies=true,batch/v2alpha1=true{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},extensions/v1beta1/podsecuritypolicy=true{{ end }}{{if .Experimental.Admission.Initializers.Enabled}},admissionregistration.k8s.io/v1alpha1{{end}}{{if .Experimental.Admission.Priority.Enabled}},scheduling.k8s.io/v1alpha1=true{{end}}
          {{if .Experimental.Admission.Priority.Enabled}}
           - --feature-gates=PodPriority=true
          {{end}}
           - --cloud-provider=aws
+{{/* RUN Attempt to prevent apiserver->etcd lockups. https://github.com/kubernetes/kubernetes/issues/47131#issuecomment-338166775 */}}
+          - --service-account-lookup=false
+{{/* RUN Attempt to prevent apiserver->etcd lockups. https://github.com/kubernetes/kubernetes/issues/47131#issuecomment-338166775 */}}
           {{range $f := .APIServerFlags}}
           - --{{$f.Name}}={{$f.Value}}
           {{ end -}}
@@ -3316,9 +4648,14 @@ write_files:
           command:
           - /hyperkube
           - controller-manager
+{{/* RUN Enable verbose logging */}}
+          - --v=3
+{{/* RUN Enable verbose logging */}}
           - --master=http://127.0.0.1:8080
           - --leader-elect=true
-          - --service-account-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+{{/* RUN-509 Remove vault-based certs DO NOT TOUCH THIS LINE */}}
+          - --service-account-private-key-file=/etc/kubernetes/ssl/serviceaccount-key.pem.controller
+{{/* RUN-509 Remove vault-based certs DO NOT TOUCH THIS LINE */}}
           {{ if .Experimental.TLSBootstrap.Enabled }}
           - --insecure-experimental-approve-all-kubelet-csrs-for-group=system:kubelet-bootstrap
           - --cluster-signing-cert-file=/etc/kubernetes/ssl/worker-ca.pem
@@ -4297,6 +5634,45 @@ write_files:
         status:
           loadBalancer: {}
 
+{{/* RUN-605 Add Flyte */}}
+{{ if .CustomSettings.Flyte.Enabled }}
+  - path: /srv/kubernetes/manifests/flyte-konveyor.yaml
+    content: |
+
+        apiVersion: extensions/v1beta1
+        kind: Deployment
+        metadata:
+          name: flyte-konveyor
+          namespace: kube-public
+        spec:
+          replicas: {{ default 1 .CustomSettings.Flyte.Replicas }}
+          template:
+            metadata:
+              labels:
+                app: flyte-konveyor
+            spec:
+              containers:
+              - name: flyte-konveyor
+                image: {{ default "181651482125.dkr.ecr.us-west-2.amazonaws.com/hotels/fkp:latest" .CustomSettings.Flyte.ImageWithTag }}
+                imagePullPolicy: Always
+                env:
+                - name: FLYTE_HOST
+                  value: {{ default "http://flyte.hcom" .CustomSettings.Flyte.HostUrl }}
+                - name: FLYTE_ENVIRONMENT
+                  value: {{ .ClusterName }}
+                - name: VAULT_ADDR
+                  value: {{ .CustomSettings.vault.address }}
+                volumeMounts:
+                - mountPath: /konveyor
+                  name: logs
+                  readOnly: false
+              volumes:
+              - name: logs
+                hostPath:
+                  path: /logs/konveyor
+{{ end }}
+{{/* RUN-605 Add Flyte */}}
+
   - path: {{.KubernetesManifestPlugin.ManifestListFile.Path}}
     encoding: gzip+base64
     content: {{.KubernetesManifestPlugin.ManifestListFile.Content.ToGzip.ToBase64}}
@@ -4370,6 +5746,16 @@ write_files:
   - path: /etc/kubernetes/ssl/etcd-trusted-ca.pem
     encoding: gzip+base64
     content: {{.AssetsConfig.EtcdTrustedCA}}
+
+{{ if .Experimental.Oidc.Enabled }}
+  - path: /etc/kubernetes/ssl/oidc.pem
+    encoding: gzip+base64
+    content: {{.AssetsConfig.OidcCert}}
+
+  - path: /etc/kubernetes/ssl/oidc-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+    encoding: gzip+base64
+    content: {{.AssetsConfig.OidcKey}}
+{{ end }}
 {{ end }}
 
   # File needed on every node (used by the kube-proxy DaemonSet), including controllers
@@ -4735,6 +6121,48 @@ write_files:
           omitStages:
             - "RequestReceived"
 {{ end -}}
+
+{{/* RUN-509 Remove vault-based certs */}}
+  - path: /opt/bin/check-pod-serviceaccount-secrets
+    permissions: 0755
+    content: |
+      #!/bin/bash
+
+      KUBEPATH=/etc/kubernetes/serviceaccount-secret/
+      mkdir -p ${KUBEPATH}
+
+      # Get the current serviceaccount secret
+      SECRET=$( /kubectl get serviceaccount default --namespace=kube-system --output=json | jq -e --raw-output '.secrets[0].name' )
+      echo $SECRET > ${KUBEPATH}secret-name
+
+      # Produce a list of pods that reference any serviceaccount secret other than the current serviceaccount secret
+      /kubectl get pods --namespace=kube-system --output=json | jq --arg good_tokens "$SECRET" '[ .items[]
+        | { podName: .metadata.name, serviceAccountTokens: [.spec.containers[].volumeMounts[]?]
+        | [map(select(.mountPath == "/var/run/secrets/kubernetes.io/serviceaccount"))[].name] | unique } ]
+        | map(select((.serviceAccountTokens - [$good_tokens]) | length > 0)) '
+
+
+  - path: /opt/bin/rotate-serviceaccount-secret
+    permissions: 0755
+    content: |
+      #!/bin/bash
+
+      KUBEPATH=/etc/kubernetes/serviceaccount-secret/
+      SECRET_ID=$(cat ${KUBEPATH}secret-name)
+
+      # Get latest secret id
+      /opt/bin/check-pod-serviceaccount-secrets
+
+      # Remove secret (new one is regenerated)
+      /kubectl delete secret ${SECRET_ID} --namespace=kube-system
+
+      # Trigger rolling-updates
+      /kubectl patch --namespace kube-system deployment kube-dns -p   "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
+      /kubectl patch --namespace kube-system deployment calico-policy-controller -p   "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
+      /kubectl patch --namespace kube-system deployment heapster-v1.2.0 -p   "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
+      /kubectl patch --namespace kube-system deployment kube-dns-autoscaler -p   "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
+      /kubectl replace --namespace kube-system daemonset calico-node -p   "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
+{{/* RUN-509 Remove vault-based certs */}}
 
 {{if .Experimental.Authentication.Webhook.Enabled}}
   - path: /etc/kubernetes/webhooks/authentication.yaml
