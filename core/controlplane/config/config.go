@@ -29,11 +29,12 @@ const (
 	credentialsDir = "credentials"
 	userDataDir    = "userdata"
 
-	NdsDefaultCalicoNodeImageTag = "v3.0.3"
-	NdsDefaultCalicoCniImageTag  = "v2.0.1"
-	NdsDefaultFlannelImageTag    = "v0.9.1"
-	NdsDefaultFlannelCniImageTag = "v0.3.0"
-	NdsDefaultTyphaImageTag      = "v0.6.2"
+	// Experimental SelfHosting feature default images.
+	kubeNetworkingSelfHostingDefaultCalicoNodeImageTag = "v3.0.3"
+	kubeNetworkingSelfHostingDefaultCalicoCniImageTag  = "v2.0.1"
+	kubeNetworkingSelfHostingDefaultFlannelImageTag    = "v0.9.1"
+	kubeNetworkingSelfHostingDefaultFlannelCniImageTag = "v0.3.0"
+	kubeNetworkingSelfHostingDefaultTyphaImageTag      = "v0.6.2"
 )
 
 func NewDefaultCluster() *Cluster {
@@ -120,15 +121,6 @@ func NewDefaultCluster() *Cluster {
 			UsernameClaim: "email",
 			GroupsClaim:   "groups",
 		},
-		NetworkingDaemonSets: NetworkingDaemonSets{
-			Enabled:         false,
-			Typha:           false,
-			CalicoNodeImage: model.Image{Repo: "quay.io/calico/node", Tag: NdsDefaultCalicoNodeImageTag, RktPullDocker: false},
-			CalicoCniImage:  model.Image{Repo: "quay.io/calico/cni", Tag: NdsDefaultCalicoCniImageTag, RktPullDocker: false},
-			FlannelImage:    model.Image{Repo: "quay.io/coreos/flannel", Tag: NdsDefaultFlannelImageTag, RktPullDocker: false},
-			FlannelCniImage: model.Image{Repo: "quay.io/coreos/flannel-cni", Tag: NdsDefaultFlannelCniImageTag, RktPullDocker: false},
-			TyphaImage:      model.Image{Repo: "quay.io/calico/typha", Tag: NdsDefaultTyphaImageTag, RktPullDocker: false},
-		},
 	}
 
 	ipvsMode := IPVSMode{
@@ -179,6 +171,20 @@ func NewDefaultCluster() *Cluster {
 			KubernetesDashboard: KubernetesDashboard{
 				AdminPrivileges: true,
 				InsecureLogin:   false,
+			},
+			Kubernetes: Kubernetes{
+				Networking: Networking{
+					SelfHosting: SelfHosting{
+						Enabled:         false,
+						Type:            "canal",
+						Typha:           false,
+						CalicoNodeImage: model.Image{Repo: "quay.io/calico/node", Tag: kubeNetworkingSelfHostingDefaultCalicoNodeImageTag, RktPullDocker: false},
+						CalicoCniImage:  model.Image{Repo: "quay.io/calico/cni", Tag: kubeNetworkingSelfHostingDefaultCalicoCniImageTag, RktPullDocker: false},
+						FlannelImage:    model.Image{Repo: "quay.io/coreos/flannel", Tag: kubeNetworkingSelfHostingDefaultFlannelImageTag, RktPullDocker: false},
+						FlannelCniImage: model.Image{Repo: "quay.io/coreos/flannel-cni", Tag: kubeNetworkingSelfHostingDefaultFlannelCniImageTag, RktPullDocker: false},
+						TyphaImage:      model.Image{Repo: "quay.io/calico/typha", Tag: kubeNetworkingSelfHostingDefaultTyphaImageTag, RktPullDocker: false},
+					},
+				},
 			},
 			CloudFormationStreaming:            true,
 			HyperkubeImage:                     model.Image{Repo: "k8s.gcr.io/hyperkube-amd64", Tag: k8sVer, RktPullDocker: true},
@@ -499,6 +505,7 @@ type DeploymentSettings struct {
 	PauseImage                         model.Image `yaml:"pauseImage,omitempty"`
 	FlannelImage                       model.Image `yaml:"flannelImage,omitempty"`
 	JournaldCloudWatchLogsImage        model.Image `yaml:"journaldCloudWatchLogsImage,omitempty"`
+	Kubernetes                         Kubernetes  `yaml:"kubernetes,omitempty"`
 }
 
 // Part of configuration which is specific to worker nodes
@@ -578,7 +585,6 @@ type Experimental struct {
 	DisableSecurityGroupIngress bool                           `yaml:"disableSecurityGroupIngress"`
 	NodeMonitorGracePeriod      string                         `yaml:"nodeMonitorGracePeriod"`
 	model.UnknownKeys           `yaml:",inline"`
-	NetworkingDaemonSets        NetworkingDaemonSets `yaml:"networkingDaemonSets"`
 }
 
 type Admission struct {
@@ -693,14 +699,23 @@ type LocalStreaming struct {
 	interval int    `yaml:"interval"`
 }
 
-type NetworkingDaemonSets struct {
+type Kubernetes struct {
+	Networking Networking `yaml:"networking,omitempty"`
+}
+
+type Networking struct {
+	SelfHosting SelfHosting `yaml:"selfHosting"`
+}
+
+type SelfHosting struct {
 	Enabled         bool        `yaml:"enabled"`
+	Type            string      `yaml:"type"`
 	Typha           bool        `yaml:"typha"`
-	CalicoNodeImage model.Image `yaml:"calico-node-image"`
-	CalicoCniImage  model.Image `yaml:"calico-cni-image"`
-	FlannelImage    model.Image `yaml:"flannel-image"`
-	FlannelCniImage model.Image `yaml:"flannel-cni-image"`
-	TyphaImage      model.Image `yaml:"typha-image"`
+	CalicoNodeImage model.Image `yaml:"calicoNodeImage"`
+	CalicoCniImage  model.Image `yaml:"calicoCniImage"`
+	FlannelImage    model.Image `yaml:"flannelImage"`
+	FlannelCniImage model.Image `yaml:"flannelCniImage"`
+	TyphaImage      model.Image `yaml:"typhaImage"`
 }
 
 func (c *LocalStreaming) Interval() int64 {
@@ -1209,6 +1224,15 @@ func (c Cluster) validate() error {
 	for i, e := range c.APIEndpointConfigs {
 		if e.LoadBalancer.NetworkLoadBalancer() && !c.Region.SupportsNetworkLoadBalancers() {
 			return fmt.Errorf("api endpoint %d is not valid: network load balancer not supported in region", i)
+		}
+	}
+
+	if c.Kubernetes.Networking.SelfHosting.Enabled {
+		if (c.Kubernetes.Networking.SelfHosting.Type != "canal") && (c.Kubernetes.Networking.SelfHosting.Type != "flannel") {
+			return fmt.Errorf("networkingdaemonsets - style must be either 'canal' or 'flannel'")
+		}
+		if c.Kubernetes.Networking.SelfHosting.Typha && c.Kubernetes.Networking.SelfHosting.Type != "canal" {
+			return fmt.Errorf("networkingdaemonsets - you can only enable typha when deploying type 'canal'")
 		}
 	}
 

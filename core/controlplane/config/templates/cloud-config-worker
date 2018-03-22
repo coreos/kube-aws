@@ -37,7 +37,7 @@ exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE
 coreos:
   update:
     reboot-strategy: "off"
-  {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+  {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
   flannel:
     interface: $private_ipv4
     etcd_cafile: /etc/kubernetes/ssl/etcd-trusted-ca.pem
@@ -151,7 +151,7 @@ coreos:
         [Install]
         WantedBy=multi-user.target
 {{end}}
-    {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+    {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
     - name: cfn-etcd-environment.service
       enable: true
       command: start
@@ -188,7 +188,7 @@ coreos:
             [Service]
             Environment="DOCKER_OPTS=--log-opt max-size=50m --log-opt max-file=3"
 
-        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         - name: 40-flannel.conf
           content: |
             [Unit]
@@ -198,7 +198,7 @@ coreos:
             ExecStartPre=/usr/bin/systemctl is-active flanneld.service
         {{- end }}
     
-    {{ if .Experimental.NetworkingDaemonSets.Enabled -}}
+    {{ if .Kubernetes.Networking.SelfHosting.Enabled -}}
     - name: flanneld.service
       enable: false
     {{ if .AssetsEncryptionEnabled -}}
@@ -215,6 +215,29 @@ coreos:
         ExecStart=/opt/bin/decrypt-assets
     {{ end -}}
     {{ else -}}
+    - name: net-migration-helper.path
+      enable: true
+      command: start
+      content: |
+        [Path]
+        PathExists=/etc/kubernetes/cni/net.d/net-migration
+    - name: net-migration-helper.service
+      enable: false
+      content: |
+        [Unit]
+        Description=Perform actions which help when migrating from legacy to selfhosted networking.
+        After=kubelet.service
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=true
+        ExecStartPre=-/bin/systemctl stop flanneld
+        ExecStartPre=-/bin/ip link delete cni0
+        ExecStartPre=-/bin/ip link delete flannel.1
+        ExecStart=/bin/true
+
+        [Install]
+        WantedBy=multi-user.target
     - name: flanneld.service
       drop-ins:
         - name: 10-etcd.conf
@@ -263,7 +286,7 @@ coreos:
       runtime: true
       content: |
         [Unit]
-        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         Wants=flanneld.service cfn-etcd-environment.service
         After=cfn-etcd-environment.service
         {{ else -}}
@@ -278,13 +301,13 @@ coreos:
         [Service]
         EnvironmentFile=/etc/environment
         EnvironmentFile=-/etc/default/kubelet
-        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         EnvironmentFile=-/etc/etcd-environment
         {{- end }}
         Environment=KUBELET_IMAGE_TAG={{.K8sVer}}
         Environment=KUBELET_IMAGE_URL={{.HyperkubeImage.RktRepoWithoutTag}}
         Environment="RKT_RUN_ARGS=--volume dns,kind=host,source=/etc/resolv.conf {{.HyperkubeImage.Options}}\
-        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         --set-env=ETCD_CA_CERT_FILE=/etc/kubernetes/ssl/etcd-trusted-ca.pem \
         --set-env=ETCD_CERT_FILE=/etc/kubernetes/ssl/etcd-client.pem \
         --set-env=ETCD_KEY_FILE=/etc/kubernetes/ssl/etcd-client-key.pem \
@@ -304,7 +327,7 @@ coreos:
         --mount volume=var-log,target=/var/log \
         --volume cni-bin,kind=host,source=/opt/cni/bin \
         --mount volume=cni-bin,target=/opt/cni/bin"
-        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         ExecStartPre=/usr/bin/systemctl is-active flanneld.service
         ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
         ExecStartPre=/usr/bin/etcdctl \
@@ -319,7 +342,7 @@ coreos:
         ExecStartPre=/usr/bin/mkdir -p /opt/cni/bin
         ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
         ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/cni/net.d
-        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/manifests /etc/kubernetes/cni/net.d/  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
         ExecStartPre=/usr/bin/etcdctl \
                        --ca-file /etc/kubernetes/ssl/etcd-trusted-ca.pem \
@@ -497,7 +520,7 @@ coreos:
         Type=oneshot
         EnvironmentFile={{.StackNameEnvFileName}}
         ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl  --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null ; then break ; fi;  done"
-        {{ if (and (not .Experimental.NetworkingDaemonSets.Enabled) .UseCalico) -}}
+        {{ if (and (not .Kubernetes.Networking.SelfHosting.Enabled) .UseCalico) -}}
         ExecStartPre=/usr/bin/bash -c "until /usr/bin/docker run --net=host --pid=host --rm {{ .CalicoCtlImage.RepoWithTag }} node status > /dev/null; do sleep 3; done && echo Calico running"
         {{- end }}
         ExecStart=/opt/bin/cfn-signal
@@ -797,7 +820,7 @@ write_files:
 
       rkt rm --uuid-file=/var/run/coreos/cfn-signal.uuid || :
 
-  {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+  {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
   - path: /opt/bin/cfn-etcd-environment
     owner: root:root
     permissions: 0700
@@ -1099,7 +1122,7 @@ write_files:
         current-context: kubelet-context
 {{ end }}
 
-{{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+{{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
 {{ if not .UseCalico }}
   - path: /etc/kubernetes/cni/net.d/10-flannel.conf
     content: |

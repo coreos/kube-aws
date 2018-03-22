@@ -1096,7 +1096,52 @@ worker:
 #  tag: "0.1"
 #  rktPullDocker: true
 
-# Use Calico for network policy.
+#kubernetes:
+#  networking:
+#    selfHosting:
+
+# Configure self-hosted networking within kubernetes, deployed as a k8s daemonset.  Choose either 'canal' (calico+flannel) or 
+# 'flannel' (choose 'canal' if you require calico or kubernetes NetworkPolicy firewalling).
+# When enabled nodes no longer need to connect etcd and frees up node podCIDR leases faster resolving issue: 
+# https://github.com/coreos/flannel/issues/954.
+# 
+# Consider enabling Typha if you have 50+ nodes in your cluster. Without Typha, the load on the API server and Felix’s CPU usage
+# increases substantially as the number of nodes is increased.  The legacy top-level 'useCalico' setting has no effect with selfHosting
+# enabled - use type 'canal' for calico+flannel.
+# 
+# Notes on migrating between networking types: -
+# From Legacy Calico to self-hosted Canal - GOOD
+# From Legacy Calico to self-hosted Flannel - OK - ISSUES1
+# From self-hosted Flannel to self-hosted Canal - GOOD
+# From self-hosted Canal to self-hosted Flannel - OK - ISSUES1
+# From Legacy Flannel to self-hosted Canal or Flannel - ISSUES2
+# From self-hosted Canal or Flannel to legacy Flannel - ISSUES3
+# 
+# ISSUES1 - calico iptables rules remain on the nodes, recycle nodes to remove.
+# ISSUES2 - Existing pod ip addresses are not tracked and can cause clashing ips - please cordon all nodes whilst
+# performing the upgrade until all workers/nodes have been recycyled - then it will be ok.
+# ISSUES3 - Rolling back to old networking will require all nodes are cycled/rolled and the network is disrupted throughout.
+#
+#      enabled: false   # enable self-hosting
+#      type: canal      # either "canal" or "flannel"
+#      typha: false     # enable for type 'canal' for large clusters
+#      calicoNodeImage:
+#        repo: quay.io/calico/node
+#        tag: v3.0.3
+#      calicoCniImage:
+#        repo: quay.io/calico/cni
+#        tag: v2.0.1
+#      flannelImage:
+#        repo: quay.io/coreos/flannel
+#        tag: v0.9.1
+#      flannelCniImage:
+#        repo: quay.io/coreos/flannel-cni
+#        tag: v0.3.0
+#     typhaImage:
+#        repo: quay.io/calico/typha
+#        tag: v0.6.2
+
+# Use Calico for network policy (legacy setting - ignored if networking self-hosting is enabled)
 # useCalico: false
 
 # Create MountTargets to subnets managed by kube-aws for a pre-existing Elastic File System (Amazon EFS),
@@ -1332,36 +1377,6 @@ experimental:
   # This is the amount of time which we allow running Node to be unresponsive before marking it unhealthy.
   # Must be N times more than kubelet's nodeStatusUpdateFrequency (default 10s).
   # nodeMonitorGracePeriod: "40s"
-
-  # Configure Calico and Flannel networking to deployed as a daemonset with kubernetes API as their backing stores.
-  # This removes the need for nodes (except controllers) connecting to etcd and frees up node podCIDR leases faster -
-  # addressing cluster role issue: https://github.com/coreos/flannel/issues/954.
-  # Use the top level cluster.yaml setting 'useCalico' to switch between calico+flannel or flannel.
-  # Consider enabling Typha if you have more than 50 Kubernetes nodes in your cluster. 
-  # Without Typha, the load on the API server and Felix’s CPU usage increases substantially as the number of nodes is increased.
-  # WARNING: Migration to networking daemonsets can be cleanly deployed into an existing cluster with no more disruption than a regular
-  # cluster role, but rolling back or susequently disabling networkingDaemonSets will cause a major disruption of services until 
-  # all of the nodes have been rolled/replaced.
-  
-  # Settings with their default values: -
-  #networkingDaemonSets:
-  #  enabled: false
-  #  typha: false
-  #  calico-node-image:
-  #    repo: quay.io/calico/node
-  #    tag: v3.0.3
-  #  calico-cni-image:
-  #    repo: quay.io/calico/cni
-  #    tag: v2.0.1
-  #  flannel-image:
-  #    repo: quay.io/coreos/flannel
-  #    tag: v0.9.1
-  #  flannel-cni-image:
-  #    repo: quay.io/coreos/flannel-cni
-  #    tag: v0.3.0
-  # typha-image:
-  #    repo: quay.io/calico/typha
-  #    tag: v0.6.2
 
 kubelet:
   # Tell Kubelet to renew its certificate as its expiration time is approaching

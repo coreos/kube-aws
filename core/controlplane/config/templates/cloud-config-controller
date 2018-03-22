@@ -27,7 +27,7 @@ exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE
 coreos:
   update:
     reboot-strategy: "off"
-  {{ if not .Experimental.NetworkingDaemonSets.Enabled -}} 
+  {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}} 
   flannel:
     interface: $private_ipv4
     etcd_cafile: /etc/kubernetes/ssl/etcd-trusted-ca.pem
@@ -167,7 +167,7 @@ coreos:
             [Service]
             Environment="DOCKER_OPTS=--log-opt max-size=50m --log-opt max-file=3"
 
-        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         - name: 40-flannel.conf
           content: |
             [Unit]
@@ -177,7 +177,7 @@ coreos:
             ExecStartPre=/usr/bin/systemctl is-active flanneld.service
         {{- end}}
 
-    {{ if .Experimental.NetworkingDaemonSets.Enabled -}}
+    {{ if .Kubernetes.Networking.SelfHosting.Enabled -}}
     - name: flanneld.service
       enable: false
     {{ if .AssetsEncryptionEnabled -}}
@@ -251,7 +251,7 @@ coreos:
         [Unit]
         Wants=cfn-etcd-environment.service
         After=cfn-etcd-environment.service
-        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         Wants=flanneld.service
         {{ else -}}
         Wants=decrypt-assets.service
@@ -265,7 +265,7 @@ coreos:
         Environment=KUBELET_IMAGE_TAG={{.K8sVer}}
         Environment=KUBELET_IMAGE_URL={{ .HyperkubeImage.RktRepoWithoutTag }}
         Environment="RKT_RUN_ARGS=--volume dns,kind=host,source=/etc/resolv.conf {{.HyperkubeImage.Options}}\
-        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         --set-env=ETCD_CA_CERT_FILE=/etc/kubernetes/ssl/etcd-trusted-ca.pem \
         --set-env=ETCD_CERT_FILE=/etc/kubernetes/ssl/etcd-client.pem \
         --set-env=ETCD_KEY_FILE=/etc/kubernetes/ssl/etcd-client-key.pem \
@@ -288,7 +288,7 @@ coreos:
         --volume etc-kubernetes,kind=host,source=/etc/kubernetes \
         --mount volume=etc-kubernetes,target=/etc/kubernetes"
         ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
-        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         ExecStartPre=/usr/bin/etcdctl \
           --ca-file /etc/kubernetes/ssl/etcd-trusted-ca.pem \
           --key-file /etc/kubernetes/ssl/etcd-client-key.pem \
@@ -303,11 +303,9 @@ coreos:
         ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
         ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/cni/net.d
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/manifests /srv/kubernetes/manifests  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
-        {{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
-        {{ if .UseCalico -}}
+        {{ if (and (not .Kubernetes.Networking.SelfHosting.Enabled) .UseCalico) -}}
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/cni/net.d/ -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
         ExecStartPre=/usr/bin/docker run --rm -e SLEEP=false -e KUBERNETES_SERVICE_HOST= -e KUBERNETES_SERVICE_PORT= -v /opt/cni/bin:/host/opt/cni/bin {{ .CalicoCniImage.RepoWithTag }} /install-cni.sh
-        {{- end }}
         {{- end }}
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
         --kubeconfig=/etc/kubernetes/kubeconfig/controller.yaml \
@@ -433,7 +431,7 @@ coreos:
         ExecStartPre=/usr/bin/systemctl is-active install-kube-system.service
         ExecStartPre=/usr/bin/systemctl is-active apply-kube-aws-plugins.service
         ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl -s -m 20 -f  http://127.0.0.1:8080/healthz > /dev/null &&  /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10252/healthz > /dev/null && /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10251/healthz > /dev/null &&  /usr/bin/curl --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null && /usr/bin/curl -s -m 20 -f http://127.0.0.1:10256/healthz > /dev/null; then break ; fi;  done"
-        {{ if (and (not .Experimental.NetworkingDaemonSets.Enabled) .UseCalico) -}}
+        {{ if (and (not .Kubernetes.Networking.SelfHosting.Enabled) .UseCalico) -}}
         ExecStartPre=/usr/bin/bash -c "until /usr/bin/docker run --net=host --pid=host --rm {{ .CalicoCtlImage.RepoWithTag }} node status > /dev/null; do sleep 3; done && echo Calico running"
         {{- end }}
         {{if .Experimental.AuditLog.Enabled -}}
@@ -880,13 +878,13 @@ write_files:
       mfdir=/srv/kubernetes/manifests
       rbac=/srv/kubernetes/rbac
 
-      {{- if .Experimental.NetworkingDaemonSets.Enabled }}
+      {{- if .Kubernetes.Networking.SelfHosting.Enabled }}
       # When using NetworkingDeamonSets ensure that all nodes
       # have a podCIDR attribute
-      /opt/bin/nds-add-node-cidrs
+      /opt/bin/add-node-cidrs
       ensuredelete "${mfdir}/calico.yaml"
       applyall "${rbac}/network-daemonsets.yaml"
-      {{- if .UseCalico }}
+      {{- if eq .Kubernetes.Networking.SelfHosting.Type "canal" }}
       ensuredelete "${mfdir}/flannel.yaml"
       applyall "${mfdir}/canal.yaml"
       {{- else }}
@@ -1008,7 +1006,7 @@ write_files:
       kind: ConfigMap
       apiVersion: v1
       metadata:
-        name: nds-canal-config
+        name: canal-config
         namespace: kube-system
       data:
         # The interface used by canal for host <-> host communication.
@@ -1023,7 +1021,7 @@ write_files:
         # To enable Typha, set this to "calico-typha" *and* set a non-zero value for Typha replicas
         # below.  We recommend using Typha if you have more than 50 nodes. Above 100 nodes it is
         # essential.
-        {{ if .Experimental.NetworkingDaemonSets.Typha -}}
+        {{ if .Kubernetes.Networking.SelfHosting.Typha -}}
         typha_service_name: "calico-typha"
         {{ else -}}
         typha_service_name: "none"
@@ -1032,7 +1030,7 @@ write_files:
         # The CNI network configuration to install on each node.
         cni_network_config: |-
           {
-              "name": "k8s-pod-network",
+              "name": "calico",
               "cniVersion": "0.3.0",
               "plugins": [
                   {
@@ -1070,7 +1068,7 @@ write_files:
             }
           }
 
-{{- if .Experimental.NetworkingDaemonSets.Typha }}
+{{- if .Kubernetes.Networking.SelfHosting.Typha }}
       ---
       # This manifest creates a Service, which will be backed by Calico's Typha daemon.
       # Typha sits in between Felix and the API server, reducing Calico's load on the API server.
@@ -1126,7 +1124,7 @@ write_files:
             # Since Calico can't network a pod until Typha is up, we need to run Typha itself
             # as a host-networked pod.
             hostNetwork: true
-            serviceAccountName: nds-canal
+            serviceAccountName: canal
             initContainers:
             - name: wait-for-default-clusterinformation
               image: {{.HyperkubeImage.RepoWithTag}}
@@ -1143,7 +1141,7 @@ write_files:
                       sleep 5
                     done
             containers:
-            - image: {{ .Experimental.NetworkingDaemonSets.TyphaImage.RepoWithTag }}
+            - image: {{ .Kubernetes.Networking.SelfHosting.TyphaImage.RepoWithTag }}
               name: typha
               ports:
               - containerPort: 5473
@@ -1196,14 +1194,14 @@ write_files:
       kind: DaemonSet
       apiVersion: extensions/v1beta1
       metadata:
-        name: nds-canal-master
+        name: canal-master
         namespace: kube-system
         labels:
-          k8s-app: nds-canal-master
+          k8s-app: canal-master
       spec:
         selector:
           matchLabels:
-            k8s-app: nds-canal-master
+            k8s-app: canal-master
         updateStrategy:
           type: RollingUpdate
           rollingUpdate:
@@ -1211,7 +1209,7 @@ write_files:
         template:
           metadata:
             labels:
-              k8s-app: nds-canal-master
+              k8s-app: canal-master
             annotations:
               scheduler.alpha.kubernetes.io/critical-pod: ''
           spec:
@@ -1224,7 +1222,7 @@ write_files:
                     - key: node-role.kubernetes.io/master
                       operator: Exists
             hostNetwork: true
-            serviceAccountName: nds-canal
+            serviceAccountName: canal
             tolerations:
               # Tolerate this effect so the pods will be schedulable at all times
               - effect: NoSchedule
@@ -1238,21 +1236,21 @@ write_files:
             # deletion": https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.
             terminationGracePeriodSeconds: 0
             initContainers:
-              - name: disable-flannelds-cni
+              - name: remove-cni-networks
                 image: alpine:latest
                 command:
                 - /bin/rm
                 - -rf
                 - /etc/kubernetes/cni/net.d/10-flannel.conflist
+                - /etc/kubernetes/cni/net.d/10-calico.conf
                 volumeMounts:
                 - mountPath: /etc/kubernetes/cni/net.d
                   name: cni-net-dir
-              - name: disable-legacycalico-cni
+              - name: net-migration
                 image: alpine:latest
                 command:
-                - /bin/rm
-                - -rf
-                - /etc/kubernetes/cni/net.d/10-calico.conf
+                - /bin/touch
+                - /etc/kubernetes/cni/net.d/net-migration
                 volumeMounts:
                 - mountPath: /etc/kubernetes/cni/net.d
                   name: cni-net-dir
@@ -1261,7 +1259,7 @@ write_files:
               # container programs network policy and routes on each
               # host.
               - name: calico-node
-                image: {{ .Experimental.NetworkingDaemonSets.CalicoNodeImage.RepoWithTag }}
+                image: {{ .Kubernetes.Networking.SelfHosting.CalicoNodeImage.RepoWithTag }}
                 env:
                   # Use Kubernetes API as the backing datastore.
                   - name: DATASTORE_TYPE
@@ -1329,7 +1327,7 @@ write_files:
               # This container installs the Calico CNI binaries
               # and CNI network config file on each node.
               - name: install-cni
-                image: {{ .Experimental.NetworkingDaemonSets.CalicoCniImage.RepoWithTag }}
+                image: {{ .Kubernetes.Networking.SelfHosting.CalicoCniImage.RepoWithTag }}
                 command: ["/install-cni.sh"]
                 env:
                   - name: CNI_NET_DIR
@@ -1340,7 +1338,7 @@ write_files:
                   - name: CNI_NETWORK_CONFIG
                     valueFrom:
                       configMapKeyRef:
-                        name: nds-canal-config
+                        name: canal-config
                         key: cni_network_config
                   - name: KUBERNETES_NODE_NAME
                     valueFrom:
@@ -1370,12 +1368,12 @@ write_files:
                   - name: FLANNELD_IFACE
                     valueFrom:
                       configMapKeyRef:
-                        name: nds-canal-config
+                        name: canal-config
                         key: canal_iface
                   - name: FLANNELD_IP_MASQ
                     valueFrom:
                       configMapKeyRef:
-                        name: nds-canal-config
+                        name: canal-config
                         key: masquerade
                 volumeMounts:
                 - name: run
@@ -1403,7 +1401,7 @@ write_files:
                   path: /run
               - name: flannel-cfg
                 configMap:
-                  name: nds-canal-config
+                  name: canal-config
       
       # Canal DaemonSet for Nodes - Typha can be enabled.
       ---
@@ -1413,14 +1411,14 @@ write_files:
       kind: DaemonSet
       apiVersion: extensions/v1beta1
       metadata:
-        name: nds-canal-node
+        name: canal-node
         namespace: kube-system
         labels:
-          k8s-app: nds-canal-node
+          k8s-app: canal-node
       spec:
         selector:
           matchLabels:
-            k8s-app: nds-canal-node
+            k8s-app: canal-node
         updateStrategy:
           type: RollingUpdate
           rollingUpdate:
@@ -1428,31 +1426,31 @@ write_files:
         template:
           metadata:
             labels:
-              k8s-app: nds-canal-node
+              k8s-app: canal-node
             annotations:
               scheduler.alpha.kubernetes.io/critical-pod: ''
           spec:
             hostNetwork: true
-            serviceAccountName: nds-canal
+            serviceAccountName: canal
             # Minimize downtime during a rolling upgrade or deletion; tell Kubernetes to do a "force
             # deletion": https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.
             terminationGracePeriodSeconds: 0
             initContainers:
-              - name: disable-flannelds-cni
+              - name: remove-cni-networks
                 image: alpine:latest
                 command:
                 - /bin/rm
                 - -rf
                 - /etc/kubernetes/cni/net.d/10-flannel.conflist
+                - /etc/kubernetes/cni/net.d/10-calico.conf
                 volumeMounts:
                 - mountPath: /etc/kubernetes/cni/net.d
                   name: cni-net-dir
-              - name: disable-legacycalico-cni
+              - name: net-migration
                 image: alpine:latest
                 command:
-                - /bin/rm
-                - -rf
-                - /etc/kubernetes/cni/net.d/10-calico.conf
+                - /bin/touch
+                - /etc/kubernetes/cni/net.d/net-migration
                 volumeMounts:
                 - mountPath: /etc/kubernetes/cni/net.d
                   name: cni-net-dir
@@ -1461,7 +1459,7 @@ write_files:
               # container programs network policy and routes on each
               # host.
               - name: calico-node
-                image: {{ .Experimental.NetworkingDaemonSets.CalicoNodeImage.RepoWithTag }}
+                image: {{ .Kubernetes.Networking.SelfHosting.CalicoNodeImage.RepoWithTag }}
                 env:
                   # Use Kubernetes API as the backing datastore.
                   - name: DATASTORE_TYPE
@@ -1494,7 +1492,7 @@ write_files:
                   - name: FELIX_TYPHAK8SSERVICENAME
                     valueFrom:
                       configMapKeyRef:
-                        name: nds-canal-config
+                        name: canal-config
                         key: typha_service_name
                   - name: NODENAME
                     valueFrom:
@@ -1532,7 +1530,7 @@ write_files:
               # This container installs the Calico CNI binaries
               # and CNI network config file on each node.
               - name: install-cni
-                image: {{ .Experimental.NetworkingDaemonSets.CalicoCniImage.RepoWithTag }}
+                image: {{ .Kubernetes.Networking.SelfHosting.CalicoCniImage.RepoWithTag }}
                 command: ["/install-cni.sh"]
                 env:
                   - name: CNI_NET_DIR
@@ -1543,7 +1541,7 @@ write_files:
                   - name: CNI_NETWORK_CONFIG
                     valueFrom:
                       configMapKeyRef:
-                        name: nds-canal-config
+                        name: canal-config
                         key: cni_network_config
                   - name: KUBERNETES_NODE_NAME
                     valueFrom:
@@ -1573,12 +1571,12 @@ write_files:
                   - name: FLANNELD_IFACE
                     valueFrom:
                       configMapKeyRef:
-                        name: nds-canal-config
+                        name: canal-config
                         key: canal_iface
                   - name: FLANNELD_IP_MASQ
                     valueFrom:
                       configMapKeyRef:
-                        name: nds-canal-config
+                        name: canal-config
                         key: masquerade
                 volumeMounts:
                 - name: run
@@ -1606,7 +1604,7 @@ write_files:
                   path: /run
               - name: flannel-cfg
                 configMap:
-                  name: nds-canal-config
+                  name: canal-config
 
       # Create all the CustomResourceDefinitions needed for
       # Calico policy-only mode.
@@ -1711,14 +1709,14 @@ write_files:
       apiVersion: v1
       kind: ServiceAccount
       metadata:
-        name: nds-canal
+        name: canal
         namespace: kube-system
 
       ---
       apiVersion: v1
       kind: ServiceAccount
       metadata:
-        name: nds-flannel
+        name: flannel
         namespace: kube-system
 
       ---
@@ -1727,7 +1725,7 @@ write_files:
       kind: ClusterRole
       apiVersion: rbac.authorization.k8s.io/v1beta1
       metadata:
-        name: nds-calico
+        name: calico
       rules:
         - apiGroups: [""]
           resources:
@@ -1798,7 +1796,7 @@ write_files:
       kind: ClusterRole
       apiVersion: rbac.authorization.k8s.io/v1beta1
       metadata:
-        name: nds-flannel
+        name: flannel
       rules:
         - apiGroups:
             - ""
@@ -1824,14 +1822,14 @@ write_files:
       kind: ClusterRoleBinding
       apiVersion: rbac.authorization.k8s.io/v1beta1
       metadata:
-        name: nds-flannel
+        name: flannel
       roleRef:
         apiGroup: rbac.authorization.k8s.io
         kind: ClusterRole
-        name: nds-flannel
+        name: flannel
       subjects:
       - kind: ServiceAccount
-        name: nds-flannel
+        name: flannel
         namespace: kube-system
 
       ---
@@ -1839,14 +1837,14 @@ write_files:
       kind: ClusterRoleBinding
       apiVersion: rbac.authorization.k8s.io/v1beta1
       metadata:
-        name: nds-canal-flannel
+        name: canal-flannel
       roleRef:
         apiGroup: rbac.authorization.k8s.io
         kind: ClusterRole
-        name: nds-flannel
+        name: flannel
       subjects:
       - kind: ServiceAccount
-        name: nds-canal
+        name: canal
         namespace: kube-system
 
       ---
@@ -1854,23 +1852,24 @@ write_files:
       apiVersion: rbac.authorization.k8s.io/v1beta1
       kind: ClusterRoleBinding
       metadata:
-        name: nds-canal-calico
+        name: canal-calico
       roleRef:
         apiGroup: rbac.authorization.k8s.io
         kind: ClusterRole
-        name: nds-calico
+        name: calico
       subjects:
       - kind: ServiceAccount
-        name: nds-canal
+        name: canal
         namespace: kube-system
 
   - path: /srv/kubernetes/manifests/flannel.yaml
     content: |
       ---
+      # Keep cni network name 'calico' to avoid ip clashes when switching to flannel.
       kind: ConfigMap
       apiVersion: v1
       metadata:
-        name: nds-flannel-cfg
+        name: flannel-cfg
         namespace: kube-system
         labels:
           tier: node
@@ -1878,13 +1877,17 @@ write_files:
       data:
         cni-conf.json: |
           {
-            "name": "cbr0",
+            "name": "calico",
             "plugins": [
               {
                 "type": "flannel",
                 "delegate": {
                   "hairpinMode": true,
                   "isDefaultGateway": true
+                },
+                "ipam": {
+                  "type": "host-local",
+                  "subnet": "usePodCidr"
                 }
               },
               {
@@ -1906,11 +1909,11 @@ write_files:
       apiVersion: extensions/v1beta1
       kind: DaemonSet
       metadata:
-        name: nds-flannel
+        name: flannel
         namespace: kube-system
         labels:
           tier: node
-          app: nds-flannel
+          app: flannel
       spec:
         updateStrategy:
           type: RollingUpdate
@@ -1918,7 +1921,7 @@ write_files:
           metadata:
             labels:
               tier: node
-              app: nds-flannel
+              app: flannel
           spec:
             hostNetwork: true
             nodeSelector:
@@ -1930,50 +1933,41 @@ write_files:
             - key: node.alpha.kubernetes.io/role
               value: "master"
               effect: NoSchedule
-            serviceAccountName: nds-flannel
+            serviceAccountName: flannel
             # Minimize downtime during a rolling upgrade or deletion; tell Kubernetes to do a "force
             # deletion": https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.
             terminationGracePeriodSeconds: 0
             initContainers:
-              - name: disable-canalds-cni
+              - name: remove-cni-networks
                 image: alpine:latest
                 command:
                 - /bin/rm
                 - -rf
                 - /etc/kubernetes/cni/net.d/10-calico.conflist
-                volumeMounts:
-                - mountPath: /etc/kubernetes/cni/net.d
-                  name: cni-net-dir
-              - name: disable-legacycalico-cni
-                image: alpine:latest
-                command:
-                - /bin/rm
-                - -rf
                 - /etc/kubernetes/cni/net.d/10-calico.conf
                 volumeMounts:
                 - mountPath: /etc/kubernetes/cni/net.d
                   name: cni-net-dir
-                {{/* # Signal restart of kubelet on nodes (re-register with apiserver)
-              - name: migration-helper
+              - name: net-migration
                 image: alpine:latest
-                command: 
+                command:
                 - /bin/touch
-                - /etc/kubernetes/cni/net.d/nds-migration
+                - /etc/kubernetes/cni/net.d/net-migration
                 volumeMounts:
                 - mountPath: /etc/kubernetes/cni/net.d
-                  name: cni-net-dir */}}
+                  name: cni-net-dir
             containers:
             # This container installs the Flannel CNI binaries
             # and CNI network config file on each node.
             - name: install-cni
-              image: {{ .Experimental.NetworkingDaemonSets.FlannelCniImage.RepoWithTag }}
+              image: {{ .Kubernetes.Networking.SelfHosting.FlannelCniImage.RepoWithTag }}
               command: ["/install-cni.sh"]
               env:
                 # The CNI network config to install on each node.
                 - name: CNI_NETWORK_CONFIG
                   valueFrom:
                     configMapKeyRef:
-                      name: nds-flannel-cfg
+                      name: flannel-cfg
                       key: cni-conf.json
               volumeMounts:
                 - mountPath: /host/opt/cni/bin
@@ -2022,7 +2016,7 @@ write_files:
                   path: /opt/cni/bin
               - name: flannel-cfg
                 configMap:
-                  name: nds-flannel-cfg
+                  name: flannel-cfg
 
   - path: /srv/kubernetes/manifests/calico.yaml
     content: |
@@ -2109,20 +2103,12 @@ write_files:
             # deletion": https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.
             terminationGracePeriodSeconds: 0
             initContainers:
-              - name: disable-canalds-cni
+              - name: remove-cni-networks
                 image: alpine:latest
                 command:
                 - /bin/rm
                 - -rf
                 - /etc/kubernetes/cni/net.d/10-calico.conflist
-                volumeMounts:
-                - mountPath: /etc/kubernetes/cni/net.d
-                  name: cni-net-dir
-              - name: disable-flannelds-cni
-                image: alpine:latest
-                command:
-                - /bin/rm
-                - -rf
                 - /etc/kubernetes/cni/net.d/10-flannel.conflist
                 volumeMounts:
                 - mountPath: /etc/kubernetes/cni/net.d
@@ -3332,7 +3318,7 @@ write_files:
           {{ if .Experimental.DisableSecurityGroupIngress }}
           - --cloud-config=/etc/kubernetes/additional-configs/cloud.config
           {{ end }}
-          {{ if .Experimental.NetworkingDaemonSets.Enabled -}}
+          {{ if .Kubernetes.Networking.SelfHosting.Enabled -}}
           - --allocate-node-cidrs=true
           - --cluster-cidr={{.PodCIDR}}
           {{- end }}
@@ -4409,7 +4395,7 @@ write_files:
           name: kubelet-context
         current-context: kubelet-context
 
-{{ if not .Experimental.NetworkingDaemonSets.Enabled -}}
+{{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
 {{ if not .UseCalico }}
   - path: /etc/kubernetes/cni/net.d/10-flannel.conf
     content: |
@@ -4445,8 +4431,8 @@ write_files:
 {{ end }}
 {{- end }}
 
-{{- if .Experimental.NetworkingDaemonSets.Enabled }}
-  - path: /opt/bin/nds-add-node-cidrs
+{{- if .Kubernetes.Networking.SelfHosting.Enabled }}
+  - path: /opt/bin/add-node-cidrs
     permissions: 0755
     content: |
       #!/bin/bash
