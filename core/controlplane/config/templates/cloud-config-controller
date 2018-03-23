@@ -873,6 +873,9 @@ write_files:
       # Install tiller by default
       applyall "${mfdir}/tiller.yaml"
 
+      # Tiller RBAC rules
+      applyall "${mfdir}/tiller-rbac.yaml"
+
 {{ if .KubeDns.NodeLocalResolver }}
       # DNS Masq Fix
       applyall "${mfdir}/dnsmasq-node-ds.yaml"
@@ -2565,7 +2568,7 @@ write_files:
                - key: "node.alpha.kubernetes.io/role"
                  operator: "Equal"
                  value: "master"
-                 effect: "NoSchedule" 
+                 effect: "NoSchedule"
               {{ else -}}
               tolerations:
               - key: "CriticalAddonsOnly"
@@ -3183,6 +3186,35 @@ write_files:
         status:
           loadBalancer: {}
 
+  - path: /srv/kubernetes/manifests/tiller-rbac.yaml
+    content: |
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRole
+        metadata:
+          name: kube-aws:tiller
+        rules:
+          - apiGroups: ["", "extensions", "apps"]
+            resources: ["deployments", "replicasets", "pods", "configmaps", "secrets", "namespaces"]
+            verbs: ["*"]
+        ---
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: kube-aws:tiller
+          namespace: kube-system
+        ---
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRoleBinding
+        metadata:
+          name: kube-aws:tiller
+        subjects:
+        - kind: ServiceAccount
+          name: kube-aws:tiller
+          namespace: kube-system
+        roleRef:
+          kind: ClusterRole
+          name: kube-aws:tiller
+          apiGroup: rbac.authorization.k8s.io/v1
   - path: {{.KubernetesManifestPlugin.ManifestListFile.Path}}
     encoding: gzip+base64
     content: {{.KubernetesManifestPlugin.ManifestListFile.Content.ToGzip.ToBase64}}
