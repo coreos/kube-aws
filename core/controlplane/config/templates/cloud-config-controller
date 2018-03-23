@@ -2745,6 +2745,7 @@ write_files:
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
             spec:
+              serviceAccountName: kube-aws:tiller
               {{if .Experimental.Admission.Priority.Enabled -}}
               priorityClassName: system-node-critical
               {{ end -}}
