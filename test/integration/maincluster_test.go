@@ -3044,7 +3044,7 @@ worker:
 				hasDefaultExperimentalFeatures,
 				func(c *config.Config, t *testing.T) {
 					if len(c.NodePools[0].IAMConfig.Role.ManagedPolicies) < 2 {
-						t.Errorf("iam.role.managedPolicies: incorrect number of policies expected=2 actual=%s", len(c.NodePools[0].IAMConfig.Role.ManagedPolicies))
+						t.Errorf("iam.role.managedPolicies: incorrect number of policies expected=2 actual=%d", len(c.NodePools[0].IAMConfig.Role.ManagedPolicies))
 					}
 					if c.NodePools[0].IAMConfig.Role.ManagedPolicies[0].Arn != "arn:aws:iam::aws:policy/AdministratorAccess" {
 						t.Errorf("iam.role.managedPolicies: expected=arn:aws:iam::aws:policy/AdministratorAccess actual=%s", c.NodePools[0].IAMConfig.Role.ManagedPolicies[0].Arn)

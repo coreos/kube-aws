@@ -11,13 +11,8 @@ s3URI: {{.S3URI}}
 #releaseChannel: stable
 
 # The AMI ID of CoreOS.
-# If omitted, the latest AMI for the releaseChannel is used.
-# This happens every time 'kube-aws update' is run, potentially replacing all instances with a newer version
-{{if .AmiId -}}
 amiId: "{{.AmiId}}"
-{{else -}}
-#amiId: ""
-{{- end}}
+
 # The ID of hosted zone to add the externalDNSName to.
 # Either specify hostedZoneId or hostedZone, but not both
 #hostedZoneId: ""

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/filegen"
 	"github.com/spf13/cobra"
 )
@@ -21,6 +22,10 @@ var (
 	initOpts = config.InitialConfig{}
 )
 
+const (
+	defaultReleaseChannel string = "stable"
+)
+
 func init() {
 	RootCmd.AddCommand(cmdInit)
 	cmdInit.Flags().StringVar(&initOpts.S3URI, "s3-uri", "", "The URI of the S3 bucket")
@@ -31,7 +36,7 @@ func init() {
 	cmdInit.Flags().StringVar(&initOpts.AvailabilityZone, "availability-zone", "", "The AWS availability-zone to deploy to")
 	cmdInit.Flags().StringVar(&initOpts.KeyName, "key-name", "", "The AWS key-pair for ssh access to nodes")
 	cmdInit.Flags().StringVar(&initOpts.KMSKeyARN, "kms-key-arn", "", "The ARN of the AWS KMS key for encrypting TLS assets")
-	cmdInit.Flags().StringVar(&initOpts.AmiId, "ami-id", "", "The AMI ID of CoreOS")
+	cmdInit.Flags().StringVar(&initOpts.AmiId, "ami-id", "", "The AMI ID of CoreOS. Last CoreOS Stable Channel selected by default if empty")
 	cmdInit.Flags().BoolVar(&initOpts.NoRecordSet, "no-record-set", false, "Instruct kube-aws to not manage Route53 record sets for your K8S API endpoints")
 }
 
@@ -45,6 +50,14 @@ func runCmdInit(cmd *cobra.Command, args []string) error {
 		flag{"--availability-zone", initOpts.AvailabilityZone},
 	); err != nil {
 		return err
+	}
+
+	if initOpts.AmiId == "" {
+		amiID, err := amiregistry.GetAMI(initOpts.Region.Name, defaultReleaseChannel)
+		initOpts.AmiId = amiID
+		if err != nil {
+			return fmt.Errorf("Cannot retrieve CoreOS AMI for region %s, channel %s", initOpts.Region.Name, defaultReleaseChannel)
+		}
 	}
 
 	if !initOpts.NoRecordSet && initOpts.HostedZoneID == "" {
