@@ -47,6 +47,24 @@
   revision = "afbc45e87f3ba324c532d12c71918ef52e0fb194"
 
 [[projects]]
+  name = "github.com/golang/protobuf"
+  packages = ["proto"]
+  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
+  version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/google/go-github"
+  packages = ["github"]
+  revision = "a8ca0025ffdafe2d0dc933bc8fdbe247d0d0c5af"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/google/go-querystring"
+  packages = ["query"]
+  revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
+
+[[projects]]
   name = "github.com/huandu/xstrings"
   packages = ["."]
   revision = "3959339b333561bf62a38b424fd41517c2c90f40"
@@ -67,6 +85,12 @@
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   revision = "bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d"
+
+[[projects]]
+  name = "github.com/kubernetes-incubator/kube-aws"
+  packages = ["cfnresource","cfnstack","cmd","core/controlplane/cluster","core/controlplane/config","core/nodepool/cluster","core/nodepool/config","core/root","core/root/config","core/root/defaults","core/root/render","coreos/amiregistry","filegen","filereader/jsontemplate","filereader/texttemplate","fingerprint","gzipcompressor","model","model/derived","netutil","node","plugin","plugin/clusterextension","plugin/plugincontents","plugin/pluginmodel","plugin/pluginutil","plugin/pluginvalue","test/helper","tlsutil"]
+  revision = "22673054e2e2de1f096980050a5f52060974929a"
+  version = "v0.9.9"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -97,17 +121,42 @@
 
 [[projects]]
   name = "golang.org/x/crypto"
-  packages = ["pbkdf2","scrypt"]
+  packages = ["pbkdf2","scrypt","ssh/terminal"]
   revision = "7e9105388ebff089b3f99f0ef676ea55a6da3a7e"
 
 [[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = ["context","context/ctxhttp"]
+  revision = "6078986fec03a1dcc236c34816c71b0e05018fda"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/oauth2"
+  packages = [".","internal"]
+  revision = "fdc9e635145ae97e6c2cb777c48305600cf515cb"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "13d03a9a82fba647c21a0ef8fba44a795d0f0835"
+
+[[projects]]
+  name = "google.golang.org/appengine"
+  packages = ["internal","internal/base","internal/datastore","internal/log","internal/remote_api","internal/urlfetch","urlfetch"]
+  revision = "150dc57a1b433e64154302bdc40b6bb8aefa313a"
+  version = "v1.0.0"
+
+[[projects]]
+  branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b"
+  revision = "4fc5987536ef307a24ca299aee7ae301cde3d221"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "08b606bda0ae075e583b6fb94f42ebca1df187b27b9814fd06d3303477fdfc54"
+  inputs-digest = "6108ae89a54b57ceeb6a7d6d1cf91517d7e41dbba4e7ee1221f71df0d736624d"
   solver-name = "gps-cdcl"
   solver-version = 1
