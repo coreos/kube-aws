@@ -12,7 +12,6 @@ type CustomSystemdUnit struct {
 	Enable      bool                      `yaml:"enable,omitempty"`
 	Runtime     bool                      `yaml:"runtime,omitempty"`
 	DropIns     []CustomSystemdUnitDropIn `yaml:"drop-ins,omitempty"`
-	UnknownKeys `yaml:",inline"`
 }
 
 func (c CustomSystemdUnit) ContentPresent() bool {

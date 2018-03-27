@@ -41,7 +41,6 @@ type ProvidedConfig struct {
 	Private                 bool                `yaml:"private,omitempty"`
 	NodePoolName            string              `yaml:"name,omitempty"`
 	ProvidedEncryptService  cfg.EncryptService
-	model.UnknownKeys       `yaml:",inline"`
 }
 
 type DeploymentSettings struct {
@@ -118,7 +117,7 @@ func newDefaultCluster() *ProvidedConfig {
 // ClusterFromBytes Necessary for unit tests, which store configs as hardcoded strings
 func ClusterFromBytes(data []byte, main *cfg.Config) (*ProvidedConfig, error) {
 	c := newDefaultCluster()
-	if err := yaml.Unmarshal(data, c); err != nil {
+	if err := yaml.UnmarshalStrict(data, c); err != nil {
 		return nil, fmt.Errorf("failed to parse cluster: %v", err)
 	}
 

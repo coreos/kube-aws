@@ -6,7 +6,6 @@ type RootVolume struct {
 	Size        int    `yaml:"size,omitempty"`
 	Type        string `yaml:"type,omitempty"`
 	IOPS        int    `yaml:"iops,omitempty"`
-	UnknownKeys `yaml:",inline"`
 }
 
 func NewGp2RootVolume(size int) RootVolume {

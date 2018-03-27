@@ -17,7 +17,6 @@ type Controller struct {
 	CustomFiles        []CustomFile        `yaml:"customFiles,omitempty"`
 	CustomSystemdUnits []CustomSystemdUnit `yaml:"customSystemdUnits,omitempty"`
 	NodeSettings       `yaml:",inline"`
-	UnknownKeys        `yaml:",inline"`
 }
 
 const DefaultControllerCount = 1

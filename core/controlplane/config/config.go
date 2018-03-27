@@ -244,7 +244,7 @@ func ClusterFromFile(filename string) (*Cluster, error) {
 func ClusterFromBytes(data []byte) (*Cluster, error) {
 	c := NewDefaultCluster()
 
-	if err := yaml.Unmarshal(data, c); err != nil {
+	if err := yaml.UnmarshalStrict(data, c); err != nil {
 		return nil, fmt.Errorf("failed to parse cluster: %v", err)
 	}
 
@@ -560,7 +560,6 @@ type Experimental struct {
 	Oidc                        model.Oidc                     `yaml:"oidc"`
 	DisableSecurityGroupIngress bool                           `yaml:"disableSecurityGroupIngress"`
 	NodeMonitorGracePeriod      string                         `yaml:"nodeMonitorGracePeriod"`
-	model.UnknownKeys           `yaml:",inline"`
 }
 
 type Admission struct {

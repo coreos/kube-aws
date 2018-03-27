@@ -38,7 +38,7 @@ kmsKeyArn: "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
 	yamlStr := defaultYaml + configYaml
 
 	c := config.Cluster{}
-	if err := yaml.Unmarshal([]byte(yamlStr), &c); err != nil {
+	if err := yaml.UnmarshalStrict([]byte(yamlStr), &c); err != nil {
 		t.Errorf("failed umarshalling config yaml: %v :\n%s", err, yamlStr)
 	}
 

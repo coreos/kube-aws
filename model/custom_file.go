@@ -10,7 +10,6 @@ type CustomFile struct {
 	Path        string `yaml:"path"`
 	Permissions uint   `yaml:"permissions"`
 	Content     string `yaml:"content"`
-	UnknownKeys `yaml:",inline"`
 }
 
 func (c CustomFile) PermissionsString() string {

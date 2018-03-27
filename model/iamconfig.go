@@ -9,7 +9,6 @@ import (
 type IAMConfig struct {
 	Role            IAMRole            `yaml:"role,omitempty"`
 	InstanceProfile IAMInstanceProfile `yaml:"instanceProfile,omitempty"`
-	UnknownKeys     `yaml:",inline"`
 	Policy          IAMPolicy
 }
 
