@@ -2568,7 +2568,7 @@ write_files:
                - key: "node.alpha.kubernetes.io/role"
                  operator: "Equal"
                  value: "master"
-                 effect: "NoSchedule"
+                 effect: "NoSchedule" 
               {{ else -}}
               tolerations:
               - key: "CriticalAddonsOnly"
