@@ -1,4 +1,5 @@
 # Unique name of Kubernetes cluster. In order to deploy
+# Unique name of Kubernetes cluster. In order to deploy
 # more than one cluster into the same AWS account, this
 # name must not conflict with an existing cluster.
 clusterName: {{.ClusterName}}
@@ -1253,6 +1254,8 @@ experimental:
     mutatingAdmissionWebhook:
       enabled: false
     validatingAdmissionWebhook:
+      enabled: false
+    OwnerReferencesPermissionEnforcement:
       enabled: false
 
   # Used to provide `/etc/environment` env vars with values from arbitrary CloudFormation refs

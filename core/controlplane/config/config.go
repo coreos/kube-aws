@@ -59,6 +59,9 @@ func NewDefaultCluster() *Cluster {
 			ValidatingAdmissionWebhook{
 				Enabled: false,
 			},
+			OwnerReferencesPermissionEnforcement{
+				Enabled: false,
+			},
 		},
 		AuditLog: AuditLog{
 			Enabled: false,
@@ -564,13 +567,14 @@ type Experimental struct {
 }
 
 type Admission struct {
-	PodSecurityPolicy          PodSecurityPolicy          `yaml:"podSecurityPolicy"`
-	AlwaysPullImages           AlwaysPullImages           `yaml:"alwaysPullImages"`
-	DenyEscalatingExec         DenyEscalatingExec         `yaml:"denyEscalatingExec"`
-	Initializers               Initializers               `yaml:"initializers"`
-	Priority                   Priority                   `yaml:"priority"`
-	MutatingAdmissionWebhook   MutatingAdmissionWebhook   `yaml:"mutatingAdmissionWebhook"`
-	ValidatingAdmissionWebhook ValidatingAdmissionWebhook `yaml:"validatingAdmissionWebhook"`
+	PodSecurityPolicy                    PodSecurityPolicy                    `yaml:"podSecurityPolicy"`
+	AlwaysPullImages                     AlwaysPullImages                     `yaml:"alwaysPullImages"`
+	DenyEscalatingExec                   DenyEscalatingExec                   `yaml:"denyEscalatingExec"`
+	Initializers                         Initializers                         `yaml:"initializers"`
+	Priority                             Priority                             `yaml:"priority"`
+	MutatingAdmissionWebhook             MutatingAdmissionWebhook             `yaml:"mutatingAdmissionWebhook"`
+	ValidatingAdmissionWebhook           ValidatingAdmissionWebhook           `yaml:"validatingAdmissionWebhook"`
+	OwnerReferencesPermissionEnforcement OwnerReferencesPermissionEnforcement `yaml:"OwnerReferencesPermissionEnforcement"`
 }
 
 type AlwaysPullImages struct {
@@ -598,6 +602,10 @@ type MutatingAdmissionWebhook struct {
 }
 
 type ValidatingAdmissionWebhook struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type OwnerReferencesPermissionEnforcement struct {
 	Enabled bool `yaml:"enabled"`
 }
 
