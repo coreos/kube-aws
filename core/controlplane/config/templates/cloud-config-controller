@@ -924,6 +924,9 @@ write_files:
       # Service Accounts
       applyall "${mfdir}"/{kube-dns,heapster,kube-proxy,kubernetes-dashboard}"-sa.yaml"
 
+      # Tiller RBAC rules
+      applyall "${mfdir}/tiller-rbac.yaml"
+
       # Install tiller by default
       applyall "${mfdir}/tiller.yaml"
 
@@ -3322,6 +3325,9 @@ write_files:
           - --allocate-node-cidrs=true
           - --cluster-cidr={{.PodCIDR}}
           {{- end }}
+          {{ if not .Addons.MetricsServer.Enabled -}}
+          - --horizontal-pod-autoscaler-use-rest-clients=false
+          {{end}}
           resources:
             requests:
               cpu: 200m
@@ -3665,7 +3671,7 @@ write_files:
                - key: "node.alpha.kubernetes.io/role"
                  operator: "Equal"
                  value: "master"
-                 effect: "NoSchedule" 
+                 effect: "NoSchedule"
               {{ else -}}
               tolerations:
               - key: "CriticalAddonsOnly"
@@ -4223,6 +4229,7 @@ write_files:
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
             spec:
+              serviceAccountName: tiller
               {{if .Experimental.Admission.Priority.Enabled -}}
               priorityClassName: system-node-critical
               {{ end -}}
@@ -4282,6 +4289,36 @@ write_files:
           type: ClusterIP
         status:
           loadBalancer: {}
+
+  - path: /srv/kubernetes/manifests/tiller-rbac.yaml
+    content: |
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRole
+        metadata:
+          name: tiller
+        rules:
+          - apiGroups: ["", "extensions", "apps"]
+            resources: ["deployments", "replicasets", "pods", "configmaps", "secrets", "namespaces"]
+            verbs: ["*"]
+        ---
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: tiller
+          namespace: kube-system
+        ---
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRoleBinding
+        metadata:
+          name: tiller
+        subjects:
+        - kind: ServiceAccount
+          name: tiller
+          namespace: kube-system
+        roleRef:
+          kind: ClusterRole
+          name: tiller
+          apiGroup: rbac.authorization.k8s.io
 
   - path: {{.KubernetesManifestPlugin.ManifestListFile.Path}}
     encoding: gzip+base64
