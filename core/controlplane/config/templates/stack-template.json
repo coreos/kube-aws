@@ -1,5 +1,5 @@
 {
-  "AWSTemplateFormatVersioTypha": "2010-09-09",
+  "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "kube-aws Kubernetes cluster {{.ClusterName}}",
   "Parameters": {
     {{if .CloudWatchLogging.Enabled}}
@@ -1325,7 +1325,7 @@
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
     {{ end -}}
-    "SecurityGroupWorkerIngressFromControllerToFlannel": {
+   "SecurityGroupWorkerIngressFromControllerToFlannel": {
       "Properties": {
         "FromPort": 8472,
         "GroupId": {
