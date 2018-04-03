@@ -22,7 +22,7 @@ type NodePoolConfig struct {
 }
 
 type ClusterAutoscaler struct {
-	Enabled     bool `yaml:"enabled,omitempty"`
+	Enabled bool `yaml:"enabled,omitempty"`
 }
 
 func (a ClusterAutoscaler) AutoDiscoveryTagKey() string {

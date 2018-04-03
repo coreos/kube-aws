@@ -8,15 +8,15 @@ type Addons struct {
 }
 
 type ClusterAutoscalerSupport struct {
-	Enabled     bool `yaml:"enabled"`
+	Enabled bool `yaml:"enabled"`
 }
 
 type Rescheduler struct {
-	Enabled     bool `yaml:"enabled"`
+	Enabled bool `yaml:"enabled"`
 }
 
 type MetricsServer struct {
-	Enabled     bool `yaml:"enabled"`
+	Enabled bool `yaml:"enabled"`
 }
 
 type Prometheus struct {
