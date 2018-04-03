@@ -1,5 +1,5 @@
 {
-  "AWSTemplateFormatVersion": "2010-09-09",
+  "AWSTemplateFormatVersioTypha": "2010-09-09",
   "Description": "kube-aws Kubernetes cluster {{.ClusterName}}",
   "Parameters": {
     {{if .CloudWatchLogging.Enabled}}
@@ -1295,6 +1295,7 @@
       },
       "Type": "AWS::EC2::SecurityGroup"
     },
+    {{ if .Kubernetes.Networking.SelfHosting.Typha -}}
     "SecurityGroupWorkerIngressFromControllerToTypha": {
       "Properties": {
         "FromPort": 5473,
@@ -1323,6 +1324,7 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
+    {{ end -}}
     "SecurityGroupWorkerIngressFromControllerToFlannel": {
       "Properties": {
         "FromPort": 8472,
