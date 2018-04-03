@@ -876,9 +876,6 @@ write_files:
       # Install tiller by default
       applyall "${mfdir}/tiller.yaml"
 
-      # Tiller RBAC rules
-      applyall "${mfdir}/tiller-rbac.yaml"
-
 {{ if .KubeDns.NodeLocalResolver }}
       # DNS Masq Fix
       applyall "${mfdir}/dnsmasq-node-ds.yaml"
