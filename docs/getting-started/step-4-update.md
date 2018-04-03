@@ -37,6 +37,9 @@ More concretely, steps should be taken in order to rotate your certs on nodes ar
   kube-aws update
   ```
 
+There are cases where the service account tokens used by the system pods become invalid after credentials update, and
+some of your system pods will break (especially `kube-dns`). Deleting the said secrets will solve the issue (see https://github.com/kubernetes-incubator/kube-aws/issues/1057).
+
 ## The etcd caveat
 
 There is no solution for hosting an etcd cluster in a way that is easily updateable in this fashion- so updates are automatically masked for the etcd instances. This means that, after the cluster is created, nothing about the etcd ec2 instances is allowed to be updated.
