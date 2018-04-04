@@ -1,5 +1,4 @@
 # Unique name of Kubernetes cluster. In order to deploy
-# Unique name of Kubernetes cluster. In order to deploy
 # more than one cluster into the same AWS account, this
 # name must not conflict with an existing cluster.
 clusterName: {{.ClusterName}}
