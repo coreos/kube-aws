@@ -96,8 +96,8 @@ func NewDefaultCluster() *Cluster {
 			Enabled: false,
 		},
 		GpuSupport: GpuSupport{
-			Enabled: false,
-			Version: "",
+			Enabled:      false,
+			Version:      "",
 			InstallImage: "shelmangroup/coreos-nvidia-driver-installer:latest",
 		},
 		KubeletOpts: "",
@@ -659,8 +659,8 @@ type Kube2IamSupport struct {
 }
 
 type GpuSupport struct {
-	Enabled bool `yaml:"enabled"`
-	Version string `yaml:"version"`
+	Enabled      bool   `yaml:"enabled"`
+	Version      string `yaml:"version"`
 	InstallImage string `yaml:"installImage"`
 }
 
