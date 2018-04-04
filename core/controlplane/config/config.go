@@ -95,6 +95,11 @@ func NewDefaultCluster() *Cluster {
 		Kube2IamSupport: Kube2IamSupport{
 			Enabled: false,
 		},
+		GpuSupport: GpuSupport{
+			Enabled: false,
+			Version: "",
+			InstallImage: "shelmangroup/coreos-nvidia-driver-installer:latest",
+		},
 		KubeletOpts: "",
 		LoadBalancer: LoadBalancer{
 			Enabled: false,
@@ -553,6 +558,7 @@ type Experimental struct {
 	EphemeralImageStorage       EphemeralImageStorage          `yaml:"ephemeralImageStorage"`
 	KIAMSupport                 KIAMSupport                    `yaml:"kiamSupport,omitempty"`
 	Kube2IamSupport             Kube2IamSupport                `yaml:"kube2IamSupport,omitempty"`
+	GpuSupport                  GpuSupport                     `yaml:"gpuSupport,omitempty"`
 	KubeletOpts                 string                         `yaml:"kubeletOpts,omitempty"`
 	LoadBalancer                LoadBalancer                   `yaml:"loadBalancer"`
 	TargetGroup                 TargetGroup                    `yaml:"targetGroup"`
@@ -650,6 +656,12 @@ type KIAMSupport struct {
 
 type Kube2IamSupport struct {
 	Enabled bool `yaml:"enabled"`
+}
+
+type GpuSupport struct {
+	Enabled bool `yaml:"enabled"`
+	Version string `yaml:"version"`
+	InstallImage string `yaml:"installImage"`
 }
 
 type KubeResourcesAutosave struct {

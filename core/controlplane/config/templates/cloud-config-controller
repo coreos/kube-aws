@@ -919,6 +919,12 @@ write_files:
         applyall "${mfdir}/kube2iam-ds.yaml";
       {{ end }}
 
+      {{ if .Experimental.GpuSupport.Enabled }}
+        mfdir=/srv/kubernetes/manifests
+        applyall "${mfdir}/nvidia-driver-installer.yaml"
+      {{ end }}
+
+
   - path: /etc/kubernetes/cni/docker_opts_cni.env
     content: |
       DOCKER_OPT_BIP=""
@@ -3594,6 +3600,118 @@ write_files:
       - kind: ServiceAccount
         name: kube2iam
         namespace: kube-system
+{{end}}
+
+{{if .Experimental.GpuSupport.Enabled }}
+  - path: /srv/kubernetes/manifests/nvidia-driver-installer.yaml
+    content: |
+      apiVersion: extensions/v1beta1
+      kind: DaemonSet
+      metadata:
+        name: nvidia-driver-installer
+        namespace: kube-system
+        labels:
+          app: nvidia-driver-installer
+        annotations:
+          scheduler.alpha.kubernetes.io/critical-pod: ''
+      spec:
+        template:
+          metadata:
+            labels:
+              name: nvidia-driver-installer
+            annotations:
+              scheduler.alpha.kubernetes.io/critical-pod: ''
+          spec:
+            nodeSelector:
+              kube-aws.coreos.com/gpu: nvidia
+            priorityClassName: system-node-critical
+            hostNetwork: true
+            hostPID: true
+            volumes:
+            - name: dev
+              hostPath:
+                path: /dev
+            - name: nvidia-install-dir-host
+              hostPath:
+                path: /opt/nvidia
+            - name: root-mount
+              hostPath:
+                path: /
+            initContainers:
+            - image: "{{.Experimental.GpuSupport.InstallImage}}"
+              name: nvidia-driver-installer
+              resources:
+                requests:
+                  cpu: 0.15
+              securityContext:
+                privileged: true
+              env:
+                - name: NVIDIA_INSTALL_DIR_HOST
+                  value: /opt/nvidia
+                - name: NVIDIA_INSTALL_DIR_CONTAINER
+                  value: /usr/local/nvidia
+                - name: ROOT_MOUNT_DIR
+                  value: /root
+                - name: NVIDIA_DRIVER_VERSION
+                  value: "{{.Experimental.GpuSupport.Version}}"
+              volumeMounts:
+              - name: nvidia-install-dir-host
+                mountPath: /usr/local/nvidia
+              - name: dev
+                mountPath: /dev
+              - name: root-mount
+                mountPath: /root
+            containers:
+            - image: "gcr.io/google-containers/pause:2.0"
+              name: pause
+      ---
+
+      apiVersion: extensions/v1beta1
+      kind: DaemonSet
+      metadata:
+        name: nvidia-gpu-device-plugin
+        namespace: kube-system
+        labels:
+          k8s-app: nvidia-gpu-device-plugin
+          addonmanager.kubernetes.io/mode: Reconcile
+      spec:
+        template:
+          metadata:
+            labels:
+              k8s-app: nvidia-gpu-device-plugin
+            annotations:
+              scheduler.alpha.kubernetes.io/critical-pod: ''
+          spec:
+            nodeSelector:
+              kube-aws.coreos.com/gpu: nvidia
+            priorityClassName: system-node-critical
+            hostNetwork: true
+            hostPID: true
+            volumes:
+            - name: device-plugin
+              hostPath:
+                path: /var/lib/kubelet/device-plugins
+            - name: dev
+              hostPath:
+                path: /dev
+            containers:
+            - image: "k8s.gcr.io/nvidia-gpu-device-plugin@sha256:0842734032018be107fa2490c98156992911e3e1f2a21e059ff0105b07dd8e9e"
+              command: ["/usr/bin/nvidia-gpu-device-plugin", "-logtostderr", "-host-path=/opt/nvidia"]
+              name: nvidia-gpu-device-plugin
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 10Mi
+                limits:
+                  cpu: 50m
+                  memory: 10Mi
+              securityContext:
+                privileged: true
+              volumeMounts:
+              - name: device-plugin
+                mountPath: /device-plugin
+              - name: dev
+                mountPath: /dev
 {{end}}
 
 {{if .Experimental.KIAMSupport.Enabled }}

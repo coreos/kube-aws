@@ -162,6 +162,7 @@ func (c *ProvidedConfig) Load(main *cfg.Config) error {
 	c.KubeClusterSettings = main.KubeClusterSettings
 	c.Experimental.TLSBootstrap = main.DeploymentSettings.Experimental.TLSBootstrap
 	c.Experimental.NodeDrainer = main.DeploymentSettings.Experimental.NodeDrainer
+	c.Experimental.GpuSupport = main.DeploymentSettings.Experimental.GpuSupport
 	c.Kubelet.RotateCerts = main.DeploymentSettings.Kubelet.RotateCerts
 
 	if c.Experimental.ClusterAutoscalerSupport.Enabled {
@@ -289,6 +290,9 @@ func (c ProvidedConfig) FeatureGates() model.FeatureGates {
 	gates := c.NodeSettings.FeatureGates
 	if c.Gpu.Nvidia.IsEnabledOn(c.InstanceType) {
 		gates["Accelerators"] = "true"
+	}
+	if c.Experimental.GpuSupport.Enabled {
+		gates["DevicePlugins"] = "true"
 	}
 	if c.Kubelet.RotateCerts.Enabled {
 		gates["RotateKubeletClientCertificate"] = "true"
