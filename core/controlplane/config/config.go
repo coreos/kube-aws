@@ -574,7 +574,7 @@ type Admission struct {
 	Priority                             Priority                             `yaml:"priority"`
 	MutatingAdmissionWebhook             MutatingAdmissionWebhook             `yaml:"mutatingAdmissionWebhook"`
 	ValidatingAdmissionWebhook           ValidatingAdmissionWebhook           `yaml:"validatingAdmissionWebhook"`
-	OwnerReferencesPermissionEnforcement OwnerReferencesPermissionEnforcement `yaml:"OwnerReferencesPermissionEnforcement"`
+	OwnerReferencesPermissionEnforcement OwnerReferencesPermissionEnforcement `yaml:"ownerReferencesPermissionEnforcement"`
 }
 
 type AlwaysPullImages struct {
