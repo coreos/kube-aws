@@ -2069,6 +2069,7 @@ write_files:
           - --etcd-cafile=/etc/kubernetes/ssl/etcd-trusted-ca.pem
           - --etcd-certfile=/etc/kubernetes/ssl/etcd-client.pem
           - --etcd-keyfile=/etc/kubernetes/ssl/etcd-client-key.pem
+          - --service-account-key-file=/etc/kubernetes/ssl/service-account-key.pem
           - --allow-privileged=true
           - --service-cluster-ip-range={{.ServiceCIDR}}
           - --secure-port=443
