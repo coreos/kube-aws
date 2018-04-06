@@ -3293,6 +3293,10 @@ write_files:
   - path: /etc/kubernetes/ssl/etcd-trusted-ca.pem
     encoding: gzip+base64
     content: {{.AssetsConfig.EtcdTrustedCA}}
+
+  - path: /etc/kubernetes/ssl/service-account-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+    encoding: gzip+base64
+    content: {{.AssetsConfig.ServiceAccountKey}}
 {{ end }}
 
   # File needed on every node (used by the kube-proxy DaemonSet), including controllers
