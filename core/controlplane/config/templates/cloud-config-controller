@@ -317,7 +317,7 @@ coreos:
         --container-runtime={{.ContainerRuntime}} \
         --rkt-path=/usr/bin/rkt \
         --rkt-stage1-image=coreos.com/rkt/stage1-coreos \
-        --node-labels=node-role.kubernetes.io/master="",kubernetes.io/role=master,{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
+        --node-labels=node-role.kubernetes.io/master="",kubernetes.io/role=master{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
         --register-with-taints=node.alpha.kubernetes.io/role=master:NoSchedule \
         --allow-privileged=true \
         --pod-manifest-path=/etc/kubernetes/manifests \
