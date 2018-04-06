@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 )
 
 const CacheFileExtension = "enc"
@@ -83,6 +84,21 @@ func RawCredentialFileFromPath(filePath string, defaultValue *string) (*RawCrede
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		if defaultValue == nil {
 			return nil, fmt.Errorf("%s must exist. Please confirm that you have not deleted the file manually", filePath)
+		}
+		// special default value that allows lookup from another file
+		re := regexp.MustCompile("^<<<([a-z./-]+.pem)$")
+		if re.MatchString(*defaultValue) {
+			readPath := re.FindStringSubmatch(*defaultValue)
+			if _, err := os.Stat(readPath[1]); os.IsNotExist(err) {
+				return nil, fmt.Errorf("%s and alternate file %s do not exist. Please confirm that you have not deleted them manually", filePath, readPath[1])
+			}
+			fmt.Printf("INFO: creating \"%s\" with contents of \"%s\"\n", filePath, readPath[1])
+			content, err := ioutil.ReadFile(readPath[1])
+			if err != nil {
+				return nil, err
+			}
+			newDefault := string(content[:])
+			return RawCredentialFileFromPath(filePath, &newDefault)
 		}
 		if err := ioutil.WriteFile(filePath, []byte(*defaultValue), 0644); err != nil {
 			return nil, err
