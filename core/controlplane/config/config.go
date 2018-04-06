@@ -972,6 +972,10 @@ func (c Cluster) StackName() string {
 	return "control-plane"
 }
 
+func (c Cluster) StackNameEnvFileName() string {
+	return "/etc/environment"
+}
+
 func (c Cluster) StackNameEnvVarName() string {
 	return "KUBE_AWS_STACK_NAME"
 }

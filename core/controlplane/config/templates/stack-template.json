@@ -894,7 +894,7 @@
           {{end}}
         ],
         "PlacementTenancy": "{{$.Etcd.Tenancy}}",
-        "UserData": {{ $.UserDataEtcd.Parts.instance.Base64 true (dict "etcdIndex" $etcdIndex) | checkSizeLessThan 16384 | quote }}
+        "UserData": {{ $.UserDataEtcd.Parts.instance.Template (dict "etcdIndex" $etcdIndex) | checkSizeLessThan 16384 }}
       },
       "Type": "AWS::AutoScaling::LaunchConfiguration"
     },
@@ -943,7 +943,7 @@
           {{end}}
         ],
         "PlacementTenancy": "{{ .Controller.Tenancy }}",
-        "UserData": {{ $.UserDataController.Parts.instance.Base64 true | checkSizeLessThan 16384 | quote }}
+        "UserData": {{ $.UserDataController.Parts.instance.Template | checkSizeLessThan 16384 }}
       },
   {{ if .Experimental.AwsEnvironment.Enabled }}
       "Metadata" : {

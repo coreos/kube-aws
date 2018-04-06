@@ -25,10 +25,11 @@ exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE
 {{ end }}
 
 {{ define "instance" -}}
-{ "Fn::Base64": { "Fn::Join" : ["", [
-  "#!/bin/bash -xe\n",
-  {"Fn::Join":["",[ "echo '{{.StackNameEnvVarName}}=", { "Ref": "AWS::StackName" }, "' >> {{.StackNameEnvFileName}}\n" ]]},
-  {{ (execTemplate "instance-script" .) | toJSON  }}
+{ "Fn::Base64": { "Fn::Join" : ["\n", [
+  "#!/bin/bash -xe",
+  "# s3-part-fingerprint: {{ (execTemplate "s3" .) | fingerprint }}",
+  {"Fn::Sub": "echo '{{.StackNameEnvVarName}}=${AWS::StackName}' >>{{.StackNameEnvFileName}}"},
+  {{ (execTemplate "instance-script" .) | toJSON }}
 ]]}}
 {{ end }}
 
@@ -653,12 +654,13 @@ write_files:
         --volume=awsenv,kind=host,source=/etc/aws-environment,readOnly=false \
         --mount volume=awsenv,target=/etc/aws-environment \
         --uuid-file-save=/var/run/coreos/set-aws-environment.uuid \
+        --set-env={{.StackNameEnvVarName}}=${{.StackNameEnvVarName}} \
         --net=host \
         --trust-keys-from-https \
         {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
           -ec \
           '
-            cfn-init -v -c "aws-environment" --region {{.Region}} --resource {{.LogicalName}} --stack '${{.StackNameEnvVarName}}'
+            cfn-init -v -c "aws-environment" --region {{.Region}} --resource {{.LogicalName}} --stack "${{.StackNameEnvVarName}}"
           '
 
       rkt rm --uuid-file=/var/run/coreos/set-aws-environment.uuid || :
@@ -744,12 +746,13 @@ write_files:
         --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false \
         --mount volume=awsenv,target=/var/run/coreos \
         --uuid-file-save=/var/run/coreos/cfn-signal.uuid \
+        --set-env={{.StackNameEnvVarName}}=${{.StackNameEnvVarName}} \
         --net=host \
         --trust-keys-from-https \
         {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
           -ec \
           '
-            cfn-signal -e 0 --region {{.Region}} --resource {{.LogicalName}} --stack '${{.StackNameEnvVarName}}'
+            cfn-signal -e 0 --region {{.Region}} --resource {{.LogicalName}} --stack "${{.StackNameEnvVarName}}"
           '
 
       rkt rm --uuid-file=/var/run/coreos/cfn-signal.uuid || :
@@ -766,6 +769,7 @@ write_files:
         --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false \
         --mount volume=awsenv,target=/var/run/coreos \
         --uuid-file-save=/var/run/coreos/cfn-etcd-environment.uuid \
+        --set-env={{.StackNameEnvVarName}}=${{.StackNameEnvVarName}} \
         --net=host \
         --trust-keys-from-https \
         {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \

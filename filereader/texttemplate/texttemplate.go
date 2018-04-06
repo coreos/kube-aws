@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/Masterminds/sprig"
 	"io/ioutil"
 	"text/template"
+
+	"github.com/Masterminds/sprig"
+	"github.com/kubernetes-incubator/kube-aws/fingerprint"
 )
 
 func ParseFile(filename string, funcs template.FuncMap) (*template.Template, error) {
@@ -32,6 +34,9 @@ func Parse(name string, raw string, funcs template.FuncMap) (*template.Template,
 		},
 		"execTemplate": func(name string, ctx interface{}) (string, error) {
 			panic("[bug] Stub 'execTemplate' was not replaced")
+		},
+		"fingerprint": func(data string) string {
+			return fingerprint.SHA256(data)
 		},
 	}
 
