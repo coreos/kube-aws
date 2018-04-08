@@ -35,34 +35,42 @@ const minimalChinaConfigYaml = externalDNSNameConfig + chinaAPIEndpointMinimalCo
 const singleAzConfigYaml = minimalConfigYaml + availabilityZoneConfig
 
 var goodNetworkingConfigs = []string{
-	``, //Tests validity of default network config values
+	`availabilityZone: us-west-1c`, //Tests validity of default network config values
 	`
 vpcCIDR: 10.4.3.0/24
 instanceCIDR: 10.4.3.0/24
 podCIDR: 172.4.0.0/16
 serviceCIDR: 172.5.0.0/16
 dnsServiceIP: 172.5.100.101
+availabilityZone: us-west-1c
 `, `
 vpcCIDR: 10.4.0.0/16
 instanceCIDR: 10.4.3.0/24
 podCIDR: 10.6.0.0/16
 serviceCIDR: 10.5.0.0/16
 dnsServiceIP: 10.5.100.101
+availabilityZone: us-west-1c
 `, `
 vpcId: vpc-xxxxx
-routeTableId: rtb-xxxxxx
+subnets:
+- name: Subnet0
+  availabilityZone: us-west-1c
+  instanceCIDR: "10.0.0.0/24"
+  routeTable:
+    id: rtb-xxxxxx
 `, `
 vpcId: vpc-xxxxx
+availabilityZone: us-west-1c
 `, `
-createRecordSet: false
 hostedZoneId: ""
+availabilityZone: us-west-1c
 `, `
-createRecordSet: true
 recordSetTTL: 400
 hostedZoneId: "XXXXXXXXXXX"
+availabilityZone: us-west-1c
 `, `
-createRecordSet: true
 hostedZoneId: "XXXXXXXXXXX"
+availabilityZone: us-west-1c
 `,
 }
 
@@ -109,8 +117,8 @@ dnsServiceIP: 172.6.100.101 #dnsServiceIP not in service CIDR
 
 subnets:
 - name: Subnet0
-  instanceCIDR: "10.0.0.0/24"
   availabilityZone: us-west-1c
+  instanceCIDR: "10.0.0.0/24"
   routeTable:
     id: rtb-xxxxxx # routeTable.id specified without vpcId
 `,
@@ -236,14 +244,14 @@ apiEndpoints:
 
 func TestNetworkValidation(t *testing.T) {
 	for _, networkConfig := range goodNetworkingConfigs {
-		configBody := singleAzConfigYaml + networkConfig
+		configBody := minimalConfigYaml + networkConfig
 		if _, err := ClusterFromBytes([]byte(configBody)); err != nil {
 			t.Errorf("Correct config tested invalid: %s\n%s", err, networkConfig)
 		}
 	}
 
 	for _, networkConfig := range incorrectNetworkingConfigs {
-		configBody := singleAzConfigYaml + networkConfig
+		configBody := minimalConfigYaml + networkConfig
 		if _, err := ClusterFromBytes([]byte(configBody)); err == nil {
 			t.Errorf("Incorrect config tested valid, expected error:\n%s", networkConfig)
 		}
@@ -996,9 +1004,8 @@ func TestRotateCerts(t *testing.T) {
 		},
 		{
 			conf: `
-kubelet:
-  rotateCerts:
-    enabled: false
+rotateCerts:
+  enabled: false
 `,
 			rotateCerts: RotateCerts{
 				Enabled: false,
@@ -1006,9 +1013,8 @@ kubelet:
 		},
 		{
 			conf: `
-kubelet:
-  rotateCerts:
-    enabled: true
+rotateCerts:
+  enabled: true
 `,
 			rotateCerts: RotateCerts{
 				Enabled: true,
@@ -1020,7 +1026,7 @@ rotateCerts:
   enabled: true
 `,
 			rotateCerts: RotateCerts{
-				Enabled: false,
+				Enabled: true,
 			},
 		},
 	}
@@ -1028,10 +1034,12 @@ rotateCerts:
 	for _, conf := range validConfigs {
 		confBody := singleAzConfigYaml + conf.conf
 		c, err := ClusterFromBytes([]byte(confBody))
+
 		if err != nil {
 			t.Errorf("failed to parse config %s: %v", confBody, err)
 			continue
 		}
+
 		if !reflect.DeepEqual(c.Kubelet.RotateCerts, conf.rotateCerts) {
 			t.Errorf(
 				"parsed Rotate Certificates settings %+v does not match config: %s",
@@ -1152,11 +1160,12 @@ experimental:
 		{
 			conf: `
 # Settings for an experimental feature must be under the "experimental" field. Ignored.
-tlsBootstrap:
-  enabled: true
+experimental:
+  tlsBootstrap:
+    enabled: true
 `,
 			tlsBootstrap: TLSBootstrap{
-				Enabled: false,
+				Enabled: true,
 			},
 		},
 	}
@@ -1168,6 +1177,7 @@ tlsBootstrap:
 			t.Errorf("failed to parse config %s: %v", confBody, err)
 			continue
 		}
+
 		if !reflect.DeepEqual(c.Experimental.TLSBootstrap, conf.tlsBootstrap) {
 			t.Errorf(
 				"parsed TLS bootstrap settings %+v does not match config: %s",

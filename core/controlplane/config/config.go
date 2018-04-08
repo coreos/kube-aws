@@ -123,7 +123,7 @@ func NewDefaultCluster() *Cluster {
 		MinSyncPeriod: "10s",
 	}
 
-	return &Cluster{
+	c := &Cluster{
 		DeploymentSettings: DeploymentSettings{
 			ClusterName:        "kubernetes",
 			VPCCIDR:            "10.0.0.0/16",
@@ -224,6 +224,9 @@ func NewDefaultCluster() *Cluster {
 			Enabled: false,
 		},
 	}
+
+	return c
+
 }
 
 func ClusterFromFile(filename string) (*Cluster, error) {
@@ -243,7 +246,7 @@ func ClusterFromFile(filename string) (*Cluster, error) {
 // ClusterFromBytes Necessary for unit tests, which store configs as hardcoded strings
 func ClusterFromBytes(data []byte) (*Cluster, error) {
 	c := NewDefaultCluster()
-
+	
 	if err := yaml.UnmarshalStrict(data, c); err != nil {
 		return nil, fmt.Errorf("failed to parse cluster: %v", err)
 	}
@@ -448,7 +451,7 @@ type DeploymentSettings struct {
 	SSHAuthorizedKeys       []string          `yaml:"sshAuthorizedKeys,omitempty"`
 	Addons                  model.Addons      `yaml:"addons"`
 	Experimental            Experimental      `yaml:"experimental"`
-	Kubelet                 Kubelet           `yaml:"kubelet"`
+	Kubelet                 Kubelet           `yaml:"kubelet,inline"`
 	ManageCertificates      bool              `yaml:"manageCertificates,omitempty"`
 	WaitSignal              WaitSignal        `yaml:"waitSignal"`
 	CloudWatchLogging       `yaml:"cloudWatchLogging,omitempty"`

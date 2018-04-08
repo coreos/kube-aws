@@ -1,6 +1,8 @@
 package cluster
 
 import (
+	"fmt"
+
 	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 )

@@ -117,6 +117,7 @@ func newDefaultCluster() *ProvidedConfig {
 // ClusterFromBytes Necessary for unit tests, which store configs as hardcoded strings
 func ClusterFromBytes(data []byte, main *cfg.Config) (*ProvidedConfig, error) {
 	c := newDefaultCluster()
+
 	if err := yaml.UnmarshalStrict(data, c); err != nil {
 		return nil, fmt.Errorf("failed to parse cluster: %v", err)
 	}
