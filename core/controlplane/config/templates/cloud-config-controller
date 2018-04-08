@@ -3191,6 +3191,7 @@ write_files:
           loadBalancer: {}
 
   - path: /srv/kubernetes/manifests/tiller-rbac.yaml
+    content: |
         apiVersion: v1
         kind: ServiceAccount
         metadata:
