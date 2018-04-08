@@ -3191,16 +3191,6 @@ write_files:
           loadBalancer: {}
 
   - path: /srv/kubernetes/manifests/tiller-rbac.yaml
-    content: |
-        apiVersion: rbac.authorization.k8s.io/v1
-        kind: ClusterRole
-        metadata:
-          name: tiller
-        rules:
-          - apiGroups: ["", "extensions", "apps"]
-            resources: ["deployments", "replicasets", "pods", "configmaps", "secrets", "namespaces"]
-            verbs: ["*"]
-        ---
         apiVersion: v1
         kind: ServiceAccount
         metadata:
@@ -3217,7 +3207,7 @@ write_files:
           namespace: kube-system
         roleRef:
           kind: ClusterRole
-          name: tiller
+          name: cluster-admin
           apiGroup: rbac.authorization.k8s.io
 
   - path: {{.KubernetesManifestPlugin.ManifestListFile.Path}}
