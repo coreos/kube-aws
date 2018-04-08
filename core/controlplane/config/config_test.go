@@ -1004,8 +1004,9 @@ func TestRotateCerts(t *testing.T) {
 		},
 		{
 			conf: `
-rotateCerts:
-  enabled: false
+kubelet:
+  rotateCerts:
+    enabled: false
 `,
 			rotateCerts: RotateCerts{
 				Enabled: false,
@@ -1013,8 +1014,9 @@ rotateCerts:
 		},
 		{
 			conf: `
-rotateCerts:
-  enabled: true
+kubelet:
+  rotateCerts:
+    enabled: true
 `,
 			rotateCerts: RotateCerts{
 				Enabled: true,
@@ -1022,8 +1024,9 @@ rotateCerts:
 		},
 		{
 			conf: `
-rotateCerts:
-  enabled: true
+kubelet:
+  rotateCerts:
+    enabled: true
 `,
 			rotateCerts: RotateCerts{
 				Enabled: true,

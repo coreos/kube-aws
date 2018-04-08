@@ -451,7 +451,7 @@ type DeploymentSettings struct {
 	SSHAuthorizedKeys       []string          `yaml:"sshAuthorizedKeys,omitempty"`
 	Addons                  model.Addons      `yaml:"addons"`
 	Experimental            Experimental      `yaml:"experimental"`
-	Kubelet                 Kubelet           `yaml:"kubelet,inline"`
+	Kubelet                 Kubelet           `yaml:"kubelet"`
 	ManageCertificates      bool              `yaml:"manageCertificates,omitempty"`
 	WaitSignal              WaitSignal        `yaml:"waitSignal"`
 	CloudWatchLogging       `yaml:"cloudWatchLogging,omitempty"`
