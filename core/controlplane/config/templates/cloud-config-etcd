@@ -271,6 +271,7 @@ coreos:
             {{end -}}
 
             [Service]
+            Type=simple
             EnvironmentFile=-/etc/etcd-environment
             EnvironmentFile=-/var/run/coreos/etcdadm/etcd-member.env
 
