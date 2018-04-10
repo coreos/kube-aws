@@ -3,6 +3,8 @@ kube-aws
 /bin
 /e2e/assets
 *~
+/core/*/config/templates.go
+/core/*/config/files.go
 .idea/
 .envrc
 coverage.txt
@@ -15,3 +17,4 @@ _book
 *.mobi
 *.pdf
 node_modules
+kube-aws

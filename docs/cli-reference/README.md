@@ -17,6 +17,7 @@ Initialize the base configuration for a cluster ready for customization prior to
 | `kms-key-arn` | The ARN of the AWS KMS key for encrypting TLS assets |
 | `no-record-set` | Instruct kube-aws to not manage Route53 record sets for your K8S API | `false` |
 | `region` | The AWS region to deploy to | none |
+| `s3-uri` | When your template is bigger than the [CloudFormation limit of 51,200 bytes](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cloudformation-limits.html), kube-aws needs to upload the template to S3 to perform the deploy/validate. The S3 location expressed as `s3://<bucket>/path/to/dir`. Most clusters will need this so it is mandatory. Multiple clusters can use the same S3 bucket. | none |
 
 ### `init` example
 
@@ -29,6 +30,7 @@ $ kube-aws init \
   --external-dns-name=my-cluster-endpoint.mydomain.com \
   --key-name=key-pair-name \
   --kms-key-arn="arn:aws:kms:us-west-1:xxxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
+  --s3-uri=s3://my-kube-aws-assets-bucket
 ```
 
 # `render credentials`
@@ -68,7 +70,6 @@ Validate cluster assets prior to deployment.
 | Flag | Description | Default |
 | -- | -- | -- |
 | `aws-debug` | Log debug information coming from the AWS SDK library | `false` |
-| `s3-uri` | When your template is bigger than the [CloudFormation limit of 51,200 bytes](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cloudformation-limits.html), kube-aws needs to upload the template to S3 to perform the deploy. The S3 location expressed as `s3://<bucket>/path/to/dir`. Multiple clusters can use the same S3 bucket. | none |
 
 ### `validate` example
 
@@ -85,7 +86,6 @@ Deploy a new Kubernetes cluster.
 | `aws-debug` | Log debug information coming from the AWS SDK library | `false` |
 | `export` | Do not create cluster, instead export the CloudFormation stack file | `false` |
 | `pretty-print` | Pretty print the resulting CloudFormation | `false` |
-| `s3-uri` | When your template is bigger than the [CloudFormation limit of 51,200 bytes](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cloudformation-limits.html), kube-aws needs to upload the template to S3 to perform the deploy. The S3 location expressed as `s3://<bucket>/path/to/dir`. Multiple clusters can use the same S3 bucket. | none |
 | `skip-wait` | Do not wait for the cluster components be ready before the CLI exits | `false` |
 
 ### `up` example
@@ -102,7 +102,6 @@ Update an existing Kubernetes cluster that was created by kube-aws.
 | -- | -- | -- |
 | `aws-debug` | Log debug information coming from the AWS SDK library | `false` |
 | `pretty-print` | Pretty print the resulting CloudFormation | `false` |
-| `s3-uri` | When your template is bigger than the [CloudFormation limit of 51,200 bytes](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cloudformation-limits.html), kube-aws needs to upload the template to S3 to perform the deploy. The S3 location expressed as `s3://<bucket>/path/to/dir`. Multiple clusters can use the same S3 bucket. | none |
 | `skip-wait` | Do not wait for the cluster components be ready before the CLI exits | `false` |
 
 ### `update` example

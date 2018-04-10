@@ -28,6 +28,13 @@ const (
 
 	credentialsDir = "credentials"
 	userDataDir    = "userdata"
+
+	// Experimental SelfHosting feature default images.
+	kubeNetworkingSelfHostingDefaultCalicoNodeImageTag = "v3.0.3"
+	kubeNetworkingSelfHostingDefaultCalicoCniImageTag  = "v2.0.1"
+	kubeNetworkingSelfHostingDefaultFlannelImageTag    = "v0.9.1"
+	kubeNetworkingSelfHostingDefaultFlannelCniImageTag = "v0.3.0"
+	kubeNetworkingSelfHostingDefaultTyphaImageTag      = "v0.6.2"
 )
 
 func NewDefaultCluster() *Cluster {
@@ -57,6 +64,9 @@ func NewDefaultCluster() *Cluster {
 				Enabled: false,
 			},
 			ValidatingAdmissionWebhook{
+				Enabled: false,
+			},
+			OwnerReferencesPermissionEnforcement{
 				Enabled: false,
 			},
 		},
@@ -169,6 +179,20 @@ func NewDefaultCluster() *Cluster {
 			KubernetesDashboard: KubernetesDashboard{
 				AdminPrivileges: true,
 				InsecureLogin:   false,
+			},
+			Kubernetes: Kubernetes{
+				Networking: Networking{
+					SelfHosting: SelfHosting{
+						Enabled:         false,
+						Type:            "canal",
+						Typha:           false,
+						CalicoNodeImage: model.Image{Repo: "quay.io/calico/node", Tag: kubeNetworkingSelfHostingDefaultCalicoNodeImageTag, RktPullDocker: false},
+						CalicoCniImage:  model.Image{Repo: "quay.io/calico/cni", Tag: kubeNetworkingSelfHostingDefaultCalicoCniImageTag, RktPullDocker: false},
+						FlannelImage:    model.Image{Repo: "quay.io/coreos/flannel", Tag: kubeNetworkingSelfHostingDefaultFlannelImageTag, RktPullDocker: false},
+						FlannelCniImage: model.Image{Repo: "quay.io/coreos/flannel-cni", Tag: kubeNetworkingSelfHostingDefaultFlannelCniImageTag, RktPullDocker: false},
+						TyphaImage:      model.Image{Repo: "quay.io/calico/typha", Tag: kubeNetworkingSelfHostingDefaultTyphaImageTag, RktPullDocker: false},
+					},
+				},
 			},
 			CloudFormationStreaming:            true,
 			HyperkubeImage:                     model.Image{Repo: "k8s.gcr.io/hyperkube-amd64", Tag: k8sVer, RktPullDocker: true},
@@ -463,9 +487,11 @@ type DeploymentSettings struct {
 	KubeDns                 `yaml:"kubeDns,omitempty"`
 	KubernetesDashboard     `yaml:"kubernetesDashboard,omitempty"`
 	// Images repository
-	HyperkubeImage                     model.Image `yaml:"hyperkubeImage,omitempty"`
-	AWSCliImage                        model.Image `yaml:"awsCliImage,omitempty"`
-	CalicoNodeImage                    model.Image `yaml:"calicoNodeImage,omitempty"`
+	HyperkubeImage model.Image `yaml:"hyperkubeImage,omitempty"`
+	AWSCliImage    model.Image `yaml:"awsCliImage,omitempty"`
+
+	CalicoNodeImage model.Image `yaml:"calicoNodeImage,omitempty"`
+
 	CalicoCniImage                     model.Image `yaml:"calicoCniImage,omitempty"`
 	CalicoCtlImage                     model.Image `yaml:"calicoCtlImage,omitempty"`
 	CalicoKubeControllersImage         model.Image `yaml:"calicoKubeControllersImage,omitempty"`
@@ -487,6 +513,7 @@ type DeploymentSettings struct {
 	PauseImage                         model.Image `yaml:"pauseImage,omitempty"`
 	FlannelImage                       model.Image `yaml:"flannelImage,omitempty"`
 	JournaldCloudWatchLogsImage        model.Image `yaml:"journaldCloudWatchLogsImage,omitempty"`
+	Kubernetes                         Kubernetes  `yaml:"kubernetes,omitempty"`
 }
 
 // Part of configuration which is specific to worker nodes
@@ -570,13 +597,14 @@ type Experimental struct {
 }
 
 type Admission struct {
-	PodSecurityPolicy          PodSecurityPolicy          `yaml:"podSecurityPolicy"`
-	AlwaysPullImages           AlwaysPullImages           `yaml:"alwaysPullImages"`
-	DenyEscalatingExec         DenyEscalatingExec         `yaml:"denyEscalatingExec"`
-	Initializers               Initializers               `yaml:"initializers"`
-	Priority                   Priority                   `yaml:"priority"`
-	MutatingAdmissionWebhook   MutatingAdmissionWebhook   `yaml:"mutatingAdmissionWebhook"`
-	ValidatingAdmissionWebhook ValidatingAdmissionWebhook `yaml:"validatingAdmissionWebhook"`
+	PodSecurityPolicy                    PodSecurityPolicy                    `yaml:"podSecurityPolicy"`
+	AlwaysPullImages                     AlwaysPullImages                     `yaml:"alwaysPullImages"`
+	DenyEscalatingExec                   DenyEscalatingExec                   `yaml:"denyEscalatingExec"`
+	Initializers                         Initializers                         `yaml:"initializers"`
+	Priority                             Priority                             `yaml:"priority"`
+	MutatingAdmissionWebhook             MutatingAdmissionWebhook             `yaml:"mutatingAdmissionWebhook"`
+	ValidatingAdmissionWebhook           ValidatingAdmissionWebhook           `yaml:"validatingAdmissionWebhook"`
+	OwnerReferencesPermissionEnforcement OwnerReferencesPermissionEnforcement `yaml:"ownerReferencesPermissionEnforcement"`
 }
 
 type AlwaysPullImages struct {
@@ -604,6 +632,10 @@ type MutatingAdmissionWebhook struct {
 }
 
 type ValidatingAdmissionWebhook struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type OwnerReferencesPermissionEnforcement struct {
 	Enabled bool `yaml:"enabled"`
 }
 
@@ -685,6 +717,25 @@ type LocalStreaming struct {
 	Enabled  bool   `yaml:"enabled"`
 	Filter   string `yaml:"filter"`
 	interval int    `yaml:"interval"`
+}
+
+type Kubernetes struct {
+	Networking Networking `yaml:"networking,omitempty"`
+}
+
+type Networking struct {
+	SelfHosting SelfHosting `yaml:"selfHosting"`
+}
+
+type SelfHosting struct {
+	Enabled         bool        `yaml:"enabled"`
+	Type            string      `yaml:"type"`
+	Typha           bool        `yaml:"typha"`
+	CalicoNodeImage model.Image `yaml:"calicoNodeImage"`
+	CalicoCniImage  model.Image `yaml:"calicoCniImage"`
+	FlannelImage    model.Image `yaml:"flannelImage"`
+	FlannelCniImage model.Image `yaml:"flannelCniImage"`
+	TyphaImage      model.Image `yaml:"typhaImage"`
 }
 
 func (c *LocalStreaming) Interval() int64 {
@@ -984,6 +1035,10 @@ func (c Cluster) StackName() string {
 	return "control-plane"
 }
 
+func (c Cluster) StackNameEnvFileName() string {
+	return "/etc/environment"
+}
+
 func (c Cluster) StackNameEnvVarName() string {
 	return "KUBE_AWS_STACK_NAME"
 }
@@ -1193,6 +1248,15 @@ func (c Cluster) validate() error {
 	for i, e := range c.APIEndpointConfigs {
 		if e.LoadBalancer.NetworkLoadBalancer() && !c.Region.SupportsNetworkLoadBalancers() {
 			return fmt.Errorf("api endpoint %d is not valid: network load balancer not supported in region", i)
+		}
+	}
+
+	if c.Kubernetes.Networking.SelfHosting.Enabled {
+		if (c.Kubernetes.Networking.SelfHosting.Type != "canal") && (c.Kubernetes.Networking.SelfHosting.Type != "flannel") {
+			return fmt.Errorf("networkingdaemonsets - style must be either 'canal' or 'flannel'")
+		}
+		if c.Kubernetes.Networking.SelfHosting.Typha && c.Kubernetes.Networking.SelfHosting.Type != "canal" {
+			return fmt.Errorf("networkingdaemonsets - you can only enable typha when deploying type 'canal'")
 		}
 	}
 

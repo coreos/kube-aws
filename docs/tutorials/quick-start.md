@@ -38,6 +38,7 @@ First run `init` using the information from the pre-requisites section. For exam
   --external-dns-name=quick-start-k8s.mycompany.com \
   --key-name=ec2-key-pair-name \
   --kms-key-arn="arn:aws:kms:us-west-1:123456789012:key/c4f79cb0-f9fb-434a-ac3c-47c5697d51e6"
+  --s3-uri=s3://kube-aws-assets/
 ```
 
 This will generate a `cluster.yaml` file which forms the main configuration for your new cluster. The `cluster.yaml` has many options to adjust your cluster, leave them as the defaults for now.
