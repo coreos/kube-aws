@@ -330,7 +330,7 @@ func (c ProvidedConfig) validate() error {
 		return err
 	}
 
-	if err := c.WorkerNodePoolConfig.Validate(); err != nil {
+	if err := c.WorkerNodePoolConfig.Validate(c.Experimental); err != nil {
 		return err
 	}
 

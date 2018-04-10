@@ -67,7 +67,7 @@ func (c NodePoolConfig) LogicalName() string {
 	return "Workers"
 }
 
-func (c NodePoolConfig) Validate() error {
+func (c NodePoolConfig) Validate(experimentalGpuSupportEnabled bool) error {
 	// one is the default WorkerCount
 	if c.Count != 1 && (c.AutoScalingGroup.MinSize != nil && *c.AutoScalingGroup.MinSize != 0 || c.AutoScalingGroup.MaxSize != 0) {
 		return fmt.Errorf("`worker.autoScalingGroup.minSize` and `worker.autoScalingGroup.maxSize` can only be specified without `count`=%d", c.Count)
@@ -105,7 +105,7 @@ func (c NodePoolConfig) Validate() error {
 		return err
 	}
 
-	if err := c.Gpu.Validate(c.InstanceType); err != nil {
+	if err := c.Gpu.Validate(c.InstanceType, experimentalGpuSupportEnabled); err != nil {
 		return err
 	}
 

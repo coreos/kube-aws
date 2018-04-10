@@ -20,8 +20,8 @@ func (c WorkerNodePoolConfig) ValidateInputs() error {
 	return nil
 }
 
-func (c WorkerNodePoolConfig) Validate() error {
-	if err := c.NodePoolConfig.Validate(); err != nil {
+func (c WorkerNodePoolConfig) Validate(experimental cfg.Experimental) error {
+	if err := c.NodePoolConfig.Validate(experimental.GpuSupport.Enabled); err != nil {
 		return err
 	}
 	return nil
