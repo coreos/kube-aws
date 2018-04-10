@@ -135,6 +135,11 @@ func TestMainClusterConfig(t *testing.T) {
 			Kube2IamSupport: controlplane_config.Kube2IamSupport{
 				Enabled: false,
 			},
+			GpuSupport: controlplane_config.GpuSupport{
+				Enabled:      false,
+				Version:      "",
+				InstallImage: "shelmangroup/coreos-nvidia-driver-installer:latest",
+			},
 			LoadBalancer: controlplane_config.LoadBalancer{
 				Enabled: false,
 			},
