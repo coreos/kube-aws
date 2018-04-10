@@ -1268,6 +1268,10 @@ experimental:
     enabled: true
   kube2IamSupport:
     enabled: true
+  gpuSupport:
+    enabled: true
+    version: "375.66"
+    installImage: "shelmangroup/coreos-nvidia-driver-installer:latest"
   kubeletOpts: '--image-gc-low-threshold 60 --image-gc-high-threshold 70'
   loadBalancer:
     enabled: true
@@ -1360,6 +1364,11 @@ worker:
 						},
 						Kube2IamSupport: controlplane_config.Kube2IamSupport{
 							Enabled: true,
+						},
+						GpuSupport: controlplane_config.GpuSupport{
+							Enabled:      true,
+							Version:      "375.66",
+							InstallImage: "shelmangroup/coreos-nvidia-driver-installer:latest",
 						},
 						KubeletOpts: "--image-gc-low-threshold 60 --image-gc-high-threshold 70",
 						LoadBalancer: controlplane_config.LoadBalancer{
