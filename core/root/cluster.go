@@ -267,13 +267,13 @@ func (c clusterImpl) generateAssets(targets OperationTargets) (cfnstack.Assets, 
 		wAssets = cfnstack.EmptyAssets()
 	}
 
-	assets := cpAssets.Merge(wAssets)
+	nestedStacksAssets := cpAssets.Merge(wAssets)
 
 	s3URI := fmt.Sprintf("%s/kube-aws/clusters/%s/exported/stacks",
 		strings.TrimSuffix(c.s3URI(), "/"),
 		c.controlPlane.ClusterName,
 	)
-	assetsBuilder := cfnstack.NewAssetsBuilder(c.stackName(), s3URI, c.controlPlane.Region)
+	rootStackAssetsBuilder := cfnstack.NewAssetsBuilder(c.stackName(), s3URI, c.controlPlane.Region)
 
 	var stackTemplate string
 	// Do not update the root stack but update either controlplane or worker stack(s) only when specified so
@@ -291,7 +291,7 @@ func (c clusterImpl) generateAssets(targets OperationTargets) (cfnstack.Assets, 
 			return nil, fmt.Errorf("failed to render template : %v", err)
 		}
 
-		a, err := assets.FindAssetByStackAndFileName(target, REMOTE_STACK_TEMPLATE_FILENAME)
+		a, err := nestedStacksAssets.FindAssetByStackAndFileName(target, REMOTE_STACK_TEMPLATE_FILENAME)
 
 		nestedStackTemplateURL, err := a.URL()
 		if err != nil {
@@ -303,11 +303,11 @@ func (c clusterImpl) generateAssets(targets OperationTargets) (cfnstack.Assets, 
 			return nil, fmt.Errorf("failed to update stack template: %v", err)
 		}
 	}
-	assetsBuilder.Add(REMOTE_STACK_TEMPLATE_FILENAME, stackTemplate)
+	rootStackAssetsBuilder.Add(REMOTE_STACK_TEMPLATE_FILENAME, stackTemplate)
 
-	rootAssets := assetsBuilder.Build()
+	rootStackAssets := rootStackAssetsBuilder.Build()
 
-	return assets.Merge(rootAssets), nil
+	return nestedStacksAssets.Merge(rootStackAssets), nil
 }
 
 func (c clusterImpl) setNestedStackTemplateURL(template, stack string, url string) (string, error) {
