@@ -819,6 +819,7 @@ write_files:
 
       # Try to batch as many files as possible to reduce the total amount of delay due to wilderness in the API aggregation
       # See https://github.com/kubernetes-incubator/kube-aws/issues/1039
+      # Use --force to ensure immutable objects are deleted+added if can not be applied.
       applyall() {
         kubectl apply --force -f $(echo "$@" | tr ' ' ',')
       }
