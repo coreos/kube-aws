@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	etcd "github.com/kubernetes-incubator/kube-aws/core/etcd/config"
+	network "github.com/kubernetes-incubator/kube-aws/core/network/config"
 	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root/defaults"
@@ -42,6 +44,8 @@ func (r stackRendererImpl) RenderFiles() error {
 		filegen.File(defaults.WorkerTmplFile, controlplane.CloudConfigWorker, 0644),
 		filegen.File(defaults.EtcdTmplFile, controlplane.CloudConfigEtcd, 0644),
 		filegen.File(defaults.ControlPlaneStackTemplateTmplFile, controlplane.StackTemplateTemplate, 0644),
+		filegen.File(defaults.NetworkStackTemplateTmplFile, network.StackTemplateTemplate, 0644),
+		filegen.File(defaults.EtcdStackTemplateTmplFile, etcd.StackTemplateTemplate, 0644),
 		filegen.File(defaults.NodePoolStackTemplateTmplFile, nodepool.StackTemplateTemplate, 0644),
 		filegen.File(defaults.RootStackTemplateTmplFile, config.StackTemplateTemplate, 0644),
 		filegen.File("kubeconfig", kubeconfig.Bytes(), 0600),

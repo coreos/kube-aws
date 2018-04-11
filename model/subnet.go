@@ -168,10 +168,20 @@ func (s *Subnet) MapPublicIPs() bool {
 }
 
 func (s *Subnet) LogicalName() string {
-	if s.Name != "" {
-		return strings.Replace(strings.Title(s.Name), "-", "", -1)
+	result, err := s.LogicalNameOrErr()
+
+	if err != nil {
+		panic(err)
 	}
-	panic(fmt.Sprintf("Name must be set for a subnet: %+v", *s))
+
+	return result
+}
+
+func (s *Subnet) LogicalNameOrErr() (string, error) {
+	if s.Name != "" {
+		return strings.Replace(strings.Title(s.Name), "-", "", -1), nil
+	}
+	return "", fmt.Errorf("name must be set for a subnet: %+v", *s)
 }
 
 func (s *Subnet) RouteTableID() string {

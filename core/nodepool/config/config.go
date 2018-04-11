@@ -199,17 +199,11 @@ define one or more public subnets in cluster.yaml or explicitly reference privat
 		}
 	}
 
-	// Import all the managed subnets from the main cluster i.e. don't create subnets inside the node pool cfn stack
-	for i, s := range c.Subnets {
-		if !s.HasIdentifier() {
-			stackOutputName := fmt.Sprintf(`{"Fn::ImportValue":{"Fn::Sub":"${ControlPlaneStackName}-%s"}}`, s.LogicalName())
-			az := s.AvailabilityZone
-			if s.Private {
-				c.Subnets[i] = model.NewPrivateSubnetFromFn(az, stackOutputName)
-			} else {
-				c.Subnets[i] = model.NewPublicSubnetFromFn(az, stackOutputName)
-			}
-		}
+	// Import all the managed subnets from the network stack i.e. don't create subnets inside the node pool cfn stack
+	var err error
+	c.Subnets, err = c.Subnets.ImportFromNetworkStack()
+	if err != nil {
+		return fmt.Errorf("failed to import subnets from network stack: %v", err)
 	}
 
 	anySubnetIsManaged := false
@@ -394,7 +388,7 @@ func (c ProvidedConfig) VPCRef() (string, error) {
 	// When HasIdentifier returns true, it means the VPC already exists, and we can reference it directly by ID
 	if !c.VPC.HasIdentifier() {
 		// Otherwise import the VPC ID from the control-plane stack
-		igw.IDFromStackOutput = `{"Fn::Sub" : "${ControlPlaneStackName}-VPC"}`
+		igw.IDFromStackOutput = `{"Fn::Sub" : "${NetworkStackName}-VPC"}`
 	}
 	return igw.RefOrError(func() (string, error) {
 		return "", fmt.Errorf("[BUG] Tried to reference VPC by its logical name")
@@ -408,7 +402,7 @@ func (c ProvidedConfig) SecurityGroupRefs() []string {
 		refs,
 		// The security group assigned to worker nodes to allow communication to etcd nodes and controller nodes
 		// which is created and maintained in the main cluster and then imported to node pools.
-		`{"Fn::ImportValue" : {"Fn::Sub" : "${ControlPlaneStackName}-WorkerSecurityGroup"}}`,
+		`{"Fn::ImportValue" : {"Fn::Sub" : "${NetworkStackName}-WorkerSecurityGroup"}}`,
 	)
 
 	return refs

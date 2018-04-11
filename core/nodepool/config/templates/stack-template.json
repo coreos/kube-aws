@@ -495,9 +495,13 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "kube-aws Kubernetes node pool {{.ClusterName}} {{.NodePoolName}}",
   "Parameters" : {
-    "ControlPlaneStackName": {
+    "EtcdStackName": {
       "Type": "String",
-      "Description": "The name of a control-plane stack used to import values into this stack"
+      "Description": "The name of an etcd stack used to import values into this stack"
+    },
+    "NetworkStackName": {
+      "Type": "String",
+      "Description": "The name of a network stack used to import values into this stack"
     }
     {{if .CloudWatchLogging.Enabled}}
     ,

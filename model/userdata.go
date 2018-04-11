@@ -127,9 +127,15 @@ func (self UserDataPart) Template(extra ...map[string]interface{}) (string, erro
 		return "", err
 	}
 
+	result := buf.String()
+
+	if len(result) == 0 {
+		return "", fmt.Errorf("failed to render template: result should'nt be empty for asset: %s", self.Asset.Key)
+	}
+
 	// we validate userdata at render time, because we need to wait for
 	// optional extra context to produce final output
-	return buf.String(), self.validate(buf.Bytes())
+	return result, self.validate(buf.Bytes())
 }
 
 func validateCoreosCloudInit(content []byte) error {

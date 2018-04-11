@@ -2,13 +2,10 @@ package cluster
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/route53"
 
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
@@ -139,7 +136,7 @@ func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugin
 	// TODO Do this in a cleaner way e.g. in config.go
 	clusterRef.KubeResourcesAutosave.S3Path = model.NewS3Folders(cfg.DeploymentSettings.S3URI, clusterRef.ClusterName).ClusterBackups().Path()
 
-	stackConfig, err := clusterRef.StackConfig(config.ControlPlaneStackName, opts, plugins)
+	stackConfig, err := clusterRef.StackConfig("etcd", opts, plugins)
 	if err != nil {
 		return nil, err
 	}
@@ -154,25 +151,19 @@ func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugin
 	// * `c.Controller.CustomSystemdUnits = controllerUnits` and `c.ClusterRef.Controller.CustomSystemdUnits = controllerUnits` results in modifying invisible/duplicate CustomSystemdSettings
 	extras := clusterextension.NewExtrasFromPlugins(plugins, c.PluginConfigs)
 
-	extraStack, err := extras.ControlPlaneStack()
+	extraStack, err := extras.EtcdStack()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load control-plane stack extras from plugins: %v", err)
 	}
 	c.StackConfig.ExtraCfnResources = extraStack.Resources
 
-	extraController, err := extras.Controller()
+	extraEtcd, err := extras.Etcd()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load controller node extras from plugins: %v", err)
 	}
-	c.StackConfig.Config.APIServerFlags = append(c.StackConfig.Config.APIServerFlags, extraController.APIServerFlags...)
-	c.StackConfig.Config.APIServerVolumes = append(c.StackConfig.Config.APIServerVolumes, extraController.APIServerVolumes...)
-	c.StackConfig.Controller.CustomSystemdUnits = append(c.StackConfig.Controller.CustomSystemdUnits, extraController.SystemdUnits...)
-	c.StackConfig.Controller.CustomFiles = append(c.StackConfig.Controller.CustomFiles, extraController.Files...)
-	c.StackConfig.Controller.IAMConfig.Policy.Statements = append(c.StackConfig.Controller.IAMConfig.Policy.Statements, extraController.IAMPolicyStatements...)
-
-	for k, v := range extraController.NodeLabels {
-		c.StackConfig.Controller.NodeLabels[k] = v
-	}
+	c.StackConfig.Etcd.CustomSystemdUnits = append(c.StackConfig.Etcd.CustomSystemdUnits, extraEtcd.SystemdUnits...)
+	c.StackConfig.Etcd.CustomFiles = append(c.StackConfig.Etcd.CustomFiles, extraEtcd.Files...)
+	c.StackConfig.Etcd.IAMConfig.Policy.Statements = append(c.StackConfig.Etcd.IAMConfig.Policy.Statements, extraEtcd.IAMPolicyStatements...)
 
 	c.assets, err = c.buildAssets()
 
@@ -183,21 +174,28 @@ func (c *Cluster) Assets() cfnstack.Assets {
 	return c.assets
 }
 
+// NestedStackName returns a sanitized name of this control-plane which is usable as a valid cloudformation nested stack name
+func (c Cluster) NestedStackName() string {
+	// Convert stack name into something valid as a cfn resource name or
+	// we'll end up with cfn errors like "Template format error: Resource name test5-controlplane is non alphanumeric"
+	return naming.FromStackToCfnResource(c.StackName)
+}
+
 func (c *Cluster) buildAssets() (cfnstack.Assets, error) {
 	var err error
 	assets := cfnstack.NewAssetsBuilder(c.StackName, c.StackConfig.ClusterExportedStacksS3URI(), c.StackConfig.Region)
 
-	if c.StackConfig.UserDataController, err = model.NewUserData(c.StackTemplateOptions.ControllerTmplFile, c.StackConfig.Config); err != nil {
-		return nil, fmt.Errorf("failed to render controller cloud config: %v", err)
+	if c.StackConfig.UserDataEtcd, err = model.NewUserData(c.StackTemplateOptions.EtcdTmplFile, c.StackConfig.Config); err != nil {
+		return nil, fmt.Errorf("failed to render etcd cloud config: %v", err)
 	}
 
-	if err = assets.AddUserDataPart(c.UserDataController, model.USERDATA_S3, "userdata-controller"); err != nil {
-		return nil, fmt.Errorf("failed to render controller cloud config: %v", err)
+	if err = assets.AddUserDataPart(c.UserDataEtcd, model.USERDATA_S3, "userdata-etcd"); err != nil {
+		return nil, fmt.Errorf("failed to render etcd cloud config: %v", err)
 	}
 
 	stackTemplate, err := c.RenderStackTemplateAsString()
 	if err != nil {
-		return nil, fmt.Errorf("failed to render control-plane template: %v", err)
+		return nil, fmt.Errorf("Error while rendering template: %v", err)
 	}
 
 	assets.Add(STACK_TEMPLATE_FILENAME, stackTemplate)
@@ -248,30 +246,12 @@ func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
 
 func (c *Cluster) Validate() error {
 	ec2Svc := ec2.New(c.session)
-	if c.KeyName != "" {
-		if err := c.validateKeyPair(ec2Svc); err != nil {
-			return err
-		}
-	}
 
 	if err := c.validateExistingVPCState(ec2Svc); err != nil {
 		return err
 	}
 
-	if err := c.validateControllerRootVolume(ec2Svc); err != nil {
-		return err
-	}
-
-	if err := c.validateDNSConfig(route53.New(c.session)); err != nil {
-		return err
-	}
-
 	return nil
-}
-
-// NestedStackName returns a sanitized name of this control-plane which is usable as a valid cloudformation nested stack name
-func (c Cluster) NestedStackName() string {
-	return naming.FromStackToCfnResource(config.ControlPlaneStackName)
 }
 
 func (c *Cluster) String() string {
@@ -279,107 +259,5 @@ func (c *Cluster) String() string {
 }
 
 func (c *ClusterRef) Destroy() error {
-	return cfnstack.NewDestroyer(config.ControlPlaneStackName, c.session, c.CloudFormation.RoleARN).Destroy()
-}
-
-func (c *ClusterRef) validateKeyPair(ec2Svc ec2Service) error {
-	_, err := ec2Svc.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{
-		KeyNames: []*string{aws.String(c.KeyName)},
-	})
-
-	if err != nil {
-		if awsErr, ok := err.(awserr.Error); ok {
-			if awsErr.Code() == "InvalidKeyPair.NotFound" {
-				return fmt.Errorf("Key %s does not exist.", c.KeyName)
-			}
-		}
-		return err
-	}
-	return nil
-}
-
-type r53Service interface {
-	ListHostedZonesByName(*route53.ListHostedZonesByNameInput) (*route53.ListHostedZonesByNameOutput, error)
-	ListResourceRecordSets(*route53.ListResourceRecordSetsInput) (*route53.ListResourceRecordSetsOutput, error)
-	GetHostedZone(*route53.GetHostedZoneInput) (*route53.GetHostedZoneOutput, error)
-}
-
-// TODO validateDNSConfig seems to be called from nowhere but should be called while validating `apiEndpoints` config
-func (c *ClusterRef) validateDNSConfig(r53 r53Service) error {
-	//if !c.CreateRecordSet {
-	//	return nil
-	//}
-
-	hzOut, err := r53.GetHostedZone(&route53.GetHostedZoneInput{Id: aws.String(c.HostedZoneID)})
-	if err != nil {
-		return fmt.Errorf("error getting hosted zone %s: %v", c.HostedZoneID, err)
-	}
-
-	if !isSubdomain(c.ExternalDNSName, aws.StringValue(hzOut.HostedZone.Name)) {
-		return fmt.Errorf("externalDNSName %s is not a sub-domain of hosted-zone %s", c.ExternalDNSName, aws.StringValue(hzOut.HostedZone.Name))
-	}
-
-	recordSetsResp, err := r53.ListResourceRecordSets(
-		&route53.ListResourceRecordSetsInput{
-			HostedZoneId: hzOut.HostedZone.Id,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("error listing record sets for hosted zone id = %s: %v", c.HostedZoneID, err)
-	}
-
-	if len(recordSetsResp.ResourceRecordSets) > 0 {
-		for _, recordSet := range recordSetsResp.ResourceRecordSets {
-			if *recordSet.Name == config.WithTrailingDot(c.ExternalDNSName) {
-				return fmt.Errorf(
-					"RecordSet for \"%s\" already exists in Hosted Zone \"%s.\"",
-					c.ExternalDNSName,
-					c.HostedZoneID,
-				)
-			}
-		}
-	}
-
-	return nil
-}
-
-func isSubdomain(sub, parent string) bool {
-	sub, parent = config.WithTrailingDot(sub), config.WithTrailingDot(parent)
-	subParts, parentParts := strings.Split(sub, "."), strings.Split(parent, ".")
-
-	if len(parentParts) > len(subParts) {
-		return false
-	}
-
-	subSuffixes := subParts[len(subParts)-len(parentParts):]
-
-	if len(subSuffixes) != len(parentParts) {
-		return false
-	}
-	for i := range subSuffixes {
-		if subSuffixes[i] != parentParts[i] {
-			return false
-		}
-	}
-	return true
-}
-
-func (c *ClusterRef) validateControllerRootVolume(ec2Svc ec2Service) error {
-
-	//Send a dry-run request to validate the controller root volume parameters
-	controllerRootVolume := &ec2.CreateVolumeInput{
-		DryRun:           aws.Bool(true),
-		AvailabilityZone: aws.String(c.AvailabilityZones()[0]),
-		Iops:             aws.Int64(int64(c.Controller.RootVolume.IOPS)),
-		Size:             aws.Int64(int64(c.Controller.RootVolume.Size)),
-		VolumeType:       aws.String(c.Controller.RootVolume.Type),
-	}
-
-	if _, err := ec2Svc.CreateVolume(controllerRootVolume); err != nil {
-		if operr, ok := err.(awserr.Error); ok && operr.Code() != "DryRunOperation" {
-			return fmt.Errorf("create volume dry-run request failed: %v", err)
-		}
-	}
-
-	return nil
+	return cfnstack.NewDestroyer("etcd", c.session, c.CloudFormation.RoleARN).Destroy()
 }

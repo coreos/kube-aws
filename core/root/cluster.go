@@ -17,6 +17,8 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
 	controlplane_cfg "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	etcd "github.com/kubernetes-incubator/kube-aws/core/etcd/cluster"
+	network "github.com/kubernetes-incubator/kube-aws/core/network/cluster"
 	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/cluster"
 	nodepool_cfg "github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
@@ -127,7 +129,7 @@ func ClusterFromFile(configPath string, opts options, awsDebug bool) (Cluster, e
 func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster, error) {
 	plugins := cfg.Plugins
 
-	cpOpts := controlplane_cfg.StackTemplateOptions{
+	stackTemplateOpts := controlplane_cfg.StackTemplateOptions{
 		AssetsDir:             opts.AssetsDir,
 		ControllerTmplFile:    opts.ControllerTmplFile,
 		EtcdTmplFile:          opts.EtcdTmplFile,
@@ -136,10 +138,28 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 		S3URI:                 cfg.DeploymentSettings.S3URI,
 		SkipWait:              opts.SkipWait,
 	}
+
+	netOpts := stackTemplateOpts
+	netOpts.StackTemplateTmplFile = opts.NetworkStackTemplateTmplFile
+	net, err := network.NewCluster(cfg.Cluster, netOpts, plugins, awsDebug)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initizlie network stack: %v", err)
+	}
+
+	cpOpts := stackTemplateOpts
+	cpOpts.StackTemplateTmplFile = opts.ControlPlaneStackTemplateTmplFile
 	cp, err := controlplane.NewCluster(cfg.Cluster, cpOpts, plugins, awsDebug)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to initialize control-plane stack: %v", err)
 	}
+
+	etcdOpts := stackTemplateOpts
+	etcdOpts.StackTemplateTmplFile = opts.EtcdStackTemplateTmplFile
+	etcd, err := etcd.NewCluster(cfg.Cluster, etcdOpts, plugins, awsDebug)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize etcd stack: %v", err)
+	}
+
 	nodePools := []*nodepool.Cluster{}
 	for i, c := range cfg.NodePools {
 		npOpts := nodepool_cfg.StackTemplateOptions{
@@ -178,6 +198,8 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 	c := clusterImpl{
 		opts:              opts,
 		controlPlane:      cp,
+		etcd:              etcd,
+		network:           net,
 		nodePools:         nodePools,
 		session:           session,
 		ExtraCfnResources: extra.Resources,
@@ -188,6 +210,8 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 
 type clusterImpl struct {
 	controlPlane      *controlplane.Cluster
+	etcd              *etcd.Cluster
+	network           *network.Cluster
 	nodePools         []*nodepool.Cluster
 	opts              options
 	session           *session.Session
@@ -196,6 +220,14 @@ type clusterImpl struct {
 
 func (c clusterImpl) ControlPlane() *controlplane.Cluster {
 	return c.controlPlane
+}
+
+func (c clusterImpl) Etcd() *etcd.Cluster {
+	return c.etcd
+}
+
+func (c clusterImpl) Network() *network.Cluster {
+	return c.network
 }
 
 func (c clusterImpl) s3URI() string {
@@ -250,11 +282,26 @@ func (c clusterImpl) Info() (*Info, error) {
 }
 
 func (c clusterImpl) generateAssets(targets OperationTargets) (cfnstack.Assets, error) {
+	fmt.Printf("generating assets for %s\n", targets.String())
+	var netAssets cfnstack.Assets
+	if targets.IncludeNetwork() {
+		netAssets = c.network.Assets()
+	} else {
+		netAssets = cfnstack.EmptyAssets()
+	}
+
 	var cpAssets cfnstack.Assets
 	if targets.IncludeControlPlane() {
 		cpAssets = c.controlPlane.Assets()
 	} else {
 		cpAssets = cfnstack.EmptyAssets()
+	}
+
+	var etcdAssets cfnstack.Assets
+	if targets.IncludeEtcd() {
+		etcdAssets = c.etcd.Assets()
+	} else {
+		etcdAssets = cfnstack.EmptyAssets()
 	}
 
 	var wAssets cfnstack.Assets
@@ -267,7 +314,7 @@ func (c clusterImpl) generateAssets(targets OperationTargets) (cfnstack.Assets, 
 		wAssets = cfnstack.EmptyAssets()
 	}
 
-	nestedStacksAssets := cpAssets.Merge(wAssets)
+	nestedStacksAssets := netAssets.Merge(cpAssets).Merge(etcdAssets).Merge(wAssets)
 
 	s3URI := fmt.Sprintf("%s/kube-aws/clusters/%s/exported/stacks",
 		strings.TrimSuffix(c.s3URI(), "/"),
@@ -436,6 +483,12 @@ func (c clusterImpl) ValidateTemplates() error {
 	if err != nil {
 		return fmt.Errorf("failed to validate template: %v", err)
 	}
+	if _, err := c.network.RenderStackTemplateAsString(); err != nil {
+		return fmt.Errorf("failed to validate network template: %v", err)
+	}
+	if _, err := c.etcd.RenderStackTemplateAsString(); err != nil {
+		return fmt.Errorf("failed to validate etcd template: %v", err)
+	}
 	if _, err := c.controlPlane.RenderStackTemplateAsString(); err != nil {
 		return fmt.Errorf("failed to validate control plane template: %v", err)
 	}
@@ -474,11 +527,23 @@ func (c clusterImpl) ValidateStack() (string, error) {
 
 	reports = append(reports, r)
 
+	netReport, err := c.network.ValidateStack()
+	if err != nil {
+		return "", fmt.Errorf("failed to validate network: %v", err)
+	}
+	reports = append(reports, netReport)
+
 	cpReport, err := c.controlPlane.ValidateStack()
 	if err != nil {
 		return "", fmt.Errorf("failed to validate control plane: %v", err)
 	}
 	reports = append(reports, cpReport)
+
+	etcdReport, err := c.etcd.ValidateStack()
+	if err != nil {
+		return "", fmt.Errorf("failed to validate etcd plane: %v", err)
+	}
+	reports = append(reports, etcdReport)
 
 	for i, p := range c.nodePools {
 		npReport, err := p.ValidateStack()
