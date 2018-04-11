@@ -820,7 +820,13 @@ write_files:
       # Try to batch as many files as possible to reduce the total amount of delay due to wilderness in the API aggregation
       # See https://github.com/kubernetes-incubator/kube-aws/issues/1039
       applyall() {
-        kubectl apply -f $(echo "$@" | tr ' ' ',')
+        set +e
+        if ! kubectl apply -f $(echo "$@" | tr ' ' ','); then
+          set -e
+          kubectl delete --ignore-not-found=true -f $(echo "$@" | tr ' ' ',')
+          kubectl create -f $(echo "$@" | tr ' ' ',')
+        fi
+        set -e
       }
 
       # Manage the deletion of services
