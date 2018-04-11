@@ -314,10 +314,14 @@ coreos:
         ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
         ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/cni/net.d
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/manifests /srv/kubernetes/manifests  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
-        {{ if (and (not .Kubernetes.Networking.SelfHosting.Enabled) .UseCalico) -}}
+        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
+        {{ if .UseCalico -}}
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/cni/net.d/ -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
         ExecStartPre=/usr/bin/docker run --rm -e SLEEP=false -e KUBERNETES_SERVICE_HOST= -e KUBERNETES_SERVICE_PORT= -v /opt/cni/bin:/host/opt/cni/bin {{ .CalicoCniImage.RepoWithTag }} /install-cni.sh
-        {{- end }}
+        {{ else -}}
+        ExecStartPre=/usr/bin/docker run --rm -v /opt/cni/bin:/host/opt/cni/bin {{.HyperkubeImage.RepoWithTag}} /bin/cp -rp /opt/cni/bin/* /host/opt/cni/bin
+        {{ end -}}
+        {{ end -}}
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
         --kubeconfig=/etc/kubernetes/kubeconfig/controller.yaml \
         --require-kubeconfig \

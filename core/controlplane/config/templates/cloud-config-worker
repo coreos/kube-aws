@@ -353,8 +353,10 @@ coreos:
                        cluster-health
         {{if .UseCalico -}}
         ExecStartPre=/usr/bin/docker run --rm -e SLEEP=false -e KUBERNETES_SERVICE_HOST= -e KUBERNETES_SERVICE_PORT= -v /opt/cni/bin:/host/opt/cni/bin {{ .CalicoCniImage.RepoWithTag }} /install-cni.sh
+        {{ else -}}
+        ExecStartPre=/usr/bin/docker run --rm -v /opt/cni/bin:/host/opt/cni/bin {{.HyperkubeImage.RepoWithTag}} /bin/cp -rp /opt/cni/bin/* /host/opt/cni/bin
         {{ end -}}
-        {{- end }}
+        {{ end -}}
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
         {{/* Work-around until https://github.com/kubernetes/kubernetes/issues/43967 is fixed via https://github.com/kubernetes/kubernetes/pull/43995 */ -}}
