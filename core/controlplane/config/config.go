@@ -21,6 +21,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/node"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	yaml "gopkg.in/yaml.v2"
+	"github.com/kubernetes-incubator/kube-aws/naming"
 )
 
 const (
@@ -1130,7 +1131,7 @@ func (c Cluster) APIAccessAllowedSourceCIDRsForControllerSG() []string {
 func (c Cluster) NestedStackName() string {
 	// Convert stack name into something valid as a cfn resource name or
 	// we'll end up with cfn errors like "Template format error: Resource name test5-controlplane is non alphanumeric"
-	return strings.Title(strings.Replace(c.StackName(), "-", "", -1))
+	return naming.FromStackToCfnResource(c.StackName())
 }
 
 func (c Cluster) NodeLabels() model.NodeLabels {

@@ -25,6 +25,8 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
+	"github.com/tidwall/sjson"
+	"github.com/kubernetes-incubator/kube-aws/naming"
 )
 
 const (
@@ -106,7 +108,7 @@ type Cluster interface {
 	Export() error
 	EstimateCost() ([]string, error)
 	Info() (*Info, error)
-	Update() (string, error)
+	Update(OperationTargets) (string, error)
 	ValidateStack() (string, error)
 	ValidateTemplates() error
 	ControlPlane() *controlplane.Cluster
@@ -207,7 +209,17 @@ func (c clusterImpl) NodePools() []*nodepool.Cluster {
 func (c clusterImpl) Create() error {
 	cfSvc := cloudformation.New(c.session)
 
-	stackTemplateURL, err := c.prepareTemplateWithAssets()
+	assets, err := c.generateAssets(AllOperationTargets())
+	if err != nil {
+		return err
+	}
+
+	err = c.uploadAssets(assets)
+	if err != nil {
+		return err
+	}
+
+	stackTemplateURL, err := c.extractRootStackTemplateURL(assets)
 	if err != nil {
 		return err
 	}
@@ -237,51 +249,103 @@ func (c clusterImpl) Info() (*Info, error) {
 	return describer.Info()
 }
 
-func (c clusterImpl) prepareTemplateWithAssets() (string, error) {
-	assets, err := c.Assets()
-
-	if err != nil {
-		return "", err
+func (c clusterImpl) generateAssets(targets OperationTargets) (cfnstack.Assets, error) {
+	var cpAssets cfnstack.Assets
+	if targets.IncludeControlPlane() {
+		cpAssets = c.controlPlane.Assets()
+	} else {
+		cpAssets = cfnstack.EmptyAssets()
 	}
 
+	var wAssets cfnstack.Assets
+	if targets.IncludeWorker() {
+		wAssets = cfnstack.EmptyAssets()
+		for _, np := range c.nodePools {
+			wAssets = wAssets.Merge(np.Assets())
+		}
+	} else {
+		wAssets = cfnstack.EmptyAssets()
+	}
+
+	assets := cpAssets.Merge(wAssets)
+
+	s3URI := fmt.Sprintf("%s/kube-aws/clusters/%s/exported/stacks",
+		strings.TrimSuffix(c.s3URI(), "/"),
+		c.controlPlane.ClusterName,
+	)
+	assetsBuilder := cfnstack.NewAssetsBuilder(c.stackName(), s3URI, c.controlPlane.Region)
+
+	var stackTemplate string
+	// Do not update the root stack but update either controlplane or worker stack(s) only when specified so
+	if targets.IncludeAll() {
+		renderedTemplate, err := c.renderTemplateAsString()
+		if err != nil {
+			return nil, fmt.Errorf("failed to render template : %v", err)
+		}
+		stackTemplate = renderedTemplate
+	} else {
+		target := targets[0]
+
+		rootStackTemplate, err := c.getCurrentRootStackTemplate()
+		if err != nil {
+			return nil, fmt.Errorf("failed to render template : %v", err)
+		}
+
+		a, err := assets.FindAssetByStackAndFileName(target, REMOTE_STACK_TEMPLATE_FILENAME)
+
+		nestedStackTemplateURL, err := a.URL()
+		if err != nil {
+			return nil, fmt.Errorf("failed to locate %s stack template url: %v", target, err)
+		}
+
+		stackTemplate, err = c.setNestedStackTemplateURL(rootStackTemplate, target, nestedStackTemplateURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update stack template: %v", err)
+		}
+	}
+	assetsBuilder.Add(REMOTE_STACK_TEMPLATE_FILENAME, stackTemplate)
+
+	rootAssets := assetsBuilder.Build()
+
+	return assets.Merge(rootAssets), nil
+}
+
+func (c clusterImpl) setNestedStackTemplateURL(template, stack string, url string) (string, error) {
+	path := fmt.Sprintf("Resources.%s.Properties.TemplateURL", naming.FromStackToCfnResource(stack))
+	return sjson.Set(template, path, url)
+}
+
+func (c clusterImpl) getCurrentRootStackTemplate() (string, error) {
+	cfnSvc := cloudformation.New(c.session)
+	byRootStackName := &cloudformation.GetTemplateInput{StackName: aws.String(c.stackName())}
+	output, err := cfnSvc.GetTemplate(byRootStackName)
+	if err != nil {
+		return "", fmt.Errorf("failed to get current root stack template: %v", err)
+	}
+	return aws.StringValue(output.TemplateBody), nil
+}
+
+func (c clusterImpl) uploadAssets(assets cfnstack.Assets) error {
 	s3Svc := s3.New(c.session)
-	err = c.stackProvisioner().UploadAssets(s3Svc, assets)
+	err := c.stackProvisioner().UploadAssets(s3Svc, assets)
 	if err != nil {
-		return "", err
+		return fmt.Errorf("failed to upload assets: %v", err)
 	}
+	return nil
+}
 
+func (c clusterImpl) extractRootStackTemplateURL(assets cfnstack.Assets) (string, error) {
 	asset, err := assets.FindAssetByStackAndFileName(c.stackName(), REMOTE_STACK_TEMPLATE_FILENAME)
 
 	if err != nil {
-		return "", fmt.Errorf("failed to prepare template with assets: %v", err)
+		return "", fmt.Errorf("failed to find root stack template: %v", err)
 	}
 
 	return asset.URL()
 }
 
 func (c clusterImpl) Assets() (cfnstack.Assets, error) {
-	stackTemplate, err := c.renderTemplateAsString()
-	if err != nil {
-		return nil, fmt.Errorf("Error while rendering template : %v", err)
-	}
-	s3URI := fmt.Sprintf("%s/kube-aws/clusters/%s/exported/stacks",
-		strings.TrimSuffix(c.s3URI(), "/"),
-		c.controlPlane.ClusterName,
-	)
-
-	assetsBuilder := cfnstack.NewAssetsBuilder(c.stackName(), s3URI, c.controlPlane.Region)
-	assetsBuilder.Add(REMOTE_STACK_TEMPLATE_FILENAME, stackTemplate)
-	assets := assetsBuilder.Build()
-
-	cpAssets := c.controlPlane.Assets()
-	assets = assets.Merge(cpAssets)
-
-	for _, np := range c.nodePools {
-		a := np.Assets()
-		assets = assets.Merge(a)
-	}
-
-	return assets, nil
+	return c.generateAssets(AllOperationTargets())
 }
 
 func (c clusterImpl) templatePath() string {
@@ -335,10 +399,20 @@ func (c clusterImpl) tags() map[string]string {
 	return c.controlPlane.Cluster.StackTags
 }
 
-func (c clusterImpl) Update() (string, error) {
+func (c clusterImpl) Update(targets OperationTargets) (string, error) {
 	cfSvc := cloudformation.New(c.session)
 
-	templateUrl, err := c.prepareTemplateWithAssets()
+	assets, err := c.generateAssets(targets)
+	if err != nil {
+		return "", err
+	}
+
+	err = c.uploadAssets(assets)
+	if err != nil {
+		return "", err
+	}
+
+	templateUrl, err := c.extractRootStackTemplateURL(assets)
 	if err != nil {
 		return "", err
 	}
@@ -377,8 +451,18 @@ func (c clusterImpl) ValidateTemplates() error {
 func (c clusterImpl) ValidateStack() (string, error) {
 	reports := []string{}
 
+	assets, err := c.generateAssets(AllOperationTargets())
+	if err != nil {
+		return "", err
+	}
+
 	// Upload all the assets including stack templates and cloud-configs for all the stacks
-	rootStackTemplateURL, err := c.prepareTemplateWithAssets()
+	err = c.uploadAssets(assets)
+	if err != nil {
+		return "", err
+	}
+
+	rootStackTemplateURL, err := c.extractRootStackTemplateURL(assets)
 	if err != nil {
 		return "", err
 	}

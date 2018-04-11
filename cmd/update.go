@@ -23,6 +23,7 @@ var (
 		awsDebug, prettyPrint, skipWait bool
 		s3URI                           string
 		force                           bool
+		targets []string
 	}{}
 )
 
@@ -32,6 +33,7 @@ func init() {
 	cmdUpdate.Flags().BoolVar(&updateOpts.prettyPrint, "pretty-print", false, "Pretty print the resulting CloudFormation")
 	cmdUpdate.Flags().BoolVar(&updateOpts.skipWait, "skip-wait", false, "Don't wait the resources finish")
 	cmdUpdate.Flags().BoolVar(&updateOpts.force, "force", false, "Don't ask for confirmation")
+	cmdUpdate.Flags().StringSliceVar(&updateOpts.targets, "targets", root.AllOperationTargetsAsStringSlice(), "Update nothing but specified sub-stacks. Defaults to `etcd,controller,worker`")
 }
 
 func runCmdUpdate(cmd *cobra.Command, args []string) error {
@@ -51,7 +53,7 @@ func runCmdUpdate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	report, err := cluster.Update()
+	report, err := cluster.Update(root.OperationTargetsFromStringSlice(updateOpts.targets))
 	if err != nil {
 		return fmt.Errorf("Error updating cluster: %v", err)
 	}
