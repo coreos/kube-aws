@@ -23,7 +23,7 @@ var (
 		awsDebug, prettyPrint, skipWait bool
 		s3URI                           string
 		force                           bool
-		targets []string
+		targets                         []string
 	}{}
 )
 
