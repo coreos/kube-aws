@@ -153,7 +153,7 @@ coreos:
         After=network.target
 
         [Service]
-        Type=oneshot
+        Restart=on-failure
         RemainAfterExit=yes
         RestartSec=5
         EnvironmentFile=-/etc/etcd-environment
@@ -180,7 +180,7 @@ coreos:
         After=network.target
 
         [Service]
-        Type=oneshot
+        Restart=on-failure
         RemainAfterExit=yes
         RestartSec=5
         EnvironmentFile=-/etc/etcd-environment
@@ -199,7 +199,8 @@ coreos:
         Description=etcd health check
 
         [Service]
-        Type=oneshot
+        Restart=on-failure
+        RestartSec=5
         EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=-/var/run/coreos/etcdadm-environment
         ExecStartPre=/usr/bin/systemctl is-active {{.Etcd.SystemdUnitName}}
@@ -230,7 +231,8 @@ coreos:
         Description=etcd snapshot
 
         [Service]
-        Type=oneshot
+        Restart=on-failure
+        RestartSec=5
         EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=-/var/run/coreos/etcdadm-environment
         ExecStartPre=/usr/bin/systemctl is-active {{.Etcd.SystemdUnitName}}
