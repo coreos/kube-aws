@@ -431,60 +431,7 @@
       "Type" : "AWS::AutoScaling::LifecycleHook"
     },
     {{end}}
-    "{{.Controller.LogicalName}}LC": {
-      "Properties": {
-        "BlockDeviceMappings": [
-          {
-            "DeviceName": "/dev/xvda",
-            "Ebs": {
-              "VolumeSize": "{{.Controller.RootVolume.Size}}",
-              {{if gt .Controller.RootVolume.IOPS 0}}
-              "Iops": "{{.Controller.RootVolume.IOPS}}",
-              {{end}}
-              "VolumeType": "{{.Controller.RootVolume.Type}}"
-            }
-          }
-        ],
-        {{if .Controller.IAMConfig.InstanceProfile.Arn }}
-        "IamInstanceProfile": "{{.Controller.IAMConfig.InstanceProfile.Arn}}",
-        {{else}}
-        "IamInstanceProfile": {
-          "Ref": "IAMInstanceProfileController"
-        },
-        {{end}}
-        "ImageId": "{{.AMI}}",
-        "InstanceType": "{{.Controller.InstanceType}}",
-        {{if .KeyName}}"KeyName": "{{.KeyName}}",{{end}}
-        "SecurityGroups": [
-          {{range $sgIndex, $sgRef := $.Controller.SecurityGroupRefs}}
-          {{if gt $sgIndex 0}},{{end}}
-          {{$sgRef}}
-          {{end}}
-        ],
-        "PlacementTenancy": "{{ .Controller.Tenancy }}",
-        "UserData": {{ $.UserDataController.Parts.instance.Template | checkSizeLessThan 16384 }}
-      },
-  {{ if .Experimental.AwsEnvironment.Enabled }}
-      "Metadata" : {
-        "AWS::CloudFormation::Init" : {
-          "config" : {
-            "commands": {
-              "write-environment": {
-                "command": { "Fn::Join" : ["", [ "echo '",
-{{range $variable, $function := .Experimental.AwsEnvironment.Environment}}
-"{{$variable}}=", {{$function}} , "\n",
-{{end}}
-"' > /etc/aws-environment" ] ] }
-              }
-            }
-          }
-        }
-      },
-  {{end}}
-      "Type": "AWS::AutoScaling::LaunchConfiguration"
-    }
     {{range $i, $apiEndpoint := $.APIEndpoints -}}
-    ,
     {{if .LoadBalancer.ManageELB -}}
     {{if .LoadBalancer.ManageELBRecordSet -}}
     "{{.LoadBalancer.RecordSetLogicalName}}": {
@@ -610,10 +557,62 @@
         "VpcId": {{$.VPCRef}}
       },
       "Type": "AWS::EC2::SecurityGroup"
+    },
+    {{end -}}
+    {{end -}}
+    {{end -}}
+    "{{.Controller.LogicalName}}LC": {
+      "Properties": {
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "VolumeSize": "{{.Controller.RootVolume.Size}}",
+              {{if gt .Controller.RootVolume.IOPS 0}}
+              "Iops": "{{.Controller.RootVolume.IOPS}}",
+              {{end}}
+              "VolumeType": "{{.Controller.RootVolume.Type}}"
+            }
+          }
+        ],
+        {{if .Controller.IAMConfig.InstanceProfile.Arn }}
+        "IamInstanceProfile": "{{.Controller.IAMConfig.InstanceProfile.Arn}}",
+        {{else}}
+        "IamInstanceProfile": {
+          "Ref": "IAMInstanceProfileController"
+        },
+        {{end}}
+        "ImageId": "{{.AMI}}",
+        "InstanceType": "{{.Controller.InstanceType}}",
+        {{if .KeyName}}"KeyName": "{{.KeyName}}",{{end}}
+        "SecurityGroups": [
+          {{range $sgIndex, $sgRef := $.Controller.SecurityGroupRefs}}
+          {{if gt $sgIndex 0}},{{end}}
+          {{$sgRef}}
+          {{end}}
+        ],
+        "PlacementTenancy": "{{ .Controller.Tenancy }}",
+        "UserData": {{ $.UserDataController.Parts.instance.Template | checkSizeLessThan 16384 }}
+      },
+  {{ if .Experimental.AwsEnvironment.Enabled }}
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "commands": {
+              "write-environment": {
+                "command": { "Fn::Join" : ["", [ "echo '",
+{{range $variable, $function := .Experimental.AwsEnvironment.Environment}}
+"{{$variable}}=", {{$function}} , "\n",
+{{end}}
+"' > /etc/aws-environment" ] ] }
+              }
+            }
+          }
+        }
+      },
+  {{end}}
+      "Type": "AWS::AutoScaling::LaunchConfiguration"
     }
-    {{end -}}
-    {{end -}}
-    {{end -}}
     {{range $n, $r := .ExtraCfnResources}}
     ,
     {{quote $n}}: {{toJSON $r}}
