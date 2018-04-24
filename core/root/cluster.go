@@ -111,7 +111,7 @@ type Cluster interface {
 	EstimateCost() ([]string, error)
 	Info() (*Info, error)
 	Update(OperationTargets) (string, error)
-	ValidateStack() (string, error)
+	ValidateStack(...OperationTargets) (string, error)
 	ValidateTemplates() error
 	ControlPlane() *controlplane.Cluster
 	NodePools() []*nodepool.Cluster
@@ -238,10 +238,28 @@ func (c clusterImpl) NodePools() []*nodepool.Cluster {
 	return c.nodePools
 }
 
+func (c clusterImpl) allOperationTargets() OperationTargets {
+	names := []string{}
+	for _, np := range c.nodePools {
+		names = append(names, np.NodePoolName)
+	}
+	return AllOperationTargetsWith(names)
+}
+
+func (c clusterImpl) operationTargetsFromUserInput(opts []OperationTargets) OperationTargets {
+	var targets OperationTargets
+	if len(opts) > 0 && !opts[0].IsAll() {
+		targets = OperationTargetsFromStringSlice(opts[0])
+	} else {
+		targets = c.allOperationTargets()
+	}
+	return targets
+}
+
 func (c clusterImpl) Create() error {
 	cfSvc := cloudformation.New(c.session)
 
-	assets, err := c.generateAssets(AllOperationTargets())
+	assets, err := c.generateAssets(c.allOperationTargets())
 	if err != nil {
 		return err
 	}
@@ -305,13 +323,11 @@ func (c clusterImpl) generateAssets(targets OperationTargets) (cfnstack.Assets, 
 	}
 
 	var wAssets cfnstack.Assets
-	if targets.IncludeWorker() {
-		wAssets = cfnstack.EmptyAssets()
-		for _, np := range c.nodePools {
+	wAssets = cfnstack.EmptyAssets()
+	for _, np := range c.nodePools {
+		if targets.IncludeWorker(np.NodePoolName) {
 			wAssets = wAssets.Merge(np.Assets())
 		}
-	} else {
-		wAssets = cfnstack.EmptyAssets()
 	}
 
 	nestedStacksAssets := netAssets.Merge(cpAssets).Merge(etcdAssets).Merge(wAssets)
@@ -324,30 +340,39 @@ func (c clusterImpl) generateAssets(targets OperationTargets) (cfnstack.Assets, 
 
 	var stackTemplate string
 	// Do not update the root stack but update either controlplane or worker stack(s) only when specified so
-	if targets.IncludeAll() {
+	includeAll := targets.IncludeNetwork() && targets.IncludeEtcd() && targets.IncludeControlPlane()
+	for _, np := range c.nodePools {
+		includeAll = includeAll && targets.IncludeWorker(np.NodePoolName)
+	}
+	if includeAll {
 		renderedTemplate, err := c.renderTemplateAsString()
 		if err != nil {
 			return nil, fmt.Errorf("failed to render template : %v", err)
 		}
 		stackTemplate = renderedTemplate
 	} else {
-		target := targets[0]
+		for _, target := range targets {
+			fmt.Printf("updating template url of %s\n", target)
 
-		rootStackTemplate, err := c.getCurrentRootStackTemplate()
-		if err != nil {
-			return nil, fmt.Errorf("failed to render template : %v", err)
-		}
+			rootStackTemplate, err := c.getCurrentRootStackTemplate()
+			if err != nil {
+				return nil, fmt.Errorf("failed to render template : %v", err)
+			}
 
-		a, err := nestedStacksAssets.FindAssetByStackAndFileName(target, REMOTE_STACK_TEMPLATE_FILENAME)
+			a, err := nestedStacksAssets.FindAssetByStackAndFileName(target, REMOTE_STACK_TEMPLATE_FILENAME)
+			if err != nil {
+				return nil, fmt.Errorf("failed to find assets for stack %s: %v", target, err)
+			}
 
-		nestedStackTemplateURL, err := a.URL()
-		if err != nil {
-			return nil, fmt.Errorf("failed to locate %s stack template url: %v", target, err)
-		}
+			nestedStackTemplateURL, err := a.URL()
+			if err != nil {
+				return nil, fmt.Errorf("failed to locate %s stack template url: %v", target, err)
+			}
 
-		stackTemplate, err = c.setNestedStackTemplateURL(rootStackTemplate, target, nestedStackTemplateURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to update stack template: %v", err)
+			stackTemplate, err = c.setNestedStackTemplateURL(rootStackTemplate, target, nestedStackTemplateURL)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update stack template: %v", err)
+			}
 		}
 	}
 	rootStackAssetsBuilder.Add(REMOTE_STACK_TEMPLATE_FILENAME, stackTemplate)
@@ -392,7 +417,7 @@ func (c clusterImpl) extractRootStackTemplateURL(assets cfnstack.Assets) (string
 }
 
 func (c clusterImpl) Assets() (cfnstack.Assets, error) {
-	return c.generateAssets(AllOperationTargets())
+	return c.generateAssets(c.allOperationTargets())
 }
 
 func (c clusterImpl) templatePath() string {
@@ -501,10 +526,12 @@ func (c clusterImpl) ValidateTemplates() error {
 }
 
 // ValidateStack validates all the CloudFormation stack templates already uploaded to S3
-func (c clusterImpl) ValidateStack() (string, error) {
+func (c clusterImpl) ValidateStack(opts ...OperationTargets) (string, error) {
 	reports := []string{}
 
-	assets, err := c.generateAssets(AllOperationTargets())
+	targets := c.operationTargetsFromUserInput(opts)
+
+	assets, err := c.generateAssets(targets)
 	if err != nil {
 		return "", err
 	}

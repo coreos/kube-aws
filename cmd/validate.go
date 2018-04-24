@@ -21,6 +21,7 @@ var (
 		awsDebug bool
 		skipWait bool
 		s3URI    string
+		targets  []string
 	}{}
 )
 
@@ -32,6 +33,11 @@ func init() {
 		false,
 		"Log debug information from aws-sdk-go library",
 	)
+	cmdValidate.Flags().StringSliceVar(
+		&validateOpts.targets,
+		"targets",
+		root.AllOperationTargetsAsStringSlice(),
+		"Validate nothing but specified sub-stacks. Specify `all` or any combination of `etcd`, `control-plane`, and node pool names. Defaults to `all`")
 }
 
 func runCmdValidate(cmd *cobra.Command, args []string) error {
@@ -43,7 +49,10 @@ func runCmdValidate(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("Validating UserData and stack template...\n")
-	report, err := cluster.ValidateStack()
+
+	targets := root.OperationTargetsFromStringSlice(validateOpts.targets)
+
+	report, err := cluster.ValidateStack(targets)
 	if report != "" {
 		fmt.Fprintf(os.Stderr, "Validation Report: %s\n", report)
 	}

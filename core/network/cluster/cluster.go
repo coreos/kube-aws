@@ -10,8 +10,8 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"github.com/kubernetes-incubator/kube-aws/naming"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 )
 
 // VERSION set by build script

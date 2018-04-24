@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
-	network "github.com/kubernetes-incubator/kube-aws/core/network/cluster"
-	etcd "github.com/kubernetes-incubator/kube-aws/core/etcd/cluster"
 	config "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	etcd "github.com/kubernetes-incubator/kube-aws/core/etcd/cluster"
+	network "github.com/kubernetes-incubator/kube-aws/core/network/cluster"
 	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/cluster"
 )
 

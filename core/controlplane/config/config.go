@@ -17,11 +17,11 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/model/derived"
+	"github.com/kubernetes-incubator/kube-aws/naming"
 	"github.com/kubernetes-incubator/kube-aws/netutil"
 	"github.com/kubernetes-incubator/kube-aws/node"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"gopkg.in/yaml.v2"
-	"github.com/kubernetes-incubator/kube-aws/naming"
 )
 
 const (
@@ -962,7 +962,7 @@ func (c Cluster) StackConfig(stackName string, opts StackTemplateOptions, extra 
 
 	var err error
 	stackConfig := StackConfig{
-		StackName: stackName,
+		StackName:         stackName,
 		ExtraCfnResources: map[string]interface{}{},
 	}
 

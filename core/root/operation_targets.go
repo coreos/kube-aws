@@ -4,36 +4,38 @@ import "strings"
 
 // TODO: Add etcd
 const (
-	OperationTargetWorker       = "worker"
 	OperationTargetControlPlane = "control-plane"
 	OperationTargetEtcd         = "etcd"
 	OperationTargetNetwork      = "network"
+	OperationTargetAll          = "all"
 )
 
 var OperationTargetNames = []string{
 	OperationTargetControlPlane,
 	OperationTargetEtcd,
-	OperationTargetWorker,
 	OperationTargetNetwork,
 }
 
 type OperationTargets []string
 
 func AllOperationTargetsAsStringSlice() []string {
-	return OperationTargetNames
+	return []string{"all"}
 }
 
-func AllOperationTargets() OperationTargets {
-	return OperationTargets(OperationTargetNames)
+func AllOperationTargetsWith(nodePoolNames []string) OperationTargets {
+	ts := []string{}
+	ts = append(ts, OperationTargetNames...)
+	ts = append(ts, nodePoolNames...)
+	return OperationTargets(ts)
 }
 
 func OperationTargetsFromStringSlice(targets []string) OperationTargets {
 	return OperationTargets(targets)
 }
 
-func (ts OperationTargets) IncludeWorker() bool {
+func (ts OperationTargets) IncludeWorker(nodePoolName string) bool {
 	for _, t := range ts {
-		if t == OperationTargetWorker {
+		if t == nodePoolName {
 			return true
 		}
 	}
@@ -67,18 +69,13 @@ func (ts OperationTargets) IncludeEtcd() bool {
 	return false
 }
 
-func (ts OperationTargets) IncludeAll() bool {
-	w := false
-	c := false
-	e := false
-	n := false
+func (ts OperationTargets) IsAll() bool {
 	for _, t := range ts {
-		w = w || t == OperationTargetWorker
-		c = c || t == OperationTargetControlPlane
-		e = e || t == OperationTargetEtcd
-		n = n || t == OperationTargetNetwork
+		if t == OperationTargetAll {
+			return true
+		}
 	}
-	return w && c && e && n
+	return false
 }
 
 func (ts OperationTargets) String() string {
