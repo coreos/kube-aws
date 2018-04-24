@@ -114,6 +114,8 @@ type Cluster interface {
 	ValidateStack(...OperationTargets) (string, error)
 	ValidateTemplates() error
 	ControlPlane() *controlplane.Cluster
+	Etcd() *etcd.Cluster
+	Network() *network.Cluster
 	NodePools() []*nodepool.Cluster
 	RenderStackTemplateAsString() (string, error)
 }

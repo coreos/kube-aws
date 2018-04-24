@@ -279,6 +279,7 @@ spec:
 				func(c root.Cluster, t *testing.T) {
 					cp := c.ControlPlane()
 					np := c.NodePools()[0]
+					etcd := c.Etcd()
 
 					{
 						e := model.CustomFile{
@@ -317,13 +318,12 @@ spec:
 					}
 
 					{
-
 						e := model.CustomFile{
 							Path:        "/var/kube-aws/bar.txt",
 							Permissions: 0644,
 							Content:     "etcd-bar",
 						}
-						a := cp.StackConfig.Etcd.CustomFiles[0]
+						a := etcd.StackConfig.Etcd.CustomFiles[0]
 						if !reflect.DeepEqual(e, a) {
 							t.Errorf("Unexpected etcd custom file from plugin: expected=%v actual=%v", e, a)
 						}
@@ -334,7 +334,7 @@ spec:
 							Permissions: 0644,
 							Content:     "etcd-baz",
 						}
-						a := cp.StackConfig.Etcd.CustomFiles[1]
+						a := etcd.StackConfig.Etcd.CustomFiles[1]
 						if !reflect.DeepEqual(e, a) {
 							t.Errorf("Unexpected etcd custom file from plugin: expected=%v actual=%v", e, a)
 						}
@@ -347,7 +347,7 @@ spec:
 								Resources: []string{"*"},
 							},
 						}
-						a := cp.StackConfig.Etcd.IAMConfig.Policy.Statements
+						a := etcd.StackConfig.Etcd.IAMConfig.Policy.Statements
 						if !reflect.DeepEqual(e, a) {
 							t.Errorf("Unexpected etcd iam policy statements from plugin: expected=%v actual=%v", e, a)
 						}
@@ -395,7 +395,7 @@ spec:
 						t.Errorf("Invalid controller userdata: %v", controllerUserdataS3Part)
 					}
 
-					etcdUserdataS3Part := cp.UserDataEtcd.Parts[model.USERDATA_S3].Asset.Content
+					etcdUserdataS3Part := etcd.UserDataEtcd.Parts[model.USERDATA_S3].Asset.Content
 					if !strings.Contains(etcdUserdataS3Part, "save-queue-name.service") {
 						t.Errorf("Invalid etcd userdata: %v", etcdUserdataS3Part)
 					}
