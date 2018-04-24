@@ -492,6 +492,8 @@ spec:
 					stackTemplateOptions.RootStackTemplateTmplFile = "../../core/root/config/templates/stack-template.json"
 					stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../core/nodepool/config/templates/stack-template.json"
 					stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/templates/stack-template.json"
+					stackTemplateOptions.EtcdStackTemplateTmplFile = "../../core/etcd/config/templates/stack-template.json"
+					stackTemplateOptions.NetworkStackTemplateTmplFile = "../../core/network/config/templates/stack-template.json"
 
 					cluster, err := root.ClusterFromConfig(providedConfig, stackTemplateOptions, false)
 					if err != nil {

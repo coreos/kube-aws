@@ -125,7 +125,7 @@ func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugin
 
 	// Import all the managed subnets from the network stack
 	var err error
-	cfg.Subnets, err = cfg.Subnets.ImportFromNetworkStack()
+	cfg.Subnets, err = cfg.Subnets.ImportFromNetworkStackRetainingNames()
 	if err != nil {
 		return nil, fmt.Errorf("failed to import subnets from network stack: %v", err)
 	}

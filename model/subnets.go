@@ -30,7 +30,20 @@ func (ss Subnets) ImportFromNetworkStack() (Subnets, error) {
 			} else {
 				result[i] = NewPublicSubnetFromFn(az, stackOutputName)
 			}
+		} else {
+			result[i] = s
 		}
+	}
+	return result, nil
+}
+
+func (ss Subnets) ImportFromNetworkStackRetainingNames() (Subnets, error) {
+	result, err := ss.ImportFromNetworkStack()
+	if err != nil {
+		return result, err
+	}
+	for i, s := range ss {
+		result[i].Name = s.Name
 	}
 	return result, nil
 }
