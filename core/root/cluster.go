@@ -474,7 +474,7 @@ func (c clusterImpl) tags() map[string]string {
 func (c clusterImpl) Update(targets OperationTargets) (string, error) {
 	cfSvc := cloudformation.New(c.session)
 
-	assets, err := c.generateAssets(targets)
+	assets, err := c.generateAssets(c.operationTargetsFromUserInput([]OperationTargets{targets}))
 	if err != nil {
 		return "", err
 	}
@@ -531,7 +531,7 @@ func (c clusterImpl) ValidateStack(opts ...OperationTargets) (string, error) {
 
 	targets := c.operationTargetsFromUserInput(opts)
 
-	assets, err := c.generateAssets(targets)
+	assets, err := c.generateAssets(c.operationTargetsFromUserInput([]OperationTargets{targets}))
 	if err != nil {
 		return "", err
 	}
