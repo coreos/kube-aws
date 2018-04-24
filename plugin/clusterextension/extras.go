@@ -191,7 +191,7 @@ func (e ClusterExtension) EtcdStack() (*stack, error) {
 			{
 				m, err := render.MapFromContents(p.Spec.CloudFormation.Stacks.Etcd.Resources.Append.Contents)
 				if err != nil {
-					return nil, fmt.Errorf("failed to load additional resources for control-plane stack: %v", err)
+					return nil, fmt.Errorf("failed to load additional resources for etcd stack: %v", err)
 				}
 				for k, v := range m {
 					resources[k] = v

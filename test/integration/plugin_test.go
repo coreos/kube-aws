@@ -120,6 +120,30 @@ spec:
                     }
                   }
                 }
+        etcd:
+          resources:
+            append:
+              inline: |
+                {
+                  "QueueFromMyPlugin": {
+                    "Type": "AWS::SQS::Queue",
+                    "Properties": {
+                    "QueueName": {{quote .Values.queue.name}}
+                    }
+                  }
+                }
+        network:
+          resources:
+            append:
+              inline: |
+                {
+                  "QueueFromMyPlugin": {
+                    "Type": "AWS::SQS::Queue",
+                    "Properties": {
+                    "QueueName": {{quote .Values.queue.name}}
+                    }
+                  }
+                }
     kubernetes:
       apiserver:
         flags:

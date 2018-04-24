@@ -148,18 +148,18 @@ func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugin
 
 	// Notes:
 	// * `c.StackConfig.CustomSystemdUnits` results in an `ambiguous selector ` error
-	// * `c.Controller.CustomSystemdUnits = controllerUnits` and `c.ClusterRef.Controller.CustomSystemdUnits = controllerUnits` results in modifying invisible/duplicate CustomSystemdSettings
+	// * `c.Etcd.CustomSystemdUnits = controllerUnits` and `c.ClusterRef.Etcd.CustomSystemdUnits = etcdUnits` results in modifying invisible/duplicate CustomSystemdSettings
 	extras := clusterextension.NewExtrasFromPlugins(plugins, c.PluginConfigs)
 
 	extraStack, err := extras.EtcdStack()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load control-plane stack extras from plugins: %v", err)
+		return nil, fmt.Errorf("failed to load etcd stack extras from plugins: %v", err)
 	}
 	c.StackConfig.ExtraCfnResources = extraStack.Resources
 
 	extraEtcd, err := extras.Etcd()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load controller node extras from plugins: %v", err)
+		return nil, fmt.Errorf("failed to load etcd node extras from plugins: %v", err)
 	}
 	c.StackConfig.Etcd.CustomSystemdUnits = append(c.StackConfig.Etcd.CustomSystemdUnits, extraEtcd.SystemdUnits...)
 	c.StackConfig.Etcd.CustomFiles = append(c.StackConfig.Etcd.CustomFiles, extraEtcd.Files...)
@@ -174,10 +174,10 @@ func (c *Cluster) Assets() cfnstack.Assets {
 	return c.assets
 }
 
-// NestedStackName returns a sanitized name of this control-plane which is usable as a valid cloudformation nested stack name
+// NestedStackName returns a sanitized name of this etcd which is usable as a valid cloudformation nested stack name
 func (c Cluster) NestedStackName() string {
 	// Convert stack name into something valid as a cfn resource name or
-	// we'll end up with cfn errors like "Template format error: Resource name test5-controlplane is non alphanumeric"
+	// we'll end up with cfn errors like "Template format error: Resource name test5-etcd is non alphanumeric"
 	return naming.FromStackToCfnResource(c.StackName)
 }
 
