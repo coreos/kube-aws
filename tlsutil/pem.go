@@ -62,3 +62,8 @@ func DecodeCertificatePEM(data []byte) (*x509.Certificate, error) {
 	block, _ := pem.Decode(data)
 	return x509.ParseCertificate(block.Bytes)
 }
+
+func IsCertificatePEM(data []byte) bool {
+	block, _ := pem.Decode(data)
+	return block.Type == "CERTIFICATE"
+}

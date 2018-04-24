@@ -5,10 +5,13 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/pem"
 	"errors"
+	"fmt"
 	"math"
 	"math/big"
 	"net"
+	"regexp"
 	"time"
 )
 
@@ -165,4 +168,103 @@ func NewSignedKIAMCertificate(cfg ClientCertConfig, key *rsa.PrivateKey, caCert 
 		return nil, err
 	}
 	return x509.ParseCertificate(certDERBytes)
+}
+
+func CheckAllCertsValid(filename string, contents []byte) error {
+	var rest = contents
+	for len(rest) > 0 {
+		var cert *x509.Certificate
+		var err error
+		cert, rest, err = decodeCert(rest)
+		if err != nil {
+			return fmt.Errorf("failed to decode certificate: %v", err)
+		}
+		if cert == nil {
+			continue
+		}
+		if certificateExpired(*cert) {
+			info := fmt.Sprintf("Subject: %+v\nIssuer: %+v\nValid From: %s\nExpires: %s",
+				cert.Subject,
+				cert.Issuer,
+				cert.NotBefore.String(),
+				cert.NotAfter.String(),
+			)
+			return fmt.Errorf("The following certificate in file %s has expired:-\n\n%s", filename, info)
+		}
+	}
+	return nil
+}
+
+func certificateExpired(c x509.Certificate) bool {
+	return time.Now().After(c.NotAfter)
+}
+
+func decodeCert(c []byte) (*x509.Certificate, []byte, error) {
+	p, rest := pem.Decode(c)
+	if p == nil {
+		return nil, rest, fmt.Errorf("Could not decode pem")
+	}
+	// skip over other pem blocks until we find a certificate
+	for len(rest) > 0 {
+		if p.Type == "CERTIFICATE" {
+			break
+		} else {
+			p, rest := pem.Decode(c)
+			if p == nil {
+				return nil, rest, fmt.Errorf("Could not decode pem")
+			}
+		}
+	}
+	if p.Type == "CERTIFICATE" {
+		cert, err := x509.ParseCertificate(p.Bytes)
+		if err != nil {
+			return nil, rest, fmt.Errorf("Could not decode x509 cert from pem")
+		}
+		return cert, rest, nil
+	}
+	return nil, rest, nil
+}
+
+func CertificateContainsDNSName(cert []byte, subjectMatch string, name string) (bool, error) {
+	var rest = cert
+	for len(rest) != 0 {
+		var cert *x509.Certificate
+		var err error
+		cert, rest, err = decodeCert(rest)
+		if err != nil {
+			return false, fmt.Errorf("failed to decode certificate: %v", err)
+		}
+		match, _ := regexp.MatchString(subjectMatch, cert.Subject.CommonName)
+		if match {
+			for _, d := range cert.DNSNames {
+				if d == name {
+					return true, nil
+				}
+			}
+			return false, nil
+		}
+	}
+	return false, fmt.Errorf("no certificates containing match string: %s", subjectMatch)
+}
+
+func CertificateContainsIPAddress(cert []byte, subjectMatch string, ip net.IP) (bool, error) {
+	var rest = cert
+	for len(rest) != 0 {
+		var cert *x509.Certificate
+		var err error
+		cert, rest, err = decodeCert(rest)
+		if err != nil {
+			return false, fmt.Errorf("failed to decode certificate: %v", err)
+		}
+		match, _ := regexp.MatchString(subjectMatch, cert.Subject.CommonName)
+		if match {
+			for _, i := range cert.IPAddresses {
+				if i.Equal(ip) {
+					return true, nil
+				}
+			}
+			return false, nil
+		}
+	}
+	return false, fmt.Errorf("no certificates containing match string: %s", subjectMatch)
 }

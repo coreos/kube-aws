@@ -26,10 +26,10 @@ exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE
 {{ end }}
 
 {{ define "instance" -}}
-{ "Fn::Base64": { "Fn::Join" : ["", [
-  "#!/bin/bash -xe\n",
-  "# s3-part-fingerprin:qt: {{ (execTemplate "s3" .) | fingerprint }}\n",
-  {"Fn::Sub": "echo '{{.StackNameEnvVarName}}=${AWS::StackName}' >>{{.EtcdNodeEnvFileName}}\n"},
+{ "Fn::Base64": { "Fn::Join" : ["\n", [
+  "#!/bin/bash -xe",
+  "# s3-part-fingerprint: {{ (execTemplate "s3" .) | fingerprint }}",
+  {"Fn::Sub": "echo '{{.StackNameEnvVarName}}=${AWS::StackName}' >>{{.EtcdNodeEnvFileName}}"},
   {{ (execTemplate "instance-script" .) | toJSON  }}
 ]]}}
 {{ end }}
