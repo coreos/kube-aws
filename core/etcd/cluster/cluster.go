@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
+	controlplanecluster "github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/model"
@@ -128,6 +129,8 @@ func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugin
 	clusterRef := newClusterRef(cfg, session)
 	// TODO Do this in a cleaner way e.g. in config.go
 	clusterRef.KubeResourcesAutosave.S3Path = model.NewS3Folders(cfg.DeploymentSettings.S3URI, clusterRef.ClusterName).ClusterBackups().Path()
+	clusterRef.KubeAWSVersion = controlplanecluster.VERSION
+	clusterRef.CoreOS = cfgRef.CoreOS
 
 	stackConfig, err := clusterRef.StackConfig("etcd", opts, session, plugins)
 	if err != nil {

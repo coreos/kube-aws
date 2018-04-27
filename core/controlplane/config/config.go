@@ -158,6 +158,7 @@ func NewDefaultCluster() *Cluster {
 			ClusterName:        "kubernetes",
 			VPCCIDR:            "10.0.0.0/16",
 			ReleaseChannel:     "stable",
+			KubeAWSVersion:     "UNKNOWN",
 			K8sVer:             k8sVer,
 			ContainerRuntime:   "docker",
 			Subnets:            []model.Subnet{},
@@ -177,6 +178,32 @@ func NewDefaultCluster() *Cluster {
 					Enabled:  true,
 					Filter:   `{ $.priority = "CRIT" || $.priority = "WARNING" && $.transport = "journal" && $.systemdUnit = "init.scope" }`,
 					interval: 60,
+				},
+			},
+			CoreOS: CoreOS{
+				Prompt: Prompt{
+					Enabled:           true,
+					IncludePWD:        true,
+					IncludeHostname:   true,
+					IncludeUser:       true,
+					ClusterColour:     model.LightCyan,
+					Divider:           "|",
+					DividerColour:     model.DefaultColour,
+					EtcdLabel:         "etcd",
+					EtcdColour:        model.LightGreen,
+					ControllerLabel:   "master",
+					ControllerColour:  model.LightRed,
+					WorkerLabel:       "node",
+					WorkerColour:      model.LightBlue,
+					RootUserColour:    model.LightRed,
+					NonRootUserColour: model.LightGreen,
+					DirectoryColour:   model.LightBlue,
+				},
+				LoginBanner: LoginBanner{
+					Enabled:          true,
+					EtcdColour:       model.LightGreen,
+					KubernetesColour: model.LightBlue,
+					KubeAWSColour:    model.LightBlue,
 				},
 			},
 			KubeProxy: KubeProxy{
@@ -485,8 +512,9 @@ type DeploymentSettings struct {
 	DeprecatedInternetGatewayID           string                `yaml:"internetGatewayId,omitempty"`
 	InternetGateway                       model.InternetGateway `yaml:"internetGateway,omitempty"`
 	// Required for validations like e.g. if instance cidr is contained in vpc cidr
-	VPCCIDR                 string            `yaml:"vpcCIDR,omitempty"`
-	InstanceCIDR            string            `yaml:"instanceCIDR,omitempty"`
+	VPCCIDR                 string `yaml:"vpcCIDR,omitempty"`
+	InstanceCIDR            string `yaml:"instanceCIDR,omitempty"`
+	KubeAWSVersion          string
 	K8sVer                  string            `yaml:"kubernetesVersion,omitempty"`
 	ContainerRuntime        string            `yaml:"containerRuntime,omitempty"`
 	KMSKeyARN               string            `yaml:"kmsKeyArn,omitempty"`
@@ -535,6 +563,7 @@ type DeploymentSettings struct {
 	FlannelImage                       model.Image `yaml:"flannelImage,omitempty"`
 	JournaldCloudWatchLogsImage        model.Image `yaml:"journaldCloudWatchLogsImage,omitempty"`
 	Kubernetes                         Kubernetes  `yaml:"kubernetes,omitempty"`
+	CoreOS                             CoreOS      `yaml:"coreos,omitempty"`
 }
 
 // Part of configuration which is specific to worker nodes
@@ -777,6 +806,37 @@ type SelfHosting struct {
 	FlannelImage    model.Image `yaml:"flannelImage"`
 	FlannelCniImage model.Image `yaml:"flannelCniImage"`
 	TyphaImage      model.Image `yaml:"typhaImage"`
+}
+
+type CoreOS struct {
+	Prompt      Prompt      `yaml:"prompt,omitempty"`
+	LoginBanner LoginBanner `yaml:"banner,omitempty"`
+}
+
+type Prompt struct {
+	Enabled           bool              `yaml:"enabled,omitempty"`
+	IncludePWD        bool              `yaml:"include-pwd,omitempty"`
+	IncludeHostname   bool              `yaml:"include-hostname,omitempty"`
+	IncludeUser       bool              `yaml:"include-user,omitempty"`
+	ClusterColour     model.ShellColour `yaml:"cluster-colour,omitempty"`
+	Divider           string            `yaml:"divider,omitempty"`
+	DividerColour     model.ShellColour `yaml:"divider-colour,omitempty"`
+	EtcdLabel         string            `yaml:"etcd-label,omitempty"`
+	EtcdColour        model.ShellColour `yaml:"etcd-colour,omitempty"`
+	ControllerLabel   string            `yaml:"controller-label,omitempty"`
+	ControllerColour  model.ShellColour `yaml:"controller-colour,omitempty"`
+	WorkerLabel       string            `yaml:"worker-label,omitempty"`
+	WorkerColour      model.ShellColour `yaml:"worker-colour,omitempty"`
+	RootUserColour    model.ShellColour `yaml:"root-user-colour,omitempty"`
+	NonRootUserColour model.ShellColour `yaml:"non-root-user-colour,omitempty"`
+	DirectoryColour   model.ShellColour `yaml:"directory-colour,omitempty"`
+}
+
+type LoginBanner struct {
+	Enabled          bool              `yaml:"enabled,omitempty"`
+	EtcdColour       model.ShellColour `yaml:"etcd-colour,omitempty"`
+	KubernetesColour model.ShellColour `yaml:"kubernetes-colour,omitempty"`
+	KubeAWSColour    model.ShellColour `yaml:"kube-aws-colour,omitempty"`
 }
 
 func (c *LocalStreaming) Interval() int64 {

@@ -1496,3 +1496,41 @@ kubelet:
 # User-provided YAML map available in control-plane's stack-template.json
 #customSettings:
 #  key1: [ 1, 2, 3 ]
+
+# CoreOS - specific configurations relating to CoreOS operating system
+coreos:
+
+# prompt - allows you to customise your shell prompt settings and colours
+# exmaple all on with defaults: -
+# server-label|cluster-name core@hostname pwd $
+# server-label|cluster-name hostname pwd #
+
+# valid colours are :-
+# default-colour, black, red, green, yellow, blue, magenta, cyan, white, dark-gray
+# light-red, light-green, light-yellow, light-blue, light-magenta, light-cyan, light-white
+
+#   prompt:
+#     enabled: true                          # Turn the customised shell prompts off.
+#     include-pwd: true                      # Include the present directory in each prompt.
+#     include-hostname: true                 # Include the hostname in each prompt.
+#     include-user: true                     # Include the username in each prompt.
+#     cluster-colour: light-cyan            
+#     divider: "|"                           # Divider between server type and cluster name, e.g. etcd|mycluster
+#     divider-colour: default-colour  
+#     etcd-label: etcd                       # Start prompt 'etcd' on prompts for etcd servers.
+#     etcd-colour: light-green
+#     controller-label: master               # Start prompt with 'master' on controllers.
+#     controller-colour: light-red
+#     worker-label: node                     # Start prompt with 'node' on workers.
+#     worker-colour: light-blue
+#     root-user-colour: light-red            # Colour of the latter half of the prompt changes for root.
+#     non-root-user-colour: light-green      # All other users will see this colour.
+#     directory-colour: light-blue           # Colour of the directory indicator and last prompt symbol ($ or #)
+
+# banner - display etcd, kubernetes and kube-aws versions upon login.
+#   banner:
+#     enabled: true
+#     etcd-colour: light-green
+#     kubernetes-colour: light-blue
+#     kube-aws-colour: light-blue
+
