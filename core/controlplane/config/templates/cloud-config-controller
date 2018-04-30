@@ -1127,21 +1127,6 @@ write_files:
             # as a host-networked pod.
             hostNetwork: true
             serviceAccountName: canal
-            initContainers:
-            - name: wait-for-default-clusterinformation
-              image: {{.HyperkubeImage.RepoWithTag}}
-              command: ["/bin/sh", "-c" ]
-              args:
-                - |
-                    set -x ;
-                    while true; do
-                      if /kubectl get clusterinformation default; then
-                        echo "Calcio clusterinformation default exists, can continue..."
-                        exit 0
-                      fi
-                      echo "Waiting for Calcio clusterinformation default..."
-                      sleep 5
-                    done
             containers:
             - image: {{ .Kubernetes.Networking.SelfHosting.TyphaImage.RepoWithTag }}
               name: typha
@@ -1434,6 +1419,15 @@ write_files:
           spec:
             hostNetwork: true
             serviceAccountName: canal
+            tolerations:
+              # Tolerate this effect so the pods will be schedulable at all times
+              - effect: NoSchedule
+                operator: Exists
+              # Mark the pod as a critical add-on for rescheduling.
+              - key: CriticalAddonsOnly
+                operator: Exists
+              - effect: NoExecute
+                operator: Exists
             # Minimize downtime during a rolling upgrade or deletion; tell Kubernetes to do a "force
             # deletion": https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.
             terminationGracePeriodSeconds: 0
@@ -3183,7 +3177,7 @@ write_files:
           - --authentication-token-webhook-cache-ttl={{ .Experimental.Authentication.Webhook.CacheTTL }}
           {{ end }}
           - --advertise-address=$private_ipv4
-          - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }}{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.NodeAuthorizer.Enabled}},NodeRestriction{{end}},ResourceQuota{{if .Experimental.Admission.DenyEscalatingExec.Enabled}},DenyEscalatingExec{{end}}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}{{if .Experimental.Admission.Priority.Enabled}},Priority{{end}},DefaultTolerationSeconds{{if .Experimental.Admission.MutatingAdmissionWebhook.Enabled}},MutatingAdmissionWebhook{{end}}{{if .Experimental.Admission.ValidatingAdmissionWebhook.Enabled}},ValidatingAdmissionWebhook{{end}}
+          - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }}{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.NodeAuthorizer.Enabled}},NodeRestriction{{end}},ResourceQuota{{if .Experimental.Admission.DenyEscalatingExec.Enabled}},DenyEscalatingExec{{end}}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}{{if .Experimental.Admission.Priority.Enabled}},Priority{{end}},DefaultTolerationSeconds{{if .Experimental.Admission.MutatingAdmissionWebhook.Enabled}},MutatingAdmissionWebhook{{end}}{{if .Experimental.Admission.ValidatingAdmissionWebhook.Enabled}},ValidatingAdmissionWebhook{{end}}{{if .Experimental.Admission.PersistentVolumeClaimResize.Enabled}},PersistentVolumeClaimResize{{end}}
           - --anonymous-auth=false
           {{if .Experimental.Oidc.Enabled}}
           - --oidc-issuer-url={{.Experimental.Oidc.IssuerUrl}}
@@ -5066,7 +5060,7 @@ write_files:
                   secretName: kiam-server-tls
             containers:
               - name: kiam
-                image: quay.io/uswitch/kiam:v2.5
+                image: {{.KIAMImage.RepoWithTag}}
                 imagePullPolicy: Always
                 command:
                   - /server

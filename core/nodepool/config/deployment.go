@@ -131,5 +131,8 @@ func (c DeploymentSettings) WithDefaultsFrom(main cfg.DeploymentSettings) Deploy
 	//Inherit main KubeDns config
 	c.KubeDns.MergeIfEmpty(main.KubeDns)
 
+	//Inherit main Kubernetes config (e.g. for Kubernetes.Networking.SelfHosting etc.)
+	c.Kubernetes = main.Kubernetes
+
 	return c
 }

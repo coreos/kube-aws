@@ -1064,7 +1064,7 @@ worker:
 # Kube Dashboard image repository to use.
 #kubernetesDashboardImage:
 #  repo: k8s.gcr.io/kubernetes-dashboard-amd64
-#  tag: v1.8.1
+#  tag: v1.8.3
 #  rktPullDocker: false
 
 # Calico Controller image repository to use.
@@ -1295,6 +1295,8 @@ experimental:
     validatingAdmissionWebhook:
       enabled: false
     OwnerReferencesPermissionEnforcement:
+      enabled: false
+    persistentVolumeClaimResize:
       enabled: false
 
   # Used to provide `/etc/environment` env vars with values from arbitrary CloudFormation refs

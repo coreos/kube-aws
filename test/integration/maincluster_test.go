@@ -101,6 +101,9 @@ func TestMainClusterConfig(t *testing.T) {
 				ValidatingAdmissionWebhook: controlplane_config.ValidatingAdmissionWebhook{
 					Enabled: false,
 				},
+				PersistentVolumeClaimResize: controlplane_config.PersistentVolumeClaimResize{
+					Enabled: false,
+				},
 			},
 			AuditLog: controlplane_config.AuditLog{
 				Enabled: false,
@@ -1245,6 +1248,8 @@ experimental:
       enabled: true
     validatingAdmissionWebhook:
       enabled: true
+    persistentVolumeClaimResize:
+      enabled: true
   auditLog:
     enabled: true
     maxage: 100
@@ -1324,6 +1329,9 @@ worker:
 								Enabled: true,
 							},
 							ValidatingAdmissionWebhook: controlplane_config.ValidatingAdmissionWebhook{
+								Enabled: true,
+							},
+							PersistentVolumeClaimResize: controlplane_config.PersistentVolumeClaimResize{
 								Enabled: true,
 							},
 						},

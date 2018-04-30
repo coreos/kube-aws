@@ -31,11 +31,11 @@ const (
 	userDataDir    = "userdata"
 
 	// Experimental SelfHosting feature default images.
-	kubeNetworkingSelfHostingDefaultCalicoNodeImageTag = "v3.0.3"
-	kubeNetworkingSelfHostingDefaultCalicoCniImageTag  = "v2.0.1"
+	kubeNetworkingSelfHostingDefaultCalicoNodeImageTag = "v3.0.6"
+	kubeNetworkingSelfHostingDefaultCalicoCniImageTag  = "v2.0.5"
 	kubeNetworkingSelfHostingDefaultFlannelImageTag    = "v0.9.1"
 	kubeNetworkingSelfHostingDefaultFlannelCniImageTag = "v0.3.0"
-	kubeNetworkingSelfHostingDefaultTyphaImageTag      = "v0.6.2"
+	kubeNetworkingSelfHostingDefaultTyphaImageTag      = "v0.6.4"
 
 	// ControlPlaneStackName is the logical name of a CloudFormation stack resource in a root stack template
 	// This is not needed to be unique in an AWS account because the actual name of a nested stack is generated randomly
@@ -74,6 +74,9 @@ func NewDefaultCluster() *Cluster {
 				Enabled: false,
 			},
 			OwnerReferencesPermissionEnforcement{
+				Enabled: false,
+			},
+			PersistentVolumeClaimResize{
 				Enabled: false,
 			},
 		},
@@ -222,7 +225,7 @@ func NewDefaultCluster() *Cluster {
 			HeapsterImage:                      model.Image{Repo: "k8s.gcr.io/heapster", Tag: "v1.5.0", RktPullDocker: false},
 			MetricsServerImage:                 model.Image{Repo: "k8s.gcr.io/metrics-server-amd64", Tag: "v0.2.1", RktPullDocker: false},
 			AddonResizerImage:                  model.Image{Repo: "k8s.gcr.io/addon-resizer", Tag: "1.8.1", RktPullDocker: false},
-			KubernetesDashboardImage:           model.Image{Repo: "k8s.gcr.io/kubernetes-dashboard-amd64", Tag: "v1.8.1", RktPullDocker: false},
+			KubernetesDashboardImage:           model.Image{Repo: "k8s.gcr.io/kubernetes-dashboard-amd64", Tag: "v1.8.3", RktPullDocker: false},
 			PauseImage:                         model.Image{Repo: "k8s.gcr.io/pause-amd64", Tag: "3.1", RktPullDocker: false},
 			FlannelImage:                       model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.9.1", RktPullDocker: false},
 			JournaldCloudWatchLogsImage:        model.Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
@@ -612,6 +615,7 @@ type Admission struct {
 	MutatingAdmissionWebhook             MutatingAdmissionWebhook             `yaml:"mutatingAdmissionWebhook"`
 	ValidatingAdmissionWebhook           ValidatingAdmissionWebhook           `yaml:"validatingAdmissionWebhook"`
 	OwnerReferencesPermissionEnforcement OwnerReferencesPermissionEnforcement `yaml:"ownerReferencesPermissionEnforcement"`
+	PersistentVolumeClaimResize          PersistentVolumeClaimResize          `yaml:"persistentVolumeClaimResize"`
 }
 
 type AlwaysPullImages struct {
@@ -643,6 +647,10 @@ type ValidatingAdmissionWebhook struct {
 }
 
 type OwnerReferencesPermissionEnforcement struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type PersistentVolumeClaimResize struct {
 	Enabled bool `yaml:"enabled"`
 }
 

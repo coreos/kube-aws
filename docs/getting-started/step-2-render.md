@@ -84,7 +84,7 @@ $ kube-aws init \
 --region=us-west-1 \
 --availability-zone=us-west-1c \
 --key-name=key-pair-name \
---kms-key-arn="arn:aws:kms:us-west-1:xxxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
+--kms-key-arn="arn:aws:kms:us-west-1:xxxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx" \
 --s3-uri=s3://my-kube-aws-assets-bucket
 ```
 
