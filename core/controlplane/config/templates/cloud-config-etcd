@@ -168,9 +168,6 @@ coreos:
         {{end -}}
         TimeoutStartSec=120
 
-        [Install]
-        WantedBy=cfn-etcd-environment.service
-
     - name: etcdadm-update-status.service
       enable: true
       content: |
