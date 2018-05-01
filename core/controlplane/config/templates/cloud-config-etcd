@@ -160,6 +160,7 @@ coreos:
         Wants=cfn-etcd-environment.service
         After=cfn-etcd-environment.service
         After=network.target
+        After=var-lib-etcd2.mount
 
         [Service]
         Type=oneshot
@@ -167,7 +168,7 @@ coreos:
         RestartSec=5
         EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=-/var/run/coreos/etcdadm-environment
-        ExecStartPre=/usr/bin/systemctl is-active format-etcd2-volume.service
+        ExecStartPre=/usr/bin/systemctl is-active var-lib-etcd2.mount
         ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
         ExecStartPre=/usr/bin/mkdir -p /var/run/coreos/etcdadm/snapshots
         ExecStart=/opt/bin/etcdadm reconfigure
@@ -175,9 +176,6 @@ coreos:
         ExecStartPost=/usr/bin/systemctl start etcdadm-check.timer
         {{end -}}
         TimeoutStartSec=120
-
-        [Install]
-        WantedBy=cfn-etcd-environment.service
 
     - name: etcdadm-update-status.service
       enable: true
