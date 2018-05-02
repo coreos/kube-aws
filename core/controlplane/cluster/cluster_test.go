@@ -18,8 +18,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"github.com/go-yaml/yaml"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 )
 
 /*

@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"github.com/go-yaml/yaml"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 )
 
 type Loader struct {
