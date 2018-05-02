@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
-	yaml "gopkg.in/yaml.v2"
+	"github.com/go-yaml/yaml"
 )
 
 /*

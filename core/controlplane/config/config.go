@@ -20,14 +20,11 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/netutil"
 	"github.com/kubernetes-incubator/kube-aws/node"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
-	yaml "gopkg.in/yaml.v2"
+	"github.com/go-yaml/yaml"
 )
 
 const (
 	k8sVer = "v1.9.3"
-
-	credentialsDir = "credentials"
-	userDataDir    = "userdata"
 
 	// Experimental SelfHosting feature default images.
 	kubeNetworkingSelfHostingDefaultCalicoNodeImageTag = "v3.0.6"
@@ -261,12 +258,12 @@ func NewDefaultCluster() *Cluster {
 func ClusterFromFile(filename string) (*Cluster, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read cluster config: %v", err)
 	}
 
 	c, err := ClusterFromBytes(data)
 	if err != nil {
-		return nil, fmt.Errorf("file %s: %v", filename, err)
+		return nil, fmt.Errorf("failed to load cluster from config %s: %v", filename, err)
 	}
 
 	return c, nil

@@ -10,7 +10,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/plugin"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
-	"gopkg.in/yaml.v2"
+	"github.com/go-yaml/yaml"
 )
 
 type UnmarshalledConfig struct {

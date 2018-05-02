@@ -23,10 +23,11 @@ import (
 )
 
 func init() {
-	addCmd.Flags().StringVarP(&parentName, "parent", "p", "RootCmd", "name of parent command for this command")
+	addCmd.Flags().StringVarP(&packageName, "package", "t", "", "target package name (e.g. github.com/spf13/hugo)")
+	addCmd.Flags().StringVarP(&parentName, "parent", "p", "rootCmd", "variable name of parent command for this command")
 }
 
-var parentName string
+var packageName, parentName string
 
 var addCmd = &cobra.Command{
 	Use:     "add [command name]",
@@ -34,7 +35,7 @@ var addCmd = &cobra.Command{
 	Short:   "Add a command to a Cobra Application",
 	Long: `Add (cobra add) will create a new command, with a license and
 the appropriate structure for a Cobra-based CLI application,
-and register it to its parent (default RootCmd).
+and register it to its parent (default rootCmd).
 
 If you want your command to be public, pass in the command name
 with an initial uppercase letter.
@@ -45,11 +46,17 @@ Example: cobra add server -> resulting in a new cmd/server.go`,
 		if len(args) < 1 {
 			er("add needs a name for the command")
 		}
-		wd, err := os.Getwd()
-		if err != nil {
-			er(err)
+
+		var project *Project
+		if packageName != "" {
+			project = NewProject(packageName)
+		} else {
+			wd, err := os.Getwd()
+			if err != nil {
+				er(err)
+			}
+			project = NewProjectFromPath(wd)
 		}
-		project := NewProjectFromPath(wd)
 
 		cmdName := validateCmdName(args[0])
 		cmdPath := filepath.Join(project.CmdPath(), cmdName+".go")
@@ -114,7 +121,7 @@ func validateCmdName(source string) string {
 
 func createCmdFile(license License, path, cmdName string) {
 	template := `{{comment .copyright}}
-{{comment .license}}
+{{if .license}}{{comment .license}}{{end}}
 
 package {{.cmdPackage}}
 

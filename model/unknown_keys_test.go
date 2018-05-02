@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	yaml "gopkg.in/yaml.v2"
+	"github.com/go-yaml/yaml"
 )
 
 type fakeConfig struct {
