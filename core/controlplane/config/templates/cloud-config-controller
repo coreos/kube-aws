@@ -4056,6 +4056,7 @@ write_files:
                     - name: AWS_REGION
                       value: {{.Region}}
                   imagePullPolicy: "Always"
+              dnsPolicy: Default
   {{end}}
 
   - path: /srv/kubernetes/manifests/heapster-svc.yaml
