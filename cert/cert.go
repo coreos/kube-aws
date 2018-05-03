@@ -17,11 +17,17 @@ type Certificate struct {
 	NotBefore time.Time
 	NotAfter  time.Time
 	Subject   DN
+	DNSNames  []string
 }
 
 func (c Certificate) String() string {
-	return fmt.Sprintf("Issuer: %s\nValidity\n    Not Before: %s\n    Not After : %s\nSubject: %s",
-		c.Issuer, c.NotBefore.Format(ValidityFormat), c.NotAfter.Format(ValidityFormat), c.Subject)
+
+	notBefore := c.NotBefore.Format(ValidityFormat)
+	notAfter := c.NotAfter.Format(ValidityFormat)
+	dnsNames := strings.Join(c.DNSNames, ", ")
+
+	return fmt.Sprintf("Issuer: %s\nValidity\n    Not Before: %s\n    Not After : %s\nSubject: %s\nDNS Names: %s",
+		c.Issuer, notBefore, notAfter, c.Subject, dnsNames)
 }
 
 type DN struct {
@@ -68,6 +74,7 @@ func ParseCertificates(certs []byte) ([]Certificate, error) {
 					Organization: c.Subject.Organization,
 					CommonName:   c.Subject.CommonName,
 				},
+				DNSNames: c.DNSNames,
 			},
 		)
 	}
