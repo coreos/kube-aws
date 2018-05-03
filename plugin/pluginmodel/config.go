@@ -197,8 +197,6 @@ type KubernetesManifest struct {
 type Contents struct {
 	Inline string `yaml:"inline,omitempty"`
 	Source `yaml:"source,omitempty"`
-	// TODO Better naming
-	UnknownKeys map[string]interface{} `yaml:",inline"`
 }
 
 type Source struct {

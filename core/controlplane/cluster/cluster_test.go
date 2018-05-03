@@ -36,9 +36,8 @@ clusterName: test-cluster-name
 kmsKeyArn: "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
 `
 	yamlStr := defaultYaml + configYaml
-
 	c := config.Cluster{}
-	if err := yaml.Unmarshal([]byte(yamlStr), &c); err != nil {
+	if err := yaml.UnmarshalStrict([]byte(yamlStr), &c); err != nil {
 		t.Errorf("failed umarshalling config yaml: %v :\n%s", err, yamlStr)
 	}
 
@@ -385,11 +384,9 @@ func TestValidateDNSConfig(t *testing.T) {
 
 	validDNSConfigs := []string{
 		`
-createRecordSet: true
 recordSetTTL: 60
 hostedZoneId: staging_id_1
 `, `
-createRecordSet: true
 recordSetTTL: 60
 hostedZoneId: /hostedzone/staging_id_2
 `,
@@ -397,11 +394,9 @@ hostedZoneId: /hostedzone/staging_id_2
 
 	invalidDNSConfigs := []string{
 		`
-createRecordSet: true
 recordSetTTL: 60
 hostedZoneId: /hostedzone/staging_id_3 # <staging_id_id> is not a super-domain
 `, `
-createRecordSet: true
 recordSetTTL: 60
 hostedZoneId: /hostedzone/staging_id_5 #non-existent hostedZoneId
 `,
@@ -686,9 +681,7 @@ controller:
 				Size:       aws.Int64(30),
 				VolumeType: aws.String("standard"),
 			},
-			clusterYaml: `
-controllerRootVolumeType: standard
-`,
+			clusterYaml: "",
 		},
 		{
 			expectedRootVolume: &ec2.CreateVolumeInput{
@@ -696,10 +689,7 @@ controllerRootVolumeType: standard
 				Size:       aws.Int64(50),
 				VolumeType: aws.String("gp2"),
 			},
-			clusterYaml: `
-controllerRootVolumeType: gp2
-controllerRootVolumeSize: 50
-`,
+			clusterYaml: "",
 		},
 		{
 			expectedRootVolume: &ec2.CreateVolumeInput{
@@ -707,11 +697,7 @@ controllerRootVolumeSize: 50
 				Size:       aws.Int64(100),
 				VolumeType: aws.String("io1"),
 			},
-			clusterYaml: `
-controllerRootVolumeType: io1
-controllerRootVolumeSize: 100
-controllerRootVolumeIOPS: 20000
-`,
+			clusterYaml: "",
 		},
 	}
 

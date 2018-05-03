@@ -18,7 +18,6 @@ type Etcd struct {
 	SecurityGroupIds   []string     `yaml:"securityGroupIds"`
 	Snapshot           EtcdSnapshot `yaml:"snapshot,omitempty"`
 	Subnets            Subnets      `yaml:"subnets,omitempty"`
-	UnknownKeys        `yaml:",inline"`
 }
 
 type EtcdVersion string

@@ -141,7 +141,7 @@ func NewDefaultCluster() *Cluster {
 		MinSyncPeriod: "10s",
 	}
 
-	return &Cluster{
+	c := &Cluster{
 		DeploymentSettings: DeploymentSettings{
 			ClusterName:        "kubernetes",
 			VPCCIDR:            "10.0.0.0/16",
@@ -256,6 +256,9 @@ func NewDefaultCluster() *Cluster {
 			Enabled: false,
 		},
 	}
+
+	return c
+
 }
 
 func ClusterFromFile(filename string) (*Cluster, error) {
@@ -276,7 +279,7 @@ func ClusterFromFile(filename string) (*Cluster, error) {
 func ClusterFromBytes(data []byte) (*Cluster, error) {
 	c := NewDefaultCluster()
 
-	if err := yaml.Unmarshal(data, c); err != nil {
+	if err := yaml.UnmarshalStrict(data, c); err != nil {
 		return nil, fmt.Errorf("failed to parse cluster: %v", err)
 	}
 
@@ -596,7 +599,6 @@ type Experimental struct {
 	Oidc                        model.Oidc                     `yaml:"oidc"`
 	DisableSecurityGroupIngress bool                           `yaml:"disableSecurityGroupIngress"`
 	NodeMonitorGracePeriod      string                         `yaml:"nodeMonitorGracePeriod"`
-	model.UnknownKeys           `yaml:",inline"`
 }
 
 type Admission struct {

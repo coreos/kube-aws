@@ -15,7 +15,6 @@ type SpotFleet struct {
 	UnitRootVolumeSize   int                   `yaml:"unitRootVolumeSize"`
 	UnitRootVolumeIOPS   int                   `yaml:"unitRootVolumeIOPS"`
 	LaunchSpecifications []LaunchSpecification `yaml:"launchSpecifications,omitempty"`
-	UnknownKeys          `yaml:",inline"`
 }
 
 func (f SpotFleet) Enabled() bool {

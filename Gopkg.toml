@@ -33,4 +33,5 @@ ignored = ["github.com/kubernetes-incubator/kube-aws/hack*"]
   name = "golang.org/x/oauth2"
 
 [[constraint]]
+  branch = "v2"
   name = "gopkg.in/yaml.v2"

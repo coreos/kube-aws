@@ -6,13 +6,12 @@ import (
 )
 
 type CustomSystemdUnit struct {
-	Name        string                    `yaml:"name"`
-	Command     string                    `yaml:"command,omitempty"`
-	Content     string                    `yaml:"content,omitempty"`
-	Enable      bool                      `yaml:"enable,omitempty"`
-	Runtime     bool                      `yaml:"runtime,omitempty"`
-	DropIns     []CustomSystemdUnitDropIn `yaml:"drop-ins,omitempty"`
-	UnknownKeys `yaml:",inline"`
+	Name    string                    `yaml:"name"`
+	Command string                    `yaml:"command,omitempty"`
+	Content string                    `yaml:"content,omitempty"`
+	Enable  bool                      `yaml:"enable,omitempty"`
+	Runtime bool                      `yaml:"runtime,omitempty"`
+	DropIns []CustomSystemdUnitDropIn `yaml:"drop-ins,omitempty"`
 }
 
 func (c CustomSystemdUnit) ContentPresent() bool {

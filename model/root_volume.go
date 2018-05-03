@@ -3,10 +3,9 @@ package model
 import "fmt"
 
 type RootVolume struct {
-	Size        int    `yaml:"size,omitempty"`
-	Type        string `yaml:"type,omitempty"`
-	IOPS        int    `yaml:"iops,omitempty"`
-	UnknownKeys `yaml:",inline"`
+	Size int    `yaml:"size,omitempty"`
+	Type string `yaml:"type,omitempty"`
+	IOPS int    `yaml:"iops,omitempty"`
 }
 
 func NewGp2RootVolume(size int) RootVolume {

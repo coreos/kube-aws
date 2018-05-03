@@ -304,9 +304,6 @@ type r53Service interface {
 
 // TODO validateDNSConfig seems to be called from nowhere but should be called while validating `apiEndpoints` config
 func (c *ClusterRef) validateDNSConfig(r53 r53Service) error {
-	//if !c.CreateRecordSet {
-	//	return nil
-	//}
 
 	hzOut, err := r53.GetHostedZone(&route53.GetHostedZoneInput{Id: aws.String(c.HostedZoneID)})
 	if err != nil {

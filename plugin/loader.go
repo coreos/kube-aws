@@ -55,7 +55,7 @@ func PluginFromFile(path string) (*pluginmodel.Plugin, error) {
 
 func PluginFromBytes(data []byte) (*pluginmodel.Plugin, error) {
 	p := &pluginmodel.Plugin{}
-	if err := yaml.Unmarshal(data, p); err != nil {
+	if err := yaml.UnmarshalStrict(data, p); err != nil {
 		return nil, fmt.Errorf("Failed to parse as yaml: %v", err)
 	}
 	if err := p.Validate(); err != nil {

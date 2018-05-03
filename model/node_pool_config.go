@@ -14,7 +14,6 @@ type NodePoolConfig struct {
 	SecurityGroupIds          []string               `yaml:"securityGroupIds,omitempty"`
 	CustomSettings            map[string]interface{} `yaml:"customSettings,omitempty"`
 	VolumeMounts              []VolumeMount          `yaml:"volumeMounts,omitempty"`
-	UnknownKeys               `yaml:",inline"`
 	NodeSettings              `yaml:",inline"`
 	NodeStatusUpdateFrequency string              `yaml:"nodeStatusUpdateFrequency"`
 	CustomFiles               []CustomFile        `yaml:"customFiles,omitempty"`
@@ -23,8 +22,7 @@ type NodePoolConfig struct {
 }
 
 type ClusterAutoscaler struct {
-	Enabled     bool `yaml:"enabled,omitempty"`
-	UnknownKeys `yaml:",inline"`
+	Enabled bool `yaml:"enabled,omitempty"`
 }
 
 func (a ClusterAutoscaler) AutoDiscoveryTagKey() string {
