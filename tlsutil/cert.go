@@ -1,9 +1,6 @@
-package cert
+package tlsutil
 
 import (
-	"crypto/x509"
-	"encoding/pem"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -47,16 +44,13 @@ func (dn DN) String() string {
 	return strings.Join(fields, " ")
 }
 
-func ParseCertificates(certs []byte) ([]Certificate, error) {
+// converts raw certificate bytes to certificate, if the supplied data is cert bundle (or chain)
+// all the certificates will be returned
+func ToCertificates(data []byte) ([]Certificate, error) {
 
-	blocks, err := decodeCertificates(certs)
+	cs, err := DecodeCertificatesPEM(data)
 	if err != nil {
 		return nil, err
-	}
-
-	cs, err := x509.ParseCertificates(blocks)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse certificate: %v", err)
 	}
 
 	var certificates []Certificate
@@ -79,29 +73,4 @@ func ParseCertificates(certs []byte) ([]Certificate, error) {
 		)
 	}
 	return certificates, nil
-}
-
-func IsCertificate(data []byte) bool {
-	block, _ := pem.Decode(data)
-	return block != nil && block.Type == "CERTIFICATE"
-}
-
-func decodeCertificates(rawCerts []byte) ([]byte, error) {
-
-	var block *pem.Block
-	var decodedCerts []byte
-	for {
-		block, rawCerts = pem.Decode(rawCerts)
-		if block == nil {
-			return nil, errors.New("failed to parse certificate PEM")
-		}
-		if block.Type != "CERTIFICATE" {
-			return nil, fmt.Errorf("failed to parse %s, only CERTIFICATE can be parsed", block.Type)
-		}
-		decodedCerts = append(decodedCerts, block.Bytes...)
-		if len(rawCerts) == 0 {
-			break
-		}
-	}
-	return decodedCerts, nil
 }

@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/kubernetes-incubator/kube-aws/cert"
 	"github.com/kubernetes-incubator/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/tlsutil"
 	"github.com/spf13/cobra"
 	"sort"
 )
@@ -49,7 +49,7 @@ func runCmdShowCertificates(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-func sortedKeys(m map[string][]cert.Certificate) []string {
+func sortedKeys(m map[string][]tlsutil.Certificate) []string {
 
 	var keys []string
 	for k := range m {
