@@ -49,6 +49,12 @@ $ kube-aws render credentials --generate-ca
 $ kube-aws render stack
 ```
 
+View generated certificates:
+
+```
+$ kube-aws show certificates
+```
+
 Validate configuration:
 
 ```
