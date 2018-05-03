@@ -17,9 +17,9 @@ var (
 	}
 
 	cmdShowCertificates = &cobra.Command{
-		Use:          "certificates",
-		Short:        "Show info about certificates",
-		Long:         `Loads all certificates from credentials directory and prints certificate
+		Use:   "certificates",
+		Short: "Show info about certificates",
+		Long: `Loads all certificates from credentials directory and prints certificate
 Issuer, Validity, Subject and DNS Names fields`,
 		RunE:         runCmdShowCertificates,
 		SilenceUsage: true,
