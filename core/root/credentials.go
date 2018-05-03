@@ -44,14 +44,16 @@ func LoadCertificates() (map[string][]cert.Certificate, error) {
 		}
 		b, err := ioutil.ReadFile(path.Join(defaults.AssetsDir, f.Name()))
 		if err != nil {
-			return nil, fmt.Errorf("cannot read %s file: %v", f.Name(), err)
+			fmt.Printf("WARNING: cannot read %q file: %v", f.Name(), err)
+			continue
 		}
 		if !cert.IsCertificate(b) {
 			continue
 		}
 		c, err := cert.ParseCertificates(b)
 		if err != nil {
-			return nil, fmt.Errorf("cannot parse %s file: %v", f.Name(), err)
+			fmt.Printf("WARNING: cannot parse %q file: %v", f.Name(), err)
+			continue
 		}
 		certs[f.Name()] = c
 	}
