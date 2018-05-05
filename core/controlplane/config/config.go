@@ -1331,6 +1331,10 @@ func (c DeploymentSettings) Validate() (*DeploymentValidationResult, error) {
 		return nil, errors.New("region must be set")
 	}
 
+	if c.KMSKeyARN != "" && !c.Region.IsEmpty() && !strings.Contains(c.KMSKeyARN, c.Region.String()) {
+		return nil, errors.New("kmsKeyArn must reference the same region as the one being deployed to")
+	}
+
 	_, vpcNet, err := net.ParseCIDR(c.VPCCIDR)
 	if err != nil {
 		return nil, fmt.Errorf("invalid vpcCIDR: %v", err)
