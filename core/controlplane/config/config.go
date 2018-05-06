@@ -12,6 +12,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/Masterminds/semver"
 	"github.com/kubernetes-incubator/kube-aws/cfnresource"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
@@ -837,6 +838,15 @@ var supportedReleaseChannels = map[string]bool{
 	"stable": true,
 }
 
+func (c DeploymentSettings) ApiServerLeaseEndpointReconciler() (bool, error) {
+	constraint, err := semver.NewConstraint(">= 1.9")
+	if err != nil {
+		return false, fmt.Errorf("[BUG] .ApiServerLeaseEndpointReconciler min version could not be parsed")
+	}
+	version, _ := semver.NewVersion(c.K8sVer) // already validated in Validate()
+	return constraint.Check(version), nil
+}
+
 func (c ControllerSettings) MinControllerCount() int {
 	if c.Controller.AutoScalingGroup.MinSize == nil {
 		return c.Controller.Count
@@ -1317,6 +1327,11 @@ func (c DeploymentSettings) Validate() (*DeploymentValidationResult, error) {
 
 	if c.Region.IsEmpty() {
 		return nil, errors.New("region must be set")
+	}
+
+	_, err := semver.NewVersion(c.K8sVer)
+	if err != nil {
+		return nil, errors.New("kubernetesVersion must be a valid version")
 	}
 
 	_, vpcNet, err := net.ParseCIDR(c.VPCCIDR)
