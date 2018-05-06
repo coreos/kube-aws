@@ -473,8 +473,7 @@ worker:
 #      awsNodeLabels:
 #        enabled: true
 #
-#      # Will provision worker nodes with IAM permissions to run cluster-autoscaler and add node labels so that
-#      # cluster-autoscaler pods are scheduled to nodes in this node pool
+#      # Provision worker nodes with IAM permissions and node labels to run cluster-autoscaler (assuming `addons.clusterAutoscaler.enabled` is true)
 #      clusterAutoscalerSupport:
 #        enabled: true
 #
@@ -1275,10 +1274,9 @@ kubeProxy:
 
 # Addon features
 addons:
-  # Will provision controller nodes with IAM permissions to run cluster-autoscaler and
-  # create a cluster-autoscaler deployment in the cluster
-  # CA runs only on controller nodes by default. Turn on `worker.nodePools[].clusterAutoscalerSupport.enabled` to
-  # add nodes from a node pool to be where CA runs
+  # Will create a cluster-autoscaler (CA) deployment in the cluster.
+  # CA runs only on controller nodes by default, to turn this off set `experimental.clusterAutoscalerSupport.enabled` to false.
+  # If you want to run CA on worker nodes, turn on `worker.nodePools[].clusterAutoscalerSupport.enabled` for the node pool.
   clusterAutoscaler:
     enabled: false
 
@@ -1352,6 +1350,10 @@ experimental:
   # The set includes names of launch configurations and autoscaling groups
   awsNodeLabels:
     enabled: false
+
+  # Provision controller nodes with IAM permissions and node labels to run cluster-autoscaler (assuming `addons.clusterAutoscaler.enabled` is true)
+  clusterAutoscalerSupport:
+    enabled: true
 
   # If enabled, instructs the controller manager to automatically issue TLS certificates to worker nodes via
   # certificate signing requests (csr) made to the API server using the bootstrap token. It's recommended to
