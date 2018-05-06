@@ -145,5 +145,6 @@ func (s kubeAwsSettings) withClusterName(n string) kubeAwsSettings {
 
 func (s kubeAwsSettings) withRegion(r string) kubeAwsSettings {
 	s.region = r
+	s.kmsKeyArn = fmt.Sprintf("arn:aws:kms:%s:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx", r)
 	return s
 }
