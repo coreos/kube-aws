@@ -253,7 +253,7 @@
                   "Resource": [ "*" ]
                 },
                 {{end}}
-                {{if (and .Addons.ClusterAutoscaler.Enabled .Experimental.ClusterAutoscalerSupport.Enabled) }}
+                {{if .ClusterAutoscalerSupportEnabled }}
                 {
                   "Action": [
                     "autoscaling:DescribeAutoScalingGroups",

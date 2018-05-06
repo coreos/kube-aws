@@ -1161,9 +1161,13 @@ func (c Cluster) APIAccessAllowedSourceCIDRsForControllerSG() []string {
 	return cidrs
 }
 
+func (c Cluster) ClusterAutoscalerSupportEnabled() bool {
+	return c.Addons.ClusterAutoscaler.Enabled && c.Experimental.ClusterAutoscalerSupport.Enabled
+}
+
 func (c Cluster) NodeLabels() model.NodeLabels {
 	labels := c.NodeSettings.NodeLabels
-	if c.Addons.ClusterAutoscaler.Enabled {
+	if c.ClusterAutoscalerSupportEnabled() {
 		labels["kube-aws.coreos.com/cluster-autoscaler-supported"] = "true"
 	}
 	return labels
