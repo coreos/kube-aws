@@ -1250,7 +1250,7 @@ func (c Cluster) validate() error {
 	}
 
 	if len(c.Controller.IAMConfig.Role.Name) > 0 {
-		if e := cfnresource.ValidateStableRoleNameLength(c.Controller.IAMConfig.Role.Name, c.Region.String()); e != nil {
+		if e := cfnresource.ValidateStableRoleNameLength(c.ClusterName, c.Controller.IAMConfig.Role.Name, c.Region.String()); e != nil {
 			return e
 		}
 	} else {

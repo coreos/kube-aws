@@ -479,7 +479,7 @@
         },
         "Path": "/",
         {{if .IAMConfig.Role.Name }}
-        "RoleName":  {"Fn::Join": ["",[{"Ref": "AWS::Region"},"-","{{.IAMConfig.Role.Name}}"]]},
+        "RoleName":  {"Fn::Join": ["-", ["{{$.ClusterName}}", {"Ref": "AWS::Region"}, "{{.IAMConfig.Role.Name}}"]]},
         {{end}}
         "ManagedPolicyArns": [ 
           {{range $policyIndex, $policyArn := .IAMConfig.Role.ManagedPolicies }}
