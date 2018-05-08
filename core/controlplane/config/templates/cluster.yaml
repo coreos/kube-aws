@@ -548,9 +548,12 @@ worker:
 #            Description=Example Custom Service
 #            [Service]
 #            ExecStart=/bin/rkt run --set-env TAGS=Controller ...
-#      # Enable PodPriority (it only makes sense if you enabled priority admission control in experimental section)
+#      # Enable feature-gates such as:
+#      # PodPriority (it only makes sense if you enabled priority admission control in experimental section)
+#      # ExpandPersistentVolumes (it only makes sense if you enabled PersistentVolumeClaimResize admission control in experimental section)
 #      featureGates:
 #        PodPriority: true
+#        ExpandPersistentVolumes: true
 
 # Maximum time to wait for worker creation
 #workerCreateTimeout: PT15M
@@ -1299,6 +1302,8 @@ experimental:
       enabled: false
     OwnerReferencesPermissionEnforcement:
       enabled: false
+    # persistentVolumeClaimResize enables PersistentVolumeClaim in the API server, scheduler and kubelet. you need to manually add the
+    # featureGate ExpandPersistentVolumes:true in the worker
     persistentVolumeClaimResize:
       enabled: false
 
