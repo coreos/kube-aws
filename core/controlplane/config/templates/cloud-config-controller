@@ -3306,9 +3306,10 @@ write_files:
           command:
           - /hyperkube
           - controller-manager
-          - --master=http://127.0.0.1:8080
+          - --kubeconfig=/etc/kubernetes/kubeconfig/kube-controller-manager.yaml
           - --leader-elect=true
           - --service-account-private-key-file=/etc/kubernetes/ssl/service-account-key.pem
+          - --use-service-account-credentials
           {{ if .Experimental.TLSBootstrap.Enabled }}
           - --insecure-experimental-approve-all-kubelet-csrs-for-group=system:kubelet-bootstrap
           - --cluster-signing-cert-file=/etc/kubernetes/ssl/worker-ca.pem
@@ -3348,6 +3349,9 @@ write_files:
           - mountPath: /etc/kubernetes/ssl
             name: ssl-certs-kubernetes
             readOnly: true
+          - mountPath: /etc/kubernetes/kubeconfig
+            name: kubeconfig
+            readOnly: true
           - mountPath: /etc/ssl/certs
             name: ssl-certs-host
             readOnly: true
@@ -3361,6 +3365,9 @@ write_files:
         - hostPath:
             path: /etc/kubernetes/ssl
           name: ssl-certs-kubernetes
+        - name: kubeconfig
+          hostPath:
+            path: /etc/kubernetes/kubeconfig
         - hostPath:
             path: /usr/share/ca-certificates
           name: ssl-certs-host
@@ -3382,7 +3389,7 @@ write_files:
           command:
           - /hyperkube
           - scheduler
-          - --master=http://127.0.0.1:8080
+          - --kubeconfig=/etc/kubernetes/kubeconfig/kube-scheduler.yaml
           - --leader-elect=true
          {{if .Experimental.Admission.Priority.Enabled}}
           - --feature-gates=PodPriority=true
@@ -3397,6 +3404,20 @@ write_files:
               port: 10251
             initialDelaySeconds: 15
             timeoutSeconds: 15
+          volumeMounts:
+          - mountPath: /etc/kubernetes/ssl
+            name: ssl-certs-kubernetes
+            readOnly: true
+          - mountPath: /etc/kubernetes/kubeconfig
+            name: kubeconfig
+            readOnly: true
+        volumes:
+        - name: ssl-certs-kubernetes
+          hostPath:
+            path: /etc/kubernetes/ssl
+        - name: kubeconfig
+          hostPath:
+            path: /etc/kubernetes/kubeconfig
 
   {{- if .Addons.Rescheduler.Enabled }}
   - path: /srv/kubernetes/manifests/kube-rescheduler-de.yaml
@@ -4376,6 +4397,22 @@ write_files:
     encoding: gzip+base64
     content: {{.AssetsConfig.APIServerKey}}
 
+  - path: /etc/kubernetes/ssl/kube-controller-manager.pem
+    encoding: gzip+base64
+    content: {{.AssetsConfig.KubeControllerManagerCert}}
+
+  - path: /etc/kubernetes/ssl/kube-controller-manager-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+    encoding: gzip+base64
+    content: {{.AssetsConfig.KubeControllerManagerKey}}
+
+  - path: /etc/kubernetes/ssl/kube-scheduler.pem
+    encoding: gzip+base64
+    content: {{.AssetsConfig.KubeSchedulerCert}}
+
+  - path: /etc/kubernetes/ssl/kube-scheduler-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+    encoding: gzip+base64
+    content: {{.AssetsConfig.KubeSchedulerKey}}
+
   - path: /etc/kubernetes/ssl/etcd-client.pem
     encoding: gzip+base64
     content: {{.AssetsConfig.EtcdClientCert}}
@@ -4399,19 +4436,62 @@ write_files:
         apiVersion: v1
         kind: Config
         clusters:
-        - name: default
+        - name: local
           cluster:
-            server: http://localhost:8080
+            certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            server: https://127.0.0.1
         users:
-        - name: default
+        - name: kube-proxy
           user:
             tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
         contexts:
         - context:
-            cluster: default
-            user: default
-          name: default
-        current-context: default
+            cluster: local
+            user: kube-proxy
+          name: kube-proxy-context
+        current-context: kube-proxy-context
+
+  - path: /etc/kubernetes/kubeconfig/kube-controller-manager.yaml
+    content: |
+        apiVersion: v1
+        kind: Config
+        clusters:
+        - name: local
+          cluster:
+            certificate-authority: /etc/kubernetes/ssl/ca.pem
+            server: https://127.0.0.1
+        users:
+        - name: kube-controller-manager
+          user:
+            client-certificate: /etc/kubernetes/ssl/kube-controller-manager.pem
+            client-key: /etc/kubernetes/ssl/kube-controller-manager-key.pem
+        contexts:
+        - context:
+            cluster: local
+            user: kube-controller-manager
+          name: kube-controller-manager-context
+        current-context: kube-controller-manager-context
+
+  - path: /etc/kubernetes/kubeconfig/kube-scheduler.yaml
+    content: |
+        apiVersion: v1
+        kind: Config
+        clusters:
+        - name: local
+          cluster:
+            certificate-authority: /etc/kubernetes/ssl/ca.pem
+            server: https://127.0.0.1
+        users:
+        - name: kube-scheduler
+          user:
+            client-certificate: /etc/kubernetes/ssl/kube-scheduler.pem
+            client-key: /etc/kubernetes/ssl/kube-scheduler-key.pem
+        contexts:
+        - context:
+            cluster: local
+            user: kube-scheduler
+          name: kube-scheduler-context
+        current-context: kube-scheduler-context
 
   - path: /etc/kubernetes/kubeconfig/controller.yaml
     content: |
