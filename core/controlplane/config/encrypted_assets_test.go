@@ -166,6 +166,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 			files := []string{
 				"admin-key.pem.enc", "worker-key.pem.enc", "apiserver-key.pem.enc",
 				"etcd-key.pem.enc", "etcd-client-key.pem.enc", "worker-ca-key.pem.enc",
+				"kube-controller-manager-key.pem.enc", "kube-scheduler-key.pem.enc",
 				"kiam-agent-key.pem.enc", "kiam-server-key.pem.enc",
 			}
 
