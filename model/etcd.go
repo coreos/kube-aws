@@ -12,6 +12,7 @@ type Etcd struct {
 	CustomSystemdUnits []CustomSystemdUnit  `yaml:"customSystemdUnits,omitempty"`
 	DataVolume         DataVolume           `yaml:"dataVolume,omitempty"`
 	DisasterRecovery   EtcdDisasterRecovery `yaml:"disasterRecovery,omitempty"`
+	VolumeMounts       []VolumeMount        `yaml:"volumeMounts,omitempty"`
 	EC2Instance        `yaml:",inline"`
 	IAMConfig          IAMConfig    `yaml:"iam,omitempty"`
 	Nodes              []EtcdNode   `yaml:"nodes,omitempty"`
@@ -146,6 +147,13 @@ func (e Etcd) SystemdUnitName() string {
 		return "etcd-member.service"
 	}
 	return "etcd2.service"
+}
+
+func (e Etcd) Validate() error {
+	if err := ValidateVolumeMounts(e.VolumeMounts); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Version returns the version of etcd (e.g. `3.2.1`) to be used for this etcd cluster

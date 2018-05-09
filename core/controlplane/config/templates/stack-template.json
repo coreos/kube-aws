@@ -573,7 +573,18 @@
               {{end}}
               "VolumeType": "{{.Controller.RootVolume.Type}}"
             }
+          }{{range $volumeMountSpecIndex, $volumeMountSpec := .Controller.VolumeMounts}},
+          {
+            "DeviceName": "{{$volumeMountSpec.Device}}",
+            "Ebs": {
+              "VolumeSize": "{{$volumeMountSpec.Size}}",
+              {{if gt $volumeMountSpec.Iops 0}}
+              "Iops": "{{$volumeMountSpec.Iops}}",
+              {{end}}
+              "VolumeType": "{{$volumeMountSpec.Type}}"
+            }
           }
+          {{- end -}}
         ],
         {{if .Controller.IAMConfig.InstanceProfile.Arn }}
         "IamInstanceProfile": "{{.Controller.IAMConfig.InstanceProfile.Arn}}",

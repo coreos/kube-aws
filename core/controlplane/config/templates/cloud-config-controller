@@ -83,6 +83,31 @@ coreos:
 {{- end}}
     - name: systemd-modules-load.service
       command: restart
+{{range $volumeMountSpecIndex, $volumeMountSpec := .Controller.VolumeMounts}}
+    - name: format-{{$volumeMountSpec.SystemdMountName}}.service
+      command: start
+      content: |
+        [Unit]
+        Description=Formats the EBS persistent volume drive for {{$volumeMountSpec.Device}}
+        Before=local-fs-pre.target
+
+        [Service]
+        Type=oneshot
+        ExecStart=-/usr/sbin/mkfs.xfs {{$volumeMountSpec.Device}}
+
+        [Install]
+        WantedBy=local-fs-pre.target
+
+    - name: {{$volumeMountSpec.SystemdMountName}}.mount
+      command: start
+      content: |
+        [Unit]
+        Description=Mount volume to {{$volumeMountSpec.Path}}
+
+        [Mount]
+        What={{$volumeMountSpec.Device}}
+        Where={{$volumeMountSpec.Path}}
+{{end}}
 {{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
     - name: amazon-ssm-agent.service
       command: start
