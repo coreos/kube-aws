@@ -461,18 +461,19 @@ type ComputedDeploymentSettings struct {
 // Though it is highly configurable, it's basically users' responsibility to provide `correct` values if they're going beyond the defaults.
 type DeploymentSettings struct {
 	ComputedDeploymentSettings
-	CloudFormation              model.CloudFormation  `yaml:"cloudformation,omitempty"`
-	ClusterName                 string                `yaml:"clusterName,omitempty"`
-	S3URI                       string                `yaml:"s3URI,omitempty"`
-	KeyName                     string                `yaml:"keyName,omitempty"`
-	Region                      model.Region          `yaml:",inline"`
-	AvailabilityZone            string                `yaml:"availabilityZone,omitempty"`
-	ReleaseChannel              string                `yaml:"releaseChannel,omitempty"`
-	AmiId                       string                `yaml:"amiId,omitempty"`
-	DeprecatedVPCID             string                `yaml:"vpcId,omitempty"`
-	VPC                         model.VPC             `yaml:"vpc,omitempty"`
-	DeprecatedInternetGatewayID string                `yaml:"internetGatewayId,omitempty"`
-	InternetGateway             model.InternetGateway `yaml:"internetGateway,omitempty"`
+	CloudFormation                        model.CloudFormation  `yaml:"cloudformation,omitempty"`
+	ClusterName                           string                `yaml:"clusterName,omitempty"`
+	S3URI                                 string                `yaml:"s3URI,omitempty"`
+	DisableContainerLinuxAutomaticUpdates string                `yaml:"disableContainerLinuxAutomaticUpdates,omitempty"`
+	KeyName                               string                `yaml:"keyName,omitempty"`
+	Region                                model.Region          `yaml:",inline"`
+	AvailabilityZone                      string                `yaml:"availabilityZone,omitempty"`
+	ReleaseChannel                        string                `yaml:"releaseChannel,omitempty"`
+	AmiId                                 string                `yaml:"amiId,omitempty"`
+	DeprecatedVPCID                       string                `yaml:"vpcId,omitempty"`
+	VPC                                   model.VPC             `yaml:"vpc,omitempty"`
+	DeprecatedInternetGatewayID           string                `yaml:"internetGatewayId,omitempty"`
+	InternetGateway                       model.InternetGateway `yaml:"internetGateway,omitempty"`
 	// Required for validations like e.g. if instance cidr is contained in vpc cidr
 	VPCCIDR                 string            `yaml:"vpcCIDR,omitempty"`
 	InstanceCIDR            string            `yaml:"instanceCIDR,omitempty"`
@@ -500,8 +501,7 @@ type DeploymentSettings struct {
 	HyperkubeImage model.Image `yaml:"hyperkubeImage,omitempty"`
 	AWSCliImage    model.Image `yaml:"awsCliImage,omitempty"`
 
-	CalicoNodeImage model.Image `yaml:"calicoNodeImage,omitempty"`
-
+	CalicoNodeImage                    model.Image `yaml:"calicoNodeImage,omitempty"`
 	CalicoCniImage                     model.Image `yaml:"calicoCniImage,omitempty"`
 	CalicoCtlImage                     model.Image `yaml:"calicoCtlImage,omitempty"`
 	CalicoKubeControllersImage         model.Image `yaml:"calicoKubeControllersImage,omitempty"`

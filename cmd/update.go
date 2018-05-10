@@ -21,7 +21,6 @@ var (
 
 	updateOpts = struct {
 		awsDebug, prettyPrint, skipWait bool
-		s3URI                           string
 		force                           bool
 		targets                         []string
 	}{}
@@ -36,7 +35,7 @@ func init() {
 	cmdUpdate.Flags().StringSliceVar(&updateOpts.targets, "targets", root.AllOperationTargetsAsStringSlice(), "Update nothing but specified sub-stacks.  Specify `all` or any combination of `etcd`, `control-plane`, and node pool names. Defaults to `all`")
 }
 
-func runCmdUpdate(cmd *cobra.Command, args []string) error {
+func runCmdUpdate(_ *cobra.Command, _ []string) error {
 	if !updateOpts.force && !updateConfirmation() {
 		fmt.Println("Operation cancelled")
 		return nil

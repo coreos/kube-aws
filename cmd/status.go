@@ -21,7 +21,7 @@ func init() {
 	RootCmd.AddCommand(cmdStatus)
 }
 
-func runCmdStatus(cmd *cobra.Command, args []string) error {
+func runCmdStatus(_ *cobra.Command, _ []string) error {
 	describer, err := root.ClusterDescriberFromFile(configPath)
 	if err != nil {
 		return fmt.Errorf("Failed to read cluster config: %v", err)

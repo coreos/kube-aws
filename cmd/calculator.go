@@ -30,7 +30,7 @@ func init() {
 	cmdCalculator.Flags().BoolVar(&calculatorOpts.awsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
 }
 
-func runCmdCalculator(cmd *cobra.Command, args []string) error {
+func runCmdCalculator(_ *cobra.Command, _ []string) error {
 
 	opts := root.NewOptions(false, false)
 

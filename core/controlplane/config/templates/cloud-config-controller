@@ -44,6 +44,15 @@ coreos:
     etcd_keyfile: /etc/kubernetes/ssl/etcd-client-key.pem
   {{- end }}
   units:
+{{if .DisableContainerLinuxAutomaticUpdates}}
+    - name: disable-automatic-update.service
+      command: start
+      content: |
+        [Unit]
+        Description=Disable Container Linux automatic update. Work around to be removed on Ignition migration.
+        [Service]
+        ExecStart=/usr/bin/sh -c 'for u in update-engine locksmithd; do systemctl stop $${u}.service; systemctl mask $${u}.service; systemctl disable $${u}.service; done; systemctl reset-failed'
+{{end}}
 {{- range $u := .Controller.CustomSystemdUnits}}
     - name: {{$u.Name}}
       {{- if $u.Command }}
@@ -264,10 +273,9 @@ coreos:
         After=cfn-etcd-environment.service
         {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         Wants=flanneld.service
-        {{ else -}}
+        {{ end -}}
         Wants=decrypt-assets.service
         After=decrypt-assets.service
-        {{- end }}
 
         [Service]
         # EnvironmentFile=/etc/environment allows the reading of COREOS_PRIVATE_IPV4
@@ -4049,12 +4057,14 @@ write_files:
                     - --stderrthreshold=info
                     - --cloud-provider=aws
                     - --skip-nodes-with-local-storage=false
+                    - --skip-nodes-with-system-pods=false
                     - --expander=least-waste
                     - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,kubernetes.io/cluster/{{.ClusterName}}
                   env:
                     - name: AWS_REGION
                       value: {{.Region}}
                   imagePullPolicy: "Always"
+              dnsPolicy: Default
   {{end}}
 
   - path: /srv/kubernetes/manifests/heapster-svc.yaml
