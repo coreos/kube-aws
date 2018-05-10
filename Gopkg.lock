@@ -20,13 +20,51 @@
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
-  packages = ["aws","aws/awserr","aws/awsutil","aws/client","aws/client/metadata","aws/corehandlers","aws/credentials","aws/credentials/ec2rolecreds","aws/credentials/endpointcreds","aws/credentials/stscreds","aws/defaults","aws/ec2metadata","aws/endpoints","aws/request","aws/session","aws/signer/v4","private/protocol","private/protocol/ec2query","private/protocol/json/jsonutil","private/protocol/jsonrpc","private/protocol/query","private/protocol/query/queryutil","private/protocol/rest","private/protocol/restxml","private/protocol/xml/xmlutil","service/cloudformation","service/cloudwatchlogs","service/ec2","service/elb","service/elbv2","service/kms","service/route53","service/s3","service/sts"]
+  packages = [
+    "aws",
+    "aws/awserr",
+    "aws/awsutil",
+    "aws/client",
+    "aws/client/metadata",
+    "aws/corehandlers",
+    "aws/credentials",
+    "aws/credentials/ec2rolecreds",
+    "aws/credentials/endpointcreds",
+    "aws/credentials/stscreds",
+    "aws/defaults",
+    "aws/ec2metadata",
+    "aws/endpoints",
+    "aws/request",
+    "aws/session",
+    "aws/signer/v4",
+    "private/protocol",
+    "private/protocol/ec2query",
+    "private/protocol/json/jsonutil",
+    "private/protocol/jsonrpc",
+    "private/protocol/query",
+    "private/protocol/query/queryutil",
+    "private/protocol/rest",
+    "private/protocol/restxml",
+    "private/protocol/xml/xmlutil",
+    "service/cloudformation",
+    "service/cloudwatchlogs",
+    "service/ec2",
+    "service/elb",
+    "service/elbv2",
+    "service/kms",
+    "service/route53",
+    "service/s3",
+    "service/sts"
+  ]
   revision = "e0cdae7a65ba3a5e66a0af747a7b3967ddac099c"
   version = "v1.8.30"
 
 [[projects]]
   name = "github.com/coreos/coreos-cloudinit"
-  packages = ["config","config/validate"]
+  packages = [
+    "config",
+    "config/validate"
+  ]
   revision = "5be99bf577f2768193c7fb587ef5a8806c1503cf"
   version = "v1.13.0"
 
@@ -96,9 +134,37 @@
   revision = "46b3c8225b20f01377eeefe3e6b7b147bb742eff"
 
 [[projects]]
+  name = "github.com/tidwall/gjson"
+  packages = ["."]
+  revision = "01f00f129617a6fe98941fb920d6c760241b54d2"
+  version = "v1.1.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/tidwall/match"
+  packages = ["."]
+  revision = "1731857f09b1f38450e2c12409748407822dc6be"
+
+[[projects]]
+  name = "github.com/tidwall/sjson"
+  packages = ["."]
+  revision = "6a22caf2fd45d5e2119bfc3717e984f15a7eb7ee"
+  version = "v1.0.0"
+
+[[projects]]
   name = "golang.org/x/crypto"
-  packages = ["pbkdf2","scrypt"]
+  packages = [
+    "pbkdf2",
+    "scrypt",
+    "ssh/terminal"
+  ]
   revision = "7e9105388ebff089b3f99f0ef676ea55a6da3a7e"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "3b87a42e500a6dc65dae1a55d0b641295971163e"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
@@ -108,6 +174,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "08b606bda0ae075e583b6fb94f42ebca1df187b27b9814fd06d3303477fdfc54"
+  inputs-digest = "9f08404c9cc6fc04e72c8482e51322bd33671e07c85dd865bb3aaebb3b4f8261"
   solver-name = "gps-cdcl"
   solver-version = 1

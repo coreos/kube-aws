@@ -273,10 +273,9 @@ coreos:
         After=cfn-etcd-environment.service
         {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         Wants=flanneld.service
-        {{ else -}}
+        {{ end -}}
         Wants=decrypt-assets.service
         After=decrypt-assets.service
-        {{- end }}
 
         [Service]
         # EnvironmentFile=/etc/environment allows the reading of COREOS_PRIVATE_IPV4
@@ -763,9 +762,9 @@ write_files:
     owner: root:root
     permissions: 0700
     content: |
-      #!/bin/bash -e
+      #!/bin/bash
 
-      rkt run \
+      result=$(rkt run \
         --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true \
         --mount volume=dns,target=/etc/resolv.conf \
         --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false \
@@ -778,9 +777,22 @@ write_files:
           -ec \
           '
             cfn-signal -e 0 --region {{.Region}} --resource {{.Controller.LogicalName}} --stack "${{.StackNameEnvVarName}}"
-          '
-
+          ')
+      result_code=$?
+      echo $result
       rkt rm --uuid-file=/var/run/coreos/cfn-signal.uuid || :
+
+      # Filter out benign failures to signal stack
+      if [ $result_code -ne 0 ]; then
+        case $result in
+          *"for resource Controllers already exists"*)     exit 0
+            ;;
+          *"is in UPDATE_COMPLETE state and cannot be"*)   exit 0
+            ;;
+        esac
+        exit 1
+      fi
+      exit 0
 
   - path: /opt/bin/cfn-etcd-environment
     owner: root:root
@@ -3207,7 +3219,7 @@ write_files:
           - --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
           - --client-ca-file=/etc/kubernetes/ssl/ca.pem
           - --service-account-key-file=/etc/kubernetes/ssl/service-account-key.pem
-          - --runtime-config=extensions/v1beta1/networkpolicies=true,batch/v2alpha1=true{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},extensions/v1beta1/podsecuritypolicy=true{{ end }}{{if .Experimental.Admission.Initializers.Enabled}},admissionregistration.k8s.io/v1alpha1{{end}}{{if .Experimental.Admission.Priority.Enabled}},scheduling.k8s.io/v1alpha1=true{{end}}
+          - --runtime-config=extensions/v1beta1/networkpolicies=true{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},extensions/v1beta1/podsecuritypolicy=true{{ end }}{{if .Experimental.Admission.Initializers.Enabled}},admissionregistration.k8s.io/v1alpha1{{end}}{{if .Experimental.Admission.Priority.Enabled}},scheduling.k8s.io/v1alpha1=true{{end}}
          {{if .Experimental.Admission.Priority.Enabled}}
           - --feature-gates=PodPriority=true
          {{end}}
@@ -3336,7 +3348,19 @@ write_files:
           {{end}}
           resources:
             requests:
-              cpu: 200m
+              cpu: {{ if .Kubernetes.ControllerManager.ComputeResources.Requests.Cpu }}{{ .Kubernetes.ControllerManager.ComputeResources.Requests.Cpu }}{{ else }}200m{{ end }}
+              {{ if .Kubernetes.ControllerManager.ComputeResources.Requests.Memory -}}
+              memory: {{.Kubernetes.ControllerManager.ComputeResources.Requests.Memory }}
+              {{- end }}
+            {{ if .Kubernetes.ControllerManager.ComputeResources.Limits -}}
+            limits:
+              {{ if .Kubernetes.ControllerManager.ComputeResources.Limits.Cpu -}}
+              cpu: {{.Kubernetes.ControllerManager.ComputeResources.Limits.Cpu }}
+              {{- end }}
+              {{ if .Kubernetes.ControllerManager.ComputeResources.Limits.Memory -}}
+              memory: {{.Kubernetes.ControllerManager.ComputeResources.Limits.Memory }}
+              {{- end }}
+            {{- end }}
           livenessProbe:
             httpGet:
               host: 127.0.0.1

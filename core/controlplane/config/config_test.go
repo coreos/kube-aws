@@ -1438,5 +1438,20 @@ kubernetesVersion: v1.10.2
 		if enabled, err := c.ApiServerLeaseEndpointReconciler(); enabled == false || err != nil {
 			t.Errorf("API server lease endpoint should be enabled at Kubernetes 1.9 or greater: %s\n%s", err, confBody)
 		}
+  }
+}
+
+func TestKube2IamKiamClash(t *testing.T) {
+	config := `
+experimental:
+  kube2IamSupport:
+    enabled: true
+  kiamSupport:
+    enabled: true
+`
+	confBody := singleAzConfigYaml + config
+	_, err := ClusterFromBytes([]byte(confBody))
+	if err == nil || !strings.Contains(err.Error(), "not both") {
+		t.Errorf("expected config to cause error as kube2iam and kiam cannot be enabled together: %s\n%s", err, confBody)
 	}
 }

@@ -5,6 +5,8 @@ import (
 
 	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
 	config "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	etcd "github.com/kubernetes-incubator/kube-aws/core/etcd/cluster"
+	network "github.com/kubernetes-incubator/kube-aws/core/network/cluster"
 	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/cluster"
 )
 
@@ -44,6 +46,58 @@ type NestedStack interface {
 	Tags() map[string]string
 	TemplateURL() (string, error)
 	NeedToExportIAMroles() bool
+}
+
+type networkStack struct {
+	network *network.Cluster
+}
+
+func (p networkStack) Name() string {
+	return p.network.NestedStackName()
+}
+
+func (p networkStack) Tags() map[string]string {
+	return p.network.StackTags
+}
+
+func (p networkStack) NeedToExportIAMroles() bool {
+	return false
+}
+
+func (p networkStack) TemplateURL() (string, error) {
+	u, err := p.network.TemplateURL()
+
+	if u == "" || err != nil {
+		return "", fmt.Errorf("failed to get TemplateURL for %+v: %v", p.network.String(), err)
+	}
+
+	return u, nil
+}
+
+type etcdStack struct {
+	etcd *etcd.Cluster
+}
+
+func (p etcdStack) Name() string {
+	return p.etcd.NestedStackName()
+}
+
+func (p etcdStack) Tags() map[string]string {
+	return p.etcd.StackTags
+}
+
+func (p etcdStack) NeedToExportIAMroles() bool {
+	return false
+}
+
+func (p etcdStack) TemplateURL() (string, error) {
+	u, err := p.etcd.TemplateURL()
+
+	if u == "" || err != nil {
+		return "", fmt.Errorf("failed to get TemplateURL for %+v: %v", p.etcd.String(), err)
+	}
+
+	return u, nil
 }
 
 type controlPlane struct {
@@ -117,6 +171,18 @@ func (p nodePool) NeedToExportIAMroles() bool {
 func (c TemplateParams) ControlPlane() controlPlane {
 	return controlPlane{
 		controlPlane: c.cluster.controlPlane,
+	}
+}
+
+func (c TemplateParams) Etcd() etcdStack {
+	return etcdStack{
+		etcd: c.cluster.Etcd(),
+	}
+}
+
+func (c TemplateParams) Network() networkStack {
+	return networkStack{
+		network: c.cluster.Network(),
 	}
 }
 

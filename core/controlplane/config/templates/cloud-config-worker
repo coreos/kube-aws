@@ -299,10 +299,9 @@ coreos:
         {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         Wants=flanneld.service cfn-etcd-environment.service
         After=cfn-etcd-environment.service
-        {{ else -}}
+        {{ end -}}
         Wants=decrypt-assets.service
         After=decrypt-assets.service
-        {{- end }}
         {{- if .Gpu.Nvidia.IsEnabledOn .InstanceType }}
         Requires=nvidia-start.service
         After=nvidia-start.service

@@ -92,7 +92,6 @@ coreos:
         Restart=on-failure
         RemainAfterExit=true
         ExecStartPre=/opt/bin/cfn-etcd-environment
-        ExecStartPre=/usr/bin/mv -f /var/run/coreos/etcd-environment /etc/etcd-environment
         ExecStart=/bin/true
         TimeoutStartSec=120
 
@@ -754,6 +753,9 @@ write_files:
       fi
 
       run append-etcd-server-env
+
+      echo 'moving /var/run/coreos/etcd-environment to /etc/etcd-environment'
+      /usr/bin/mv -f /var/run/coreos/etcd-environment /etc/etcd-environment
 
       /usr/bin/sed -i "s/^ETCDCTL_ENDPOINT.*$/ETCDCTL_ENDPOINT=https:\/\/$(cat /var/run/coreos/advertised-hostname):2379/" /etc/environment
 
