@@ -19,7 +19,7 @@ var (
 
 	validateOpts = struct {
 		awsDebug, skipWait bool
-		targets  []string
+		targets            []string
 	}{}
 )
 
