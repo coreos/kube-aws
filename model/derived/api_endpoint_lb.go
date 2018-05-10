@@ -76,7 +76,8 @@ func (b APIEndpointLB) SecurityGroupRefs() []string {
 
 	refs = append(
 		refs,
-		`{"Ref":"SecurityGroupElbAPIServer"}`,
+		`{"Fn::ImportValue" : {"Fn::Sub" : "${NetworkStackName}-SecurityGroupElbAPIServer"}}`,
+		//`{"Ref":"SecurityGroupElbAPIServer"}`,
 	)
 
 	return refs

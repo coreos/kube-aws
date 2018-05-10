@@ -6,7 +6,7 @@ import (
 	cfg "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 )
 
-func (c DeploymentSettings) ValidateInputs() error {
+func (c DeploymentSettings) ValidateInputs(name string) error {
 	// By design, kube-aws doesn't allow customizing the following settings among node pools.
 	//
 	// Every node pool imports subnets from the main stack and therefore there's no need for setting:
@@ -48,15 +48,15 @@ func (c DeploymentSettings) ValidateInputs() error {
 		return fmt.Errorf("although you can't customize `kmsKeyArn` per node pool but you did specify \"%s\" in your cluster.yaml", c.KMSKeyARN)
 	}
 
-	if err := c.Experimental.Validate(); err != nil {
+	if err := c.Experimental.Validate(name); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s DeploymentSettings) Validate() error {
-	if err := s.Experimental.Validate(); err != nil {
+func (s DeploymentSettings) Validate(name string) error {
+	if err := s.Experimental.Validate(name); err != nil {
 		return err
 	}
 	return nil

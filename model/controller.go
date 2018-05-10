@@ -52,7 +52,7 @@ func (c Controller) SecurityGroupRefs() []string {
 
 	refs = append(
 		refs,
-		`{"Ref":"SecurityGroupController"}`,
+		`{"Fn::ImportValue" : {"Fn::Sub" : "${NetworkStackName}-ControllerSecurityGroup"}}`,
 	)
 
 	return refs

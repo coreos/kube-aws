@@ -135,7 +135,7 @@ func (e Etcd) SecurityGroupRefs() []string {
 
 	refs = append(
 		refs,
-		`{"Ref":"SecurityGroupEtcd"}`,
+		`{"Fn::ImportValue" : {"Fn::Sub" : "${NetworkStackName}-EtcdSecurityGroup"}}`,
 	)
 
 	return refs

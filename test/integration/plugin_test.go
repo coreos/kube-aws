@@ -120,6 +120,30 @@ spec:
                     }
                   }
                 }
+        etcd:
+          resources:
+            append:
+              inline: |
+                {
+                  "QueueFromMyPlugin": {
+                    "Type": "AWS::SQS::Queue",
+                    "Properties": {
+                    "QueueName": {{quote .Values.queue.name}}
+                    }
+                  }
+                }
+        network:
+          resources:
+            append:
+              inline: |
+                {
+                  "QueueFromMyPlugin": {
+                    "Type": "AWS::SQS::Queue",
+                    "Properties": {
+                    "QueueName": {{quote .Values.queue.name}}
+                    }
+                  }
+                }
     kubernetes:
       apiserver:
         flags:
@@ -255,6 +279,7 @@ spec:
 				func(c root.Cluster, t *testing.T) {
 					cp := c.ControlPlane()
 					np := c.NodePools()[0]
+					etcd := c.Etcd()
 
 					{
 						e := model.CustomFile{
@@ -293,13 +318,12 @@ spec:
 					}
 
 					{
-
 						e := model.CustomFile{
 							Path:        "/var/kube-aws/bar.txt",
 							Permissions: 0644,
 							Content:     "etcd-bar",
 						}
-						a := cp.StackConfig.Etcd.CustomFiles[0]
+						a := etcd.StackConfig.Etcd.CustomFiles[0]
 						if !reflect.DeepEqual(e, a) {
 							t.Errorf("Unexpected etcd custom file from plugin: expected=%v actual=%v", e, a)
 						}
@@ -310,7 +334,7 @@ spec:
 							Permissions: 0644,
 							Content:     "etcd-baz",
 						}
-						a := cp.StackConfig.Etcd.CustomFiles[1]
+						a := etcd.StackConfig.Etcd.CustomFiles[1]
 						if !reflect.DeepEqual(e, a) {
 							t.Errorf("Unexpected etcd custom file from plugin: expected=%v actual=%v", e, a)
 						}
@@ -323,7 +347,7 @@ spec:
 								Resources: []string{"*"},
 							},
 						}
-						a := cp.StackConfig.Etcd.IAMConfig.Policy.Statements
+						a := etcd.StackConfig.Etcd.IAMConfig.Policy.Statements
 						if !reflect.DeepEqual(e, a) {
 							t.Errorf("Unexpected etcd iam policy statements from plugin: expected=%v actual=%v", e, a)
 						}
@@ -371,7 +395,7 @@ spec:
 						t.Errorf("Invalid controller userdata: %v", controllerUserdataS3Part)
 					}
 
-					etcdUserdataS3Part := cp.UserDataEtcd.Parts[model.USERDATA_S3].Asset.Content
+					etcdUserdataS3Part := etcd.UserDataEtcd.Parts[model.USERDATA_S3].Asset.Content
 					if !strings.Contains(etcdUserdataS3Part, "save-queue-name.service") {
 						t.Errorf("Invalid etcd userdata: %v", etcdUserdataS3Part)
 					}
@@ -492,6 +516,8 @@ spec:
 					stackTemplateOptions.RootStackTemplateTmplFile = "../../core/root/config/templates/stack-template.json"
 					stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../core/nodepool/config/templates/stack-template.json"
 					stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/templates/stack-template.json"
+					stackTemplateOptions.EtcdStackTemplateTmplFile = "../../core/etcd/config/templates/stack-template.json"
+					stackTemplateOptions.NetworkStackTemplateTmplFile = "../../core/network/config/templates/stack-template.json"
 
 					cluster, err := root.ClusterFromConfig(providedConfig, stackTemplateOptions, false)
 					if err != nil {

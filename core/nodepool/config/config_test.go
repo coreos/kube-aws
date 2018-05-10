@@ -1,6 +1,7 @@
 package config
 
 import (
+	"strings"
 	"testing"
 
 	cfg "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
@@ -34,4 +35,20 @@ func TestRotateCerts(t *testing.T) {
 		t.Errorf("When RotateCerts is enabled, Feature Gate RotateKubeletClientCertificate should be automatically enabled too")
 	}
 
+}
+
+func TestKube2IamKiamClash(t *testing.T) {
+	config := `
+name: nodepool1
+kube2IamSupport:
+  enabled: true
+kiamSupport:
+  enabled: true
+`
+
+	controlplane_config, _ := cfg.ConfigFromBytes([]byte(cluster_config))
+	_, err := ClusterFromBytes([]byte(config), controlplane_config)
+	if err == nil || !strings.Contains(err.Error(), "not both") {
+		t.Errorf("expected config to cause error as kube2iam and kiam cannot be enabled together: %s\n%s", err, config)
+	}
 }

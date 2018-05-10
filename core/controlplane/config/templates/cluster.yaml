@@ -193,7 +193,7 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #  # If you specify managedIamRoleName the role created for controller nodes will not suffix the random id at the end
 #  # Role will be created with "Ref": {"AWS::StackName"}-{"AWS::Region"}-yourManagedRole
 #  # to follow the recommendation in AWS documentation  http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
-#  # This is also intended to be used in combination with .experimental.kube2IamSupport. See #297 for more information.
+#  # This is also intended to be used in combination with .experimental.kube2IamSupport or .experimental.kiamSupport. See #297 for more information.
 #  #
 #  # ATTENTION: Consider limiting number of characters in clusterName and iam.role.name to avoid the resulting IAM
 #  # role name's length from exceeding the AWS limit: 64
@@ -317,7 +317,7 @@ worker:
 #      # If you specify managedIamRoleName the role created for worker nodes will not suffix the random id at the end
 #      # Role will be created with "Ref": {"AWS::StackName"}-{"AWS::Region"}-yourManagedRole
 #      # to follow the recommendation in AWS documentation  http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
-#      # This is also intended to be used in combination with kube2IamSupport. See #297 for more information.
+#      # This is also intended to be used in combination with kube2IamSupport or kiamSupport. See #297 for more information.
 #      #
 #      # ATTENTION: Consider limiting number of characters in clusterName, nodePools[].name and managedIamRoleName to
 #      # avoid the resulting IAM role name's length from exceeding the AWS limit: 64
@@ -491,7 +491,13 @@ worker:
 #      ephemeralImageStorage:
 #        enabled: true
 #
-#      # When enabled it will grant sts:assumeRole permission to the IAM roles for worker nodes.
+#      # When enabled this will install kiam using the repo from `kiamImage` (ref https://github.com/uswitch/kiam)
+#      # It will also grant sts:assumeRole permission to the IAM role for worker nodes in this pool.
+#      # This will use SSL certificates generated during `kube-aws render credentials`, ensure this has been run with kube-aws v0.9.9+
+#      kiamSupport:
+#        enabled: true
+#
+#      # When enabled it will grant sts:assumeRole permission to the IAM roles for worker nodes in this pool.
 #      # This is intended to be used in combination with managedIamRoleName. See #297 for more information.
 #      kube2IamSupport:
 #        enabled: true
@@ -1001,6 +1007,12 @@ worker:
 #  tag: 1.1.2
 #  rktPullDocker: false
 
+# kiam image repository to use.
+kiamImage:
+  repo: quay.io/uswitch/kiam
+  tag: v2.7
+  rktPullDocker: false
+
 # kube2iam image repository to use.
 #kube2iamImage:
 #  repo: jtblin/kube2iam
@@ -1100,6 +1112,14 @@ worker:
 #kubernetes:
 #  networking:
 #    selfHosting:
+#  controllerManager:
+#    resources:
+#      requests:
+#        cpu: 200m
+#        memory: 1G
+#      limits:
+#        cpu: 1
+#        memory: 2G
 
 # Configure self-hosted networking within kubernetes, deployed as a k8s daemonset.  Choose either 'canal' (calico+flannel) or 
 # 'flannel' (choose 'canal' if you require calico or kubernetes NetworkPolicy firewalling).
@@ -1316,8 +1336,10 @@ experimental:
   # Enable audit log for apiserver. Recommended when `rbac` is enabled.
   auditLog:
     enabled: false
-    maxage: 30
-    logpath: /dev/stdout
+    logPath: /var/log/kube-apiserver-audit.log
+    maxAge: 30
+    maxBackup: 1
+    maxSize: 100
 
   # See https://kubernetes.io/docs/admin/authentication/#webhook-token-authentication for more information
   authentication:
@@ -1346,6 +1368,12 @@ experimental:
 
   # This option has not yet been tested with rkt as container runtime
   ephemeralImageStorage:
+    enabled: false
+
+  # When enabled this will install kiam using the repo from `kiamImage` (ref https://github.com/uswitch/kiam)
+  # It will also grant sts:assumeRole permission to the IAM role for controller nodes.
+  # This will use SSL certificates generated during `kube-aws render credentials`, ensure this has been run with kube-aws v0.9.9+
+  kiamSupport:
     enabled: false
 
   # When enabled it will grant sts:assumeRole permission to the IAM role for controller nodes.
