@@ -5,7 +5,20 @@ import (
 	"github.com/stretchr/testify/require"
 	"net"
 	"testing"
+	"time"
 )
+
+func TestIsExpired(t *testing.T) {
+
+	cert := Certificate{NotAfter: time.Now().AddDate(0, 0, -1)}
+	assert.True(t, cert.IsExpired())
+}
+
+func TestIsNotExpired(t *testing.T) {
+
+	cert := Certificate{NotAfter: time.Now().AddDate(0, 0, 1)}
+	assert.False(t, cert.IsExpired())
+}
 
 func TestCertificateContainsDNSName(t *testing.T) {
 
