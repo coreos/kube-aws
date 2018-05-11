@@ -74,10 +74,10 @@ func DecodeCertificatesPEM(data []byte) ([]*x509.Certificate, error) {
 		if block == nil {
 			return nil, errors.New("failed to parse certificate PEM")
 		}
-		if block.Type != certificateType {
-			return nil, fmt.Errorf("failed to parse %s, only type %s can be parsed", block.Type, certificateType)
+		// append only certificates
+		if block.Type == certificateType {
+			decodedCerts = append(decodedCerts, block.Bytes...)
 		}
-		decodedCerts = append(decodedCerts, block.Bytes...)
 		if len(data) == 0 {
 			break
 		}

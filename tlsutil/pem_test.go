@@ -40,6 +40,18 @@ func TestEncodeCertificatesPEM(t *testing.T) {
 	assert.Equal(t, 2, len(decodedBundle))
 }
 
+func TestEncodeCertificatesPEMBundleContainsPrivateKey(t *testing.T) {
+
+	cert1 := EncodeCertificatePEM(getSelfSignedCert(t, "test CN", "abc organization"))
+	key := EncodePrivateKeyPEM(getPrivateKey(t))
+	bundle := append(cert1[:], key[:]...)
+
+	decodedBundle, err := DecodeCertificatesPEM(bundle)
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, len(decodedBundle))
+}
+
 func TestIsCertificatePEMIsFalseForPrivateKey(t *testing.T) {
 
 	key := getPrivateKey(t)
