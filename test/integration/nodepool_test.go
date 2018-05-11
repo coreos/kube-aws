@@ -67,7 +67,7 @@ apiEndpoints:
       id: hostedzone-xxxx
 sshAuthorizedKeys:
 - mydummysshpublickey
-kmsKeyArn: mykmskeyarn
+kmsKeyArn: arn:aws:kms:ap-northeast-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx
 s3URI: s3//bucket/emptyDir
 `
 	mainCluster, err := cfg.ClusterFromBytes([]byte(mainClusterYaml))

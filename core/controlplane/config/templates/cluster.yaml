@@ -554,9 +554,12 @@ worker:
 #            Description=Example Custom Service
 #            [Service]
 #            ExecStart=/bin/rkt run --set-env TAGS=Controller ...
-#      # Enable PodPriority (it only makes sense if you enabled priority admission control in experimental section)
+#      # Enable feature-gates such as:
+#      # PodPriority (it only makes sense if you enabled priority admission control in experimental section)
+#      # ExpandPersistentVolumes (it only makes sense if you enabled PersistentVolumeClaimResize admission control in experimental section)
 #      featureGates:
 #        PodPriority: true
+#        ExpandPersistentVolumes: true
 
 # Maximum time to wait for worker creation
 #workerCreateTimeout: PT15M
@@ -1319,6 +1322,8 @@ experimental:
       enabled: false
     OwnerReferencesPermissionEnforcement:
       enabled: false
+    # persistentVolumeClaimResize enables PersistentVolumeClaim in the API server, scheduler and kubelet. you need to manually add the
+    # featureGate ExpandPersistentVolumes:true in the worker
     persistentVolumeClaimResize:
       enabled: false
 
@@ -1331,8 +1336,10 @@ experimental:
   # Enable audit log for apiserver. Recommended when `rbac` is enabled.
   auditLog:
     enabled: false
-    maxage: 30
-    logpath: /dev/stdout
+    logPath: /var/log/kube-apiserver-audit.log
+    maxAge: 30
+    maxBackup: 1
+    maxSize: 100
 
   # See https://kubernetes.io/docs/admin/authentication/#webhook-token-authentication for more information
   authentication:

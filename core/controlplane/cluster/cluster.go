@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -12,10 +13,13 @@ import (
 
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/naming"
+	"github.com/kubernetes-incubator/kube-aws/netutil"
 	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
+	"github.com/kubernetes-incubator/kube-aws/tlsutil"
 )
 
 // VERSION set by build script
@@ -216,6 +220,10 @@ func (c *Cluster) TemplateURL() (string, error) {
 
 // ValidateStack validates the CloudFormation stack for this control plane already uploaded to S3
 func (c *Cluster) ValidateStack() (string, error) {
+	if err := c.validateCertsAgainstSettings(); err != nil {
+		return "", err
+	}
+
 	templateURL, err := c.TemplateURL()
 	if err != nil {
 		return "", fmt.Errorf("failed to get template url : %v", err)
@@ -379,6 +387,44 @@ func (c *ClusterRef) validateControllerRootVolume(ec2Svc ec2Service) error {
 		if operr, ok := err.(awserr.Error); ok && operr.Code() != "DryRunOperation" {
 			return fmt.Errorf("create volume dry-run request failed: %v", err)
 		}
+	}
+
+	return nil
+}
+
+// validateCertsAgainstSettings cross checks that our api server cert is compatible with our cluster settings: -
+// - It must include the externalDNS name for the api servers.
+// - It must include the IPAddress of the first IP in the chosen ServiceCIDR.
+func (c Cluster) validateCertsAgainstSettings() error {
+	apiServerPEM, err := gzipcompressor.DecompressString(c.AssetsConfig.APIServerCert)
+	if err != nil {
+		return fmt.Errorf("could not decompress the apiserver pem: %v", err)
+	}
+
+	// Check DNS Names
+	for _, apiEndPoint := range c.KubeClusterSettings.APIEndpointConfigs {
+		apiDnsOK, err := tlsutil.CertificateContainsDNSName([]byte(apiServerPEM), "kube-apiserver", apiEndPoint.DNSName)
+		if err != nil {
+			return fmt.Errorf("error validating api cert contains dns name %s: %v", apiEndPoint.DNSName, err)
+		}
+		if !apiDnsOK {
+			return fmt.Errorf("the apiserver cert does not contain the external dns name %s, please regenerate or resolve", apiEndPoint.DNSName)
+		}
+	}
+
+	// Check IP SANS
+	_, serviceNet, err := net.ParseCIDR(c.ServiceCIDR)
+	if err != nil {
+		return fmt.Errorf("invalid serviceCIDR: %v", err)
+	}
+	kubernetesServiceIPAddr := netutil.IncrementIP(serviceNet.IP)
+
+	apiIPOK, err := tlsutil.CertificateContainsIPAddress([]byte(apiServerPEM), "kube-apiserver", kubernetesServiceIPAddr)
+	if err != nil {
+		return fmt.Errorf("error validating api cert contains kubernetes service ip %v: %v", kubernetesServiceIPAddr, err)
+	}
+	if !apiIPOK {
+		return fmt.Errorf("the apiserver cert does not contain the kubernetes service ip address %v, please regenerate or resolve", kubernetesServiceIPAddr)
 	}
 
 	return nil

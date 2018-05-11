@@ -106,9 +106,11 @@ func TestMainClusterConfig(t *testing.T) {
 				},
 			},
 			AuditLog: controlplane_config.AuditLog{
-				Enabled: false,
-				MaxAge:  30,
-				LogPath: "/var/log/kube-apiserver-audit.log",
+				Enabled:   false,
+				LogPath:   "/var/log/kube-apiserver-audit.log",
+				MaxAge:    30,
+				MaxBackup: 1,
+				MaxSize:   100,
 			},
 			Authentication: controlplane_config.Authentication{
 				Webhook: controlplane_config.Webhook{
@@ -1252,8 +1254,10 @@ experimental:
       enabled: true
   auditLog:
     enabled: true
-    maxage: 100
-    logpath: "/var/log/audit.log"
+    logPath: "/var/log/audit.log"
+    maxAge: 100
+    maxBackup: 10
+    maxSize: 5
   authentication:
     webhook:
       enabled: true
@@ -1336,9 +1340,11 @@ worker:
 							},
 						},
 						AuditLog: controlplane_config.AuditLog{
-							Enabled: true,
-							MaxAge:  100,
-							LogPath: "/var/log/audit.log",
+							Enabled:   true,
+							LogPath:   "/var/log/audit.log",
+							MaxAge:    100,
+							MaxBackup: 10,
+							MaxSize:   5,
 						},
 						Authentication: controlplane_config.Authentication{
 							Webhook: controlplane_config.Webhook{

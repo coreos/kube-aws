@@ -750,7 +750,7 @@ func newDefaultClusterWithDeps(opts config.StackTemplateOptions) (*Cluster, erro
 	cluster.ExternalDNSName = "foo.example.com"
 	cluster.KeyName = "mykey"
 	cluster.S3URI = "s3://mybucket/mydir"
-	cluster.KMSKeyARN = "mykmskey"
+	cluster.KMSKeyARN = "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
 	if err := cluster.Load(); err != nil {
 		return &Cluster{}, err
 	}
