@@ -68,13 +68,7 @@ func runCmdRender(_ *cobra.Command, args []string) error {
 	return nil
 }
 func runCmdRenderStack(_ *cobra.Command, _ []string) error {
-	// Read the config from file.
-	cluster, err := root.StackAssetsRendererFromFile(configPath)
-	if err != nil {
-		return fmt.Errorf("Failed to read cluster config: %v", err)
-	}
-
-	if err := cluster.RenderFiles(); err != nil {
+	if err := root.RenderStack(configPath); err != nil {
 		return err
 	}
 
@@ -92,9 +86,5 @@ Next steps:
 }
 
 func runCmdRenderCredentials(_ *cobra.Command, _ []string) error {
-	cluster, err := root.CredentialsRendererFromFile(configPath)
-	if err != nil {
-		return fmt.Errorf("failed to read cluster config: %v", err)
-	}
-	return cluster.RenderCredentials(renderCredentialsOpts)
+	return root.RenderCredentials(configPath, renderCredentialsOpts)
 }

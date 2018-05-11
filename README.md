@@ -4,7 +4,6 @@
 [![Build Status](https://travis-ci.org/kubernetes-incubator/kube-aws.svg?branch=master)](https://travis-ci.org/kubernetes-incubator/kube-aws)
 [![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)](LICENSE)
 
-
 **Note**: The `master` branch may be in an *unstable or even broken state* during development. Please use [releases](https://github.com/kubernetes-incubator/kube-aws/releases) instead of the `master` branch in order to get stable binaries.
 
 `kube-aws` is a command-line tool to create/update/destroy Kubernetes clusters on AWS.
@@ -47,6 +46,12 @@ Generate assets:
 ```
 $ kube-aws render credentials --generate-ca
 $ kube-aws render stack
+```
+
+View generated certificates:
+
+```
+$ kube-aws show certificates
 ```
 
 Validate configuration:

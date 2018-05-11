@@ -13,6 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/go-yaml/yaml"
 	"github.com/kubernetes-incubator/kube-aws/cfnresource"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
@@ -22,7 +23,6 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/netutil"
 	"github.com/kubernetes-incubator/kube-aws/node"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
-	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -1327,6 +1327,10 @@ func (c DeploymentSettings) Validate() (*DeploymentValidationResult, error) {
 
 	if c.Region.IsEmpty() {
 		return nil, errors.New("region must be set")
+	}
+
+	if c.KMSKeyARN != "" && !c.Region.IsEmpty() && !strings.Contains(c.KMSKeyARN, c.Region.String()) {
+		return nil, errors.New("kmsKeyArn must reference the same region as the one being deployed to")
 	}
 
 	_, vpcNet, err := net.ParseCIDR(c.VPCCIDR)

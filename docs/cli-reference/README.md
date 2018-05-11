@@ -63,6 +63,16 @@ Render [CloudFormation](https://aws.amazon.com/cloudformation/) stack templates 
 $ kube-aws render stack
 ```
 
+# `show certificates`
+
+Shows info about every certificate stored in `credentials` directory
+
+`show certificates` has no CLI flags.
+
+```bash
+$ kube-aws show certificates
+```
+
 # `validate`
 
 Validate cluster assets prior to deployment.

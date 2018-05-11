@@ -111,7 +111,7 @@ apiEndpoints:
     hostedZone:
       id: hostedzone-xxxx
 keyName: mykey
-kmsKeyArn: mykeyarn
+kmsKeyArn: arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx
 region: us-west-1
 availabilityZone: us-west-1a
 `))
@@ -151,7 +151,7 @@ apiEndpoints:
   loadBalancer:
     recordSetManaged: false
 keyName: mykey
-kmsKeyArn: mykeyarn
+kmsKeyArn: arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx
 region: us-west-1
 availabilityZone: dummy-az-0
 `))
@@ -236,7 +236,7 @@ keyName: test-key-name
 region: us-west-1
 clusterName: test-cluster-name
 s3URI: s3://mybucket/mydir
-kmsKeyArn: "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
+kmsKeyArn: arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx
 availabilityZone: us-west-1a
 `
 

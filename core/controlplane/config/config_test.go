@@ -1380,3 +1380,18 @@ experimental:
 		t.Errorf("expected config to cause error as kube2iam and kiam cannot be enabled together: %s\n%s", err, confBody)
 	}
 }
+func TestKMSArnValidateRegion(t *testing.T) {
+	config := `keyName: test-key-name
+s3URI: s3://mybucket/mydir
+region: us-west-1
+clusterName: test-cluster-name
+kmsKeyArn: "arn:aws:kms:eu-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
+`
+	confBody := config + externalDNSNameConfig + availabilityZoneConfig
+
+	_, err := ClusterFromBytes([]byte(confBody))
+	if err == nil || !strings.Contains(err.Error(), "same region") {
+		t.Errorf("Expecting validation error for mismatching KMS key ARN and region config: %s\n%s", err, confBody)
+	}
+
+}

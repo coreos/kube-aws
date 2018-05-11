@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -48,9 +49,14 @@ type Call struct {
 	// Amount of times this call has been called
 	totalCalls int
 
+	// Call to this method can be optional
+	optional bool
+
 	// Holds a channel that will be used to block the Return until it either
 	// receives a message or is closed. nil means it returns immediately.
 	WaitFor <-chan time.Time
+
+	waitTime time.Duration
 
 	// Holds a handler used to manipulate arguments content that are passed by
 	// reference. It's useful when mocking methods such as unmarshalers or
@@ -130,7 +136,10 @@ func (c *Call) WaitUntil(w <-chan time.Time) *Call {
 //
 //    Mock.On("MyMethod", arg1, arg2).After(time.Second)
 func (c *Call) After(d time.Duration) *Call {
-	return c.WaitUntil(time.After(d))
+	c.lock()
+	defer c.unlock()
+	c.waitTime = d
+	return c
 }
 
 // Run sets a handler to be called before returning. It can be used when
@@ -145,6 +154,15 @@ func (c *Call) Run(fn func(args Arguments)) *Call {
 	c.lock()
 	defer c.unlock()
 	c.RunFn = fn
+	return c
+}
+
+// Maybe allows the method call to be optional. Not calling an optional method
+// will not cause an error while asserting expectations
+func (c *Call) Maybe() *Call {
+	c.lock()
+	defer c.unlock()
+	c.optional = true
 	return c
 }
 
@@ -285,9 +303,16 @@ func (m *Mock) Called(arguments ...interface{}) Arguments {
 	}
 	parts := strings.Split(functionPath, ".")
 	functionName := parts[len(parts)-1]
+	return m.MethodCalled(functionName, arguments...)
+}
 
+// MethodCalled tells the mock object that the given method has been called, and gets
+// an array of arguments to return. Panics if the call is unexpected (i.e. not preceded
+// by appropriate .On .Return() calls)
+// If Call.WaitFor is set, blocks until the channel is closed or receives a message.
+func (m *Mock) MethodCalled(methodName string, arguments ...interface{}) Arguments {
 	m.mutex.Lock()
-	found, call := m.findExpectedCall(functionName, arguments...)
+	found, call := m.findExpectedCall(methodName, arguments...)
 
 	if found < 0 {
 		// we have to fail here - because we don't know what to do
@@ -297,43 +322,47 @@ func (m *Mock) Called(arguments ...interface{}) Arguments {
 		//   b) the arguments are not what was expected, or
 		//   c) the developer has forgotten to add an accompanying On...Return pair.
 
-		closestFound, closestCall := m.findClosestCall(functionName, arguments...)
+		closestFound, closestCall := m.findClosestCall(methodName, arguments...)
 		m.mutex.Unlock()
 
 		if closestFound {
-			panic(fmt.Sprintf("\n\nmock: Unexpected Method Call\n-----------------------------\n\n%s\n\nThe closest call I have is: \n\n%s\n\n%s\n", callString(functionName, arguments, true), callString(functionName, closestCall.Arguments, true), diffArguments(arguments, closestCall.Arguments)))
+			panic(fmt.Sprintf("\n\nmock: Unexpected Method Call\n-----------------------------\n\n%s\n\nThe closest call I have is: \n\n%s\n\n%s\n", callString(methodName, arguments, true), callString(methodName, closestCall.Arguments, true), diffArguments(closestCall.Arguments, arguments)))
 		} else {
-			panic(fmt.Sprintf("\nassert: mock: I don't know what to return because the method call was unexpected.\n\tEither do Mock.On(\"%s\").Return(...) first, or remove the %s() call.\n\tThis method was unexpected:\n\t\t%s\n\tat: %s", functionName, functionName, callString(functionName, arguments, true), assert.CallerInfo()))
+			panic(fmt.Sprintf("\nassert: mock: I don't know what to return because the method call was unexpected.\n\tEither do Mock.On(\"%s\").Return(...) first, or remove the %s() call.\n\tThis method was unexpected:\n\t\t%s\n\tat: %s", methodName, methodName, callString(methodName, arguments, true), assert.CallerInfo()))
 		}
 	}
 
-	switch {
-	case call.Repeatability == 1:
+	if call.Repeatability == 1 {
 		call.Repeatability = -1
-		call.totalCalls++
-
-	case call.Repeatability > 1:
+	} else if call.Repeatability > 1 {
 		call.Repeatability--
-		call.totalCalls++
-
-	case call.Repeatability == 0:
-		call.totalCalls++
 	}
+	call.totalCalls++
 
 	// add the call
-	m.Calls = append(m.Calls, *newCall(m, functionName, arguments...))
+	m.Calls = append(m.Calls, *newCall(m, methodName, arguments...))
 	m.mutex.Unlock()
 
 	// block if specified
 	if call.WaitFor != nil {
 		<-call.WaitFor
+	} else {
+		time.Sleep(call.waitTime)
 	}
 
-	if call.RunFn != nil {
-		call.RunFn(arguments)
+	m.mutex.Lock()
+	runFn := call.RunFn
+	m.mutex.Unlock()
+
+	if runFn != nil {
+		runFn(arguments)
 	}
 
-	return call.ReturnArguments
+	m.mutex.Lock()
+	returnArgs := call.ReturnArguments
+	m.mutex.Unlock()
+
+	return returnArgs
 }
 
 /*
@@ -373,16 +402,17 @@ func (m *Mock) AssertExpectations(t TestingT) bool {
 	// iterate through each expectation
 	expectedCalls := m.expectedCalls()
 	for _, expectedCall := range expectedCalls {
-		if !m.methodWasCalled(expectedCall.Method, expectedCall.Arguments) && expectedCall.totalCalls == 0 {
+		if !expectedCall.optional && !m.methodWasCalled(expectedCall.Method, expectedCall.Arguments) && expectedCall.totalCalls == 0 {
 			somethingMissing = true
 			failedExpectations++
-			t.Logf("\u274C\t%s(%s)", expectedCall.Method, expectedCall.Arguments.String())
+			t.Logf("FAIL:\t%s(%s)", expectedCall.Method, expectedCall.Arguments.String())
 		} else {
 			if expectedCall.Repeatability > 0 {
 				somethingMissing = true
 				failedExpectations++
+				t.Logf("FAIL:\t%s(%s)", expectedCall.Method, expectedCall.Arguments.String())
 			} else {
-				t.Logf("\u2705\t%s(%s)", expectedCall.Method, expectedCall.Arguments.String())
+				t.Logf("PASS:\t%s(%s)", expectedCall.Method, expectedCall.Arguments.String())
 			}
 		}
 	}
@@ -491,9 +521,25 @@ type argumentMatcher struct {
 
 func (f argumentMatcher) Matches(argument interface{}) bool {
 	expectType := f.fn.Type().In(0)
+	expectTypeNilSupported := false
+	switch expectType.Kind() {
+	case reflect.Interface, reflect.Chan, reflect.Func, reflect.Map, reflect.Slice, reflect.Ptr:
+		expectTypeNilSupported = true
+	}
 
-	if reflect.TypeOf(argument).AssignableTo(expectType) {
-		result := f.fn.Call([]reflect.Value{reflect.ValueOf(argument)})
+	argType := reflect.TypeOf(argument)
+	var arg reflect.Value
+	if argType == nil {
+		arg = reflect.New(expectType).Elem()
+	} else {
+		arg = reflect.ValueOf(argument)
+	}
+
+	if argType == nil && !expectTypeNilSupported {
+		panic(errors.New("attempting to call matcher with nil for non-nil expected type"))
+	}
+	if argType == nil || argType.AssignableTo(expectType) {
+		result := f.fn.Call([]reflect.Value{arg})
 		return result[0].Bool()
 	}
 	return false
@@ -579,10 +625,10 @@ func (args Arguments) Diff(objects []interface{}) (string, int) {
 
 		if matcher, ok := expected.(argumentMatcher); ok {
 			if matcher.Matches(actual) {
-				output = fmt.Sprintf("%s\t%d: \u2705  %s matched by %s\n", output, i, actual, matcher)
+				output = fmt.Sprintf("%s\t%d: PASS:  %s matched by %s\n", output, i, actual, matcher)
 			} else {
 				differences++
-				output = fmt.Sprintf("%s\t%d: \u2705  %s not matched by %s\n", output, i, actual, matcher)
+				output = fmt.Sprintf("%s\t%d: PASS:  %s not matched by %s\n", output, i, actual, matcher)
 			}
 		} else if reflect.TypeOf(expected) == reflect.TypeOf((*AnythingOfTypeArgument)(nil)).Elem() {
 
@@ -590,7 +636,7 @@ func (args Arguments) Diff(objects []interface{}) (string, int) {
 			if reflect.TypeOf(actual).Name() != string(expected.(AnythingOfTypeArgument)) && reflect.TypeOf(actual).String() != string(expected.(AnythingOfTypeArgument)) {
 				// not match
 				differences++
-				output = fmt.Sprintf("%s\t%d: \u274C  type %s != type %s - %s\n", output, i, expected, reflect.TypeOf(actual).Name(), actual)
+				output = fmt.Sprintf("%s\t%d: FAIL:  type %s != type %s - %s\n", output, i, expected, reflect.TypeOf(actual).Name(), actual)
 			}
 
 		} else {
@@ -599,11 +645,11 @@ func (args Arguments) Diff(objects []interface{}) (string, int) {
 
 			if assert.ObjectsAreEqual(expected, Anything) || assert.ObjectsAreEqual(actual, Anything) || assert.ObjectsAreEqual(actual, expected) {
 				// match
-				output = fmt.Sprintf("%s\t%d: \u2705  %s == %s\n", output, i, actual, expected)
+				output = fmt.Sprintf("%s\t%d: PASS:  %s == %s\n", output, i, actual, expected)
 			} else {
 				// not match
 				differences++
-				output = fmt.Sprintf("%s\t%d: \u274C  %s != %s\n", output, i, actual, expected)
+				output = fmt.Sprintf("%s\t%d: FAIL:  %s != %s\n", output, i, actual, expected)
 			}
 		}
 
