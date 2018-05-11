@@ -10,3 +10,11 @@ package model
 type VPC struct {
 	Identifier `yaml:",inline"`
 }
+
+func (v VPC) ImportFromNetworkStack() VPC {
+	if !v.HasIdentifier() {
+		// Otherwise import the VPC ID from the control-plane stack
+		v.IDFromFn = `{"Fn::ImportValue":{"Fn::Sub":"${NetworkStackName}-VPC"}}`
+	}
+	return v
+}

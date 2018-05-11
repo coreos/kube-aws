@@ -23,7 +23,7 @@ var (
 )
 
 const (
-	defaultReleaseChannel string = "stable"
+	defaultReleaseChannel = "stable"
 )
 
 func init() {
@@ -40,7 +40,7 @@ func init() {
 	cmdInit.Flags().BoolVar(&initOpts.NoRecordSet, "no-record-set", false, "Instruct kube-aws to not manage Route53 record sets for your K8S API endpoints")
 }
 
-func runCmdInit(cmd *cobra.Command, args []string) error {
+func runCmdInit(_ *cobra.Command, _ []string) error {
 	// Validate flags.
 	if err := validateRequired(
 		flag{"--s3-uri", initOpts.S3URI},

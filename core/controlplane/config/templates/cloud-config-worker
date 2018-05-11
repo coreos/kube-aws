@@ -46,6 +46,15 @@ coreos:
     etcd_keyfile: /etc/kubernetes/ssl/etcd-client-key.pem
   {{- end }}
   units:
+{{if .DisableContainerLinuxAutomaticUpdates}}
+    - name: disable-automatic-update.service
+      command: start
+      content: |
+        [Unit]
+        Description=Disable Container Linux automatic update. Work around to be removed on Ignition migration.
+        [Service]
+        ExecStart=/usr/bin/sh -c 'for u in update-engine locksmithd; do systemctl stop $${u}.service; systemctl mask $${u}.service; systemctl disable $${u}.service; done; systemctl reset-failed'
+{{end}}
 {{- range $u := .CustomSystemdUnits}}
     - name: {{$u.Name}}
       {{- if $u.Command }}
@@ -290,10 +299,9 @@ coreos:
         {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         Wants=flanneld.service cfn-etcd-environment.service
         After=cfn-etcd-environment.service
-        {{ else -}}
+        {{ end -}}
         Wants=decrypt-assets.service
         After=decrypt-assets.service
-        {{- end }}
         {{- if .Gpu.Nvidia.IsEnabledOn .InstanceType }}
         Requires=nvidia-start.service
         After=nvidia-start.service

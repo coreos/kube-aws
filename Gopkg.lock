@@ -134,6 +134,24 @@
   revision = "46b3c8225b20f01377eeefe3e6b7b147bb742eff"
 
 [[projects]]
+  name = "github.com/tidwall/gjson"
+  packages = ["."]
+  revision = "01f00f129617a6fe98941fb920d6c760241b54d2"
+  version = "v1.1.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/tidwall/match"
+  packages = ["."]
+  revision = "1731857f09b1f38450e2c12409748407822dc6be"
+
+[[projects]]
+  name = "github.com/tidwall/sjson"
+  packages = ["."]
+  revision = "6a22caf2fd45d5e2119bfc3717e984f15a7eb7ee"
+  version = "v1.0.0"
+
+[[projects]]
   name = "golang.org/x/crypto"
   packages = [
     "pbkdf2",
@@ -156,6 +174,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6338385426146a98c6131a5026cb4f1aa77e679bfea5fe7f616380a63893fa3b"
+  inputs-digest = "9f08404c9cc6fc04e72c8482e51322bd33671e07c85dd865bb3aaebb3b4f8261"
   solver-name = "gps-cdcl"
   solver-version = 1

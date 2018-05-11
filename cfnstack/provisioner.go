@@ -223,7 +223,7 @@ func (c *Provisioner) ValidateStackAtURL(templateURL string) (string, error) {
 	cfSvc := cloudformation.New(c.session)
 	validationReport, err := cfSvc.ValidateTemplate(&validateInput)
 	if err != nil {
-		return "", fmt.Errorf("invalid cloudformation stack: %v", err)
+		return "", fmt.Errorf("invalid cloudformation stack template %s: %v", templateURL, err)
 	}
 
 	return validationReport.String(), nil

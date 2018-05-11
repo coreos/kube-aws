@@ -20,6 +20,6 @@ func init() {
 	RootCmd.AddCommand(cmdVersion)
 }
 
-func runCmdVersion(cmd *cobra.Command, args []string) {
+func runCmdVersion(_ *cobra.Command, _ []string) {
 	fmt.Printf("kube-aws version %s\n", cluster.VERSION)
 }

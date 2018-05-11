@@ -28,7 +28,7 @@ func init() {
 	cmdDestroy.Flags().BoolVar(&destroyOpts.Force, "force", false, "Don't ask for confirmation")
 }
 
-func runCmdDestroy(cmd *cobra.Command, args []string) error {
+func runCmdDestroy(_ *cobra.Command, _ []string) error {
 	if !destroyOpts.Force && !destroyConfirmation() {
 		fmt.Printf("Operation Cancelled")
 		return nil

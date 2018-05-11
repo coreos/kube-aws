@@ -18,7 +18,6 @@ var (
 
 	upOpts = struct {
 		awsDebug, export, prettyPrint, skipWait bool
-		s3URI                                   string
 	}{}
 )
 
@@ -30,7 +29,7 @@ func init() {
 	cmdUp.Flags().BoolVar(&upOpts.skipWait, "skip-wait", false, "Don't wait for the cluster components be ready")
 }
 
-func runCmdUp(cmd *cobra.Command, args []string) error {
+func runCmdUp(_ *cobra.Command, _ []string) error {
 	opts := root.NewOptions(upOpts.prettyPrint, upOpts.skipWait)
 
 	cluster, err := root.ClusterFromFile(configPath, opts, upOpts.awsDebug)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/kubernetes-incubator/kube-aws/model"
@@ -1362,5 +1363,20 @@ func TestWithTrailingDot(t *testing.T) {
 				actual,
 			)
 		}
+	}
+}
+
+func TestKube2IamKiamClash(t *testing.T) {
+	config := `
+experimental:
+  kube2IamSupport:
+    enabled: true
+  kiamSupport:
+    enabled: true
+`
+	confBody := singleAzConfigYaml + config
+	_, err := ClusterFromBytes([]byte(confBody))
+	if err == nil || !strings.Contains(err.Error(), "not both") {
+		t.Errorf("expected config to cause error as kube2iam and kiam cannot be enabled together: %s\n%s", err, confBody)
 	}
 }

@@ -349,6 +349,7 @@ This includes the certificate authority, signed server certificates for the Kube
   Additionally, the certificate must have the following Subject Alternative Names (SANs).
   These IPs and DNS names are used within the cluster to route from applications to the Kubernetes API:
 
+    - 127.0.0.1
     - 10.0.0.50
     - 10.3.0.1
     - kubernetes

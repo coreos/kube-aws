@@ -12,6 +12,7 @@ import (
 // StackConfig contains configuration parameters available when rendering CFN stack template from golang text templates
 type StackConfig struct {
 	*Config
+	StackName string
 	StackTemplateOptions
 	UserDataController    model.UserData
 	UserDataEtcd          model.UserData
