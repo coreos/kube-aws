@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/kubernetes-incubator/kube-aws/awsconn"
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
 	controlplane_cfg "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
@@ -129,6 +130,11 @@ func ClusterFromFile(configPath string, opts options, awsDebug bool) (Cluster, e
 }
 
 func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster, error) {
+	session, err := awsconn.NewSessionFromRegion(cfg.Region, awsDebug)
+	if err != nil {
+		return nil, fmt.Errorf("failed to establish aws session: %v", err)
+	}
+
 	plugins := cfg.Plugins
 
 	stackTemplateOpts := controlplane_cfg.StackTemplateOptions{
@@ -143,21 +149,21 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 
 	netOpts := stackTemplateOpts
 	netOpts.StackTemplateTmplFile = opts.NetworkStackTemplateTmplFile
-	net, err := network.NewCluster(cfg.Cluster, netOpts, plugins, awsDebug)
+	net, err := network.NewCluster(cfg.Cluster, netOpts, plugins, session)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initizlie network stack: %v", err)
 	}
 
 	cpOpts := stackTemplateOpts
 	cpOpts.StackTemplateTmplFile = opts.ControlPlaneStackTemplateTmplFile
-	cp, err := controlplane.NewCluster(cfg.Cluster, cpOpts, plugins, awsDebug)
+	cp, err := controlplane.NewCluster(cfg.Cluster, cpOpts, plugins, session)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize control-plane stack: %v", err)
 	}
 
 	etcdOpts := stackTemplateOpts
 	etcdOpts.StackTemplateTmplFile = opts.EtcdStackTemplateTmplFile
-	etcd, err := etcd.NewCluster(cfg.Cluster, etcdOpts, plugins, awsDebug)
+	etcd, err := etcd.NewCluster(cfg.Cluster, etcdOpts, plugins, session)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize etcd stack: %v", err)
 	}
@@ -172,23 +178,11 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 			S3URI:                 cfg.DeploymentSettings.S3URI,
 			SkipWait:              opts.SkipWait,
 		}
-		np, err := nodepool.NewCluster(c, npOpts, plugins, awsDebug)
+		np, err := nodepool.NewCluster(c, npOpts, plugins, session)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load node pool #%d: %v", i, err)
 		}
 		nodePools = append(nodePools, np)
-	}
-	awsConfig := aws.NewConfig().
-		WithRegion(cfg.Region.String()).
-		WithCredentialsChainVerboseErrors(true)
-
-	if awsDebug {
-		awsConfig = awsConfig.WithLogLevel(aws.LogDebug)
-	}
-
-	session, err := session.NewSession(awsConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to establish aws session: %v", err)
 	}
 
 	extras := clusterextension.NewExtrasFromPlugins(plugins, cp.PluginConfigs)

@@ -92,6 +92,15 @@ func (svc dummyEC2DescribeKeyPairsService) DescribeKeyPairs(input *ec2.DescribeK
 	return output, nil
 }
 
+func clusterRefFromBytes(bytes []byte, main *controlplane.Config) (*ClusterRef, error) {
+	provided, err := config.ClusterFromBytes(bytes, main)
+	if err != nil {
+		return nil, err
+	}
+	c := newClusterRef(provided, nil)
+	return c, nil
+}
+
 func TestValidateKeyPair(t *testing.T) {
 	main, err := controlplane.ConfigFromBytes([]byte(`clusterName: test-cluster
 s3URI: s3://mybucket/mydir
@@ -110,7 +119,7 @@ availabilityZone: us-west-1a
 		t.Errorf("[bug] failed to initialize test cluster : %v", err)
 	}
 
-	c, err := ClusterRefFromBytes([]byte(minimalYaml), main, false)
+	c, err := clusterRefFromBytes([]byte(minimalYaml), main)
 	if err != nil {
 		t.Errorf("could not get valid cluster config: %v", err)
 	}
@@ -201,7 +210,7 @@ rootVolume:
 
 	for _, testCase := range testCases {
 		configBody := minimalYaml + testCase.clusterYaml
-		c, err := ClusterRefFromBytes([]byte(configBody), main, false)
+		c, err := clusterRefFromBytes([]byte(configBody), main)
 		if err != nil {
 			t.Errorf("failed to read cluster config: %v", err)
 		}
@@ -252,7 +261,7 @@ name: pool1
 			S3URI:                 "s3://test-bucket/foo/bar",
 		}
 
-		cluster, err := NewCluster(clusterConfig, stackTemplateOptions, []*pluginmodel.Plugin{}, false)
+		cluster, err := NewCluster(clusterConfig, stackTemplateOptions, []*pluginmodel.Plugin{}, nil)
 		if !assert.NoError(t, err) {
 			return
 		}

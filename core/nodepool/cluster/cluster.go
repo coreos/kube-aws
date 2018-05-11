@@ -51,28 +51,20 @@ func (c *Info) String() string {
 	return buf.String()
 }
 
-func NewClusterRef(cfg *config.ProvidedConfig, awsDebug bool) *ClusterRef {
-	awsConfig := aws.NewConfig().
-		WithRegion(cfg.Region.String()).
-		WithCredentialsChainVerboseErrors(true)
-
-	if awsDebug {
-		awsConfig = awsConfig.WithLogLevel(aws.LogDebug)
-	}
-
+func newClusterRef(cfg *config.ProvidedConfig, session *session.Session) *ClusterRef {
 	return &ClusterRef{
 		ProvidedConfig: *cfg,
-		session:        session.New(awsConfig),
+		session:        session,
 	}
 }
 
-func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOptions, plugins []*pluginmodel.Plugin, awsDebug bool) (*Cluster, error) {
-	stackConfig, err := provided.StackConfig(opts)
+func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOptions, plugins []*pluginmodel.Plugin, session *session.Session) (*Cluster, error) {
+	stackConfig, err := provided.StackConfig(opts, session)
 	if err != nil {
 		return nil, err
 	}
 
-	clusterRef := NewClusterRef(provided, awsDebug)
+	clusterRef := newClusterRef(provided, session)
 
 	c := &Cluster{
 		StackConfig: stackConfig,

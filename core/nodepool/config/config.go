@@ -8,6 +8,7 @@ import (
 
 	"errors"
 
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/kubernetes-incubator/kube-aws/cfnresource"
 	cfg "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
@@ -70,7 +71,7 @@ func (c ProvidedConfig) NestedStackName() string {
 	return naming.FromStackToCfnResource(c.StackName())
 }
 
-func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, error) {
+func (c ProvidedConfig) StackConfig(opts StackTemplateOptions, session *session.Session) (*StackConfig, error) {
 	var err error
 	stackConfig := StackConfig{
 		ExtraCfnResources: map[string]interface{}{},
@@ -82,11 +83,8 @@ func (c ProvidedConfig) StackConfig(opts StackTemplateOptions) (*StackConfig, er
 
 	tlsBootstrappingEnabled := c.Experimental.TLSBootstrap.Enabled
 	if stackConfig.ComputedConfig.AssetsEncryptionEnabled() {
-		compactAssets, err := cfg.ReadOrCreateCompactAssets(opts.AssetsDir, c.ManageCertificates, tlsBootstrappingEnabled, false, cfg.KMSConfig{
-			Region:         stackConfig.ComputedConfig.Region,
-			KMSKeyARN:      c.KMSKeyARN,
-			EncryptService: c.ProvidedEncryptService,
-		})
+		kmsConfig := cfg.NewKMSConfig(c.KMSKeyARN, c.ProvidedEncryptService, session)
+		compactAssets, err := cfg.ReadOrCreateCompactAssets(opts.AssetsDir, c.ManageCertificates, tlsBootstrappingEnabled, false, kmsConfig)
 		if err != nil {
 			return nil, err
 		}

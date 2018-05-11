@@ -489,7 +489,7 @@ stackTags:
 				S3URI: "s3://test-bucket/foo/bar",
 			}
 
-			cluster, err := NewCluster(clusterConfig, stackTemplateOptions, []*pluginmodel.Plugin{}, false)
+			cluster, err := NewCluster(clusterConfig, stackTemplateOptions, []*pluginmodel.Plugin{}, nil)
 			if !assert.NoError(t, err) {
 				return
 			}
@@ -754,7 +754,7 @@ func newDefaultClusterWithDeps(opts config.StackTemplateOptions) (*Cluster, erro
 	if err := cluster.Load(); err != nil {
 		return &Cluster{}, err
 	}
-	return NewCluster(cluster, opts, []*pluginmodel.Plugin{}, false)
+	return NewCluster(cluster, opts, []*pluginmodel.Plugin{}, nil)
 }
 
 func TestRenderStackTemplate(t *testing.T) {

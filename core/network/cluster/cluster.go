@@ -19,18 +19,10 @@ var VERSION = "UNKNOWN"
 
 const STACK_TEMPLATE_FILENAME = "stack.json"
 
-func NewClusterRef(cfg *config.Cluster, awsDebug bool) *ClusterRef {
-	awsConfig := aws.NewConfig().
-		WithRegion(cfg.Region.String()).
-		WithCredentialsChainVerboseErrors(true)
-
-	if awsDebug {
-		awsConfig = awsConfig.WithLogLevel(aws.LogDebug)
-	}
-
+func newClusterRef(cfg *config.Cluster, session *session.Session) *ClusterRef {
 	return &ClusterRef{
 		Cluster: cfg,
-		session: session.New(awsConfig),
+		session: session,
 	}
 }
 
@@ -118,15 +110,15 @@ func (c *ClusterRef) validateExistingVPCState(ec2Svc ec2Service) error {
 	return nil
 }
 
-func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugins []*pluginmodel.Plugin, awsDebug bool) (*Cluster, error) {
+func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugins []*pluginmodel.Plugin, session *session.Session) (*Cluster, error) {
 	cfg := &config.Cluster{}
 	*cfg = *cfgRef
 
-	clusterRef := NewClusterRef(cfg, awsDebug)
+	clusterRef := newClusterRef(cfg, session)
 	// TODO Do this in a cleaner way e.g. in config.go
 	clusterRef.KubeResourcesAutosave.S3Path = model.NewS3Folders(cfg.DeploymentSettings.S3URI, clusterRef.ClusterName).ClusterBackups().Path()
 
-	stackConfig, err := clusterRef.StackConfig("network", opts, plugins)
+	stackConfig, err := clusterRef.StackConfig("network", opts, session, plugins)
 	if err != nil {
 		return nil, err
 	}

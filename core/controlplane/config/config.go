@@ -12,6 +12,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/kubernetes-incubator/kube-aws/cfnresource"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
@@ -981,7 +982,7 @@ type StackTemplateOptions struct {
 	SkipWait              bool
 }
 
-func (c Cluster) StackConfig(stackName string, opts StackTemplateOptions, extra ...[]*pluginmodel.Plugin) (*StackConfig, error) {
+func (c Cluster) StackConfig(stackName string, opts StackTemplateOptions, session *session.Session, extra ...[]*pluginmodel.Plugin) (*StackConfig, error) {
 	plugins := []*pluginmodel.Plugin{}
 	if len(extra) > 0 {
 		plugins = extra[0]
@@ -1000,11 +1001,8 @@ func (c Cluster) StackConfig(stackName string, opts StackTemplateOptions, extra 
 	var compactAssets *CompactAssets
 
 	if c.AssetsEncryptionEnabled() {
-		compactAssets, err = ReadOrCreateCompactAssets(opts.AssetsDir, c.ManageCertificates, c.Experimental.TLSBootstrap.Enabled, c.Experimental.KIAMSupport.Enabled, KMSConfig{
-			Region:         stackConfig.Config.Region,
-			KMSKeyARN:      c.KMSKeyARN,
-			EncryptService: c.ProvidedEncryptService,
-		})
+		kmsConfig := NewKMSConfig(c.KMSKeyARN, c.ProvidedEncryptService, session)
+		compactAssets, err = ReadOrCreateCompactAssets(opts.AssetsDir, c.ManageCertificates, c.Experimental.TLSBootstrap.Enabled, c.Experimental.KIAMSupport.Enabled, kmsConfig)
 		if err != nil {
 			return nil, err
 		}

@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
-	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/test/helper"
 	"os"
 	"path/filepath"
@@ -122,11 +121,7 @@ func TestTLSGeneration(t *testing.T) {
 
 func TestReadOrCreateCompactAssets(t *testing.T) {
 	helper.WithDummyCredentials(func(dir string) {
-		kmsConfig := KMSConfig{
-			KMSKeyARN:      "keyarn",
-			Region:         model.RegionForName("us-west-1"),
-			EncryptService: &dummyEncryptService{},
-		}
+		kmsConfig := NewKMSConfig("keyarn", &dummyEncryptService{}, nil)
 
 		// See https://github.com/kubernetes-incubator/kube-aws/issues/107
 		t.Run("CachedToPreventUnnecessaryNodeReplacement", func(t *testing.T) {

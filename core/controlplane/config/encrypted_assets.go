@@ -13,11 +13,9 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
-	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/netutil"
 	"github.com/kubernetes-incubator/kube-aws/tlsutil"
 )
@@ -854,23 +852,25 @@ func (r *EncryptedAssetsOnDisk) Compact() (*CompactAssets, error) {
 }
 
 type KMSConfig struct {
-	Region         model.Region
 	EncryptService EncryptService
 	KMSKeyARN      string
 }
 
-func ReadOrCreateEncryptedAssets(tlsAssetsDir string, manageCertificates bool, caKeyRequiredOnController bool, kiamEnabled bool, kmsConfig KMSConfig) (*EncryptedAssetsOnDisk, error) {
-	var kmsSvc EncryptService
-
-	// TODO Cleaner way to inject this dependency
-	if kmsConfig.EncryptService == nil {
-		awsConfig := aws.NewConfig().
-			WithRegion(kmsConfig.Region.String()).
-			WithCredentialsChainVerboseErrors(true)
-		kmsSvc = kms.New(session.New(awsConfig))
+func NewKMSConfig(kmsKeyARN string, encSvc EncryptService, session *session.Session) KMSConfig {
+	var svc EncryptService
+	if encSvc != nil {
+		svc = encSvc
 	} else {
-		kmsSvc = kmsConfig.EncryptService
+		svc = kms.New(session)
 	}
+	return KMSConfig{
+		EncryptService: svc,
+		KMSKeyARN:      kmsKeyARN,
+	}
+}
+
+func ReadOrCreateEncryptedAssets(tlsAssetsDir string, manageCertificates bool, caKeyRequiredOnController bool, kiamEnabled bool, kmsConfig KMSConfig) (*EncryptedAssetsOnDisk, error) {
+	kmsSvc := kmsConfig.EncryptService
 
 	encryptionSvc := bytesEncryptionService{
 		kmsKeyARN: kmsConfig.KMSKeyARN,
