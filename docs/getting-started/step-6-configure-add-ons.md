@@ -38,10 +38,10 @@ The above example configuration would:
   * If there are no unschdulable, pending pod(s) that is waiting for more capacity and one or more nodes are in low utlization, CA will remove node(s), down until the min size `1`
 * The second node pool `notScaled` is scaled manually by YOU, because you had not the autoscaling on it(=missing `autoscaling.clusterAutoscaler.enabled`)
 
-## kube2iam
+## kube2iam / kiam
  
-[kube2iam](https://github.com/jtblin/kube2iam) is an add-on which provides IAM credentials for target IAM roles to pods running inside a Kubernetes cluster based on annotations.
-To allow kube2iam deployed to worker and controller nodes to assume target roles, you need the following configurations.
+[kube2iam](https://github.com/jtblin/kube2iam) and [kiam](https://github.com/uswitch/kiam) are add-ons which provides IAM credentials for target IAM roles to pods running inside a Kubernetes cluster based on annotations.
+To allow kube2iam or kiam deployed to worker and controller nodes to assume target roles, you need the following configurations.
 
 1. IAM roles associated to worker and controller nodes requires an IAM policy:
  
@@ -53,8 +53,8 @@ To allow kube2iam deployed to worker and controller nodes to assume target roles
   }
   ```
 
-  To add the policy to controller nodes, set `experimental.kube2IamSupport.enabled` to `true` in your `cluster.yaml`.
-  For worker nodes, it is `worker.nodePools[].kube2IamSupport.enabled`.
+  To add the policy to controller nodes, set `experimental.kube2IamSupport.enabled` or `experimental.kiamSupport.enabled` to `true` in your `cluster.yaml` (but not both).
+  For worker nodes, it is `worker.nodePools[].kube2IamSupport.enabled` or `worker.nodePools[].kiamSupport.enabled`.
 
 2. Target IAM roles needs to change trust relationships to allow kube-aws worker/controller IAM role to assume the target roles.
 
@@ -63,8 +63,8 @@ To allow kube2iam deployed to worker and controller nodes to assume target roles
   `managedIamRoleName`s becomes suffixes of the resulting worker/controller role names. 
   
   Please beware that configuration of target roles' trust relationships are out-of-scope of kube-aws.
-  Please see [the part of kube2iam doc](https://github.com/jtblin/kube2iam#iam-roles) for more information. Basically,
-  you need to point `Principal` to the ARN of a resulting worker/controller IAM role which would look like `arn:aws:iam::<your aws account id>:role/<stack-name>-<managed iam role name>`. 
+  Please see [the part of kube2iam doc](https://github.com/jtblin/kube2iam#iam-roles) or [the part of the kiam doc](https://github.com/uswitch/kiam/blob/master/docs/IAM.md)for more information.
+  Basically, you need to point `Principal` to the ARN of a resulting worker/controller IAM role which would look like `arn:aws:iam::<your aws account id>:role/<stack-name>-<managed iam role name>`. 
 
 Finally, an example `cluster.yaml` usable with kube2iam would look like:
 
@@ -86,7 +86,7 @@ worker:
       enabled: true
  ```
 
-See [the relevant GitHub issue](https://github.com/kubernetes-incubator/kube-aws/issues/253) for more information.
+See the relevant GitHub issues for [kube2iam](https://github.com/kubernetes-incubator/kube-aws/issues/253) and [kiam](https://github.com/kubernetes-incubator/kube-aws/issues/1055) or more information.
 
 You can reference controller and worker IAM Roles in a separate CloudFormation stack that provides roles to assume:
 

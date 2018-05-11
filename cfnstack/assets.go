@@ -14,6 +14,12 @@ type Assets interface {
 	FindAssetByStackAndFileName(string, string) (model.Asset, error)
 }
 
+func EmptyAssets() assetsImpl {
+	return assetsImpl{
+		underlying: map[model.AssetID]model.Asset{},
+	}
+}
+
 type assetsImpl struct {
 	underlying map[model.AssetID]model.Asset
 }

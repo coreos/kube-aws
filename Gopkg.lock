@@ -77,19 +77,12 @@
 [[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
-  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
-  version = "v1.1.0"
+  revision = "04cdfd42973bb9c8589fd6a731800cf222fde1a9"
 
 [[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
   revision = "afbc45e87f3ba324c532d12c71918ef52e0fb194"
-
-[[projects]]
-  name = "github.com/go-yaml/yaml"
-  packages = ["."]
-  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
-  version = "v2.2.1"
 
 [[projects]]
   name = "github.com/huandu/xstrings"
@@ -116,8 +109,7 @@
 [[projects]]
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
-  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
-  version = "v1.0.0"
+  revision = "d8ed2627bdf02c080bf22230dbb337003b7aba2d"
 
 [[projects]]
   name = "github.com/satori/go.uuid"
@@ -128,8 +120,7 @@
 [[projects]]
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "a1f051bc3eba734da4772d60e2d677f47cf93ef4"
-  version = "v0.0.2"
+  revision = "e606913c4ee45fec232e67e70105fb6c866b95d9"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -140,8 +131,25 @@
 [[projects]]
   name = "github.com/stretchr/testify"
   packages = ["assert"]
-  revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
-  version = "v1.2.1"
+  revision = "46b3c8225b20f01377eeefe3e6b7b147bb742eff"
+
+[[projects]]
+  name = "github.com/tidwall/gjson"
+  packages = ["."]
+  revision = "01f00f129617a6fe98941fb920d6c760241b54d2"
+  version = "v1.1.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/tidwall/match"
+  packages = ["."]
+  revision = "1731857f09b1f38450e2c12409748407822dc6be"
+
+[[projects]]
+  name = "github.com/tidwall/sjson"
+  packages = ["."]
+  revision = "6a22caf2fd45d5e2119bfc3717e984f15a7eb7ee"
+  version = "v1.0.0"
 
 [[projects]]
   name = "golang.org/x/crypto"
@@ -156,11 +164,16 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "78d5f264b493f125018180c204871ecf58a2dce1"
+  revision = "3b87a42e500a6dc65dae1a55d0b641295971163e"
+
+[[projects]]
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  revision = "cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c2eda613ad7538c9de67c308068a77a4ff228327ca27e380203583cca2d7c09f"
+  inputs-digest = "9f08404c9cc6fc04e72c8482e51322bd33671e07c85dd865bb3aaebb3b4f8261"
   solver-name = "gps-cdcl"
   solver-version = 1

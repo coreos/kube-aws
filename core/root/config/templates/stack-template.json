@@ -10,11 +10,30 @@
         "RetentionInDays" : {{.CloudWatchLogging.RetentionInDays}}
       }
     },{{ end }}
+    "{{.Network.Name}}": {
+      "Type" : "AWS::CloudFormation::Stack",
+      "Properties" : {
+        "Tags" : [
+          {
+            "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
+            "Value": "true"
+          }{{range $k, $v := $.ControlPlane.Tags}},
+          {
+            "Key":"{{$k}}",
+            "Value":"{{$v}}"
+          }{{end}}
+        ],
+        "TemplateURL" : "{{$.Network.TemplateURL}}"
+      }
+    },
     "{{.ControlPlane.Name}}": {
       "Type" : "AWS::CloudFormation::Stack",
       "Properties" : {
         "Parameters": {
+          "EtcdStackName": {"Fn::GetAtt" : [ "{{$.Etcd.Name}}" , "Outputs.StackName" ]},
+          "NetworkStackName": {"Fn::GetAtt" : [ "{{$.Network.Name}}" , "Outputs.StackName" ]}
           {{if .CloudWatchLogging.Enabled}}
+          ,
           "CloudWatchLogGroupARN": { "Fn::GetAtt": [ "CloudWatchLogGroup", "Arn" ] }
           {{ end }}
         },
@@ -30,12 +49,37 @@
         ],
         "TemplateURL" : "{{$.ControlPlane.TemplateURL}}"
       }
-    }{{range $_, $p := .NodePools}},
+    },
+    "{{.Etcd.Name}}": {
+      "Type" : "AWS::CloudFormation::Stack",
+      "Properties" : {
+        "Parameters": {
+          "NetworkStackName": {"Fn::GetAtt" : [ "{{$.Network.Name}}" , "Outputs.StackName" ]}
+          {{if .CloudWatchLogging.Enabled}}
+          ,
+          "CloudWatchLogGroupARN": { "Fn::GetAtt": [ "CloudWatchLogGroup", "Arn" ] }
+          {{ end }}
+        },
+        "Tags" : [
+          {
+            "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
+            "Value": "true"
+          }{{range $k, $v := $.ControlPlane.Tags}},
+          {
+            "Key":"{{$k}}",
+            "Value":"{{$v}}"
+          }{{end}}
+        ],
+        "TemplateURL" : "{{$.Etcd.TemplateURL}}"
+      }
+    }
+    {{range $_, $p := .NodePools}},
     "{{$p.Name}}": {
       "Type" : "AWS::CloudFormation::Stack",
       "Properties" : {
         "Parameters": {
-          "ControlPlaneStackName": {"Fn::GetAtt" : [ "{{$.ControlPlane.Name}}" , "Outputs.StackName" ]}
+          "EtcdStackName": {"Fn::GetAtt" : [ "{{$.Etcd.Name}}" , "Outputs.StackName" ]},
+          "NetworkStackName": {"Fn::GetAtt" : [ "{{$.Network.Name}}" , "Outputs.StackName" ]}
           {{if .CloudWatchLogging.Enabled}}
           ,
           "CloudWatchLogGroupARN": { "Fn::GetAtt": [ "CloudWatchLogGroup", "Arn" ] }

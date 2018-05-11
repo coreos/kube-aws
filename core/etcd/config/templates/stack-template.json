@@ -1,0 +1,528 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "kube-aws Kubernetes cluster {{.ClusterName}}",
+  "Parameters": {
+    "NetworkStackName": {
+      "Type": "String",
+      "Description": "The name of a network stack used to import values into this stack"
+    }
+    {{if .CloudWatchLogging.Enabled}},
+    "CloudWatchLogGroupARN": {
+      "Type": "String",
+      "Description": "CloudWatch LogGroup to send journald logs to"
+    }
+    {{end}}
+  },
+  "Resources": {
+    {{ if not .Etcd.IAMConfig.InstanceProfile.Arn }}
+    "IAMInstanceProfileEtcd": {
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "IAMRoleEtcd"
+          }
+        ]
+      },
+      "Type": "AWS::IAM::InstanceProfile"
+    },
+    "IAMManagedPolicyEtcd" : {
+      "Type" : "AWS::IAM::ManagedPolicy",
+      "Properties" : {
+        "Description" : "Policy for managing kube-aws k8s etcd nodes",
+        "Path" : "/",
+        "PolicyDocument" :   {
+          "Version":"2012-10-17",
+          "Statement": [
+            {{range $s := .Etcd.IAMConfig.Policy.Statements }}
+            {
+              "Action": {{toJSON $s.Actions}},
+              "Effect": {{toJSON $s.Effect}},
+              "Resource": {{toJSON $s.Resources}}
+            },
+            {{end}}
+            {{if .AssetsEncryptionEnabled}}
+            {
+              "Action" : "kms:Decrypt",
+              "Effect" : "Allow",
+              "Resource" : "{{.KMSKeyARN}}"
+            },
+            {{end}}
+            {{if $.Etcd.KMSKeyARN -}}
+            {{/* Required for mounting encrypted data volume */}}
+            {
+            "Action": [
+              "kms:CreateGrant",
+              "kms:Decrypt",
+              "kms:Describe*",
+              "kms:Encrypt",
+              "kms:GenerateDataKey*",
+              "kms:ReEncrypt*"
+            ],
+            "Effect": "Allow",
+            "Resource": "{{ $.Etcd.KMSKeyARN }}"
+            },
+            {{end -}}
+            {
+              "Action": "ec2:DescribeTags",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {{/* Required for cfn-etcd-environment.service to discover the volume */}}
+            {
+              "Action": "ec2:DescribeVolumes",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {{/* Required for cfn-etcd-environment.service to start attaching the volume */}}
+            {
+              "Action": "ec2:AttachVolume",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {{/* Required for cfn-etcd-environment.service to wait until the volume is attached */}}
+            {
+              "Action": "ec2:DescribeVolumeStatus",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {{if $.Etcd.NodeShouldHaveEIP -}}
+            {{/* Required for cfn-etcd-environment.service to associate an EIP */}}
+            {
+              "Action": "ec2:AssociateAddress",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {{end -}}
+            {{if $.Etcd.NodeShouldHaveSecondaryENI -}}
+            {{/* Required for cfn-etcd-environment.service to associate a network interface */}}
+            {
+              "Action": "ec2:AttachNetworkInterface",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {
+              "Action": "ec2:DescribeNetworkInterfaces",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {
+              "Action": "ec2:DescribeNetworkInterfaceAttribute",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {{end -}}
+            {{- if $.UserDataEtcd.Parts.s3 }}
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject"
+              ],
+              "Resource": "arn:{{.Region.Partition}}:s3:::{{ $.UserDataEtcd.Parts.s3.Asset.S3Prefix }}*"
+            },
+            {{- end }}
+            {{/* Required for `etcdadm reconfigure` to check existence of an etcd snapshot in S3 */}}
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:ListBucket"
+              ],
+              "Resource": "arn:{{.Region.Partition}}:s3:::{{$.EtcdSnapshotsS3Bucket}}"
+            },
+            {{if .CloudWatchLogging.Enabled}}
+            {
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:DescribeLogStreams"
+              ],
+              "Resource": [
+                { "Ref": "CloudWatchLogGroupARN" },
+                { "Fn::Join" : [ "", [{ "Ref": "CloudWatchLogGroupARN" }, ":log-stream:*"]] }
+              ]
+            },{{ end }}
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:List*",
+                "s3:GetObject*"
+              ],
+              "Resource": "arn:{{.Region.Partition}}:s3:::{{$.EtcdSnapshotsS3Bucket}}",
+              "Condition": {
+                "StringLike": {
+                  "s3:prefix": { "Fn::Join" : [ "", [{{$.EtcdSnapshotsS3PrefixRef}}, "/*" ]]}
+                }
+              }
+            },
+            {{/* Required for `etcdadm save` to save etcd snapshots in S3 */}}
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:*"
+              ],
+              "Resource": { "Fn::Join" : [ "", ["arn:{{.Region.Partition}}:s3:::", {{$.EtcdSnapshotsS3PathRef}}, "/*" ]]}
+            },
+            {{/* Required for `etcdadm reconfigure` to determine the number of active etcd nodes */}}
+            {
+              "Action": "ec2:DescribeInstances",
+              "Resource": "*",
+              "Effect": "Allow"
+            }
+          ]
+        }
+      }
+    },
+    "IAMRoleEtcd": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sts:AssumeRole"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.{{.Region.PublicDomainName}}"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Path": "/",
+        "ManagedPolicyArns": [
+          {{range $policyIndex, $policyArn := .Etcd.IAMConfig.Role.ManagedPolicies }}
+            "{{$policyArn.Arn}}",
+          {{end}}
+          {"Ref": "IAMManagedPolicyEtcd"}
+        ]
+      },
+      "Type": "AWS::IAM::Role"
+    },
+    {{end}}
+    {{if $.Etcd.HostedZoneManaged}}
+    "{{$.Etcd.HostedZoneLogicalName}}": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "HostedZoneConfig": {
+          "Comment": "My hosted zone for {{$.Etcd.InternalDomainName}}"
+        },
+        "Name": "{{$.Etcd.InternalDomainName}}",
+        "VPCs": [{
+          "VPCId": {{$.VPCRef}},
+          "VPCRegion": { "Ref": "AWS::Region" }
+        }],
+        "HostedZoneTags" : [{
+          "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
+          "Value": "owned"
+        }]
+      }
+    },
+    {{end}}
+    {{range $etcdIndex, $etcdInstance := .EtcdNodes}}
+    {{if $etcdInstance.RecordSetManaged}}
+    "{{$etcdInstance.RecordSetLogicalName}}" : {
+      "Type" : "AWS::Route53::RecordSet",
+        "Properties" : {
+        "HostedZoneId": {{$.Etcd.HostedZoneRef}},
+        "Name": {{$etcdInstance.AdvertisedFQDNRef}},
+        "Comment" : "A record for the private IP address of Etcd node named {{$etcdInstance.Name}} at index {{$etcdIndex}}",
+        "Type" : "A",
+        "TTL" : "300",
+        "ResourceRecords" : [
+          {{$etcdInstance.NetworkInterfacePrivateIPRef}}
+        ]
+      }
+    },
+    {{end}}
+    {{if $etcdInstance.NetworkInterfaceManaged}}
+    "{{$etcdInstance.NetworkInterfaceLogicalName}}": {
+      "Properties": {
+        "SubnetId": {{$etcdInstance.SubnetRef}},
+        "GroupSet": [
+          {{range $sgIndex, $sgRef := $.Etcd.SecurityGroupRefs}}
+          {{if gt $sgIndex 0}},{{end}}
+          {{$sgRef}}
+          {{end}}
+        ]
+      },
+      "Type": "AWS::EC2::NetworkInterface"
+    },
+    {{end}}
+    {{if $etcdInstance.EIPManaged}}
+    "{{$etcdInstance.EIPLogicalName}}": {
+      "Properties": {
+        "Domain": "vpc"
+      },
+      "Type": "AWS::EC2::EIP"
+    },
+    {{end}}
+    {{if not $.Etcd.DataVolume.Ephemeral}}
+    "{{$etcdInstance.EBSLogicalName}}": {
+      "Properties": {
+          "AvailabilityZone": "{{$etcdInstance.SubnetAvailabilityZone}}",
+          "Size": "{{$.Etcd.DataVolume.Size}}",
+          {{if gt $.Etcd.DataVolume.IOPS 0}}
+          "Iops": "{{$.Etcd.DataVolume.IOPS}}",
+          {{end}}
+          {{if $.Etcd.DataVolume.Encrypted}}
+          "Encrypted": {{$.Etcd.DataVolume.Encrypted}},
+          {{if $.Etcd.KMSKeyARN}}
+          "KmsKeyId": "{{$.Etcd.KMSKeyARN}}",
+          {{end}}
+          {{end}}
+          "VolumeType": "{{$.Etcd.DataVolume.Type}}",
+          "Tags": [
+            {
+              "Key": "kube-aws:etcd:index",
+              "Value": "{{$etcdIndex}}"
+            },
+            {{if $etcdInstance.EIPManaged}}{
+              "Key": "{{$.Etcd.EIPAllocationIDTagKey}}",
+              "Value": {{$etcdInstance.EIPAllocationIDRef}}
+            },{{end}}
+            {{if $etcdInstance.NetworkInterfaceManaged}}{
+              "Key": "{{$.Etcd.NetworkInterfaceIDTagKey}}",
+              "Value": {{$etcdInstance.NetworkInterfaceIDRef}}
+            },{{end}}
+            {
+              "Key": "{{$.Etcd.AdvertisedFQDNTagKey}}",
+              "Value": {{$etcdInstance.AdvertisedFQDNRef}}
+            },
+            {
+              "Key": "{{$.Etcd.NameTagKey}}",
+              "Value": "{{$etcdInstance.Name}}"
+            }
+          ]
+      },
+      "Type": "AWS::EC2::Volume"
+    },
+    {{end}}
+    "{{$etcdInstance.LogicalName}}": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "HealthCheckGracePeriod": 600,
+        "HealthCheckType": "EC2",
+        "LaunchConfigurationName": {
+          "Ref": "{{$etcdInstance.LaunchConfigurationLogicalName}}"
+        },
+        "MaxSize": "1",
+        "MetricsCollection": [
+          {
+            "Granularity": "1Minute"
+          }
+        ],
+        "MinSize": "1",
+        "Tags": [
+          {{range $k, $v := $.Etcd.InstanceTags -}}
+          {
+            "Key": "{{$k}}",
+            "PropagateAtLaunch": "true",
+            "Value": "{{$v}}"
+          },
+          {{end -}}
+          {
+            "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
+            "PropagateAtLaunch": "true",
+            "Value": "owned"
+          },
+          {
+            "Key": "Name",
+            "PropagateAtLaunch": "true",
+            "Value": "{{$.ClusterName}}-{{$.StackName}}-kube-aws-etcd-{{$etcdIndex}}"
+          },
+          {
+            "Key": "kube-aws:role",
+            "PropagateAtLaunch": "true",
+            "Value": "etcd"
+          }
+        ],
+        "VPCZoneIdentifier": [
+          {{$etcdInstance.SubnetRef}}
+        ]
+      },
+      {{if $.WaitSignal.Enabled}}
+      "CreationPolicy" : {
+        "ResourceSignal" : {
+          "Count" : "1",
+          "Timeout" : "{{$.Controller.CreateTimeout}}"
+        }
+      },
+      {{end}}
+      "UpdatePolicy" : {
+        "AutoScalingRollingUpdate" : {
+          "MinInstancesInService" : "0",
+          "MaxBatchSize" : "1",
+          {{if $.WaitSignal.Enabled}}
+          "WaitOnResourceSignals" : "true",
+          "PauseTime": "{{$.Controller.CreateTimeout}}"
+          {{else}}
+          "PauseTime": "PT2M"
+          {{end}}
+        }
+      },
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "configSets" : {
+              "etcd-server": [ "etcd-server-env" ]
+          },
+          "etcd-server-env": {
+            "files" : {
+              "/var/run/coreos/etcd-environment": {
+                "content": { "Fn::Join" : [ "", [
+                  "ETCD_INITIAL_CLUSTER='",
+                    {{range $etcdIndex, $etcdInstance := $.EtcdNodes}}
+                    {{if $etcdIndex}}",", {{end}}
+                    "{{$etcdInstance.Name}}",
+                    "=https://",
+                    {{$etcdInstance.AdvertisedFQDNRef}},
+                    ":2380",
+                    {{end}}
+                  "'\n"
+                ]]}
+              },
+              "/var/run/coreos/etcdadm-environment": {
+                "content": { "Fn::Join" : [ "", [
+                  "ETCD_ENDPOINTS='",
+                    {{range $index, $etcdInstance := $.EtcdNodes}}
+                    {{if $index}}",", {{end}}
+                    "https://",
+                    {{$etcdInstance.AdvertisedFQDNRef}},
+                    ":2379",
+                    {{end}}
+                  "'\n",
+                  "AWS_DEFAULT_REGION='",
+                    "{{$.Region}}",
+                  "'\n",
+                  "KUBERNETES_CLUSTER='",
+                    "{{$.ClusterName}}",
+                  "'\n",
+                  "ETCDCTL_CACERT='",
+                    "/etc/ssl/certs/etcd-trusted-ca.pem",
+                  "'\n",
+                  "ETCDCTL_CERT='",
+                    "/etc/ssl/certs/etcd-client.pem",
+                  "'\n",
+                  "ETCDCTL_KEY='",
+                    "/etc/ssl/certs/etcd-client-key.pem",
+                  "'\n",
+                  "ETCDCTL_CA_FILE='",
+                    "/etc/ssl/certs/etcd-trusted-ca.pem",
+                  "'\n",
+                  "ETCDCTL_CERT_FILE='",
+                    "/etc/ssl/certs/etcd-client.pem",
+                  "'\n",
+                  "ETCDCTL_KEY_FILE='",
+                    "/etc/ssl/certs/etcd-client-key.pem",
+                  "'\n",
+                  "ETCDADM_MEMBER_SYSTEMD_SERVICE_NAME='",
+                    "etcd-member",
+                  "'\n",
+                  "ETCDADM_CLUSTER_SNAPSHOTS_S3_URI='",
+                    { "Fn::Join" : [ "", ["s3://", {{$.EtcdSnapshotsS3PathRef}} ]] },
+                  "'\n",
+                  "ETCDADM_STATE_FILES_DIR='",
+                    "/var/run/coreos/etcdadm",
+                  "'\n",
+                  "ETCDADM_MEMBER_ENV_FILE='",
+                    "/var/run/coreos/etcdadm/etcd-member.env",
+                  "'\n",
+                  "ETCDADM_MEMBER_COUNT='",
+                    "{{$.Etcd.Count}}",
+                  "'\n",
+                  "ETCDADM_MEMBER_INDEX='",
+                    "{{$etcdIndex}}",
+                  "'\n",
+                  "ETCD_VERSION='",
+                    "{{$.Etcd.Version}}",
+                  "'\n"
+                ]]}
+              }
+            }
+          }
+        }
+      },
+      "DependsOn": [
+        {{if $etcdInstance.DependencyExists}}{{$etcdInstance.DependencyRef}},{{end}}
+        {{if $etcdIndex}}"{{$.Etcd.LogicalName}}{{sub $etcdIndex 1}}",{{end}}
+        {{if $etcdInstance.EIPManaged}}
+        "{{$etcdInstance.EIPLogicalName}}",
+        {{end}}
+        {{if $etcdInstance.NetworkInterfaceManaged}}
+        "{{$etcdInstance.NetworkInterfaceLogicalName}}",
+        {{end}}
+        {{if $etcdInstance.RecordSetManaged}}
+        "{{$etcdInstance.RecordSetLogicalName}}",
+        {{end}}
+        "{{$etcdInstance.EBSLogicalName}}"
+      ]
+    },
+    "{{$etcdInstance.LaunchConfigurationLogicalName}}": {
+      "Properties": {
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "VolumeSize": "{{$.Etcd.RootVolume.Size}}",
+              {{if gt $.Etcd.RootVolume.IOPS 0}}
+              "Iops": "{{$.Etcd.RootVolume.IOPS}}",
+              {{end}}
+              "VolumeType": "{{$.Etcd.RootVolume.Type}}"
+            }
+          }
+          {{if $.Etcd.DataVolume.Ephemeral}}
+          ,
+          {
+            "DeviceName": "/dev/xvdf",
+            "VirtualName" : "ephemeral0"
+          }
+          {{end}}
+        ],
+        {{if $.Etcd.IAMConfig.InstanceProfile.Arn }}
+        "IamInstanceProfile": "{{$.Etcd.IAMConfig.InstanceProfile.Arn}}",
+        {{else}}
+        "IamInstanceProfile": {
+          "Ref": "IAMInstanceProfileEtcd"
+        },
+        {{end}}
+        "ImageId": "{{$.AMI}}",
+        "InstanceType": "{{$.Etcd.InstanceType}}",
+        {{if $.KeyName}}"KeyName": "{{$.KeyName}}",{{end}}
+        "SecurityGroups": [
+          {{range $sgIndex, $sgRef := $.Etcd.SecurityGroupRefs}}
+          {{if gt $sgIndex 0}},{{end}}
+          {{$sgRef}}
+          {{end}}
+        ],
+        "PlacementTenancy": "{{$.Etcd.Tenancy}}",
+        "UserData": {{ $.UserDataEtcd.Parts.instance.Template (dict "etcdIndex" $etcdIndex) | checkSizeLessThan 16384 }}
+      },
+      "Type": "AWS::AutoScaling::LaunchConfiguration"
+    }
+    {{end}}
+  },
+  "Outputs": {
+    {{range $index, $etcdInstance := $.EtcdNodes}}
+    {{if $etcdInstance.EIPManaged}}
+    "{{$etcdInstance.EIPLogicalName}}": {
+      "Description": "The EIP for etcd node {{$index}}",
+      "Value": {{$etcdInstance.EIPRef}},
+      "Export": { "Name" : {"Fn::Sub": "${AWS::StackName}-{{$etcdInstance.EIPLogicalName}}" }}
+    },
+    {{end}}
+    {{if $etcdInstance.NetworkInterfaceManaged}}
+    "{{$etcdInstance.NetworkInterfacePrivateIPLogicalName}}": {
+      "Description": "The private IP for etcd node {{$index}}",
+      "Value": {{$etcdInstance.NetworkInterfacePrivateIPRef}},
+      "Export": { "Name" : {"Fn::Sub": "${AWS::StackName}-{{$etcdInstance.NetworkInterfacePrivateIPLogicalName}}" }}
+    },
+    {{end}}
+    {{end}}
+    "StackName": {
+      "Description": "The name of this stack which is used by node pool stacks to import outputs from this stack",
+      "Value": { "Ref": "AWS::StackName" }
+    }
+  }
+}

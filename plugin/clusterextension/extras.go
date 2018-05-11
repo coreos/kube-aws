@@ -179,6 +179,32 @@ func (e ClusterExtension) ControlPlaneStack() (*stack, error) {
 	}, nil
 }
 
+func (e ClusterExtension) EtcdStack() (*stack, error) {
+	resources := map[string]interface{}{}
+
+	for _, p := range e.plugins {
+		if enabled, pc := p.EnabledIn(e.configs); enabled {
+			values := pluginutil.MergeValues(p.Spec.Values, pc.Values)
+
+			render := plugincontents.TemplateRendererFor(p, values)
+
+			{
+				m, err := render.MapFromContents(p.Spec.CloudFormation.Stacks.Etcd.Resources.Append.Contents)
+				if err != nil {
+					return nil, fmt.Errorf("failed to load additional resources for etcd stack: %v", err)
+				}
+				for k, v := range m {
+					resources[k] = v
+				}
+			}
+		}
+	}
+
+	return &stack{
+		Resources: resources,
+	}, nil
+}
+
 func (e ClusterExtension) Controller() (*controller, error) {
 	apiServerFlags := pluginmodel.APIServerFlags{}
 	apiServerVolumes := pluginmodel.APIServerVolumes{}

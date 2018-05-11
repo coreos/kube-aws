@@ -12,19 +12,23 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/go-yaml/yaml"
 	"github.com/kubernetes-incubator/kube-aws/cfnresource"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/model/derived"
+	"github.com/kubernetes-incubator/kube-aws/naming"
 	"github.com/kubernetes-incubator/kube-aws/netutil"
 	"github.com/kubernetes-incubator/kube-aws/node"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
+	"gopkg.in/yaml.v2"
 )
 
 const (
 	k8sVer = "v1.9.3"
+
+	credentialsDir = "credentials"
+	userDataDir    = "userdata"
 
 	// Experimental SelfHosting feature default images.
 	kubeNetworkingSelfHostingDefaultCalicoNodeImageTag = "v3.0.6"
@@ -32,6 +36,12 @@ const (
 	kubeNetworkingSelfHostingDefaultFlannelImageTag    = "v0.9.1"
 	kubeNetworkingSelfHostingDefaultFlannelCniImageTag = "v0.3.0"
 	kubeNetworkingSelfHostingDefaultTyphaImageTag      = "v0.6.4"
+
+	// ControlPlaneStackName is the logical name of a CloudFormation stack resource in a root stack template
+	// This is not needed to be unique in an AWS account because the actual name of a nested stack is generated randomly
+	// by CloudFormation by including the logical name.
+	// This is NOT intended to be used to reference stack name from cloud-config as the target of awscli or cfn-bootstrap-tools commands e.g. `cfn-init` and `cfn-signal`
+	ControlPlaneStackName = "control-plane"
 )
 
 func NewDefaultCluster() *Cluster {
@@ -71,9 +81,11 @@ func NewDefaultCluster() *Cluster {
 			},
 		},
 		AuditLog: AuditLog{
-			Enabled: false,
-			MaxAge:  30,
-			LogPath: "/var/log/kube-apiserver-audit.log",
+			Enabled:   false,
+			LogPath:   "/var/log/kube-apiserver-audit.log",
+			MaxAge:    30,
+			MaxBackup: 1,
+			MaxSize:   100,
 		},
 		Authentication: Authentication{
 			Webhook{
@@ -258,12 +270,12 @@ func NewDefaultCluster() *Cluster {
 func ClusterFromFile(filename string) (*Cluster, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read cluster config: %v", err)
+		return nil, err
 	}
 
 	c, err := ClusterFromBytes(data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load cluster from config %s: %v", filename, err)
+		return nil, fmt.Errorf("file %s: %v", filename, err)
 	}
 
 	return c, nil
@@ -314,27 +326,6 @@ func (c *Cluster) Load() error {
 
 	if err := c.SetDefaults(); err != nil {
 		return fmt.Errorf("invalid cluster: %v", err)
-	}
-
-	if c.ExternalDNSName != "" {
-		// TODO: Deprecate externalDNSName?
-
-		if len(c.APIEndpointConfigs) != 0 {
-			return errors.New("invalid cluster: you can only specify either externalDNSName or apiEndpoints, but not both")
-		}
-
-		subnetRefs := []model.SubnetReference{}
-		for _, s := range c.Controller.LoadBalancer.Subnets {
-			subnetRefs = append(subnetRefs, model.SubnetReference{Name: s.Name})
-		}
-
-		c.APIEndpointConfigs = model.NewDefaultAPIEndpoints(
-			c.ExternalDNSName,
-			subnetRefs,
-			c.HostedZoneID,
-			c.RecordSetTTL,
-			c.Controller.LoadBalancer.Private,
-		)
 	}
 
 	return nil
@@ -409,6 +400,27 @@ func (c *Cluster) SetDefaults() error {
 		}
 	} else if c.Etcd.Subnets.ContainsBothPrivateAndPublic() {
 		return fmt.Errorf("You can not mix private and public subnets for etcd nodes. Please explicitly configure etcd.subnets[] to contain either public or private subnets only")
+	}
+
+	if c.ExternalDNSName != "" {
+		// TODO: Deprecate externalDNSName?
+
+		if len(c.APIEndpointConfigs) != 0 {
+			return errors.New("invalid cluster: you can only specify either externalDNSName or apiEndpoints, but not both")
+		}
+
+		subnetRefs := []model.SubnetReference{}
+		for _, s := range c.Controller.LoadBalancer.Subnets {
+			subnetRefs = append(subnetRefs, model.SubnetReference{Name: s.Name})
+		}
+
+		c.APIEndpointConfigs = model.NewDefaultAPIEndpoints(
+			c.ExternalDNSName,
+			subnetRefs,
+			c.HostedZoneID,
+			c.RecordSetTTL,
+			c.Controller.LoadBalancer.Private,
+		)
 	}
 
 	return nil
@@ -645,9 +657,11 @@ type PersistentVolumeClaimResize struct {
 }
 
 type AuditLog struct {
-	Enabled bool   `yaml:"enabled"`
-	MaxAge  int    `yaml:"maxage"`
-	LogPath string `yaml:"logpath"`
+	Enabled   bool   `yaml:"enabled"`
+	LogPath   string `yaml:"logPath"`
+	MaxAge    int    `yaml:"maxAge"`
+	MaxBackup int    `yaml:"maxBackup"`
+	MaxSize   int    `yaml:"maxSize"`
 }
 
 type Authentication struct {
@@ -725,7 +739,22 @@ type LocalStreaming struct {
 }
 
 type Kubernetes struct {
-	Networking Networking `yaml:"networking,omitempty"`
+	Networking        Networking        `yaml:"networking,omitempty"`
+	ControllerManager ControllerManager `yaml:"controllerManager,omitempty"`
+}
+
+type ControllerManager struct {
+	ComputeResources ComputeResources `yaml:"resources,omitempty"`
+}
+
+type ComputeResources struct {
+	Requests ResourceQuota `yaml:"requests,omitempty"`
+	Limits   ResourceQuota `yaml:"limits,omitempty"`
+}
+
+type ResourceQuota struct {
+	Cpu    string `yaml:"cpu"`
+	Memory string `yaml:"memory"`
 }
 
 type Networking struct {
@@ -952,7 +981,7 @@ type StackTemplateOptions struct {
 	SkipWait              bool
 }
 
-func (c Cluster) StackConfig(opts StackTemplateOptions, extra ...[]*pluginmodel.Plugin) (*StackConfig, error) {
+func (c Cluster) StackConfig(stackName string, opts StackTemplateOptions, extra ...[]*pluginmodel.Plugin) (*StackConfig, error) {
 	plugins := []*pluginmodel.Plugin{}
 	if len(extra) > 0 {
 		plugins = extra[0]
@@ -960,6 +989,7 @@ func (c Cluster) StackConfig(opts StackTemplateOptions, extra ...[]*pluginmodel.
 
 	var err error
 	stackConfig := StackConfig{
+		StackName:         stackName,
 		ExtraCfnResources: map[string]interface{}{},
 	}
 
@@ -1030,14 +1060,6 @@ type Config struct {
 
 	APIServerVolumes pluginmodel.APIServerVolumes
 	APIServerFlags   pluginmodel.APIServerFlags
-}
-
-// StackName returns the logical name of a CloudFormation stack resource in a root stack template
-// This is not needed to be unique in an AWS account because the actual name of a nested stack is generated randomly
-// by CloudFormation by including the logical name.
-// This is NOT intended to be used to reference stack name from cloud-config as the target of awscli or cfn-bootstrap-tools commands e.g. `cfn-init` and `cfn-signal`
-func (c Cluster) StackName() string {
-	return "control-plane"
 }
 
 func (c Cluster) StackNameEnvFileName() string {
@@ -1131,13 +1153,6 @@ func (c Cluster) APIAccessAllowedSourceCIDRsForControllerSG() []string {
 	return cidrs
 }
 
-// NestedStackName returns a sanitized name of this control-plane which is usable as a valid cloudformation nested stack name
-func (c Cluster) NestedStackName() string {
-	// Convert stack name into something valid as a cfn resource name or
-	// we'll end up with cfn errors like "Template format error: Resource name test5-controlplane is non alphanumeric"
-	return strings.Title(strings.Replace(c.StackName(), "-", "", -1))
-}
-
 func (c Cluster) NodeLabels() model.NodeLabels {
 	labels := c.NodeSettings.NodeLabels
 	if c.Addons.ClusterAutoscaler.Enabled {
@@ -1223,7 +1238,7 @@ func (c Cluster) validate() error {
 
 	clusterNamePlaceholder := "<my-cluster-name>"
 	nestedStackNamePlaceHolder := "<my-nested-stack-name>"
-	replacer := strings.NewReplacer(clusterNamePlaceholder, "", nestedStackNamePlaceHolder, c.StackName())
+	replacer := strings.NewReplacer(clusterNamePlaceholder, "", nestedStackNamePlaceHolder, ControlPlaneStackName)
 	simulatedLcName := fmt.Sprintf("%s-%s-1N2C4K3LLBEDZ-%sLC-BC2S9P3JG2QD", clusterNamePlaceholder, nestedStackNamePlaceHolder, c.Controller.LogicalName())
 	limit := 63 - len(replacer.Replace(simulatedLcName))
 	if c.Experimental.AwsNodeLabels.Enabled && len(c.ClusterName) > limit {
@@ -1239,7 +1254,7 @@ func (c Cluster) validate() error {
 			return e
 		}
 	} else {
-		if e := cfnresource.ValidateUnstableRoleNameLength(c.ClusterName, c.NestedStackName(), c.Controller.IAMConfig.Role.Name, c.Region.String()); e != nil {
+		if e := cfnresource.ValidateUnstableRoleNameLength(c.ClusterName, naming.FromStackToCfnResource(ControlPlaneStackName), c.Controller.IAMConfig.Role.Name, c.Region.String()); e != nil {
 			return e
 		}
 	}
@@ -1408,7 +1423,7 @@ func (c DeploymentSettings) Validate() (*DeploymentValidationResult, error) {
 		}
 	}
 
-	if err := c.Experimental.Validate(); err != nil {
+	if err := c.Experimental.Validate("controller"); err != nil {
 		return nil, err
 	}
 
@@ -1577,9 +1592,13 @@ func (e EtcdSettings) Validate() error {
 	return nil
 }
 
-func (c Experimental) Validate() error {
+func (c Experimental) Validate(name string) error {
 	if err := c.NodeDrainer.Validate(); err != nil {
 		return err
+	}
+
+	if c.Kube2IamSupport.Enabled && c.KIAMSupport.Enabled {
+		return fmt.Errorf("at '%s', you can enable kube2IamSupport or kiamSupport, but not both", name)
 	}
 
 	return nil

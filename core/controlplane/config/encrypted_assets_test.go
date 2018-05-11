@@ -55,6 +55,16 @@ func TestTLSGeneration(t *testing.T) {
 			CertBytes: assets.APIServerCert,
 		},
 		{
+			Name:      "kube-controller-manager",
+			KeyBytes:  assets.KubeControllerManagerKey,
+			CertBytes: assets.KubeControllerManagerCert,
+		},
+		{
+			Name:      "kube-scheduler",
+			KeyBytes:  assets.KubeSchedulerKey,
+			CertBytes: assets.KubeSchedulerCert,
+		},
+		{
 			Name:      "admin",
 			KeyBytes:  assets.AdminKey,
 			CertBytes: assets.AdminCert,
@@ -156,6 +166,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 			files := []string{
 				"admin-key.pem.enc", "worker-key.pem.enc", "apiserver-key.pem.enc",
 				"etcd-key.pem.enc", "etcd-client-key.pem.enc", "worker-ca-key.pem.enc",
+				"kube-controller-manager-key.pem.enc", "kube-scheduler-key.pem.enc",
 				"kiam-agent-key.pem.enc", "kiam-server-key.pem.enc",
 			}
 
@@ -178,6 +189,8 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 				{"CACert", original.CACert, regenerated.CACert},
 				{"WorkerCert", original.WorkerCert, regenerated.WorkerCert},
 				{"APIServerCert", original.APIServerCert, regenerated.APIServerCert},
+				{"KubeControllerManagerCert", original.KubeControllerManagerCert, regenerated.KubeControllerManagerCert},
+				{"KubeSchedulerCert", original.KubeSchedulerCert, regenerated.KubeSchedulerCert},
 				{"EtcdClientCert", original.EtcdClientCert, regenerated.EtcdClientCert},
 				{"EtcdCert", original.EtcdCert, regenerated.EtcdCert},
 				{"KIAMAgentCert", original.KIAMAgentCert, regenerated.KIAMAgentCert},
@@ -194,6 +207,8 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 				{"WorkerCAKey", original.WorkerCAKey, regenerated.WorkerCAKey},
 				{"WorkerKey", original.WorkerKey, regenerated.WorkerKey},
 				{"APIServerKey", original.APIServerKey, regenerated.APIServerKey},
+				{"KubeControllerManagerKey", original.KubeControllerManagerKey, regenerated.KubeControllerManagerKey},
+				{"KubeSchedulerKey", original.KubeSchedulerKey, regenerated.KubeSchedulerKey},
 				{"EtcdClientKey", original.EtcdClientKey, regenerated.EtcdClientKey},
 				{"EtcdKey", original.EtcdKey, regenerated.EtcdKey},
 				{"KIAMAgentKey", original.KIAMAgentKey, regenerated.KIAMAgentKey},

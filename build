@@ -26,6 +26,16 @@ go run ../../../codegen/files_gen.go Etcdadm=../../../etcdadm/etcdadm
 gofmt -w files.go
 popd
 
+pushd core/network/config
+go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json
+gofmt -w templates.go
+popd
+
+pushd core/etcd/config
+go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json
+gofmt -w templates.go
+popd
+
 pushd core/nodepool/config
 go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json
 gofmt -w templates.go
