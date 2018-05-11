@@ -12,6 +12,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/go-yaml/yaml"
 	"github.com/kubernetes-incubator/kube-aws/cfnresource"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
@@ -21,7 +22,6 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/netutil"
 	"github.com/kubernetes-incubator/kube-aws/node"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
-	"gopkg.in/yaml.v2"
 )
 
 const (
