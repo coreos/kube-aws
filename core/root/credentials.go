@@ -47,7 +47,7 @@ func LoadCertificates() (map[string][]tlsutil.Certificate, error) {
 			fmt.Printf("WARNING: cannot read %q file: %v", f.Name(), err)
 			continue
 		}
-		if !tlsutil.IsCertificate(b) {
+		if !tlsutil.IsCertificatePEM(b) {
 			continue
 		}
 		c, err := tlsutil.ToCertificates(b)

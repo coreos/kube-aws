@@ -25,7 +25,7 @@ func RenderStack(configPath string) error {
 	if err != nil {
 		return err
 	}
-	kubeconfig, err := parseKubeconfig(clusterConfig)
+	kubeconfig, err := generateKubeconfig(clusterConfig)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func RenderStack(configPath string) error {
 	return nil
 }
 
-func parseKubeconfig(clusterConfig *controlplane.Config) ([]byte, error) {
+func generateKubeconfig(clusterConfig *controlplane.Config) ([]byte, error) {
 
 	tmpl, err := template.New("kubeconfig.yaml").Parse(string(controlplane.KubeConfigTemplate))
 	if err != nil {

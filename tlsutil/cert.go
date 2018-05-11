@@ -2,6 +2,8 @@ package tlsutil
 
 import (
 	"fmt"
+	"net"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -10,11 +12,36 @@ import (
 var ValidityFormat = "Jan _2 15:04:05 2006 MST"
 
 type Certificate struct {
-	Issuer    DN
-	NotBefore time.Time
-	NotAfter  time.Time
-	Subject   DN
-	DNSNames  []string
+	Issuer      DN
+	NotBefore   time.Time
+	NotAfter    time.Time
+	Subject     DN
+	DNSNames    []string
+	IPAddresses []net.IP
+}
+
+func (c Certificate) IsExpired() bool {
+	return time.Now().After(c.NotAfter)
+}
+
+func (c Certificate) ContainsDNSName(name string) bool {
+
+	for _, d := range c.DNSNames {
+		if d == name {
+			return true
+		}
+	}
+	return false
+}
+
+func (c Certificate) ContainsIPAddress(ip net.IP) bool {
+
+	for _, i := range c.IPAddresses {
+		if i.Equal(ip) {
+			return true
+		}
+	}
+	return false
 }
 
 func (c Certificate) String() string {
@@ -23,8 +50,15 @@ func (c Certificate) String() string {
 	notAfter := c.NotAfter.Format(ValidityFormat)
 	dnsNames := strings.Join(c.DNSNames, ", ")
 
-	return fmt.Sprintf("Issuer: %s\nValidity\n    Not Before: %s\n    Not After : %s\nSubject: %s\nDNS Names: %s",
-		c.Issuer, notBefore, notAfter, c.Subject, dnsNames)
+	var ips []string
+	for _, ip := range c.IPAddresses {
+		ips = append(ips, fmt.Sprintf("%s", ip))
+	}
+	ipAddresses := strings.Join(ips, ", ")
+
+	return fmt.Sprintf(
+		"Issuer: %s\nValidity\n    Not Before: %s\n    Not After : %s\nSubject: %s\nDNS Names: %s\nIP Addresses: %s",
+		c.Issuer, notBefore, notAfter, c.Subject, dnsNames, ipAddresses)
 }
 
 type DN struct {
@@ -68,9 +102,22 @@ func ToCertificates(data []byte) ([]Certificate, error) {
 					Organization: c.Subject.Organization,
 					CommonName:   c.Subject.CommonName,
 				},
-				DNSNames: c.DNSNames,
+				DNSNames:    c.DNSNames,
+				IPAddresses: c.IPAddresses,
 			},
 		)
 	}
 	return certificates, nil
+}
+
+// returns certificate that matches subject CN match regex (Subject.CommonName), if the certificate cannot be found,
+// second returned value will be false
+func GetCertificate(certificates []Certificate, subjectCNMatch string) (cert Certificate, ok bool) {
+
+	for _, c := range certificates {
+		if match, _ := regexp.MatchString(subjectCNMatch, c.Subject.CommonName); match {
+			return c, true
+		}
+	}
+	return
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/route53"
 
+	"errors"
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
@@ -401,13 +402,18 @@ func (c Cluster) validateCertsAgainstSettings() error {
 		return fmt.Errorf("could not decompress the apiserver pem: %v", err)
 	}
 
+	apiServerCerts, err := tlsutil.ToCertificates([]byte(apiServerPEM))
+	if err != nil {
+		return fmt.Errorf("error parsing api server cert: %v", err)
+	}
+	kubeAPIServerCert, ok := tlsutil.GetCertificate(apiServerCerts, "kube-apiserver")
+	if !ok {
+		return errors.New("no api server certs contain Subject CommonName 'kube-apiserver'")
+	}
+
 	// Check DNS Names
 	for _, apiEndPoint := range c.KubeClusterSettings.APIEndpointConfigs {
-		apiDnsOK, err := tlsutil.CertificateContainsDNSName([]byte(apiServerPEM), "kube-apiserver", apiEndPoint.DNSName)
-		if err != nil {
-			return fmt.Errorf("error validating api cert contains dns name %s: %v", apiEndPoint.DNSName, err)
-		}
-		if !apiDnsOK {
+		if !kubeAPIServerCert.ContainsDNSName(apiEndPoint.DNSName) {
 			return fmt.Errorf("the apiserver cert does not contain the external dns name %s, please regenerate or resolve", apiEndPoint.DNSName)
 		}
 	}
@@ -419,13 +425,8 @@ func (c Cluster) validateCertsAgainstSettings() error {
 	}
 	kubernetesServiceIPAddr := netutil.IncrementIP(serviceNet.IP)
 
-	apiIPOK, err := tlsutil.CertificateContainsIPAddress([]byte(apiServerPEM), "kube-apiserver", kubernetesServiceIPAddr)
-	if err != nil {
-		return fmt.Errorf("error validating api cert contains kubernetes service ip %v: %v", kubernetesServiceIPAddr, err)
+	if !kubeAPIServerCert.ContainsIPAddress(kubernetesServiceIPAddr) {
+		return fmt.Errorf("the api server cert does not contain the kubernetes service ip address %v, please regenerate or resolve", kubernetesServiceIPAddr)
 	}
-	if !apiIPOK {
-		return fmt.Errorf("the apiserver cert does not contain the kubernetes service ip address %v, please regenerate or resolve", kubernetesServiceIPAddr)
-	}
-
 	return nil
 }
