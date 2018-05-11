@@ -1,4 +1,4 @@
-package render
+package root
 
 import (
 	"bytes"
@@ -10,32 +10,24 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root/defaults"
 	"github.com/kubernetes-incubator/kube-aws/filegen"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"path/filepath"
 	"text/template"
 )
 
-type StackRenderer interface {
-	RenderFiles() error
-}
+func RenderStack(configPath string) error {
 
-type stackRendererImpl struct {
-	cfg *controlplane.Config
-}
-
-func NewStackRenderer(c *controlplane.Config) StackRenderer {
-	return stackRendererImpl{
-		cfg: c,
-	}
-}
-
-func (r stackRendererImpl) RenderFiles() error {
-	tmpl, err := template.New("kubeconfig.yaml").Parse(string(controlplane.KubeConfigTemplate))
+	cluster, err := controlplane.ClusterFromFile(configPath)
 	if err != nil {
-		return fmt.Errorf("Failed to parse default kubeconfig template: %v", err)
+		return err
 	}
-	var kubeconfig bytes.Buffer
-	if err := tmpl.Execute(&kubeconfig, r.cfg); err != nil {
-		return fmt.Errorf("Failed to render kubeconfig: %v", err)
+	clusterConfig, err := cluster.Config([]*pluginmodel.Plugin{})
+	if err != nil {
+		return err
+	}
+	kubeconfig, err := parseKubeconfig(clusterConfig)
+	if err != nil {
+		return err
 	}
 
 	if err := filegen.Render(
@@ -48,10 +40,24 @@ func (r stackRendererImpl) RenderFiles() error {
 		filegen.File(defaults.EtcdStackTemplateTmplFile, etcd.StackTemplateTemplate, 0644),
 		filegen.File(defaults.NodePoolStackTemplateTmplFile, nodepool.StackTemplateTemplate, 0644),
 		filegen.File(defaults.RootStackTemplateTmplFile, config.StackTemplateTemplate, 0644),
-		filegen.File("kubeconfig", kubeconfig.Bytes(), 0600),
+		filegen.File("kubeconfig", kubeconfig, 0600),
 	); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func parseKubeconfig(clusterConfig *controlplane.Config) ([]byte, error) {
+
+	tmpl, err := template.New("kubeconfig.yaml").Parse(string(controlplane.KubeConfigTemplate))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse default kubeconfig template: %v", err)
+	}
+
+	var kubeconfig bytes.Buffer
+	if err := tmpl.Execute(&kubeconfig, clusterConfig); err != nil {
+		return nil, fmt.Errorf("failed to render kubeconfig: %v", err)
+	}
+	return kubeconfig.Bytes(), nil
 }

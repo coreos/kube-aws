@@ -77,12 +77,19 @@
 [[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
-  revision = "04cdfd42973bb9c8589fd6a731800cf222fde1a9"
+  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
+  version = "v1.1.0"
 
 [[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
   revision = "afbc45e87f3ba324c532d12c71918ef52e0fb194"
+
+[[projects]]
+  name = "github.com/go-yaml/yaml"
+  packages = ["."]
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [[projects]]
   name = "github.com/huandu/xstrings"
@@ -109,7 +116,8 @@
 [[projects]]
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
-  revision = "d8ed2627bdf02c080bf22230dbb337003b7aba2d"
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/satori/go.uuid"
@@ -120,7 +128,8 @@
 [[projects]]
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "e606913c4ee45fec232e67e70105fb6c866b95d9"
+  revision = "a1f051bc3eba734da4772d60e2d677f47cf93ef4"
+  version = "v0.0.2"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -131,7 +140,8 @@
 [[projects]]
   name = "github.com/stretchr/testify"
   packages = ["assert"]
-  revision = "46b3c8225b20f01377eeefe3e6b7b147bb742eff"
+  revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
+  version = "v1.2.1"
 
 [[projects]]
   name = "github.com/tidwall/gjson"
@@ -166,14 +176,9 @@
   packages = ["unix"]
   revision = "bb9c189858d91f42db229b04d45a4c3d23a7662a"
 
-[[projects]]
-  name = "gopkg.in/yaml.v2"
-  packages = ["."]
-  revision = "cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9f08404c9cc6fc04e72c8482e51322bd33671e07c85dd865bb3aaebb3b4f8261"
+  inputs-digest = "3d26a915875916434709ce73a6b7ce10f45abb9f4a2dd9a812b6a6b8898402fc"
   solver-name = "gps-cdcl"
   solver-version = 1

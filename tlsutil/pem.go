@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"errors"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -61,6 +62,30 @@ func EncodeCertificatePEM(cert *x509.Certificate) []byte {
 func DecodeCertificatePEM(data []byte) (*x509.Certificate, error) {
 	block, _ := pem.Decode(data)
 	return x509.ParseCertificate(block.Bytes)
+}
+
+func DecodeCertificatesPEM(data []byte) ([]*x509.Certificate, error) {
+	var block *pem.Block
+	var decodedCerts []byte
+	for {
+		block, data = pem.Decode(data)
+		if block == nil {
+			return nil, errors.New("failed to parse certificate PEM")
+		}
+		if block.Type != "CERTIFICATE" {
+			return nil, fmt.Errorf("failed to parse %s, only CERTIFICATE can be parsed", block.Type)
+		}
+		decodedCerts = append(decodedCerts, block.Bytes...)
+		if len(data) == 0 {
+			break
+		}
+	}
+	return x509.ParseCertificates(decodedCerts)
+}
+
+func IsCertificate(data []byte) bool {
+	block, _ := pem.Decode(data)
+	return block != nil && block.Type == "CERTIFICATE"
 }
 
 func IsCertificatePEM(data []byte) bool {
