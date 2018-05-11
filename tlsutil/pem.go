@@ -87,3 +87,8 @@ func IsCertificate(data []byte) bool {
 	block, _ := pem.Decode(data)
 	return block != nil && block.Type == "CERTIFICATE"
 }
+
+func IsCertificatePEM(data []byte) bool {
+	block, _ := pem.Decode(data)
+	return block.Type == "CERTIFICATE"
+}

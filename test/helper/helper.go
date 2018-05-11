@@ -6,6 +6,25 @@ import (
 	"os"
 )
 
+const (
+	dummyKey = `-----BEGIN RSA PRIVATE KEY-----
+ZHVtbXkK
+-----END RSA PRIVATE KEY-----`
+
+	dummyCert = `-----BEGIN CERTIFICATE-----
+MIIBvjCCAWgCCQDQ4pUwqdLIIDANBgkqhkiG9w0BAQsFADBlMQswCQYDVQQGEwJV
+UzESMBAGA1UECAwJQW50YXJ0aWNhMRowGAYDVQQKDBFUZXN0IFdpZGdldHMgSW5j
+LjERMA8GA1UECwwIVGVzdCBMYWIxEzARBgNVBAMMCmR1bW15LWNlcnQwIBcNMTgw
+NDMwMDk1NDExWhgPMjUxNzEyMzAwOTU0MTFaMGUxCzAJBgNVBAYTAlVTMRIwEAYD
+VQQIDAlBbnRhcnRpY2ExGjAYBgNVBAoMEVRlc3QgV2lkZ2V0cyBJbmMuMREwDwYD
+VQQLDAhUZXN0IExhYjETMBEGA1UEAwwKZHVtbXktY2VydDBcMA0GCSqGSIb3DQEB
+AQUAA0sAMEgCQQDgd2lsmEBDXMxZsaFUSwnC/FF3x/62SIb3/f8mrGrBtb6Vim11
+s7T0zFCm9cWbTi63bzWRFs3gP2FwwU1MF5RDAgMBAAEwDQYJKoZIhvcNAQELBQAD
+QQA0bLc3+5kpZuJaAK+C0XvTPZFz8Vx1nv8YnwoIJdEvvGOPGAqvrA8Y0Fvs7L11
+Z3leoFbVQmybV7EcduIrOANA
+-----END CERTIFICATE-----`
+)
+
 func WithTempDir(fn func(dir string)) {
 	dir, err := ioutil.TempDir("", "test-temp-dir")
 
@@ -40,14 +59,14 @@ func withDummyCredentials(alsoWriteCAKey bool, fn func(dir string)) {
 
 	for _, pairName := range []string{"ca", "apiserver", "kube-controller-manager", "kube-scheduler", "worker", "admin", "etcd", "etcd-client", "kiam-agent", "kiam-server"} {
 		certFile := fmt.Sprintf("%s/%s.pem", dir, pairName)
-		if err := ioutil.WriteFile(certFile, []byte("dummycert"), 0644); err != nil {
+		if err := ioutil.WriteFile(certFile, []byte(dummyCert), 0644); err != nil {
 			panic(err)
 		}
 		defer os.Remove(certFile)
 
 		if pairName != "ca" || alsoWriteCAKey {
 			keyFile := fmt.Sprintf("%s/%s-key.pem", dir, pairName)
-			if err := ioutil.WriteFile(keyFile, []byte("dummykey"), 0644); err != nil {
+			if err := ioutil.WriteFile(keyFile, []byte(dummyKey), 0644); err != nil {
 				panic(err)
 			}
 			defer os.Remove(keyFile)

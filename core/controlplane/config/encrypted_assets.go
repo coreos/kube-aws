@@ -432,48 +432,49 @@ func ReadRawAssets(dirname string, manageCertificates bool, caKeyRequiredOnContr
 		name         string
 		data         *RawCredentialOnDisk
 		defaultValue *string
+		expiryCheck  bool
 	}
 
 	// Uses a random token as default value
 	files := []entry{
-		{"tokens.csv", &r.AuthTokens, &defaultTokensFile},
-		{"kubelet-tls-bootstrap-token", &r.TLSBootstrapToken, &defaultTLSBootstrapToken},
+		{name: "tokens.csv", data: &r.AuthTokens, defaultValue: &defaultTokensFile, expiryCheck: false},
+		{name: "kubelet-tls-bootstrap-token", data: &r.TLSBootstrapToken, defaultValue: &defaultTLSBootstrapToken, expiryCheck: false},
 	}
 
 	if manageCertificates {
 		// Assumes no default values for any cert
 		files = append(files, []entry{
-			{"ca.pem", &r.CACert, nil},
-			{"worker-ca.pem", &r.WorkerCACert, nil},
-			{"apiserver.pem", &r.APIServerCert, nil},
-			{"apiserver-key.pem", &r.APIServerKey, nil},
-			{"kube-controller-manager.pem", &r.KubeControllerManagerCert, nil},
-			{"kube-controller-manager-key.pem", &r.KubeControllerManagerKey, nil},
-			{"kube-scheduler.pem", &r.KubeSchedulerCert, nil},
-			{"kube-scheduler-key.pem", &r.KubeSchedulerKey, nil},
-			{"worker.pem", &r.WorkerCert, nil},
-			{"worker-key.pem", &r.WorkerKey, nil},
-			{"admin.pem", &r.AdminCert, nil},
-			{"admin-key.pem", &r.AdminKey, nil},
-			{"etcd.pem", &r.EtcdCert, nil},
-			{"etcd-key.pem", &r.EtcdKey, nil},
-			{"etcd-client.pem", &r.EtcdClientCert, nil},
-			{"etcd-client-key.pem", &r.EtcdClientKey, nil},
-			{"etcd-trusted-ca.pem", &r.EtcdTrustedCA, nil},
+			{name: "ca.pem", data: &r.CACert, defaultValue: nil, expiryCheck: true},
+			{name: "worker-ca.pem", data: &r.WorkerCACert, defaultValue: nil, expiryCheck: true},
+			{name: "apiserver.pem", data: &r.APIServerCert, defaultValue: nil, expiryCheck: true},
+			{name: "apiserver-key.pem", data: &r.APIServerKey, defaultValue: nil, expiryCheck: false},
+			{name: "kube-controller-manager.pem", data: &r.KubeControllerManagerCert, defaultValue: nil, expiryCheck: true},
+			{name: "kube-controller-manager-key.pem", data: &r.KubeControllerManagerKey, defaultValue: nil, expiryCheck: false},
+			{name: "kube-scheduler.pem", data: &r.KubeSchedulerCert, defaultValue: nil, expiryCheck: true},
+			{name: "kube-scheduler-key.pem", data: &r.KubeSchedulerKey, defaultValue: nil, expiryCheck: false},
+			{name: "worker.pem", data: &r.WorkerCert, defaultValue: nil, expiryCheck: true},
+			{name: "worker-key.pem", data: &r.WorkerKey, defaultValue: nil, expiryCheck: false},
+			{name: "admin.pem", data: &r.AdminCert, defaultValue: nil, expiryCheck: false},
+			{name: "admin-key.pem", data: &r.AdminKey, defaultValue: nil, expiryCheck: false},
+			{name: "etcd.pem", data: &r.EtcdCert, defaultValue: nil, expiryCheck: true},
+			{name: "etcd-key.pem", data: &r.EtcdKey, defaultValue: nil, expiryCheck: false},
+			{name: "etcd-client.pem", data: &r.EtcdClientCert, defaultValue: nil, expiryCheck: true},
+			{name: "etcd-client-key.pem", data: &r.EtcdClientKey, defaultValue: nil, expiryCheck: false},
+			{name: "etcd-trusted-ca.pem", data: &r.EtcdTrustedCA, defaultValue: nil, expiryCheck: true},
 			// allow setting service-account-key from the apiserver-key by default.
-			{"service-account-key.pem", &r.ServiceAccountKey, &defaultServiceAccountKey},
+			{name: "service-account-key.pem", data: &r.ServiceAccountKey, defaultValue: &defaultServiceAccountKey},
 		}...)
 
 		if caKeyRequiredOnController {
-			files = append(files, entry{"worker-ca-key.pem", &r.WorkerCAKey, nil})
+			files = append(files, entry{name: "worker-ca-key.pem", data: &r.WorkerCAKey, defaultValue: nil, expiryCheck: true})
 		}
 
 		if kiamEnabled {
-			files = append(files, entry{"kiam-server-key.pem", &r.KIAMServerKey, nil})
-			files = append(files, entry{"kiam-server.pem", &r.KIAMServerCert, nil})
-			files = append(files, entry{"kiam-agent-key.pem", &r.KIAMAgentKey, nil})
-			files = append(files, entry{"kiam-agent.pem", &r.KIAMAgentCert, nil})
-			files = append(files, entry{"kiam-ca.pem", &r.KIAMCACert, nil})
+			files = append(files, entry{name: "kiam-server-key.pem", data: &r.KIAMServerKey, defaultValue: nil, expiryCheck: false})
+			files = append(files, entry{name: "kiam-server.pem", data: &r.KIAMServerCert, defaultValue: nil, expiryCheck: true})
+			files = append(files, entry{name: "kiam-agent-key.pem", data: &r.KIAMAgentKey, defaultValue: nil, expiryCheck: false})
+			files = append(files, entry{name: "kiam-agent.pem", data: &r.KIAMAgentCert, defaultValue: nil, expiryCheck: true})
+			files = append(files, entry{name: "kiam-ca.pem", data: &r.KIAMCACert, defaultValue: nil, expiryCheck: true})
 		}
 	}
 
@@ -482,6 +483,11 @@ func ReadRawAssets(dirname string, manageCertificates bool, caKeyRequiredOnContr
 		data, err := RawCredentialFileFromPath(path, file.defaultValue)
 		if err != nil {
 			return nil, fmt.Errorf("Error reading credential file %s: %v", path, err)
+		}
+		if file.expiryCheck {
+			if err := tlsutil.CheckAllCertsValid(path, data.content); err != nil {
+				return nil, err
+			}
 		}
 
 		*file.data = *data
@@ -504,45 +510,46 @@ func ReadOrEncryptAssets(dirname string, manageCertificates bool, caKeyRequiredO
 		data          *EncryptedCredentialOnDisk
 		defaultValue  *string
 		readEncrypted bool
+		expiryCheck   bool
 	}
 
 	files := []entry{
-		{"tokens.csv", &r.AuthTokens, &defaultTokensFile, true},
-		{"kubelet-tls-bootstrap-token", &r.TLSBootstrapToken, &defaultTLSBootstrapToken, true},
+		{name: "tokens.csv", data: &r.AuthTokens, defaultValue: &defaultTokensFile, readEncrypted: true, expiryCheck: false},
+		{name: "kubelet-tls-bootstrap-token", data: &r.TLSBootstrapToken, defaultValue: &defaultTLSBootstrapToken, readEncrypted: true, expiryCheck: false},
 	}
 
 	if manageCertificates {
 		files = append(files, []entry{
-			{"ca.pem", &r.CACert, nil, false},
-			{"worker-ca.pem", &r.WorkerCACert, nil, false},
-			{"apiserver.pem", &r.APIServerCert, nil, false},
-			{"apiserver-key.pem", &r.APIServerKey, nil, true},
-			{"kube-controller-manager.pem", &r.KubeControllerManagerCert, nil, false},
-			{"kube-controller-manager-key.pem", &r.KubeControllerManagerKey, nil, true},
-			{"kube-scheduler.pem", &r.KubeSchedulerCert, nil, false},
-			{"kube-scheduler-key.pem", &r.KubeSchedulerKey, nil, true},
-			{"worker.pem", &r.WorkerCert, nil, false},
-			{"worker-key.pem", &r.WorkerKey, nil, true},
-			{"admin.pem", &r.AdminCert, nil, false},
-			{"admin-key.pem", &r.AdminKey, nil, true},
-			{"etcd.pem", &r.EtcdCert, nil, false},
-			{"etcd-key.pem", &r.EtcdKey, nil, true},
-			{"etcd-client.pem", &r.EtcdClientCert, nil, false},
-			{"etcd-client-key.pem", &r.EtcdClientKey, nil, true},
-			{"etcd-trusted-ca.pem", &r.EtcdTrustedCA, nil, false},
-			{"service-account-key.pem", &r.ServiceAccountKey, &defaultServiceAccountKey, true},
+			{name: "ca.pem", data: &r.CACert, defaultValue: nil, readEncrypted: false, expiryCheck: true},
+			{name: "worker-ca.pem", data: &r.WorkerCACert, defaultValue: nil, readEncrypted: false, expiryCheck: true},
+			{name: "apiserver.pem", data: &r.APIServerCert, defaultValue: nil, readEncrypted: false, expiryCheck: true},
+			{name: "apiserver-key.pem", data: &r.APIServerKey, defaultValue: nil, readEncrypted: true, expiryCheck: false},
+			{name: "kube-controller-manager.pem", data: &r.KubeControllerManagerCert, defaultValue: nil, readEncrypted: false, expiryCheck: true},
+			{name: "kube-controller-manager-key.pem", data: &r.KubeControllerManagerKey, defaultValue: nil, readEncrypted: true, expiryCheck: false},
+			{name: "kube-scheduler.pem", data: &r.KubeSchedulerCert, defaultValue: nil, readEncrypted: false, expiryCheck: true},
+			{name: "kube-scheduler-key.pem", data: &r.KubeSchedulerKey, defaultValue: nil, readEncrypted: true, expiryCheck: false},
+			{name: "worker.pem", data: &r.WorkerCert, defaultValue: nil, readEncrypted: false, expiryCheck: true},
+			{name: "worker-key.pem", data: &r.WorkerKey, defaultValue: nil, readEncrypted: true, expiryCheck: false},
+			{name: "admin.pem", data: &r.AdminCert, defaultValue: nil, readEncrypted: false, expiryCheck: false},
+			{name: "admin-key.pem", data: &r.AdminKey, defaultValue: nil, readEncrypted: true, expiryCheck: false},
+			{name: "etcd.pem", data: &r.EtcdCert, defaultValue: nil, readEncrypted: false, expiryCheck: true},
+			{name: "etcd-key.pem", data: &r.EtcdKey, defaultValue: nil, readEncrypted: true, expiryCheck: false},
+			{name: "etcd-client.pem", data: &r.EtcdClientCert, defaultValue: nil, readEncrypted: false, expiryCheck: true},
+			{name: "etcd-client-key.pem", data: &r.EtcdClientKey, defaultValue: nil, readEncrypted: true, expiryCheck: false},
+			{name: "etcd-trusted-ca.pem", data: &r.EtcdTrustedCA, defaultValue: nil, readEncrypted: false, expiryCheck: true},
+			{name: "service-account-key.pem", data: &r.ServiceAccountKey, defaultValue: &defaultServiceAccountKey, readEncrypted: true, expiryCheck: false},
 		}...)
 
 		if caKeyRequiredOnController {
-			files = append(files, entry{"worker-ca-key.pem", &r.WorkerCAKey, nil, true})
+			files = append(files, entry{name: "worker-ca-key.pem", data: &r.WorkerCAKey, defaultValue: nil, readEncrypted: true, expiryCheck: false})
 		}
 
 		if kiamEnabled {
-			files = append(files, entry{"kiam-server-key.pem", &r.KIAMServerKey, nil, true})
-			files = append(files, entry{"kiam-server.pem", &r.KIAMServerCert, nil, false})
-			files = append(files, entry{"kiam-agent-key.pem", &r.KIAMAgentKey, nil, true})
-			files = append(files, entry{"kiam-agent.pem", &r.KIAMAgentCert, nil, false})
-			files = append(files, entry{"kiam-ca.pem", &r.KIAMCACert, nil, false})
+			files = append(files, entry{name: "kiam-server-key.pem", data: &r.KIAMServerKey, defaultValue: nil, readEncrypted: true, expiryCheck: false})
+			files = append(files, entry{name: "kiam-server.pem", data: &r.KIAMServerCert, defaultValue: nil, readEncrypted: false, expiryCheck: true})
+			files = append(files, entry{name: "kiam-agent-key.pem", data: &r.KIAMAgentKey, defaultValue: nil, readEncrypted: true, expiryCheck: false})
+			files = append(files, entry{name: "kiam-agent.pem", data: &r.KIAMAgentCert, defaultValue: nil, readEncrypted: false, expiryCheck: true})
+			files = append(files, entry{name: "kiam-ca.pem", data: &r.KIAMCACert, defaultValue: nil, readEncrypted: false, expiryCheck: true})
 		}
 	}
 
@@ -562,6 +569,11 @@ func ReadOrEncryptAssets(dirname string, manageCertificates bool, caKeyRequiredO
 			raw, err := RawCredentialFileFromPath(path, file.defaultValue)
 			if err != nil {
 				return nil, fmt.Errorf("Error reading credential file %s: %v", path, err)
+			}
+			if file.expiryCheck {
+				if err := tlsutil.CheckAllCertsValid(path, raw.content); err != nil {
+					return nil, err
+				}
 			}
 			(*file.data).content = raw.content
 		}
