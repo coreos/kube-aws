@@ -1344,9 +1344,9 @@ func (c DeploymentSettings) Validate() (*DeploymentValidationResult, error) {
 	_, err := semver.NewVersion(c.K8sVer)
 	if err != nil {
 		return nil, errors.New("kubernetesVersion must be a valid version")
-  }
+	}
 
-  if c.KMSKeyARN != "" && !c.Region.IsEmpty() && !strings.Contains(c.KMSKeyARN, c.Region.String()) {
+	if c.KMSKeyARN != "" && !c.Region.IsEmpty() && !strings.Contains(c.KMSKeyARN, c.Region.String()) {
 		return nil, errors.New("kmsKeyArn must reference the same region as the one being deployed to")
 	}
 
