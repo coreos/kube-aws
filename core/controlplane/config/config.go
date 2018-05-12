@@ -12,8 +12,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/Masterminds/semver"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-yaml/yaml"
 	"github.com/kubernetes-incubator/kube-aws/cfnresource"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
