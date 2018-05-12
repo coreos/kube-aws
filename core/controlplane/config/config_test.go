@@ -1366,6 +1366,81 @@ func TestWithTrailingDot(t *testing.T) {
 	}
 }
 
+func TestInvalidKubernetesVersion(t *testing.T) {
+	testCases := []string{
+		`
+kubernetesVersion: v1.x.3
+`,
+		`
+kubernetesVersion: v1.9.3yes
+`,
+		`
+kubernetesVersion: $v1.9.3
+`}
+
+	for _, testCase := range testCases {
+		confBody := singleAzConfigYaml + testCase
+		_, err := ClusterFromBytes([]byte(confBody))
+		if err == nil || !strings.Contains(err.Error(), "must be a valid version") {
+			t.Errorf("expected kubernetesVersion to be validated: %s\n%s", err, confBody)
+
+		}
+	}
+}
+
+func TestValidKubernetesVersion(t *testing.T) {
+	testCases := []string{
+		`
+kubernetesVersion: v1.9.3
+`,
+		`
+kubernetesVersion: v1.7.2
+`}
+
+	for _, testCase := range testCases {
+		confBody := singleAzConfigYaml + testCase
+		_, err := ClusterFromBytes([]byte(confBody))
+		if err != nil {
+			t.Errorf("expected kubernetesVersion to be validated: %s\n%s", err, confBody)
+		}
+	}
+}
+
+func TestApiServerLeaseEndpointReconcilerDisabled(t *testing.T) {
+	testCases := []string{
+		`
+kubernetesVersion: v1.7.16
+`,
+		`
+kubernetesVersion: v1.8.12
+`}
+
+	for _, testCase := range testCases {
+		confBody := singleAzConfigYaml + testCase
+		c, _ := ClusterFromBytes([]byte(confBody))
+		if enabled, err := c.ApiServerLeaseEndpointReconciler(); enabled == true || err != nil {
+			t.Errorf("API server lease endpoint should not be enabled prior to Kubernetes 1.9: %s\n%s", err, confBody)
+		}
+	}
+}
+func TestApiServerLeaseEndpointReconcilerEnabled(t *testing.T) {
+	testCases := []string{
+		`
+kubernetesVersion: v1.9.3
+`,
+		`
+kubernetesVersion: v1.10.2
+`}
+
+	for _, testCase := range testCases {
+		confBody := singleAzConfigYaml + testCase
+		c, _ := ClusterFromBytes([]byte(confBody))
+		if enabled, err := c.ApiServerLeaseEndpointReconciler(); enabled == false || err != nil {
+			t.Errorf("API server lease endpoint should be enabled at Kubernetes 1.9 or greater: %s\n%s", err, confBody)
+		}
+	}
+}
+
 func TestKube2IamKiamClash(t *testing.T) {
 	config := `
 experimental:

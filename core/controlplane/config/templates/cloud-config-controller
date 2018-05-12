@@ -3176,7 +3176,11 @@ write_files:
           command:
           - /hyperkube
           - apiserver
+          {{- if .ApiServerLeaseEndpointReconciler }}
+          - --endpoint-reconciler-type=lease
+          {{- else }}
           - --apiserver-count={{if .MinControllerCount}}{{ .MinControllerCount }}{{else}}{{ .ControllerCount }}{{end}}
+          {{- end }}
           - --bind-address=0.0.0.0
           - --etcd-servers=#ETCD_ENDPOINTS#
           - --etcd-cafile=/etc/kubernetes/ssl/etcd-trusted-ca.pem
