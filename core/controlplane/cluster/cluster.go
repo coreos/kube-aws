@@ -20,7 +20,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/netutil"
 	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
-	"github.com/kubernetes-incubator/kube-aws/tlsutil"
+	"github.com/kubernetes-incubator/kube-aws/tlscerts"
 )
 
 // VERSION set by build script
@@ -402,11 +402,11 @@ func (c Cluster) validateCertsAgainstSettings() error {
 		return fmt.Errorf("could not decompress the apiserver pem: %v", err)
 	}
 
-	apiServerCerts, err := tlsutil.ToCertificates([]byte(apiServerPEM))
+	apiServerCerts, err := tlscerts.FromBytes([]byte(apiServerPEM))
 	if err != nil {
 		return fmt.Errorf("error parsing api server cert: %v", err)
 	}
-	kubeAPIServerCert, ok := tlsutil.GetCertificate(apiServerCerts, "kube-apiserver")
+	kubeAPIServerCert, ok := apiServerCerts.GetBySubjectCommonNamePattern("kube-apiserver")
 	if !ok {
 		return errors.New("no api server certs contain Subject CommonName 'kube-apiserver'")
 	}

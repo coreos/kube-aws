@@ -19,6 +19,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/netutil"
+	"github.com/kubernetes-incubator/kube-aws/tlscerts"
 	"github.com/kubernetes-incubator/kube-aws/tlsutil"
 )
 
@@ -485,7 +486,7 @@ func ReadRawAssets(dirname string, manageCertificates bool, caKeyRequiredOnContr
 			return nil, fmt.Errorf("error reading credential file %s: %v", path, err)
 		}
 		if file.expiryCheck {
-			certs, err := tlsutil.ToCertificates(data.content)
+			certs, err := tlscerts.FromBytes(data.content)
 			if err != nil {
 				return nil, err
 			}
@@ -577,7 +578,7 @@ func ReadOrEncryptAssets(dirname string, manageCertificates bool, caKeyRequiredO
 				return nil, fmt.Errorf("error reading credential file %s: %v", path, err)
 			}
 			if file.expiryCheck {
-				certs, err := tlsutil.ToCertificates(raw.content)
+				certs, err := tlscerts.FromBytes(raw.content)
 				if err != nil {
 					return nil, err
 				}

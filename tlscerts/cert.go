@@ -1,7 +1,8 @@
-package tlsutil
+package tlscerts
 
 import (
 	"fmt"
+	"github.com/kubernetes-incubator/kube-aws/tlsutil"
 	"net"
 	"regexp"
 	"strings"
@@ -10,6 +11,20 @@ import (
 
 // format for NotBefore and NotAfter fields to make output similar to openssl
 var ValidityFormat = "Jan _2 15:04:05 2006 MST"
+
+type Certificates []Certificate
+
+// returns certificate that matches subject CN match regex (Subject.CommonName), if the certificate cannot be found,
+// second returned value will be false
+func (cs Certificates) GetBySubjectCommonNamePattern(subjectCNMatch string) (cert Certificate, ok bool) {
+
+	for _, c := range cs {
+		if match, _ := regexp.MatchString(subjectCNMatch, c.Subject.CommonName); match {
+			return c, true
+		}
+	}
+	return
+}
 
 type Certificate struct {
 	Issuer      DN
@@ -80,9 +95,9 @@ func (dn DN) String() string {
 
 // converts raw certificate bytes to certificate, if the supplied data is cert bundle (or chain)
 // all the certificates will be returned
-func ToCertificates(data []byte) ([]Certificate, error) {
+func FromBytes(data []byte) (Certificates, error) {
 
-	cs, err := DecodeCertificatesPEM(data)
+	cs, err := tlsutil.DecodeCertificatesPEM(data)
 	if err != nil {
 		return nil, err
 	}
@@ -108,16 +123,4 @@ func ToCertificates(data []byte) ([]Certificate, error) {
 		)
 	}
 	return certificates, nil
-}
-
-// returns certificate that matches subject CN match regex (Subject.CommonName), if the certificate cannot be found,
-// second returned value will be false
-func GetCertificate(certificates []Certificate, subjectCNMatch string) (cert Certificate, ok bool) {
-
-	for _, c := range certificates {
-		if match, _ := regexp.MatchString(subjectCNMatch, c.Subject.CommonName); match {
-			return c, true
-		}
-	}
-	return
 }
