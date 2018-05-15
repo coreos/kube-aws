@@ -492,6 +492,20 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
+    "SecurityGroupWorkerIngressFromControllerToControllerControllerManager": {
+      "Properties": {
+        "FromPort": 10252,
+        "GroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "ToPort": 10252
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
     "SecurityGroupWorkerIngressFromWorkerToControllerScheduleManager": {
       "Properties": {
         "FromPort": 10251,

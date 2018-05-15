@@ -1584,6 +1584,14 @@ write_files:
               sleep $attempt_interval_sec;
           fi
       done
-
 {{ end }}
+
+  - path: /etc/kube-aws-cidr-settings
+    owner: root:root
+    permissions: 0644
+    content: |
+      # This file can be sourced by system units but its primary role is to ensure that nodes role when cidrs change
+      KUBE_POD_CIDR="{{ .PodCIDR }}"
+      KUBE_SERVICE_CIDR="{{ .ServiceCIDR }}"
+
 {{ end }}
