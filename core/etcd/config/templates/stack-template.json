@@ -222,6 +222,7 @@
     },
     {{end}}
     {{range $etcdIndex, $etcdInstance := .EtcdNodes}}
+    {{if $etcdIndex }},{{end}}
     {{if $etcdInstance.RecordSetManaged}}
     "{{$etcdInstance.RecordSetLogicalName}}" : {
       "Type" : "AWS::Route53::RecordSet",
