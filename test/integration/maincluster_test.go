@@ -3491,8 +3491,8 @@ worker:
 				var stackTemplateOptions = root.NewOptions(false, false)
 				stackTemplateOptions.AssetsDir = dummyAssetsDir
 				stackTemplateOptions.ControllerTmplFile = "../../core/controlplane/config/templates/cloud-config-controller"
-				stackTemplateOptions.WorkerTmplFile = "../../core/controlplane/config/templates/cloud-config-worker"
-				stackTemplateOptions.EtcdTmplFile = "../../core/controlplane/config/templates/cloud-config-etcd"
+				stackTemplateOptions.WorkerTmplFile = "../../core/nodepool/config/templates/cloud-config-worker"
+				stackTemplateOptions.EtcdTmplFile = "../../core/etcd/config/templates/cloud-config-etcd"
 				stackTemplateOptions.RootStackTemplateTmplFile = "../../core/root/config/templates/stack-template.json"
 				stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../core/nodepool/config/templates/stack-template.json"
 				stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/templates/stack-template.json"

@@ -257,7 +257,7 @@ name: pool1
 		var stackTemplateOptions = config.StackTemplateOptions{
 			AssetsDir:             dummyAssetsDir,
 			StackTemplateTmplFile: "../config/templates/stack-template.json",
-			WorkerTmplFile:        "../../controlplane/config/templates/cloud-config-worker",
+			WorkerTmplFile:        "../../nodepool/config/templates/cloud-config-worker",
 			S3URI:                 "s3://test-bucket/foo/bar",
 		}
 
