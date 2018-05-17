@@ -200,7 +200,7 @@ func NewDefaultCluster() *Cluster {
 				},
 				Networking: Networking{
 					SelfHosting: SelfHosting{
-						Enabled:         false,
+						Enabled:         true,
 						Type:            "canal",
 						Typha:           false,
 						CalicoNodeImage: model.Image{Repo: "quay.io/calico/node", Tag: kubeNetworkingSelfHostingDefaultCalicoNodeImageTag, RktPullDocker: false},

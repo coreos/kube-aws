@@ -1116,8 +1116,7 @@ kubernetes:
   # The bootstrap token is automatically generated in ./credentials/kubelet-tls-bootstrap-token.
   encryptionAtRest:
     enabled: false
-#  networking:
-#    selfHosting:
+
 #  controllerManager:
 #    resources:
 #      requests:
@@ -1127,12 +1126,13 @@ kubernetes:
 #        cpu: 1
 #        memory: 2G
 
-# Configure self-hosted networking within kubernetes, deployed as a k8s daemonset.  Choose either 'canal' (calico+flannel) or 
-# 'flannel' (choose 'canal' if you require calico or kubernetes NetworkPolicy firewalling).
+# Kubernetes Self-hosted networking daemonsets
+# Choose either 'canal' (calico+flannel) or 'flannel'
+# (choose 'canal' if you require calico or kubernetes NetworkPolicy firewalling).
 # When enabled nodes no longer need to connect etcd and frees up node podCIDR leases faster resolving issue: 
 # https://github.com/coreos/flannel/issues/954.
 # 
-# Consider enabling Typha if you have 50+ nodes in your cluster. Without Typha, the load on the API server and Felix’s CPU usage
+# Enable Typha if you have 50+ nodes in your cluster. Without Typha, the load on the API server and Felix’s CPU usage
 # increases substantially as the number of nodes is increased.  The legacy top-level 'useCalico' setting has no effect with selfHosting
 # enabled - use type 'canal' for calico+flannel.
 # 
@@ -1148,10 +1148,12 @@ kubernetes:
 # ISSUES2 - Existing pod ip addresses are not tracked and can cause clashing ips - please cordon all nodes whilst
 # performing the upgrade until all workers/nodes have been recycyled - then it will be ok.
 # ISSUES3 - Rolling back to old networking will require all nodes are cycled/rolled and the network is disrupted throughout.
-#
-#      enabled: false   # enable self-hosting
-#      type: canal      # either "canal" or "flannel"
-#      typha: false     # enable for type 'canal' for large clusters
+
+  networking:
+    selfHosting:
+      enabled: true    # false will fall back to legacy coreos flannel/etcd2 installation
+      type: canal      # either "canal" or "flannel"
+      typha: false     # enable for type 'canal' for 50+ node clusters
 #      calicoNodeImage:
 #        repo: quay.io/calico/node
 #        tag: v3.0.3
