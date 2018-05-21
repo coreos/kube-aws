@@ -178,6 +178,17 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #    # Number of I/O operations per second (IOPS) that the controller node disk supports. Leave blank if controller.rootVolume.type is not io1
 #    iops: 0
 #
+#  # Additional EBS volumes mounted on the controller(s)
+#  # No additional EBS volumes by default. All parameter values do not default - they must be explicitly defined
+#  volumeMounts:
+#  - type: "gp2"
+#    iops: 0
+#    size: 30
+#    # Follow the aws convention of '/dev/xvd*' where '*' is a single letter from 'f' to 'z'
+#    device: "/dev/xvdf"
+#    path: "/ebs"
+#
+#
 #  # Existing security groups attached to controller nodes which are typically used to
 #  # (1) allow access from controller nodes to services running on an existing infrastructure
 #  # (2) allow ssh accesses from bastions when `sshAccessAllowedSourceCIDRs` are explicitly set to an empty array
@@ -612,6 +623,16 @@ worker:
 #    # (Recommended set to true for high-throughput control planes)
 #    # CAUTION: Currently broken. Please don't turn this on until it is fixed in https://github.com/kubernetes-incubator/kube-aws/pull/417
 #    ephemeral: false
+#
+#  # Additional EBS volumes mounted on the etcd
+#  # No additional EBS volumes by default. All parameter values do not default - they must be explicitly defined
+#  volumeMounts:
+#  - type: "gp2"
+#    iops: 0
+#    size: 30
+#    # Follow the aws convention of '/dev/xvd*' where '*' is a single letter from 'f' to 'z'
+#    device: "/dev/xvdf"
+#    path: "/ebs"
 #
 #  # Tenancy of the etcd instances. Options are "default" and "dedicated"
 #  # Documentation: http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/dedicated-instance.html
