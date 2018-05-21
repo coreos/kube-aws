@@ -406,7 +406,7 @@
         },
         "Path": "/",
         {{if .Controller.IAMConfig.Role.Name }}
-        "RoleName":  {"Fn::Join": ["",[{"Ref": "AWS::Region"},"-","{{.Controller.IAMConfig.Role.Name}}"]]},
+        "RoleName":  {"Fn::Join": ["-", ["{{$.ClusterName}}", {"Ref": "AWS::Region"}, "{{.Controller.IAMConfig.Role.Name}}"]]},
         {{end}}
         "ManagedPolicyArns": [
           {{range $policyIndex, $policyArn := .Controller.IAMConfig.Role.ManagedPolicies }}

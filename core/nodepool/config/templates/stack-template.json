@@ -349,7 +349,7 @@
                   "Resource": "arn:{{.Region.Partition}}:s3:::{{ .KubeResourcesAutosave.S3Path }}/*"
                 },
                 {{end}}
-                {{if or .Kube2IamSupport.Enabled .KIAMSupport.Enabled }}
+                {{if .Kube2IamSupport.Enabled }}
                 {
                   "Action": "sts:AssumeRole",
                   "Effect":"Allow",
@@ -479,7 +479,7 @@
         },
         "Path": "/",
         {{if .IAMConfig.Role.Name }}
-        "RoleName":  {"Fn::Join": ["",[{"Ref": "AWS::Region"},"-","{{.IAMConfig.Role.Name}}"]]},
+        "RoleName":  {"Fn::Join": ["-", ["{{$.ClusterName}}", {"Ref": "AWS::Region"}, "{{.IAMConfig.Role.Name}}"]]},
         {{end}}
         "ManagedPolicyArns": [ 
           {{range $policyIndex, $policyArn := .IAMConfig.Role.ManagedPolicies }}
