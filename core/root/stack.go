@@ -3,6 +3,9 @@ package root
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
+	"text/template"
+
 	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	etcd "github.com/kubernetes-incubator/kube-aws/core/etcd/config"
 	network "github.com/kubernetes-incubator/kube-aws/core/network/config"
@@ -11,8 +14,6 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/core/root/defaults"
 	"github.com/kubernetes-incubator/kube-aws/filegen"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
-	"path/filepath"
-	"text/template"
 )
 
 func RenderStack(configPath string) error {
@@ -33,8 +34,8 @@ func RenderStack(configPath string) error {
 	if err := filegen.Render(
 		filegen.File(filepath.Join(defaults.AssetsDir, ".gitignore"), []byte("*"), 0644),
 		filegen.File(defaults.ControllerTmplFile, controlplane.CloudConfigController, 0644),
-		filegen.File(defaults.WorkerTmplFile, controlplane.CloudConfigWorker, 0644),
-		filegen.File(defaults.EtcdTmplFile, controlplane.CloudConfigEtcd, 0644),
+		filegen.File(defaults.WorkerTmplFile, nodepool.CloudConfigWorker, 0644),
+		filegen.File(defaults.EtcdTmplFile, etcd.CloudConfigEtcd, 0644),
 		filegen.File(defaults.ControlPlaneStackTemplateTmplFile, controlplane.StackTemplateTemplate, 0644),
 		filegen.File(defaults.NetworkStackTemplateTmplFile, network.StackTemplateTemplate, 0644),
 		filegen.File(defaults.EtcdStackTemplateTmplFile, etcd.StackTemplateTemplate, 0644),

@@ -3491,8 +3491,8 @@ worker:
 				var stackTemplateOptions = root.NewOptions(false, false)
 				stackTemplateOptions.AssetsDir = dummyAssetsDir
 				stackTemplateOptions.ControllerTmplFile = "../../core/controlplane/config/templates/cloud-config-controller"
-				stackTemplateOptions.WorkerTmplFile = "../../core/controlplane/config/templates/cloud-config-worker"
-				stackTemplateOptions.EtcdTmplFile = "../../core/controlplane/config/templates/cloud-config-etcd"
+				stackTemplateOptions.WorkerTmplFile = "../../core/nodepool/config/templates/cloud-config-worker"
+				stackTemplateOptions.EtcdTmplFile = "../../core/etcd/config/templates/cloud-config-etcd"
 				stackTemplateOptions.RootStackTemplateTmplFile = "../../core/root/config/templates/stack-template.json"
 				stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../core/nodepool/config/templates/stack-template.json"
 				stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/templates/stack-template.json"
@@ -4351,7 +4351,7 @@ controller:
     role:
       name: foobarba-foobarba-foobarba-foobarba-foobarba-foobarba
 `,
-			expectedErrorMessage: "IAM role name(=ap-northeast-1-foobarba-foobarba-foobarba-foobarba-foobarba-foobarba) will be 68 characters long. It exceeds the AWS limit of 64 characters: region name(=ap-northeast-1) + managed iam role name(=foobarba-foobarba-foobarba-foobarba-foobarba-foobarba) should be less than or equal to 49",
+			expectedErrorMessage: "IAM role name(=kubeaws-it-main-ap-northeast-1-foobarba-foobarba-foobarba-foobarba-foobarba-foobarba) will be 84 characters long. It exceeds the AWS limit of 64 characters: clusterName(=kubeaws-it-main) + region name(=ap-northeast-1) + managed iam role name(=foobarba-foobarba-foobarba-foobarba-foobarba-foobarba) should be less than or equal to 33",
 		},
 		{
 			context: "WithTooLongWorkerIAMRoleName",
@@ -4363,7 +4363,7 @@ worker:
       role:
         name: foobarba-foobarba-foobarba-foobarba-foobarba-foobarbazzz
 `,
-			expectedErrorMessage: "IAM role name(=ap-northeast-1-foobarba-foobarba-foobarba-foobarba-foobarba-foobarbazzz) will be 71 characters long. It exceeds the AWS limit of 64 characters: region name(=ap-northeast-1) + managed iam role name(=foobarba-foobarba-foobarba-foobarba-foobarba-foobarbazzz) should be less than or equal to 49",
+			expectedErrorMessage: "IAM role name(=kubeaws-it-main-ap-northeast-1-foobarba-foobarba-foobarba-foobarba-foobarba-foobarbazzz) will be 87 characters long. It exceeds the AWS limit of 64 characters: clusterName(=kubeaws-it-main) + region name(=ap-northeast-1) + managed iam role name(=foobarba-foobarba-foobarba-foobarba-foobarba-foobarbazzz) should be less than or equal to 33",
 		},
 		{
 			context: "WithInvalidEtcdInstanceProfileArn",

@@ -84,7 +84,7 @@ func (i etcdNodeImpl) privateDNSNameRef() string {
 
 func (i etcdNodeImpl) importedPrivateDNSNameRef() string {
 	if i.cluster.EC2InternalDomainUsed() {
-		return i.defaultPrivateDNSNameRefFromIPRef(fmt.Sprintf(`{ "Fn::ImportValue": {"Fn::Sub" : "${ControlPlaneStackName}-%s"} }`, i.NetworkInterfacePrivateIPLogicalName()))
+		return i.defaultPrivateDNSNameRefFromIPRef(fmt.Sprintf(`{ "Fn::ImportValue": {"Fn::Sub" : "${EtcdStackName}-%s"} }`, i.NetworkInterfacePrivateIPLogicalName()))
 	}
 	return fmt.Sprintf(`"%s"`, i.customPrivateDNSName())
 }

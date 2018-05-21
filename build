@@ -20,7 +20,7 @@ echo Building kube-aws ${VERSION}
 
 # generate controlplane templates
 pushd core/controlplane/config
-go run ../../../codegen/templates_gen.go CloudConfigController=cloud-config-controller CloudConfigWorker=cloud-config-worker CloudConfigEtcd=cloud-config-etcd DefaultClusterConfig=cluster.yaml KubeConfigTemplate=kubeconfig.tmpl StackTemplateTemplate=stack-template.json
+go run ../../../codegen/templates_gen.go CloudConfigController=cloud-config-controller KubeConfigTemplate=kubeconfig.tmpl StackTemplateTemplate=stack-template.json
 gofmt -w templates.go
 go run ../../../codegen/files_gen.go Etcdadm=../../../etcdadm/etcdadm
 gofmt -w files.go
@@ -32,17 +32,17 @@ gofmt -w templates.go
 popd
 
 pushd core/etcd/config
-go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json
+go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json CloudConfigEtcd=cloud-config-etcd 
 gofmt -w templates.go
 popd
 
 pushd core/nodepool/config
-go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json
+go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json CloudConfigWorker=cloud-config-worker
 gofmt -w templates.go
 popd
 
 pushd core/root/config
-go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json
+go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json DefaultClusterConfig=cluster.yaml 
 gofmt -w templates.go
 popd
 
