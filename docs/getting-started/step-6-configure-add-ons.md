@@ -59,8 +59,8 @@ To allow kube2iam or kiam deployed to worker and controller nodes to assume targ
 2. Target IAM roles needs to change trust relationships to allow kube-aws worker/controller IAM role to assume the target roles.
 
   As CloudFormation generates unpredictable role names containing random IDs by default, it is recommended to make them predictable at first so that you can easily automate configuring trust relationships afterwards.
-  To make worker/controller role names predictable, set `controller.managedIamRoleName` for controller and `worker.nodePools[].managedIamRoleName` for worker nodes.
-  `managedIamRoleName`s becomes suffixes of the resulting worker/controller role names. 
+  To make worker/controller role names predictable, set `controller.iam.role.name` for controller and `worker.nodePools[].iam.role.name` for worker nodes.
+  `iam.role.name`s becomes suffixes of the resulting worker/controller role names. 
   
   Please beware that configuration of target roles' trust relationships are out-of-scope of kube-aws.
   Please see [the part of kube2iam doc](https://github.com/jtblin/kube2iam#iam-roles) or [the part of the kiam doc](https://github.com/uswitch/kiam/blob/master/docs/IAM.md)for more information.
@@ -71,7 +71,9 @@ Finally, an example `cluster.yaml` usable with kube2iam would look like:
 ```yaml
 # for controller nodes
 controller:
-  managedIamRoleName: mycontrollerrole
+  iam:
+    role:
+      name: mycontrollerrole
  
 experimental:
   kube2IamSupport:
@@ -81,7 +83,9 @@ experimental:
 worker:
   nodePools:
   - name: mypool
-    managedIamRoleName: myworkerrole
+    iam:
+      role:
+        name: myworkerrole
     kube2IamSupport:
       enabled: true
  ```

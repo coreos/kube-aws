@@ -13,11 +13,13 @@ func ValidateUnstableRoleNameLength(clusterName string, nestedStackLogicalName s
 	return nil
 }
 
-func ValidateStableRoleNameLength(managedIAMRoleName string, region string) error {
-	name := fmt.Sprintf("%s-%s", region, managedIAMRoleName)
+func ValidateStableRoleNameLength(clusterName string, managedIAMRoleName string, region string) error {
+	// include cluster name in the managed role
+	// enables multiple clusters in the same account and region to have mirrored configuration without clashes
+	name := fmt.Sprintf("%s-%s-%s", clusterName, region, managedIAMRoleName)
 	if len(name) > 64 {
 		limit := 64 - len(name) + len(managedIAMRoleName)
-		return fmt.Errorf("IAM role name(=%s) will be %d characters long. It exceeds the AWS limit of 64 characters: region name(=%s) + managed iam role name(=%s) should be less than or equal to %d", name, len(name), region, managedIAMRoleName, limit)
+		return fmt.Errorf("IAM role name(=%s) will be %d characters long. It exceeds the AWS limit of 64 characters: clusterName(=%s) + region name(=%s) + managed iam role name(=%s) should be less than or equal to %d", name, len(name), clusterName, region, managedIAMRoleName, limit)
 	}
 	return nil
 }
