@@ -353,7 +353,7 @@ func (c ProvidedConfig) validate() error {
 	}
 
 	if len(c.WorkerNodePoolConfig.IAMConfig.Role.Name) > 0 {
-		if e := cfnresource.ValidateStableRoleNameLength(c.WorkerNodePoolConfig.IAMConfig.Role.Name, c.Region.String()); e != nil {
+		if e := cfnresource.ValidateStableRoleNameLength(c.ClusterName, c.WorkerNodePoolConfig.IAMConfig.Role.Name, c.Region.String()); e != nil {
 			return e
 		}
 	} else {
