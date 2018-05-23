@@ -1211,7 +1211,7 @@ kubernetes:
 # Access the dashboard  using 'kubectl proxy:
 # insecureLogin: false ==> "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/"
 # insecureLogin: true ==>  "http://localhost:8001/api/v1/namespaces/kube-system/services/http:kubernetes-dashboard:/proxy/"
-# enabled: false
+# enabled: true
 # Expose the dashboard
 # Please check the documentation: https://kubernetes-incubator.github.io/kube-aws/advanced-topics/kubernetes-dashboard.html
 
