@@ -4959,10 +4959,9 @@ write_files:
                   - "--auto-discover-default-role"
                   - "--iptables=true"
                   - "--host-ip=$(HOST_IP)"
-           {{/* if (NOT KNSelfHosting.Enabled AND UseCali) OR (KNSelfHosting.Enabled AND KNSelfHosting.Type="canal") */}}
            {{- if (or (and (not .Kubernetes.Networking.SelfHosting.Enabled) .UseCalico) (and .Kubernetes.Networking.SelfHosting.Enabled (eq .Kubernetes.Networking.SelfHosting.Type "canal"))) }}
                   - "--host-interface=cali+"
-           {{- else}}
+           {{- else }}
                   - "--host-interface=cni0"
            {{- end }}
                 env:
@@ -5354,7 +5353,6 @@ write_files:
                   - /agent
                 args:
                   - --iptables
-           {{/* if (NOT KNSelfHosting.Enabled AND UseCali) OR (KNSelfHosting.Enabled AND KNSelfHosting.Type="canal") */}}
            {{- if (or (and (not .Kubernetes.Networking.SelfHosting.Enabled) .UseCalico) (and .Kubernetes.Networking.SelfHosting.Enabled (eq .Kubernetes.Networking.SelfHosting.Type "canal"))) }}
                   - --host-interface=cali+
            {{- else}}
