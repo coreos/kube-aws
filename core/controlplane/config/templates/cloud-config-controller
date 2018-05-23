@@ -938,14 +938,16 @@ write_files:
       applyall "${mfdir}"/{kube-node-drainer-ds,kube-node-drainer-asg-status-updater-de}".yaml"
       {{ end }}
 
+      {{ if not .KubernetesDashboard.Disable }}
       # Secrets
       applyall "${mfdir}/kubernetes-dashboard-se.yaml"
+      {{ end }}
 
       # Configmaps
       applyall "${mfdir}"/{kube-dns,kube-proxy,heapster-config}"-cm.yaml"
 
       # Service Accounts
-      applyall "${mfdir}"/{kube-dns,heapster,kube-proxy,kubernetes-dashboard}"-sa.yaml"
+      applyall "${mfdir}"/{kube-dns,heapster,kube-proxy{{ if not .KubernetesDashboard.Disable }},kubernetes-dashboard{{ end }}}"-sa.yaml"
 
       # Tiller RBAC rules
       applyall "${mfdir}/tiller-rbac.yaml"
@@ -959,13 +961,13 @@ write_files:
 {{ end }}
 
       # Deployments
-      applyall "${mfdir}"/{kube-dns,kube-dns-autoscaler,kubernetes-dashboard,{{ if .Addons.ClusterAutoscaler.Enabled }}cluster-autoscaler,{{ end }}heapster{{ if .KubeResourcesAutosave.Enabled }},kube-resources-autosave{{ end }}}"-de.yaml"
+      applyall "${mfdir}"/{kube-dns,kube-dns-autoscaler {{ if not .KubernetesDashboard.Disable }},kubernetes-dashboard{{ end }},{{ if .Addons.ClusterAutoscaler.Enabled }}cluster-autoscaler,{{ end }}heapster{{ if .KubeResourcesAutosave.Enabled }},kube-resources-autosave{{ end }}}"-de.yaml"
 
       # Daemonsets
       applyall "${mfdir}"/kube-proxy"-ds.yaml"
 
       # Services
-      applyall "${mfdir}"/{kube-dns,heapster,kubernetes-dashboard}"-svc.yaml"
+      applyall "${mfdir}"/{kube-dns,heapster{{ if not .KubernetesDashboard.Disable }},kubernetes-dashboard{{ end }}}"-svc.yaml"
 
       {{- if .Addons.Rescheduler.Enabled }}
       applyall "${mfdir}/kube-rescheduler-de.yaml"
@@ -978,14 +980,16 @@ write_files:
 
       applyall "${mfdir}/cluster-role-bindings"/{kube-admin,system-worker,node,node-proxier,node-extensions,heapster}".yaml"
 
+      {{ if not .KubernetesDashboard.Disable }}
       {{ if .KubernetesDashboard.AdminPrivileges }}
       applyall "${mfdir}/cluster-role-bindings/kubernetes-dashboard-admin.yaml"
       {{- end }}
+      {{- end }}
 
       # Roles and bindings
-      applyall "${mfdir}/roles"/{pod-nanny,kubernetes-dashboard}".yaml"
+      applyall "${mfdir}/roles"/{pod-nanny{{ if not .KubernetesDashboard.Disable }},kubernetes-dashboard{{ end }}}".yaml"
 
-      applyall "${mfdir}/role-bindings"/{heapster-nanny,kubernetes-dashboard}".yaml"
+      applyall "${mfdir}/role-bindings"/{heapster-nanny{{ if not .KubernetesDashboard.Disable }},kubernetes-dashboard{{ end }}}".yaml"
 
       {{ if .Experimental.TLSBootstrap.Enabled }}
       applyall "${mfdir}/cluster-roles"/{node-bootstrapper,kubelet-certificate-bootstrap}".yaml"
@@ -3009,6 +3013,7 @@ write_files:
           apiGroup: rbac.authorization.k8s.io
 {{ end }}
 
+{{ if not .KubernetesDashboard.Disable }}
   #kubernetes dashboard
   - path: /srv/kubernetes/rbac/roles/kubernetes-dashboard.yaml
     content: |
@@ -3067,6 +3072,7 @@ write_files:
         - kind: ServiceAccount
           name: kubernetes-dashboard
           namespace: kube-system
+{{ end }}
 {{ end }}
   - path: /srv/kubernetes/manifests/kube-proxy-cm.yaml
     content: |
@@ -4157,6 +4163,7 @@ write_files:
           selector:
             k8s-app: heapster
 
+{{ if not .KubernetesDashboard.Disable }}
   - path: /srv/kubernetes/manifests/kubernetes-dashboard-se.yaml
     content: |
         apiVersion: v1
@@ -4280,6 +4287,7 @@ write_files:
             {{ end }}
           selector:
             k8s-app: kubernetes-dashboard
+{{ end }}
 
   - path: /srv/kubernetes/manifests/tiller.yaml
     content: |
