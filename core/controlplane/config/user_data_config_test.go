@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/coreos/coreos-cloudinit/config/validate"
+	etcdconfig "github.com/kubernetes-incubator/kube-aws/core/etcd/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/test/helper"
 	"github.com/stretchr/testify/assert"
@@ -103,7 +104,7 @@ func TestCloudConfigTemplating(t *testing.T) {
 	}{
 		{
 			Name:     "CloudConfigEtcd",
-			Template: CloudConfigEtcd,
+			Template: etcdconfig.CloudConfigEtcd,
 		},
 		{
 			Name:     "CloudConfigController",

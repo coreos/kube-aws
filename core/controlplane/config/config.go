@@ -1046,19 +1046,6 @@ func (c Cluster) StackConfig(stackName string, opts StackTemplateOptions, sessio
 	return &stackConfig, nil
 }
 
-type InitialConfig struct {
-	AmiId            string
-	AvailabilityZone string
-	ClusterName      string
-	ExternalDNSName  string
-	HostedZoneID     string
-	KMSKeyARN        string
-	KeyName          string
-	NoRecordSet      bool
-	Region           model.Region
-	S3URI            string
-}
-
 // Config contains configuration parameters available when rendering userdata injected into a controller or an etcd node from golang text templates
 type Config struct {
 	Cluster

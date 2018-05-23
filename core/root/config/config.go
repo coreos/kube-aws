@@ -13,6 +13,19 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 )
 
+type InitialConfig struct {
+	AmiId            string
+	AvailabilityZone string
+	ClusterName      string
+	ExternalDNSName  string
+	HostedZoneID     string
+	KMSKeyARN        string
+	KeyName          string
+	NoRecordSet      bool
+	Region           model.Region
+	S3URI            string
+}
+
 type UnmarshalledConfig struct {
 	controlplane.Cluster `yaml:",inline"`
 	Worker               `yaml:"worker,omitempty"`
