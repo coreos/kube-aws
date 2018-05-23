@@ -927,7 +927,7 @@ worker:
 #       # Only specify either id or idFromStackOutput but not both
 #       #idFromStackOutput: myinfra-PublicRouteTable1
 
-# Kubernetes Networking CIDRs
+# Kubernetes Network CIDRs
 # You can change your serviceCIDR or podCIDR and kube-aws will facilitate the migration
 # see https://github.com/kubernetes-incubator/kube-aws/issues/1307
 # NOTE: requires cluster downtime.
