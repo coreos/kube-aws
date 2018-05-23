@@ -6021,12 +6021,8 @@ write_files:
         validate_kube_service
         validate_services
       else
-        log "No previous cidrs saved - validating everything :) ..."
+        log "No previous cidrs saved ..."
         save_configmap
-        validate_nodes
-        validate_pods
-        validate_kube_service
-        validate_services
       fi
 
       if [[ "${deleted_myself}" == "1" ]]; then
