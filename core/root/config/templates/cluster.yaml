@@ -928,8 +928,9 @@ worker:
 #       #idFromStackOutput: myinfra-PublicRouteTable1
 
 # Kubernetes Networking CIDRs
-# These can be changed, see https://github.com/kubernetes-incubator/kube-aws/issues/1307
-# requires downtime.
+# You can change your serviceCIDR or podCIDR and kube-aws will facilitate the migration
+# see https://github.com/kubernetes-incubator/kube-aws/issues/1307
+# NOTE: requires cluster downtime.
 
 # CIDR for all service IP addresses
 # serviceCIDR: "10.3.0.0/24"
