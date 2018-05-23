@@ -6,7 +6,7 @@
 kubernetesDashboard:
   adminPrivileges: true
   insecureLogin: false
-  enabled: false
+  enabled: true
 ```
 
 In the default setup the Dashboard is configured using the `--auto-generate-certificates` flag only and has Admin privileges.
