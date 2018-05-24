@@ -5167,6 +5167,9 @@ write_files:
         name: kube-system
         annotations:
           iam.amazonaws.com/permitted: ".*"
+        labels:
+	  name: kube-system
+
   - path: /srv/kubernetes/manifests/kiam-all.yaml
     content: |
       apiVersion: extensions/v1beta1
