@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/netutil"
 	"github.com/kubernetes-incubator/kube-aws/tlscerts"
 	"github.com/kubernetes-incubator/kube-aws/tlsutil"
@@ -190,7 +191,7 @@ type CredentialsOptions struct {
 }
 
 func (c *Cluster) NewAssetsOnDisk(dir string, o CredentialsOptions) (*RawAssetsOnDisk, error) {
-	fmt.Println("Generating credentials...")
+	logger.Info("Generating credentials...")
 	var caKey *rsa.PrivateKey
 	var caCert *x509.Certificate
 	if o.GenerateCA {
@@ -199,9 +200,9 @@ func (c *Cluster) NewAssetsOnDisk(dir string, o CredentialsOptions) (*RawAssetsO
 		if err != nil {
 			return nil, fmt.Errorf("failed generating cluster CA: %v", err)
 		}
-		fmt.Printf("-> Generating new TLS CA\n")
+		logger.Info("-> Generating new TLS CA\n")
 	} else {
-		fmt.Printf("-> Parsing existing TLS CA\n")
+		logger.Info("-> Parsing existing TLS CA\n")
 		if caKeyBytes, err := ioutil.ReadFile(o.CaKeyPath); err != nil {
 			return nil, fmt.Errorf("failed reading ca key file %s : %v", o.CaKeyPath, err)
 		} else {
@@ -218,7 +219,7 @@ func (c *Cluster) NewAssetsOnDisk(dir string, o CredentialsOptions) (*RawAssetsO
 		}
 	}
 
-	fmt.Println("-> Generating new assets")
+	logger.Info("-> Generating new assets")
 	assets, err := c.NewAssetsOnMemory(caKey, caCert, o.KIAM)
 	if err != nil {
 		return nil, fmt.Errorf("Error generating default assets: %v", err)
@@ -228,16 +229,16 @@ func (c *Cluster) NewAssetsOnDisk(dir string, o CredentialsOptions) (*RawAssetsO
 	certsManagedByKubeAws := c.ManageCertificates
 	caKeyRequiredOnController := certsManagedByKubeAws && tlsBootstrappingEnabled
 
-	fmt.Printf("--> Summarizing the configuration\n    Kubelet TLS bootstrapping enabled=%v, TLS certificates managed by kube-aws=%v, CA key required on controller nodes=%v\n", tlsBootstrappingEnabled, certsManagedByKubeAws, caKeyRequiredOnController)
+	logger.Infof("--> Summarizing the configuration\n    Kubelet TLS bootstrapping enabled=%v, TLS certificates managed by kube-aws=%v, CA key required on controller nodes=%v\n", tlsBootstrappingEnabled, certsManagedByKubeAws, caKeyRequiredOnController)
 
-	fmt.Println("--> Writing to the storage")
+	logger.Info("--> Writing to the storage")
 	alsoWriteCAKey := o.GenerateCA || caKeyRequiredOnController
 	if err := assets.WriteToDir(dir, alsoWriteCAKey, o.KIAM); err != nil {
 		return nil, fmt.Errorf("Error creating assets: %v", err)
 	}
 
 	{
-		fmt.Println("--> Verifying the result")
+		logger.Info("--> Verifying the result")
 		verified, err := ReadRawAssets(dir, certsManagedByKubeAws, tlsBootstrappingEnabled, o.KIAM)
 
 		if err != nil {
@@ -709,20 +710,20 @@ func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool, kiamEn
 				fileExists := lstatErr == nil && !symlinkExists
 
 				if fileExists {
-					fmt.Printf("INFO: Removing a file at %s\n", from)
+					logger.Infof("Removing a file at %s\n", from)
 					if err := os.Remove(from); err != nil {
 						return err
 					}
 				}
 
 				if symlinkExists {
-					fmt.Printf("INFO: Removing a symlink at %s\n", from)
+					logger.Infof("Removing a symlink at %s\n", from)
 					if err := os.Remove(from); err != nil {
 						return err
 					}
 				}
 
-				fmt.Printf("INFO: Creating a symlink from %s to %s\n", from, to)
+				logger.Infof("Creating a symlink from %s to %s\n", from, to)
 				if err := os.Symlink(to, from); err != nil {
 					return err
 				}
@@ -735,7 +736,7 @@ func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool, kiamEn
 				return fmt.Errorf("Not sure what to do for %s", path)
 			}
 		}
-		fmt.Printf("INFO: Writing %d bytes to %s\n", len(asset.data), path)
+		logger.Infof("Writing %d bytes to %s\n", len(asset.data), path)
 		if err := ioutil.WriteFile(path, asset.data, 0600); err != nil {
 			return err
 		}

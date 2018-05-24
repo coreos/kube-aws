@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/kubernetes-incubator/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/tlscerts"
 	"github.com/spf13/cobra"
 	"sort"
@@ -21,7 +21,7 @@ var (
 		Short: "Show info about certificates",
 		Long: `Loads all certificates from credentials directory and prints certificate
 Issuer, Validity, Subject and DNS Names fields`,
-		RunE:         runCmdShowCertificates,
+		Run:          runCmdShowCertificates,
 		SilenceUsage: true,
 	}
 )
@@ -31,22 +31,21 @@ func init() {
 	cmdShow.AddCommand(cmdShowCertificates)
 }
 
-func runCmdShowCertificates(_ *cobra.Command, _ []string) error {
+func runCmdShowCertificates(_ *cobra.Command, _ []string) {
 	certs, err := root.LoadCertificates()
 	if err != nil {
-		return err
+		logger.Fatal(err)
 	}
 
 	keys := sortedKeys(certs)
 	for _, k := range keys {
 		cert := certs[k]
-		fmt.Printf("--- %s ---\n", k)
+		logger.Headingf("--- %s ---\n", k)
 		for _, v := range cert {
-			fmt.Println(v)
+			logger.Info(v)
 		}
-		fmt.Println("")
+		logger.Info("")
 	}
-	return nil
 }
 
 func sortedKeys(m map[string]tlscerts.Certificates) []string {

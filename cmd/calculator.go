@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/kubernetes-incubator/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +16,7 @@ var (
 		Use:          "calculator",
 		Short:        "Discover the monthly cost of your cluster",
 		Long:         ``,
-		RunE:         runCmdCalculator,
+		Run:          runCmdCalculator,
 		SilenceUsage: true,
 	}
 
@@ -30,26 +30,25 @@ func init() {
 	cmdCalculator.Flags().BoolVar(&calculatorOpts.awsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
 }
 
-func runCmdCalculator(_ *cobra.Command, _ []string) error {
+func runCmdCalculator(_ *cobra.Command, _ []string) {
 
 	opts := root.NewOptions(false, false)
 
 	cluster, err := root.ClusterFromFile(configPath, opts, calculatorOpts.awsDebug)
 	if err != nil {
-		return fmt.Errorf("Failed to initialize cluster driver: %v", err)
+		logger.Fatalf("Failed to initialize cluster driver: %v", err)
 	}
 
 	if _, err := cluster.ValidateStack(); err != nil {
-		return fmt.Errorf("Error validating cluster: %v", err)
+		logger.Fatalf("Error validating cluster: %v", err)
 	}
 
 	urls, err := cluster.EstimateCost()
 
 	if err != nil {
-		return fmt.Errorf("%v", err)
+		logger.Fatal(err)
 	}
 
-	fmt.Printf("To estimate your monthly cost, open the links below\n%v", strings.Join(urls, "\n"))
-
-	return nil
+	logger.Heading("To estimate your monthly cost, open the links below")
+	logger.Infof("%v", strings.Join(urls, "\n"))
 }

@@ -1,6 +1,9 @@
 package model
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/kubernetes-incubator/kube-aws/logger"
+)
 
 type RootVolume struct {
 	Size        int    `yaml:"size,omitempty"`
@@ -43,16 +46,16 @@ func (v RootVolume) Validate() error {
 }
 
 func (v RootVolume) RootVolumeIOPS() int {
-	fmt.Println("WARN: RootVolumeIOPS is deprecated and will be removed in v0.9.7. Please use RootVolume.IOPS instead")
+	logger.Warn("RootVolumeIOPS is deprecated and will be removed in v0.9.7. Please use RootVolume.IOPS instead")
 	return v.IOPS
 }
 
 func (v RootVolume) RootVolumeType() string {
-	fmt.Println("WARN: RootVolumeType is deprecated and will be removed in v0.9.7. Please use RootVolume.Type instead")
+	logger.Warn("RootVolumeType is deprecated and will be removed in v0.9.7. Please use RootVolume.Type instead")
 	return v.Type
 }
 
 func (v RootVolume) RootVolumeSize() int {
-	fmt.Println("WARN: RootVolumeSize is deprecated and will be removed in v0.9.7. Please use RootVolume.Size instead")
+	logger.Warn("RootVolumeSize is deprecated and will be removed in v0.9.7. Please use RootVolume.Size instead")
 	return v.Size
 }

@@ -5,6 +5,7 @@ import (
 
 	"bufio"
 	"github.com/kubernetes-incubator/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/spf13/cobra"
 	"os"
 	"strings"
@@ -15,7 +16,7 @@ var (
 		Use:          "update",
 		Short:        "Update an existing Kubernetes cluster",
 		Long:         ``,
-		RunE:         runCmdUpdate,
+		Run:          runCmdUpdate,
 		SilenceUsage: true,
 	}
 
@@ -35,45 +36,43 @@ func init() {
 	cmdUpdate.Flags().StringSliceVar(&updateOpts.targets, "targets", root.AllOperationTargetsAsStringSlice(), "Update nothing but specified sub-stacks.  Specify `all` or any combination of `etcd`, `control-plane`, and node pool names. Defaults to `all`")
 }
 
-func runCmdUpdate(_ *cobra.Command, _ []string) error {
+func runCmdUpdate(_ *cobra.Command, _ []string) {
 	if !updateOpts.force && !updateConfirmation() {
-		fmt.Println("Operation cancelled")
-		return nil
+		logger.Info("Operation cancelled")
+		return
 	}
 
 	opts := root.NewOptions(updateOpts.prettyPrint, updateOpts.skipWait)
 
 	cluster, err := root.ClusterFromFile(configPath, opts, updateOpts.awsDebug)
 	if err != nil {
-		return fmt.Errorf("Failed to read cluster config: %v", err)
+		logger.Fatalf("Failed to read cluster config: %v", err)
 	}
 
 	targets := root.OperationTargetsFromStringSlice(updateOpts.targets)
 
 	if _, err := cluster.ValidateStack(targets); err != nil {
-		return err
+		logger.Fatal(err)
 	}
 
 	report, err := cluster.Update(targets)
 	if err != nil {
-		return fmt.Errorf("Error updating cluster: %v", err)
+		logger.Fatalf("Error updating cluster: %v", err)
 	}
 	if report != "" {
-		fmt.Printf("Update stack: %s\n", report)
+		logger.Infof("Update stack: %s\n", report)
 	}
 
 	info, err := cluster.Info()
 	if err != nil {
-		return fmt.Errorf("Failed fetching cluster info: %v", err)
+		logger.Fatalf("Failed fetching cluster info: %v", err)
 	}
 
 	successMsg :=
 		`Success! Your AWS resources are being updated:
 %s
 `
-	fmt.Printf(successMsg, info.String())
-
-	return nil
+	logger.Infof(successMsg, info)
 }
 
 func updateConfirmation() bool {

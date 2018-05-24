@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"fmt"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"strings"
 )
 
@@ -45,7 +46,7 @@ func (c Gpu) Validate(instanceType string, experimentalGpuSupportEnabled bool) e
 		return errors.New(fmt.Sprintf("instance type %v doesn't support GPU. You can enable Nvidia driver intallation support only when use %v instance family.", instanceType, GPUEnabledInstanceFamily))
 	}
 	if !c.Nvidia.Enabled && !experimentalGpuSupportEnabled && isGpuEnabledInstanceType(instanceType) {
-		fmt.Printf("WARNING: Nvidia GPU driver intallation is disabled although instance type %v does support GPU.  You have to install Nvidia GPU driver by yourself to schedule gpu resource.\n", instanceType)
+		logger.Warnf("Nvidia GPU driver intallation is disabled although instance type %v does support GPU.  You have to install Nvidia GPU driver by yourself to schedule gpu resource.\n", instanceType)
 	}
 	if c.Nvidia.Enabled && experimentalGpuSupportEnabled {
 		return errors.New(`Only one of gpu.nvidia.enabled and experimental.gpuSupport.enabled are allowed at one time.`)

@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/kubernetes-incubator/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 )
 
 var (
@@ -16,7 +17,7 @@ var (
 		Use:          "destroy",
 		Short:        "Destroy an existing Kubernetes cluster",
 		Long:         ``,
-		RunE:         runCmdDestroy,
+		Run:          runCmdDestroy,
 		SilenceUsage: true,
 	}
 	destroyOpts = root.DestroyOptions{}
@@ -28,23 +29,22 @@ func init() {
 	cmdDestroy.Flags().BoolVar(&destroyOpts.Force, "force", false, "Don't ask for confirmation")
 }
 
-func runCmdDestroy(_ *cobra.Command, _ []string) error {
+func runCmdDestroy(_ *cobra.Command, _ []string) {
 	if !destroyOpts.Force && !destroyConfirmation() {
-		fmt.Printf("Operation Cancelled")
-		return nil
+		logger.Info("Operation Cancelled")
+		return
 	}
 
 	c, err := root.ClusterDestroyerFromFile(configPath, destroyOpts)
 	if err != nil {
-		return fmt.Errorf("Error parsing config: %v", err)
+		logger.Fatalf("Error parsing config: %v", err)
 	}
 
 	if err := c.Destroy(); err != nil {
-		return fmt.Errorf("Failed destroying cluster: %v", err)
+		logger.Fatalf("Failed destroying cluster: %v", err)
 	}
 
-	fmt.Println("CloudFormation stack is being destroyed. This will take several minutes")
-	return nil
+	logger.Info("CloudFormation stack is being destroyed. This will take several minutes")
 }
 
 func destroyConfirmation() bool {

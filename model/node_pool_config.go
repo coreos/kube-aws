@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 )
 
 type NodePoolConfig struct {
@@ -98,7 +99,7 @@ func (c NodePoolConfig) Validate(experimentalGpuSupportEnabled bool) error {
 	}
 
 	if c.InstanceType == "t2.micro" || c.InstanceType == "t2.nano" {
-		fmt.Println(`WARNING: instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/kubernetes-incubator/kube-aws/issues/258 for more information`)
+		logger.Warnf(`instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/kubernetes-incubator/kube-aws/issues/258 for more information`)
 	}
 
 	if err := c.IAMConfig.Validate(); err != nil {

@@ -18,6 +18,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnresource"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/model/derived"
 	"github.com/kubernetes-incubator/kube-aws/naming"
@@ -339,12 +340,12 @@ func (c *Cluster) Load() error {
 func (c *Cluster) ConsumeDeprecatedKeys() {
 	// TODO Remove in v0.9.9-rc.1
 	if c.DeprecatedVPCID != "" {
-		fmt.Println("WARN: vpcId is deprecated and will be removed in v0.9.9. Please use vpc.id instead")
+		logger.Warn("vpcId is deprecated and will be removed in v0.9.9. Please use vpc.id instead")
 		c.VPC.ID = c.DeprecatedVPCID
 	}
 
 	if c.DeprecatedInternetGatewayID != "" {
-		fmt.Println("WARN: internetGatewayId is deprecated and will be removed in v0.9.9. Please use internetGateway.id instead")
+		logger.Warn("internetGatewayId is deprecated and will be removed in v0.9.9. Please use internetGateway.id instead")
 		c.InternetGateway.ID = c.DeprecatedInternetGatewayID
 	}
 }
@@ -1089,7 +1090,7 @@ func (c Config) VPCLogicalName() (string, error) {
 }
 
 func (c Config) VPCID() (string, error) {
-	fmt.Println("WARN: .VPCID in stack template is deprecated and will be removed in v0.9.9. Please use .VPC.ID instead")
+	logger.Warn(".VPCID in stack template is deprecated and will be removed in v0.9.9. Please use .VPC.ID instead")
 	if !c.VPC.HasIdentifier() {
 		return "", fmt.Errorf("[BUG] .VPCID should not be called in stack template when vpc.id(FromStackOutput) is specified. Use .VPCManaged instead.")
 	}
@@ -1253,7 +1254,7 @@ func (c Cluster) validate() error {
 	}
 
 	if c.Controller.InstanceType == "t2.micro" || c.Etcd.InstanceType == "t2.micro" || c.Controller.InstanceType == "t2.nano" || c.Etcd.InstanceType == "t2.nano" {
-		fmt.Println(`WARNING: instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/kubernetes-incubator/kube-aws/issues/258 for more information`)
+		logger.Warn(`instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/kubernetes-incubator/kube-aws/issues/258 for more information`)
 	}
 
 	if len(c.Controller.IAMConfig.Role.Name) > 0 {

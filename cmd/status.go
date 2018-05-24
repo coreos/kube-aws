@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/kubernetes-incubator/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -12,7 +11,7 @@ var (
 		Use:          "status",
 		Short:        "Describe an existing Kubernetes cluster",
 		Long:         ``,
-		RunE:         runCmdStatus,
+		Run:          runCmdStatus,
 		SilenceUsage: true,
 	}
 )
@@ -21,17 +20,16 @@ func init() {
 	RootCmd.AddCommand(cmdStatus)
 }
 
-func runCmdStatus(_ *cobra.Command, _ []string) error {
+func runCmdStatus(_ *cobra.Command, _ []string) {
 	describer, err := root.ClusterDescriberFromFile(configPath)
 	if err != nil {
-		return fmt.Errorf("Failed to read cluster config: %v", err)
+		logger.Fatalf("Failed to read cluster config: %v", err)
 	}
 
 	info, err := describer.Info()
 	if err != nil {
-		return fmt.Errorf("Failed fetching cluster info: %v", err)
+		logger.Fatalf("Failed fetching cluster info: %v", err)
 	}
 
-	fmt.Print(info.String())
-	return nil
+	logger.Info(info)
 }

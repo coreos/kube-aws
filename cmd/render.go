@@ -1,11 +1,11 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +14,7 @@ var (
 		Use:          "render",
 		Short:        "Render deployment artifacts",
 		Long:         ``,
-		RunE:         runCmdRender,
+		Run:          runCmdRender,
 		SilenceUsage: true,
 	}
 
@@ -22,7 +22,7 @@ var (
 		Use:          "credentials",
 		Short:        "Render credentials",
 		Long:         ``,
-		RunE:         runCmdRenderCredentials,
+		Run:          runCmdRenderCredentials,
 		SilenceUsage: true,
 	}
 
@@ -32,7 +32,7 @@ var (
 		Use:          "stack",
 		Short:        "Render CloudFormation stack template and coreos-cloudinit userdata",
 		Long:         ``,
-		RunE:         runCmdRenderStack,
+		Run:          runCmdRenderStack,
 		SilenceUsage: true,
 	}
 )
@@ -48,28 +48,22 @@ func init() {
 	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.CaCertPath, "ca-cert-path", "./credentials/ca.pem", "path to pem-encoded CA x509 certificate")
 	cmdRenderCredentials.Flags().BoolVar(&renderCredentialsOpts.KIAM, "kiam", true, "generate TLS assets for kiam")
 }
-func runCmdRender(_ *cobra.Command, args []string) error {
-	fmt.Println("WARNING: 'kube-aws render' is deprecated. See 'kube-aws render --help' for usage")
+func runCmdRender(_ *cobra.Command, args []string) {
+	logger.Warn("WARNING: 'kube-aws render' is deprecated. See 'kube-aws render --help' for usage")
 	if len(args) != 0 {
-		return fmt.Errorf("render takes no arguments\n")
+		logger.Fatal("render takes no arguments\n")
 	}
 
 	if _, err := os.Stat(renderCredentialsOpts.CaKeyPath); os.IsNotExist(err) {
 		renderCredentialsOpts.GenerateCA = true
 	}
-	if err := runCmdRenderCredentials(cmdRenderCredentials, args); err != nil {
-		return err
-	}
-
-	if err := runCmdRenderStack(cmdRenderCredentials, args); err != nil {
-		return err
-	}
-
-	return nil
+	runCmdRenderCredentials(cmdRenderCredentials, args)
+	runCmdRenderStack(cmdRenderCredentials, args)
 }
-func runCmdRenderStack(_ *cobra.Command, _ []string) error {
+
+func runCmdRenderStack(_ *cobra.Command, _ []string) {
 	if err := root.RenderStack(configPath); err != nil {
-		return err
+		logger.Fatal(err)
 	}
 
 	successMsg :=
@@ -80,11 +74,11 @@ Next steps:
 2. (Optional) Further customize the cluster by modifying templates in ./stack-templates or cloud-configs in ./userdata.
 3. Start the cluster with "kube-aws up".
 `
-
-	fmt.Printf(successMsg, configPath)
-	return nil
+	logger.Infof(successMsg, configPath)
 }
 
-func runCmdRenderCredentials(_ *cobra.Command, _ []string) error {
-	return root.RenderCredentials(configPath, renderCredentialsOpts)
+func runCmdRenderCredentials(_ *cobra.Command, _ []string) {
+	if err := root.RenderCredentials(configPath, renderCredentialsOpts); err != nil {
+		logger.Fatal(err)
+	}
 }

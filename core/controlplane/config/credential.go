@@ -3,6 +3,7 @@ package config
 import (
 	"crypto/sha256"
 	"fmt"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -45,12 +46,12 @@ func (e CachedEncryptor) EncryptedCredentialFromPath(filePath string, defaultVal
 		if err != nil {
 			return nil, err
 		}
-		fmt.Printf("INFO: generated \"%s\" by encrypting \"%s\"\n", cache.filePath, raw.filePath)
+		logger.Infof("generated \"%s\" by encrypting \"%s\"\n", cache.filePath, raw.filePath)
 	} else {
 		// we verify fingreprints only if non .enc version is present, so there is something there to compare against
 		// otherwise we assume that user provided correct .enc files to be used as-is
 		if errRaw == nil && raw.Fingerprint() != cache.Fingerprint() {
-			fmt.Printf("INFO: \"%s\" is not up-to-date. kube-aws is regenerating it from \"%s\"\n", cache.filePath, raw.filePath)
+			logger.Infof("\"%s\" is not up-to-date. kube-aws is regenerating it from \"%s\"\n", cache.filePath, raw.filePath)
 			cache, err = EncryptedCredentialCacheFromRawCredential(raw, e.bytesEncryptionService)
 			if err != nil {
 				return nil, err
@@ -92,7 +93,7 @@ func RawCredentialFileFromPath(filePath string, defaultValue *string) (*RawCrede
 			if _, err := os.Stat(readPath[1]); os.IsNotExist(err) {
 				return nil, fmt.Errorf("%s and alternate file %s do not exist. Please confirm that you have not deleted them manually", filePath, readPath[1])
 			}
-			fmt.Printf("INFO: creating \"%s\" with contents of \"%s\"\n", filePath, readPath[1])
+			logger.Infof("creating \"%s\" with contents of \"%s\"\n", filePath, readPath[1])
 			content, err := ioutil.ReadFile(readPath[1])
 			if err != nil {
 				return nil, err
@@ -154,7 +155,7 @@ func EncryptedCredentialCacheFromPath(filePath string, doLoadFingerprint bool) (
 	if doLoadFingerprint {
 		var err error
 		if fingerprint, err = loadFingerprint(fingerprintPath); err != nil {
-			fmt.Printf("WARNING: \"%s\" does not exist. Did you explicitly removed it or upgrading from old kube-aws? Anyway, kube-aws is generating one for you from \"%s\" to automatically detect updates to it and recreate \"%s\" if necessary\n", fingerprintPath, filePath, cachePath)
+			logger.Warnf("\"%s\" does not exist. Did you explicitly removed it or upgrading from old kube-aws? Anyway, kube-aws is generating one for you from \"%s\" to automatically detect updates to it and recreate \"%s\" if necessary\n", fingerprintPath, filePath, cachePath)
 			raw, rawErr := RawCredentialFileFromPath(filePath, nil)
 			if rawErr != nil {
 				return nil, rawErr
