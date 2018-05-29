@@ -4247,12 +4247,12 @@ write_files:
                   - --auto-generate-certificates
                   {{ end }}
                 resources:
-                  limits:
-                    cpu: 100m
-                    memory: 100Mi
                   requests:
-                    cpu: 100m
-                    memory: 100Mi
+                    cpu: {{ if .KubernetesDashboard.ComputeResources.Requests.Cpu }}{{ .KubernetesDashboard.ComputeResources.Requests.Cpu }}{{ else }}100m{{ end }}
+                    memory: {{ if .KubernetesDashboard.ComputeResources.Requests.Memory }}{{.KubernetesDashboard.ComputeResources.Requests.Memory }}{{ else }}100Mi{{ end }}
+                  limits:
+                    cpu: {{ if .KubernetesDashboard.ComputeResources.Limits.Cpu }}{{.KubernetesDashboard.ComputeResources.Limits.Cpu }}{{ else }}100m{{ end }}
+                    memory: {{ if .KubernetesDashboard.ComputeResources.Limits.Memory }}{{.KubernetesDashboard.ComputeResources.Limits.Memory }}{{ else }}100Mi{{ end }}
                 volumeMounts:
                 - name: kubernetes-dashboard-certs
                   mountPath: /certs

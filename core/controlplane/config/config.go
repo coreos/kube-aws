@@ -830,9 +830,10 @@ func (c *KubeDns) MergeIfEmpty(other KubeDns) {
 }
 
 type KubernetesDashboard struct {
-	AdminPrivileges bool `yaml:"adminPrivileges"`
-	InsecureLogin   bool `yaml:"insecureLogin"`
-	Enabled         bool `yaml:"enabled"`
+	AdminPrivileges  bool             `yaml:"adminPrivileges"`
+	InsecureLogin    bool             `yaml:"insecureLogin"`
+	Enabled          bool             `yaml:"enabled"`
+	ComputeResources ComputeResources `yaml:"resources,omitempty"`
 }
 
 type WaitSignal struct {
