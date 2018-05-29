@@ -77,8 +77,6 @@ coreos:
         {{- end }}
       {{- end}}
 {{- end}}
-    - name: systemd-modules-load.service
-      command: restart
 {{range $volumeMountSpecIndex, $volumeMountSpec := .Etcd.VolumeMounts}}
     - name: format-{{$volumeMountSpec.SystemdMountName}}.service
       command: start
