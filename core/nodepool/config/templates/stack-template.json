@@ -493,7 +493,7 @@
 {{end}}
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "kube-aws Kubernetes node pool {{.ClusterName}} {{.NodePoolName}}",
+  "Description": "kube-aws node pool stack for {{.ClusterName}} {{.NodePoolName}}",
   "Parameters" : {
     "EtcdStackName": {
       "Type": "String",

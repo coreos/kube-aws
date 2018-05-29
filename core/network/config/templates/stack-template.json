@@ -351,6 +351,20 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
+    "SecurityGroupControllerIngressFromControllerToFlannel": {
+      "Properties": {
+        "FromPort": 8472,
+        "GroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "IpProtocol": "udp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "ToPort": 8472
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
     "SecurityGroupWorkerIngressFromWorkerToFlannel": {
       "Properties": {
         "FromPort": 8472,

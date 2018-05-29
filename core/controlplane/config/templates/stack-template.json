@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "kube-aws Kubernetes cluster {{.ClusterName}}",
+  "Description": "kube-aws control plane stack for {{.ClusterName}}",
   "Parameters": {
     "NetworkStackName": {
       "Type": "String",
