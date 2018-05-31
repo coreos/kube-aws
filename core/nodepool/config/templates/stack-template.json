@@ -266,6 +266,9 @@
         {{else}}
         "PlacementTenancy": "{{.Tenancy}}",
         {{end}}
+        {{if EbsOptimized .InstanceType }}
+        "EbsOptimized": "true",
+        {{end}}
         "UserData": {{ .UserDataWorker.Parts.instance.Template }}
       },
       "Type": "AWS::AutoScaling::LaunchConfiguration"
