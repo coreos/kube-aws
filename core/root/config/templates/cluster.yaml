@@ -1043,6 +1043,12 @@ kiamImage:
 #  tag: 1.14.7
 #  rktPullDocker: false
 
+# Core DNS image repository to use.
+#coreDnsImage:
+#  repo: coredns/coredns
+#  tag: 1.1.3
+#  rktPullDocker: false
+
 # kube rescheduler image repository to use.
 #kubeReschedulerImage:
 #  repo: k8s.gcr.io/rescheduler-amd64
@@ -1142,13 +1148,13 @@ kubernetes:
 # Kubernetes Self-hosted networking daemonsets
 # Choose either 'canal' (calico+flannel) or 'flannel'
 # (choose 'canal' if you require calico or kubernetes NetworkPolicy firewalling).
-# When enabled nodes no longer need to connect etcd and frees up node podCIDR leases faster resolving issue: 
+# When enabled nodes no longer need to connect etcd and frees up node podCIDR leases faster resolving issue:
 # https://github.com/coreos/flannel/issues/954.
-# 
+#
 # Enable Typha if you have 50+ nodes in your cluster. Without Typha, the load on the API server and Felix’s CPU usage
 # increases substantially as the number of nodes is increased.  The legacy top-level 'useCalico' setting has no effect with selfHosting
 # enabled - use type 'canal' for calico+flannel.
-# 
+#
 # Notes on migrating between networking types: -
 # From Legacy Calico to self-hosted Canal - GOOD
 # From Legacy Calico to self-hosted Flannel - OK - ISSUES1
@@ -1156,7 +1162,7 @@ kubernetes:
 # From self-hosted Canal to self-hosted Flannel - OK - ISSUES1
 # From Legacy Flannel to self-hosted Canal or Flannel - ISSUES2
 # From self-hosted Canal or Flannel to legacy Flannel - ISSUES3
-# 
+#
 # ISSUES1 - calico iptables rules remain on the nodes, recycle nodes to remove.
 # ISSUES2 - Existing pod ip addresses are not tracked and can cause clashing ips - please cordon all nodes whilst
 # performing the upgrade until all workers/nodes have been recycyled - then it will be ok.
@@ -1268,12 +1274,20 @@ kubernetesDashboard:
 #  sha1sum: a6fff8f9839d5905934e7e3df3123b54020a1f5e
 
 
+# KubeDNS
 kubeDns:
-# When enabled, will enable a DNS-masq DaemonSet to make PODs to resolve DNS names via locally running dnsmasq
-# It is disabled by default.
-# nodeLocalResolver: false
-# When enabled, will deploy kube-dns to K8s controllers instead of workers.
-# deployToControllers: false
+  # Define which DNS provider to use (kube-dns or coredns), default kube-dns.
+  provider: kube-dns
+
+  # When enabled, will enable a DNS-masq DaemonSet to make PODs to resolve DNS names via locally running dnsmasq
+  # It is disabled by default.
+  # nodeLocalResolver: false
+
+  # When enabled, will deploy kube-dns to K8s controllers instead of workers.
+  # deployToControllers: false
+
+  # DNS Autoscaler
+  # Ref: https://github.com/kubernetes-incubator/cluster-proportional-autoscaler/
   autoscaler:
     coresPerReplica: 256
     nodesPerReplica: 16

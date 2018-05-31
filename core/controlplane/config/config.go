@@ -182,6 +182,7 @@ func NewDefaultCluster() *Cluster {
 				IPVSMode: ipvsMode,
 			},
 			KubeDns: KubeDns{
+				Provider:            "kube-dns",
 				NodeLocalResolver:   false,
 				DeployToControllers: false,
 				Autoscaler: KubeDnsAutoscaler{
@@ -221,6 +222,7 @@ func NewDefaultCluster() *Cluster {
 			CalicoCtlImage:                     model.Image{Repo: "quay.io/calico/ctl", Tag: "v1.6.3", RktPullDocker: false},
 			ClusterAutoscalerImage:             model.Image{Repo: "k8s.gcr.io/cluster-autoscaler", Tag: "v1.1.0", RktPullDocker: false},
 			ClusterProportionalAutoscalerImage: model.Image{Repo: "k8s.gcr.io/cluster-proportional-autoscaler-amd64", Tag: "1.1.2", RktPullDocker: false},
+			CoreDnsImage:                       model.Image{Repo: "coredns/coredns", Tag: "1.1.3", RktPullDocker: false},
 			KIAMImage:                          model.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.6", RktPullDocker: false},
 			Kube2IAMImage:                      model.Image{Repo: "jtblin/kube2iam", Tag: "0.9.0", RktPullDocker: false},
 			KubeDnsImage:                       model.Image{Repo: "k8s.gcr.io/k8s-dns-kube-dns-amd64", Tag: "1.14.7", RktPullDocker: false},
@@ -514,6 +516,7 @@ type DeploymentSettings struct {
 	CalicoKubeControllersImage         model.Image `yaml:"calicoKubeControllersImage,omitempty"`
 	ClusterAutoscalerImage             model.Image `yaml:"clusterAutoscalerImage,omitempty"`
 	ClusterProportionalAutoscalerImage model.Image `yaml:"clusterProportionalAutoscalerImage,omitempty"`
+	CoreDnsImage                       model.Image `yaml:"coreDnsImage,omitempty"`
 	KIAMImage                          model.Image `yaml:"kiamImage,omitempty"`
 	Kube2IAMImage                      model.Image `yaml:"kube2iamImage,omitempty"`
 	KubeDnsImage                       model.Image `yaml:"kubeDnsImage,omitempty"`
@@ -817,6 +820,7 @@ type KubeDnsAutoscaler struct {
 }
 
 type KubeDns struct {
+	Provider            string            `yaml:"provider"`
 	NodeLocalResolver   bool              `yaml:"nodeLocalResolver"`
 	DeployToControllers bool              `yaml:"deployToControllers"`
 	Autoscaler          KubeDnsAutoscaler `yaml:"autoscaler"`
