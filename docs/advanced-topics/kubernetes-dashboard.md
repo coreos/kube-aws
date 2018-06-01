@@ -6,11 +6,14 @@
 kubernetesDashboard:
   adminPrivileges: true
   insecureLogin: false
+  enabled: true
 ```
 
 In the default setup the Dashboard is configured using the `--auto-generate-certificates` flag only and has Admin privileges.
 Even if `adminPrivileges` is set to `true`, you'll be prompted to authenticate using `kubeconfig` or a token.
 In this case you can use the `Skip` option on login page to access Dashboard.
+
+To not deploy the dashboard and the manifests associated with it change enabled to "false"
 
 ###### Access the dashboard  using `kubectl proxy` command:
 

@@ -1657,8 +1657,8 @@ write_files:
               sleep $attempt_interval_sec;
           fi
       done
-
 {{ end }}
+
 {{ if .EC2Instance.HasNvmeDevices }}
   - path: /opt/nvme-hack/ebs-nvme-mapping
     owner: root:root
@@ -1685,6 +1685,14 @@ write_files:
     content: |
       # Create the legacy device node for the volume mount and raid0 startup
       ACTION=="add", SUBSYSTEM=="block", KERNEL=="nvme[1-26]n1", ATTRS{model}=="Amazon Elastic Block Store              ", RUN+="/opt/nvme-hack/ebs-nvme-mapping"
-
 {{ end }}
+
+  - path: /etc/kube-aws-cidr-settings
+    owner: root:root
+    permissions: 0644
+    content: |
+      # This file can be sourced by system units but its primary role is to ensure that nodes role when cidrs change
+      KUBE_POD_CIDR="{{ .PodCIDR }}"
+      KUBE_SERVICE_CIDR="{{ .ServiceCIDR }}"
+
 {{ end }}

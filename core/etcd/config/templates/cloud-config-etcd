@@ -77,6 +77,31 @@ coreos:
         {{- end }}
       {{- end}}
 {{- end}}
+{{range $volumeMountSpecIndex, $volumeMountSpec := .Etcd.VolumeMounts}}
+    - name: format-{{$volumeMountSpec.SystemdMountName}}.service
+      command: start
+      content: |
+        [Unit]
+        Description=Formats the EBS persistent volume drive for {{$volumeMountSpec.Device}}
+        Before=local-fs-pre.target
+
+        [Service]
+        Type=oneshot
+        ExecStart=-/usr/sbin/mkfs.xfs {{$volumeMountSpec.Device}}
+
+        [Install]
+        WantedBy=local-fs-pre.target
+
+    - name: {{$volumeMountSpec.SystemdMountName}}.mount
+      command: start
+      content: |
+        [Unit]
+        Description=Mount volume to {{$volumeMountSpec.Path}}
+
+        [Mount]
+        What={{$volumeMountSpec.Device}}
+        Where={{$volumeMountSpec.Path}}
+{{end}}
     - name: cfn-etcd-environment.service
       enable: true
       command: start

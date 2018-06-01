@@ -193,6 +193,7 @@ func NewDefaultCluster() *Cluster {
 			KubernetesDashboard: KubernetesDashboard{
 				AdminPrivileges: true,
 				InsecureLogin:   false,
+				Enabled:         true,
 			},
 			Kubernetes: Kubernetes{
 				EncryptionAtRest: EncryptionAtRest{
@@ -200,7 +201,7 @@ func NewDefaultCluster() *Cluster {
 				},
 				Networking: Networking{
 					SelfHosting: SelfHosting{
-						Enabled:         false,
+						Enabled:         true,
 						Type:            "canal",
 						Typha:           false,
 						CalicoNodeImage: model.Image{Repo: "quay.io/calico/node", Tag: kubeNetworkingSelfHostingDefaultCalicoNodeImageTag, RktPullDocker: false},
@@ -238,7 +239,9 @@ func NewDefaultCluster() *Cluster {
 			JournaldCloudWatchLogsImage:        model.Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
 		},
 		KubeClusterSettings: KubeClusterSettings{
+			PodCIDR:      "10.2.0.0/16",
 			DNSServiceIP: "10.3.0.10",
+			ServiceCIDR:  "10.3.0.0/24",
 		},
 		DefaultWorkerSettings: DefaultWorkerSettings{
 			WorkerCreateTimeout:    "PT15M",
@@ -255,11 +258,6 @@ func NewDefaultCluster() *Cluster {
 		EtcdSettings: EtcdSettings{
 			Etcd: model.NewDefaultEtcd(),
 		},
-		FlannelSettings: FlannelSettings{
-			PodCIDR: "10.2.0.0/16",
-		},
-		// for kube-apiserver
-		ServiceCIDR: "10.3.0.0/24",
 		// for base cloudformation stack
 		TLSCADurationDays:           365 * 10,
 		TLSCertDurationDays:         365,
@@ -449,6 +447,8 @@ type KubeClusterSettings struct {
 	// Required by kubelet to locate the cluster-internal dns hosted on controller nodes in the base cluster
 	DNSServiceIP string `yaml:"dnsServiceIP,omitempty"`
 	UseCalico    bool   `yaml:"useCalico,omitempty"`
+	PodCIDR      string `yaml:"podCIDR,omitempty"`
+	ServiceCIDR  string `yaml:"serviceCIDR,omitempty"`
 }
 
 // Part of configuration which can't be provided via user input but is computed from user input
@@ -556,11 +556,6 @@ type EtcdSettings struct {
 	model.Etcd `yaml:"etcd,omitempty"`
 }
 
-// Part of configuration which is specific to flanneld
-type FlannelSettings struct {
-	PodCIDR string `yaml:"podCIDR,omitempty"`
-}
-
 // Cluster is the container of all the configurable parameters of a kube-aws cluster, customizable via cluster.yaml
 type Cluster struct {
 	KubeClusterSettings    `yaml:",inline"`
@@ -568,9 +563,7 @@ type Cluster struct {
 	DefaultWorkerSettings  `yaml:",inline"`
 	ControllerSettings     `yaml:",inline"`
 	EtcdSettings           `yaml:",inline"`
-	FlannelSettings        `yaml:",inline"`
 	AdminAPIEndpointName   string              `yaml:"adminAPIEndpointName,omitempty"`
-	ServiceCIDR            string              `yaml:"serviceCIDR,omitempty"`
 	RecordSetTTL           int                 `yaml:"recordSetTTL,omitempty"`
 	TLSCADurationDays      int                 `yaml:"tlsCADurationDays,omitempty"`
 	TLSCertDurationDays    int                 `yaml:"tlsCertDurationDays,omitempty"`
@@ -839,6 +832,7 @@ func (c *KubeDns) MergeIfEmpty(other KubeDns) {
 type KubernetesDashboard struct {
 	AdminPrivileges bool `yaml:"adminPrivileges"`
 	InsecureLogin   bool `yaml:"insecureLogin"`
+	Enabled         bool `yaml:"enabled"`
 }
 
 type WaitSignal struct {
@@ -1590,6 +1584,10 @@ func (e EtcdSettings) Validate() error {
 
 	if err := e.IAMConfig.Validate(); err != nil {
 		return fmt.Errorf("invalid etcd settings: %v", err)
+	}
+
+	if err := e.Etcd.Validate(); err != nil {
+		return err
 	}
 
 	if e.Etcd.Version().Is3() {
