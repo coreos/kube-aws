@@ -119,6 +119,11 @@ func NewDefaultCluster() *Cluster {
 			Disk:       "xvdb",
 			Filesystem: "xfs",
 		},
+		KIAMSupport: KIAMSupport{
+			Enabled:         false,
+			Image:           model.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.7", RktPullDocker: false},
+			ServerAddresses: KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
+		},
 		Kube2IamSupport: Kube2IamSupport{
 			Enabled: false,
 		},
@@ -227,7 +232,6 @@ func NewDefaultCluster() *Cluster {
 			ClusterAutoscalerImage:             model.Image{Repo: "k8s.gcr.io/cluster-autoscaler", Tag: "v1.1.0", RktPullDocker: false},
 			ClusterProportionalAutoscalerImage: model.Image{Repo: "k8s.gcr.io/cluster-proportional-autoscaler-amd64", Tag: "1.1.2", RktPullDocker: false},
 			CoreDnsImage:                       model.Image{Repo: "coredns/coredns", Tag: "1.1.3", RktPullDocker: false},
-			KIAMImage:                          model.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.6", RktPullDocker: false},
 			Kube2IAMImage:                      model.Image{Repo: "jtblin/kube2iam", Tag: "0.9.0", RktPullDocker: false},
 			KubeDnsImage:                       model.Image{Repo: "k8s.gcr.io/k8s-dns-kube-dns-amd64", Tag: "1.14.7", RktPullDocker: false},
 			KubeDnsMasqImage:                   model.Image{Repo: "k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64", Tag: "1.14.7", RktPullDocker: false},
@@ -522,7 +526,6 @@ type DeploymentSettings struct {
 	ClusterAutoscalerImage             model.Image `yaml:"clusterAutoscalerImage,omitempty"`
 	ClusterProportionalAutoscalerImage model.Image `yaml:"clusterProportionalAutoscalerImage,omitempty"`
 	CoreDnsImage                       model.Image `yaml:"coreDnsImage,omitempty"`
-	KIAMImage                          model.Image `yaml:"kiamImage,omitempty"`
 	Kube2IAMImage                      model.Image `yaml:"kube2iamImage,omitempty"`
 	KubeDnsImage                       model.Image `yaml:"kubeDnsImage,omitempty"`
 	KubeDnsMasqImage                   model.Image `yaml:"kubeDnsMasqImage,omitempty"`
@@ -714,7 +717,14 @@ type EphemeralImageStorage struct {
 }
 
 type KIAMSupport struct {
-	Enabled bool `yaml:"enabled"`
+	Enabled         bool                `yaml:"enabled"`
+	Image           model.Image         `yaml:"image,omitempty"`
+	ServerAddresses KIAMServerAddresses `yaml:"serverAddresses,omitempty"`
+}
+
+type KIAMServerAddresses struct {
+	ServerAddress string `yaml:"serverAddress,omitempty"`
+	AgentAddress  string `yaml:"agentAddress,omitempty"`
 }
 
 type Kube2IamSupport struct {

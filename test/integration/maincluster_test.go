@@ -137,7 +137,9 @@ func TestMainClusterConfig(t *testing.T) {
 				Filesystem: "xfs",
 			},
 			KIAMSupport: controlplane_config.KIAMSupport{
-				Enabled: false,
+				Enabled:         false,
+				Image:           model.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.7", RktPullDocker: false},
+				ServerAddresses: controlplane_config.KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
 			},
 			Kube2IamSupport: controlplane_config.Kube2IamSupport{
 				Enabled: false,
@@ -1374,7 +1376,9 @@ worker:
 							Filesystem: "xfs",
 						},
 						KIAMSupport: controlplane_config.KIAMSupport{
-							Enabled: false,
+							Enabled:         false,
+							Image:           model.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.7", RktPullDocker: false},
+							ServerAddresses: controlplane_config.KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
 						},
 						Kube2IamSupport: controlplane_config.Kube2IamSupport{
 							Enabled: true,
@@ -1568,6 +1572,12 @@ worker:
 experimental:
   kiamSupport:
     enabled: true
+    image:
+      repo: quay.io/uswitch/kiam
+      tag: v2.6
+    serverAddresses:
+      serverAddress: localhost
+      agentAddress: kiam-server
 worker:
   nodePools:
   - name: pool1
@@ -1575,7 +1585,9 @@ worker:
 			assertConfig: []ConfigTester{
 				func(c *config.Config, t *testing.T) {
 					expected := controlplane_config.KIAMSupport{
-						Enabled: true,
+						Enabled:         true,
+						Image:           model.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.6", RktPullDocker: false},
+						ServerAddresses: controlplane_config.KIAMServerAddresses{ServerAddress: "localhost", AgentAddress: "kiam-server"},
 					}
 
 					actual := c.Experimental
@@ -1604,7 +1616,9 @@ worker:
 				func(c *config.Config, t *testing.T) {
 					expected := controlplane_config.Experimental{
 						KIAMSupport: controlplane_config.KIAMSupport{
-							Enabled: true,
+							Enabled:         true,
+							Image:           model.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.7", RktPullDocker: false},
+							ServerAddresses: controlplane_config.KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
 						},
 					}
 					p := c.NodePools[0]

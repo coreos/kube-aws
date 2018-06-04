@@ -5492,7 +5492,7 @@ write_files:
                   secretName: kiam-server-tls
             containers:
               - name: kiam
-                image: {{.KIAMImage.RepoWithTag}}
+                image: {{.Experimental.KIAMSupport.Image.RepoWithTag}}
                 imagePullPolicy: Always
                 command:
                   - /server
@@ -5518,7 +5518,7 @@ write_files:
                     - --cert=/etc/kiam/tls/server.pem
                     - --key=/etc/kiam/tls/server-key.pem
                     - --ca=/etc/kiam/tls/ca.pem
-                    - --server-address=localhost:443
+                    - --server-address={{.Experimental.KIAMSupport.ServerAddresses.ServerAddress}}
                     - --server-address-refresh=2s
                     - --timeout=5s
                   initialDelaySeconds: 10
@@ -5531,7 +5531,7 @@ write_files:
                     - --cert=/etc/kiam/tls/server.pem
                     - --key=/etc/kiam/tls/server-key.pem
                     - --ca=/etc/kiam/tls/ca.pem
-                    - --server-address=localhost:443
+                    - --server-address={{.Experimental.KIAMSupport.ServerAddresses.ServerAddress}}
                     - --server-address-refresh=2s
                     - --timeout=5s
                   initialDelaySeconds: 3
@@ -5632,7 +5632,7 @@ write_files:
               - name: kiam
                 securityContext:
                   privileged: true
-                image: {{.KIAMImage.RepoWithTag}}
+                image: {{.Experimental.KIAMSupport.Image.RepoWithTag}}
                 command:
                   - /agent
                 args:
@@ -5647,7 +5647,7 @@ write_files:
                   - --cert=/etc/kiam/tls/agent.pem
                   - --key=/etc/kiam/tls/agent-key.pem
                   - --ca=/etc/kiam/tls/ca.pem
-                  - --server-address=kiam-server:443
+                  - --server-address={{.Experimental.KIAMSupport.ServerAddresses.AgentAddress}}
                   - --prometheus-listen-addr=0.0.0.0:9620
                   - --prometheus-sync-interval=5s
                 env:
