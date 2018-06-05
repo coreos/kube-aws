@@ -17,7 +17,7 @@ var (
 		Use:          "destroy",
 		Short:        "Destroy an existing Kubernetes cluster",
 		Long:         ``,
-		Run:          runCmdDestroy,
+		RunE:         runCmdDestroy,
 		SilenceUsage: true,
 	}
 	destroyOpts = root.DestroyOptions{}
@@ -29,22 +29,23 @@ func init() {
 	cmdDestroy.Flags().BoolVar(&destroyOpts.Force, "force", false, "Don't ask for confirmation")
 }
 
-func runCmdDestroy(_ *cobra.Command, _ []string) {
+func runCmdDestroy(_ *cobra.Command, _ []string) error {
 	if !destroyOpts.Force && !destroyConfirmation() {
 		logger.Info("Operation Cancelled")
-		return
+		return nil
 	}
 
 	c, err := root.ClusterDestroyerFromFile(configPath, destroyOpts)
 	if err != nil {
-		logger.Fatalf("Error parsing config: %v", err)
+		return fmt.Errorf("error parsing config: %v", err)
 	}
 
 	if err := c.Destroy(); err != nil {
-		logger.Fatalf("Failed destroying cluster: %v", err)
+		return fmt.Errorf("failed destroying cluster: %v", err)
 	}
 
 	logger.Info("CloudFormation stack is being destroyed. This will take several minutes")
+	return nil
 }
 
 func destroyConfirmation() bool {

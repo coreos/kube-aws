@@ -21,7 +21,7 @@ var (
 		Short: "Show info about certificates",
 		Long: `Loads all certificates from credentials directory and prints certificate
 Issuer, Validity, Subject and DNS Names fields`,
-		Run:          runCmdShowCertificates,
+		RunE:         runCmdShowCertificates,
 		SilenceUsage: true,
 	}
 )
@@ -31,10 +31,10 @@ func init() {
 	cmdShow.AddCommand(cmdShowCertificates)
 }
 
-func runCmdShowCertificates(_ *cobra.Command, _ []string) {
+func runCmdShowCertificates(_ *cobra.Command, _ []string) error {
 	certs, err := root.LoadCertificates()
 	if err != nil {
-		logger.Fatal(err)
+		return err
 	}
 
 	keys := sortedKeys(certs)
@@ -46,6 +46,7 @@ func runCmdShowCertificates(_ *cobra.Command, _ []string) {
 		}
 		logger.Info("")
 	}
+	return nil
 }
 
 func sortedKeys(m map[string]tlscerts.Certificates) []string {

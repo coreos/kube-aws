@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/filegen"
@@ -13,7 +16,7 @@ var (
 		Use:          "init",
 		Short:        "Initialize default node pool configuration",
 		Long:         ``,
-		Run:          runCmdInit,
+		RunE:         runCmdInit,
 		SilenceUsage: true,
 	}
 
@@ -38,7 +41,7 @@ func init() {
 	cmdInit.Flags().BoolVar(&initOpts.NoRecordSet, "no-record-set", false, "Instruct kube-aws to not manage Route53 record sets for your K8S API endpoints")
 }
 
-func runCmdInit(_ *cobra.Command, _ []string) {
+func runCmdInit(_ *cobra.Command, _ []string) error {
 	// Validate flags.
 	if err := validateRequired(
 		flag{"--s3-uri", initOpts.S3URI},
@@ -47,23 +50,23 @@ func runCmdInit(_ *cobra.Command, _ []string) {
 		flag{"--region", initOpts.Region.Name},
 		flag{"--availability-zone", initOpts.AvailabilityZone},
 	); err != nil {
-		logger.Fatal(err)
+		return err
 	}
 
 	if initOpts.AmiId == "" {
 		amiID, err := amiregistry.GetAMI(initOpts.Region.Name, defaultReleaseChannel)
 		initOpts.AmiId = amiID
 		if err != nil {
-			logger.Fatalf("Cannot retrieve CoreOS AMI for region %s, channel %s", initOpts.Region.Name, defaultReleaseChannel)
+			return fmt.Errorf("cannot retrieve CoreOS AMI for region %s, channel %s", initOpts.Region.Name, defaultReleaseChannel)
 		}
 	}
 
 	if !initOpts.NoRecordSet && initOpts.HostedZoneID == "" {
-		logger.Fatal("Missing required flags: either --hosted-zone-id or --no-record-set is required")
+		return errors.New("missing required flags: either --hosted-zone-id or --no-record-set is required")
 	}
 
 	if err := filegen.CreateFileFromTemplate(configPath, initOpts, config.DefaultClusterConfig); err != nil {
-		logger.Fatalf("Error exec-ing default config template: %v", err)
+		return fmt.Errorf("error exec-ing default config template: %v", err)
 	}
 
 	successMsg :=
@@ -74,4 +77,5 @@ Next steps:
 2. Use the "kube-aws render" command to render the CloudFormation stack template and coreos-cloudinit userdata.
 `
 	logger.Infof(successMsg, configPath, configPath)
+	return nil
 }

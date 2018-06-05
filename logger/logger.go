@@ -17,14 +17,12 @@ var (
 	stdErrLogger     = log.New(os.Stderr, "ERROR: ", 0)
 )
 
-func Fatal(v ...interface{}) {
+func Error(v ...interface{}) {
 	Log(stdErrLogger, ColorRed, v...)
-	os.Exit(1)
 }
 
-func Fatalf(format string, v ...interface{}) {
+func Errorf(format string, v ...interface{}) {
 	Logf(stdErrLogger, ColorRed, format, v...)
-	os.Exit(1)
 }
 
 func Warn(v ...interface{}) {

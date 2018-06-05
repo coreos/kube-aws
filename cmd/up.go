@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/kubernetes-incubator/kube-aws/core/root"
 	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/spf13/cobra"
@@ -11,7 +13,7 @@ var (
 		Use:          "up",
 		Short:        "Create a new Kubernetes cluster",
 		Long:         ``,
-		Run:          runCmdUp,
+		RunE:         runCmdUp,
 		SilenceUsage: true,
 	}
 
@@ -28,33 +30,33 @@ func init() {
 	cmdUp.Flags().BoolVar(&upOpts.skipWait, "skip-wait", false, "Don't wait for the cluster components be ready")
 }
 
-func runCmdUp(_ *cobra.Command, _ []string) {
+func runCmdUp(_ *cobra.Command, _ []string) error {
 	opts := root.NewOptions(upOpts.prettyPrint, upOpts.skipWait)
 
 	cluster, err := root.ClusterFromFile(configPath, opts, upOpts.awsDebug)
 	if err != nil {
-		logger.Fatalf("Failed to initialize cluster driver: %v", err)
+		return fmt.Errorf("failed to initialize cluster driver: %v", err)
 	}
 
 	if _, err := cluster.ValidateStack(); err != nil {
-		logger.Fatalf("Error validating cluster: %v", err)
+		return fmt.Errorf("error validating cluster: %v", err)
 	}
 
 	if upOpts.export {
 		if err := cluster.Export(); err != nil {
-			logger.Fatal(err)
+			return err
 		}
-		return
+		return nil
 	}
 
 	logger.Info("Creating AWS resources. Please wait. It may take a few minutes.")
 	if err := cluster.Create(); err != nil {
-		logger.Fatalf("Error creating cluster: %v", err)
+		return fmt.Errorf("error creating cluster: %v", err)
 	}
 
 	info, err := cluster.Info()
 	if err != nil {
-		logger.Fatalf("Failed fetching cluster info: %v", err)
+		return fmt.Errorf("failed fetching cluster info: %v", err)
 	}
 
 	successMsg :=
@@ -65,4 +67,5 @@ The containers that power your cluster are now being downloaded.
 You should be able to access the Kubernetes API once the containers finish downloading.
 `
 	logger.Infof(successMsg, info)
+	return nil
 }

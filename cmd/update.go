@@ -16,7 +16,7 @@ var (
 		Use:          "update",
 		Short:        "Update an existing Kubernetes cluster",
 		Long:         ``,
-		Run:          runCmdUpdate,
+		RunE:         runCmdUpdate,
 		SilenceUsage: true,
 	}
 
@@ -36,28 +36,28 @@ func init() {
 	cmdUpdate.Flags().StringSliceVar(&updateOpts.targets, "targets", root.AllOperationTargetsAsStringSlice(), "Update nothing but specified sub-stacks.  Specify `all` or any combination of `etcd`, `control-plane`, and node pool names. Defaults to `all`")
 }
 
-func runCmdUpdate(_ *cobra.Command, _ []string) {
+func runCmdUpdate(_ *cobra.Command, _ []string) error {
 	if !updateOpts.force && !updateConfirmation() {
 		logger.Info("Operation cancelled")
-		return
+		return nil
 	}
 
 	opts := root.NewOptions(updateOpts.prettyPrint, updateOpts.skipWait)
 
 	cluster, err := root.ClusterFromFile(configPath, opts, updateOpts.awsDebug)
 	if err != nil {
-		logger.Fatalf("Failed to read cluster config: %v", err)
+		return fmt.Errorf("failed to read cluster config: %v", err)
 	}
 
 	targets := root.OperationTargetsFromStringSlice(updateOpts.targets)
 
 	if _, err := cluster.ValidateStack(targets); err != nil {
-		logger.Fatal(err)
+		return err
 	}
 
 	report, err := cluster.Update(targets)
 	if err != nil {
-		logger.Fatalf("Error updating cluster: %v", err)
+		return fmt.Errorf("error updating cluster: %v", err)
 	}
 	if report != "" {
 		logger.Infof("Update stack: %s\n", report)
@@ -65,7 +65,7 @@ func runCmdUpdate(_ *cobra.Command, _ []string) {
 
 	info, err := cluster.Info()
 	if err != nil {
-		logger.Fatalf("Failed fetching cluster info: %v", err)
+		return fmt.Errorf("failed fetching cluster info: %v", err)
 	}
 
 	successMsg :=
@@ -73,6 +73,7 @@ func runCmdUpdate(_ *cobra.Command, _ []string) {
 %s
 `
 	logger.Infof(successMsg, info)
+	return nil
 }
 
 func updateConfirmation() bool {

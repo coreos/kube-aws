@@ -19,7 +19,7 @@ func validateRequired(required ...flag) error {
 		}
 	}
 	if len(missing) != 0 {
-		return fmt.Errorf("Missing required flag(s): %s", strings.Join(missing, ", "))
+		return fmt.Errorf("missing required flag(s): %s", strings.Join(missing, ", "))
 	}
 	return nil
 }

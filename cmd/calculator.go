@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/kubernetes-incubator/kube-aws/core/root"
@@ -16,7 +17,7 @@ var (
 		Use:          "calculator",
 		Short:        "Discover the monthly cost of your cluster",
 		Long:         ``,
-		Run:          runCmdCalculator,
+		RunE:         runCmdCalculator,
 		SilenceUsage: true,
 	}
 
@@ -30,25 +31,26 @@ func init() {
 	cmdCalculator.Flags().BoolVar(&calculatorOpts.awsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
 }
 
-func runCmdCalculator(_ *cobra.Command, _ []string) {
+func runCmdCalculator(_ *cobra.Command, _ []string) error {
 
 	opts := root.NewOptions(false, false)
 
 	cluster, err := root.ClusterFromFile(configPath, opts, calculatorOpts.awsDebug)
 	if err != nil {
-		logger.Fatalf("Failed to initialize cluster driver: %v", err)
+		return fmt.Errorf("failed to initialize cluster driver: %v", err)
 	}
 
 	if _, err := cluster.ValidateStack(); err != nil {
-		logger.Fatalf("Error validating cluster: %v", err)
+		return fmt.Errorf("error validating cluster: %v", err)
 	}
 
 	urls, err := cluster.EstimateCost()
 
 	if err != nil {
-		logger.Fatal(err)
+		return fmt.Errorf("%v", err)
 	}
 
 	logger.Heading("To estimate your monthly cost, open the links below")
 	logger.Infof("%v", strings.Join(urls, "\n"))
+	return nil
 }
