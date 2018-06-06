@@ -451,7 +451,7 @@
       },
       "DependsOn": [
         {{if $etcdInstance.DependencyExists}}{{$etcdInstance.DependencyRef}},{{end}}
-        {{if $etcdIndex}}"{{$.Etcd.LogicalName}}{{sub $etcdIndex 1}}",{{end}}
+        {{if $.Etcd.StackExists}}{{if $etcdIndex}}"{{$.Etcd.LogicalName}}{{sub $etcdIndex 1}}",{{end}}{{end}}
         {{if $etcdInstance.EIPManaged}}
         "{{$etcdInstance.EIPLogicalName}}",
         {{end}}

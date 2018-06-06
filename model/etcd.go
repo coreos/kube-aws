@@ -19,6 +19,7 @@ type Etcd struct {
 	SecurityGroupIds   []string     `yaml:"securityGroupIds"`
 	Snapshot           EtcdSnapshot `yaml:"snapshot,omitempty"`
 	Subnets            Subnets      `yaml:"subnets,omitempty"`
+	StackExists        bool
 	UnknownKeys        `yaml:",inline"`
 }
 
@@ -62,6 +63,7 @@ func NewDefaultEtcd() Etcd {
 			Type: "gp2",
 			IOPS: 0,
 		},
+		StackExists: false,
 	}
 }
 func (i Etcd) LogicalName() string {
