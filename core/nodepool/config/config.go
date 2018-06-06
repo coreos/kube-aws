@@ -164,6 +164,8 @@ func (c *ProvidedConfig) Load(main *cfg.Config) error {
 	c.Experimental.NodeDrainer = main.DeploymentSettings.Experimental.NodeDrainer
 	c.Experimental.GpuSupport = main.DeploymentSettings.Experimental.GpuSupport
 	c.Kubelet.RotateCerts = main.DeploymentSettings.Kubelet.RotateCerts
+	c.Kubelet.SystemReservedResources = main.DeploymentSettings.Kubelet.SystemReservedResources
+	c.Kubelet.KubeReservedResources = main.DeploymentSettings.Kubelet.KubeReservedResources
 
 	if c.Experimental.ClusterAutoscalerSupport.Enabled {
 		if !main.Addons.ClusterAutoscaler.Enabled {

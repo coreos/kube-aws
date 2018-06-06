@@ -470,6 +470,12 @@ coreos:
         {{- if .FeatureGates.Enabled }}
         --feature-gates="{{.FeatureGates.String}}" \
         {{- end }}
+        {{- if .Kubelet.SystemReservedResources }}
+        --system-reserved={{ .Kubelet.SystemReservedResources }} \
+        {{- end }}
+        {{- if .Kubelet.KubeReservedResources }}
+        --kube-reserved={{ .Kubelet.KubeReservedResources }} \
+        {{- end }}
         --require-kubeconfig \
         $KUBELET_OPTS
         Restart=always

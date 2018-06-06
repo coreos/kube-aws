@@ -52,6 +52,8 @@ func NewDefaultCluster() *Cluster {
 		RotateCerts: RotateCerts{
 			Enabled: false,
 		},
+		SystemReservedResources: "",
+		KubeReservedResources:   "",
 	}
 	experimental := Experimental{
 		Admission: Admission{
@@ -582,7 +584,9 @@ type Cluster struct {
 
 // Kubelet options
 type Kubelet struct {
-	RotateCerts RotateCerts `yaml:"rotateCerts"`
+	RotateCerts             RotateCerts `yaml:"rotateCerts"`
+	SystemReservedResources string      `yaml:"systemReserved"`
+	KubeReservedResources   string      `yaml:"kubeReserved"`
 }
 
 type Experimental struct {

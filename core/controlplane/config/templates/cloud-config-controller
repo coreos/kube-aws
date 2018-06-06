@@ -397,6 +397,12 @@ coreos:
         {{if or (.Experimental.Admission.Priority.Enabled) (.Experimental.Admission.PersistentVolumeClaimResize.Enabled) -}}
         --feature-gates=PodPriority={{.Experimental.Admission.Priority.Enabled}},ExpandPersistentVolumes={{.Experimental.Admission.PersistentVolumeClaimResize.Enabled}} \
         {{end -}}\
+        {{- if .Kubelet.SystemReservedResources }}
+        --system-reserved={{ .Kubelet.SystemReservedResources }} \
+        {{- end }}
+        {{- if .Kubelet.KubeReservedResources }}
+        --kube-reserved={{ .Kubelet.KubeReservedResources }} \
+        {{- end }}
         $KUBELET_OPTS
         Restart=always
         RestartSec=10
