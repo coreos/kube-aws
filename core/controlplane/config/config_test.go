@@ -1105,6 +1105,56 @@ rotateCerts:
 	}
 }
 
+func TestKubeletReserved(t *testing.T) {
+
+	validConfigs := []struct {
+		conf           string
+		kubeReserved   string
+		systemReserved string
+	}{
+		{
+			conf: `
+`,
+			systemReserved: "",
+			kubeReserved:   "",
+		},
+		{
+			conf: `
+kubelet:
+  kubeReserved: "cpu=100m,memory=100Mi,storage=1Gi"
+  systemReserved: "cpu=200m,memory=200Mi,storage=2Gi"
+`,
+			kubeReserved:   "cpu=100m,memory=100Mi,storage=1Gi",
+			systemReserved: "cpu=200m,memory=200Mi,storage=2Gi",
+		},
+		{
+			conf: `
+kubeReserved: "cpu=100m,memory=100Mi,storage=1Gi"
+systemReserved: "cpu=200m,memory=200Mi,storage=2Gi"
+`,
+			kubeReserved:   "",
+			systemReserved: "",
+		},
+	}
+
+	for _, conf := range validConfigs {
+		confBody := singleAzConfigYaml + conf.conf
+		c, err := ClusterFromBytes([]byte(confBody))
+		if err != nil {
+			t.Errorf("failed to parse config %s: %v", confBody, err)
+			continue
+		}
+		if !reflect.DeepEqual(c.Kubelet.KubeReservedResources, conf.kubeReserved) || !reflect.DeepEqual(c.Kubelet.SystemReservedResources, conf.systemReserved) {
+			t.Errorf(
+				"parsed KubeReservedResources (%+v) and/or SystemReservedResources (%+v) settings does not match config: %s",
+				c.Kubelet.KubeReservedResources,
+				c.Kubelet.SystemReservedResources,
+				confBody,
+			)
+		}
+	}
+}
+
 func TestKubeDns(t *testing.T) {
 
 	validConfigs := []struct {
