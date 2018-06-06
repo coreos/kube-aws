@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -13,3 +14,27 @@ var (
 
 	configPath = "cluster.yaml"
 )
+
+func init() {
+	RootCmd.PersistentFlags().BoolVarP(
+		&logger.Silent,
+		"silent",
+		"s",
+		false,
+		"do not show messages",
+	)
+	RootCmd.PersistentFlags().BoolVarP(
+		&logger.Verbose,
+		"verbose",
+		"v",
+		false,
+		"show debug messages",
+	)
+	RootCmd.PersistentFlags().BoolVarP(
+		&logger.Color,
+		"color",
+		"",
+		false,
+		"use color for messages",
+	)
+}

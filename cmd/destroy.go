@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/kubernetes-incubator/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 )
 
 var (
@@ -30,20 +31,20 @@ func init() {
 
 func runCmdDestroy(_ *cobra.Command, _ []string) error {
 	if !destroyOpts.Force && !destroyConfirmation() {
-		fmt.Printf("Operation Cancelled")
+		logger.Info("Operation Cancelled")
 		return nil
 	}
 
 	c, err := root.ClusterDestroyerFromFile(configPath, destroyOpts)
 	if err != nil {
-		return fmt.Errorf("Error parsing config: %v", err)
+		return fmt.Errorf("error parsing config: %v", err)
 	}
 
 	if err := c.Destroy(); err != nil {
-		return fmt.Errorf("Failed destroying cluster: %v", err)
+		return fmt.Errorf("failed destroying cluster: %v", err)
 	}
 
-	fmt.Println("CloudFormation stack is being destroyed. This will take several minutes")
+	logger.Info("CloudFormation stack is being destroyed. This will take several minutes")
 	return nil
 }
 

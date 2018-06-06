@@ -22,6 +22,14 @@
 Check out our [getting started tutorial](https://kubernetes-incubator.github.io/kube-aws/getting-started/) 
 to launch your first Kubernetes cluster on AWS.
 
+## Global options
+
+Each command supports following options:
+
+ - `-s` `--silent` do not show messages
+ - `-v` `--verbose` show debug messages
+ - `--color` use color for messages
+
 ## Examples
 
 Generate `cluster.yaml`:

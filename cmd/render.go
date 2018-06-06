@@ -6,6 +6,7 @@ import (
 
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -49,7 +50,7 @@ func init() {
 	cmdRenderCredentials.Flags().BoolVar(&renderCredentialsOpts.KIAM, "kiam", true, "generate TLS assets for kiam")
 }
 func runCmdRender(_ *cobra.Command, args []string) error {
-	fmt.Println("WARNING: 'kube-aws render' is deprecated. See 'kube-aws render --help' for usage")
+	logger.Warn("'kube-aws render' is deprecated. See 'kube-aws render --help' for usage")
 	if len(args) != 0 {
 		return fmt.Errorf("render takes no arguments\n")
 	}
@@ -81,7 +82,7 @@ Next steps:
 3. Start the cluster with "kube-aws up".
 `
 
-	fmt.Printf(successMsg, configPath)
+	logger.Infof(successMsg, configPath)
 	return nil
 }
 

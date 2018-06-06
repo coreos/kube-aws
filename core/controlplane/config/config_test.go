@@ -1058,7 +1058,7 @@ func TestRotateCerts(t *testing.T) {
 			},
 		},
 		{
-			conf: `        
+			conf: `
 kubelet:
   rotateCerts:
     enabled: false
@@ -1115,6 +1115,7 @@ func TestKubeDns(t *testing.T) {
 			conf: `
 `,
 			kubeDns: KubeDns{
+				Provider:            "kube-dns",
 				NodeLocalResolver:   false,
 				DeployToControllers: false,
 				Autoscaler: KubeDnsAutoscaler{
@@ -1131,6 +1132,7 @@ kubeDns:
   deployToControllers: false
 `,
 			kubeDns: KubeDns{
+				Provider:            "kube-dns",
 				NodeLocalResolver:   false,
 				DeployToControllers: false,
 				Autoscaler: KubeDnsAutoscaler{
@@ -1151,12 +1153,29 @@ kubeDns:
     min: 15
 `,
 			kubeDns: KubeDns{
+				Provider:            "kube-dns",
 				NodeLocalResolver:   true,
 				DeployToControllers: true,
 				Autoscaler: KubeDnsAutoscaler{
 					CoresPerReplica: 5,
 					NodesPerReplica: 10,
 					Min:             15,
+				},
+			},
+		},
+		{
+			conf: `
+kubeDns:
+  provider: coredns
+`,
+			kubeDns: KubeDns{
+				Provider:            "coredns",
+				NodeLocalResolver:   false,
+				DeployToControllers: false,
+				Autoscaler: KubeDnsAutoscaler{
+					CoresPerReplica: 256,
+					NodesPerReplica: 16,
+					Min:             2,
 				},
 			},
 		},

@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/kubernetes-incubator/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/tlscerts"
 	"github.com/spf13/cobra"
 	"sort"
@@ -40,11 +40,11 @@ func runCmdShowCertificates(_ *cobra.Command, _ []string) error {
 	keys := sortedKeys(certs)
 	for _, k := range keys {
 		cert := certs[k]
-		fmt.Printf("--- %s ---\n", k)
+		logger.Headingf("--- %s ---\n", k)
 		for _, v := range cert {
-			fmt.Println(v)
+			logger.Info(v)
 		}
-		fmt.Println("")
+		logger.Info("")
 	}
 	return nil
 }

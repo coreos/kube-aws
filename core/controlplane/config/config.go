@@ -18,6 +18,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnresource"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/model/derived"
 	"github.com/kubernetes-incubator/kube-aws/naming"
@@ -182,6 +183,7 @@ func NewDefaultCluster() *Cluster {
 				IPVSMode: ipvsMode,
 			},
 			KubeDns: KubeDns{
+				Provider:            "kube-dns",
 				NodeLocalResolver:   false,
 				DeployToControllers: false,
 				Autoscaler: KubeDnsAutoscaler{
@@ -193,6 +195,7 @@ func NewDefaultCluster() *Cluster {
 			KubernetesDashboard: KubernetesDashboard{
 				AdminPrivileges: true,
 				InsecureLogin:   false,
+				Enabled:         true,
 			},
 			Kubernetes: Kubernetes{
 				EncryptionAtRest: EncryptionAtRest{
@@ -200,7 +203,7 @@ func NewDefaultCluster() *Cluster {
 				},
 				Networking: Networking{
 					SelfHosting: SelfHosting{
-						Enabled:         false,
+						Enabled:         true,
 						Type:            "canal",
 						Typha:           false,
 						CalicoNodeImage: model.Image{Repo: "quay.io/calico/node", Tag: kubeNetworkingSelfHostingDefaultCalicoNodeImageTag, RktPullDocker: false},
@@ -220,6 +223,7 @@ func NewDefaultCluster() *Cluster {
 			CalicoCtlImage:                     model.Image{Repo: "quay.io/calico/ctl", Tag: "v1.6.3", RktPullDocker: false},
 			ClusterAutoscalerImage:             model.Image{Repo: "k8s.gcr.io/cluster-autoscaler", Tag: "v1.1.0", RktPullDocker: false},
 			ClusterProportionalAutoscalerImage: model.Image{Repo: "k8s.gcr.io/cluster-proportional-autoscaler-amd64", Tag: "1.1.2", RktPullDocker: false},
+			CoreDnsImage:                       model.Image{Repo: "coredns/coredns", Tag: "1.1.3", RktPullDocker: false},
 			KIAMImage:                          model.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.6", RktPullDocker: false},
 			Kube2IAMImage:                      model.Image{Repo: "jtblin/kube2iam", Tag: "0.9.0", RktPullDocker: false},
 			KubeDnsImage:                       model.Image{Repo: "k8s.gcr.io/k8s-dns-kube-dns-amd64", Tag: "1.14.7", RktPullDocker: false},
@@ -238,7 +242,9 @@ func NewDefaultCluster() *Cluster {
 			JournaldCloudWatchLogsImage:        model.Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
 		},
 		KubeClusterSettings: KubeClusterSettings{
+			PodCIDR:      "10.2.0.0/16",
 			DNSServiceIP: "10.3.0.10",
+			ServiceCIDR:  "10.3.0.0/24",
 		},
 		DefaultWorkerSettings: DefaultWorkerSettings{
 			WorkerCreateTimeout:    "PT15M",
@@ -255,11 +261,6 @@ func NewDefaultCluster() *Cluster {
 		EtcdSettings: EtcdSettings{
 			Etcd: model.NewDefaultEtcd(),
 		},
-		FlannelSettings: FlannelSettings{
-			PodCIDR: "10.2.0.0/16",
-		},
-		// for kube-apiserver
-		ServiceCIDR: "10.3.0.0/24",
 		// for base cloudformation stack
 		TLSCADurationDays:           365 * 10,
 		TLSCertDurationDays:         365,
@@ -339,12 +340,12 @@ func (c *Cluster) Load() error {
 func (c *Cluster) ConsumeDeprecatedKeys() {
 	// TODO Remove in v0.9.9-rc.1
 	if c.DeprecatedVPCID != "" {
-		fmt.Println("WARN: vpcId is deprecated and will be removed in v0.9.9. Please use vpc.id instead")
+		logger.Warn("vpcId is deprecated and will be removed in v0.9.9. Please use vpc.id instead")
 		c.VPC.ID = c.DeprecatedVPCID
 	}
 
 	if c.DeprecatedInternetGatewayID != "" {
-		fmt.Println("WARN: internetGatewayId is deprecated and will be removed in v0.9.9. Please use internetGateway.id instead")
+		logger.Warn("internetGatewayId is deprecated and will be removed in v0.9.9. Please use internetGateway.id instead")
 		c.InternetGateway.ID = c.DeprecatedInternetGatewayID
 	}
 }
@@ -449,6 +450,8 @@ type KubeClusterSettings struct {
 	// Required by kubelet to locate the cluster-internal dns hosted on controller nodes in the base cluster
 	DNSServiceIP string `yaml:"dnsServiceIP,omitempty"`
 	UseCalico    bool   `yaml:"useCalico,omitempty"`
+	PodCIDR      string `yaml:"podCIDR,omitempty"`
+	ServiceCIDR  string `yaml:"serviceCIDR,omitempty"`
 }
 
 // Part of configuration which can't be provided via user input but is computed from user input
@@ -514,6 +517,7 @@ type DeploymentSettings struct {
 	CalicoKubeControllersImage         model.Image `yaml:"calicoKubeControllersImage,omitempty"`
 	ClusterAutoscalerImage             model.Image `yaml:"clusterAutoscalerImage,omitempty"`
 	ClusterProportionalAutoscalerImage model.Image `yaml:"clusterProportionalAutoscalerImage,omitempty"`
+	CoreDnsImage                       model.Image `yaml:"coreDnsImage,omitempty"`
 	KIAMImage                          model.Image `yaml:"kiamImage,omitempty"`
 	Kube2IAMImage                      model.Image `yaml:"kube2iamImage,omitempty"`
 	KubeDnsImage                       model.Image `yaml:"kubeDnsImage,omitempty"`
@@ -556,11 +560,6 @@ type EtcdSettings struct {
 	model.Etcd `yaml:"etcd,omitempty"`
 }
 
-// Part of configuration which is specific to flanneld
-type FlannelSettings struct {
-	PodCIDR string `yaml:"podCIDR,omitempty"`
-}
-
 // Cluster is the container of all the configurable parameters of a kube-aws cluster, customizable via cluster.yaml
 type Cluster struct {
 	KubeClusterSettings    `yaml:",inline"`
@@ -568,9 +567,7 @@ type Cluster struct {
 	DefaultWorkerSettings  `yaml:",inline"`
 	ControllerSettings     `yaml:",inline"`
 	EtcdSettings           `yaml:",inline"`
-	FlannelSettings        `yaml:",inline"`
 	AdminAPIEndpointName   string              `yaml:"adminAPIEndpointName,omitempty"`
-	ServiceCIDR            string              `yaml:"serviceCIDR,omitempty"`
 	RecordSetTTL           int                 `yaml:"recordSetTTL,omitempty"`
 	TLSCADurationDays      int                 `yaml:"tlsCADurationDays,omitempty"`
 	TLSCertDurationDays    int                 `yaml:"tlsCertDurationDays,omitempty"`
@@ -824,6 +821,7 @@ type KubeDnsAutoscaler struct {
 }
 
 type KubeDns struct {
+	Provider            string            `yaml:"provider"`
 	NodeLocalResolver   bool              `yaml:"nodeLocalResolver"`
 	DeployToControllers bool              `yaml:"deployToControllers"`
 	Autoscaler          KubeDnsAutoscaler `yaml:"autoscaler"`
@@ -837,8 +835,10 @@ func (c *KubeDns) MergeIfEmpty(other KubeDns) {
 }
 
 type KubernetesDashboard struct {
-	AdminPrivileges bool `yaml:"adminPrivileges"`
-	InsecureLogin   bool `yaml:"insecureLogin"`
+	AdminPrivileges  bool             `yaml:"adminPrivileges"`
+	InsecureLogin    bool             `yaml:"insecureLogin"`
+	Enabled          bool             `yaml:"enabled"`
+	ComputeResources ComputeResources `yaml:"resources,omitempty"`
 }
 
 type WaitSignal struct {
@@ -1089,7 +1089,7 @@ func (c Config) VPCLogicalName() (string, error) {
 }
 
 func (c Config) VPCID() (string, error) {
-	fmt.Println("WARN: .VPCID in stack template is deprecated and will be removed in v0.9.9. Please use .VPC.ID instead")
+	logger.Warn(".VPCID in stack template is deprecated and will be removed in v0.9.9. Please use .VPC.ID instead")
 	if !c.VPC.HasIdentifier() {
 		return "", fmt.Errorf("[BUG] .VPCID should not be called in stack template when vpc.id(FromStackOutput) is specified. Use .VPCManaged instead.")
 	}
@@ -1253,7 +1253,7 @@ func (c Cluster) validate() error {
 	}
 
 	if c.Controller.InstanceType == "t2.micro" || c.Etcd.InstanceType == "t2.micro" || c.Controller.InstanceType == "t2.nano" || c.Etcd.InstanceType == "t2.nano" {
-		fmt.Println(`WARNING: instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/kubernetes-incubator/kube-aws/issues/258 for more information`)
+		logger.Warn(`instance types "t2.nano" and "t2.micro" are not recommended. See https://github.com/kubernetes-incubator/kube-aws/issues/258 for more information`)
 	}
 
 	if len(c.Controller.IAMConfig.Role.Name) > 0 {
@@ -1590,6 +1590,10 @@ func (e EtcdSettings) Validate() error {
 
 	if err := e.IAMConfig.Validate(); err != nil {
 		return fmt.Errorf("invalid etcd settings: %v", err)
+	}
+
+	if err := e.Etcd.Validate(); err != nil {
+		return err
 	}
 
 	if e.Etcd.Version().Is3() {

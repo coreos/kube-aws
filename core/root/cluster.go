@@ -25,6 +25,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root/defaults"
 	"github.com/kubernetes-incubator/kube-aws/filereader/jsontemplate"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/naming"
 	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
@@ -46,7 +47,7 @@ func (c clusterImpl) Export() error {
 
 	for _, asset := range assets.AsMap() {
 		path := filepath.Join("exported", "stacks", asset.Path)
-		fmt.Printf("Exporting %s\n", path)
+		logger.Infof("Exporting %s\n", path)
 		dir := filepath.Dir(path)
 		if err := os.MkdirAll(dir, 0700); err != nil {
 			return fmt.Errorf("failed to create directory \"%s\": %v", dir, err)
@@ -55,7 +56,7 @@ func (c clusterImpl) Export() error {
 			return fmt.Errorf("Error writing %s : %v", path, err)
 		}
 		if strings.HasSuffix(path, "stack.json") && c.controlPlane.KMSKeyARN == "" {
-			fmt.Printf("BEWARE: %s contains your TLS secrets!\n", path)
+			logger.Warnf("%s contains your TLS secrets!\n", path)
 		}
 	}
 	return nil
@@ -296,7 +297,7 @@ func (c clusterImpl) Info() (*Info, error) {
 }
 
 func (c clusterImpl) generateAssets(targets OperationTargets) (cfnstack.Assets, error) {
-	fmt.Printf("generating assets for %s\n", targets.String())
+	logger.Infof("generating assets for %s\n", targets.String())
 	var netAssets cfnstack.Assets
 	if targets.IncludeNetwork() {
 		netAssets = c.network.Assets()
@@ -348,7 +349,7 @@ func (c clusterImpl) generateAssets(targets OperationTargets) (cfnstack.Assets, 
 		stackTemplate = renderedTemplate
 	} else {
 		for _, target := range targets {
-			fmt.Printf("updating template url of %s\n", target)
+			logger.Infof("updating template url of %s\n", target)
 
 			rootStackTemplate, err := c.getCurrentRootStackTemplate()
 			if err != nil {
@@ -580,7 +581,7 @@ func (c clusterImpl) ValidateStack(opts ...OperationTargets) (string, error) {
 }
 
 func streamJournaldLogs(c clusterImpl, q chan struct{}) error {
-	fmt.Printf("Streaming filtered Journald logs for log group '%s'...\nNOTE: Due to high initial entropy, '.service' failures may occur during the early stages of booting.\n", c.controlPlane.ClusterName)
+	logger.Infof("Streaming filtered Journald logs for log group '%s'...\nNOTE: Due to high initial entropy, '.service' failures may occur during the early stages of booting.\n", c.controlPlane.ClusterName)
 	cwlSvc := cloudwatchlogs.New(c.session)
 	s := time.Now().Unix() * 1E3
 	t := s
@@ -608,7 +609,7 @@ func streamJournaldLogs(c clusterImpl, q chan struct{}) error {
 						json.Unmarshal([]byte(*event.Message), &res)
 						s := int(((*event.Timestamp) - t) / 1E3)
 						d := fmt.Sprintf("+%.2d:%.2d:%.2d", s/3600, (s/60)%60, s%60)
-						fmt.Printf("%s\t%s: \"%s\"\n", d, res.Hostname, res.Message)
+						logger.Infof("%s\t%s: \"%s\"\n", d, res.Hostname, res.Message)
 					}
 				}
 			}
@@ -623,6 +624,6 @@ func streamJournaldLogs(c clusterImpl, q chan struct{}) error {
 
 // streamStackEvents streams all the events from the root, the control-plane, and worker node pool stacks using StreamEventsNested
 func streamStackEvents(c clusterImpl, cfSvc *cloudformation.CloudFormation, q chan struct{}) error {
-	fmt.Printf("Streaming CloudFormation events for the cluster '%s'...\n", c.controlPlane.ClusterName)
+	logger.Infof("Streaming CloudFormation events for the cluster '%s'...\n", c.controlPlane.ClusterName)
 	return c.stackProvisioner().StreamEventsNested(q, cfSvc, c.controlPlane.ClusterName, c.controlPlane.ClusterName, time.Now())
 }

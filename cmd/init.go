@@ -7,6 +7,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/filegen"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -56,16 +57,16 @@ func runCmdInit(_ *cobra.Command, _ []string) error {
 		amiID, err := amiregistry.GetAMI(initOpts.Region.Name, defaultReleaseChannel)
 		initOpts.AmiId = amiID
 		if err != nil {
-			return fmt.Errorf("Cannot retrieve CoreOS AMI for region %s, channel %s", initOpts.Region.Name, defaultReleaseChannel)
+			return fmt.Errorf("cannot retrieve CoreOS AMI for region %s, channel %s", initOpts.Region.Name, defaultReleaseChannel)
 		}
 	}
 
 	if !initOpts.NoRecordSet && initOpts.HostedZoneID == "" {
-		return errors.New("Missing required flags: either --hosted-zone-id or --no-record-set is required")
+		return errors.New("missing required flags: either --hosted-zone-id or --no-record-set is required")
 	}
 
 	if err := filegen.CreateFileFromTemplate(configPath, initOpts, config.DefaultClusterConfig); err != nil {
-		return fmt.Errorf("Error exec-ing default config template: %v", err)
+		return fmt.Errorf("error exec-ing default config template: %v", err)
 	}
 
 	successMsg :=
@@ -75,7 +76,6 @@ Next steps:
 1. (Optional) Edit %s to parameterize the cluster.
 2. Use the "kube-aws render" command to render the CloudFormation stack template and coreos-cloudinit userdata.
 `
-
-	fmt.Printf(successMsg, configPath, configPath)
+	logger.Infof(successMsg, configPath, configPath)
 	return nil
 }

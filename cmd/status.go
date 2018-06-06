@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kubernetes-incubator/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -24,14 +25,14 @@ func init() {
 func runCmdStatus(_ *cobra.Command, _ []string) error {
 	describer, err := root.ClusterDescriberFromFile(configPath)
 	if err != nil {
-		return fmt.Errorf("Failed to read cluster config: %v", err)
+		return fmt.Errorf("failed to read cluster config: %v", err)
 	}
 
 	info, err := describer.Info()
 	if err != nil {
-		return fmt.Errorf("Failed fetching cluster info: %v", err)
+		return fmt.Errorf("failed fetching cluster info: %v", err)
 	}
 
-	fmt.Print(info.String())
+	logger.Info(info)
 	return nil
 }

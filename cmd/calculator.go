@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/kubernetes-incubator/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -36,11 +37,11 @@ func runCmdCalculator(_ *cobra.Command, _ []string) error {
 
 	cluster, err := root.ClusterFromFile(configPath, opts, calculatorOpts.awsDebug)
 	if err != nil {
-		return fmt.Errorf("Failed to initialize cluster driver: %v", err)
+		return fmt.Errorf("failed to initialize cluster driver: %v", err)
 	}
 
 	if _, err := cluster.ValidateStack(); err != nil {
-		return fmt.Errorf("Error validating cluster: %v", err)
+		return fmt.Errorf("error validating cluster: %v", err)
 	}
 
 	urls, err := cluster.EstimateCost()
@@ -49,7 +50,7 @@ func runCmdCalculator(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("%v", err)
 	}
 
-	fmt.Printf("To estimate your monthly cost, open the links below\n%v", strings.Join(urls, "\n"))
-
+	logger.Heading("To estimate your monthly cost, open the links below")
+	logger.Infof("%v", strings.Join(urls, "\n"))
 	return nil
 }

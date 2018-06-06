@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root/defaults"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/tlscerts"
 	"github.com/kubernetes-incubator/kube-aws/tlsutil"
 	"io/ioutil"
@@ -45,7 +46,7 @@ func LoadCertificates() (map[string]tlscerts.Certificates, error) {
 		}
 		b, err := ioutil.ReadFile(path.Join(defaults.AssetsDir, f.Name()))
 		if err != nil {
-			fmt.Printf("WARNING: cannot read %q file: %v", f.Name(), err)
+			logger.Warnf("cannot read %q file: %v", f.Name(), err)
 			continue
 		}
 		if !tlsutil.IsCertificatePEM(b) {
@@ -53,7 +54,7 @@ func LoadCertificates() (map[string]tlscerts.Certificates, error) {
 		}
 		c, err := tlscerts.FromBytes(b)
 		if err != nil {
-			fmt.Printf("WARNING: cannot parse %q file: %v", f.Name(), err)
+			logger.Warnf("cannot parse %q file: %v", f.Name(), err)
 			continue
 		}
 		certs[f.Name()] = c

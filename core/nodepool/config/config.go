@@ -12,6 +12,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/cfnresource"
 	cfg "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/model/derived"
 	"github.com/kubernetes-incubator/kube-aws/naming"
@@ -133,7 +134,7 @@ func ClusterFromBytes(data []byte, main *cfg.Config) (*ProvidedConfig, error) {
 }
 
 func (c *ProvidedConfig) ExternalDNSName() string {
-	fmt.Println("WARN: ExternalDNSName is deprecated and will be removed in v0.9.7. Please use APIEndpoint.Name instead")
+	logger.Warn("WARN: ExternalDNSName is deprecated and will be removed in v0.9.7. Please use APIEndpoint.Name instead")
 	return c.APIEndpoint.DNSName
 }
 

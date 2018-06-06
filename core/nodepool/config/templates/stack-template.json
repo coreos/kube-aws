@@ -62,7 +62,7 @@
             {{end}}
             {{if $.IAMConfig.InstanceProfile.Arn }}
             "IamInstanceProfile": {
-              "Arn": "{{$.IAMConfig.InstanceProfile.Arn}}" 
+              "Arn": "{{$.IAMConfig.InstanceProfile.Arn}}"
             },
             {{else}}
             "IamInstanceProfile": {
@@ -91,7 +91,17 @@
                   {{end}}
                   "VolumeType": "{{$volumeMountSpec.Type}}"
                 }
-              }
+              }{{- end -}}{{range $raid0MountSpecIndex, $raid0MountSpec := $.Raid0Mounts}}{{range $DeviceIndex, $Device := $raid0MountSpec.Devices}},
+              {
+                "DeviceName": "{{$Device}}",
+                "Ebs": {
+                  "VolumeSize": "{{$raid0MountSpec.Size}}",
+                  {{if gt $raid0MountSpec.Iops 0}}
+                  "Iops": "{{$raid0MountSpec.Iops}}",
+                  {{end}}
+                  "VolumeType": "{{$raid0MountSpec.Type}}"
+                }
+              }{{end}}
               {{- end -}}
             ],
             "SecurityGroups": [
@@ -244,7 +254,17 @@
               {{end}}
               "VolumeType": "{{$volumeMountSpec.Type}}"
             }
-          }
+          }{{- end -}}{{range $raid0MountSpecIndex, $raid0MountSpec := $.Raid0Mounts}}{{range $DeviceIndex, $Device := $raid0MountSpec.Devices}},
+            {
+              "DeviceName": "{{$Device}}",
+              "Ebs": {
+                "VolumeSize": "{{$raid0MountSpec.Size}}",
+                {{if gt $raid0MountSpec.Iops 0}}
+                "Iops": "{{$raid0MountSpec.Iops}}",
+                {{end}}
+                "VolumeType": "{{$raid0MountSpec.Type}}"
+              }
+            }{{end}}
           {{- end -}}
         ],
          {{if .IAMConfig.InstanceProfile.Arn }}
@@ -265,6 +285,9 @@
         "SpotPrice": {{.SpotPrice}},
         {{else}}
         "PlacementTenancy": "{{.Tenancy}}",
+        {{end}}
+        {{if EbsOptimized .InstanceType }}
+        "EbsOptimized": "true",
         {{end}}
         "UserData": {{ .UserDataWorker.Parts.instance.Template }}
       },
@@ -481,7 +504,7 @@
         {{if .IAMConfig.Role.Name }}
         "RoleName":  {"Fn::Join": ["-", ["{{$.ClusterName}}", {"Ref": "AWS::Region"}, "{{.IAMConfig.Role.Name}}"]]},
         {{end}}
-        "ManagedPolicyArns": [ 
+        "ManagedPolicyArns": [
           {{range $policyIndex, $policyArn := .IAMConfig.Role.ManagedPolicies }}
             "{{$policyArn.Arn}}",
           {{end}}
@@ -493,7 +516,7 @@
 {{end}}
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "kube-aws Kubernetes node pool {{.ClusterName}} {{.NodePoolName}}",
+  "Description": "kube-aws node pool stack for {{.ClusterName}} {{.NodePoolName}}",
   "Parameters" : {
     "EtcdStackName": {
       "Type": "String",

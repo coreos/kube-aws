@@ -11,6 +11,9 @@ s3URI: {{.S3URI}}
 #releaseChannel: stable
 
 # The AMI ID of CoreOS.
+#
+# To update this to the latest AMI run the following command with the appropriate region and channel then place the resulting ID here
+#   REGION=eu-west-1 && CHANNEL=stable && curl -s https://coreos.com/dist/aws/aws-$CHANNEL.json | jq -r ".\"$REGION\".hvm"
 amiId: "{{.AmiId}}"
 
 # Container Linux has automatic updates https://coreos.com/os/docs/latest/update-strategies.html. This can be a risk in certain situations and this is why is disabled by default and you can enable it by setting this param to false.
@@ -178,6 +181,17 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #    # Number of I/O operations per second (IOPS) that the controller node disk supports. Leave blank if controller.rootVolume.type is not io1
 #    iops: 0
 #
+#  # Additional EBS volumes mounted on the controller(s)
+#  # No additional EBS volumes by default. All parameter values do not default - they must be explicitly defined
+#  volumeMounts:
+#  - type: "gp2"
+#    iops: 0
+#    size: 30
+#    # Follow the aws convention of '/dev/xvd*' where '*' is a single letter from 'f' to 'z'
+#    device: "/dev/xvdf"
+#    path: "/ebs"
+#
+#
 #  # Existing security groups attached to controller nodes which are typically used to
 #  # (1) allow access from controller nodes to services running on an existing infrastructure
 #  # (2) allow ssh accesses from bastions when `sshAccessAllowedSourceCIDRs` are explicitly set to an empty array
@@ -327,6 +341,21 @@ worker:
 #        # Follow the aws convention of '/dev/xvd*' where '*' is a single letter from 'f' to 'z'
 #        device: "/dev/xvdf"
 #        path: "/ebs"
+#
+#      # Additional Raid0 EBS backed volumes mounted on the worker
+#      # No additional Raid0 volumes by default. All parameter values do not default - they must be explicitly defined
+#      raid0Mounts:
+#      - type: "gp2"
+#        iops: 0
+#        # size of each device. As below shows 4 devices, total size is 4 * 214G or 896G.
+#        size: 214
+#        # Follow the aws convention of '/dev/xvd*' where '*' is a single letter from 'f' to 'z'
+#        devices:
+#        - "/dev/xvdg"
+#        - "/dev/xvdh"
+#        - "/dev/xvdi"
+#        - "/dev/xvdj"
+#        path: "/data"
 #
 #      # Specifies how often kubelet posts node status to master. Note: be cautious when changing the constant, it must work with nodeMonitorGracePeriod in nodecontroller.
 #      # nodeStatusUpdateFrequency: "10s"
@@ -612,6 +641,16 @@ worker:
 #    # (Recommended set to true for high-throughput control planes)
 #    # CAUTION: Currently broken. Please don't turn this on until it is fixed in https://github.com/kubernetes-incubator/kube-aws/pull/417
 #    ephemeral: false
+#
+#  # Additional EBS volumes mounted on the etcd
+#  # No additional EBS volumes by default. All parameter values do not default - they must be explicitly defined
+#  volumeMounts:
+#  - type: "gp2"
+#    iops: 0
+#    size: 30
+#    # Follow the aws convention of '/dev/xvd*' where '*' is a single letter from 'f' to 'z'
+#    device: "/dev/xvdf"
+#    path: "/ebs"
 #
 #  # Tenancy of the etcd instances. Options are "default" and "dedicated"
 #  # Documentation: http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/dedicated-instance.html
@@ -927,6 +966,10 @@ worker:
 #       # Only specify either id or idFromStackOutput but not both
 #       #idFromStackOutput: myinfra-PublicRouteTable1
 
+# Kubernetes Network CIDRs
+# You can change your serviceCIDR or podCIDR and kube-aws will facilitate the migration
+# see https://github.com/kubernetes-incubator/kube-aws/issues/1307
+# NOTE: requires cluster downtime.
 
 # CIDR for all service IP addresses
 # serviceCIDR: "10.3.0.0/24"
@@ -1018,6 +1061,12 @@ kiamImage:
 #  tag: 1.14.7
 #  rktPullDocker: false
 
+# Core DNS image repository to use.
+#coreDnsImage:
+#  repo: coredns/coredns
+#  tag: 1.1.3
+#  rktPullDocker: false
+
 # kube rescheduler image repository to use.
 #kubeReschedulerImage:
 #  repo: k8s.gcr.io/rescheduler-amd64
@@ -1104,26 +1153,26 @@ kubernetes:
   # The bootstrap token is automatically generated in ./credentials/kubelet-tls-bootstrap-token.
   encryptionAtRest:
     enabled: false
-#  networking:
-#    selfHosting:
+
 #  controllerManager:
 #    resources:
 #      requests:
-#        cpu: 200m
-#        memory: 1G
+#        cpu: 100m
+#        memory: 100M
 #      limits:
-#        cpu: 1
-#        memory: 2G
+#        cpu: 250m
+#        memory: 512M
 
-# Configure self-hosted networking within kubernetes, deployed as a k8s daemonset.  Choose either 'canal' (calico+flannel) or 
-# 'flannel' (choose 'canal' if you require calico or kubernetes NetworkPolicy firewalling).
-# When enabled nodes no longer need to connect etcd and frees up node podCIDR leases faster resolving issue: 
+# Kubernetes Self-hosted networking daemonsets
+# Choose either 'canal' (calico+flannel) or 'flannel'
+# (choose 'canal' if you require calico or kubernetes NetworkPolicy firewalling).
+# When enabled nodes no longer need to connect etcd and frees up node podCIDR leases faster resolving issue:
 # https://github.com/coreos/flannel/issues/954.
-# 
-# Consider enabling Typha if you have 50+ nodes in your cluster. Without Typha, the load on the API server and Felix’s CPU usage
+#
+# Enable Typha if you have 50+ nodes in your cluster. Without Typha, the load on the API server and Felix’s CPU usage
 # increases substantially as the number of nodes is increased.  The legacy top-level 'useCalico' setting has no effect with selfHosting
 # enabled - use type 'canal' for calico+flannel.
-# 
+#
 # Notes on migrating between networking types: -
 # From Legacy Calico to self-hosted Canal - GOOD
 # From Legacy Calico to self-hosted Flannel - OK - ISSUES1
@@ -1131,15 +1180,17 @@ kubernetes:
 # From self-hosted Canal to self-hosted Flannel - OK - ISSUES1
 # From Legacy Flannel to self-hosted Canal or Flannel - ISSUES2
 # From self-hosted Canal or Flannel to legacy Flannel - ISSUES3
-# 
+#
 # ISSUES1 - calico iptables rules remain on the nodes, recycle nodes to remove.
 # ISSUES2 - Existing pod ip addresses are not tracked and can cause clashing ips - please cordon all nodes whilst
 # performing the upgrade until all workers/nodes have been recycyled - then it will be ok.
 # ISSUES3 - Rolling back to old networking will require all nodes are cycled/rolled and the network is disrupted throughout.
-#
-#      enabled: false   # enable self-hosting
-#      type: canal      # either "canal" or "flannel"
-#      typha: false     # enable for type 'canal' for large clusters
+
+  networking:
+    selfHosting:
+      enabled: true    # false will fall back to legacy coreos flannel/etcd2 installation
+      type: canal      # either "canal" or "flannel"
+      typha: false     # enable for type 'canal' for 50+ node clusters
 #      calicoNodeImage:
 #        repo: quay.io/calico/node
 #        tag: v3.0.3
@@ -1211,12 +1262,23 @@ kubernetes:
 # Access the dashboard  using 'kubectl proxy:
 # insecureLogin: false ==> "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/"
 # insecureLogin: true ==>  "http://localhost:8001/api/v1/namespaces/kube-system/services/http:kubernetes-dashboard:/proxy/"
+# enabled: true
 # Expose the dashboard
 # Please check the documentation: https://kubernetes-incubator.github.io/kube-aws/advanced-topics/kubernetes-dashboard.html
 
 kubernetesDashboard:
   adminPrivileges: true
   insecureLogin: false
+  enabled: true
+# # Optional resource change for Dashboard can be done via using the resources block below and changing the values.
+# # Values below are the default already if not set.
+# resources:
+#   requests:
+#     cpu: 100m
+#     memory: 100Mi
+#   limits:
+#     cpu: 100m
+#     memory: 100Mi
 
 # When enabled, all nodes will forward journald logs to AWS CloudWatch.
 # It is disabled by default.
@@ -1239,12 +1301,20 @@ kubernetesDashboard:
 #  sha1sum: a6fff8f9839d5905934e7e3df3123b54020a1f5e
 
 
+# KubeDNS
 kubeDns:
-# When enabled, will enable a DNS-masq DaemonSet to make PODs to resolve DNS names via locally running dnsmasq
-# It is disabled by default.
-# nodeLocalResolver: false
-# When enabled, will deploy kube-dns to K8s controllers instead of workers.
-# deployToControllers: false
+  # Define which DNS provider to use (kube-dns or coredns), default kube-dns.
+  provider: kube-dns
+
+  # When enabled, will enable a DNS-masq DaemonSet to make PODs to resolve DNS names via locally running dnsmasq
+  # It is disabled by default.
+  # nodeLocalResolver: false
+
+  # When enabled, will deploy kube-dns to K8s controllers instead of workers.
+  # deployToControllers: false
+
+  # DNS Autoscaler
+  # Ref: https://github.com/kubernetes-incubator/cluster-proportional-autoscaler/
   autoscaler:
     coresPerReplica: 256
     nodesPerReplica: 16

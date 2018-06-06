@@ -5,6 +5,7 @@ import (
 
 	"bufio"
 	"github.com/kubernetes-incubator/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/spf13/cobra"
 	"os"
 	"strings"
@@ -37,7 +38,7 @@ func init() {
 
 func runCmdUpdate(_ *cobra.Command, _ []string) error {
 	if !updateOpts.force && !updateConfirmation() {
-		fmt.Println("Operation cancelled")
+		logger.Info("Operation cancelled")
 		return nil
 	}
 
@@ -45,7 +46,7 @@ func runCmdUpdate(_ *cobra.Command, _ []string) error {
 
 	cluster, err := root.ClusterFromFile(configPath, opts, updateOpts.awsDebug)
 	if err != nil {
-		return fmt.Errorf("Failed to read cluster config: %v", err)
+		return fmt.Errorf("failed to read cluster config: %v", err)
 	}
 
 	targets := root.OperationTargetsFromStringSlice(updateOpts.targets)
@@ -56,23 +57,22 @@ func runCmdUpdate(_ *cobra.Command, _ []string) error {
 
 	report, err := cluster.Update(targets)
 	if err != nil {
-		return fmt.Errorf("Error updating cluster: %v", err)
+		return fmt.Errorf("error updating cluster: %v", err)
 	}
 	if report != "" {
-		fmt.Printf("Update stack: %s\n", report)
+		logger.Infof("Update stack: %s\n", report)
 	}
 
 	info, err := cluster.Info()
 	if err != nil {
-		return fmt.Errorf("Failed fetching cluster info: %v", err)
+		return fmt.Errorf("failed fetching cluster info: %v", err)
 	}
 
 	successMsg :=
 		`Success! Your AWS resources are being updated:
 %s
 `
-	fmt.Printf(successMsg, info.String())
-
+	logger.Infof(successMsg, info)
 	return nil
 }
 
