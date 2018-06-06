@@ -5441,7 +5441,9 @@ write_files:
         annotations:
           iam.amazonaws.com/permitted: ".*"
         labels:
-          name: kube-system
+	{{- range $key, $value := .KubeSystemNamespaceLabels }}
+          {{ $key }}: {{ $value }}
+	{{- end }}
 
   - path: /srv/kubernetes/manifests/kiam-all.yaml
     content: |

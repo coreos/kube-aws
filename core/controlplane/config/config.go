@@ -192,6 +192,7 @@ func NewDefaultCluster() *Cluster {
 					Min:             2,
 				},
 			},
+			KubeSystemNamespaceLabels: make(map[string]string),
 			KubernetesDashboard: KubernetesDashboard{
 				AdminPrivileges: true,
 				InsecureLogin:   false,
@@ -485,28 +486,29 @@ type DeploymentSettings struct {
 	DeprecatedInternetGatewayID           string                `yaml:"internetGatewayId,omitempty"`
 	InternetGateway                       model.InternetGateway `yaml:"internetGateway,omitempty"`
 	// Required for validations like e.g. if instance cidr is contained in vpc cidr
-	VPCCIDR                 string            `yaml:"vpcCIDR,omitempty"`
-	InstanceCIDR            string            `yaml:"instanceCIDR,omitempty"`
-	K8sVer                  string            `yaml:"kubernetesVersion,omitempty"`
-	ContainerRuntime        string            `yaml:"containerRuntime,omitempty"`
-	KMSKeyARN               string            `yaml:"kmsKeyArn,omitempty"`
-	StackTags               map[string]string `yaml:"stackTags,omitempty"`
-	Subnets                 model.Subnets     `yaml:"subnets,omitempty"`
-	EIPAllocationIDs        []string          `yaml:"eipAllocationIDs,omitempty"`
-	ElasticFileSystemID     string            `yaml:"elasticFileSystemId,omitempty"`
-	SharedPersistentVolume  bool              `yaml:"sharedPersistentVolume,omitempty"`
-	SSHAuthorizedKeys       []string          `yaml:"sshAuthorizedKeys,omitempty"`
-	Addons                  model.Addons      `yaml:"addons"`
-	Experimental            Experimental      `yaml:"experimental"`
-	Kubelet                 Kubelet           `yaml:"kubelet"`
-	ManageCertificates      bool              `yaml:"manageCertificates,omitempty"`
-	WaitSignal              WaitSignal        `yaml:"waitSignal"`
-	CloudWatchLogging       `yaml:"cloudWatchLogging,omitempty"`
-	AmazonSsmAgent          `yaml:"amazonSsmAgent,omitempty"`
-	CloudFormationStreaming bool `yaml:"cloudFormationStreaming,omitempty"`
-	KubeProxy               `yaml:"kubeProxy,omitempty"`
-	KubeDns                 `yaml:"kubeDns,omitempty"`
-	KubernetesDashboard     `yaml:"kubernetesDashboard,omitempty"`
+	VPCCIDR                   string            `yaml:"vpcCIDR,omitempty"`
+	InstanceCIDR              string            `yaml:"instanceCIDR,omitempty"`
+	K8sVer                    string            `yaml:"kubernetesVersion,omitempty"`
+	ContainerRuntime          string            `yaml:"containerRuntime,omitempty"`
+	KMSKeyARN                 string            `yaml:"kmsKeyArn,omitempty"`
+	StackTags                 map[string]string `yaml:"stackTags,omitempty"`
+	Subnets                   model.Subnets     `yaml:"subnets,omitempty"`
+	EIPAllocationIDs          []string          `yaml:"eipAllocationIDs,omitempty"`
+	ElasticFileSystemID       string            `yaml:"elasticFileSystemId,omitempty"`
+	SharedPersistentVolume    bool              `yaml:"sharedPersistentVolume,omitempty"`
+	SSHAuthorizedKeys         []string          `yaml:"sshAuthorizedKeys,omitempty"`
+	Addons                    model.Addons      `yaml:"addons"`
+	Experimental              Experimental      `yaml:"experimental"`
+	Kubelet                   Kubelet           `yaml:"kubelet"`
+	ManageCertificates        bool              `yaml:"manageCertificates,omitempty"`
+	WaitSignal                WaitSignal        `yaml:"waitSignal"`
+	CloudWatchLogging         `yaml:"cloudWatchLogging,omitempty"`
+	AmazonSsmAgent            `yaml:"amazonSsmAgent,omitempty"`
+	CloudFormationStreaming   bool `yaml:"cloudFormationStreaming,omitempty"`
+	KubeProxy                 `yaml:"kubeProxy,omitempty"`
+	KubeDns                   `yaml:"kubeDns,omitempty"`
+	KubeSystemNamespaceLabels map[string]string `yaml:"kubeSystemNamespaceLabels,omitempty"`
+	KubernetesDashboard       `yaml:"kubernetesDashboard,omitempty"`
 	// Images repository
 	HyperkubeImage model.Image `yaml:"hyperkubeImage,omitempty"`
 	AWSCliImage    model.Image `yaml:"awsCliImage,omitempty"`

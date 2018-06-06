@@ -1253,6 +1253,16 @@ kubernetes:
 # The autosave process executes on start-up and repeats every 24 hours.
 #kubeResourcesAutosave:
 #  enabled: false
+#
+      
+# Set kube-system namespace labels:
+# In order to target a namespace for network policies the namepace needs to be labeled.
+# Feel free to remove or alter this setting to change the labels for the kube-system namespace.
+# Values need to be a dictionary of values
+# foo: bar
+# bar: foo
+kubeSystemNamespaceLabels:
+  name: kube-system
 
 # Accessing Dashboard:
 # By default, the kubernetes dashboard has admin privileges and doesn't require authentication.
