@@ -1488,6 +1488,14 @@ kubelet:
   RotateCerts:
     enabled: true
 
+  # Currently CPU, memory and storage are supported.
+  # How resources are reserved: https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/
+  # How to size these limits: https://kubernetes.io/blog/2016/11/visualize-kubelet-performance-with-node-dashboard/
+  # kubeReserved is used to reserve capacity for kubernetes system daemons
+  #kubeReserved: "cpu=100m,memory=100Mi,storage=1Gi"
+  # systemReserved is used to reserve capacity for OS system daemons
+  #systemReserved: "cpu=100m,memory=100Mi,storage=1Gi"
+
 # AWS Tags for cloudformation stack resources
 #stackTags:
 #  Name: "Kubernetes"
