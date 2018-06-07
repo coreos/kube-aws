@@ -18,3 +18,4 @@ _book
 *.pdf
 node_modules
 kube-aws
+.DS_Store

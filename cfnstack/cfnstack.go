@@ -32,7 +32,8 @@ type S3ObjectPutterService interface {
 	PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput, error)
 }
 
-type cfInterrogator interface {
+// Used for querying existance of stacks and nested stacks.
+type CFInterrogator interface {
 	ListStacks(input *cloudformation.ListStacksInput) (*cloudformation.ListStacksOutput, error)
 	ListStackResources(input *cloudformation.ListStackResourcesInput) (*cloudformation.ListStackResourcesOutput, error)
 }
@@ -59,7 +60,7 @@ func StackEventErrMsgs(events []*cloudformation.StackEvent) []string {
 	return errMsgs
 }
 
-func NestedStackExists(cf cfInterrogator, parentStackName, stackName string) (bool, error) {
+func NestedStackExists(cf CFInterrogator, parentStackName, stackName string) (bool, error) {
 	logger.Debugf("Testing whether nested stack '%s' is present in parent stack '%s'", stackName, parentStackName)
 	parentExists, err := StackExists(cf, parentStackName)
 	if err != nil {
@@ -76,6 +77,9 @@ func NestedStackExists(cf cfInterrogator, parentStackName, stackName string) (bo
 	if err != nil {
 		return false, fmt.Errorf("Could not read cf stack %s: %v", parentStackName, err)
 	}
+	if out == nil {
+		return false, nil
+	}
 	logger.Debugf("<- AWS responded with %d stack resources", len(out.StackResourceSummaries))
 	for _, resource := range out.StackResourceSummaries {
 		if *resource.LogicalResourceId == stackName {
@@ -87,13 +91,16 @@ func NestedStackExists(cf cfInterrogator, parentStackName, stackName string) (bo
 	return false, nil
 }
 
-func StackExists(cf cfInterrogator, stackName string) (bool, error) {
+func StackExists(cf CFInterrogator, stackName string) (bool, error) {
 	logger.Debugf("Testing whether cf stack %s exits", stackName)
 	req := &cloudformation.ListStacksInput{}
 	logger.Debug("Calling AWS cloudformation ListStacks ->")
 	stacks, err := cf.ListStacks(req)
 	if err != nil {
 		return false, fmt.Errorf("Could not list cloudformation stacks: %v", err)
+	}
+	if stacks == nil {
+		return false, nil
 	}
 	logger.Debugf("<- AWS Responded with %d stacks", len(stacks.StackSummaries))
 	for _, summary := range stacks.StackSummaries {

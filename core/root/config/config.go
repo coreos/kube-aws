@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 
 	"github.com/go-yaml/yaml"
+	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
@@ -185,12 +186,13 @@ func failFastWhenUnknownKeysFound(vs []unknownKeyValidation) error {
 	return nil
 }
 
-func ConfigFromBytesWithEncryptService(data []byte, plugins []*pluginmodel.Plugin, encryptService controlplane.EncryptService) (*Config, error) {
+func ConfigFromBytesWithMocks(data []byte, plugins []*pluginmodel.Plugin, encryptService controlplane.EncryptService, cf cfnstack.CFInterrogator) (*Config, error) {
 	c, err := ConfigFromBytes(data, plugins)
 	if err != nil {
 		return nil, err
 	}
 	c.ProvidedEncryptService = encryptService
+	c.ProvidedCFInterrogator = cf
 
 	// Uses the same encrypt service for node pools for consistency
 	for _, p := range c.NodePools {

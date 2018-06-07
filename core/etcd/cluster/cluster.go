@@ -116,7 +116,9 @@ func (c *ClusterRef) validateExistingVPCState(ec2Svc ec2Service) error {
 func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugins []*pluginmodel.Plugin, session *session.Session) (*Cluster, error) {
 	cfg := &config.Cluster{}
 	*cfg = *cfgRef
-	cf := cloudformation.New(session)
+	if cfg.ProvidedCFInterrogator == nil {
+		cfg.ProvidedCFInterrogator = cloudformation.New(session)
+	}
 
 	// Import all the managed subnets from the network stack
 	var err error
@@ -159,7 +161,7 @@ func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugin
 	c.StackConfig.Etcd.CustomSystemdUnits = append(c.StackConfig.Etcd.CustomSystemdUnits, extraEtcd.SystemdUnits...)
 	c.StackConfig.Etcd.CustomFiles = append(c.StackConfig.Etcd.CustomFiles, extraEtcd.Files...)
 	c.StackConfig.Etcd.IAMConfig.Policy.Statements = append(c.StackConfig.Etcd.IAMConfig.Policy.Statements, extraEtcd.IAMPolicyStatements...)
-	c.StackConfig.Etcd.StackExists, err = cfnstack.NestedStackExists(cf, c.ClusterName, naming.FromStackToCfnResource(c.Etcd.LogicalName()))
+	c.StackConfig.Etcd.StackExists, err = cfnstack.NestedStackExists(cfg.ProvidedCFInterrogator, c.ClusterName, naming.FromStackToCfnResource(c.Etcd.LogicalName()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for existence of etcd cloud-formation stack: %v", err)
 	}

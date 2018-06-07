@@ -2,6 +2,7 @@ package helper
 
 import (
 	"fmt"
+
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 )
 
@@ -9,6 +10,20 @@ type DummyCloudformationService struct {
 	ExpectedTags []*cloudformation.Tag
 	StackEvents  []*cloudformation.StackEvent
 	StackStatus  string
+}
+
+// DummyCFInterrogator is used to prevent calls to AWS - always returns empty results.
+type DummyCFInterrogator struct {
+	ListStacksResult          *cloudformation.ListStacksOutput
+	ListStacksResourcesResult *cloudformation.ListStackResourcesOutput
+}
+
+func (cf DummyCFInterrogator) ListStacks(input *cloudformation.ListStacksInput) (*cloudformation.ListStacksOutput, error) {
+	return cf.ListStacksResult, nil
+}
+
+func (cf DummyCFInterrogator) ListStackResources(input *cloudformation.ListStackResourcesInput) (*cloudformation.ListStackResourcesOutput, error) {
+	return cf.ListStacksResourcesResult, nil
 }
 
 func (cfSvc *DummyCloudformationService) CreateStack(req *cloudformation.CreateStackInput) (*cloudformation.CreateStackOutput, error) {

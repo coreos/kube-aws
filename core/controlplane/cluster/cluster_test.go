@@ -1,7 +1,6 @@
 package cluster
 
 import (
-	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/test/helper"
@@ -514,52 +513,6 @@ stackTags:
 			assert.NoError(t, err)
 			assert.Equal(t, "test-bucket/foo/bar/kube-aws/clusters/test-cluster-name/exported/stacks/control-plane/userdata-controller", path, "UserDataController.S3Prefix returned an unexpected value")
 		})
-	}
-}
-
-func TestStackCreationErrorMessaging(t *testing.T) {
-	events := []*cloudformation.StackEvent{
-		&cloudformation.StackEvent{
-			// Failure with all fields set
-			ResourceStatus:       aws.String("CREATE_FAILED"),
-			ResourceType:         aws.String("Computer"),
-			LogicalResourceId:    aws.String("test_comp"),
-			ResourceStatusReason: aws.String("BAD HD"),
-		},
-		&cloudformation.StackEvent{
-			// Success, should not show up
-			ResourceStatus: aws.String("SUCCESS"),
-			ResourceType:   aws.String("Computer"),
-		},
-		&cloudformation.StackEvent{
-			// Failure due to cancellation should not show up
-			ResourceStatus:       aws.String("CREATE_FAILED"),
-			ResourceType:         aws.String("Computer"),
-			ResourceStatusReason: aws.String("Resource creation cancelled"),
-		},
-		&cloudformation.StackEvent{
-			// Failure with missing fields
-			ResourceStatus: aws.String("CREATE_FAILED"),
-			ResourceType:   aws.String("Computer"),
-		},
-	}
-
-	expectedMsgs := []string{
-		"CREATE_FAILED Computer test_comp BAD HD",
-		"CREATE_FAILED Computer",
-	}
-
-	outputMsgs := cfnstack.StackEventErrMsgs(events)
-	if len(expectedMsgs) != len(outputMsgs) {
-		t.Errorf("Expected %d stack error messages, got %d\n",
-			len(expectedMsgs),
-			len(cfnstack.StackEventErrMsgs(events)))
-	}
-
-	for i := range expectedMsgs {
-		if expectedMsgs[i] != outputMsgs[i] {
-			t.Errorf("Expected `%s`, got `%s`\n", expectedMsgs[i], outputMsgs[i])
-		}
 	}
 }
 
