@@ -138,7 +138,6 @@ func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugin
 	// TODO Do this in a cleaner way e.g. in config.go
 	clusterRef.KubeResourcesAutosave.S3Path = model.NewS3Folders(cfg.DeploymentSettings.S3URI, clusterRef.ClusterName).ClusterBackups().Path()
 	stackConfig, err := clusterRef.StackConfig(config.ControlPlaneStackName, opts, session, plugins)
-	clusterRef.KubeAWSVersion = VERSION
 	if err != nil {
 		return nil, err
 	}
@@ -168,6 +167,7 @@ func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugin
 	c.StackConfig.Controller.CustomSystemdUnits = append(c.StackConfig.Controller.CustomSystemdUnits, extraController.SystemdUnits...)
 	c.StackConfig.Controller.CustomFiles = append(c.StackConfig.Controller.CustomFiles, extraController.Files...)
 	c.StackConfig.Controller.IAMConfig.Policy.Statements = append(c.StackConfig.Controller.IAMConfig.Policy.Statements, extraController.IAMPolicyStatements...)
+	c.StackConfig.KubeAWSVersion = VERSION
 
 	for k, v := range extraController.NodeLabels {
 		c.StackConfig.Controller.NodeLabels[k] = v

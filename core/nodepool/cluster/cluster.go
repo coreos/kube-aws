@@ -3,16 +3,18 @@ package cluster
 import (
 	"bytes"
 	"fmt"
+	"text/tabwriter"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
+	controlplanecluster "github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
 	"github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
-	"text/tabwriter"
 )
 
 const STACK_TEMPLATE_FILENAME = "stack.json"
@@ -86,6 +88,7 @@ func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOption
 	c.StackConfig.CustomSystemdUnits = append(c.StackConfig.CustomSystemdUnits, extraWorker.SystemdUnits...)
 	c.StackConfig.CustomFiles = append(c.StackConfig.CustomFiles, extraWorker.Files...)
 	c.StackConfig.IAMConfig.Policy.Statements = append(c.StackConfig.IAMConfig.Policy.Statements, extraWorker.IAMPolicyStatements...)
+	c.StackConfig.KubeAWSVersion = controlplanecluster.VERSION
 
 	for k, v := range extraWorker.NodeLabels {
 		c.NodeSettings.NodeLabels[k] = v
