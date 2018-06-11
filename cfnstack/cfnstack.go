@@ -61,18 +61,18 @@ func StackEventErrMsgs(events []*cloudformation.StackEvent) []string {
 }
 
 func NestedStackExists(cf CFInterrogator, parentStackName, stackName string) (bool, error) {
-	logger.Debugf("Testing whether nested stack '%s' is present in parent stack '%s'", stackName, parentStackName)
+	logger.Debugf("testing whether nested stack '%s' is present in parent stack '%s'", stackName, parentStackName)
 	parentExists, err := StackExists(cf, parentStackName)
 	if err != nil {
 		return false, err
 	}
 	if !parentExists {
-		logger.Debugf("Parent stack '%s' does not exist, so nested stack can not exist either", parentStackName)
+		logger.Debugf("parent stack '%s' does not exist, so nested stack can not exist either", parentStackName)
 		return false, nil
 	}
 
 	req := &cloudformation.ListStackResourcesInput{StackName: &parentStackName}
-	logger.Debugf("Calling AWS cloudformation ListStackResources for stack %s ->", parentStackName)
+	logger.Debugf("calling AWS cloudformation ListStackResources for stack %s ->", parentStackName)
 	out, err := cf.ListStackResources(req)
 	if err != nil {
 		return false, fmt.Errorf("Could not read cf stack %s: %v", parentStackName, err)
@@ -83,21 +83,21 @@ func NestedStackExists(cf CFInterrogator, parentStackName, stackName string) (bo
 	logger.Debugf("<- AWS responded with %d stack resources", len(out.StackResourceSummaries))
 	for _, resource := range out.StackResourceSummaries {
 		if *resource.LogicalResourceId == stackName {
-			logger.Debugf("Match! resource id '%s' exists", stackName)
+			logger.Debugf("match! resource id '%s' exists", stackName)
 			return true, nil
 		}
 	}
-	logger.Debugf("No match! resource id '%s' does not exist", stackName)
+	logger.Debugf("no match! resource id '%s' does not exist", stackName)
 	return false, nil
 }
 
 func StackExists(cf CFInterrogator, stackName string) (bool, error) {
-	logger.Debugf("Testing whether cf stack %s exits", stackName)
+	logger.Debugf("testing whether cf stack %s exits", stackName)
 	req := &cloudformation.ListStacksInput{}
-	logger.Debug("Calling AWS cloudformation ListStacks ->")
+	logger.Debug("calling AWS cloudformation ListStacks ->")
 	stacks, err := cf.ListStacks(req)
 	if err != nil {
-		return false, fmt.Errorf("Could not list cloudformation stacks: %v", err)
+		return false, fmt.Errorf("could not list cloudformation stacks: %v", err)
 	}
 	if stacks == nil {
 		return false, nil
@@ -105,15 +105,15 @@ func StackExists(cf CFInterrogator, stackName string) (bool, error) {
 	logger.Debugf("<- AWS Responded with %d stacks", len(stacks.StackSummaries))
 	for _, summary := range stacks.StackSummaries {
 		if *summary.StackName == stackName {
-			logger.Debugf("Found matching stack %s: %+v", *summary.StackName, *summary)
+			logger.Debugf("found matching stack %s: %+v", *summary.StackName, *summary)
 			if summary.DeletionTime == nil {
-				logger.Debugf("Stack is active - matched!")
+				logger.Debugf("stack is active - matched!")
 				return true, nil
 			} else {
-				logger.Debugf("Stack is not active, ignoring")
+				logger.Debugf("stack is not active, ignoring")
 			}
 		}
 	}
-	logger.Debugf("Found no active stacks with id %s", stackName)
+	logger.Debugf("found no active stacks with id %s", stackName)
 	return false, nil
 }
