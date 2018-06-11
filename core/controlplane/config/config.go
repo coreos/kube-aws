@@ -493,9 +493,10 @@ type DeploymentSettings struct {
 	DeprecatedInternetGatewayID           string                `yaml:"internetGatewayId,omitempty"`
 	InternetGateway                       model.InternetGateway `yaml:"internetGateway,omitempty"`
 	// Required for validations like e.g. if instance cidr is contained in vpc cidr
-	VPCCIDR                   string            `yaml:"vpcCIDR,omitempty"`
-	InstanceCIDR              string            `yaml:"instanceCIDR,omitempty"`
-	K8sVer                    string            `yaml:"kubernetesVersion,omitempty"`
+	VPCCIDR                   string `yaml:"vpcCIDR,omitempty"`
+	InstanceCIDR              string `yaml:"instanceCIDR,omitempty"`
+	K8sVer                    string `yaml:"kubernetesVersion,omitempty"`
+	KubeAWSVersion            string
 	ContainerRuntime          string            `yaml:"containerRuntime,omitempty"`
 	KMSKeyARN                 string            `yaml:"kmsKeyArn,omitempty"`
 	StackTags                 map[string]string `yaml:"stackTags,omitempty"`
