@@ -130,7 +130,7 @@ func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugin
 	// TODO Do this in a cleaner way e.g. in config.go
 	clusterRef.KubeResourcesAutosave.S3Path = model.NewS3Folders(cfg.DeploymentSettings.S3URI, clusterRef.ClusterName).ClusterBackups().Path()
 	clusterRef.KubeAWSVersion = controlplanecluster.VERSION
-	clusterRef.CoreOS = cfgRef.CoreOS
+	clusterRef.HostOS = cfgRef.HostOS
 
 	stackConfig, err := clusterRef.StackConfig("etcd", opts, session, plugins)
 	if err != nil {

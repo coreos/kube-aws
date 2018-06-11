@@ -122,7 +122,7 @@ coreos:
 
         [Install]
         RequiredBy=format-etcd2-volume.service
-{{- if .CoreOS.Prompt.Enabled }}
+{{- if .HostOS.BashPrompt.Enabled }}
     - name: replace-prompt.service
       enable: true
       command: start
@@ -139,7 +139,7 @@ coreos:
         [Install]
         WantedBy=multi-user.target
 {{- end }}
-{{- if .CoreOS.LoginBanner.Enabled }}
+{{- if .HostOS.MOTDBanner.Enabled }}
     - name: enhance-motd.service
       enable: true
       command: start
@@ -150,8 +150,8 @@ coreos:
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=/bin/bash -c "echo -e \"{{.CoreOS.LoginBanner.EtcdColour.On}}Etcd Server{{.CoreOS.LoginBanner.EtcdColour.Off}} v{{.Etcd.Version}}\" >>/etc/motd"
-        ExecStart=/bin/bash -c "echo -e \"{{.CoreOS.LoginBanner.KubeAWSColour.On}}kube-aws{{.CoreOS.LoginBanner.KubeAWSColour.Off}} {{ .KubeAWSVersion }}\" >>/etc/motd"
+        ExecStart=/bin/bash -c "echo -e \"{{.HostOS.MOTDBanner.EtcdColour.On}}Etcd Server{{.HostOS.MOTDBanner.EtcdColour.Off}} v{{.Etcd.Version}}\" >>/etc/motd"
+        ExecStart=/bin/bash -c "echo -e \"{{.HostOS.MOTDBanner.KubeAWSColour.On}}kube-aws{{.HostOS.MOTDBanner.KubeAWSColour.Off}} {{ .KubeAWSVersion }}\" >>/etc/motd"
 
         [Install]
         WantedBy=multi-user.target
@@ -894,7 +894,7 @@ write_files:
     content: {{.AssetsConfig.EtcdClientKey}}
 
 {{ end }}
-  {{if .CoreOS.Prompt.Enabled -}}
+  {{if .HostOS.BashPrompt.Enabled -}}
   # Enable informative coreos ssh shell prompts
   - path: /etc/bash/bashrc-kube-aws
     permissions: 0644
@@ -941,10 +941,10 @@ write_files:
       # Change the window title of X terminals
       case ${TERM} in
       [aEkx]term*|rxvt*|gnome*|konsole*|interix)
-          PS1='\[\033]0;{{.CoreOS.Prompt.EtcdLabel}}{{.CoreOS.Prompt.Divider}}{{.ClusterName}} \h\007\]'
+          PS1='\[\033]0;{{.HostOS.BashPrompt.EtcdLabel}}{{.HostOS.BashPrompt.Divider}}{{.ClusterName}} \h\007\]'
           ;;
       screen*)
-          PS1='\[\033k{{.CoreOS.Prompt.EtcdLabel}}{{.CoreOS.Prompt.Divider}}{{.ClusterName}} \h\033\\\]'
+          PS1='\[\033k{{.HostOS.BashPrompt.EtcdLabel}}{{.HostOS.BashPrompt.Divider}}{{.ClusterName}} \h\033\\\]'
           ;;
       *)
           unset PS1
@@ -988,36 +988,36 @@ write_files:
 
       if [[ ${EUID} == 0 ]] ; then
         END_SYMBOL='#'
-        USER_COLOUR_ON='{{ .CoreOS.Prompt.RootUserColour.PCOn }}'
-        USER_COLOUR_OFF='{{ .CoreOS.Prompt.RootUserColour.PCOff }}'
-        USERHOST_STYLE='{{ if .CoreOS.Prompt.IncludeHostname }}\h{{ end }}'
+        USER_COLOUR_ON='{{ .HostOS.BashPrompt.RootUserColour.PCOn }}'
+        USER_COLOUR_OFF='{{ .HostOS.BashPrompt.RootUserColour.PCOff }}'
+        USERHOST_STYLE='{{ if .HostOS.BashPrompt.IncludeHostname }}\h{{ end }}'
         DIRECTORY_STYLE='\W'
       else
         END_SYMBOL='$'
-        USER_COLOUR_ON='{{ .CoreOS.Prompt.NonRootUserColour.PCOn }}'
-        USER_COLOUR_OFF='{{ .CoreOS.Prompt.NonRootUserColour.PCOff }}'
-        USERHOST_STYLE='\u{{ if .CoreOS.Prompt.IncludeHostname }}@\h{{ end }}'
+        USER_COLOUR_ON='{{ .HostOS.BashPrompt.NonRootUserColour.PCOn }}'
+        USER_COLOUR_OFF='{{ .HostOS.BashPrompt.NonRootUserColour.PCOff }}'
+        USERHOST_STYLE='\u{{ if .HostOS.BashPrompt.IncludeHostname }}@\h{{ end }}'
         DIRECTORY_STYLE='\w'
       fi
 
       if ${use_color} ; then
-          PS1+="{{ .CoreOS.Prompt.EtcdColour.PCOn }}{{ .CoreOS.Prompt.EtcdLabel }}{{ .CoreOS.Prompt.EtcdColour.PCOff }}
-          {{- .CoreOS.Prompt.DividerColour.PCOn }}{{ .CoreOS.Prompt.Divider }}{{ .CoreOS.Prompt.DividerColour.PCOff }}
-          {{- .CoreOS.Prompt.ClusterColour.PCOn }}{{ .ClusterName }}{{ .CoreOS.Prompt.ClusterColour.PCOff }}
-          {{- if .CoreOS.Prompt.IncludeUser }}${USER_COLOUR_ON} ${USERHOST_STYLE}${USER_COLOUR_OFF}{{ end }}
-          {{- .CoreOS.Prompt.DirectoryColour.PCOn }}
-          {{- if .CoreOS.Prompt.IncludePWD }} ${DIRECTORY_STYLE}{{ end }} ${END_SYMBOL} {{ .CoreOS.Prompt.DirectoryColour.PCOff }}"
+          PS1+="{{ .HostOS.BashPrompt.EtcdColour.PCOn }}{{ .HostOS.BashPrompt.EtcdLabel }}{{ .HostOS.BashPrompt.EtcdColour.PCOff }}
+          {{- .HostOS.BashPrompt.DividerColour.PCOn }}{{ .HostOS.BashPrompt.Divider }}{{ .HostOS.BashPrompt.DividerColour.PCOff }}
+          {{- .HostOS.BashPrompt.ClusterColour.PCOn }}{{ .ClusterName }}{{ .HostOS.BashPrompt.ClusterColour.PCOff }}
+          {{- if .HostOS.BashPrompt.IncludeUser }}${USER_COLOUR_ON} ${USERHOST_STYLE}${USER_COLOUR_OFF}{{ end }}
+          {{- .HostOS.BashPrompt.DirectoryColour.PCOn }}
+          {{- if .HostOS.BashPrompt.IncludePWD }} ${DIRECTORY_STYLE}{{ end }} ${END_SYMBOL} {{ .HostOS.BashPrompt.DirectoryColour.PCOff }}"
 
           alias ls='ls --color=auto'
           alias grep='grep --colour=auto'
           alias egrep='egrep --colour=auto'
           alias fgrep='fgrep --colour=auto'
       else
-          PS1+="{{ .CoreOS.Prompt.EtcdLabel }}
-          {{- .CoreOS.Prompt.Divider }}
+          PS1+="{{ .HostOS.BashPrompt.EtcdLabel }}
+          {{- .HostOS.BashPrompt.Divider }}
           {{- .ClusterName }}
-          {{- if .CoreOS.Prompt.IncludeUser }} ${USERHOST_STYLE}{{ end }}
-          {{- if .CoreOS.Prompt.IncludePWD }} ${DIRECTORY_STYLE}{{ end }} ${END_SYMBOL} "
+          {{- if .HostOS.BashPrompt.IncludeUser }} ${USERHOST_STYLE}{{ end }}
+          {{- if .HostOS.BashPrompt.IncludePWD }} ${DIRECTORY_STYLE}{{ end }} ${END_SYMBOL} "
       fi
 
       for sh in /etc/bash/bashrc.d/* ; do

@@ -160,7 +160,7 @@ func (c *ProvidedConfig) Load(main *cfg.Config) error {
 
 	// Inherit parameters from the control plane stack
 	c.KubeClusterSettings = main.KubeClusterSettings
-	c.CoreOS = main.CoreOS
+	c.HostOS = main.HostOS
 	c.Experimental.TLSBootstrap = main.DeploymentSettings.Experimental.TLSBootstrap
 	c.Experimental.NodeDrainer = main.DeploymentSettings.Experimental.NodeDrainer
 	c.Experimental.GpuSupport = main.DeploymentSettings.Experimental.GpuSupport
