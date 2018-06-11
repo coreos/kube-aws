@@ -1253,6 +1253,16 @@ kubernetes:
 # The autosave process executes on start-up and repeats every 24 hours.
 #kubeResourcesAutosave:
 #  enabled: false
+#
+      
+# Set kube-system namespace labels:
+# In order to target a namespace for network policies the namepace needs to be labeled.
+# Feel free to remove or alter this setting to change the labels for the kube-system namespace.
+# Values need to be a dictionary of values
+# foo: bar
+# bar: foo
+kubeSystemNamespaceLabels:
+  name: kube-system
 
 # Accessing Dashboard:
 # By default, the kubernetes dashboard has admin privileges and doesn't require authentication.
@@ -1487,6 +1497,14 @@ kubelet:
   # Requires Experimental.tlsBootstrap to be enabled
   RotateCerts:
     enabled: true
+
+  # Currently CPU, memory and storage are supported.
+  # How resources are reserved: https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/
+  # How to size these limits: https://kubernetes.io/blog/2016/11/visualize-kubelet-performance-with-node-dashboard/
+  # kubeReserved is used to reserve capacity for kubernetes system daemons
+  #kubeReserved: "cpu=100m,memory=100Mi,storage=1Gi"
+  # systemReserved is used to reserve capacity for OS system daemons
+  #systemReserved: "cpu=100m,memory=100Mi,storage=1Gi"
 
 # AWS Tags for cloudformation stack resources
 #stackTags:

@@ -16,6 +16,7 @@ var (
 )
 
 func init() {
+	RootCmd.SetOutput(logger.Writer(logger.StdErrOutput))
 	RootCmd.PersistentFlags().BoolVarP(
 		&logger.Silent,
 		"silent",

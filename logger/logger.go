@@ -17,6 +17,22 @@ var (
 	stdErrLogger     = log.New(os.Stderr, "ERROR: ", 0)
 )
 
+func StdErrOutput(b []byte) (n int, err error) {
+	if Color {
+		b = append([]byte(ColorRed), b...)
+		b = append(b, ColorNC...)
+	}
+	return os.Stderr.Write([]byte(b))
+}
+
+// io.Writer interface implementation. To use with error logs, pass StdErrOutput func:
+// Writer(StdErrOutput) <- implements io.Writer
+type Writer func(b []byte) (n int, err error)
+
+func (w Writer) Write(b []byte) (n int, err error) {
+	return w(b)
+}
+
 func Error(v ...interface{}) {
 	Log(stdErrLogger, ColorRed, v...)
 }

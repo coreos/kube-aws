@@ -431,6 +431,12 @@ coreos:
         {{if or (.Experimental.Admission.Priority.Enabled) (.Experimental.Admission.PersistentVolumeClaimResize.Enabled) -}}
         --feature-gates=PodPriority={{.Experimental.Admission.Priority.Enabled}},ExpandPersistentVolumes={{.Experimental.Admission.PersistentVolumeClaimResize.Enabled}} \
         {{end -}}\
+        {{- if .Kubelet.SystemReservedResources }}
+        --system-reserved={{ .Kubelet.SystemReservedResources }} \
+        {{- end }}
+        {{- if .Kubelet.KubeReservedResources }}
+        --kube-reserved={{ .Kubelet.KubeReservedResources }} \
+        {{- end }}
         $KUBELET_OPTS
         Restart=always
         RestartSec=10
@@ -5474,6 +5480,11 @@ write_files:
         name: kube-system
         annotations:
           iam.amazonaws.com/permitted: ".*"
+        labels:
+	{{- range $key, $value := .KubeSystemNamespaceLabels }}
+          {{ $key }}: {{ $value }}
+	{{- end }}
+
   - path: /srv/kubernetes/manifests/kiam-all.yaml
     content: |
       apiVersion: extensions/v1beta1
