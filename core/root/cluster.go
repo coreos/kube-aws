@@ -107,12 +107,11 @@ func (c clusterImpl) EstimateCost() ([]string, error) {
 }
 
 type Cluster interface {
+	Apply(OperationTargets) error
 	Assets() (cfnstack.Assets, error)
-	Create() error
 	Export() error
 	EstimateCost() ([]string, error)
 	Info() (*Info, error)
-	Update(OperationTargets) (string, error)
 	ValidateStack(...OperationTargets) (string, error)
 	ValidateTemplates() error
 	ControlPlane() *controlplane.Cluster
@@ -253,8 +252,7 @@ func (c clusterImpl) operationTargetsFromUserInput(opts []OperationTargets) Oper
 	return targets
 }
 
-func (c clusterImpl) Create() error {
-	cfSvc := cloudformation.New(c.session)
+func (c clusterImpl) create(cfSvc *cloudformation.CloudFormation) error {
 
 	assets, err := c.generateAssets(c.allOperationTargets())
 	if err != nil {
@@ -468,20 +466,31 @@ func (c clusterImpl) tags() map[string]string {
 	return c.controlPlane.Cluster.StackTags
 }
 
-func (c clusterImpl) Update(targets OperationTargets) (string, error) {
+func (c clusterImpl) Apply(targets OperationTargets) error {
 	cfSvc := cloudformation.New(c.session)
 
 	exists, err := cfnstack.StackExists(cfSvc, c.controlPlane.ClusterName)
 	if err != nil {
 		logger.Errorf("please check your AWS Credentials/Permissions")
-		return "", fmt.Errorf("can't lookup AWS CloudFormation stacks")
-	}
-	if !exists {
-		logger.Errorf("you can only 'update' clusters with a matching cloudformation stack")
-		return "", fmt.Errorf("missing cluster root stack %s", c.controlPlane.ClusterName)
+		return fmt.Errorf("can't lookup AWS CloudFormation stacks")
 	}
 
-	exists, err = cfnstack.NestedStackExists(cfSvc, c.controlPlane.ClusterName, naming.FromStackToCfnResource(c.etcd.Etcd.LogicalName()))
+	if exists {
+		report, err := c.update(cfSvc, targets)
+		if err != nil {
+			return fmt.Errorf("error updating cluster: %v", err)
+		}
+		if report != "" {
+			logger.Infof("Update stack: %s\n", report)
+		}
+		return nil
+	}
+	return c.create(cfSvc)
+}
+
+func (c clusterImpl) update(cfSvc *cloudformation.CloudFormation, targets OperationTargets) (string, error) {
+
+	exists, err := cfnstack.NestedStackExists(cfSvc, c.controlPlane.ClusterName, naming.FromStackToCfnResource(c.etcd.Etcd.LogicalName()))
 	if err != nil {
 		logger.Errorf("please check your AWS Credentials/Permissions")
 		return "", fmt.Errorf("can't lookup AWS CloudFormation stacks")
