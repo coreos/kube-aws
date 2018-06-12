@@ -490,7 +490,7 @@ func (c clusterImpl) Update(targets OperationTargets) (string, error) {
 	if !exists {
 		logger.Errorf("the %s stack must exist in order to be able to update your cluster.", naming.FromStackToCfnResource(c.etcd.Etcd.LogicalName()))
 		logger.Error("we're sorry, but kube-aws can not presently upgrade your cluster to the new release with a separate ETCD Cloudformation stack.")
-		logger.Error("please update using the previous 0.9.x branch or consider backing up, destroying and recreating to upgrade.")
+		logger.Error("please consider backing up, destroying and recreating to upgrade.")
 		return "", fmt.Errorf("update not supported for clusters without a separate etcd cloudformation stack")
 	}
 

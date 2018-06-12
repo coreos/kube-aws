@@ -186,7 +186,7 @@ func failFastWhenUnknownKeysFound(vs []unknownKeyValidation) error {
 	return nil
 }
 
-func ConfigFromBytesWithMocks(data []byte, plugins []*pluginmodel.Plugin, encryptService controlplane.EncryptService, cf cfnstack.CFInterrogator) (*Config, error) {
+func ConfigFromBytesWithStubs(data []byte, plugins []*pluginmodel.Plugin, encryptService controlplane.EncryptService, cf cfnstack.CFInterrogator) (*Config, error) {
 	c, err := ConfigFromBytes(data, plugins)
 	if err != nil {
 		return nil, err
