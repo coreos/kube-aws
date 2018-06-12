@@ -471,8 +471,8 @@ func (c clusterImpl) Apply(targets OperationTargets) error {
 
 	exists, err := cfnstack.StackExists(cfSvc, c.controlPlane.ClusterName)
 	if err != nil {
-		logger.Errorf("please check your AWS Credentials/Permissions")
-		return fmt.Errorf("can't lookup AWS CloudFormation stacks")
+		logger.Errorf("please check your AWS credentials/permissions")
+		return fmt.Errorf("can't lookup AWS CloudFormation stacks: %s", err)
 	}
 
 	if exists {
@@ -492,8 +492,8 @@ func (c clusterImpl) update(cfSvc *cloudformation.CloudFormation, targets Operat
 
 	exists, err := cfnstack.NestedStackExists(cfSvc, c.controlPlane.ClusterName, naming.FromStackToCfnResource(c.etcd.Etcd.LogicalName()))
 	if err != nil {
-		logger.Errorf("please check your AWS Credentials/Permissions")
-		return "", fmt.Errorf("can't lookup AWS CloudFormation stacks")
+		logger.Errorf("please check your AWS credentials/permissions")
+		return "", fmt.Errorf("can't lookup AWS CloudFormation stacks: %s", err)
 	}
 	// fail fast if it looks like we are trying to update a legacy cluster.
 	if !exists {
