@@ -109,9 +109,11 @@ func (c clusterImpl) EstimateCost() ([]string, error) {
 type Cluster interface {
 	Apply(OperationTargets) error
 	Assets() (cfnstack.Assets, error)
+	LegacyCreate() error
 	Export() error
 	EstimateCost() ([]string, error)
 	Info() (*Info, error)
+	LegacyUpdate(OperationTargets) (string, error)
 	ValidateStack(...OperationTargets) (string, error)
 	ValidateTemplates() error
 	ControlPlane() *controlplane.Cluster
@@ -250,6 +252,12 @@ func (c clusterImpl) operationTargetsFromUserInput(opts []OperationTargets) Oper
 		targets = c.allOperationTargets()
 	}
 	return targets
+}
+
+// remove with legacy up command
+func (c clusterImpl) LegacyCreate() error {
+	cfSvc := cloudformation.New(c.session)
+	return c.create(cfSvc)
 }
 
 func (c clusterImpl) create(cfSvc *cloudformation.CloudFormation) error {
@@ -486,6 +494,12 @@ func (c clusterImpl) Apply(targets OperationTargets) error {
 		return nil
 	}
 	return c.create(cfSvc)
+}
+
+// remove with legacy up command
+func (c clusterImpl) LegacyUpdate(targets OperationTargets) (string, error) {
+	cfSvc := cloudformation.New(c.session)
+	return c.update(cfSvc, targets)
 }
 
 func (c clusterImpl) update(cfSvc *cloudformation.CloudFormation, targets OperationTargets) (string, error) {

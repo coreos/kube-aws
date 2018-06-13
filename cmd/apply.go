@@ -75,7 +75,7 @@ func runCmdApply(_ *cobra.Command, _ []string) error {
 	}
 
 	successMsg :=
-		`Success! Your AWS resources are being applied:
+		`Success! Your AWS resources are being provisioned:
 %s
 `
 	logger.Infof(successMsg, info)
