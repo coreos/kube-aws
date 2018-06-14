@@ -1,11 +1,11 @@
-{{define "Metadata"}}
+{{define "Metadata" -}}
 {
   "AWS::CloudFormation::Init" : {
     "configSets" : {
-      "etcd-client": [ "etcd-client-env" ]{{ if .AwsEnvironment.Enabled }},
-      "aws-environment": [ "aws-environment-env" ]{{end}}
+      {{ if not .Kubernetes.Networking.SelfHosting.Enabled }}"etcd-client": [ "etcd-client-env" ]{{if .AwsEnvironment.Enabled}},{{end}}{{end}}
+      {{ if .AwsEnvironment.Enabled }}"aws-environment": [ "aws-environment-env" ]{{end}}
     },
-    {{ if .AwsEnvironment.Enabled }}
+    {{ if .AwsEnvironment.Enabled -}}
     "aws-environment-env" : {
       "commands": {
          "write-environment": {
@@ -18,8 +18,9 @@
           }
         }
       }
-    },
-    {{end}}
+    }{{ if not .Kubernetes.Networking.SelfHosting.Enabled }},{{end}}
+    {{end -}}
+    {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
     "etcd-client-env": {
       "files" : {
         "/var/run/coreos/etcd-environment": {
@@ -35,6 +36,7 @@
         }
       }
     }
+    {{end}}
   }
 }
 {{end}}
@@ -107,8 +109,9 @@
           {{end}}
         ]
       }
-    },
+    }{{ if or (not .Kubernetes.Networking.SelfHosting.Enabled) .AwsEnvironment.Enabled }},
     "Metadata": {{template "Metadata" .}}
+    {{- end }}
   },
 {{end}}
 {{define "AutoScaling"}}
@@ -206,8 +209,9 @@
           "PauseTime": "PT2M"
           {{end}}
         }
-      },
+      }{{ if or (not .Kubernetes.Networking.SelfHosting.Enabled) .AwsEnvironment.Enabled }},
       "Metadata": {{template "Metadata" .}}
+      {{- end }}
     },
     {{if .NodeDrainer.Enabled }}
     "{{.LogicalName}}NodeDrainerLH" : {

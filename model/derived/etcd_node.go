@@ -2,6 +2,7 @@ package derived
 
 import (
 	"fmt"
+
 	"github.com/kubernetes-incubator/kube-aws/model"
 )
 

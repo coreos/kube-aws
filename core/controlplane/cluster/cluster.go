@@ -168,6 +168,9 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins [
 	c.StackConfig.Etcd.CustomSystemdUnits = append(c.StackConfig.Etcd.CustomSystemdUnits, extraEtcd.SystemdUnits...)
 	c.StackConfig.Etcd.CustomFiles = append(c.StackConfig.Etcd.CustomFiles, extraEtcd.Files...)
 	c.StackConfig.Etcd.IAMConfig.Policy.Statements = append(c.StackConfig.Etcd.IAMConfig.Policy.Statements, extraEtcd.IAMPolicyStatements...)
+	if err = c.lookupMissingEtcdSubnetCIDRs(); err != nil {
+		return nil, fmt.Errorf("Failed to lookup subnets: %v", err)
+	}
 
 	c.assets, err = c.buildAssets()
 
@@ -379,5 +382,31 @@ func (c *ClusterRef) validateControllerRootVolume(ec2Svc ec2Service) error {
 		}
 	}
 
+	return nil
+}
+
+// helper function goes and gets missing etcd subnet cidrs so that we can reference them in the etcd security group.
+func (c *ClusterRef) lookupMissingEtcdSubnetCIDRs() error {
+	ec := ec2.New(c.session)
+
+	for idx, subnet := range c.Etcd.Subnets {
+		if subnet.InstanceCIDR != "" {
+			// subnet already has a cidr
+			continue
+		}
+		if subnet.ID == "" {
+			return fmt.Errorf("Subnet %s does not have an ID so can't lookup cidr", subnet.Name)
+		}
+		dsi := &ec2.DescribeSubnetsInput{
+			SubnetIds: []*string{
+				aws.String(subnet.ID),
+			},
+		}
+		result, err := ec.DescribeSubnets(dsi)
+		if err != nil {
+			return fmt.Errorf("Can't lookup ec2 subnets: %v", err)
+		}
+		c.Etcd.Subnets[idx].InstanceCIDR = *result.Subnets[0].CidrBlock
+	}
 	return nil
 }
