@@ -125,7 +125,15 @@ configure() {
 
   rm -rf ./kubeconfig ./credentials ./userdata ./stack-templates ./exported
 
-  ${KUBE_AWS_CMD} render
+  ${KUBE_AWS_CMD} render stack
+  ${KUBE_AWS_CMD} render credentials --generate-ca
+
+  if [ "${EXISTING_CA}" != "" ]; then
+    mv ./credentials/ca-key.pem my-ca-key.pem
+    mv ./credentials/ca.pem my-ca.pem
+    rm -rf ./credentials
+    ${KUBE_AWS_CMD} render credentials --ca-key-path=./my-ca-key.pem --ca-cert-path=./my-ca.pem
+  fi
 
   validate
 
@@ -136,6 +144,7 @@ configure() {
 }
 
 kube-aws() {
+  mkdir -p ${WORK_DIR}
   cd ${WORK_DIR}
   ${KUBE_AWS_CMD} "$@"
 }
@@ -149,8 +158,8 @@ customize_cluster_yaml() {
   echo Writing to $(pwd)/cluster.yaml
 
   if [ "${KUBE_AWS_DEPLOY_TO_EXISTING_VPC}" != "" ]; then
-    echo "vpcId: $(testinfra_vpc)" >> cluster.yaml
-    echo "routeTableId: $(testinfra_public_routetable)" >> cluster.yaml
+    echo -e "vpc:\n  id: $(testinfra_vpc)" >> cluster.yaml
+    echo -e "routeTableId: $(testinfra_public_routetable)" >> cluster.yaml
     echo -e "workerSecurityGroupIds:\n- $(testinfra_glue_sg)" >> cluster.yaml
   fi
 
@@ -256,6 +265,8 @@ worker:
 # controller configuration
 controller:
   count: $CONTROLLER_COUNT
+  nodeLabels:
+    kube-aws.coreos.com/role: controller
 waitSignal:
   enabled: true
 kubeResourcesAutosave:
@@ -264,10 +275,36 @@ experimental:
   awsNodeLabels:
     enabled: true
   auditLog:
-    enabled: true
+    enabled: true" >> cluster.yaml
+
+  if [ "${ENCRYPTION_AT_REST}" != "" ]; then
+      echo -e "
+  encryptionAtRest:
+    enabled: true" >> cluster.yaml
+  fi
+
+  if [ "${NODE_AUTHORIZER}" != "" -o "${TLS_BOOTSTRAP}" != "" ]; then
+    echo -e "
+  tlsBootstrap:
+    enabled: true" >> cluster.yaml
+  fi
+
+  if [ "${NODE_AUTHORIZER}" != "" ]; then
+    echo -e "
+  nodeAuthorizer:
+    enabled: true" >> cluster.yaml
+  fi
+
+  echo -e "
 addons:
   clusterAutoscaler:
-    enabled: true
+    enabled: true" >> cluster.yaml
+
+  echo -e "
+cloudWatchLogging:
+  enabled: true
+amazonSsmAgent:
+  enabled: true
 # etcd configuration
 etcd:
   count: $ETCD_COUNT" >> cluster.yaml

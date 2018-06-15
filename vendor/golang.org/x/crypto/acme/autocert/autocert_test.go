@@ -560,3 +560,47 @@ func TestValidCert(t *testing.T) {
 		}
 	}
 }
+
+type cacheGetFunc func(ctx context.Context, key string) ([]byte, error)
+
+func (f cacheGetFunc) Get(ctx context.Context, key string) ([]byte, error) {
+	return f(ctx, key)
+}
+
+func (f cacheGetFunc) Put(ctx context.Context, key string, data []byte) error {
+	return fmt.Errorf("unsupported Put of %q = %q", key, data)
+}
+
+func (f cacheGetFunc) Delete(ctx context.Context, key string) error {
+	return fmt.Errorf("unsupported Delete of %q", key)
+}
+
+func TestManagerGetCertificateBogusSNI(t *testing.T) {
+	m := Manager{
+		Prompt: AcceptTOS,
+		Cache: cacheGetFunc(func(ctx context.Context, key string) ([]byte, error) {
+			return nil, fmt.Errorf("cache.Get of %s", key)
+		}),
+	}
+	tests := []struct {
+		name    string
+		wantErr string
+	}{
+		{"foo.com", "cache.Get of foo.com"},
+		{"foo.com.", "cache.Get of foo.com"},
+		{`a\b.com`, "acme/autocert: server name contains invalid character"},
+		{`a/b.com`, "acme/autocert: server name contains invalid character"},
+		{"", "acme/autocert: missing server name"},
+		{"foo", "acme/autocert: server name component count invalid"},
+		{".foo", "acme/autocert: server name component count invalid"},
+		{"foo.", "acme/autocert: server name component count invalid"},
+		{"fo.o", "cache.Get of fo.o"},
+	}
+	for _, tt := range tests {
+		_, err := m.GetCertificate(&tls.ClientHelloInfo{ServerName: tt.name})
+		got := fmt.Sprint(err)
+		if got != tt.wantErr {
+			t.Errorf("GetCertificate(SNI = %q) = %q; want %q", tt.name, got, tt.wantErr)
+		}
+	}
+}

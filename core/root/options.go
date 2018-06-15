@@ -9,23 +9,25 @@ type options struct {
 	EtcdTmplFile                      string
 	RootStackTemplateTmplFile         string
 	ControlPlaneStackTemplateTmplFile string
+	NetworkStackTemplateTmplFile      string
+	EtcdStackTemplateTmplFile         string
 	NodePoolStackTemplateTmplFile     string
-	S3URI                             string
 	SkipWait                          bool
 	PrettyPrint                       bool
 }
 
-func NewOptions(s3URI string, prettyPrint bool, skipWait bool) options {
+func NewOptions(prettyPrint bool, skipWait bool) options {
 	return options{
 		AssetsDir:                         defaults.AssetsDir,
 		ControllerTmplFile:                defaults.ControllerTmplFile,
 		WorkerTmplFile:                    defaults.WorkerTmplFile,
 		EtcdTmplFile:                      defaults.EtcdTmplFile,
 		ControlPlaneStackTemplateTmplFile: defaults.ControlPlaneStackTemplateTmplFile,
+		NetworkStackTemplateTmplFile:      defaults.NetworkStackTemplateTmplFile,
+		EtcdStackTemplateTmplFile:         defaults.EtcdStackTemplateTmplFile,
 		NodePoolStackTemplateTmplFile:     defaults.NodePoolStackTemplateTmplFile,
 		RootStackTemplateTmplFile:         defaults.RootStackTemplateTmplFile,
-		S3URI:       s3URI,
-		SkipWait:    skipWait,
-		PrettyPrint: prettyPrint,
+		SkipWait:                          skipWait,
+		PrettyPrint:                       prettyPrint,
 	}
 }

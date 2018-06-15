@@ -85,7 +85,7 @@ config_etcd_endpoints() {
   echo "${ETCD_ENDPOINTS}"
 }
 
-etcd_version=${ETCD_VERSION:-3.1.3}
+etcd_version=${ETCD_VERSION:-3.2.13}
 etcd_aci_url="https://github.com/coreos/etcd/releases/download/v$etcd_version/etcd-v$etcd_version-linux-amd64.aci"
 
 member_count="${ETCDADM_MEMBER_COUNT:?missing required env}"
@@ -248,15 +248,19 @@ member_snapshot_relative_path() {
 }
 
 member_save_snapshot() {
-  local snapshot_name
-  snapshot_name=$(member_snapshot_relative_path)
-  if cluster_is_healthy; then
-    member_etcdctl snapshot save "$snapshot_name"
-    member_etcdctl snapshot status "$snapshot_name"
-    member_upload_snapshot
-    member_remove_snapshot
+  if member_is_leader; then
+    local snapshot_name
+    snapshot_name=$(member_snapshot_relative_path)
+    if cluster_is_healthy; then
+      member_etcdctl snapshot save "$snapshot_name"
+      member_etcdctl snapshot status "$snapshot_name"
+      member_upload_snapshot
+      member_remove_snapshot
+    else
+      _info 'cluster is not healthy. skipped taking snapshot because the cluster can be unhealthy due to the corrupted etcd data of members, including this member'
+    fi
   else
-    _info 'cluster is not healthy. skipped taking snapshot because the cluster can be unhealthy due to the corrupted etcd data of members, including this member'
+    _info 'this member is not leader. skipped taking snapshot'
   fi
 }
 
@@ -493,20 +497,14 @@ member_restore_from_local_snapshot() {
     rm -rf "$restored_dir"
   fi
 
-  _run_as_root rkt run \
-      --insecure-options=image \
-      --set-env ETCDCTL_API=3 \
-      --dns=host \
-      --net=host \
-      --volume $(member_snapshots_dir_name),kind=host,source="$(member_host_snapshots_dir_path)" \
-      --mount volume="$(member_snapshots_dir_name)",target=/"$(member_snapshots_dir_name)" \
-      --volume data-dir-root,kind=host,source="$(dirname "$restored_dir")" \
-      --mount volume=data-dir-root,target="$(dirname "$restored_dir")" \
-      --volume data-dir,kind=empty \
-      --mount volume=data-dir,target=/var/lib/etcd \
-      --uuid-file-save="$uuid_file" \
-      "$etcd_aci_url" \
-      --exec etcdctl -- \
+  _run_as_root docker run --rm \
+      -e ETCDCTL_API=3 \
+      --network=host \
+      --volume="$(member_host_snapshots_dir_path)":/"$(member_snapshots_dir_name)" \
+      --volume="$(dirname "$restored_dir")":"$(dirname "$restored_dir")" \
+      --volume=/var/lib/etcd \
+      quay.io/coreos/etcd:v$etcd_version \
+        etcdctl \
         --write-out simple \
         --endpoints "$(member_client_url)" snapshot restore \
         --data-dir "$restored_dir" \
@@ -514,8 +512,6 @@ member_restore_from_local_snapshot() {
         --initial-advertise-peer-urls "$(member_peer_url)" \
         --name "$(member_name)" \
         "$snapshot_name"
-  _run_as_root rkt stop --force --uuid-file "$uuid_file" || echo pod is already stopped
-  _run_as_root rkt rm --uuid-file "$uuid_file"
 
   _run_as_root mv "$restored_dir"/* "$data_dir"/
   _run_as_root rm -rf "$restored_dir"
@@ -529,11 +525,7 @@ member_restore_from_local_snapshot() {
 }
 
 member_env_file() {
-  local name
-  local env_file
-  name=$(member_name)
-  env_file=$(config_state_dir)/${name}.env
-  echo "${env_file}"
+  echo "${ETCDADM_MEMBER_ENV_FILE:-$(config_state_dir)/$(member_name).env}"
 }
 
 member_set_initial_cluster_state() {
@@ -784,37 +776,35 @@ member_data_dir() {
 
 member_etcdctl() {
   local uuid_file
-  local rkt_opts=(--insecure-options=image)
+  local docker_opts=(--rm)
 
   uuid_file="$(config_state_dir)/etcdctl-$BASHPID.uuid"
 
   if [ "${ETCDCTL_CACERT:-}" != "" -a "${ETCDCTL_CERT:-}" != "" -a  "${ETCDCTL_KEY:-}" != "" ]; then
     local credentials
     credentials=$(dirname "${ETCDCTL_CACERT}")
-    rkt_opts+=(--set-env ETCDCTL_CACERT=${ETCDCTL_CACERT})
-    rkt_opts+=(--set-env ETCDCTL_CERT=${ETCDCTL_CERT})
-    rkt_opts+=(--set-env ETCDCTL_KEY=${ETCDCTL_KEY})
-    rkt_opts+=(--volume credentials,kind=host,source=${credentials})
-    rkt_opts+=(--mount volume=credentials,target=${credentials})
+    docker_opts+=(-e ETCDCTL_CACERT=${ETCDCTL_CACERT})
+    docker_opts+=(-e ETCDCTL_CERT=${ETCDCTL_CERT})
+    docker_opts+=(-e ETCDCTL_KEY=${ETCDCTL_KEY})
+    docker_opts+=(--volume=${credentials}:${credentials})
   fi
 
-  _run_as_root rkt run ${rkt_opts[*]} \
-    --set-env ETCDCTL_API=3 \
-    --dns=host \
-    --net=host \
-    --volume "$(member_snapshots_dir_name)",kind=host,source="$(member_host_snapshots_dir_path)" \
-    --mount volume="$(member_snapshots_dir_name)",target=/"$(member_snapshots_dir_name)" \
-    --volume data-dir,kind=host,source="$(member_data_dir)" \
-    --mount volume=data-dir,target=/var/lib/etcd \
-    --uuid-file-save="$uuid_file" \
-    "$etcd_aci_url" \
-    --exec etcdctl -- --endpoints "$(member_client_url)" ${*}
-  _run_as_root rkt rm --uuid-file "$uuid_file"
-  rm "$uuid_file"
+  _run_as_root docker run ${docker_opts[*]} \
+    --env ETCDCTL_API=3 \
+    --network=host \
+    --volume="$(member_host_snapshots_dir_path)":/"$(member_snapshots_dir_name)" \
+    --volume="$(member_data_dir)":/var/lib/etcd \
+    --volume "$(member_snapshots_dir_name)":"$(member_host_snapshots_dir_path)" \
+    quay.io/coreos/etcd:v$etcd_version \
+      etcdctl --endpoints "$(member_client_url)" ${*}
 }
 
 member_is_healthy() {
   member_etcdctl endpoint health | grep "is healthy" 1>&2
+}
+
+member_is_leader() {
+  member_etcdctl -w json endpoint status | jq -r '.[].Status.leader == .[].Status.header.member_id' | grep "true" 1>&2
 }
 
 member_etcdctl_v2() {

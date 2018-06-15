@@ -1,14 +1,18 @@
 package config
 
 import (
-	"bytes"
+	"io/ioutil"
+	"os"
 	"testing"
-	"text/template"
 
 	"fmt"
+
 	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/coreos/coreos-cloudinit/config/validate"
+	etcdconfig "github.com/kubernetes-incubator/kube-aws/core/etcd/config"
+	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/test/helper"
+	"github.com/stretchr/testify/assert"
 )
 
 var numEncryption int
@@ -59,13 +63,9 @@ func TestCloudConfigTemplating(t *testing.T) {
 		t.Fatalf("Failed to create config: %v", err)
 	}
 
-	// TLS assets
-	caKey, caCert, err := cluster.NewTLSCA()
-	if err != nil {
-		t.Fatalf("failed generating tls ca: %v", err)
-	}
 	opts := CredentialsOptions{
 		GenerateCA: true,
+		KIAM:       true,
 	}
 
 	var compactAssets *CompactAssets
@@ -75,12 +75,12 @@ func TestCloudConfigTemplating(t *testing.T) {
 	}
 
 	helper.WithTempDir(func(dir string) {
-		_, err = cluster.NewAssetsOnDisk(dir, opts, caKey, caCert)
+		_, err = cluster.NewAssetsOnDisk(dir, opts)
 		if err != nil {
 			t.Fatalf("Error generating default assets: %v", err)
 		}
 
-		encryptedAssets, err := ReadOrEncryptAssets(dir, true, cachedEncryptor)
+		encryptedAssets, err := ReadOrEncryptAssets(dir, true, true, true, cachedEncryptor)
 		if err != nil {
 			t.Fatalf("failed to compress assets: %v", err)
 		}
@@ -104,34 +104,33 @@ func TestCloudConfigTemplating(t *testing.T) {
 	}{
 		{
 			Name:     "CloudConfigEtcd",
-			Template: CloudConfigEtcd,
+			Template: etcdconfig.CloudConfigEtcd,
 		},
 		{
 			Name:     "CloudConfigController",
 			Template: CloudConfigController,
 		},
 	} {
-		tmpl, err := template.New(cloudTemplate.Name).Parse(string(cloudTemplate.Template))
-		if err != nil {
-			t.Errorf("Error loading template %s : %v", cloudTemplate.Name, err)
+		tmpfile, _ := ioutil.TempFile("", "ud")
+		tmpfile.Write(cloudTemplate.Template)
+		tmpfile.Close()
+		defer os.Remove(tmpfile.Name())
+
+		udata, err := model.NewUserData(tmpfile.Name(), cfg)
+		if !assert.NoError(t, err, "Error loading template %s", cloudTemplate.Name) {
+			continue
+		}
+		content, err := udata.Parts[model.USERDATA_S3].Template()
+		if !assert.NoError(t, err, "Can't render template %s", cloudTemplate.Name) {
 			continue
 		}
 
-		var buf bytes.Buffer
-		if err := tmpl.Execute(&buf, cfg); err != nil {
-			t.Errorf("Error excuting template %s : %v", cloudTemplate.Name, err)
+		report, err := validate.Validate([]byte(content))
+		if !assert.NoError(t, err, "cloud-config %s could not be parsed", cloudTemplate.Name) {
+			for _, entry := range report.Entries() {
+				t.Errorf("%s: %+v", cloudTemplate.Name, entry)
+			}
 			continue
-		}
-
-		report, err := validate.Validate(buf.Bytes())
-
-		if err != nil {
-			t.Errorf("cloud-config %s could not be parsed: %v", cloudTemplate.Name, err)
-			continue
-		}
-
-		for _, entry := range report.Entries() {
-			t.Errorf("%s: %+v", cloudTemplate.Name, entry)
 		}
 	}
 }

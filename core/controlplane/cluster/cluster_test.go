@@ -1,19 +1,24 @@
 package cluster
 
 import (
-	"errors"
-	"fmt"
-	"testing"
+	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/test/helper"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/route53"
-	"github.com/kubernetes-incubator/kube-aws/cfnstack"
-	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
-	"github.com/kubernetes-incubator/kube-aws/test/helper"
-	yaml "gopkg.in/yaml.v2"
+	"github.com/stretchr/testify/assert"
+
+	"errors"
+	"fmt"
+	"strings"
+	"testing"
+
+	"github.com/go-yaml/yaml"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 )
 
 /*
@@ -24,6 +29,7 @@ func defaultConfigValues(t *testing.T, configYaml string) string {
 	defaultYaml := `
 externalDNSName: test.staging.core-os.net
 keyName: test-key-name
+s3URI: s3://mybucket/mydir
 region: us-west-1
 clusterName: test-cluster-name
 kmsKeyArn: "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
@@ -170,8 +176,11 @@ func TestExistingVPCValidation(t *testing.T) {
 		`
 vpcCIDR: 10.5.0.0/16
 vpcId: vpc-xxx1
-routeTableId: rtb-xxxxxx
-instanceCIDR: 10.5.11.0/24
+subnets:
+- name: Subnet0
+  routeTable:
+    id: rtb-xxxxxx
+  instanceCIDR: 10.5.11.0/24
 `, `
 vpcCIDR: 192.168.1.0/24
 vpcId: vpc-xxx2
@@ -192,30 +201,37 @@ subnets:
 		`
 vpcCIDR: 10.0.0.0/16
 vpcId: vpc-xxx3 #vpc does not exist
-instanceCIDR: 10.0.0.0/24
-routeTableId: rtb-xxxxxx
+subnets:
+- name: Subnet0
+  routeTable:
+    id: rtb-xxxxxx
+  instanceCIDR: 10.0.0.0/24
 `, `
 vpcCIDR: 10.10.0.0/16 #vpc cidr does match existing vpc-xxx1
 vpcId: vpc-xxx1
-instanceCIDR: 10.10.0.0/24
-routeTableId: rtb-xxxxxx
+subnets:
+- name: Subnet0
+  routeTable:
+    id: rtb-xxxxxx
+  instanceCIDR: 10.10.0.0/24
 `, `
 vpcCIDR: 10.5.0.0/16
 instanceCIDR: 10.5.2.0/28 #instance cidr conflicts with existing subnet
 vpcId: vpc-xxx1
-routeTableId: rtb-xxxxxx
 `, `
 vpcCIDR: 192.168.1.0/24
 instanceCIDR: 192.168.1.100/26 #instance cidr conflicts with existing subnet
 vpcId: vpc-xxx2
-routeTableId: rtb-xxxxxx
 `, `
 vpcCIDR: 192.168.1.0/24
 vpcId: vpc-xxx2
-routeTableId: rtb-xxxxxx
 subnets:
   - instanceCIDR: 192.168.1.100/26  #instance cidr conflicts with existing subnet
+    routeTable:
+      id: rtb-xxxxxx
   - instanceCIDR: 192.168.1.0/26
+    routeTable:
+      id: rtb-xxxxxx
 `,
 	}
 
@@ -386,7 +402,7 @@ hostedZoneId: /hostedzone/staging_id_3 # <staging_id_id> is not a super-domain
 `, `
 createRecordSet: true
 recordSetTTL: 60
-hostedZoneId: /hostedzone/staging_id_5 #non-existant hostedZoneId
+hostedZoneId: /hostedzone/staging_id_5 #non-existent hostedZoneId
 `,
 	}
 
@@ -472,67 +488,31 @@ stackTags:
 				S3URI: "s3://test-bucket/foo/bar",
 			}
 
-			cluster, err := NewCluster(clusterConfig, stackTemplateOptions, false)
-			if err != nil {
-				t.Errorf("%v", err)
-				t.FailNow()
+			cluster, err := NewCluster(clusterConfig, stackTemplateOptions, []*pluginmodel.Plugin{}, nil)
+			if !assert.NoError(t, err) {
+				return
 			}
 
-			path, err := cluster.UserDataControllerS3Prefix()
-			if err != nil {
-				t.Errorf("failed to get controller user data path in s3: %v", err)
+			assets := cluster.Assets()
+			if !assert.NoError(t, err) {
+				return
 			}
 
-			if path != "test-bucket/foo/bar/kube-aws/clusters/test-cluster-name/exported/stacks/control-plane/userdata-controller" {
-				t.Errorf("UserDataControllerS3Prefix returned an unexpected value: %s", path)
+			userdataFilename := ""
+			var asset model.Asset
+			var id model.AssetID
+			for id, asset = range assets.AsMap() {
+				if strings.HasPrefix(id.Filename, "userdata-controller-") {
+					userdataFilename = id.Filename
+					break
+				}
 			}
+			assert.NotZero(t, userdataFilename, "Unable to find userdata-controller asset")
+
+			path, err := asset.S3Prefix()
+			assert.NoError(t, err)
+			assert.Equal(t, "test-bucket/foo/bar/kube-aws/clusters/test-cluster-name/exported/stacks/control-plane/userdata-controller", path, "UserDataController.S3Prefix returned an unexpected value")
 		})
-	}
-}
-
-func TestStackCreationErrorMessaging(t *testing.T) {
-	events := []*cloudformation.StackEvent{
-		&cloudformation.StackEvent{
-			// Failure with all fields set
-			ResourceStatus:       aws.String("CREATE_FAILED"),
-			ResourceType:         aws.String("Computer"),
-			LogicalResourceId:    aws.String("test_comp"),
-			ResourceStatusReason: aws.String("BAD HD"),
-		},
-		&cloudformation.StackEvent{
-			// Success, should not show up
-			ResourceStatus: aws.String("SUCCESS"),
-			ResourceType:   aws.String("Computer"),
-		},
-		&cloudformation.StackEvent{
-			// Failure due to cancellation should not show up
-			ResourceStatus:       aws.String("CREATE_FAILED"),
-			ResourceType:         aws.String("Computer"),
-			ResourceStatusReason: aws.String("Resource creation cancelled"),
-		},
-		&cloudformation.StackEvent{
-			// Failure with missing fields
-			ResourceStatus: aws.String("CREATE_FAILED"),
-			ResourceType:   aws.String("Computer"),
-		},
-	}
-
-	expectedMsgs := []string{
-		"CREATE_FAILED Computer test_comp BAD HD",
-		"CREATE_FAILED Computer",
-	}
-
-	outputMsgs := cfnstack.StackEventErrMsgs(events)
-	if len(expectedMsgs) != len(outputMsgs) {
-		t.Errorf("Expected %d stack error messages, got %d\n",
-			len(expectedMsgs),
-			len(cfnstack.StackEventErrMsgs(events)))
-	}
-
-	for i := range expectedMsgs {
-		if expectedMsgs[i] != outputMsgs[i] {
-			t.Errorf("Expected `%s`, got `%s`\n", expectedMsgs[i], outputMsgs[i])
-		}
 	}
 }
 
@@ -640,7 +620,7 @@ controller:
 		},
 		{
 			expectedRootVolume: &ec2.CreateVolumeInput{
-				Iops:       aws.Int64(2000),
+				Iops:       aws.Int64(20000),
 				Size:       aws.Int64(100),
 				VolumeType: aws.String("io1"),
 			},
@@ -649,7 +629,7 @@ controller:
   rootVolume:
     type: io1
     size: 100
-    iops: 2000
+    iops: 20000
 `,
 		},
 		// TODO Remove test cases for deprecated keys in v0.9.7
@@ -676,14 +656,14 @@ controllerRootVolumeSize: 50
 		},
 		{
 			expectedRootVolume: &ec2.CreateVolumeInput{
-				Iops:       aws.Int64(2000),
+				Iops:       aws.Int64(20000),
 				Size:       aws.Int64(100),
 				VolumeType: aws.String("io1"),
 			},
 			clusterYaml: `
 controllerRootVolumeType: io1
 controllerRootVolumeSize: 100
-controllerRootVolumeIOPS: 2000
+controllerRootVolumeIOPS: 20000
 `,
 		},
 	}
@@ -708,4 +688,41 @@ controllerRootVolumeIOPS: 2000
 			t.Errorf("error creating cluster: %v\nfor test case %+v", err, testCase)
 		}
 	}
+}
+
+func newDefaultClusterWithDeps(opts config.StackTemplateOptions) (*Cluster, error) {
+	cluster := config.NewDefaultCluster()
+	cluster.HyperkubeImage.Tag = cluster.K8sVer
+	cluster.ProvidedEncryptService = helper.DummyEncryptService{}
+
+	cluster.Region = model.RegionForName("us-west-1")
+	cluster.Subnets = []model.Subnet{
+		model.NewPublicSubnet("us-west-1a", "10.0.1.0/24"),
+		model.NewPublicSubnet("us-west-1b", "10.0.2.0/24"),
+	}
+	cluster.ExternalDNSName = "foo.example.com"
+	cluster.KeyName = "mykey"
+	cluster.S3URI = "s3://mybucket/mydir"
+	cluster.KMSKeyARN = "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
+	if err := cluster.Load(); err != nil {
+		return &Cluster{}, err
+	}
+	return NewCluster(cluster, opts, []*pluginmodel.Plugin{}, nil)
+}
+
+func TestRenderStackTemplate(t *testing.T) {
+	helper.WithDummyCredentials(func(dir string) {
+		var stackTemplateOptions = config.StackTemplateOptions{
+			AssetsDir:             dir,
+			ControllerTmplFile:    "../config/templates/cloud-config-controller",
+			EtcdTmplFile:          "../config/templates/cloud-config-etcd",
+			StackTemplateTmplFile: "../config/templates/stack-template.json",
+			S3URI: "s3://test-bucket/foo/bar",
+		}
+		cluster, err := newDefaultClusterWithDeps(stackTemplateOptions)
+		if assert.NoError(t, err, "Unable to initialize Cluster") {
+			_, err = cluster.StackConfig.RenderStackTemplateAsString()
+			assert.NoError(t, err, "Unable to render stack template")
+		}
+	})
 }

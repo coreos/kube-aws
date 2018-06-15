@@ -7,21 +7,30 @@ import (
 )
 
 type VolumeMount struct {
-	Type   string `yaml:"type,omitempty"`
-	Iops   int    `yaml:"iops,omitempty"`
-	Size   int    `yaml:"size,omitempty"`
-	Device string `yaml:"device,omitempty"`
-	Path   string `yaml:"path,omitempty"`
+	Type       string `yaml:"type,omitempty"`
+	Iops       int    `yaml:"iops,omitempty"`
+	Size       int    `yaml:"size,omitempty"`
+	Device     string `yaml:"device,omitempty"`
+	Filesystem string `yaml:"filesystem,omitempty"`
+	Path       string `yaml:"path,omitempty"`
+	CreateTmp  bool   `yaml:"createTmp,omitempty"`
 }
 
 func (v VolumeMount) SystemdMountName() string {
 	return strings.Replace(strings.TrimLeft(v.Path, "/"), "/", "-", -1)
 }
 
+func (v VolumeMount) FilesystemType() string {
+	if v.Filesystem == "" {
+		return "xfs"
+	}
+	return v.Filesystem
+}
+
 func (v VolumeMount) Validate() error {
 	if v.Type == "io1" {
-		if v.Iops < 100 || v.Iops > 2000 {
-			return fmt.Errorf(`invalid iops "%d" in %+v: iops must be between "100" and "2000"`, v.Iops, v)
+		if v.Iops < 100 || v.Iops > 20000 {
+			return fmt.Errorf(`invalid iops "%d" in %+v: iops must be between "100" and "20000"`, v.Iops, v)
 		}
 	} else {
 		if v.Iops != 0 {
@@ -30,6 +39,11 @@ func (v VolumeMount) Validate() error {
 
 		if v.Type != "standard" && v.Type != "gp2" {
 			return fmt.Errorf(`invalid type "%s" in %+v: type must be one of "standard", "gp2", "io1"`, v.Type, v)
+		}
+	}
+	if v.Filesystem != "" {
+		if v.Filesystem != "xfs" && v.Filesystem != "ext4" {
+			return fmt.Errorf(`invalid filesystem type "%s" in %+v: type must be one of "xfs", "ext4"`, v.Type, v)
 		}
 	}
 

@@ -1,3 +1,4 @@
+kube-aws
 /artifacts/template.json
 /bin
 /e2e/assets
@@ -8,4 +9,13 @@
 .envrc
 coverage.txt
 profile.out
-/.glide
+
+# gitbook docs
+_book
+.grunt
+*.epub
+*.mobi
+*.pdf
+node_modules
+kube-aws
+.DS_Store

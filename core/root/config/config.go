@@ -1,18 +1,31 @@
 package config
 
-//go:generate go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json
-//go:generate gofmt -w templates.go
-
 import (
 	"errors"
 	"fmt"
 	"io/ioutil"
 
+	"github.com/go-yaml/yaml"
+	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/model"
-	"gopkg.in/yaml.v2"
+	"github.com/kubernetes-incubator/kube-aws/plugin"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 )
+
+type InitialConfig struct {
+	AmiId            string
+	AvailabilityZone string
+	ClusterName      string
+	ExternalDNSName  string
+	HostedZoneID     string
+	KMSKeyARN        string
+	KeyName          string
+	NoRecordSet      bool
+	Region           model.Region
+	S3URI            string
+}
 
 type UnmarshalledConfig struct {
 	controlplane.Cluster `yaml:",inline"`
@@ -30,6 +43,7 @@ type Config struct {
 	*controlplane.Cluster
 	NodePools         []*nodepool.ProvidedConfig
 	model.UnknownKeys `yaml:",inline"`
+	Plugins           []*pluginmodel.Plugin
 }
 
 type unknownKeysSupport interface {
@@ -50,7 +64,7 @@ func newDefaultUnmarshalledConfig() *UnmarshalledConfig {
 	}
 }
 
-func ConfigFromBytes(data []byte) (*Config, error) {
+func ConfigFromBytes(data []byte, plugins []*pluginmodel.Plugin) (*Config, error) {
 	c := newDefaultUnmarshalledConfig()
 	if err := yaml.Unmarshal(data, c); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
@@ -62,7 +76,7 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 		return nil, err
 	}
 
-	cpConfig, err := cpCluster.Config()
+	cpConfig, err := cpCluster.Config(plugins)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +102,10 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 	}
 
 	for i, np := range nodePools {
-		if err := np.Experimental.Taints.Valid(); err != nil {
+		if np == nil {
+			return nil, fmt.Errorf("Empty nodepool definition found at index %d", i)
+		}
+		if err := np.Taints.Validate(); err != nil {
 			return nil, fmt.Errorf("invalid taints for node pool at index %d: %v", i, err)
 		}
 
@@ -138,6 +155,7 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 		{c.Addons, "addons"},
 		{c.Addons.Rescheduler, "addons.rescheduler"},
 		{c.Addons.ClusterAutoscaler, "addons.clusterAutoscaler"},
+		{c.Addons.MetricsServer, "addons.metricsServer"},
 	}
 
 	for i, np := range c.Worker.NodePools {
@@ -154,6 +172,8 @@ func ConfigFromBytes(data []byte) (*Config, error) {
 		return nil, err
 	}
 
+	cfg.Plugins = plugins
+
 	return cfg, nil
 }
 
@@ -166,12 +186,13 @@ func failFastWhenUnknownKeysFound(vs []unknownKeyValidation) error {
 	return nil
 }
 
-func ConfigFromBytesWithEncryptService(data []byte, encryptService controlplane.EncryptService) (*Config, error) {
-	c, err := ConfigFromBytes(data)
+func ConfigFromBytesWithStubs(data []byte, plugins []*pluginmodel.Plugin, encryptService controlplane.EncryptService, cf cfnstack.CFInterrogator) (*Config, error) {
+	c, err := ConfigFromBytes(data, plugins)
 	if err != nil {
 		return nil, err
 	}
 	c.ProvidedEncryptService = encryptService
+	c.ProvidedCFInterrogator = cf
 
 	// Uses the same encrypt service for node pools for consistency
 	for _, p := range c.NodePools {
@@ -187,7 +208,12 @@ func ConfigFromFile(configPath string) (*Config, error) {
 		return nil, err
 	}
 
-	c, err := ConfigFromBytes(data)
+	plugins, err := plugin.LoadAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load plugins: %v", err)
+	}
+
+	c, err := ConfigFromBytes(data, plugins)
 	if err != nil {
 		return nil, fmt.Errorf("file %s: %v", configPath, err)
 	}

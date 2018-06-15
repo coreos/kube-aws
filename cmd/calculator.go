@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/kubernetes-incubator/kube-aws/core/root"
-	"github.com/spf13/cobra"
 	"strings"
+
+	"github.com/kubernetes-incubator/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/logger"
+	"github.com/spf13/cobra"
 )
 
 //TODO this is a first step to calculate the stack cost
@@ -21,31 +23,25 @@ var (
 
 	calculatorOpts = struct {
 		awsDebug bool
-		s3URI    string
 	}{}
 )
 
 func init() {
 	RootCmd.AddCommand(cmdCalculator)
 	cmdCalculator.Flags().BoolVar(&calculatorOpts.awsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
-	cmdCalculator.Flags().StringVar(&calculatorOpts.s3URI, "s3-uri", "", "When your template is bigger than the cloudformation limit of 51200 bytes, upload the template to the specified location in S3. S3 location expressed as s3://<bucket>/path/to/dir")
 }
 
-func runCmdCalculator(cmd *cobra.Command, args []string) error {
+func runCmdCalculator(_ *cobra.Command, _ []string) error {
 
-	if err := validateRequired(flag{"--s3-uri", calculatorOpts.s3URI}); err != nil {
-		return err
-	}
-
-	opts := root.NewOptions(calculatorOpts.s3URI, false, false)
+	opts := root.NewOptions(false, false)
 
 	cluster, err := root.ClusterFromFile(configPath, opts, calculatorOpts.awsDebug)
 	if err != nil {
-		return fmt.Errorf("Failed to initialize cluster driver: %v", err)
+		return fmt.Errorf("failed to initialize cluster driver: %v", err)
 	}
 
 	if _, err := cluster.ValidateStack(); err != nil {
-		return fmt.Errorf("Error validating cluster: %v", err)
+		return fmt.Errorf("error validating cluster: %v", err)
 	}
 
 	urls, err := cluster.EstimateCost()
@@ -54,7 +50,7 @@ func runCmdCalculator(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%v", err)
 	}
 
-	fmt.Printf("To estimate your monthly cost, open the links below\n%v", strings.Join(urls, "\n"))
-
+	logger.Heading("To estimate your monthly cost, open the links below")
+	logger.Infof("%v", strings.Join(urls, "\n"))
 	return nil
 }

@@ -1,0 +1,9 @@
+#!/bin/bash
+set -euo pipefail
+
+COREOS_KUBERNETES_ROOT=$(git rev-parse --show-toplevel)
+KUBERNETES_MOUNT_DIR="/go/src/github.com/kubernetes-incubator/kube-aws"
+
+docker run --rm -i \
+    -v "${COREOS_KUBERNETES_ROOT}:${KUBERNETES_MOUNT_DIR}:z" -w ${KUBERNETES_MOUNT_DIR} \
+    golang:1.8.3 ./make/test

@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -10,9 +11,18 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/route53"
 
+	"errors"
+
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/naming"
+	"github.com/kubernetes-incubator/kube-aws/netutil"
+	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
+	"github.com/kubernetes-incubator/kube-aws/tlscerts"
 )
 
 // VERSION set by build script
@@ -20,18 +30,10 @@ var VERSION = "UNKNOWN"
 
 const STACK_TEMPLATE_FILENAME = "stack.json"
 
-func NewClusterRef(cfg *config.Cluster, awsDebug bool) *ClusterRef {
-	awsConfig := aws.NewConfig().
-		WithRegion(cfg.Region.String()).
-		WithCredentialsChainVerboseErrors(true)
-
-	if awsDebug {
-		awsConfig = awsConfig.WithLogLevel(aws.LogDebug)
-	}
-
+func newClusterRef(cfg *config.Cluster, session *session.Session) *ClusterRef {
 	return &ClusterRef{
 		Cluster: cfg,
-		session: session.New(awsConfig),
+		session: session,
 	}
 }
 
@@ -42,7 +44,8 @@ type ClusterRef struct {
 
 type Cluster struct {
 	*ClusterRef
-	*config.CompressedStackConfig
+	*config.StackConfig
+	assets cfnstack.Assets
 }
 
 type ec2Service interface {
@@ -53,24 +56,32 @@ type ec2Service interface {
 }
 
 func (c *ClusterRef) validateExistingVPCState(ec2Svc ec2Service) error {
-	if c.VPCID == "" {
+	if !c.VPC.HasIdentifier() {
 		//The VPC will be created. No existing state to validate
 		return nil
 	}
 
+	// TODO kube-aws should de-reference the vpc id from the stack output and continue validating with it
+	if c.VPC.IDFromStackOutput != "" {
+		logger.Infof("kube-aws doesn't support validating the vpc referenced by the stack output `%s`. Skipped validation of existing vpc state. The cluster creation may fail afterwards if the VPC isn't configured properly.", c.VPC.IDFromStackOutput)
+		return nil
+	}
+
+	vpcId := c.VPC.ID
+
 	describeVpcsInput := ec2.DescribeVpcsInput{
-		VpcIds: []*string{aws.String(c.VPCID)},
+		VpcIds: []*string{aws.String(vpcId)},
 	}
 	vpcOutput, err := ec2Svc.DescribeVpcs(&describeVpcsInput)
 	if err != nil {
 		return fmt.Errorf("error describing existing vpc: %v", err)
 	}
 	if len(vpcOutput.Vpcs) == 0 {
-		return fmt.Errorf("could not find vpc %s in region %s", c.VPCID, c.Region)
+		return fmt.Errorf("could not find vpc %s in region %s", vpcId, c.Region)
 	}
 	if len(vpcOutput.Vpcs) > 1 {
 		//Theoretically this should never happen. If it does, we probably want to know.
-		return fmt.Errorf("found more than one vpc with id %s. this is NOT NORMAL", c.VPCID)
+		return fmt.Errorf("found more than one vpc with id %s. this is NOT NORMAL", vpcId)
 	}
 
 	existingVPC := vpcOutput.Vpcs[0]
@@ -110,53 +121,102 @@ func (c *ClusterRef) validateExistingVPCState(ec2Svc ec2Service) error {
 	return nil
 }
 
-func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, awsDebug bool) (*Cluster, error) {
-	cluster := NewClusterRef(cfg, awsDebug)
+func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugins []*pluginmodel.Plugin, session *session.Session) (*Cluster, error) {
+	cfg := &config.Cluster{}
+	*cfg = *cfgRef
+
+	// Import all the managed subnets from the network stack
+	var err error
+	cfg.Subnets, err = cfg.Subnets.ImportFromNetworkStackRetainingNames()
+	if err != nil {
+		return nil, fmt.Errorf("failed to import subnets from network stack: %v", err)
+	}
+	cfg.VPC = cfg.VPC.ImportFromNetworkStack()
+	cfg.SetDefaults()
+
+	clusterRef := newClusterRef(cfg, session)
 	// TODO Do this in a cleaner way e.g. in config.go
-	cluster.KubeResourcesAutosave.S3Path = model.NewS3Folders(opts.S3URI, cluster.ClusterName).ClusterBackups().Path()
-	stackConfig, err := cluster.StackConfig(opts)
+	clusterRef.KubeResourcesAutosave.S3Path = model.NewS3Folders(cfg.DeploymentSettings.S3URI, clusterRef.ClusterName).ClusterBackups().Path()
+	stackConfig, err := clusterRef.StackConfig(config.ControlPlaneStackName, opts, session, plugins)
 	if err != nil {
 		return nil, err
 	}
-	compressed, err := stackConfig.Compress()
-	if err != nil {
-		return nil, err
+
+	c := &Cluster{
+		ClusterRef:  clusterRef,
+		StackConfig: stackConfig,
 	}
-	return &Cluster{
-		ClusterRef:            cluster,
-		CompressedStackConfig: compressed,
-	}, nil
+
+	// Notes:
+	// * `c.StackConfig.CustomSystemdUnits` results in an `ambiguous selector ` error
+	// * `c.Controller.CustomSystemdUnits = controllerUnits` and `c.ClusterRef.Controller.CustomSystemdUnits = controllerUnits` results in modifying invisible/duplicate CustomSystemdSettings
+	extras := clusterextension.NewExtrasFromPlugins(plugins, c.PluginConfigs)
+
+	extraStack, err := extras.ControlPlaneStack()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load control-plane stack extras from plugins: %v", err)
+	}
+	c.StackConfig.ExtraCfnResources = extraStack.Resources
+
+	extraController, err := extras.Controller()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load controller node extras from plugins: %v", err)
+	}
+	c.StackConfig.Config.APIServerFlags = append(c.StackConfig.Config.APIServerFlags, extraController.APIServerFlags...)
+	c.StackConfig.Config.APIServerVolumes = append(c.StackConfig.Config.APIServerVolumes, extraController.APIServerVolumes...)
+	c.StackConfig.Controller.CustomSystemdUnits = append(c.StackConfig.Controller.CustomSystemdUnits, extraController.SystemdUnits...)
+	c.StackConfig.Controller.CustomFiles = append(c.StackConfig.Controller.CustomFiles, extraController.Files...)
+	c.StackConfig.Controller.IAMConfig.Policy.Statements = append(c.StackConfig.Controller.IAMConfig.Policy.Statements, extraController.IAMPolicyStatements...)
+	c.StackConfig.KubeAWSVersion = VERSION
+
+	for k, v := range extraController.NodeLabels {
+		c.StackConfig.Controller.NodeLabels[k] = v
+	}
+
+	c.assets, err = c.buildAssets()
+
+	return c, err
 }
 
-func (c *Cluster) Assets() (cfnstack.Assets, error) {
-	stackTemplate, err := c.RenderTemplateAsString()
-	if err != nil {
-		return nil, fmt.Errorf("Error while rendering template : %v", err)
+func (c *Cluster) Assets() cfnstack.Assets {
+	return c.assets
+}
+
+func (c *Cluster) buildAssets() (cfnstack.Assets, error) {
+	var err error
+	assets := cfnstack.NewAssetsBuilder(c.StackName, c.StackConfig.ClusterExportedStacksS3URI(), c.StackConfig.Region)
+
+	if c.StackConfig.UserDataController, err = model.NewUserData(c.StackTemplateOptions.ControllerTmplFile, c.StackConfig.Config); err != nil {
+		return nil, fmt.Errorf("failed to render controller cloud config: %v", err)
 	}
 
-	return cfnstack.NewAssetsBuilder(c.StackName(), c.StackConfig.ClusterExportedStacksS3URI(), c.StackConfig.Region).
-		Add(c.UserDataControllerFileName(), c.UserDataController).
-		Add(c.UserDataEtcdFileName(), c.UserDataEtcd).
-		Add(STACK_TEMPLATE_FILENAME, stackTemplate).
-		Build(), nil
+	if err = assets.AddUserDataPart(c.UserDataController, model.USERDATA_S3, "userdata-controller"); err != nil {
+		return nil, fmt.Errorf("failed to render controller cloud config: %v", err)
+	}
+
+	stackTemplate, err := c.RenderStackTemplateAsString()
+	if err != nil {
+		return nil, fmt.Errorf("failed to render control-plane template: %v", err)
+	}
+
+	assets.Add(STACK_TEMPLATE_FILENAME, stackTemplate)
+
+	return assets.Build(), nil
 }
 
 func (c *Cluster) TemplateURL() (string, error) {
-	assets, err := c.Assets()
-	if err != nil {
-		return "", err
-	}
-	asset, err := assets.FindAssetByStackAndFileName(c.StackName(), STACK_TEMPLATE_FILENAME)
+	assets := c.Assets()
+	asset, err := assets.FindAssetByStackAndFileName(c.StackName, STACK_TEMPLATE_FILENAME)
 	if err != nil {
 		return "", fmt.Errorf("failed to get template URL: %v", err)
 	}
-	return asset.URL(), nil
+	return asset.URL()
 }
 
 // ValidateStack validates the CloudFormation stack for this control plane already uploaded to S3
 func (c *Cluster) ValidateStack() (string, error) {
-	if err := c.ValidateUserData(); err != nil {
-		return "", fmt.Errorf("failed to validate userdata : %v", err)
+	if err := c.validateCertsAgainstSettings(); err != nil {
+		return "", err
 	}
 
 	templateURL, err := c.TemplateURL()
@@ -164,14 +224,6 @@ func (c *Cluster) ValidateStack() (string, error) {
 		return "", fmt.Errorf("failed to get template url : %v", err)
 	}
 	return c.stackProvisioner().ValidateStackAtURL(templateURL)
-}
-
-func (c *Cluster) RenderTemplateAsString() (string, error) {
-	data, err := c.RenderStackTemplateAsString()
-	if err != nil {
-		return "", fmt.Errorf("Error while rendering stack template : %v", err)
-	}
-	return data, nil
 }
 
 func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
@@ -187,12 +239,14 @@ func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
 }
 `
 	return cfnstack.NewProvisioner(
-		c.StackName(),
+		c.StackName,
 		c.StackTags,
 		c.ClusterExportedStacksS3URI(),
 		c.Region,
 		stackPolicyBody,
-		c.session)
+		c.session,
+		c.CloudFormation.RoleARN,
+	)
 }
 
 func (c *Cluster) Validate() error {
@@ -218,12 +272,17 @@ func (c *Cluster) Validate() error {
 	return nil
 }
 
+// NestedStackName returns a sanitized name of this control-plane which is usable as a valid cloudformation nested stack name
+func (c Cluster) NestedStackName() string {
+	return naming.FromStackToCfnResource(config.ControlPlaneStackName)
+}
+
 func (c *Cluster) String() string {
-	return fmt.Sprintf("{Config:%+v}", *c.CompressedStackConfig.Config)
+	return fmt.Sprintf("{Config:%+v}", *c.StackConfig.Config)
 }
 
 func (c *ClusterRef) Destroy() error {
-	return cfnstack.NewDestroyer(c.StackName(), c.session).Destroy()
+	return cfnstack.NewDestroyer(config.ControlPlaneStackName, c.session, c.CloudFormation.RoleARN).Destroy()
 }
 
 func (c *ClusterRef) validateKeyPair(ec2Svc ec2Service) error {
@@ -248,10 +307,11 @@ type r53Service interface {
 	GetHostedZone(*route53.GetHostedZoneInput) (*route53.GetHostedZoneOutput, error)
 }
 
+// TODO validateDNSConfig seems to be called from nowhere but should be called while validating `apiEndpoints` config
 func (c *ClusterRef) validateDNSConfig(r53 r53Service) error {
-	if !c.CreateRecordSet {
-		return nil
-	}
+	//if !c.CreateRecordSet {
+	//	return nil
+	//}
 
 	hzOut, err := r53.GetHostedZone(&route53.GetHostedZoneInput{Id: aws.String(c.HostedZoneID)})
 	if err != nil {
@@ -324,5 +384,43 @@ func (c *ClusterRef) validateControllerRootVolume(ec2Svc ec2Service) error {
 		}
 	}
 
+	return nil
+}
+
+// validateCertsAgainstSettings cross checks that our api server cert is compatible with our cluster settings: -
+// - It must include the externalDNS name for the api servers.
+// - It must include the IPAddress of the first IP in the chosen ServiceCIDR.
+func (c Cluster) validateCertsAgainstSettings() error {
+	apiServerPEM, err := gzipcompressor.DecompressString(c.AssetsConfig.APIServerCert)
+	if err != nil {
+		return fmt.Errorf("could not decompress the apiserver pem: %v", err)
+	}
+
+	apiServerCerts, err := tlscerts.FromBytes([]byte(apiServerPEM))
+	if err != nil {
+		return fmt.Errorf("error parsing api server cert: %v", err)
+	}
+	kubeAPIServerCert, ok := apiServerCerts.GetBySubjectCommonNamePattern("kube-apiserver")
+	if !ok {
+		return errors.New("no api server certs contain Subject CommonName 'kube-apiserver'")
+	}
+
+	// Check DNS Names
+	for _, apiEndPoint := range c.KubeClusterSettings.APIEndpointConfigs {
+		if !kubeAPIServerCert.ContainsDNSName(apiEndPoint.DNSName) {
+			return fmt.Errorf("the apiserver cert does not contain the external dns name %s, please regenerate or resolve", apiEndPoint.DNSName)
+		}
+	}
+
+	// Check IP SANS
+	_, serviceNet, err := net.ParseCIDR(c.ServiceCIDR)
+	if err != nil {
+		return fmt.Errorf("invalid serviceCIDR: %v", err)
+	}
+	kubernetesServiceIPAddr := netutil.IncrementIP(serviceNet.IP)
+
+	if !kubeAPIServerCert.ContainsIPAddress(kubernetesServiceIPAddr) {
+		return fmt.Errorf("the api server cert does not contain the kubernetes service ip address %v, please regenerate or resolve", kubernetesServiceIPAddr)
+	}
 	return nil
 }

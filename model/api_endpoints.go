@@ -6,16 +6,24 @@ import (
 
 type APIEndpoints []APIEndpoint
 
-// DefaultAPIEndpointName is the default endpoint name used when you've omitted `apiEndpoints` but not `externalDNSName`
-const DefaultAPIEndpointName = "Default"
+const (
+	// DefaultAPIEndpointName is the default endpoint name used when you've omitted `apiEndpoints` but not `externalDNSName`
+	DefaultAPIEndpointName = "Default"
+
+	// DefaultLoadBalancerType is the default load balancer to be provisioned by kube-aws for the API endpoints
+	DefaultLoadBalancerType = "classic"
+)
 
 // NewDefaultAPIEndpoints creates the slice of API endpoints containing only the default one which is with arbitrary DNS name and an ELB
-func NewDefaultAPIEndpoints(dnsName string, subnets []SubnetReference, hostedZoneId string, createRecordSet bool, recordSetTTL int, private bool) APIEndpoints {
+func NewDefaultAPIEndpoints(dnsName string, subnets []SubnetReference, hostedZoneId string, recordSetTTL int, private bool) APIEndpoints {
+	defaultLBType := DefaultLoadBalancerType
+
 	return []APIEndpoint{
 		APIEndpoint{
 			Name:    DefaultAPIEndpointName,
 			DNSName: dnsName,
 			LoadBalancer: APIEndpointLB{
+				Type: &defaultLBType,
 				APIAccessAllowedSourceCIDRs: DefaultCIDRRanges(),
 				SubnetReferences:            subnets,
 				HostedZone: HostedZone{
@@ -23,7 +31,6 @@ func NewDefaultAPIEndpoints(dnsName string, subnets []SubnetReference, hostedZon
 						ID: hostedZoneId,
 					},
 				},
-				CreateRecordSet:       &createRecordSet,
 				RecordSetTTLSpecified: &recordSetTTL,
 				PrivateSpecified:      &private,
 			},
@@ -39,6 +46,16 @@ func (e APIEndpoints) Validate() error {
 		}
 	}
 	return nil
+}
+
+// HasNetworkLoadBalancers returns true if there's any API endpoint load balancer of type 'network'
+func (e APIEndpoints) HasNetworkLoadBalancers() bool {
+	for _, apiEndpoint := range e {
+		if apiEndpoint.LoadBalancer.NetworkLoadBalancer() {
+			return true
+		}
+	}
+	return false
 }
 
 //type APIDNSRoundRobin struct {

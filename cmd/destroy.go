@@ -1,11 +1,15 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/kubernetes-incubator/kube-aws/core/root"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 )
 
 var (
@@ -22,18 +26,33 @@ var (
 func init() {
 	RootCmd.AddCommand(cmdDestroy)
 	cmdDestroy.Flags().BoolVar(&destroyOpts.AwsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
+	cmdDestroy.Flags().BoolVar(&destroyOpts.Force, "force", false, "Don't ask for confirmation")
 }
 
-func runCmdDestroy(cmd *cobra.Command, args []string) error {
+func runCmdDestroy(_ *cobra.Command, _ []string) error {
+	if !destroyOpts.Force && !destroyConfirmation() {
+		logger.Info("Operation Cancelled")
+		return nil
+	}
+
 	c, err := root.ClusterDestroyerFromFile(configPath, destroyOpts)
 	if err != nil {
-		return fmt.Errorf("Error parsing config: %v", err)
+		return fmt.Errorf("error parsing config: %v", err)
 	}
 
 	if err := c.Destroy(); err != nil {
-		return fmt.Errorf("Failed destroying cluster: %v", err)
+		return fmt.Errorf("failed destroying cluster: %v", err)
 	}
 
-	fmt.Println("CloudFormation stack is being destroyed. This will take several minutes")
+	logger.Info("CloudFormation stack is being destroyed. This will take several minutes")
 	return nil
+}
+
+func destroyConfirmation() bool {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("This operation will destroy the cluster. Are you sure? [y,n]: ")
+	text, _ := reader.ReadString('\n')
+	text = strings.TrimSuffix(strings.ToLower(text), "\n")
+
+	return text == "y" || text == "yes"
 }

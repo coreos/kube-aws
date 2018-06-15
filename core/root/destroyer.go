@@ -2,14 +2,15 @@ package root
 
 import (
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
+
+	"github.com/kubernetes-incubator/kube-aws/awsconn"
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 )
 
 type DestroyOptions struct {
 	AwsDebug bool
+	Force    bool
 }
 
 type ClusterDestroyer interface {
@@ -26,23 +27,12 @@ func ClusterDestroyerFromFile(configPath string, opts DestroyOptions) (ClusterDe
 		return nil, err
 	}
 
-	region := cfg.Region
-	stackName := cfg.RootStackName()
-
-	awsConfig := aws.NewConfig().
-		WithRegion(region.String()).
-		WithCredentialsChainVerboseErrors(true)
-
-	if opts.AwsDebug {
-		awsConfig = awsConfig.WithLogLevel(aws.LogDebug)
-	}
-
-	session, err := session.NewSession(awsConfig)
+	session, err := awsconn.NewSessionFromRegion(cfg.Region, opts.AwsDebug)
 	if err != nil {
 		return nil, fmt.Errorf("failed to establish aws session: %v", err)
 	}
 
-	cfnDestroyer := cfnstack.NewDestroyer(stackName, session)
+	cfnDestroyer := cfnstack.NewDestroyer(cfg.RootStackName(), session, cfg.CloudFormation.RoleARN)
 	return clusterDestroyerImpl{
 		underlying: cfnDestroyer,
 	}, nil

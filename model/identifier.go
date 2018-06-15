@@ -20,7 +20,7 @@ func (i Identifier) Validate() error {
 	if i.IDFromFn != "" {
 		var jsonHolder map[string]interface{}
 		if err := json.Unmarshal([]byte(i.IDFromFn), &jsonHolder); err != nil {
-			return fmt.Errorf("idFromRef must be a valid json expression but was not: %s", i.IDFromFn)
+			return fmt.Errorf("idFromFn must be a valid json expression but was not: %s", i.IDFromFn)
 		}
 	}
 	return nil

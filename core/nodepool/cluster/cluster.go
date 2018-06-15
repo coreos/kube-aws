@@ -3,13 +3,18 @@ package cluster
 import (
 	"bytes"
 	"fmt"
+	"text/tabwriter"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
+	controlplanecluster "github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
 	"github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
-	"text/tabwriter"
+	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 )
 
 const STACK_TEMPLATE_FILENAME = "stack.json"
@@ -21,7 +26,8 @@ type ClusterRef struct {
 
 type Cluster struct {
 	*ClusterRef
-	*config.CompressedStackConfig
+	*config.StackConfig
+	assets cfnstack.Assets
 }
 
 type Info struct {
@@ -47,63 +53,86 @@ func (c *Info) String() string {
 	return buf.String()
 }
 
-func NewClusterRef(cfg *config.ProvidedConfig, awsDebug bool) *ClusterRef {
-	awsConfig := aws.NewConfig().
-		WithRegion(cfg.Region.String()).
-		WithCredentialsChainVerboseErrors(true)
-
-	if awsDebug {
-		awsConfig = awsConfig.WithLogLevel(aws.LogDebug)
-	}
-
+func newClusterRef(cfg *config.ProvidedConfig, session *session.Session) *ClusterRef {
 	return &ClusterRef{
 		ProvidedConfig: *cfg,
-		session:        session.New(awsConfig),
+		session:        session,
 	}
 }
 
-func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOptions, awsDebug bool) (*Cluster, error) {
-	computed, err := provided.Config()
+func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOptions, plugins []*pluginmodel.Plugin, session *session.Session) (*Cluster, error) {
+	stackConfig, err := provided.StackConfig(opts, session)
 	if err != nil {
 		return nil, err
 	}
-	stackConfig, err := computed.StackConfig(opts)
-	if err != nil {
-		return nil, err
+
+	clusterRef := newClusterRef(provided, session)
+
+	c := &Cluster{
+		StackConfig: stackConfig,
+		ClusterRef:  clusterRef,
 	}
-	compressed, err := stackConfig.Compress()
+
+	extras := clusterextension.NewExtrasFromPlugins(plugins, c.Plugins)
+
+	extraStack, err := extras.NodePoolStack()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load node pool stack extras from plugins: %v", err)
 	}
-	ref := NewClusterRef(provided, awsDebug)
-	return &Cluster{
-		CompressedStackConfig: compressed,
-		ClusterRef:            ref,
-	}, nil
+	c.StackConfig.ExtraCfnResources = extraStack.Resources
+
+	extraWorker, err := extras.Worker()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load controller node extras from plugins: %v", err)
+	}
+	c.StackConfig.CustomSystemdUnits = append(c.StackConfig.CustomSystemdUnits, extraWorker.SystemdUnits...)
+	c.StackConfig.CustomFiles = append(c.StackConfig.CustomFiles, extraWorker.Files...)
+	c.StackConfig.IAMConfig.Policy.Statements = append(c.StackConfig.IAMConfig.Policy.Statements, extraWorker.IAMPolicyStatements...)
+	c.StackConfig.KubeAWSVersion = controlplanecluster.VERSION
+
+	for k, v := range extraWorker.NodeLabels {
+		c.NodeSettings.NodeLabels[k] = v
+	}
+	for k, v := range extraWorker.FeatureGates {
+		c.NodeSettings.FeatureGates[k] = v
+	}
+
+	c.assets, err = c.buildAssets()
+
+	return c, err
 }
 
-func (c *Cluster) Assets() (cfnstack.Assets, error) {
+func (c *Cluster) Assets() cfnstack.Assets {
+	return c.assets
+}
+
+func (c *Cluster) buildAssets() (cfnstack.Assets, error) {
+	var err error
+	assets := cfnstack.NewAssetsBuilder(c.StackName(), c.StackConfig.S3URI, c.StackConfig.Region)
+	if c.UserDataWorker, err = model.NewUserData(c.StackTemplateOptions.WorkerTmplFile, c.ComputedConfig); err != nil {
+		return nil, fmt.Errorf("failed to render worker cloud config: %v", err)
+	}
+
+	if err = assets.AddUserDataPart(c.UserDataWorker, model.USERDATA_S3, "userdata-worker"); err != nil {
+		return nil, fmt.Errorf("failed to render worker cloud config: %v", err)
+	}
+
 	stackTemplate, err := c.RenderStackTemplateAsString()
 	if err != nil {
 		return nil, fmt.Errorf("Error while rendering template : %v", err)
 	}
+	assets.Add(STACK_TEMPLATE_FILENAME, stackTemplate)
 
-	return cfnstack.NewAssetsBuilder(c.StackName(), c.StackConfig.S3URI, c.StackConfig.Region).
-		Add(c.UserDataWorkerFileName(), c.UserDataWorker).
-		Add(STACK_TEMPLATE_FILENAME, stackTemplate).
-		Build(), nil
+	return assets.Build(), nil
 }
 
 func (c *Cluster) TemplateURL() (string, error) {
-	assets, err := c.Assets()
-	if err != nil {
-		return "", fmt.Errorf("failed to get template url: %v", err)
-	}
+	assets := c.Assets()
 	asset, err := assets.FindAssetByStackAndFileName(c.StackName(), STACK_TEMPLATE_FILENAME)
 	if err != nil {
 		return "", fmt.Errorf("failed to get template url: %v", err)
 	}
-	return asset.URL(), nil
+	return asset.URL()
 }
 
 func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
@@ -118,7 +147,7 @@ func (c *Cluster) stackProvisioner() *cfnstack.Provisioner {
   ]
 }`
 
-	return cfnstack.NewProvisioner(c.StackName(), c.WorkerDeploymentSettings().StackTags(), c.S3URI, c.Region, stackPolicyBody, c.session())
+	return cfnstack.NewProvisioner(c.StackName(), c.WorkerDeploymentSettings().StackTags(), c.S3URI, c.Region, stackPolicyBody, c.session(), c.CloudFormation.RoleARN)
 }
 
 func (c *Cluster) session() *session.Session {
@@ -127,10 +156,6 @@ func (c *Cluster) session() *session.Session {
 
 // ValidateStack validates the CloudFormation stack for this worker node pool already uploaded to S3
 func (c *Cluster) ValidateStack() (string, error) {
-	if err := c.ValidateUserData(); err != nil {
-		return "", fmt.Errorf("failed to validate userdata : %v", err)
-	}
-
 	ec2Svc := ec2.New(c.session())
 	if err := c.validateWorkerRootVolume(ec2Svc); err != nil {
 		return "", err
@@ -167,13 +192,7 @@ func (c *ClusterRef) validateKeyPair(ec2Svc ec2DescribeKeyPairsService) error {
 func (c *ClusterRef) validateWorkerRootVolume(ec2Svc ec2CreateVolumeService) error {
 
 	//Send a dry-run request to validate the worker root volume parameters
-	workerRootVolume := &ec2.CreateVolumeInput{
-		DryRun:           aws.Bool(true),
-		AvailabilityZone: aws.String(c.Subnets[0].AvailabilityZone),
-		Iops:             aws.Int64(int64(c.RootVolume.IOPS)),
-		Size:             aws.Int64(int64(c.RootVolume.Size)),
-		VolumeType:       aws.String(c.RootVolume.Type),
-	}
+	workerRootVolume := c.getWorkerRootVolumeConfig()
 
 	if _, err := ec2Svc.CreateVolume(workerRootVolume); err != nil {
 		operr, ok := err.(awserr.Error)
@@ -186,6 +205,37 @@ func (c *ClusterRef) validateWorkerRootVolume(ec2Svc ec2CreateVolumeService) err
 	return nil
 }
 
+func (c *ClusterRef) getWorkerRootVolumeConfig() *ec2.CreateVolumeInput {
+	var workerRootVolume = &ec2.CreateVolumeInput{}
+
+	switch c.RootVolume.Type {
+	case "standard", "gp2":
+		workerRootVolume = &ec2.CreateVolumeInput{
+			DryRun:           aws.Bool(true),
+			AvailabilityZone: aws.String(c.Subnets[0].AvailabilityZone),
+			Size:             aws.Int64(int64(c.RootVolume.Size)),
+			VolumeType:       aws.String(c.RootVolume.Type),
+		}
+	case "io1":
+		workerRootVolume = &ec2.CreateVolumeInput{
+			DryRun:           aws.Bool(true),
+			AvailabilityZone: aws.String(c.Subnets[0].AvailabilityZone),
+			Iops:             aws.Int64(int64(c.RootVolume.IOPS)),
+			Size:             aws.Int64(int64(c.RootVolume.Size)),
+			VolumeType:       aws.String(c.RootVolume.Type),
+		}
+	default:
+		workerRootVolume = &ec2.CreateVolumeInput{
+			DryRun:           aws.Bool(true),
+			AvailabilityZone: aws.String(c.Subnets[0].AvailabilityZone),
+			Size:             aws.Int64(int64(c.RootVolume.Size)),
+			VolumeType:       aws.String(c.RootVolume.Type),
+		}
+	}
+
+	return workerRootVolume
+}
+
 func (c *ClusterRef) Info() (*Info, error) {
 	var info Info
 	{
@@ -195,5 +245,5 @@ func (c *ClusterRef) Info() (*Info, error) {
 }
 
 func (c *ClusterRef) Destroy() error {
-	return cfnstack.NewDestroyer(c.StackName(), c.session).Destroy()
+	return cfnstack.NewDestroyer(c.StackName(), c.session, c.CloudFormation.RoleARN).Destroy()
 }

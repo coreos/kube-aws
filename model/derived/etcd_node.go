@@ -84,7 +84,7 @@ func (i etcdNodeImpl) privateDNSNameRef() string {
 
 func (i etcdNodeImpl) importedPrivateDNSNameRef() string {
 	if i.cluster.EC2InternalDomainUsed() {
-		return i.defaultPrivateDNSNameRefFromIPRef(fmt.Sprintf(`{ "Fn::ImportValue": {"Fn::Sub" : "${ControlPlaneStackName}-%s"} }`, i.NetworkInterfacePrivateIPLogicalName()))
+		return i.defaultPrivateDNSNameRefFromIPRef(fmt.Sprintf(`{ "Fn::ImportValue": {"Fn::Sub" : "${EtcdStackName}-%s"} }`, i.NetworkInterfacePrivateIPLogicalName()))
 	}
 	return fmt.Sprintf(`"%s"`, i.customPrivateDNSName())
 }
@@ -118,7 +118,7 @@ func (i etcdNodeImpl) importedDefaultPublicDNSNameRef() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to determine an ec2 default public dns name: %v", err)
 	}
-	eipRef := fmt.Sprintf(`{ "Fn::ImportValue": {"Fn::Sub" : "${ControlPlaneStackName}-%s"} }`, eipLogicalName)
+	eipRef := fmt.Sprintf(`{ "Fn::ImportValue": {"Fn::Sub" : "${EtcdStackName}-%s"} }`, eipLogicalName)
 	return i.defaultPublicDNSNameRefFromIPRef(eipRef), nil
 }
 

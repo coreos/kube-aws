@@ -8,15 +8,18 @@ import (
 
 type Etcd struct {
 	Cluster            EtcdCluster          `yaml:",inline"`
+	CustomFiles        []CustomFile         `yaml:"customFiles,omitempty"`
+	CustomSystemdUnits []CustomSystemdUnit  `yaml:"customSystemdUnits,omitempty"`
 	DataVolume         DataVolume           `yaml:"dataVolume,omitempty"`
 	DisasterRecovery   EtcdDisasterRecovery `yaml:"disasterRecovery,omitempty"`
-	Snapshot           EtcdSnapshot         `yaml:"snapshot,omitempty"`
+	VolumeMounts       []VolumeMount        `yaml:"volumeMounts,omitempty"`
 	EC2Instance        `yaml:",inline"`
-	Nodes              []EtcdNode          `yaml:"nodes,omitempty"`
-	SecurityGroupIds   []string            `yaml:"securityGroupIds"`
-	Subnets            []Subnet            `yaml:"subnets,omitempty"`
-	CustomFiles        []CustomFile        `yaml:"customFiles,omitempty"`
-	CustomSystemdUnits []CustomSystemdUnit `yaml:"customSystemdUnits,omitempty"`
+	IAMConfig          IAMConfig    `yaml:"iam,omitempty"`
+	Nodes              []EtcdNode   `yaml:"nodes,omitempty"`
+	SecurityGroupIds   []string     `yaml:"securityGroupIds"`
+	Snapshot           EtcdSnapshot `yaml:"snapshot,omitempty"`
+	Subnets            Subnets      `yaml:"subnets,omitempty"`
+	StackExists        bool
 	UnknownKeys        `yaml:",inline"`
 }
 
@@ -60,6 +63,7 @@ func NewDefaultEtcd() Etcd {
 			Type: "gp2",
 			IOPS: 0,
 		},
+		StackExists: false,
 	}
 }
 func (i Etcd) LogicalName() string {
@@ -134,7 +138,7 @@ func (e Etcd) SecurityGroupRefs() []string {
 
 	refs = append(
 		refs,
-		`{"Ref":"SecurityGroupEtcd"}`,
+		`{"Fn::ImportValue" : {"Fn::Sub" : "${NetworkStackName}-EtcdSecurityGroup"}}`,
 	)
 
 	return refs
@@ -147,12 +151,19 @@ func (e Etcd) SystemdUnitName() string {
 	return "etcd2.service"
 }
 
-// Version returns the version of etcd (e.g. `3.1.5`) to be used for this etcd cluster
+func (e Etcd) Validate() error {
+	if err := ValidateVolumeMounts(e.VolumeMounts); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Version returns the version of etcd (e.g. `3.2.1`) to be used for this etcd cluster
 func (e Etcd) Version() EtcdVersion {
 	if e.Cluster.Version != "" {
 		return e.Cluster.Version
 	}
-	return "3.1.5"
+	return "3.2.13"
 }
 
 func (v EtcdVersion) Is3() bool {

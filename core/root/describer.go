@@ -5,9 +5,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/kubernetes-incubator/kube-aws/awsconn"
 	"github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
 	cp "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
+	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 )
 
 type Info struct {
@@ -34,16 +36,13 @@ func ClusterDescriberFromFile(configPath string) (ClusterDescriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	awsConfig := aws.NewConfig().
-		WithRegion(config.Region.String()).
-		WithCredentialsChainVerboseErrors(true)
 
-	session, err := session.NewSession(awsConfig)
+	session, err := awsconn.NewSessionFromRegion(config.Region, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to establish aws session: %v", err)
 	}
 
-	cpConfig, err := config.Config()
+	cpConfig, err := config.Config([]*pluginmodel.Plugin{})
 	if err != nil {
 		return nil, err
 	}
