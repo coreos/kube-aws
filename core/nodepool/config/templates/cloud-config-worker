@@ -407,6 +407,7 @@ coreos:
         Wants=flanneld.service cfn-etcd-environment.service
         After=cfn-etcd-environment.service
         {{ end -}}
+        Wants=rpc-statd.service        
         Wants=decrypt-assets.service
         After=decrypt-assets.service
         {{- if .Gpu.Nvidia.IsEnabledOn .InstanceType }}
@@ -517,6 +518,10 @@ coreos:
         [Install]
         WantedBy=multi-user.target
 
+    - name: rpc-statd.service
+      command: start
+      enable: true
+
 {{ if eq .ContainerRuntime "rkt" }}
     - name: rkt-api.service
       enable: true
@@ -614,9 +619,6 @@ coreos:
 {{end}}
 
 {{ if $.ElasticFileSystemID }}
-    - name: rpc-statd.service
-      command: start
-      enable: true
     - name: efs.service
       command: start
       content: |
