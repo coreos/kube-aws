@@ -158,6 +158,57 @@
         }
       }
     },
+    "SecurityGroupWorker": {
+      "Properties": {
+        "GroupDescription": {
+          "Ref": "AWS::StackName"
+        },
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": -1,
+            "IpProtocol": "icmp",
+            "ToPort": -1
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 0,
+            "IpProtocol": "tcp",
+            "ToPort": 65535
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 0,
+            "IpProtocol": "udp",
+            "ToPort": 65535
+          }
+        ],
+        "SecurityGroupIngress": [
+          {{ range $_, $r := $.SSHAccessAllowedSourceCIDRs -}}
+          {
+            "CidrIp": "{{$r}}",
+            "FromPort": 22,
+            "IpProtocol": "tcp",
+            "ToPort": 22
+          },
+          {{end -}}
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": -1,
+            "IpProtocol": "icmp",
+            "ToPort": -1
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "{{$.ClusterName}}-sg-worker"
+          }
+        ],
+        "VpcId": {{.VPCRef}}
+      },
+      "Type": "AWS::EC2::SecurityGroup"
+    },
     {{ if not .Controller.IAMConfig.InstanceProfile.Arn }}
     "IAMInstanceProfileController": {
       "Properties": {
@@ -617,7 +668,6 @@
     {{quote $n}}: {{toJSON $r}}
     {{end}}
   },
-
   "Outputs": {
     {{ if not .Controller.IAMConfig.InstanceProfile.Arn }}
     "ControllerIAMRoleArn": {
@@ -626,6 +676,11 @@
       "Export": { "Name": { "Fn::Sub": "${AWS::StackName}-ControllerIAMRoleArn" } }
     },
     {{end}}
+    "WorkerSecurityGroup" : {
+      "Description" : "The security group assigned to worker nodes",
+      "Value" :  { "Ref" : "SecurityGroupWorker" },
+      "Export" : { "Name" : {"Fn::Sub": "${AWS::StackName}-WorkerSecurityGroup" }}
+    },
     "StackName": {
       "Description": "The name of this stack which is used by node pool stacks to import outputs from this stack",
       "Value": { "Ref": "AWS::StackName" }

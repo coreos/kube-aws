@@ -354,6 +354,7 @@ coreos:
         {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         Wants=flanneld.service
         {{ end -}}
+        Wants=rpc-statd.service
         Wants=decrypt-assets.service
         After=decrypt-assets.service
 
@@ -444,6 +445,10 @@ coreos:
         [Install]
         WantedBy=multi-user.target
 
+    - name: rpc-statd.service
+      command: start
+      enable: true
+
 {{ if eq .ContainerRuntime "rkt" }}
     - name: rkt-api.service
       enable: true
@@ -508,9 +513,6 @@ coreos:
         ExecStart=/opt/bin/retry 3 /opt/bin/apply-kube-aws-plugins
 
 {{ if $.ElasticFileSystemID }}
-    - name: rpc-statd.service
-      command: start
-      enable: true
     - name: efs.service
       command: start
       content: |
