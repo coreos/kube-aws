@@ -354,7 +354,7 @@ coreos:
         {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         Wants=flanneld.service
         {{ end -}}
-        Wants=rpc-statd.service	
+        Wants=rpc-statd.service
         Wants=decrypt-assets.service
         After=decrypt-assets.service
 
@@ -444,10 +444,10 @@ coreos:
 
         [Install]
         WantedBy=multi-user.target
-	
+
     - name: rpc-statd.service
       command: start
-      enable: true	
+      enable: true
 
 {{ if eq .ContainerRuntime "rkt" }}
     - name: rkt-api.service
