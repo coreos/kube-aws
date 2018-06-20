@@ -511,10 +511,11 @@ func (c clusterImpl) update(cfSvc *cloudformation.CloudFormation, targets Operat
 	}
 	// fail fast if it looks like we are trying to update a legacy cluster.
 	if !exists {
-		logger.Errorf("the %s stack must exist in order to be able to update your cluster.", naming.FromStackToCfnResource(c.etcd.Etcd.LogicalName()))
-		logger.Error("we're sorry, but kube-aws can not presently upgrade your cluster to the new release with a separate ETCD Cloudformation stack.")
-		logger.Error("please consider backing up, destroying and recreating to upgrade.")
-		return "", fmt.Errorf("update not supported for clusters without a separate etcd cloudformation stack")
+		//	logger.Errorf("the %s stack must exist in order to be able to update your cluster.", naming.FromStackToCfnResource(c.etcd.Etcd.LogicalName()))
+		//	logger.Error("we're sorry, but kube-aws can not presently upgrade your cluster to the new release with a separate ETCD Cloudformation stack.")
+		//	logger.Error("please consider backing up, destroying and recreating to upgrade.")
+		//	return "", fmt.Errorf("update not supported for clusters without a separate etcd cloudformation stack")
+		logger.Warnf("WARNING!!! you are updating the cluster with legacy etcd stack... be careful, tread lightly...")
 	}
 
 	assets, err := c.generateAssets(c.operationTargetsFromUserInput([]OperationTargets{targets}))
