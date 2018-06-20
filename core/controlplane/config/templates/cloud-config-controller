@@ -3208,7 +3208,7 @@ write_files:
         namespace: kube-system
       data:
         kube-proxy-config.yaml: |
-          apiVersion: {{if ge .K8sVer "v1.9"}}kubeproxy.config.k8s.io{{else}}componentconfig{{end}}/v1alpha1
+          apiVersion: {{if checkVersion ">=1.9" .K8sVer}}kubeproxy.config.k8s.io{{else}}componentconfig{{end}}/v1alpha1
           kind: KubeProxyConfiguration
           bindAddress: 0.0.0.0
           clientConnection:

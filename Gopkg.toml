@@ -25,3 +25,15 @@ ignored = ["github.com/kubernetes-incubator/kube-aws/hack*"]
 [[constraint]]
   name = "github.com/go-yaml/yaml"
   version = "v2.2.1"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/net"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/oauth2"
+
+[[constraint]]
+  name = "gopkg.in/yaml.v2"
+

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/semver"
 	"github.com/Masterminds/sprig"
 	"github.com/kubernetes-incubator/kube-aws/fingerprint"
 )
@@ -61,6 +62,17 @@ var funcs2 = template.FuncMap{
 		series := strings.Split(instanceType, ".")
 
 		return !nonSupportedSeries[series[0]] && !nonSupportedTypes[instanceType]
+	},
+	"checkVersion": func(constraint string, versionToCheck string) (bool, error) {
+		c, err := semver.NewConstraint(constraint)
+		if err != nil {
+			return false, err
+		}
+		v, err := semver.NewVersion(versionToCheck)
+		if err != nil {
+			return false, err
+		}
+		return c.Check(v), nil
 	},
 }
 
