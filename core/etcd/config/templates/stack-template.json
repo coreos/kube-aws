@@ -388,6 +388,60 @@
                   "'\n"
                 ]]}
               },
+              {{ if .EtcdMigrationEnabled -}}
+              "/var/run/coreos/etcdadm-environment-migration": {
+                "content": { "Fn::Join" : [ "", [
+                  "ETCD_ENDPOINTS='",
+                    "{{ .EtcdMigrationExistingEndpoints }}",
+                  "'\n",
+                  "AWS_DEFAULT_REGION='",
+                    "{{$.Region}}",
+                  "'\n",
+                  "KUBERNETES_CLUSTER='",
+                    "{{$.ClusterName}}",
+                  "'\n",
+                  "ETCDCTL_CACERT='",
+                    "/etc/ssl/certs/etcd-trusted-ca.pem",
+                  "'\n",
+                  "ETCDCTL_CERT='",
+                    "/etc/ssl/certs/etcd-client.pem",
+                  "'\n",
+                  "ETCDCTL_KEY='",
+                    "/etc/ssl/certs/etcd-client-key.pem",
+                  "'\n",
+                  "ETCDCTL_CA_FILE='",
+                    "/etc/ssl/certs/etcd-trusted-ca.pem",
+                  "'\n",
+                  "ETCDCTL_CERT_FILE='",
+                    "/etc/ssl/certs/etcd-client.pem",
+                  "'\n",
+                  "ETCDCTL_KEY_FILE='",
+                    "/etc/ssl/certs/etcd-client-key.pem",
+                  "'\n",
+                  "ETCDADM_MEMBER_SYSTEMD_SERVICE_NAME='",
+                    "etcd-member",
+                  "'\n",
+                  "ETCDADM_CLUSTER_SNAPSHOTS_S3_URI='",
+                    { "Fn::Join" : [ "", ["s3://", {{$.EtcdSnapshotsS3PathRef}} ]] },
+                  "'\n",
+                  "ETCDADM_STATE_FILES_DIR='",
+                    "/var/run/coreos/etcdadm",
+                  "'\n",
+                  "ETCDADM_MEMBER_ENV_FILE='",
+                    "/var/run/coreos/etcdadm/etcd-member.env",
+                  "'\n",
+                  "ETCDADM_MEMBER_COUNT='",
+                    "{{$.Etcd.Count}}",
+                  "'\n",
+                  "ETCDADM_MEMBER_INDEX='",
+                    "{{$etcdIndex}}",
+                  "'\n",
+                  "ETCD_VERSION='",
+                    "{{$.Etcd.Version}}",
+                  "'\n"
+                ]]}
+              },
+              {{ end -}}
               "/var/run/coreos/etcdadm-environment": {
                 "content": { "Fn::Join" : [ "", [
                   "ETCD_ENDPOINTS='",
@@ -451,7 +505,7 @@
       },
       "DependsOn": [
         {{if $etcdInstance.DependencyExists}}{{$etcdInstance.DependencyRef}},{{end}}
-        {{if $.Etcd.StackExists}}{{if $etcdIndex}}"{{$.Etcd.LogicalName}}{{sub $etcdIndex 1}}",{{end}}{{end}}
+        {{if $.StackExists}}{{if $etcdIndex}}"{{$.Etcd.LogicalName}}{{sub $etcdIndex 1}}",{{end}}{{end}}
         {{if $etcdInstance.EIPManaged}}
         "{{$etcdInstance.EIPLogicalName}}",
         {{end}}

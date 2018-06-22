@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 type DummyCloudformationService struct {
@@ -24,6 +25,14 @@ func (cf DummyCFInterrogator) ListStacks(input *cloudformation.ListStacksInput) 
 
 func (cf DummyCFInterrogator) ListStackResources(input *cloudformation.ListStackResourcesInput) (*cloudformation.ListStackResourcesOutput, error) {
 	return cf.ListStacksResourcesResult, nil
+}
+
+type DummyEC2Interrogator struct {
+	DescribeInstancesOutput *ec2.DescribeInstancesOutput
+}
+
+func (ec DummyEC2Interrogator) DescribeInstances(input *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
+	return ec.DescribeInstancesOutput, nil
 }
 
 func (cfSvc *DummyCloudformationService) CreateStack(req *cloudformation.CreateStackInput) (*cloudformation.CreateStackOutput, error) {

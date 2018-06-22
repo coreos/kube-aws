@@ -207,6 +207,56 @@ coreos:
         [Install]
         WantedBy=multi-user.target
 {{end}}
+    {{ if .EtcdMigrationEnabled -}}
+    - name: export-existing-etcd-state.service
+      enable: true
+      content: |
+        [Unit]
+        Description=Exports Kubernetes Values from a remote Etcd cluster
+        Wants=cfn-etcd-environment.service
+        After=etcd-member.service
+
+        [Service]
+        Type=simple
+        Restart=Restart=on-failure
+        RestartSec=5
+        EnvironmentFile=-/etc/etcd-environment
+        EnvironmentFile=/var/run/coreos/etcdadm-environment-migration
+        ExecStartPre=/opt/bin/etcdadm cluster-is-healthy
+        ExecStartPre=/bin/bash -c "(/opt/bin/etcdadm member-is-leader && /opt/bin/etcdadm migration-export-kube-state existing-state-file.json && mv /var/run/coreos/etcdadm/snapshots/existing-state-file.json /var/run/coreos/etcdadm/snapshots/exported-state-file.json) || touch /var/run/coreos/etcdadm/snapshots/exported-state-file.json)"
+        ExecStart=/bin/sleep 3600
+        TimeoutStartSec=900
+    - name: import-existing-etcd-state.path
+      enable: true
+      command:  start
+      content: |
+        [Path]
+        PathExists=/var/run/coreos/etcdadm/snapshots/exported-state-file.json
+
+        [Install]
+        WantedBy=default.target
+    - name: import-existing-etcd-state.service
+      enable: false
+      command: stop
+      content: |
+        [Unit]
+        Description=Imports Kubernetes Values from export file into this cluster
+        Wants=cfn-etcd-environment.service
+        After=etcd-member.service
+        After=export-existing-etcd-state.service
+
+        [Service]
+        Type=simple
+        Restart=Restart=on-failure
+        RestartSec=5
+        EnvironmentFile=-/etc/etcd-environment
+        EnvironmentFile=/var/run/coreos/etcdadm-environment
+        ExecStartPre=/usr/bin/systemctl is-active export-existing-etcd-state.service
+        ExecStartPre=/opt/bin/etcdadm cluster-is-healthy
+        ExecStartPre=/bin/bash -c "(/opt/bin/etcdadm member-is-leader && /opt/bin/etcdadm migration-import-kube-state /var/run/coreos/etcdadm/snapshots/exported-state-file.json) || /bin/true)"
+        ExecStart=/bin/sleep 3600
+        TimeoutStartSec=900
+    {{ end -}}
     {{if .Etcd.DisasterRecovery.SupportsEtcdVersion .Etcd.Version -}}
     - name: etcdadm-reconfigure.service
       enable: true
@@ -433,6 +483,9 @@ coreos:
         [Unit]
         Wants={{.Etcd.SystemdUnitName}}
         After={{.Etcd.SystemdUnitName}}
+        {{ if .EtcdMigrationEnabled -}}
+        After=import-existing-etcd-state.service
+        {{ end -}}
 
         [Service]
         Type=simple
@@ -441,6 +494,9 @@ coreos:
 
         EnvironmentFile={{.EtcdNodeEnvFileName}}
         ExecStartPre=/usr/bin/systemctl is-active {{.Etcd.SystemdUnitName}}
+        {{ if .EtcdMigrationEnabled -}}
+        ExecStartPre=/usr/bin/systemctl is-active import-existing-etcd-state.service
+        {{ end -}}
         ExecStartPre=/usr/bin/rkt fetch {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}}
         ExecStart=-/opt/bin/cfn-signal
 {{end}}

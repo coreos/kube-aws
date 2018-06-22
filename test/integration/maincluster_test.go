@@ -3489,7 +3489,7 @@ worker:
 			configBytes := validCase.configYaml
 			// TODO Allow including plugins in test data?
 			plugins := []*pluginmodel.Plugin{}
-			providedConfig, err := config.ConfigFromBytesWithStubs([]byte(configBytes), plugins, helper.DummyEncryptService{}, helper.DummyCFInterrogator{})
+			providedConfig, err := config.ConfigFromBytesWithStubs([]byte(configBytes), plugins, helper.DummyEncryptService{}, helper.DummyCFInterrogator{}, helper.DummyEC2Interrogator{})
 			if err != nil {
 				t.Errorf("failed to parse config %s: %v", configBytes, err)
 				t.FailNow()

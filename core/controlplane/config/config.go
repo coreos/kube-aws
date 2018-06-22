@@ -571,26 +571,25 @@ type ControllerSettings struct {
 
 // Part of configuration which is specific to etcd nodes
 type EtcdSettings struct {
-	model.Etcd                     `yaml:"etcd,omitempty"`
-	EtcdMigrationEnabled           bool
-	EtcdMigrationExistingEndpoints string
+	model.Etcd `yaml:"etcd,omitempty"`
 }
 
 // Cluster is the container of all the configurable parameters of a kube-aws cluster, customizable via cluster.yaml
 type Cluster struct {
-	KubeClusterSettings    `yaml:",inline"`
-	DeploymentSettings     `yaml:",inline"`
-	DefaultWorkerSettings  `yaml:",inline"`
-	ControllerSettings     `yaml:",inline"`
-	EtcdSettings           `yaml:",inline"`
-	AdminAPIEndpointName   string              `yaml:"adminAPIEndpointName,omitempty"`
-	RecordSetTTL           int                 `yaml:"recordSetTTL,omitempty"`
-	TLSCADurationDays      int                 `yaml:"tlsCADurationDays,omitempty"`
-	TLSCertDurationDays    int                 `yaml:"tlsCertDurationDays,omitempty"`
-	HostedZoneID           string              `yaml:"hostedZoneId,omitempty"`
-	PluginConfigs          model.PluginConfigs `yaml:"kubeAwsPlugins,omitempty"`
-	ProvidedEncryptService EncryptService
-	ProvidedCFInterrogator cfnstack.CFInterrogator
+	KubeClusterSettings     `yaml:",inline"`
+	DeploymentSettings      `yaml:",inline"`
+	DefaultWorkerSettings   `yaml:",inline"`
+	ControllerSettings      `yaml:",inline"`
+	EtcdSettings            `yaml:",inline"`
+	AdminAPIEndpointName    string              `yaml:"adminAPIEndpointName,omitempty"`
+	RecordSetTTL            int                 `yaml:"recordSetTTL,omitempty"`
+	TLSCADurationDays       int                 `yaml:"tlsCADurationDays,omitempty"`
+	TLSCertDurationDays     int                 `yaml:"tlsCertDurationDays,omitempty"`
+	HostedZoneID            string              `yaml:"hostedZoneId,omitempty"`
+	PluginConfigs           model.PluginConfigs `yaml:"kubeAwsPlugins,omitempty"`
+	ProvidedEncryptService  EncryptService
+	ProvidedCFInterrogator  cfnstack.CFInterrogator
+	ProvidedEC2Interrogator cfnstack.EC2Interrogator
 	// SSHAccessAllowedSourceCIDRs is network ranges of sources you'd like SSH accesses to be allowed from, in CIDR notation
 	SSHAccessAllowedSourceCIDRs model.CIDRRanges       `yaml:"sshAccessAllowedSourceCIDRs,omitempty"`
 	CustomSettings              map[string]interface{} `yaml:"customSettings,omitempty"`

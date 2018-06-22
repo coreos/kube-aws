@@ -892,14 +892,19 @@ etcdadm_main() {
     "save" )
       member_save_snapshot
       ;;
+    "cluster-is-healthy" )
+      cluster_is_healthy
+      ;;
     "migration-export-kube-state" )
-      export_kubernetes_registry migration-exported-objects.json
+      export_kubernetes_registry $2
+      shift
       ;;
     "migration-import-kube-state" )
-      import_kubernetes_registry migration-exported-objects.json
+      import_kubernetes_registry $2
+      shift
       ;;
     "member-is-leader" )
-      exit member_is_leader
+      member_is_leader
       ;;
     "replace" )
       member_replace_failed
