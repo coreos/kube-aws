@@ -571,7 +571,9 @@ type ControllerSettings struct {
 
 // Part of configuration which is specific to etcd nodes
 type EtcdSettings struct {
-	model.Etcd `yaml:"etcd,omitempty"`
+	model.Etcd                     `yaml:"etcd,omitempty"`
+	EtcdMigrationEnabled           bool
+	EtcdMigrationExistingEndpoints string
 }
 
 // Cluster is the container of all the configurable parameters of a kube-aws cluster, customizable via cluster.yaml

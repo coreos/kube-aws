@@ -775,6 +775,10 @@ member_data_dir() {
 }
 
 member_etcdctl() {
+  raw_etcdctl etcdctl --endpoints "$(member_client_url)" ${*}
+}
+
+raw_etcdctl() {
   local uuid_file
   local docker_opts=(--rm)
 
@@ -796,7 +800,7 @@ member_etcdctl() {
     --volume="$(member_data_dir)":/var/lib/etcd \
     --volume "$(member_snapshots_dir_name)":"$(member_host_snapshots_dir_path)" \
     quay.io/coreos/etcd:v$etcd_version \
-      etcdctl --endpoints "$(member_client_url)" ${*}
+      ${*}
 }
 
 member_is_healthy() {
@@ -858,12 +862,44 @@ member_validate() {
   fi
 }
 
+export_kubernetes_registry() {
+  local file_name=$1
+  echo "Exporting kubernetes objects to $(member_host_snapshots_dir_path)/$file_name"
+  if cluster_is_healthy; then
+    (member_etcdctl get '/registry' --prefix --write-out="json") | jq -r '.kvs[] | "\(.key):\(.value)"' >"$(member_host_snapshots_dir_path)/$file_name"
+  else
+    _panic 'cluster is not healthy, can not export keys from an unhealthy cluster'
+  fi
+}
+
+import_kubernetes_registry() {
+  local file_name=$1
+  echo "Importing kubernetes objects to $(member_host_snapshots_dir_path)/$file_name"
+  if [[ ! -f "$(member_host_snapshots_dir_path)/$file_name" ]]; then
+    _panic "Can't import objects, file not found: $(member_host_snapshots_dir_path)/$file_name"
+  fi
+  if cluster_is_healthy; then
+    raw_etcdctl /bin/sh -c 'while read -u 10 l; do k=$(echo "${l%%:*}" | base64 -d); v=${l##*:}; echo "saving $k"; echo -e "$v" | base64 -d | etcdctl --endpoints='$(member_client_url)' put "$k"; done 10<'$(member_snapshots_dir_name)/$file_name
+  else
+    _panic 'cluster is not healthy, can not import keys to an unhealthy cluster'
+  fi
+}
+
 etcdadm_main() {
   local cmd=$1
 
   case "${cmd}" in
     "save" )
       member_save_snapshot
+      ;;
+    "migration-export-kube-state" )
+      export_kubernetes_registry migration-exported-objects.json
+      ;;
+    "migration-import-kube-state" )
+      import_kubernetes_registry migration-exported-objects.json
+      ;;
+    "member-is-leader" )
+      exit member_is_leader
       ;;
     "replace" )
       member_replace_failed

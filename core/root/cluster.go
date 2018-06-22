@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/kubernetes-incubator/kube-aws/awsconn"
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
@@ -504,18 +505,23 @@ func (c clusterImpl) LegacyUpdate(targets OperationTargets) (string, error) {
 
 func (c clusterImpl) update(cfSvc *cloudformation.CloudFormation, targets OperationTargets) (string, error) {
 
+	// Look at existing state of cloud formation and stacks to determine if we need to take special measures in migrating our etcd
+	// clusters from the control plane stack to their own Etcd stack.
 	exists, err := cfnstack.NestedStackExists(cfSvc, c.controlPlane.ClusterName, naming.FromStackToCfnResource(c.etcd.Etcd.LogicalName()))
 	if err != nil {
 		logger.Errorf("please check your AWS credentials/permissions")
 		return "", fmt.Errorf("can't lookup AWS CloudFormation stacks: %s", err)
 	}
-	// fail fast if it looks like we are trying to update a legacy cluster.
 	if !exists {
-		//	logger.Errorf("the %s stack must exist in order to be able to update your cluster.", naming.FromStackToCfnResource(c.etcd.Etcd.LogicalName()))
-		//	logger.Error("we're sorry, but kube-aws can not presently upgrade your cluster to the new release with a separate ETCD Cloudformation stack.")
-		//	logger.Error("please consider backing up, destroying and recreating to upgrade.")
-		//	return "", fmt.Errorf("update not supported for clusters without a separate etcd cloudformation stack")
-		logger.Warnf("WARNING!!! you are updating the cluster with legacy etcd stack... be careful, tread lightly...")
+		if !c.controlPlane.Kubernetes.Networking.SelfHosting.Enabled {
+			return "", fmt.Errorf("sorry, you can only update an existing legacy cluster with Kubernetes.Networking.SelfHosting enabled")
+		}
+		logger.Warnf("your cluster does not have a separate etcd stack, this update will spin up a new etcd cluster and attempt to import your existing state.")
+		c.etcd.EtcdMigrationEnabled = true
+		// look up existing etcd servers
+		if c.etcd.EtcdMigrationExistingEndpoints, err = c.lookupExistingEtcdEndpoints(); err != nil {
+			return "", fmt.Errorf("can't lookup existing etcd endpoints: %v", err)
+		}
 	}
 
 	assets, err := c.generateAssets(c.operationTargetsFromUserInput([]OperationTargets{targets}))
@@ -545,6 +551,50 @@ func (c clusterImpl) update(cfSvc *cloudformation.CloudFormation, targets Operat
 	}
 
 	return c.stackProvisioner().UpdateStackAtURLAndWait(cfSvc, templateUrl)
+}
+
+// lookupExistingEtcdEndpoints supports the migration from embedded etcd servers to their own stack
+// by looking up the existing etcd servers for a specific cluster and constructing and etcd endpoints
+// list as used by tools such as etcdctl and the etcdadm script.
+func (c clusterImpl) lookupExistingEtcdEndpoints() (string, error) {
+	ec2svc := ec2.New(c.session)
+	clusterTag := fmt.Sprintf("tag:kubernetes.io/cluster/%s", c.controlPlane.ClusterName)
+	params := &ec2.DescribeInstancesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("tag:kube-aws:role"),
+				Values: []*string{aws.String("etcd")},
+			},
+			{
+				Name:   aws.String(clusterTag),
+				Values: []*string{aws.String("owned")},
+			},
+			{
+				Name:   aws.String("instance-state-name"),
+				Values: []*string{aws.String("running"), aws.String("pending")},
+			},
+		},
+	}
+	logger.Debugf("Calling AWS EC2 DescribeInstances ->")
+	resp, err := ec2svc.DescribeInstances(params)
+	if err != nil {
+		return "", fmt.Errorf("can't lookup ec2 instances: %v", err)
+	}
+
+	logger.Debugf("<- received %d instances from AWS", len(resp.Reservations))
+	if len(resp.Reservations) == 0 {
+		return "", nil
+	}
+	// construct comma separated endpoints string
+	endpoints := []string{}
+	for _, res := range resp.Reservations {
+		for _, inst := range res.Instances {
+			endpoints = append(endpoints, fmt.Sprintf("https://%s:2379", *inst.PrivateDnsName))
+		}
+	}
+	result := strings.Join(endpoints, ",")
+	logger.Debugf("Existing etcd endpoints found: %s", result)
+	return result, nil
 }
 
 func (c clusterImpl) ValidateTemplates() error {
