@@ -11,7 +11,8 @@ import (
 
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	controlplanecluster "github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
-	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	controlplaneconfig "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
+	"github.com/kubernetes-incubator/kube-aws/core/etcd/config"
 	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/naming"
@@ -24,7 +25,7 @@ var VERSION = "UNKNOWN"
 
 const STACK_TEMPLATE_FILENAME = "stack.json"
 
-func newClusterRef(cfg *config.Cluster, session *session.Session) *ClusterRef {
+func newClusterRef(cfg *controlplaneconfig.Cluster, session *session.Session) *ClusterRef {
 	return &ClusterRef{
 		Cluster: cfg,
 		session: session,
@@ -32,7 +33,7 @@ func newClusterRef(cfg *config.Cluster, session *session.Session) *ClusterRef {
 }
 
 type ClusterRef struct {
-	*config.Cluster
+	*controlplaneconfig.Cluster
 	session *session.Session
 }
 
@@ -42,18 +43,11 @@ type Cluster struct {
 	assets cfnstack.Assets
 }
 
-// ExistingState describes the existing state of the etcd cluster
-type ExistingState struct {
-	StackExists                    bool
-	EtcdMigrationEnabled           bool
-	EtcdMigrationExistingEndpoints string
-}
-
 // An EtcdConfigurationContext contains configuration settings/options mixed with existing state in a way that can be
 // consumed by stack and cloud-config templates.
 type EtcdConfigurationContext struct {
-	*config.Config
-	ExistingState
+	*controlplaneconfig.Config
+	model.EtcdExistingState
 }
 
 type ec2Service interface {
@@ -129,8 +123,9 @@ func (c *ClusterRef) validateExistingVPCState(ec2Svc ec2Service) error {
 	return nil
 }
 
-func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugins []*pluginmodel.Plugin, session *session.Session) (*Cluster, error) {
-	cfg := &config.Cluster{}
+func NewCluster(cfgRef *controlplaneconfig.Cluster, opts controlplaneconfig.StackTemplateOptions, plugins []*pluginmodel.Plugin, session *session.Session) (*Cluster, error) {
+	logger.Debugf("Called etcd.NewCluster")
+	cfg := &controlplaneconfig.Cluster{}
 	*cfg = *cfgRef
 
 	// Import all the managed subnets from the network stack
@@ -148,14 +143,16 @@ func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugin
 	clusterRef.KubeAWSVersion = controlplanecluster.VERSION
 	clusterRef.HostOS = cfgRef.HostOS
 
-	stackConfig, err := clusterRef.StackConfig("etcd", opts, session, plugins)
+	cpStackConfig, err := clusterRef.StackConfig("etcd", opts, session, plugins)
 	if err != nil {
 		return nil, err
 	}
+	// hack - mutate our controlplane generated stack config into our own specific etcd version
+	etcdStackConfig := config.NewEtcdStackConfig(cpStackConfig)
 
 	c := &Cluster{
 		ClusterRef:  clusterRef,
-		StackConfig: stackConfig,
+		StackConfig: etcdStackConfig,
 	}
 
 	// Notes:
@@ -178,20 +175,21 @@ func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugin
 	c.StackConfig.Etcd.IAMConfig.Policy.Statements = append(c.StackConfig.Etcd.IAMConfig.Policy.Statements, extraEtcd.IAMPolicyStatements...)
 
 	// create the context that will be used to build the assets (combination of config + existing state)
-	state, err := c.inspectExistingState()
+	c.StackConfig.EtcdExistingState, err = c.inspectExistingState()
 	if err != nil {
 		return nil, fmt.Errorf("Could not inspect existing etcd state: %v", err)
 	}
 	ctx := EtcdConfigurationContext{
-		Config:        c.StackConfig.Config,
-		ExistingState: state,
+		Config:            c.StackConfig.Config,
+		EtcdExistingState: c.StackConfig.EtcdExistingState,
 	}
+
 	c.assets, err = c.buildAssets(ctx)
 
 	return c, err
 }
 
-func (c *Cluster) inspectExistingState() (ExistingState, error) {
+func (c *Cluster) inspectExistingState() (model.EtcdExistingState, error) {
 	var err error
 	if c.ProvidedCFInterrogator == nil {
 		c.ProvidedCFInterrogator = cloudformation.New(c.session)
@@ -200,7 +198,7 @@ func (c *Cluster) inspectExistingState() (ExistingState, error) {
 		c.ProvidedEC2Interrogator = ec2.New(c.session)
 	}
 
-	state := ExistingState{}
+	state := model.EtcdExistingState{}
 	state.StackExists, err = cfnstack.NestedStackExists(c.ProvidedCFInterrogator, c.ClusterName, naming.FromStackToCfnResource(c.Etcd.LogicalName()))
 	if err != nil {
 		return state, fmt.Errorf("failed to check for existence of etcd cloud-formation stack: %v", err)
@@ -230,6 +228,8 @@ func (c Cluster) NestedStackName() string {
 }
 
 func (c *Cluster) buildAssets(ctx EtcdConfigurationContext) (cfnstack.Assets, error) {
+	logger.Debugf("Called etcd.buildAssets")
+	logger.Debugf("Context is: %+v", ctx)
 	var err error
 	assets := cfnstack.NewAssetsBuilder(c.StackName, c.StackConfig.ClusterExportedStacksS3URI(), c.StackConfig.Region)
 
@@ -246,8 +246,10 @@ func (c *Cluster) buildAssets(ctx EtcdConfigurationContext) (cfnstack.Assets, er
 		return nil, fmt.Errorf("Error while rendering template: %v", err)
 	}
 
+	logger.Debugf("Calling assets.Add on %s", STACK_TEMPLATE_FILENAME)
 	assets.Add(STACK_TEMPLATE_FILENAME, stackTemplate)
 
+	logger.Debugf("Calling assets.Build for etcd...")
 	return assets.Build(), nil
 }
 

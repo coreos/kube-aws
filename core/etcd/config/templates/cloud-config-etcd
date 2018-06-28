@@ -210,6 +210,7 @@ coreos:
     {{ if .EtcdMigrationEnabled -}}
     - name: export-existing-etcd-state.service
       enable: true
+      command: start
       content: |
         [Unit]
         Description=Exports Kubernetes Values from a remote Etcd cluster
@@ -218,12 +219,18 @@ coreos:
 
         [Service]
         Type=simple
-        Restart=Restart=on-failure
+        Restart=on-failure
         RestartSec=5
         EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=/var/run/coreos/etcdadm-environment-migration
         ExecStartPre=/opt/bin/etcdadm cluster-is-healthy
-        ExecStartPre=/bin/bash -c "(/opt/bin/etcdadm member-is-leader && /opt/bin/etcdadm migration-export-kube-state existing-state-file.json && mv /var/run/coreos/etcdadm/snapshots/existing-state-file.json /var/run/coreos/etcdadm/snapshots/exported-state-file.json) || touch /var/run/coreos/etcdadm/snapshots/exported-state-file.json)"
+        ExecStartPre=/bin/bash -c "\
+          if /opt/bin/etcdadm member-is-leader; then \
+              /opt/bin/etcdadm migration-export-kube-state existing-state-file.json && \
+              mv /var/run/coreos/etcdadm/snapshots/existing-state-file.json /var/run/coreos/etcdadm/snapshots/exported-state-file.json; \
+          else \
+             touch /var/run/coreos/etcdadm/snapshots/exported-state-file.json; \
+          fi"
         ExecStart=/bin/sleep 3600
         TimeoutStartSec=900
     - name: import-existing-etcd-state.path
@@ -237,7 +244,6 @@ coreos:
         WantedBy=default.target
     - name: import-existing-etcd-state.service
       enable: false
-      command: stop
       content: |
         [Unit]
         Description=Imports Kubernetes Values from export file into this cluster
@@ -247,13 +253,14 @@ coreos:
 
         [Service]
         Type=simple
-        Restart=Restart=on-failure
+        Restart=on-failure
         RestartSec=5
         EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=/var/run/coreos/etcdadm-environment
         ExecStartPre=/usr/bin/systemctl is-active export-existing-etcd-state.service
         ExecStartPre=/opt/bin/etcdadm cluster-is-healthy
-        ExecStartPre=/bin/bash -c "(/opt/bin/etcdadm member-is-leader && /opt/bin/etcdadm migration-import-kube-state /var/run/coreos/etcdadm/snapshots/exported-state-file.json) || /bin/true)"
+        ExecStartPre=/bin/bash -c 'if [[ -s "/var/run/coreos/etcdadm/snapshots/exported-state-file.json" ]]; then \
+          /opt/bin/etcdadm migration-import-kube-state exported-state-file.json; fi'
         ExecStart=/bin/sleep 3600
         TimeoutStartSec=900
     {{ end -}}

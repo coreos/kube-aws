@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strings"
 
+	controlplaneconfig "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/filereader/jsontemplate"
 	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/model"
@@ -12,13 +13,12 @@ import (
 
 // StackConfig contains configuration parameters available when rendering CFN stack template from golang text templates
 type StackConfig struct {
-	*Config
+	*controlplaneconfig.Config
 	StackName string
-	StackTemplateOptions
-	UserDataController    model.UserData
-	UserDataEtcd          model.UserData
-	ControllerSubnetIndex int
-	ExtraCfnResources     map[string]interface{}
+	controlplaneconfig.StackTemplateOptions
+	UserDataEtcd      model.UserData
+	ExtraCfnResources map[string]interface{}
+	model.EtcdExistingState
 }
 
 func (c *StackConfig) s3Folders() model.S3Folders {
@@ -60,11 +60,24 @@ func (c StackConfig) EtcdSnapshotsS3PrefixRef() (string, error) {
 }
 
 func (c *StackConfig) RenderStackTemplateAsBytes() ([]byte, error) {
+	logger.Debugf("Template Context:-\n%+v\n", c)
 	return jsontemplate.GetBytes(c.StackTemplateTmplFile, *c, c.PrettyPrint)
 }
 
 func (c *StackConfig) RenderStackTemplateAsString() (string, error) {
-	logger.Debugf("Called RenderStackTemplateAsString on %s", c.StackName)
+	logger.Debugf("Called etcd version of RenderStackTemplateAsString on %s", c.StackName)
 	bytes, err := c.RenderStackTemplateAsBytes()
 	return string(bytes), err
+}
+
+// NewEtcdStackConfig: Convert a controlplane StackConfig to an Etcd flavour StackConfig
+func NewEtcdStackConfig(cp *controlplaneconfig.StackConfig) *StackConfig {
+	config := new(StackConfig)
+	config.Config = cp.Config
+	config.StackName = cp.StackName
+	config.StackTemplateOptions = cp.StackTemplateOptions
+	config.UserDataEtcd = cp.UserDataEtcd
+	config.ExtraCfnResources = cp.ExtraCfnResources
+
+	return config
 }

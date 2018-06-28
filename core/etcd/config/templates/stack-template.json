@@ -388,11 +388,11 @@
                   "'\n"
                 ]]}
               },
-              {{ if .EtcdMigrationEnabled -}}
+              {{ if $.EtcdMigrationEnabled -}}
               "/var/run/coreos/etcdadm-environment-migration": {
                 "content": { "Fn::Join" : [ "", [
                   "ETCD_ENDPOINTS='",
-                    "{{ .EtcdMigrationExistingEndpoints }}",
+                    "{{ $.EtcdMigrationExistingEndpoints }}",
                   "'\n",
                   "AWS_DEFAULT_REGION='",
                     "{{$.Region}}",
