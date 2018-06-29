@@ -1707,6 +1707,10 @@ write_files:
     permissions: 0755
     content: |
       #! /bin/bash
+
+      # Copyright (c) 2018 Omachonu Ogali
+      # Please see the https://github.com/kubernetes-incubator/kube-aws/tree/master/licenses/LICENSE.ebs-automatic-nvme-mapping for the licensing information
+
       PATH="${PATH}:/usr/sbin"
 
       for blkdev in $( nvme list | awk '/^\/dev/ { print $1 }' ) ; do
@@ -1725,6 +1729,8 @@ write_files:
     owner: root:root
     permissions: 0644
     content: |
+      # Copyright (c) 2018 Omachonu Ogali
+      # Please see the https://github.com/kubernetes-incubator/kube-aws/tree/master/licenses/LICENSE.ebs-automatic-nvme-mapping for the licensing information
       # Create the legacy device node for the volume mount and raid0 startup
       ACTION=="add", SUBSYSTEM=="block", KERNEL=="nvme[1-26]n1", ATTRS{model}=="Amazon Elastic Block Store              ", RUN+="/opt/nvme-hack/ebs-nvme-mapping"
 {{ end }}
