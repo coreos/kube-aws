@@ -709,7 +709,7 @@ write_files:
 
       ETCD_INITIAL_CLUSTER_STATE=new
       ETCD_DATA_DIR=/var/lib/etcd2
-      ETCD_LISTEN_CLIENT_URLS=https://$private_ip:2379
+      ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:2379
       ETCD_ADVERTISE_CLIENT_URLS=https://$advertised_hostname:2379
       ETCD_LISTEN_PEER_URLS=https://$private_ip:2380
       ETCD_INITIAL_ADVERTISE_PEER_URLS=https://$advertised_hostname:2380" >> /var/run/coreos/etcd-environment
