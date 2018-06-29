@@ -168,6 +168,9 @@ func NewCluster(cfg *config.Cluster, opts config.StackTemplateOptions, plugins [
 	c.StackConfig.Etcd.CustomSystemdUnits = append(c.StackConfig.Etcd.CustomSystemdUnits, extraEtcd.SystemdUnits...)
 	c.StackConfig.Etcd.CustomFiles = append(c.StackConfig.Etcd.CustomFiles, extraEtcd.Files...)
 	c.StackConfig.Etcd.IAMConfig.Policy.Statements = append(c.StackConfig.Etcd.IAMConfig.Policy.Statements, extraEtcd.IAMPolicyStatements...)
+	if !c.StackConfig.Kubernetes.Networking.SelfHosting.Enabled {
+		fmt.Printf("\nWARNING: You will not be able to upgrade your cluster to future kube-aws releases (0.11+) without changing your cluster network settings.\nPlease consider updating your cluster with Kubernetes.Networking.SelfHosting enabled to allow updates (the networking update does incure some minor cluster downtime/disruption as it rolls out so please do read the docs in the default cluster.yaml)\n\n")
+	}
 	if err = c.lookupMissingEtcdSubnetCIDRs(); err != nil {
 		return nil, fmt.Errorf("Failed to lookup subnets: %v", err)
 	}
