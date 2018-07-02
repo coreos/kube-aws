@@ -338,6 +338,9 @@ func (c Cluster) lookupExistingEtcdEndpoints() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("can't lookup ec2 instances: %v", err)
 	}
+	if resp == nil {
+		return "", nil
+	}
 
 	logger.Debugf("<- received %d instances from AWS", len(resp.Reservations))
 	if len(resp.Reservations) == 0 {
