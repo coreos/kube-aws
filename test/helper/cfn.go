@@ -2,13 +2,23 @@ package helper
 
 import (
 	"fmt"
+
 	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 type DummyCloudformationService struct {
 	ExpectedTags []*cloudformation.Tag
 	StackEvents  []*cloudformation.StackEvent
 	StackStatus  string
+}
+
+type DummyEC2Interrogator struct {
+	DescribeSubnetsOutput *ec2.DescribeSubnetsOutput
+}
+
+func (ec DummyEC2Interrogator) DescribeSubnets(input *ec2.DescribeSubnetsInput) (*ec2.DescribeSubnetsOutput, error) {
+	return ec.DescribeSubnetsOutput, nil
 }
 
 func (cfSvc *DummyCloudformationService) CreateStack(req *cloudformation.CreateStackInput) (*cloudformation.CreateStackOutput, error) {

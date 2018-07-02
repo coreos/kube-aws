@@ -390,7 +390,9 @@ func (c *ClusterRef) validateControllerRootVolume(ec2Svc ec2Service) error {
 
 // helper function goes and gets missing etcd subnet cidrs so that we can reference them in the etcd security group.
 func (c *ClusterRef) lookupMissingEtcdSubnetCIDRs() error {
-	ec := ec2.New(c.session)
+	if c.ProvidedEC2Interrogator == nil {
+		c.ProvidedEC2Interrogator = ec2.New(c.session)
+	}
 
 	for idx, subnet := range c.Etcd.Subnets {
 		if subnet.InstanceCIDR != "" {
@@ -405,11 +407,13 @@ func (c *ClusterRef) lookupMissingEtcdSubnetCIDRs() error {
 				aws.String(subnet.ID),
 			},
 		}
-		result, err := ec.DescribeSubnets(dsi)
+		result, err := c.ProvidedEC2Interrogator.DescribeSubnets(dsi)
 		if err != nil {
 			return fmt.Errorf("Can't lookup ec2 subnets: %v", err)
 		}
-		c.Etcd.Subnets[idx].InstanceCIDR = *result.Subnets[0].CidrBlock
+		if result != nil {
+			c.Etcd.Subnets[idx].InstanceCIDR = *result.Subnets[0].CidrBlock
+		}
 	}
 	return nil
 }

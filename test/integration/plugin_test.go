@@ -471,7 +471,7 @@ spec:
 				}
 
 				configBytes := validCase.clusterYaml
-				providedConfig, err := config.ConfigFromBytesWithEncryptService([]byte(configBytes), plugins, helper.DummyEncryptService{})
+				providedConfig, err := config.ConfigFromBytesWithStubs([]byte(configBytes), plugins, helper.DummyEncryptService{}, helper.DummyEC2Interrogator{})
 				if err != nil {
 					t.Errorf("failed to parse config %s: %v", configBytes, err)
 					t.FailNow()

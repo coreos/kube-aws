@@ -13,6 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/kubernetes-incubator/kube-aws/cfnresource"
+	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
 	"github.com/kubernetes-incubator/kube-aws/model"
@@ -549,20 +550,21 @@ type FlannelSettings struct {
 
 // Cluster is the container of all the configurable parameters of a kube-aws cluster, customizable via cluster.yaml
 type Cluster struct {
-	KubeClusterSettings    `yaml:",inline"`
-	DeploymentSettings     `yaml:",inline"`
-	DefaultWorkerSettings  `yaml:",inline"`
-	ControllerSettings     `yaml:",inline"`
-	EtcdSettings           `yaml:",inline"`
-	FlannelSettings        `yaml:",inline"`
-	AdminAPIEndpointName   string              `yaml:"adminAPIEndpointName,omitempty"`
-	ServiceCIDR            string              `yaml:"serviceCIDR,omitempty"`
-	RecordSetTTL           int                 `yaml:"recordSetTTL,omitempty"`
-	TLSCADurationDays      int                 `yaml:"tlsCADurationDays,omitempty"`
-	TLSCertDurationDays    int                 `yaml:"tlsCertDurationDays,omitempty"`
-	HostedZoneID           string              `yaml:"hostedZoneId,omitempty"`
-	PluginConfigs          model.PluginConfigs `yaml:"kubeAwsPlugins,omitempty"`
-	ProvidedEncryptService EncryptService
+	KubeClusterSettings     `yaml:",inline"`
+	DeploymentSettings      `yaml:",inline"`
+	DefaultWorkerSettings   `yaml:",inline"`
+	ControllerSettings      `yaml:",inline"`
+	EtcdSettings            `yaml:",inline"`
+	FlannelSettings         `yaml:",inline"`
+	AdminAPIEndpointName    string              `yaml:"adminAPIEndpointName,omitempty"`
+	ServiceCIDR             string              `yaml:"serviceCIDR,omitempty"`
+	RecordSetTTL            int                 `yaml:"recordSetTTL,omitempty"`
+	TLSCADurationDays       int                 `yaml:"tlsCADurationDays,omitempty"`
+	TLSCertDurationDays     int                 `yaml:"tlsCertDurationDays,omitempty"`
+	HostedZoneID            string              `yaml:"hostedZoneId,omitempty"`
+	PluginConfigs           model.PluginConfigs `yaml:"kubeAwsPlugins,omitempty"`
+	ProvidedEncryptService  EncryptService
+	ProvidedEC2Interrogator cfnstack.EC2Interrogator
 	// SSHAccessAllowedSourceCIDRs is network ranges of sources you'd like SSH accesses to be allowed from, in CIDR notation
 	SSHAccessAllowedSourceCIDRs model.CIDRRanges       `yaml:"sshAccessAllowedSourceCIDRs,omitempty"`
 	CustomSettings              map[string]interface{} `yaml:"customSettings,omitempty"`
