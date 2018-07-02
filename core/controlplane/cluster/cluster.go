@@ -400,7 +400,7 @@ func (c *ClusterRef) lookupMissingEtcdSubnetCIDRs() error {
 			continue
 		}
 		if subnet.ID == "" {
-			return nil
+			continue
 		}
 		dsi := &ec2.DescribeSubnetsInput{
 			SubnetIds: []*string{
