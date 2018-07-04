@@ -3376,6 +3376,16 @@ write_files:
           - --feature-gates=PodPriority={{.Experimental.Admission.Priority.Enabled}},ExpandPersistentVolumes={{.Experimental.Admission.PersistentVolumeClaimResize.Enabled}}
          {{end}}
           - --cloud-provider=aws
+          {{ if .Addons.MetricsServer.Enabled -}}
+          - --requestheader-client-ca-file=/etc/kubernetes/ssl/ca.pem
+          - --requestheader-allowed-names=aggregator
+          - --requestheader-extra-headers-prefix=X-Remote-Extra-
+          - --requestheader-group-headers=X-Remote-Group
+          - --requestheader-username-headers=X-Remote-User
+          - --enable-aggregator-routing=false
+          - --proxy-client-cert-file=/etc/kubernetes/ssl/api-aggregator.pem
+          - --proxy-client-key-file=/etc/kubernetes/ssl/api-aggregator-key.pem
+          {{ end -}}
           {{range $f := .APIServerFlags}}
           - --{{$f.Name}}={{$f.Value}}
           {{ end -}}
@@ -4355,8 +4365,8 @@ write_files:
                 - --requestheader-extra-headers-prefix=X-Remote-Extra
                 resources:
                   limits:
-                    cpu: 80m
-                    memory: 200Mi
+                    cpu: 500m
+                    memory: 512Mi
                   requests:
                     cpu: 80m
                     memory: 200Mi
@@ -4803,6 +4813,16 @@ write_files:
   - path: /etc/kubernetes/ssl/service-account-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.AssetsConfig.ServiceAccountKey}}
+
+  {{ if .Addons.MetricsServer.Enabled -}}
+  - path: /etc/kubernetes/ssl/api-aggregator.pem
+    encoding: gzip+base64
+    content: {{.AssetsConfig.APIAggregatorCert}}
+
+  - path: /etc/kubernetes/ssl/api-aggregator-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
+    encoding: gzip+base64
+    content: {{.AssetsConfig.APIAggregatorKey}}
+  {{ end -}}
 {{ end }}
 
 {{ if .Kubernetes.EncryptionAtRest.Enabled }}
