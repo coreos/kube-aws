@@ -3376,7 +3376,7 @@ write_files:
           - --feature-gates=PodPriority={{.Experimental.Admission.Priority.Enabled}},ExpandPersistentVolumes={{.Experimental.Admission.PersistentVolumeClaimResize.Enabled}}
          {{end}}
           - --cloud-provider=aws
-          {{ if .Addons.MetricsServer.Enabled -}}
+          {{ if .Addons.APIAggregator.Enabled -}}
           - --requestheader-client-ca-file=/etc/kubernetes/ssl/ca.pem
           - --requestheader-allowed-names=aggregator
           - --requestheader-extra-headers-prefix=X-Remote-Extra-
@@ -4814,7 +4814,7 @@ write_files:
     encoding: gzip+base64
     content: {{.AssetsConfig.ServiceAccountKey}}
 
-  {{ if .Addons.MetricsServer.Enabled -}}
+  {{ if .Addons.APIAggregator.Enabled -}}
   - path: /etc/kubernetes/ssl/api-aggregator.pem
     encoding: gzip+base64
     content: {{.AssetsConfig.APIAggregatorCert}}

@@ -442,6 +442,10 @@ func (c *Cluster) SetDefaults() error {
 		)
 	}
 
+	if c.Addons.MetricsServer.Enabled {
+		c.Addons.APIAggregator.Enabled = true
+	}
+
 	return nil
 }
 

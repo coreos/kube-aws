@@ -5,6 +5,7 @@ type Addons struct {
 	ClusterAutoscaler ClusterAutoscalerSupport `yaml:"clusterAutoscaler,omitempty"`
 	MetricsServer     MetricsServer            `yaml:"metricsServer,omitempty"`
 	Prometheus        Prometheus               `yaml:"prometheus"`
+	APIAggregator     APIAggregator            `yaml:"api-aggregator"`
 	UnknownKeys       `yaml:",inline"`
 }
 
@@ -26,4 +27,8 @@ type MetricsServer struct {
 type Prometheus struct {
 	SecurityGroupsEnabled bool `yaml:"securityGroupsEnabled"`
 	UnknownKeys           `yaml:",inline"`
+}
+
+type APIAggregator struct {
+	Enabled bool `yaml:"enabled"`
 }
