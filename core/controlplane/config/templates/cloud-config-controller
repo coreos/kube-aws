@@ -1561,10 +1561,8 @@ write_files:
                 requiredDuringSchedulingIgnoredDuringExecution:
                   nodeSelectorTerms:
                   - matchExpressions:
-                    - key: kubernetes.io/role
-                      operator: In
-                      values:
-                        - node
+                    - key: node-role.kubernetes.io/master
+                      operator: DoesNotExist
             hostNetwork: true
             serviceAccountName: canal
             tolerations:
