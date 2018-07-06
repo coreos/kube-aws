@@ -578,7 +578,7 @@ write_files:
   - path: {{$w.Path}}
     permissions: {{$w.PermissionsString}}
     encoding: gzip+base64
-    content: {{$w.GzippedBase64Content}}
+    content: {{$w.RenderGzippedBase64Content .}}
   {{- end }}
 {{- end }}
   - path: /etc/modules-load.d/ip_vs.conf
