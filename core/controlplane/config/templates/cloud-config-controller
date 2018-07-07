@@ -5664,8 +5664,13 @@ write_files:
               key: CriticalAddonsOnly
             hostNetwork: true
             dnsPolicy: ClusterFirstWithHostNet
-            nodeSelector:
-              kubernetes.io/role: node
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                  - matchExpressions:
+                    - key: node-role.kubernetes.io/master
+                      operator: DoesNotExist
             volumes:
               - name: ssl-certs
                 hostPath:
