@@ -451,7 +451,7 @@ worker:
 						MetricsServer: model.MetricsServer{
 							Enabled: true,
 						},
-						APIAggregator: model.APIAggregator{
+						APIServerAggregator: model.APIServerAggregator{
 							Enabled: true,
 						},
 					}

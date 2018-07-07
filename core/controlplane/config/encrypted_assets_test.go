@@ -65,9 +65,9 @@ func TestTLSGeneration(t *testing.T) {
 			CertBytes: assets.KubeSchedulerCert,
 		},
 		{
-			Name:      "api-aggregator",
-			KeyBytes:  assets.APIAggregatorKey,
-			CertBytes: assets.APIAggregatorCert,
+			Name:      "apiserver-aggregator",
+			KeyBytes:  assets.APIServerAggregatorKey,
+			CertBytes: assets.APIServerAggregatorCert,
 		},
 		{
 			Name:      "admin",
@@ -168,7 +168,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 				"admin-key.pem.enc", "worker-key.pem.enc", "apiserver-key.pem.enc",
 				"etcd-key.pem.enc", "etcd-client-key.pem.enc", "worker-ca-key.pem.enc",
 				"kube-controller-manager-key.pem.enc", "kube-scheduler-key.pem.enc",
-				"kiam-agent-key.pem.enc", "kiam-server-key.pem.enc", "api-aggregator-key.pem.enc",
+				"kiam-agent-key.pem.enc", "kiam-server-key.pem.enc", "apiserver-aggregator-key.pem.enc",
 			}
 
 			for _, filename := range files {
@@ -197,7 +197,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 				{"KIAMAgentCert", original.KIAMAgentCert, regenerated.KIAMAgentCert},
 				{"KIAMServerCert", original.KIAMServerCert, regenerated.KIAMServerCert},
 				{"KIAMCACert", original.KIAMCACert, regenerated.KIAMCACert},
-				{"APIAggregatorCert", original.APIAggregatorCert, regenerated.APIAggregatorCert},
+				{"APIServerAggregatorCert", original.APIServerAggregatorCert, regenerated.APIServerAggregatorCert},
 			} {
 				if v[1] != v[2] {
 					t.Errorf("%s must NOT change but it did : original = %v, regenrated = %v ", v[0], v[1], v[2])
@@ -215,7 +215,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 				{"EtcdKey", original.EtcdKey, regenerated.EtcdKey},
 				{"KIAMAgentKey", original.KIAMAgentKey, regenerated.KIAMAgentKey},
 				{"KIAMServerKey", original.KIAMServerKey, regenerated.KIAMServerKey},
-				{"APIAggregatorKey", original.APIAggregatorKey, regenerated.APIAggregatorKey},
+				{"APIServerAggregatorKey", original.APIServerAggregatorKey, regenerated.APIServerAggregatorKey},
 			} {
 				if v[1] == v[2] {
 					t.Errorf("%s must change but it didn't : original = %v, regenrated = %v ", v[0], v[1], v[2])

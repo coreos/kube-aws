@@ -30,6 +30,8 @@ type RawAssetsOnMemory struct {
 	WorkerCAKey               []byte
 	APIServerCert             []byte
 	APIServerKey              []byte
+	APIServerAggregatorCert   []byte
+	APIServerAggregatorKey    []byte
 	KubeControllerManagerCert []byte
 	KubeControllerManagerKey  []byte
 	KubeSchedulerCert         []byte
@@ -49,8 +51,6 @@ type RawAssetsOnMemory struct {
 	KIAMAgentKey              []byte
 	KIAMCACert                []byte
 	ServiceAccountKey         []byte
-	APIAggregatorCert         []byte
-	APIAggregatorKey          []byte
 
 	// Other assets.
 	AuthTokens        []byte
@@ -66,6 +66,8 @@ type RawAssetsOnDisk struct {
 	WorkerCAKey               RawCredentialOnDisk
 	APIServerCert             RawCredentialOnDisk
 	APIServerKey              RawCredentialOnDisk
+	APIServerAggregatorCert   RawCredentialOnDisk
+	APIServerAggregatorKey    RawCredentialOnDisk
 	KubeControllerManagerCert RawCredentialOnDisk
 	KubeControllerManagerKey  RawCredentialOnDisk
 	KubeSchedulerCert         RawCredentialOnDisk
@@ -85,8 +87,6 @@ type RawAssetsOnDisk struct {
 	KIAMAgentKey              RawCredentialOnDisk
 	KIAMCACert                RawCredentialOnDisk
 	ServiceAccountKey         RawCredentialOnDisk
-	APIAggregatorCert         RawCredentialOnDisk
-	APIAggregatorKey          RawCredentialOnDisk
 
 	// Other assets.
 	AuthTokens        RawCredentialOnDisk
@@ -102,6 +102,8 @@ type EncryptedAssetsOnDisk struct {
 	WorkerCAKey               EncryptedCredentialOnDisk
 	APIServerCert             EncryptedCredentialOnDisk
 	APIServerKey              EncryptedCredentialOnDisk
+	APIServerAggregatorCert   EncryptedCredentialOnDisk
+	APIServerAggregatorKey    EncryptedCredentialOnDisk
 	KubeControllerManagerCert EncryptedCredentialOnDisk
 	KubeControllerManagerKey  EncryptedCredentialOnDisk
 	KubeSchedulerCert         EncryptedCredentialOnDisk
@@ -121,8 +123,6 @@ type EncryptedAssetsOnDisk struct {
 	KIAMAgentKey              EncryptedCredentialOnDisk
 	KIAMCACert                EncryptedCredentialOnDisk
 	ServiceAccountKey         EncryptedCredentialOnDisk
-	APIAggregatorCert         EncryptedCredentialOnDisk
-	APIAggregatorKey          EncryptedCredentialOnDisk
 
 	// Other encrypted assets.
 	AuthTokens        EncryptedCredentialOnDisk
@@ -138,6 +138,8 @@ type CompactAssets struct {
 	WorkerCAKey               string
 	APIServerCert             string
 	APIServerKey              string
+	APIServerAggregatorCert   string
+	APIServerAggregatorKey    string
 	KubeControllerManagerCert string
 	KubeControllerManagerKey  string
 	KubeSchedulerCert         string
@@ -157,8 +159,6 @@ type CompactAssets struct {
 	KIAMAgentKey              string
 	KIAMCACert                string
 	ServiceAccountKey         string
-	APIAggregatorCert         string
-	APIAggregatorKey          string
 
 	// Encrypted -> gzip -> base64 encoded assets.
 	AuthTokens        string
@@ -269,7 +269,7 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 			return nil, err
 		}
 	}
-	apiServerKey, kubeControllerManagerKey, kubeSchedulerKey, workerKey, adminKey, etcdKey, etcdClientKey, kiamAgentKey, kiamServerKey, serviceAccountKey, apiAggregatorKey := keys[0], keys[1], keys[2], keys[3], keys[4], keys[5], keys[6], keys[7], keys[8], keys[9], keys[10]
+	apiServerKey, kubeControllerManagerKey, kubeSchedulerKey, workerKey, adminKey, etcdKey, etcdClientKey, kiamAgentKey, kiamServerKey, serviceAccountKey, apiServerAggregatorKey := keys[0], keys[1], keys[2], keys[3], keys[4], keys[5], keys[6], keys[7], keys[8], keys[9], keys[10]
 
 	// Compute kubernetesServiceIP from serviceCIDR
 	_, serviceNet, err := net.ParseCIDR(c.ServiceCIDR)
@@ -366,11 +366,11 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 		return nil, err
 	}
 
-	apiAggregatorConfig := tlsutil.ClientCertConfig{
+	apiServerAggregatorConfig := tlsutil.ClientCertConfig{
 		CommonName: "aggregator",
 		Duration:   certDuration,
 	}
-	apiAggregatorCert, err := tlsutil.NewSignedClientCertificate(apiAggregatorConfig, apiAggregatorKey, caCert, caKey)
+	apiServerAggregatorCert, err := tlsutil.NewSignedClientCertificate(apiServerAggregatorConfig, apiServerAggregatorKey, caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -395,17 +395,17 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 		AdminCert:                 tlsutil.EncodeCertificatePEM(adminCert),
 		EtcdCert:                  tlsutil.EncodeCertificatePEM(etcdCert),
 		EtcdClientCert:            tlsutil.EncodeCertificatePEM(etcdClientCert),
-		APIAggregatorCert:         tlsutil.EncodeCertificatePEM(apiAggregatorCert),
-		CAKey:                     tlsutil.EncodePrivateKeyPEM(caKey),
-		APIServerKey:              tlsutil.EncodePrivateKeyPEM(apiServerKey),
-		KubeControllerManagerKey:  tlsutil.EncodePrivateKeyPEM(kubeControllerManagerKey),
-		KubeSchedulerKey:          tlsutil.EncodePrivateKeyPEM(kubeSchedulerKey),
-		WorkerKey:                 tlsutil.EncodePrivateKeyPEM(workerKey),
-		AdminKey:                  tlsutil.EncodePrivateKeyPEM(adminKey),
-		EtcdKey:                   tlsutil.EncodePrivateKeyPEM(etcdKey),
-		EtcdClientKey:             tlsutil.EncodePrivateKeyPEM(etcdClientKey),
-		ServiceAccountKey:         tlsutil.EncodePrivateKeyPEM(serviceAccountKey),
-		APIAggregatorKey:          tlsutil.EncodePrivateKeyPEM(apiAggregatorKey),
+		APIServerAggregatorCert:   tlsutil.EncodeCertificatePEM(apiServerAggregatorCert),
+		CAKey:                    tlsutil.EncodePrivateKeyPEM(caKey),
+		APIServerKey:             tlsutil.EncodePrivateKeyPEM(apiServerKey),
+		KubeControllerManagerKey: tlsutil.EncodePrivateKeyPEM(kubeControllerManagerKey),
+		KubeSchedulerKey:         tlsutil.EncodePrivateKeyPEM(kubeSchedulerKey),
+		WorkerKey:                tlsutil.EncodePrivateKeyPEM(workerKey),
+		AdminKey:                 tlsutil.EncodePrivateKeyPEM(adminKey),
+		EtcdKey:                  tlsutil.EncodePrivateKeyPEM(etcdKey),
+		EtcdClientKey:            tlsutil.EncodePrivateKeyPEM(etcdClientKey),
+		ServiceAccountKey:        tlsutil.EncodePrivateKeyPEM(serviceAccountKey),
+		APIServerAggregatorKey:   tlsutil.EncodePrivateKeyPEM(apiServerAggregatorKey),
 
 		AuthTokens:        []byte(authTokens),
 		TLSBootstrapToken: []byte(tlsBootstrapToken),
@@ -498,8 +498,8 @@ func ReadRawAssets(dirname string, manageCertificates bool, caKeyRequiredOnContr
 			{name: "etcd-client.pem", data: &r.EtcdClientCert, defaultValue: nil, expiryCheck: true},
 			{name: "etcd-client-key.pem", data: &r.EtcdClientKey, defaultValue: nil, expiryCheck: false},
 			{name: "etcd-trusted-ca.pem", data: &r.EtcdTrustedCA, defaultValue: nil, expiryCheck: true},
-			{name: "api-aggregator-key.pem", data: &r.APIAggregatorKey, defaultValue: nil, expiryCheck: false},
-			{name: "api-aggregator.pem", data: &r.APIAggregatorCert, defaultValue: nil, expiryCheck: true},
+			{name: "apiserver-aggregator-key.pem", data: &r.APIServerAggregatorKey, defaultValue: nil, expiryCheck: false},
+			{name: "apiserver-aggregator.pem", data: &r.APIServerAggregatorCert, defaultValue: nil, expiryCheck: true},
 			// allow setting service-account-key from the apiserver-key by default.
 			{name: "service-account-key.pem", data: &r.ServiceAccountKey, defaultValue: &defaultServiceAccountKey},
 		}...)
@@ -588,8 +588,8 @@ func ReadOrEncryptAssets(dirname string, manageCertificates bool, caKeyRequiredO
 			{name: "etcd-client.pem", data: &r.EtcdClientCert, defaultValue: nil, readEncrypted: false, expiryCheck: true},
 			{name: "etcd-client-key.pem", data: &r.EtcdClientKey, defaultValue: nil, readEncrypted: true, expiryCheck: false},
 			{name: "etcd-trusted-ca.pem", data: &r.EtcdTrustedCA, defaultValue: nil, readEncrypted: false, expiryCheck: true},
-			{name: "api-aggregator-key.pem", data: &r.APIAggregatorKey, defaultValue: nil, readEncrypted: true, expiryCheck: false},
-			{name: "api-aggregator.pem", data: &r.APIAggregatorCert, defaultValue: nil, readEncrypted: false, expiryCheck: true},
+			{name: "apiserver-aggregator-key.pem", data: &r.APIServerAggregatorKey, defaultValue: nil, readEncrypted: true, expiryCheck: false},
+			{name: "apiserver-aggregator.pem", data: &r.APIServerAggregatorCert, defaultValue: nil, readEncrypted: false, expiryCheck: true},
 			{name: "service-account-key.pem", data: &r.ServiceAccountKey, defaultValue: &defaultServiceAccountKey, readEncrypted: true, expiryCheck: false},
 		}...)
 
@@ -666,8 +666,8 @@ func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool, kiamEn
 		{"etcd-client.pem", r.EtcdClientCert, true, ""},
 		{"etcd-client-key.pem", r.EtcdClientKey, true, ""},
 		{"etcd-trusted-ca.pem", r.EtcdTrustedCA, true, "ca.pem"},
-		{"api-aggregator-key.pem", r.APIAggregatorKey, true, ""},
-		{"api-aggregator.pem", r.APIAggregatorCert, true, ""},
+		{"apiserver-aggregator-key.pem", r.APIServerAggregatorKey, true, ""},
+		{"apiserver-aggregator.pem", r.APIServerAggregatorCert, true, ""},
 		{"kubelet-tls-bootstrap-token", r.TLSBootstrapToken, true, ""},
 		{"service-account-key.pem", r.ServiceAccountKey, true, "apiserver-key.pem"},
 
@@ -795,8 +795,8 @@ func (r *EncryptedAssetsOnDisk) WriteToDir(dirname string, kiamEnabled bool) err
 		{"etcd-client.pem", r.EtcdClientCert},
 		{"etcd-client-key.pem", r.EtcdClientKey},
 		{"etcd-trusted-ca.pem", r.EtcdTrustedCA},
-		{"api-aggregator-key.pem", r.APIAggregatorKey},
-		{"api-aggregator.pem", r.APIAggregatorCert},
+		{"apiserver-aggregator-key.pem", r.APIServerAggregatorKey},
+		{"apiserver-aggregator.pem", r.APIServerAggregatorCert},
 		{"service-account-key.pem", r.ServiceAccountKey},
 
 		{"tokens.csv", r.AuthTokens},
@@ -860,8 +860,8 @@ func (r *RawAssetsOnDisk) Compact() (*CompactAssets, error) {
 		EtcdClientKey:             compact(r.EtcdClientKey),
 		EtcdKey:                   compact(r.EtcdKey),
 		EtcdTrustedCA:             compact(r.EtcdTrustedCA),
-		APIAggregatorCert:         compact(r.APIAggregatorCert),
-		APIAggregatorKey:          compact(r.APIAggregatorKey),
+		APIServerAggregatorCert:   compact(r.APIServerAggregatorCert),
+		APIServerAggregatorKey:    compact(r.APIServerAggregatorKey),
 		KIAMAgentCert:             compact(r.KIAMAgentCert),
 		KIAMAgentKey:              compact(r.KIAMAgentKey),
 		KIAMServerCert:            compact(r.KIAMServerCert),
@@ -917,8 +917,8 @@ func (r *EncryptedAssetsOnDisk) Compact() (*CompactAssets, error) {
 		EtcdClientKey:             compact(r.EtcdClientKey),
 		EtcdKey:                   compact(r.EtcdKey),
 		EtcdTrustedCA:             compact(r.EtcdTrustedCA),
-		APIAggregatorCert:         compact(r.APIAggregatorCert),
-		APIAggregatorKey:          compact(r.APIAggregatorKey),
+		APIServerAggregatorCert:   compact(r.APIServerAggregatorCert),
+		APIServerAggregatorKey:    compact(r.APIServerAggregatorKey),
 		KIAMAgentKey:              compact(r.KIAMAgentKey),
 		KIAMAgentCert:             compact(r.KIAMAgentCert),
 		KIAMServerKey:             compact(r.KIAMServerKey),
