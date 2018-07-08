@@ -1135,12 +1135,7 @@ write_files:
 
   - path: /srv/kubernetes/manifests/canal.yaml
     content: |
-      # Canal Version v3.0.3
-      # https://docs.projectcalico.org/v3.0/releases#v3.0.3
-      # This manifest includes the following component versions:
-      #   calico/node:v3.0.3
-      #   calico/cni:v2.0.1
-      #   coreos/flannel:
+      # Based on https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/canal/canal.yaml
 
       # This ConfigMap can be used to configure a self-hosted Canal installation.
       kind: ConfigMap
