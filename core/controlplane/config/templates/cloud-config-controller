@@ -1477,7 +1477,7 @@ write_files:
               # This container runs flannel using the kube-subnet-mgr backend
               # for allocating subnets.
               - name: flannel
-                image: {{ .FlannelImage.RepoWithTag }}
+                image: {{ .Kubernetes.Networking.SelfHosting.FlannelImage.RepoWithTag }}
                 command: [ "/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr" ]
                 securityContext:
                   privileged: true
@@ -1697,7 +1697,7 @@ write_files:
               # This container runs flannel using the kube-subnet-mgr backend
               # for allocating subnets.
               - name: flannel
-                image: {{ .FlannelImage.RepoWithTag }}
+                image: {{ .Kubernetes.Networking.SelfHosting.FlannelImage.RepoWithTag }}
                 command: [ "/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr" ]
                 securityContext:
                   privileged: true
@@ -2159,7 +2159,7 @@ write_files:
                 - mountPath: /host/etc/cni/net.d
                   name: cni-net-dir
             - name: flannel
-              image: {{ .FlannelImage.RepoWithTag }}
+              image: {{ .Kubernetes.Networking.SelfHosting.FlannelImage.RepoWithTag }}
               command:
               - /opt/bin/flanneld
               args:
