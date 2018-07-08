@@ -1019,6 +1019,12 @@ worker:
 #  tag: v1.11.2
 #  rktPullDocker: false
 
+# Calico Controller image repository to use.
+#calicoCtlImage:
+#  repo: calico/ctl
+#  tag: v1.6.3
+#  rktPullDocker: false
+
 # Calico Kube Controllers image repository to use.
 #calicoKubeControllersImage:
 #  repo: quay.io/calico/kube-controllers
@@ -1115,12 +1121,6 @@ worker:
 #  tag: v1.8.3
 #  rktPullDocker: false
 
-# Calico Controller image repository to use.
-#calicoCtlImage:
-#  repo: calico/ctl
-#  tag: v1.6.3
-#  rktPullDocker: false
-
 # Pause image repository to use.This works only if you are deploying your cluster in "cn-north-1" region.
 #pauseImage:
 #  repo: k8s.gcr.io/pause-amd64
@@ -1187,19 +1187,19 @@ kubernetes:
       typha: false     # enable for type 'canal' for 50+ node clusters
 #      calicoNodeImage:
 #        repo: quay.io/calico/node
-#        tag: v3.0.3
+#        tag: v3.1.3
 #      calicoCniImage:
 #        repo: quay.io/calico/cni
-#        tag: v2.0.1
+#        tag: v3.1.3
 #      flannelImage:
 #        repo: quay.io/coreos/flannel
 #        tag: v0.9.1
 #      flannelCniImage:
 #        repo: quay.io/coreos/flannel-cni
 #        tag: v0.3.0
-#     typhaImage:
+#      typhaImage:
 #        repo: quay.io/calico/typha
-#        tag: v0.6.2
+#        tag: v0.7.4
 
 # Use Calico for network policy (legacy setting - ignored if networking self-hosting is enabled)
 # useCalico: false
