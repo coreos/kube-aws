@@ -422,14 +422,15 @@ coreos:
         EnvironmentFile=-/etc/etcd-environment
         {{- end }}
         Environment=KUBELET_IMAGE_TAG={{.K8sVer}}
-        Environment=KUBELET_IMAGE_URL={{.HyperkubeImage.RktRepoWithoutTag}}
-        Environment="RKT_RUN_ARGS=--volume dns,kind=host,source=/etc/resolv.conf {{.HyperkubeImage.Options}}\
+        Environment=KUBELET_IMAGE_URL={{ .HyperkubeImage.RktRepoWithoutTag }}
+        Environment="RKT_RUN_ARGS={{.HyperkubeImage.Options}}\
+        --volume dns,kind=host,source=/etc/resolv.conf \
+        --mount volume=dns,target=/etc/resolv.conf \
         {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         --set-env=ETCD_CA_CERT_FILE=/etc/kubernetes/ssl/etcd-trusted-ca.pem \
         --set-env=ETCD_CERT_FILE=/etc/kubernetes/ssl/etcd-client.pem \
         --set-env=ETCD_KEY_FILE=/etc/kubernetes/ssl/etcd-client-key.pem \
         {{ end -}}
-        --mount volume=dns,target=/etc/resolv.conf \
         {{ if eq .ContainerRuntime "rkt" -}}
         --volume rkt,kind=host,source=/opt/bin/host-rkt \
         --mount volume=rkt,target=/usr/bin/rkt \
@@ -440,6 +441,12 @@ coreos:
         {{ end -}}
         --volume var-lib-cni,kind=host,source=/var/lib/cni \
         --mount volume=var-lib-cni,target=/var/lib/cni \
+        {{ if .Kubernetes.Networking.SelfHosting.Enabled -}}
+        --volume var-run-calico,kind=host,source=/var/run/calico \
+        --mount volume=var-run-calico,target=/var/run/calico \
+        --volume var-lib-calico,kind=host,source=/var/lib/calico \
+        --mount volume=var-lib-calico,target=/var/lib/calico \
+        {{ end -}}
         --volume var-log,kind=host,source=/var/log \
         --mount volume=var-log,target=/var/log \
         --volume cni-bin,kind=host,source=/opt/cni/bin \
@@ -459,6 +466,10 @@ coreos:
         ExecStartPre=/usr/bin/mkdir -p /opt/cni/bin
         ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
         ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/cni/net.d
+        {{ if .Kubernetes.Networking.SelfHosting.Enabled -}}
+        ExecStartPre=/usr/bin/mkdir -p /var/run/calico
+        ExecStartPre=/usr/bin/mkdir -p /var/lib/calico
+        {{ end -}}
         {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/manifests /etc/kubernetes/cni/net.d/  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
         ExecStartPre=/usr/bin/etcdctl \
