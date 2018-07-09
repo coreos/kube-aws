@@ -6,7 +6,6 @@ import (
 	"text/template"
 
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
-	"github.com/kubernetes-incubator/kube-aws/logger"
 )
 
 type CustomFile struct {
@@ -65,6 +64,5 @@ func (c CustomFile) renderTemplate(ctx interface{}) (string, error) {
 		return "", fmt.Errorf("error rendering CustomFile template %s: %v", c.Path, err)
 	}
 
-	logger.Debugf("successfully rendered CustomFile template %s", c.Path)
 	return buf.String(), nil
 }
