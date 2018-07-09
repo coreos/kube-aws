@@ -950,38 +950,39 @@ write_files:
       applyall "${mfdir}/kube-rescheduler-de.yaml"
       {{- end }}
 
-      mfdir=/srv/kubernetes/rbac
-
       # Cluster roles and bindings
-      applyall "${mfdir}/cluster-roles/node-extensions.yaml"
-
-      applyall "${mfdir}/cluster-role-bindings"/{kube-admin,system-worker,node,node-proxier,node-extensions,heapster}".yaml"
+      applyall "${rbac}/cluster-roles/node-extensions.yaml"
+      applyall "${rbac}/cluster-role-bindings"/{kube-admin,system-worker,node,node-proxier,node-extensions,heapster}".yaml"
 
       {{ if .KubernetesDashboard.AdminPrivileges }}
-      applyall "${mfdir}/cluster-role-bindings/kubernetes-dashboard-admin.yaml"
+        applyall "${rbac}/cluster-role-bindings/kubernetes-dashboard-admin.yaml"
       {{- end }}
 
       # Roles and bindings
-      applyall "${mfdir}/roles"/{pod-nanny,kubernetes-dashboard}".yaml"
+      applyall "${rbac}/roles"/{pod-nanny{{ if .KubernetesDashboard.Enabled }},kubernetes-dashboard{{ end }}}".yaml"
 
-      applyall "${mfdir}/role-bindings"/{heapster-nanny,kubernetes-dashboard}".yaml"
+      applyall "${rbac}/role-bindings"/{heapster-nanny{{ if .KubernetesDashboard.Enabled }},kubernetes-dashboard{{ end }}}".yaml"
 
       {{ if .Experimental.TLSBootstrap.Enabled }}
-      applyall "${mfdir}/cluster-roles"/{node-bootstrapper,kubelet-certificate-bootstrap}".yaml"
+      applyall "${rbac}/cluster-roles"/{node-bootstrapper,kubelet-certificate-bootstrap}".yaml"
 
-      applyall "${mfdir}/cluster-role-bindings"/{node-bootstrapper,kubelet-certificate-bootstrap}".yaml"
+      applyall "${rbac}/cluster-role-bindings"/{node-bootstrapper,kubelet-certificate-bootstrap}".yaml"
       {{ end }}
 
       {{if .Experimental.Kube2IamSupport.Enabled }}
-        mfdir=/srv/kubernetes/manifests
         applyall "${mfdir}/kube2iam-rbac.yaml"
         applyall "${mfdir}/kube2iam-ds.yaml";
       {{ end }}
 
       {{ if .Experimental.GpuSupport.Enabled }}
-        mfdir=/srv/kubernetes/manifests
         applyall "${mfdir}/nvidia-driver-installer.yaml"
       {{ end }}
+
+      # Install any manifest files that we find in mfdir/extra directory so that we can add
+      # kubernetes manifests using customFiles.
+      if ! [[ $(echo ${mfdir}/custom/*.yaml) == ${mfdir}'/custom/*.yaml' ]]; then
+        applyall ${mfdir}/custom/*.yaml
+      fi
 
   - path: /etc/kubernetes/cni/docker_opts_cni.env
     content: |

@@ -229,6 +229,9 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #     kube-aws.coreos.com/role: controller
 #
 #  # User defined files that will be added to the Controller cluster cloud-init configuration in the "write_files:" section.
+#  # Writing a kubernetes manifest to path /srv/kubernetes/manifests/custom/*.yaml will be automatically
+#  # installed when the controllers start up.
+# 
 #  customFiles:
 #    - path: "/etc/rkt/auth.d/docker.json"
 #      permissions: 0600
