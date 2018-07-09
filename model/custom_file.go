@@ -1,8 +1,8 @@
 package model
 
 import (
+	"bytes"
 	"fmt"
-	"strings"
 	"text/template"
 
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
@@ -53,7 +53,7 @@ func (c CustomFile) customFileHasTemplate() bool {
 }
 
 func (c CustomFile) renderTemplate(ctx interface{}) (string, error) {
-	var buf strings.Builder
+	var buf bytes.Buffer
 
 	tmpl, err := template.New("").Parse(c.Template)
 	if err != nil {

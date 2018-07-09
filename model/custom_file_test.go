@@ -3,8 +3,8 @@ package model
 import (
 	"testing"
 
-	"github.com/go-yaml/yaml"
 	"github.com/stretchr/testify/assert"
+	yaml "gopkg.in/yaml.v2"
 )
 
 type TestContextFruit struct {
