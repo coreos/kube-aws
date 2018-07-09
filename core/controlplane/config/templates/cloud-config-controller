@@ -959,9 +959,9 @@ write_files:
       {{- end }}
 
       # Roles and bindings
-      applyall "${rbac}/roles"/{pod-nanny{{ if .KubernetesDashboard.Enabled }},kubernetes-dashboard{{ end }}}".yaml"
+      applyall "${rbac}/roles"/{pod-nanny,kubernetes-dashboard}".yaml"
 
-      applyall "${rbac}/role-bindings"/{heapster-nanny{{ if .KubernetesDashboard.Enabled }},kubernetes-dashboard{{ end }}}".yaml"
+      applyall "${rbac}/role-bindings"/{heapster-nanny,kubernetes-dashboard}".yaml"
 
       {{ if .Experimental.TLSBootstrap.Enabled }}
       applyall "${rbac}/cluster-roles"/{node-bootstrapper,kubelet-certificate-bootstrap}".yaml"
