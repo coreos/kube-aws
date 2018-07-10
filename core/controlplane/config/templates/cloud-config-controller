@@ -979,7 +979,7 @@ write_files:
       {{ end }}
 
       # Allow installing kubernetes manifests via customFiles in the controller config - installs all manifests in mfdir/custom directory.
-      if ! [[ $(echo ${mfdir}/custom/*.yaml) == ${mfdir}'/custom/*.yaml' ]]; then
+      if ls ${mfdir}/custom/*.yaml &> /dev/null; then
         applyall ${mfdir}/custom/*.yaml
       fi
 
