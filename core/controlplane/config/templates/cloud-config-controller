@@ -1176,12 +1176,13 @@ write_files:
         # The CNI network configuration to install on each node.
         cni_network_config: |-
           {
-              "name": "calico",
-              "cniVersion": "0.3.0",
+              "name": "k8s-pod-network",
+              "cniVersion": "0.3.1",
               "plugins": [
                   {
                       "type": "calico",
                       "log_level": "info",
+                      "mtu": 8951,
                       "datastore_type": "kubernetes",
                       "nodename": "__KUBERNETES_NODE_NAME__",
                       "ipam": {
@@ -1200,7 +1201,8 @@ write_files:
                   {
                       "type": "portmap",
                       "capabilities": {"portMappings": true},
-                      "snat": true
+                      "snat": true,
+                      "externalSetMarkChain": "KUBE-MARK-MASQ"
                   }
               ]
           }
@@ -3580,8 +3582,8 @@ write_files:
           {{ if .Kubernetes.Networking.SelfHosting.Enabled -}}
           - --allocate-node-cidrs=true
           - --cluster-cidr={{.PodCIDR}}
-          {{/* no need to auto configure cloud routes when using flannel or canal */}}
-          - --configure-cloud-routes=false
+          - --configure-cloud-routes=false {{/* no need to auto configure cloud routes when using flannel or canal */}}
+          - --service-cluster-ip-range={{.ServiceCIDR}} {{/* removes the service CIDR range from the cluster CIDR if it intersects */}}
           {{- end }}
           {{ if not .Addons.MetricsServer.Enabled -}}
           - --horizontal-pod-autoscaler-use-rest-clients=false
