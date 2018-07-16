@@ -342,11 +342,6 @@
             "Key": "kube-aws:role",
             "PropagateAtLaunch": "true",
             "Value": "etcd"
-          },
-          {
-            "Key": "kube-aws/version",
-            "PropagateAtLaunch": "true",
-            "Value": "{{$.KubeAWSVersion}}"
           }
         ],
         "VPCZoneIdentifier": [

@@ -17,10 +17,6 @@
           {
             "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
             "Value": "true"
-          },
-          {
-            "Key": "kube-aws/version",
-            "Value": "{{$.KubeAwsVersion}}"
           }{{range $k, $v := $.ControlPlane.Tags}},
           {
             "Key":"{{$k}}",
@@ -45,10 +41,6 @@
           {
             "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
             "Value": "true"
-          },
-          {
-            "Key": "kube-aws/version",
-            "Value": "{{$.KubeAwsVersion}}"
           }{{range $k, $v := $.ControlPlane.Tags}},
           {
             "Key":"{{$k}}",
@@ -72,10 +64,6 @@
           {
             "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
             "Value": "true"
-          },
-          {
-            "Key": "kube-aws/version",
-            "Value": "{{$.KubeAwsVersion}}"
           }{{range $k, $v := $.ControlPlane.Tags}},
           {
             "Key":"{{$k}}",
@@ -101,10 +89,6 @@
           {
             "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
             "Value": "true"
-          },
-          {
-            "Key": "kube-aws/version",
-            "Value": "{{$.KubeAwsVersion}}"
           }{{range $k, $v := $p.Tags}},
           {
             "Key":"{{$k}}",

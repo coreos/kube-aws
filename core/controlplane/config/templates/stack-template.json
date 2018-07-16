@@ -55,11 +55,6 @@
             "Key": "kubernetes.io/role/master",
             "PropagateAtLaunch": "true",
             "Value": ""
-          },
-          {
-            "Key": "kube-aws/version",
-            "PropagateAtLaunch": "true",
-            "Value": "{{.KubeAWSVersion}}"
           }
         ],
         "VPCZoneIdentifier": [
