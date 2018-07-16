@@ -89,6 +89,9 @@ func NewCluster(provided *config.ProvidedConfig, opts config.StackTemplateOption
 	c.StackConfig.CustomFiles = append(c.StackConfig.CustomFiles, extraWorker.Files...)
 	c.StackConfig.IAMConfig.Policy.Statements = append(c.StackConfig.IAMConfig.Policy.Statements, extraWorker.IAMPolicyStatements...)
 	c.StackConfig.KubeAWSVersion = controlplanecluster.VERSION
+	if len(c.StackConfig.StackTags) == 0 {
+		c.StackConfig.StackTags = make(map[string]string, 1)
+	}
 	c.StackConfig.StackTags["kube-aws:version"] = controlplanecluster.VERSION
 
 	for k, v := range extraWorker.NodeLabels {
