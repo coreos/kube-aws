@@ -168,6 +168,11 @@
             "Key": "Name",
             "PropagateAtLaunch": "true",
             "Value": "{{.ClusterName}}-{{.StackName}}-kube-aws-worker"
+          },
+          {
+            "Key": "kube-aws/version",
+            "PropagateAtLaunch": "true",
+            "Value": "{{$.KubeAWSVersion}}"
           }
         ],
         {{if .LoadBalancer.Enabled}}
