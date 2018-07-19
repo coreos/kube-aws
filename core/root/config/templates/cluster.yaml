@@ -470,6 +470,7 @@ worker:
 #        maxSize: 3
 #        rollingUpdateMinInstancesInService: 2
 #
+#
 #      #
 #      # Spot fleet config for worker nodes
 #      #
