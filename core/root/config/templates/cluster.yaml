@@ -439,6 +439,7 @@ worker:
 #        onDemandCount: 0
 #
 #        # Choose the orientation the Spotinst’s algorithm will lean towards. 
+#        # See https://api.spotinst.com/integration-docs/elastigroup/concepts/general-concepts/cluster-orientation/ for available options.
 #        availabilityVsCost: "balanced"
 #
 #        # (Seconds) The time you would like to allocate for existing sessions to drain before spot termination or scaling.
@@ -456,9 +457,13 @@ worker:
 #        signalsTimeout: 900
 #        
 #        # Elastic Load Balancer Type 
+#        # Select ELB Type "CLASSIC" or "TARGET_GROUP".
 #        elbType: "CLASSIC"
 #
-#
+#        # SpotInstance's Instance Type.
+#        # You can specify multiple instance type in array
+#        spotInstanceTypes: [t2.medium] 
+#        
 #      # Auto Scaling Group definition for workers. If only `workerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
 #      autoScalingGroup:
 #        minSize: 1

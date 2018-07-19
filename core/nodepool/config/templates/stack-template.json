@@ -93,7 +93,10 @@
             "instanceTypes": {
               "ondemand": "{{.InstanceType}}",
               "spot": [
-                "{{.InstanceType}}"
+                {{range $index, $var := $.Elastigroup.SpotInstanceTypes}}
+                  {{if gt $index 0}},{{end}} 
+                  "{{$var}}"
+                {{end}}               
               ]
             },
             "availabilityZones": [
@@ -112,14 +115,25 @@
               {{if .LoadBalancer.Enabled}}
               "loadBalancersConfig": {
                 "loadBalancers": [
+                  {{if .TargetGroup.Enabled}}
+                  {{range $index, $elb := .LoadBalancer.Names}}
+                  {{if $index}},{{end}}
                   {
-                    "name": {{range $index, $elb := .LoadBalancer.Names}}
-                    {{if $index}},{{end}}
-                    "{{$elb}}",
-                    {{end}}
+                    "name": "{{$elb}}",
+                    "type": "{{$.Elastigroup.ElbType}}",
+                    "arn": "{{(index $.TargetGroup.Arns $index)}}"
+                  }
+                  {{end}}
+                  {{else}}
+                  {{range $index, $elb := .LoadBalancer.Names}}
+                  {{if $index}},{{end}}
+                  {
+                    "name": "{{$elb}}",
                     "type": "{{$.Elastigroup.ElbType}}"
                   }
-                ]
+                  {{end}}
+                  {{end}}
+                ] 
               },
               {{end}}
               "securityGroupIds": [
@@ -163,12 +177,6 @@
                 {{- end -}}
               ],
               "tags": [
-                {{if .Autoscaling.ClusterAutoscaler.Enabled}}
-                {
-                  "tagKey": "{{.Autoscaling.ClusterAutoscaler.AutoDiscoveryTagKey}}",
-                  "tagValue": ""
-                },
-                {{end}}
                 {{range $k, $v := .InstanceTags -}}
                 {
                   "tagKey": "{{$k}}",
