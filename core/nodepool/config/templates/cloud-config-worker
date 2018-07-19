@@ -29,6 +29,11 @@ exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE
   "#!/bin/bash -xe",
   "# s3-part-fingerprint: {{ (execTemplate "s3" .) | fingerprint }}",
   {"Fn::Sub": "echo '{{.StackNameEnvVarName}}=${AWS::StackName}' >>{{.StackNameEnvFileName}}"},
+  {{if .Elastigroup.Enabled}}
+  {"Fn::Sub": [
+    "echo \"WAIT_HANDLE='${WaitHandle}'\" >>{{.StackNameEnvFileName}}", {"WaitHandle": {"Ref": "{{.LogicalName}}WaitHandle"}}
+  ]},
+  {{end}}
   {{ (execTemplate "instance-script" .) | toJSON }}
 ]]}}
 {{ end }}
@@ -943,6 +948,8 @@ write_files:
     permissions: 0700
     content: |
       #!/bin/bash -e
+      
+      instance_id=$(curl http://169.254.169.254/latest/meta-data/instance-id)
 
       rkt run \
         --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true \
@@ -950,14 +957,23 @@ write_files:
         --volume=awsenv,kind=host,source=/var/run/coreos,readOnly=false \
         --mount volume=awsenv,target=/var/run/coreos \
         --uuid-file-save=/var/run/coreos/cfn-signal.uuid \
-        --set-env={{.StackNameEnvVarName}}=${{.StackNameEnvVarName}} \
+        --set-env={{.StackNameEnvVarName}}=${{.StackNameEnvVarName}} \{{if .Elastigroup.Enabled}}
+        --set-env=WAIT_HANDLE=$WAIT_HANDLE \{{end}}
+        --set-env=SPOTINST_TOKEN={{$.Elastigroup.AccessToken}} \
         --net=host \
         --trust-keys-from-https \
         {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
-          -ec \
+          -ec \{{if .Elastigroup.Enabled}}
           '
-            cfn-signal -e 0 --region {{.Region}} --resource {{.LogicalName}} --stack "${{.StackNameEnvVarName}}"
+          cfn-signal -e 0 $WAIT_HANDLE{{if .LoadBalancer.Enabled}}
+          instance_signal=$(echo '\''{"instanceId" : "'${instance_id}'", "signal" : "INSTANCE_READY"}'\'')
+          echo $instance_signal > instance_signal
+          token=$SPOTINST_TOKEN
+          curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ${token}" -d @instance_signal https://api.spotinst.io/aws/ec2/instance/signal
+          {{end}}'{{else}}
           '
+          cfn-signal -e 0 --region {{.Region}} --resource {{.LogicalName}} --stack "${{.StackNameEnvVarName}}"
+          '{{end}}
 
       rkt rm --uuid-file=/var/run/coreos/cfn-signal.uuid || :
 

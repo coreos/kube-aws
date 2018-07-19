@@ -18,7 +18,8 @@
           }
         }
       }
-    }{{ if not .Kubernetes.Networking.SelfHosting.Enabled }},{{end}}
+    }
+    {{ if not .Kubernetes.Networking.SelfHosting.Enabled }},{{end}}
     {{end -}}
     {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
     "etcd-client-env": {
@@ -39,6 +40,201 @@
     {{end}}
   }
 }
+{{end}}
+{{define "Elastigroup"}}
+    "{{.LogicalName}}": {
+      "Type": "Custom::elastigroup",
+      "Properties": {
+        "ServiceToken": "arn:aws:lambda:{{.Region}}:178579023202:function:spotinst-cloudformation",
+        "accessToken": "{{$.Elastigroup.AccessToken}}",
+        "accountId": "{{$.Elastigroup.AccountId}}",
+        "updatePolicy": {
+          "shouldRoll": {
+            "Ref": "shouldRoll"
+          },
+          "rollConfig": {
+            "batchSizePercentage": 50,
+            "gracePeriod": 600
+          },
+          "shouldUpdateTargetCapacity": {
+            "Ref": "shouldUpdateTargetCapacity"
+          }
+        },
+        "group": {
+          "name": "{{.LogicalName}}",
+          "description": "Elastigroup for kube-aws Worker Nodes",
+          "strategy": {
+            "risk": "{{$.Elastigroup.Risk}}",
+            "onDemandCount": "{{$.Elastigroup.OnDemandCount}}",
+            "availabilityVsCost": "{{$.Elastigroup.AvalilabilityVsCost}}",
+            "drainingTimeout": "{{$.Elastigroup.DrainingTimeout}}",
+            "fallbackToOd": "{{$.Elastigroup.FallbackToOd}}",
+            "lifetimePeriod": "days",
+            "revertToSpot": {
+              "performAt": "{{$.Elastigroup.RevertToSpot}}"
+            }
+            {{if .LoadBalancer.Enabled}}
+            , 
+            "signals": [
+              {
+                "name": "INSTANCE_READY",
+                "timeout": "{{$.Elastigroup.SignalsTimeout}}"
+              }
+            ]
+            {{end}}
+          },
+          "capacity": {
+            "target": "{{$.Elastigroup.TargetSize}}",
+            "minimum": "{{$.Elastigroup.MinSize}}",
+            "maximum": "{{$.Elastigroup.MaxSize}}",
+            "unit": "instance"
+          },
+          "compute": {
+            "instanceTypes": {
+              "ondemand": "{{.InstanceType}}",
+              "spot": [
+                {{range $index, $var := $.Elastigroup.SpotInstanceTypes}}
+                  {{if gt $index 0}},{{end}} 
+                  "{{$var}}"
+                {{end}}               
+              ]
+            },
+            "availabilityZones": [
+              {
+                {{range $index, $subnet := .Subnets}}
+                "name": "{{$subnet.AvailabilityZone}}",
+                "subnetIds": [
+                  {{if gt $index 0}},{{end}}
+                  {{$subnet.Ref}}
+                  {{end}}
+                ]
+              }
+            ],
+            "product": "Linux/UNIX",
+            "launchSpecification": {
+              {{if .LoadBalancer.Enabled}}
+              "loadBalancersConfig": {
+                "loadBalancers": [
+                  {{if .TargetGroup.Enabled}}
+                  {{range $index, $elb := .LoadBalancer.Names}}
+                  {{if $index}},{{end}}
+                  {
+                    "name": "{{$elb}}",
+                    "type": "{{$.Elastigroup.ElbType}}",
+                    "arn": "{{(index $.TargetGroup.Arns $index)}}"
+                  }
+                  {{end}}
+                  {{else}}
+                  {{range $index, $elb := .LoadBalancer.Names}}
+                  {{if $index}},{{end}}
+                  {
+                    "name": "{{$elb}}",
+                    "type": "{{$.Elastigroup.ElbType}}"
+                  }
+                  {{end}}
+                  {{end}}
+                ] 
+              },
+              {{end}}
+              "securityGroupIds": [
+                {{range $sgIndex, $sgRef := $.SecurityGroupRefs}}
+                {{if gt $sgIndex 0}},{{end}}
+                {{$sgRef}}
+                {{end}}
+              ],
+              "monitoring": false,
+              "ebsOptimized": false,
+              "imageId": "{{.AMI}}",
+              {{if .KeyName}}"keyPair": "{{.KeyName}}",{{end}}
+              "userData": {{ $.UserDataWorker.Parts.instance.Template }},
+              "blockDeviceMappings": [
+                {
+                  "deviceName": "/dev/xvda",
+                  "ebs": {
+                    "deleteOnTermination": true,
+                    "volumeSize": "{{.RootVolume.Size}}",
+                    "volumeType": "{{.RootVolume.Type}}"
+                  }
+                }{{range $volumeMountSpecIndex, $volumeMountSpec := .VolumeMounts}},
+                {
+                  "deviceName": "{{$volumeMountSpec.Device}}",
+                  "ebs": {
+                    "deleteOnTermination": true,
+                    "volumeSize": "{{$volumeMountSpec.Size}}",
+                    "volumeType": "{{$volumeMountSpec.Type}}"
+                  }
+                }{{- end -}}{{range $raid0MountSpecIndex, $raid0MountSpec := $.Raid0Mounts}}{{range $DeviceIndex, $Device := $raid0MountSpec.Devices}},
+                {  
+                  "DeviceName": "{{$Device}}",
+                  "Ebs": {
+                    "VolumeSize": "{{$raid0MountSpec.Size}}",
+                    {{if gt $raid0MountSpec.Iops 0}}
+                    "Iops": "{{$raid0MountSpec.Iops}}",
+                    {{end}}
+                    "VolumeType": "{{$raid0MountSpec.Type}}"
+                  }
+                }{{end}}
+                {{- end -}}
+              ],
+              "tags": [
+                {{range $k, $v := .InstanceTags -}}
+                {
+                  "tagKey": "{{$k}}",
+                  "tagValue": "{{$v}}"
+                },
+                {{end -}}      
+                {
+                  "tagKey": "kubernetes.io/cluster/{{ .ClusterName }}",
+                  "tagValue": "owned"
+                },
+                {
+                  "tagKey": "kube-aws:node-pool:name",   
+                  "tagValue": "{{.NodePoolName}}"
+                },
+                {
+                  "tagKey": "Name",
+                  "tagValue": "{{.ClusterName}}-{{.StackName}}-kube-aws-worker"
+                }
+              ],
+              "iamRole": {
+                {{if .IAMConfig.InstanceProfile.Arn }}
+                "arn": "{{.IAMConfig.InstanceProfile.Arn}}",
+                {{else}}
+                "arn": { 
+                  "Fn::GetAtt": [
+                    "IAMInstanceProfileWorker", 
+                    "Arn"
+                  ] 
+                }
+                {{end}}
+              },
+              "healthCheckType": "EC2",
+              "healthCheckGracePeriod": 600,
+              "healthCheckUnhealthyDurationBeforeReplacement": 60,
+              "tenancy": "default"
+            }
+          },
+          "scheduling": {},
+          "thirdPartiesIntegration": {}
+        }
+      }{{ if or (not .Kubernetes.Networking.SelfHosting.Enabled) .AwsEnvironment.Enabled }},
+      "Metadata": {{template "Metadata" .}}
+      {{- end }}
+    },
+    "{{.LogicalName}}WaitCondition": {
+      "Type": "AWS::CloudFormation::WaitCondition",
+      "DependsOn": "{{.LogicalName}}",
+      "Properties": {
+        "Handle": {
+          "Ref": "{{.LogicalName}}WaitHandle"
+        },
+        "Timeout": "900",
+        "Count": "{{$.Elastigroup.TargetSize}}"
+      }
+    },
+    "{{.LogicalName}}WaitHandle": {
+      "Type": "AWS::CloudFormation::WaitConditionHandle"
+    },
 {{end}}
 {{define "SpotFleet"}}
   "{{.LogicalName}}": {
@@ -505,10 +701,10 @@
           "Version": "2012-10-17"
         },
         "Path": "/",
-        {{if .IAMConfig.Role.Name }}
+        {{if .IAMConfig.Role.Name }} 
         "RoleName":  {"Fn::Join": ["-", ["{{$.ClusterName}}", {"Ref": "AWS::Region"}, "{{.IAMConfig.Role.Name}}"]]},
         {{end}}
-        "ManagedPolicyArns": [
+        "ManagedPolicyArns": [ 
           {{range $policyIndex, $policyArn := .IAMConfig.Role.ManagedPolicies }}
             "{{$policyArn.Arn}}",
           {{end}}
@@ -537,9 +733,28 @@
       "Description": "CloudWatch LogGroup to send journald logs to"
     }
     {{ end }}
+    {{if .Elastigroup.Enabled}}
+    ,
+    "shouldRoll": {
+      "Type": "String",
+      "Default": "false",
+      "Description": "Should roll when updating"
+    },
+    "shouldUpdateTargetCapacity": {
+      "Type": "String",
+      "Default": "true",
+      "AllowedValues": [
+        "false",
+        "true"
+      ],
+      "Description": "Should update target capacity on group update"
+    }
+    {{end}}
   },
   "Resources": {
-    {{if .SpotFleet.Enabled}}
+    {{if .Elastigroup.Enabled}}
+    {{template "Elastigroup" .}}
+    {{else if .SpotFleet.Enabled}}
     {{template "SpotFleet" .}}
     {{else}}
     {{template "AutoScaling" .}}

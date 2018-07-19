@@ -9,6 +9,7 @@ type NodePoolConfig struct {
 	Autoscaling               Autoscaling      `yaml:"autoscaling,omitempty"`
 	AutoScalingGroup          AutoScalingGroup `yaml:"autoScalingGroup,omitempty"`
 	SpotFleet                 SpotFleet        `yaml:"spotFleet,omitempty"`
+	Elastigroup               Elastigroup      `yaml:"elastiGroup"`
 	EC2Instance               `yaml:",inline"`
 	IAMConfig                 IAMConfig              `yaml:"iam,omitempty"`
 	SpotPrice                 string                 `yaml:"spotPrice,omitempty"`
