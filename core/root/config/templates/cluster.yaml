@@ -412,11 +412,64 @@ worker:
 #        # Max number of nodes concurrently updated
 #        maxBatchSize: 1
 #
+#
+#      #
+#      #      # Spotinst Elastigroup config for worker nodes
+#      #
+#      elastiGroup:
+#        # Spotinst API Access Token
+#        accessToken: "YOUR_ACCESSTOKEN_KEY"
+#
+#        # Spotinst Account ID
+#        accountId: "YOUR_ACCOUNT_ID"
+#
+#        # In the case of a ‘scale down’ policy action, this is the minimum number of running instances/vCPU weight in the group. 
+#        minSize: 1
+#
+#        #  - In the case of a ‘scale up’ policy action, this is the maximum number of running instances/vCPU weight in the group.
+#        maxSize: 3
+#
+#        # Number of running instances/vCPU weight in your Elastigroup
+#        targetSize: 1
+#
+#        #  What % of instances of your target instance count should be launched as spot instances. 
+#        risk: 100
+#
+#        # Out of your target instance count, how many instances should be launched as On-Demand/Reserved
+#        onDemandCount: 0
+#
+#        # Choose the orientation the Spotinst’s algorithm will lean towards. 
+#        # See https://api.spotinst.com/integration-docs/elastigroup/concepts/general-concepts/cluster-orientation/ for available options.
+#        availabilityVsCost: "balanced"
+#
+#        # (Seconds) The time you would like to allocate for existing sessions to drain before spot termination or scaling.
+#        drainingTimeout: 120
+#
+#        # In the case of no available spot instances, this will enable the fallback to On-Demand instances. 
+#        fallbackToOd: true
+#
+#        # In the event of a fallback to On-Demand instances, select the time period to revert back to Spot. 
+#        # Supported Arguments ia  "always" (default), "timeWindow", "never". 
+#        # For timeWindow or never to be valid the group must have availabilityOriented OR persistence defined.
+#        revertToSpot: "always"
+#        
+#        # The timeout in seconds to hold the instance until a signal is sent.
+#        signalsTimeout: 900
+#        
+#        # Elastic Load Balancer Type 
+#        # Select ELB Type "CLASSIC" or "TARGET_GROUP".
+#        elbType: "CLASSIC"
+#
+#        # SpotInstance's Instance Type.
+#        # You can specify multiple instance type in array
+#        spotInstanceTypes: [t2.medium] 
+#        
 #      # Auto Scaling Group definition for workers. If only `workerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
 #      autoScalingGroup:
 #        minSize: 1
 #        maxSize: 3
 #        rollingUpdateMinInstancesInService: 2
+#
 #
 #      #
 #      # Spot fleet config for worker nodes
