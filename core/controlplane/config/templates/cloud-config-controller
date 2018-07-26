@@ -987,6 +987,12 @@ write_files:
 
       applyall "/srv/kubernetes/manifests/kube-system-ns.yaml"
 
+     # Daemonsets
+      applyall \
+        "${mfdir}/kube-proxy-ds.yaml" \
+        {{ if .Experimental.NodeDrainer.Enabled }}"${mfdir}/kube-node-drainer-ds.yaml"{{ end }} \
+        {{ if .KubeDns.NodeLocalResolver }}"${mfdir}/dnsmasq-node-ds.yaml"{{ end }}
+
       # See https://github.com/kubernetes-incubator/kube-aws/issues/1039#issuecomment-348978375
       if ks get apiservice v1beta1.metrics.k8s.io && ! ps ax | grep '[h]yperkube proxy'; then
         echo "apiserver is up but kube-proxy isn't up. We have likely encountered #1039."
@@ -1076,12 +1082,6 @@ write_files:
         {{ if .Experimental.NodeDrainer.Enabled }}"${mfdir}/kube-node-drainer-asg-status-updater-de.yaml"{{ end }} \
         {{ if .KubeResourcesAutosave.Enabled }}"${mfdir}/kube-resources-autosave-de.yaml"{{ end }} \
         {{ if .KubernetesDashboard.Enabled }}"${mfdir}/kubernetes-dashboard-de.yaml"{{ end }}
-
-      # Daemonsets
-      applyall \
-        "${mfdir}/kube-proxy-ds.yaml" \
-        {{ if .Experimental.NodeDrainer.Enabled }}"${mfdir}/kube-node-drainer-ds.yaml"{{ end }} \
-        {{ if .KubeDns.NodeLocalResolver }}"${mfdir}/dnsmasq-node-ds.yaml"{{ end }}
 
       # Services
       applyall \
