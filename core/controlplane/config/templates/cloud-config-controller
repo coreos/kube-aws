@@ -987,7 +987,7 @@ write_files:
 
       applyall "/srv/kubernetes/manifests/kube-system-ns.yaml"
 
-     # Daemonsets
+      # Daemonsets
       applyall \
         "${mfdir}/kube-proxy-ds.yaml" \
         {{ if .Experimental.NodeDrainer.Enabled }}"${mfdir}/kube-node-drainer-ds.yaml"{{ end }} \
