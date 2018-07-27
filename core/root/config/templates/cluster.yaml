@@ -268,8 +268,13 @@ worker:
 #  # The name of the API endpoint defined in the top level `apiEndpoints` that the worker node pools will use to access the k8s API
 #  # Required if there are 2 or more API endpoints defined in `apiEndpoints`
 #  # Can be overriden per node pool by specifying `worker.nodePools[].apiEndpointName`
-#  apiEndpointName: versionedPublic
-#
+#  apiEndpointName: versionedPublic\
+#  # Used to globally toggle nodePool sequential rollout strategy
+#  # Default behaviour (false / disabled) will not overwrite anything
+#  # If enabled (set to true) it will overwrite all "sequentialRoll" false values at a nodePool level (see below)
+#  # For finer grain control, enable it at a lower (nodePool) level if only targeting specific nodePools.
+#  GlobalSequentialRoll:
+#    enabled: true
   nodePools:
     - # Name of this node pool. Must be unique among all the node pools in this cluster
       name: nodepool1
@@ -278,7 +283,15 @@ worker:
 #      # If omitted, public subnets are created by kube-aws and used for worker nodes
 #      subnets:
 #      - name: ManagedPublicSubnet1
-#
+#      # Used to toggle how the worker nodepools will roll out.
+#      # Default behaviour (false / disabled) will create / upgrade each nodepool in parallel
+#      # If enabled, the worker nodepools will roll out one after the other
+#      # in sequence of how they are defined in the nodePool section
+#      # NOTICE: if there are multiple nodePool groups that are to be rolled sequentially and concurrently
+#      # the nodePools that have sequential roll out need to be declared before those with concurrent roll out
+#      # otherwise the first declared sequential nodePool will be dependent on the last declared concurrent nodePool
+#      sequentialRoll:
+#        enabled: false
 #      # Existing "glue" security groups attached to worker nodes which are typically used to allow
 #      # access from worker nodes to services running on an existing infrastructure
 #      securityGroupIds:

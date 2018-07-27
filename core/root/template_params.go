@@ -168,6 +168,13 @@ func (p nodePool) NeedToExportIAMroles() bool {
 	return p.nodePool.IAMConfig.InstanceProfile.Arn == ""
 }
 
+func (p nodePool) SequentialRoll() bool {
+	return p.nodePool.SequentialRoll.Enabled
+}
+
+func (p nodePool) SequentialWorkerRoll() bool {
+	return true
+}
 func (c TemplateParams) ControlPlane() controlPlane {
 	return controlPlane{
 		controlPlane: c.cluster.controlPlane,
@@ -186,8 +193,8 @@ func (c TemplateParams) Network() networkStack {
 	}
 }
 
-func (c TemplateParams) NodePools() []NestedStack {
-	nps := []NestedStack{}
+func (c TemplateParams) NodePools() []nodePool {
+	nps := []nodePool{}
 	for _, np := range c.cluster.nodePools {
 		nps = append(nps, nodePool{
 			nodePool: np,

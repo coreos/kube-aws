@@ -34,9 +34,10 @@ type UnmarshalledConfig struct {
 }
 
 type Worker struct {
-	APIEndpointName   string                     `yaml:"apiEndpointName,omitempty"`
-	NodePools         []*nodepool.ProvidedConfig `yaml:"nodePools,omitempty"`
-	model.UnknownKeys `yaml:",inline"`
+	APIEndpointName      string                     `yaml:"apiEndpointName,omitempty"`
+	NodePools            []*nodepool.ProvidedConfig `yaml:"nodePools,omitempty"`
+	model.UnknownKeys    `yaml:",inline"`
+	GlobalSequentialRoll model.SequentialRoll `yaml:"globalSequentialRoll,omitempty"`
 }
 
 type Config struct {
@@ -108,7 +109,6 @@ func ConfigFromBytes(data []byte, plugins []*pluginmodel.Plugin) (*Config, error
 		if err := np.Taints.Validate(); err != nil {
 			return nil, fmt.Errorf("invalid taints for node pool at index %d: %v", i, err)
 		}
-
 		if np.APIEndpointName == "" {
 			if c.Worker.APIEndpointName == "" {
 				if len(cpConfig.APIEndpoints) > 1 {
@@ -117,6 +117,12 @@ func ConfigFromBytes(data []byte, plugins []*pluginmodel.Plugin) (*Config, error
 				np.APIEndpointName = cpConfig.APIEndpoints.GetDefault().Name
 			} else {
 				np.APIEndpointName = c.Worker.APIEndpointName
+			}
+		}
+
+		if np.SequentialRoll.Enabled == false {
+			if c.Worker.GlobalSequentialRoll.Enabled == true {
+				np.SequentialRoll.Enabled = true
 			}
 		}
 

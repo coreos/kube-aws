@@ -106,6 +106,8 @@ func TestValidateKeyPair(t *testing.T) {
 s3URI: s3://mybucket/mydir
 apiEndpoints:
 - name: public
+  sequentialRoll:
+    enabled: false
   dnsName: test-cluster.example.com
   loadBalancer:
     hostedZone:
