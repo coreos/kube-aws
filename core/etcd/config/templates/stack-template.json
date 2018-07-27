@@ -497,6 +497,12 @@
                   "ETCD_VERSION='",
                     "{{$.Etcd.Version}}",
                   "'\n"
+                  {{if $.Etcd.FormatOpts}}
+                  ,
+                  "ETCD_OPTS='",
+                    "{{$.Etcd.FormatOpts}}",
+                  "'\n"
+                  {{end}}
                 ]]}
               }
             }

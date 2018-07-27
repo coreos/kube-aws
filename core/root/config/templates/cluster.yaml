@@ -770,6 +770,12 @@ worker:
 #        Description=Example Custom Service
 #        [Service]
 #        ExecStart=/bin/rkt run --set-env TAGS=Controller ...
+#  # extra etcd options 
+#  userSuppliedArgs:
+#    # for example, setting the --quota-backend-bytes and --auto-compaction-retention options
+#    quotaBackendBytes:
+#    autoCompactionRetention:
+
 
 ## Networking config
 

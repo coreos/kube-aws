@@ -68,6 +68,9 @@ func TestMainClusterConfig(t *testing.T) {
 				Subnets: model.Subnets{
 					subnet1,
 				},
+				UserSuppliedArgs: model.UserSuppliedArgs{
+					QuotaBackendBytes: model.DefaultQuotaBackendBytes,
+				},
 			},
 		}
 		actual := c.EtcdSettings
