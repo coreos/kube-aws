@@ -268,7 +268,7 @@ worker:
 #  # The name of the API endpoint defined in the top level `apiEndpoints` that the worker node pools will use to access the k8s API
 #  # Required if there are 2 or more API endpoints defined in `apiEndpoints`
 #  # Can be overriden per node pool by specifying `worker.nodePools[].apiEndpointName`
-#  apiEndpointName: versionedPublic\
+#  apiEndpointName: versionedPublic
 #  # Used to globally toggle nodePool sequential rollout strategy
 #  # Default behaviour (false / disabled) will not overwrite anything
 #  # If enabled (set to true) it will overwrite all "sequentialRoll" false values at a nodePool level (see below)
