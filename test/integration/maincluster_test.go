@@ -74,6 +74,7 @@ func TestMainClusterConfig(t *testing.T) {
 			},
 		}
 		actual := c.EtcdSettings
+		fmt.Printf("actual is %v", actual)
 		if !reflect.DeepEqual(expected, actual) {
 			t.Errorf(
 				"EtcdSettings didn't match: expected=%v actual=%v",
@@ -802,6 +803,9 @@ etcd:
 							Subnets: model.Subnets{
 								subnet1,
 							},
+							UserSuppliedArgs: model.UserSuppliedArgs{
+								QuotaBackendBytes: model.DefaultQuotaBackendBytes,
+							},
 						},
 					}
 					actual := c.EtcdSettings
@@ -859,6 +863,9 @@ etcd:
 							Subnets: model.Subnets{
 								subnet1,
 							},
+							UserSuppliedArgs: model.UserSuppliedArgs{
+								QuotaBackendBytes: model.DefaultQuotaBackendBytes,
+							},
 						},
 					}
 					actual := c.EtcdSettings
@@ -914,8 +921,12 @@ etcd:
 								Type:      "gp2",
 								IOPS:      0,
 								Ephemeral: false,
-							}, Subnets: model.Subnets{
+							},
+							Subnets: model.Subnets{
 								subnet1,
+							},
+							UserSuppliedArgs: model.UserSuppliedArgs{
+								QuotaBackendBytes: model.DefaultQuotaBackendBytes,
 							},
 						},
 					}
@@ -991,6 +1002,9 @@ etcd:
 							Subnets: model.Subnets{
 								subnet1,
 							},
+							UserSuppliedArgs: model.UserSuppliedArgs{
+								QuotaBackendBytes: model.DefaultQuotaBackendBytes,
+							},
 						},
 					}
 					actual := c.EtcdSettings
@@ -1064,6 +1078,9 @@ etcd:
 							},
 							Subnets: model.Subnets{
 								subnet1,
+							},
+							UserSuppliedArgs: model.UserSuppliedArgs{
+								QuotaBackendBytes: model.DefaultQuotaBackendBytes,
 							},
 						},
 					}
@@ -1142,6 +1159,9 @@ etcd:
 							Subnets: model.Subnets{
 								subnet1,
 							},
+							UserSuppliedArgs: model.UserSuppliedArgs{
+								QuotaBackendBytes: model.DefaultQuotaBackendBytes,
+							},
 						},
 					}
 					actual := c.EtcdSettings
@@ -1218,6 +1238,9 @@ etcd:
 							},
 							Subnets: model.Subnets{
 								subnet1,
+							},
+							UserSuppliedArgs: model.UserSuppliedArgs{
+								QuotaBackendBytes: model.DefaultQuotaBackendBytes,
 							},
 						},
 					}
@@ -3100,6 +3123,9 @@ subnets:
 								Ephemeral: false,
 							},
 							Subnets: subnets,
+						},
+						UserSuppliedArgs: model.UserSuppliedArgs{
+							QuotaBackendBytes: model.DefaultQuotaBackendBytes,
 						},
 					}
 					actual := c.EtcdSettings
