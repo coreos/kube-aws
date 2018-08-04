@@ -20,7 +20,7 @@ type Etcd struct {
 	DisasterRecovery   EtcdDisasterRecovery `yaml:"disasterRecovery,omitempty"`
 	VolumeMounts       []VolumeMount        `yaml:"volumeMounts,omitempty"`
 	EC2Instance        `yaml:",inline"`
-	UserSuppliedArgs   UserSuppliedArgs `yaml:"userSuppliedArgs,omitempty`
+	UserSuppliedArgs   UserSuppliedArgs `yaml:"userSuppliedArgs,omitempty"`
 	IAMConfig          IAMConfig        `yaml:"iam,omitempty"`
 	Nodes              []EtcdNode       `yaml:"nodes,omitempty"`
 	SecurityGroupIds   []string         `yaml:"securityGroupIds"`
