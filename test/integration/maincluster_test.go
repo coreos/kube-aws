@@ -74,7 +74,6 @@ func TestMainClusterConfig(t *testing.T) {
 			},
 		}
 		actual := c.EtcdSettings
-		fmt.Printf("actual is %v", actual)
 		if !reflect.DeepEqual(expected, actual) {
 			t.Errorf(
 				"EtcdSettings didn't match: expected=%v actual=%v",
