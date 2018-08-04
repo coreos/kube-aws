@@ -3123,9 +3123,9 @@ subnets:
 								Ephemeral: false,
 							},
 							Subnets: subnets,
-						},
-						UserSuppliedArgs: model.UserSuppliedArgs{
-							QuotaBackendBytes: model.DefaultQuotaBackendBytes,
+							UserSuppliedArgs: model.UserSuppliedArgs{
+								QuotaBackendBytes: model.DefaultQuotaBackendBytes,
+							},
 						},
 					}
 					actual := c.EtcdSettings
