@@ -120,11 +120,11 @@ func ConfigFromBytes(data []byte, plugins []*pluginmodel.Plugin) (*Config, error
 			}
 		}
 
-		if np.NodePoolRollingStrategy != "parallel" && np.NodePoolRollingStrategy != "sequential" {
-			if c.Worker.NodePoolRollingStrategy != "" && (c.Worker.NodePoolRollingStrategy == "sequential" || c.Worker.NodePoolRollingStrategy == "parallel") {
+		if np.NodePoolRollingStrategy != "Parallel" && np.NodePoolRollingStrategy != "Sequential" {
+			if c.Worker.NodePoolRollingStrategy != "" && (c.Worker.NodePoolRollingStrategy == "Sequential" || c.Worker.NodePoolRollingStrategy == "Parallel") {
 				np.NodePoolRollingStrategy = c.Worker.NodePoolRollingStrategy
 			} else {
-				np.NodePoolRollingStrategy = "parallel"
+				np.NodePoolRollingStrategy = "Parallel"
 			}
 		}
 
