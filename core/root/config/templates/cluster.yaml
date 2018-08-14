@@ -269,12 +269,13 @@ worker:
 #  # Required if there are 2 or more API endpoints defined in `apiEndpoints`
 #  # Can be overriden per node pool by specifying `worker.nodePools[].apiEndpointName`
 #  apiEndpointName: versionedPublic
-#  # Used to globally toggle nodePool sequential rollout strategy
-#  # Default behaviour (false / disabled) will not overwrite anything
-#  # If enabled (set to true) it will overwrite all "sequentialRoll" false values at a nodePool level (see below)
-#  # For finer grain control, enable it at a lower (nodePool) level if only targeting specific nodePools.
-#  GlobalSequentialRoll:
-#    enabled: true
+#  # Used to globally specify nodePool rolling strategy across availability zones: 'sequential' or 'parallel'
+#  # Default behaviour ('parallel') will roll out nodes concurrently across availability zones
+#  # If set to 'sequential', the nodePools will roll out sequentially, in order of declaration, across availability zones
+#  # If set at a Worker level, it will only take effect if it is not set at a nodePool level
+#  # For finer grain control, declare it on a nodePool-by-nodePool basis
+#  nodePoolRollingStrategy: sequential
+
   nodePools:
     - # Name of this node pool. Must be unique among all the node pools in this cluster
       name: nodepool1
@@ -283,15 +284,13 @@ worker:
 #      # If omitted, public subnets are created by kube-aws and used for worker nodes
 #      subnets:
 #      - name: ManagedPublicSubnet1
-#      # Used to toggle how the worker nodepools will roll out.
-#      # Default behaviour (false / disabled) will create / upgrade each nodepool in parallel
-#      # If enabled, the worker nodepools will roll out one after the other
-#      # in sequence of how they are defined in the nodePool section
-#      # NOTICE: if there are multiple nodePool groups that are to be rolled sequentially and concurrently
-#      # the nodePools that have sequential roll out need to be declared before those with concurrent roll out
-#      # otherwise the first declared sequential nodePool will be dependent on the last declared concurrent nodePool
-#      sequentialRoll:
-#        enabled: false
+#      # Used to specify the strategy in which nodePools will roll out across availability zones: in sequence or parallel
+#      # By default (if not set at nodePool/worker level) the nodePools will roll out in parallel across all availability zones
+#      # If set to 'sequential', the nodePools will roll out one-by-one in order of declaration across all availability zones
+#      # NOTICE: if there are multiple nodePool groups that will use both rolling strategies ('sequential'/'parallel')
+#      # the nodePools rolling out in sequence should be declared before those that roll out in parallel
+#      # otherwise, the first declared nodePool to roll out in sequence will depend on the last concurrent nodePool
+#      nodePoolRollingStrategy: parallel
 #      # Existing "glue" security groups attached to worker nodes which are typically used to allow
 #      # access from worker nodes to services running on an existing infrastructure
 #      securityGroupIds:

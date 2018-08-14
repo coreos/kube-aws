@@ -34,10 +34,10 @@ type UnmarshalledConfig struct {
 }
 
 type Worker struct {
-	APIEndpointName      string                     `yaml:"apiEndpointName,omitempty"`
-	NodePools            []*nodepool.ProvidedConfig `yaml:"nodePools,omitempty"`
-	model.UnknownKeys    `yaml:",inline"`
-	GlobalSequentialRoll model.SequentialRoll `yaml:"globalSequentialRoll,omitempty"`
+	APIEndpointName         string                     `yaml:"apiEndpointName,omitempty"`
+	NodePools               []*nodepool.ProvidedConfig `yaml:"nodePools,omitempty"`
+	model.UnknownKeys       `yaml:",inline"`
+	NodePoolRollingStrategy string `yaml:"nodePoolRollingStrategy,omitempty"`
 }
 
 type Config struct {
@@ -120,9 +120,11 @@ func ConfigFromBytes(data []byte, plugins []*pluginmodel.Plugin) (*Config, error
 			}
 		}
 
-		if np.SequentialRoll.Enabled == false {
-			if c.Worker.GlobalSequentialRoll.Enabled == true {
-				np.SequentialRoll.Enabled = true
+		if np.NodePoolRollingStrategy != "parallel" && np.NodePoolRollingStrategy != "sequential" {
+			if c.Worker.NodePoolRollingStrategy != "" && (c.Worker.NodePoolRollingStrategy == "sequential" || c.Worker.NodePoolRollingStrategy == "parallel") {
+				np.NodePoolRollingStrategy = c.Worker.NodePoolRollingStrategy
+			} else {
+				np.NodePoolRollingStrategy = "parallel"
 			}
 		}
 

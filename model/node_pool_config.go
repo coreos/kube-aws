@@ -17,22 +17,16 @@ type NodePoolConfig struct {
 	CustomSettings            map[string]interface{} `yaml:"customSettings,omitempty"`
 	VolumeMounts              []VolumeMount          `yaml:"volumeMounts,omitempty"`
 	Raid0Mounts               []Raid0Mount           `yaml:"raid0Mounts,omitempty"`
-	UnknownKeys               `yaml:",inline"`
 	NodeSettings              `yaml:",inline"`
 	NodeStatusUpdateFrequency string              `yaml:"nodeStatusUpdateFrequency"`
 	CustomFiles               []CustomFile        `yaml:"customFiles,omitempty"`
 	CustomSystemdUnits        []CustomSystemdUnit `yaml:"customSystemdUnits,omitempty"`
 	Gpu                       Gpu                 `yaml:"gpu"`
-	SequentialRoll            SequentialRoll      `yaml:"sequentialRoll,omitempty"`
+	NodePoolRollingStrategy   string              `yaml:"nodePoolRollingStrategy,omitempty"`
+	UnknownKeys               `yaml:",inline"`
 }
 
 type ClusterAutoscaler struct {
-	Enabled     bool `yaml:"enabled,omitempty"`
-	UnknownKeys `yaml:",inline"`
-}
-
-// SequentialRoll will allow the nodepools to roll one at a time in the order they are defined in the nodePool body
-type SequentialRoll struct {
 	Enabled     bool `yaml:"enabled,omitempty"`
 	UnknownKeys `yaml:",inline"`
 }

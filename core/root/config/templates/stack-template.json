@@ -99,7 +99,7 @@
       },
       "DependsOn": [
         "{{$.ControlPlane.Name}}"
-        {{ if $p.SequentialRoll -}}
+        {{ if eq $p.NodePoolRollingStrategy "sequential" -}}
           {{ if $i -}}
           ,"{{ (index $.NodePools (sub $i 1)).Name}}"
           {{ end -}}

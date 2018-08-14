@@ -168,13 +168,11 @@ func (p nodePool) NeedToExportIAMroles() bool {
 	return p.nodePool.IAMConfig.InstanceProfile.Arn == ""
 }
 
-func (p nodePool) SequentialRoll() bool {
-	return p.nodePool.SequentialRoll.Enabled
+// returns NodePoolRolling strategy string to be used in stack-template
+func (p nodePool) NodePoolRollingStrategy() string {
+	return p.nodePool.NodePoolConfig.NodePoolRollingStrategy
 }
 
-func (p nodePool) SequentialWorkerRoll() bool {
-	return true
-}
 func (c TemplateParams) ControlPlane() controlPlane {
 	return controlPlane{
 		controlPlane: c.cluster.controlPlane,
