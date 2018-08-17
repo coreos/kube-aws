@@ -258,6 +258,36 @@ func TestMainClusterConfig(t *testing.T) {
 		}
 	}
 
+	hasDefaultNodePoolRollingStrategy := func(c *config.Config, t *testing.T) {
+		s := c.NodePools[0].NodePoolRollingStrategy
+
+		if s != "Parallel" {
+			t.Errorf("Default nodePool rolling strategy should be 'Parallel' but is not: %v", s)
+		}
+	}
+
+	hasSpecificNodePoolRollingStrategy := func(expRollingStrategy string) func(c *config.Config, t *testing.T) {
+		return func(c *config.Config, t *testing.T) {
+			actRollingStrategy := c.NodePools[0].NodePoolRollingStrategy
+			if actRollingStrategy != expRollingStrategy {
+				t.Errorf("The nodePool Rolling Strategy (%s) does not match with the expected one: %s", actRollingStrategy, expRollingStrategy)
+			}
+		}
+	}
+
+	hasWorkerAndNodePoolStrategy := func(expWorkerStrategy, expNodePoolStrategy string) func(c *config.Config, t *testing.T) {
+		return func(c *config.Config, t *testing.T) {
+			actWorkerStrategy := c.NodePools[0].NodePoolRollingStrategy
+			actNodePoolStrategy := c.NodePools[1].NodePoolRollingStrategy
+
+			if expWorkerStrategy != actWorkerStrategy {
+				t.Errorf("The nodePool Rolling Strategy (%s) does not match with the expected one: %s", actWorkerStrategy, expWorkerStrategy)
+			}
+			if expNodePoolStrategy != actNodePoolStrategy {
+				t.Errorf("The nodePool Rolling Strategy (%s) does not match with the expected one: %s", actNodePoolStrategy, expNodePoolStrategy)
+			}
+		}
+	}
 	hasPrivateSubnetsWithManagedNGWs := func(numExpectedNum int) func(c *config.Config, t *testing.T) {
 		return func(c *config.Config, t *testing.T) {
 			for i, s := range c.PrivateSubnets() {
@@ -1797,6 +1827,53 @@ worker:
 						t.Errorf("waitSignal.maxBatchSize should be 2 for node pool at index %d but was %d", 1, c.NodePools[1].WaitSignal.MaxBatchSize())
 					}
 				},
+			},
+		},
+		{
+			context: "WithDefaultNodePoolRollingStrategy",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  nodePools:
+  - name: pool1
+`,
+			assertConfig: []ConfigTester{
+				hasDefaultNodePoolRollingStrategy,
+			},
+		},
+		{
+			context: "WithSpecificNodePoolRollingStrategy",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  nodePools:
+  - name: pool1
+    nodePoolRollingStrategy: Sequential`,
+			assertConfig: []ConfigTester{
+				hasSpecificNodePoolRollingStrategy("Sequential"),
+			},
+		},
+		{
+			context: "WithSpecificWorkerRollingStrategy",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  nodePoolRollingStrategy: Sequential
+  nodePools:
+  - name: pool1`,
+			assertConfig: []ConfigTester{
+				hasSpecificNodePoolRollingStrategy("Sequential"),
+			},
+		},
+		{
+			context: "WithWorkerAndNodePoolStrategy",
+			configYaml: minimalValidConfigYaml + `
+worker:
+  nodePoolRollingStrategy: Sequential
+  nodePools:
+  - name: pool1
+  - name: pool2
+    nodePoolRollingStrategy: Parallel
+`,
+			assertConfig: []ConfigTester{
+				hasWorkerAndNodePoolStrategy("Sequential", "Parallel"),
 			},
 		},
 		{
