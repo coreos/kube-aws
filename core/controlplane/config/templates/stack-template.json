@@ -37,7 +37,7 @@
           {{range $k, $v := $.Controller.InstanceTags -}}
           {
             "Key": "{{$k}}",
-            "PropagateAtLaunch": "true",
+            "PropagateAtLaunch": "true" ,
             "Value": "{{$v}}"
           },
           {{end -}}
@@ -212,12 +212,18 @@
     {{ if not .Controller.IAMConfig.InstanceProfile.Arn }}
     "IAMInstanceProfileController": {
       "Properties": {
-        "Path": "/",
+		"Path": "/",
+		{{ if .Controller.IAMConfig.ManagedRole }}
+		"Roles": [
+			"{{.Controller.IAMConfig.ManagedRole}}"
+		]
+		{{ else }}
         "Roles": [
-          {
-            "Ref": "IAMRoleController"
-          }
-        ]
+			{
+				"Ref": "IAMRoleController"
+			}
+		]
+		{{ end }}
       },
       "Type": "AWS::IAM::InstanceProfile"
     },
