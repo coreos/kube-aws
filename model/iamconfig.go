@@ -11,6 +11,7 @@ type IAMConfig struct {
 	InstanceProfile IAMInstanceProfile `yaml:"instanceProfile,omitempty"`
 	UnknownKeys     `yaml:",inline"`
 	Policy          IAMPolicy
+	ManagedRole     string `yaml:"managedRole,omitempty"`
 }
 
 type IAMRole struct {
