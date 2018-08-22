@@ -1714,6 +1714,23 @@ worker:
 			},
 		},
 		{
+			context: "WithControllerManagedRole",
+			configYaml: minimalValidConfigYaml + `
+controller:
+  iam:
+    managedRole: us-west-2-cluster-existing-role
+`,
+			assertConfig: []ConfigTester{
+				func(c *config.Config, t *testing.T) {
+					expectedIAMManagedRole := "us-west-2-cluster-existing-role"
+
+					if expectedIAMManagedRole != c.Controller.IAMConfig.ManagedRole {
+						t.Errorf("controller's iam.managedRole didn't match : expected=%v actual=%v", expectedIAMManagedRole, c.Controller.IAMConfig.ManagedRole)
+					}
+				},
+			},
+		},
+		{
 			context: "WithWaitSignalDisabled",
 			configYaml: minimalValidConfigYaml + `
 waitSignal:
