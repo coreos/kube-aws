@@ -11,12 +11,12 @@ type IAMConfig struct {
 	InstanceProfile IAMInstanceProfile `yaml:"instanceProfile,omitempty"`
 	UnknownKeys     `yaml:",inline"`
 	Policy          IAMPolicy
-	ManagedRole     string `yaml:"managedRole,omitempty"`
 }
 
 type IAMRole struct {
 	ARN             `yaml:",inline"`
 	Name            string             `yaml:"name,omitempty"`
+	UseStrict       bool               `yaml:"useStrict,omitempty"`
 	ManagedPolicies []IAMManagedPolicy `yaml:"managedPolicies,omitempty"`
 }
 

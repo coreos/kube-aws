@@ -1714,18 +1714,38 @@ worker:
 			},
 		},
 		{
-			context: "WithControllerManagedRole",
+			context:    "WithControllerIAMDefaultUseStrict",
+			configYaml: minimalValidConfigYaml,
+			assertConfig: []ConfigTester{
+				func(c *config.Config, t *testing.T) {
+					expectedValue := false
+
+					if c.Controller.IAMConfig.Role.UseStrict != expectedValue {
+						t.Errorf("controller's iam.role.useStrict didn't match : expected=%v actual=%v", expectedValue, c.Controller.IAMConfig.Role.UseStrict)
+					}
+				},
+			},
+		},
+		{
+			context: "WithControllerIAMEnabledUseStrict",
 			configYaml: minimalValidConfigYaml + `
 controller:
   iam:
-    managedRole: us-west-2-cluster-existing-role
+   role:
+     name: myrole1
+     useStrict: true
 `,
 			assertConfig: []ConfigTester{
 				func(c *config.Config, t *testing.T) {
-					expectedIAMManagedRole := "us-west-2-cluster-existing-role"
+					expectedUseStrict := true
+					expectedRoleName := "myrole1"
 
-					if expectedIAMManagedRole != c.Controller.IAMConfig.ManagedRole {
-						t.Errorf("controller's iam.managedRole didn't match : expected=%v actual=%v", expectedIAMManagedRole, c.Controller.IAMConfig.ManagedRole)
+					if expectedRoleName != c.Controller.IAMConfig.Role.Name {
+						t.Errorf("controller's iam.role.name didn't match : expected=%v actual=%v", expectedRoleName, c.Controller.IAMConfig.Role.Name)
+					}
+
+					if expectedUseStrict != c.Controller.IAMConfig.Role.UseStrict {
+						t.Errorf("controller's iam.role.useStrict didn't matchg : expected=%v actual=%v", expectedUseStrict, c.Controller.IAMConfig.Role.UseStrict)
 					}
 				},
 			},

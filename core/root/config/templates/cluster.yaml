@@ -218,6 +218,11 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #      # the Statements included in the ManagedPolicy are the minimun ones required for the Controllers to run.
 #      name: "yourManagedRole"
 #
+#	   # If useStrict is enabled (i.e set to true), kube-aws will not create a new IAM role and will instead use an existing one.
+#	   # The existing role name must be set under iam.role.name and must exist on AWS before the cluster is rolled out.
+#	   # By default, useStrict is disabled (i.e set to false)
+#	   useStrict: true   
+#
 #      # If you set managedPolicies here it will be attached in addition to the created managedPolicy in kube-aws for the cluster.
 #      # CAUTION: if you attach a more restrictive policy in some resources (i.e ec2:* Deny) you can make kube-aws fail.
 #      managedPolicies:
