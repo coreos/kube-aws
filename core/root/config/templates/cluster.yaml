@@ -978,8 +978,7 @@ worker:
 # serviceCIDR: "10.3.0.0/24"
 
 # CIDR for all pod IP addresses
-# Should set to 10.244.0.0/16 for Flannel or Canal
-# Should set to 192.168.0.0/16 for Calico
+# Typically set to 10.244.0.0/16 for Flannel or Canal and 192.168.0.0/16 for Calico
 # podCIDR: "10.2.0.0/16"
 
 # IP address of Kubernetes dns service (must be contained by serviceCIDR)
