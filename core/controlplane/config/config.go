@@ -736,6 +736,8 @@ type KIAMSupport struct {
 	Image           model.Image         `yaml:"image,omitempty"`
 	SessionDuration string              `yaml:"sessionDuration,omitempty"`
 	ServerAddresses KIAMServerAddresses `yaml:"serverAddresses,omitempty"`
+	ServerResources ComputeResources    `yaml:"serverResources,omitempty"`
+	AgentResources  ComputeResources    `yaml:"agentResources,omitempty"`
 }
 
 type KIAMServerAddresses struct {

@@ -5628,7 +5628,6 @@ write_files:
             containers:
               - name: kiam
                 image: {{.Experimental.KIAMSupport.Image.RepoWithTag}}
-                imagePullPolicy: Always
                 command:
                   - /server
                 args:
@@ -5673,6 +5672,13 @@ write_files:
                   initialDelaySeconds: 3
                   periodSeconds: 10
                   timeoutSeconds: 10
+                resources:
+                  requests:
+                    cpu: {{ if .Experimental.KIAMSupport.ServerResources.Requests.Cpu }}{{ .Experimental.KIAMSupport.ServerResources.Requests.Cpu }}{{ else }}50m{{ end }}
+                    memory: {{ if .Experimental.KIAMSupport.ServerResources.Requests.Memory }}{{ .Experimental.KIAMSupport.ServerResources.Requests.Memory }}{{ else }}10Mi{{ end }}
+                  limits:
+                    cpu: {{ if .Experimental.KIAMSupport.ServerResources.Limits.Cpu }}{{ .Experimental.KIAMSupport.ServerResources.Limits.Cpu }}{{ else }}200m{{ end }}
+                    memory: {{ if .Experimental.KIAMSupport.ServerResources.Limits.Memory }}{{ .Experimental.KIAMSupport.ServerResources.Limits.Memory }}{{ else }}200Mi{{ end }}
       ---
       apiVersion: v1
       kind: Service
@@ -5731,6 +5737,8 @@ write_files:
         namespace: kube-system
         name: kiam-agent
       spec:
+        updateStrategy:
+          type: RollingUpdate
         template:
           metadata:
             annotations:
@@ -5809,6 +5817,13 @@ write_files:
                     port: 8181
                   initialDelaySeconds: 3
                   periodSeconds: 3
+                resources:
+                  requests:
+                    cpu: {{ if .Experimental.KIAMSupport.AgentResources.Requests.Cpu }}{{ .Experimental.KIAMSupport.AgentResources.Requests.Cpu }}{{ else }}10m{{ end }}
+                    memory: {{ if .Experimental.KIAMSupport.AgentResources.Requests.Memory }}{{ .Experimental.KIAMSupport.AgentResources.Requests.Memory }}{{ else }}5Mi{{ end }}
+                  limits:
+                    cpu: {{ if .Experimental.KIAMSupport.AgentResources.Limits.Cpu }}{{ .Experimental.KIAMSupport.AgentResources.Limits.Cpu }}{{ else }}200m{{ end }}
+                    memory: {{ if .Experimental.KIAMSupport.AgentResources.Limits.Memory }}{{ .Experimental.KIAMSupport.AgentResources.Limits.Memory }}{{ else }}100Mi{{ end }}
 {{end}}
 
   - path: /opt/bin/retry
