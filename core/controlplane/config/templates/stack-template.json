@@ -231,7 +231,12 @@
       "Type" : "AWS::IAM::ManagedPolicy",
       "Properties" : {
         "Description" : "Policy for managing kube-aws k8s controllers",
-        "Path" : "/",
+				"Path" : "/",
+				{{ if and (.Controller.IAMConfig.Role.UseStrict) (.Controller.IAMConfig.Role.Name) }}
+				"Roles" : [
+           "{{.Controller.IAMConfig.Role.Name}}"
+				],
+				{{ end }}
         "PolicyDocument" :   {
           "Version":"2012-10-17",
           "Statement": [
