@@ -939,7 +939,7 @@ write_files:
       #!/bin/bash -e
 
       vols="-v /srv/kubernetes:/srv/kubernetes"
-
+      mfdir=/srv/kubernetes/manifests
       kubectl() {
           # --request-timeout=1s is intended to instruct kubectl to give up discovering unresponsive apiservice(s) in certain periods
           # so that temporal freakiness/unresponsity of specific apiservice until apiserver/controller-manager fully starts doesn't
@@ -981,7 +981,6 @@ write_files:
         --from-file=$kiam_tls_dir/agent.pem \
         --from-file=$kiam_tls_dir/agent-key.pem --dry-run -o yaml | kubectl apply -n kube-system -f -
 
-      mfdir=/srv/kubernetes/manifests
       applyall "${mfdir}/kiam-all.yaml"
       {{ end }}
 
@@ -1006,8 +1005,6 @@ write_files:
         done
         echo kube-proxy stared. apiserver should be responsive again.
       fi
-
-      mfdir=/srv/kubernetes/manifests
       rbac=/srv/kubernetes/rbac
 
       {{- if .Kubernetes.Networking.SelfHosting.Enabled }}
