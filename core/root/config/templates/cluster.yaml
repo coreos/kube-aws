@@ -1036,30 +1036,6 @@ worker:
 #   tag: master
 #   rktPullDocker: false
 
-# Calico Node image repository to use.
-#calicoNodeImage:
-#  repo: quay.io/calico/node
-#  tag: v2.6.5
-#  rktPullDocker: false
-
-# Calico CNI image repository to use.
-#calicoCniImage:
-#  repo: quay.io/calico/cni
-#  tag: v1.11.2
-#  rktPullDocker: false
-
-# Calico Controller image repository to use.
-#calicoCtlImage:
-#  repo: calico/ctl
-#  tag: v1.6.3
-#  rktPullDocker: false
-
-# Calico Kube Controllers image repository to use.
-#calicoKubeControllersImage:
-#  repo: quay.io/calico/kube-controllers
-#  tag: v1.0.2
-#  rktPullDocker: false
-
 # Cluster Autoscaler image repository to use.
 #clusterAutoscalerImage:
 #  repo: k8s.gcr.io/cluster-autoscaler
@@ -1156,12 +1132,6 @@ worker:
 #  tag: 3.1
 #  rktPullDocker: false
 
-# Flannel image repository to use.This allow pulling flannel image from a docker repo.
-#flannelImage:
-#  repo: quay.io/coreos/flannel
-#  tag: v0.9.1
-#  rktPullDocker: false
-
 # JournaldCloudWatchLogsImage image repository to use. This sends journald logs to CloudWatch.
 #journaldCloudWatchLogsImage:
 #  repo: "jollinshead/journald-cloudwatch-logs"
@@ -1189,29 +1159,10 @@ kubernetes:
 # Kubernetes Self-hosted networking daemonsets
 # Choose either 'canal' (calico+flannel) or 'flannel'
 # (choose 'canal' if you require calico or kubernetes NetworkPolicy firewalling).
-# When enabled nodes no longer need to connect etcd and frees up node podCIDR leases faster resolving issue:
-# https://github.com/coreos/flannel/issues/954.
-#
 # Enable Typha if you have 50+ nodes in your cluster. Without Typha, the load on the API server and Felix’s CPU usage
-# increases substantially as the number of nodes is increased.  The legacy top-level 'useCalico' setting has no effect with selfHosting
-# enabled - use type 'canal' for calico+flannel.
-#
-# Notes on migrating between networking types: -
-# From Legacy Calico to self-hosted Canal - GOOD
-# From Legacy Calico to self-hosted Flannel - OK - ISSUES1
-# From self-hosted Flannel to self-hosted Canal - GOOD
-# From self-hosted Canal to self-hosted Flannel - OK - ISSUES1
-# From Legacy Flannel to self-hosted Canal or Flannel - ISSUES2
-# From self-hosted Canal or Flannel to legacy Flannel - ISSUES3
-#
-# ISSUES1 - calico iptables rules remain on the nodes, recycle nodes to remove.
-# ISSUES2 - Existing pod ip addresses are not tracked and can cause clashing ips - please cordon all nodes whilst
-# performing the upgrade until all workers/nodes have been recycyled - then it will be ok.
-# ISSUES3 - Rolling back to old networking will require all nodes are cycled/rolled and the network is disrupted throughout.
-
+# increases substantially as the number of nodes is increased.
   networking:
     selfHosting:
-      enabled: true    # false will fall back to legacy coreos flannel/etcd2 installation
       type: canal      # either "canal" or "flannel"
       typha: false     # enable for type 'canal' for 50+ node clusters
 #      calicoNodeImage:
@@ -1229,9 +1180,6 @@ kubernetes:
 #      typhaImage:
 #        repo: quay.io/calico/typha
 #        tag: v0.7.4
-
-# Use Calico for network policy (legacy setting - ignored if networking self-hosting is enabled)
-# useCalico: false
 
 # Create MountTargets to subnets managed by kube-aws for a pre-existing Elastic File System (Amazon EFS),
 # and then mount to every node.

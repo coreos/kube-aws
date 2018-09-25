@@ -36,13 +36,6 @@ exec /usr/bin/coreos-cloudinit --from-file /var/run/coreos/$USERDATA_FILE
 coreos:
   update:
     reboot-strategy: "off"
-  {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
-  flannel:
-    interface: $private_ipv4
-    etcd_cafile: /etc/kubernetes/ssl/etcd-trusted-ca.pem
-    etcd_certfile: /etc/kubernetes/ssl/etcd-client.pem
-    etcd_keyfile: /etc/kubernetes/ssl/etcd-client-key.pem
-  {{- end }}
   units:
 {{if .DisableContainerLinuxAutomaticUpdates}}
     - name: disable-automatic-update.service
@@ -267,17 +260,6 @@ coreos:
             [Service]
             Environment="DOCKER_OPTS=--log-opt max-size=50m --log-opt max-file=3"
 
-        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
-        - name: 40-flannel.conf
-          content: |
-            [Unit]
-            Wants=flanneld.service
-            [Service]
-            EnvironmentFile=/etc/kubernetes/cni/docker_opts_cni.env
-            ExecStartPre=/usr/bin/systemctl is-active flanneld.service
-        {{- end}}
-
-    {{ if .Kubernetes.Networking.SelfHosting.Enabled -}}
     - name: flanneld.service
       enable: false
     {{ if .AssetsEncryptionEnabled -}}
@@ -293,56 +275,6 @@ coreos:
         RemainAfterExit=true
         ExecStart=/opt/bin/decrypt-assets
     {{- end }}
-    {{- else -}}
-    - name: flanneld.service
-      drop-ins:
-        - name: 10-etcd.conf
-          content: |
-            [Unit]
-            Wants=cfn-etcd-environment.service
-            After=cfn-etcd-environment.service
-
-            [Service]
-            EnvironmentFile=-/etc/etcd-environment
-            Environment="ETCD_SSL_DIR=/etc/kubernetes/ssl"
-            EnvironmentFile=-/run/flannel/etcd-endpoints.opts
-            ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
-            ExecStartPre=/bin/sh -ec "echo FLANNELD_ETCD_ENDPOINTS=${ETCD_ENDPOINTS} >/run/flannel/etcd-endpoints.opts"
-            {{- if .AssetsEncryptionEnabled }}
-            ExecStartPre=/opt/bin/decrypt-assets
-            {{- end}}
-            ExecStartPre=/usr/bin/etcdctl \
-            --ca-file=/etc/kubernetes/ssl/etcd-trusted-ca.pem \
-            --cert-file=/etc/kubernetes/ssl/etcd-client.pem \
-            --key-file=/etc/kubernetes/ssl/etcd-client-key.pem \
-            --endpoints="${ETCD_ENDPOINTS}" \
-            set /coreos.com/network/config '{"Network" : "{{.PodCIDR}}", "Backend" : {"Type" : "vxlan"}}'
-            TimeoutStartSec=120
-
-{{if .FlannelImage.RktPullDocker}}
-        - name: 20-flannel-custom-image.conf
-          content: |
-            [Unit]
-            PartOf=flanneld.service
-            Before=docker.service
-
-            [Service]
-            Environment="FLANNEL_IMAGE={{.FlannelImage.RktRepo}}"
-            Environment="RKT_RUN_ARGS={{.FlannelImage.Options}}"
-
-    - name: flannel-docker-opts.service
-      drop-ins:
-        - name: 10-flannel-docker-options.conf
-          content: |
-            [Unit]
-            PartOf=flanneld.service
-            Before=docker.service
-
-            [Service]
-            Environment="FLANNEL_IMAGE={{.FlannelImage.RktRepo}}"
-            Environment="RKT_RUN_ARGS={{.FlannelImage.Options}} --uuid-file-save=/var/lib/coreos/flannel-wrapper2.uuid"
-{{end}}
-    {{- end }}
 
     - name: kubelet.service
       command: start
@@ -351,9 +283,6 @@ coreos:
         [Unit]
         Wants=cfn-etcd-environment.service
         After=cfn-etcd-environment.service
-        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
-        Wants=flanneld.service
-        {{ end -}}
         Wants=rpc-statd.service
         Wants=decrypt-assets.service
         After=decrypt-assets.service
@@ -367,11 +296,6 @@ coreos:
         Environment="RKT_RUN_ARGS={{.HyperkubeImage.Options}}\
         --volume dns,kind=host,source=/etc/resolv.conf \
         --mount volume=dns,target=/etc/resolv.conf \
-        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
-        --set-env=ETCD_CA_CERT_FILE=/etc/kubernetes/ssl/etcd-trusted-ca.pem \
-        --set-env=ETCD_CERT_FILE=/etc/kubernetes/ssl/etcd-client.pem \
-        --set-env=ETCD_KEY_FILE=/etc/kubernetes/ssl/etcd-client-key.pem \
-        {{ end -}}
         {{ if eq .ContainerRuntime "rkt" -}}
         --volume rkt,kind=host,source=/opt/bin/host-rkt \
         --mount volume=rkt,target=/usr/bin/rkt \
@@ -382,12 +306,10 @@ coreos:
         {{ end -}}
         --volume var-lib-cni,kind=host,source=/var/lib/cni \
         --mount volume=var-lib-cni,target=/var/lib/cni \
-        {{ if .Kubernetes.Networking.SelfHosting.Enabled -}}
         --volume var-run-calico,kind=host,source=/var/run/calico \
         --mount volume=var-run-calico,target=/var/run/calico \
         --volume var-lib-calico,kind=host,source=/var/lib/calico \
         --mount volume=var-lib-calico,target=/var/lib/calico \
-        {{ end -}}
         --volume var-log,kind=host,source=/var/log \
         --mount volume=var-log,target=/var/log \
         --volume cni-bin,kind=host,source=/opt/cni/bin \
@@ -395,33 +317,14 @@ coreos:
         --volume etc-kubernetes,kind=host,source=/etc/kubernetes \
         --mount volume=etc-kubernetes,target=/etc/kubernetes"
         ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
-        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
-        ExecStartPre=/usr/bin/etcdctl \
-          --ca-file /etc/kubernetes/ssl/etcd-trusted-ca.pem \
-          --key-file /etc/kubernetes/ssl/etcd-client-key.pem \
-          --cert-file /etc/kubernetes/ssl/etcd-client.pem \
-          --endpoints "${ETCD_ENDPOINTS}" \
-          cluster-health
-        ExecStartPre=/usr/bin/systemctl is-active flanneld.service
-        {{ end -}}
         ExecStartPre=/usr/bin/mkdir -p /var/lib/cni
         ExecStartPre=/usr/bin/mkdir -p /var/log/containers
         ExecStartPre=/usr/bin/mkdir -p /opt/cni/bin
         ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
         ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/cni/net.d
-        {{ if .Kubernetes.Networking.SelfHosting.Enabled -}}
         ExecStartPre=/usr/bin/mkdir -p /var/run/calico
         ExecStartPre=/usr/bin/mkdir -p /var/lib/calico
-        {{ end -}}
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/manifests /srv/kubernetes/manifests  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
-        {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
-        {{ if .UseCalico -}}
-        ExecStartPre=/bin/sh -ec "find /etc/kubernetes/cni/net.d/ -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
-        ExecStartPre=/usr/bin/docker run --rm -e SLEEP=false -e KUBERNETES_SERVICE_HOST= -e KUBERNETES_SERVICE_PORT= -v /opt/cni/bin:/host/opt/cni/bin {{ .CalicoCniImage.RepoWithTag }} /install-cni.sh
-        {{ else -}}
-        ExecStartPre=/usr/bin/docker run --rm -v /opt/cni/bin:/host/opt/cni/bin {{.HyperkubeImage.RepoWithTag}} /bin/sh -ec 'cp -rp /opt/cni/bin/* /host/opt/cni/bin'
-        {{ end -}}
-        {{ end -}}
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
         --kubeconfig=/etc/kubernetes/kubeconfig/controller.yaml \
         {{if checkVersion "<1.10" .K8sVer -}}
@@ -562,9 +465,6 @@ coreos:
         # FIXME: Remove dependency on the apiserver insecure port
         ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl -s -m 20 -f  http://127.0.0.1:8080/healthz > /dev/null &&  /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10252/healthz > /dev/null && /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10251/healthz > /dev/null &&  /usr/bin/curl --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null && /usr/bin/curl -s -m 20 -f http://127.0.0.1:10256/healthz > /dev/null; then break ; fi;  done"
 
-        {{ if (and (not .Kubernetes.Networking.SelfHosting.Enabled) .UseCalico) -}}
-        ExecStartPre=/usr/bin/bash -c "until /usr/bin/docker run --net=host --pid=host --rm {{ .CalicoCtlImage.RepoWithTag }} node status > /dev/null; do sleep 3; done && echo Calico running"
-        {{- end }}
         {{if .Experimental.AuditLog.Enabled -}}
         ExecStartPre=/opt/bin/check-worker-communication
         {{end -}}
@@ -1007,11 +907,6 @@ write_files:
       fi
       rbac=/srv/kubernetes/rbac
 
-      {{- if .Kubernetes.Networking.SelfHosting.Enabled }}
-      # When using NetworkingDeamonSets ensure that all nodes
-      # have a podCIDR attribute
-      /opt/bin/add-node-cidrs
-      ensuredelete "${mfdir}/calico.yaml"
       applyall "${rbac}/network-daemonsets.yaml"
       {{- if eq .Kubernetes.Networking.SelfHosting.Type "canal" }}
       ensuredelete "${mfdir}/flannel.yaml"
@@ -1019,14 +914,6 @@ write_files:
       {{- else }}
       ensuredelete "${mfdir}/canal.yaml"
       applyall "${mfdir}/flannel.yaml"
-      {{- end }}
-      {{- else }}
-      ensuredelete "${mfdir}/flannel.yaml"
-      ensuredelete "${mfdir}/canal.yaml"
-      {{- if .UseCalico }}
-      /bin/bash /opt/bin/populate-tls-calico-etcd
-      applyall "${mfdir}/calico.yaml"
-      {{- end }}
       {{- end }}
 
       {{ if .Addons.MetricsServer.Enabled -}}
@@ -2219,255 +2106,6 @@ write_files:
                 configMap:
                   name: flannel-cfg
 
-  - path: /srv/kubernetes/manifests/calico.yaml
-    content: |
-      kind: ConfigMap
-      apiVersion: v1
-      metadata:
-        name: calico-config
-        namespace: kube-system
-      data:
-        etcd_endpoints: "#ETCD_ENDPOINTS#"
-        cni_network_config: |-
-          {
-              "name": "calico",
-              "type": "flannel",
-              "delegate": {
-                  "type": "calico",
-                  "etcd_endpoints": "__ETCD_ENDPOINTS__",
-                  "etcd_key_file": "__ETCD_KEY_FILE__",
-                  "etcd_cert_file": "__ETCD_CERT_FILE__",
-                  "etcd_ca_cert_file": "__ETCD_CA_CERT_FILE__",
-                  "log_level": "info",
-                  "policy": {
-                      "type": "k8s",
-                      "k8s_api_root": "https://__KUBERNETES_SERVICE_HOST__:__KUBERNETES_SERVICE_PORT__",
-                      "k8s_auth_token": "__SERVICEACCOUNT_TOKEN__"
-                  },
-                  "kubernetes": {
-                      "kubeconfig": "__KUBECONFIG_FILEPATH__"
-                  }
-              }
-          }
-
-        etcd_ca: "/calico-secrets/etcd-ca"
-        etcd_cert: "/calico-secrets/etcd-cert"
-        etcd_key: "/calico-secrets/etcd-key"
-
-      ---
-
-      apiVersion: v1
-      kind: Secret
-      type: Opaque
-      metadata:
-        name: calico-etcd-secrets
-        namespace: kube-system
-      data:
-        etcd-key: "$ETCDKEY"
-        etcd-cert: "$ETCDCERT"
-        etcd-ca: "$ETCDCA"
-
-      ---
-
-      kind: DaemonSet
-      apiVersion: extensions/v1beta1
-      metadata:
-        name: calico-node
-        namespace: kube-system
-        labels:
-          k8s-app: calico-node
-      spec:
-        selector:
-          matchLabels:
-            k8s-app: calico-node
-        updateStrategy:
-          type: RollingUpdate
-        template:
-          metadata:
-            labels:
-              k8s-app: calico-node
-            annotations:
-              scheduler.alpha.kubernetes.io/critical-pod: ''
-          spec:
-            {{if .Experimental.Admission.Priority.Enabled -}}
-            priorityClassName: system-node-critical
-            {{ end -}}
-            tolerations:
-            - operator: Exists
-              effect: NoSchedule
-            - operator: Exists
-              effect: NoExecute
-            - operator: Exists
-              key: CriticalAddonsOnly
-            hostNetwork: true
-            # Minimize downtime during a rolling upgrade or deletion; tell Kubernetes to do a "force
-            # deletion": https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.
-            terminationGracePeriodSeconds: 0
-            initContainers:
-              - name: remove-cni-networks
-                image: {{.HyperkubeImage.RepoWithTag}}
-                command:
-                - /bin/rm
-                - -rf
-                - /etc/kubernetes/cni/net.d/10-calico.conflist
-                - /etc/kubernetes/cni/net.d/10-flannel.conflist
-                volumeMounts:
-                - mountPath: /etc/kubernetes/cni/net.d
-                  name: cni-net-dir
-            containers:
-              - name: calico-node
-                image: {{ .CalicoNodeImage.RepoWithTag }}
-                env:
-                  - name: ETCD_ENDPOINTS
-                    valueFrom:
-                      configMapKeyRef:
-                        name: calico-config
-                        key: etcd_endpoints
-                  - name: CALICO_NETWORKING_BACKEND
-                    value: "none"
-                  - name: CLUSTER_TYPE
-                    value: "kubeaws,canal"
-                  - name: CALICO_DISABLE_FILE_LOGGING
-                    value: "true"
-                  - name: NO_DEFAULT_POOLS
-                    value: "true"
-                  - name: ETCD_CA_CERT_FILE
-                    valueFrom:
-                      configMapKeyRef:
-                        name: calico-config
-                        key: etcd_ca
-                  - name: ETCD_KEY_FILE
-                    valueFrom:
-                      configMapKeyRef:
-                        name: calico-config
-                        key: etcd_key
-                  - name: ETCD_CERT_FILE
-                    valueFrom:
-                      configMapKeyRef:
-                        name: calico-config
-                        key: etcd_cert
-                securityContext:
-                  privileged: true
-                volumeMounts:
-                  - mountPath: /lib/modules
-                    name: lib-modules
-                    readOnly: true
-                  - mountPath: /var/run/calico
-                    name: var-run-calico
-                    readOnly: false
-                  - mountPath: /var/lib/calico
-                    name: var-lib-calico
-                    readOnly: false
-                  - mountPath: /calico-secrets
-                    name: etcd-certs
-                  - mountPath: /etc/resolv.conf
-                    name: dns
-                    readOnly: true
-            volumes:
-              - name: lib-modules
-                hostPath:
-                  path: /lib/modules
-              - name: var-run-calico
-                hostPath:
-                  path: /var/run/calico
-              - name: var-lib-calico
-                hostPath:
-                  path: /var/lib/calico
-              - name: cni-bin-dir
-                hostPath:
-                  path: /opt/cni/bin
-              - name: cni-net-dir
-                hostPath:
-                  path: /etc/kubernetes/cni/net.d
-              - name: etcd-certs
-                secret:
-                  secretName: calico-etcd-secrets
-              - name: dns
-                hostPath:
-                  path: /etc/resolv.conf
-
-      ---
-
-      apiVersion: extensions/v1beta1
-      kind: Deployment
-      metadata:
-        name: calico-kube-controllers
-        namespace: kube-system
-        labels:
-          k8s-app: calico-policy
-        annotations:
-          scheduler.alpha.kubernetes.io/critical-pod: ''
-
-      spec:
-        replicas: 1
-        template:
-          metadata:
-            name: calico-kube-controllers
-            namespace: kube-system
-            labels:
-              k8s-app: calico-policy
-          spec:
-            {{if .Experimental.Admission.Priority.Enabled -}}
-            priorityClassName: system-node-critical
-            {{ end -}}
-            tolerations:
-            - key: "node.alpha.kubernetes.io/role"
-              operator: "Equal"
-              value: "master"
-              effect: "NoSchedule"
-            - key: "CriticalAddonsOnly"
-              operator: "Exists"
-            hostNetwork: true
-            containers:
-              - name: calico-kube-controllers
-                image: {{ .CalicoKubeControllersImage.RepoWithTag }}
-                env:
-                  - name: ETCD_ENDPOINTS
-                    valueFrom:
-                      configMapKeyRef:
-                        name: calico-config
-                        key: etcd_endpoints
-                  - name: ETCD_CA_CERT_FILE
-                    valueFrom:
-                      configMapKeyRef:
-                        name: calico-config
-                        key: etcd_ca
-                  - name: ETCD_KEY_FILE
-                    valueFrom:
-                      configMapKeyRef:
-                        name: calico-config
-                        key: etcd_key
-                  - name: ETCD_CERT_FILE
-                    valueFrom:
-                      configMapKeyRef:
-                        name: calico-config
-                        key: etcd_cert
-                  - name: K8S_API
-                    value: "https://kubernetes.default:443"
-                  - name: CONFIGURE_ETC_HOSTS
-                    value: "true"
-                volumeMounts:
-                  - mountPath: /calico-secrets
-                    name: etcd-certs
-            volumes:
-              - name: etcd-certs
-                secret:
-                  secretName: calico-etcd-secrets
-
-  - path: /opt/bin/populate-tls-calico-etcd
-    owner: root:root
-    permissions: 0700
-    content: |
-      #!/bin/bash -e
-
-      etcd_ca=$(cat /etc/kubernetes/ssl/etcd-trusted-ca.pem | base64 | tr -d '\n')
-      etcd_key=$(cat /etc/kubernetes/ssl/etcd-client-key.pem | base64 | tr -d '\n')
-      etcd_cert=$(cat /etc/kubernetes/ssl/etcd-client.pem | base64 | tr -d '\n')
-
-      sed -i -e "s#\$ETCDCA#$etcd_ca#g" /srv/kubernetes/manifests/calico.yaml
-      sed -i -e "s#\$ETCDCERT#$etcd_cert#g" /srv/kubernetes/manifests/calico.yaml
-      sed -i -e "s#\$ETCDKEY#$etcd_key#g" /srv/kubernetes/manifests/calico.yaml
-
 {{ if .KubeResourcesAutosave.Enabled }}
   - path: /srv/kubernetes/manifests/kube-resources-autosave-de.yaml
     content: |
@@ -3576,12 +3214,10 @@ write_files:
           {{ if .Experimental.DisableSecurityGroupIngress }}
           - --cloud-config=/etc/kubernetes/additional-configs/cloud.config
           {{ end }}
-          {{ if .Kubernetes.Networking.SelfHosting.Enabled -}}
           - --allocate-node-cidrs=true
           - --cluster-cidr={{.PodCIDR}}
           - --configure-cloud-routes=false {{/* no need to auto configure cloud routes when using flannel or canal */}}
           - --service-cluster-ip-range={{.ServiceCIDR}} {{/* removes the service CIDR range from the cluster CIDR if it intersects */}}
-          {{- end }}
           {{ if not .Addons.MetricsServer.Enabled -}}
           - --horizontal-pod-autoscaler-use-rest-clients=false
           {{end}}
@@ -4976,197 +4612,6 @@ write_files:
           name: kubelet-context
         current-context: kubelet-context
 
-{{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
-{{ if not .UseCalico }}
-  - path: /etc/kubernetes/cni/net.d/10-flannel.conf
-    content: |
-        {
-            "name": "podnet",
-            "type": "flannel",
-            "delegate": {
-                "isDefaultGateway": true
-            }
-        }
-
-{{ else }}
-
-  # FIXME: Remove dependency on the apiserver insecure port
-  - path: /etc/kubernetes/cni/net.d/10-calico.conf
-    content: |
-      {
-        "name": "calico",
-        "type": "flannel",
-        "delegate": {
-          "type": "calico",
-          "etcd_endpoints": "#ETCD_ENDPOINTS#",
-          "etcd_key_file": "/etc/kubernetes/ssl/etcd-client-key.pem",
-          "etcd_cert_file": "/etc/kubernetes/ssl/etcd-client.pem",
-          "etcd_ca_cert_file": "/etc/kubernetes/ssl/etcd-trusted-ca.pem",
-          "log_level": "info",
-          "policy": {
-            "type": "k8s",
-            "k8s_api_root": "http://127.0.0.1:8080/api/v1/"
-          }
-        }
-      }
-
-{{ end }}
-{{- end }}
-
-{{- if .Kubernetes.Networking.SelfHosting.Enabled }}
-  - path: /opt/bin/add-node-cidrs
-    permissions: 0755
-    content: |
-      #!/bin/bash
-      set -u
-
-      # NDS Migration helper script - patch missing podcidrs
-      # Legacy nodes do not have a podcidr allocated (it is just received through docker) so when
-      # migrating to the flannel deamonset we need to make sure that all nodes have the podcidr set
-      # that they are actually using.  This can be found by looking at existing pods on the node or
-      # we will run our own pod in order to work out the cidr (always assumed to be a /24).
-
-      pod_cidr="{{.PodCIDR}}"
-      cidr_match="^${pod_cidr%%\.*}.*" # Match just the first IP tuple
-      temporary_podlist="/tmp/podlist"
-      retries=5
-
-      kubectl() {
-        docker run --rm -i --net=host -v /etc/kubernetes:/etc/kubernetes:ro -v /etc/resolv.conf:/etc/resolv.conf:ro {{.HyperkubeImage.RepoWithTag}} /kubectl "$@"
-      }
-
-      log() {
-        >&2 echo "$@"
-      }
-
-      generate_running_pod_list() {
-          kubectl get pods -o wide --all-namespaces | awk '($4 == "Running"){print}' >$temporary_podlist
-      }
-
-      match_running_pods() {
-        local node=$1
-        log "Trying to match a running pod on node ${node}..."
-        cat $temporary_podlist | awk "(\$7 ~ \"${cidr_match}\" && \$8 == \"$node\"){print \$7}" | head -1
-      }
-
-      run_pod() {
-        local node=$1
-        local ipaddress
-
-        log "Running a pod on node ${node} to determine pod ip address..."
-        local selector="{ \"apiVersion\": \"v1\", \"spec\": { \"nodeSelector\": { \"kubernetes.io/hostname\": \"${node}\" }, \"tolerations\": [ { \"effect\": \"NoSchedule\", \"operator\": \"Exists\" }, { \"effect\": \"NoExecute\", \"operator\": \"Exists\" } ] } }"
-        ipaddress=$(kubectl -n kube-system run find-pod-ip-${node%%.*} --pod-running-timeout=1m -i -t --image={{.HyperkubeImage.RepoWithTag}} --restart=Never --overrides="${selector}" -- /bin/sh -c "cat /proc/net/fib_trie | awk '/32 host/ {print f} {f=\$2}' | grep -v 127.0.0.1 | uniq") || return 1
-        kubectl -n kube-system delete pod find-pod-ip-${node%%.*} 2>&1 >/dev/null
-
-        if [[ -n "${ipaddress}" ]]; then
-          echo "${ipaddress}"
-          return 0
-        else
-          log "Running pod did not return an ip address"
-          return 1
-        fi
-      }
-
-      find_node_cidr() {
-        local node=$1
-        local found
-
-        log "Finding cidrs on node ${node}"
-        if ! node_ready "${node}"; then
-          log "Aborting lookup of cidr, node is not ready."
-          return 1
-        fi
-
-        found=$(match_running_pods "${node}")
-        if [[ -n "${found}" ]]; then
-          log "Found a running pod with ip ${found}"
-        else
-          log "No suitable pods running on node, starting our own..."
-          if ! found=$(run_pod "${node}"); then
-            log "Running pod failed."
-            return 1
-          fi
-        fi
-
-        if [[ -n "$found" ]]; then
-          echo "${found%\.*}.0/24"
-          return 0
-        else
-          log "Found ip address was empty!"
-          return 1
-        fi
-      }
-
-      patch_node() {
-        local node=$1
-        local podcidr=$2
-        local tries=0
-
-        while [ "$tries" -lt "$retries" ]; do
-          kubectl patch node "${node}" -p "{\"spec\":{\"podCIDR\":\"${podcidr}\"}}" && return 0
-          log "Patch failed, wait 20s and retry"
-          sleep 20
-          tries=$((tries += 1))
-        done
-      }
-
-      list_ready_nodes() {
-        kubectl get nodes | awk '($2 == "Ready" && $3 != "master"){print $1}' || log "Failed to list running pods" && exit 1
-      }
-
-      read_node() {
-        local node=$1
-        local tries=0
-
-        while [ "$tries" -lt "$retries" ]; do
-          kubectl get node $node -o jsonpath='{.spec.podCIDR}' && return 0
-          log "Failed to read node ${node}, sleep and try again"
-          sleep 20
-          tries=$((tries += 1))
-        done
-        return 1
-      }
-
-      node_ready() {
-        local node=$1
-        local tries=0
-        local ready
-
-        while [ "$tries" -lt "$retries" ]; do
-          ready=$(kubectl get nodes | awk "(\$1 == \"${node}\" && \$2 == \"Ready\"){print}") && break
-          log "Failed to list nodes, sleep and try again"
-          sleep 20
-          tries=$((tries += 1))
-        done
-        [[ -n "$ready" ]]
-      }
-
-      # MAIN
-
-      log "Finding and setting all missing podCIDRs..."
-      generate_running_pod_list
-      nodes=$(list_ready_nodes)
-      for node in $nodes
-      do
-        if ! pod_cidr=$(read_node ${node}); then
-          log "Failed to read node ${node}, skipping."
-          continue
-        fi
-        if [[ -n "${pod_cidr}" ]]; then
-            log "Node ${node} already has podcidr: ${pod_cidr}"
-        else
-          log "Node ${node} does not have a pod_cidr!"
-          if cidr=$(find_node_cidr "${node}"); then
-            log "Patching node ${node} with CIDR ${cidr}"
-            patch_node "${node}" "${cidr}"
-          else
-            log "Could not find the pod_cidr for node ${node}, skipping"
-          fi
-        fi
-      done
-
-{{- end }}
-
 # AdvancedAuditing is enabled by default since K8S v1.8.
 # With AdvancedAuditing, you have to provide a audit policy file.
 # Otherwise no audit logs are recorded at all.
@@ -5368,7 +4813,7 @@ write_files:
                   - "--auto-discover-default-role"
                   - "--iptables=true"
                   - "--host-ip=$(HOST_IP)"
-           {{- if (or (and (not .Kubernetes.Networking.SelfHosting.Enabled) .UseCalico) (and .Kubernetes.Networking.SelfHosting.Enabled (eq .Kubernetes.Networking.SelfHosting.Type "canal"))) }}
+           {{- if eq .Kubernetes.Networking.SelfHosting.Type "canal" }}
                   - "--host-interface=cali+"
            {{- else }}
                   - "--host-interface=cni0"
@@ -5786,7 +5231,7 @@ write_files:
                   - /agent
                 args:
                   - --iptables
-           {{- if (or (and (not .Kubernetes.Networking.SelfHosting.Enabled) .UseCalico) (and .Kubernetes.Networking.SelfHosting.Enabled (eq .Kubernetes.Networking.SelfHosting.Type "canal"))) }}
+           {{- if eq .Kubernetes.Networking.SelfHosting.Type "canal" }}
                   - --host-interface=cali+
            {{- else}}
                   - --host-interface=cni0

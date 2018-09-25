@@ -172,20 +172,6 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
-    "SecurityGroupControllerIngressFromWorkerToEtcd": {
-      "Properties": {
-        "FromPort": 2379,
-        "GroupId": {
-          "Ref": "SecurityGroupController"
-        },
-        "IpProtocol": "tcp",
-        "SourceSecurityGroupId": {
-          "Ref": "SecurityGroupWorker"
-        },
-        "ToPort": 2379
-      },
-      "Type": "AWS::EC2::SecurityGroupIngress"
-    },
     "SecurityGroupWorker": {
       "Properties": {
         "GroupDescription": {
@@ -332,20 +318,6 @@
         "IpProtocol": "tcp",
         "SourceSecurityGroupId": {
           "Ref": "SecurityGroupController"
-        },
-        "ToPort": 2379
-      },
-      "Type": "AWS::EC2::SecurityGroupIngress"
-    },
-    "SecurityGroupEtcdIngressFromWorkerToEtcd": {
-      "Properties": {
-        "FromPort": 2379,
-        "GroupId": {
-          "Ref": "SecurityGroupEtcd"
-        },
-        "IpProtocol": "tcp",
-        "SourceSecurityGroupId": {
-          "Ref": "SecurityGroupWorker"
         },
         "ToPort": 2379
       },

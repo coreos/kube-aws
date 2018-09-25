@@ -219,7 +219,6 @@ func NewDefaultCluster() *Cluster {
 				},
 				Networking: Networking{
 					SelfHosting: SelfHosting{
-						Enabled:         true,
 						Type:            "canal",
 						Typha:           false,
 						CalicoNodeImage: model.Image{Repo: "quay.io/calico/node", Tag: kubeNetworkingSelfHostingDefaultCalicoNodeImageTag, RktPullDocker: false},
@@ -233,10 +232,6 @@ func NewDefaultCluster() *Cluster {
 			CloudFormationStreaming:            true,
 			HyperkubeImage:                     model.Image{Repo: "k8s.gcr.io/hyperkube-amd64", Tag: k8sVer, RktPullDocker: true},
 			AWSCliImage:                        model.Image{Repo: "quay.io/coreos/awscli", Tag: "master", RktPullDocker: false},
-			CalicoNodeImage:                    model.Image{Repo: "quay.io/calico/node", Tag: "v2.6.5", RktPullDocker: false},
-			CalicoCniImage:                     model.Image{Repo: "quay.io/calico/cni", Tag: "v1.11.2", RktPullDocker: false},
-			CalicoKubeControllersImage:         model.Image{Repo: "quay.io/calico/kube-controllers", Tag: "v1.0.2", RktPullDocker: false},
-			CalicoCtlImage:                     model.Image{Repo: "quay.io/calico/ctl", Tag: "v1.6.3", RktPullDocker: false},
 			ClusterAutoscalerImage:             model.Image{Repo: "k8s.gcr.io/cluster-autoscaler", Tag: "v1.1.0", RktPullDocker: false},
 			ClusterProportionalAutoscalerImage: model.Image{Repo: "k8s.gcr.io/cluster-proportional-autoscaler-amd64", Tag: "1.1.2", RktPullDocker: false},
 			CoreDnsImage:                       model.Image{Repo: "coredns/coredns", Tag: "1.1.3", RktPullDocker: false},
@@ -253,7 +248,6 @@ func NewDefaultCluster() *Cluster {
 			AddonResizerImage:                  model.Image{Repo: "k8s.gcr.io/addon-resizer", Tag: "1.8.1", RktPullDocker: false},
 			KubernetesDashboardImage:           model.Image{Repo: "k8s.gcr.io/kubernetes-dashboard-amd64", Tag: "v1.8.3", RktPullDocker: false},
 			PauseImage:                         model.Image{Repo: "k8s.gcr.io/pause-amd64", Tag: "3.1", RktPullDocker: false},
-			FlannelImage:                       model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.9.1", RktPullDocker: false},
 			JournaldCloudWatchLogsImage:        model.Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
 		},
 		KubeClusterSettings: KubeClusterSettings{
@@ -468,7 +462,6 @@ type KubeClusterSettings struct {
 	ExternalDNSName string `yaml:"externalDNSName,omitempty"`
 	// Required by kubelet to locate the cluster-internal dns hosted on controller nodes in the base cluster
 	DNSServiceIP string `yaml:"dnsServiceIP,omitempty"`
-	UseCalico    bool   `yaml:"useCalico,omitempty"`
 	PodCIDR      string `yaml:"podCIDR,omitempty"`
 	ServiceCIDR  string `yaml:"serviceCIDR,omitempty"`
 }
@@ -531,10 +524,6 @@ type DeploymentSettings struct {
 	// Images repository
 	HyperkubeImage                     model.Image `yaml:"hyperkubeImage,omitempty"`
 	AWSCliImage                        model.Image `yaml:"awsCliImage,omitempty"`
-	CalicoNodeImage                    model.Image `yaml:"calicoNodeImage,omitempty"`
-	CalicoCniImage                     model.Image `yaml:"calicoCniImage,omitempty"`
-	CalicoCtlImage                     model.Image `yaml:"calicoCtlImage,omitempty"`
-	CalicoKubeControllersImage         model.Image `yaml:"calicoKubeControllersImage,omitempty"`
 	ClusterAutoscalerImage             model.Image `yaml:"clusterAutoscalerImage,omitempty"`
 	ClusterProportionalAutoscalerImage model.Image `yaml:"clusterProportionalAutoscalerImage,omitempty"`
 	CoreDnsImage                       model.Image `yaml:"coreDnsImage,omitempty"`
@@ -551,7 +540,6 @@ type DeploymentSettings struct {
 	AddonResizerImage                  model.Image `yaml:"addonResizerImage,omitempty"`
 	KubernetesDashboardImage           model.Image `yaml:"kubernetesDashboardImage,omitempty"`
 	PauseImage                         model.Image `yaml:"pauseImage,omitempty"`
-	FlannelImage                       model.Image `yaml:"flannelImage,omitempty"`
 	JournaldCloudWatchLogsImage        model.Image `yaml:"journaldCloudWatchLogsImage,omitempty"`
 	Kubernetes                         Kubernetes  `yaml:"kubernetes,omitempty"`
 	HostOS                             HostOS      `yaml:"hostOS,omitempty"`
@@ -803,7 +791,6 @@ type Networking struct {
 }
 
 type SelfHosting struct {
-	Enabled         bool        `yaml:"enabled"`
 	Type            string      `yaml:"type"`
 	Typha           bool        `yaml:"typha"`
 	CalicoNodeImage model.Image `yaml:"calicoNodeImage"`
@@ -1317,13 +1304,11 @@ func (c Cluster) validate() error {
 		}
 	}
 
-	if c.Kubernetes.Networking.SelfHosting.Enabled {
-		if (c.Kubernetes.Networking.SelfHosting.Type != "canal") && (c.Kubernetes.Networking.SelfHosting.Type != "flannel") {
-			return fmt.Errorf("networkingdaemonsets - style must be either 'canal' or 'flannel'")
-		}
-		if c.Kubernetes.Networking.SelfHosting.Typha && c.Kubernetes.Networking.SelfHosting.Type != "canal" {
-			return fmt.Errorf("networkingdaemonsets - you can only enable typha when deploying type 'canal'")
-		}
+	if (c.Kubernetes.Networking.SelfHosting.Type != "canal") && (c.Kubernetes.Networking.SelfHosting.Type != "flannel") {
+		return fmt.Errorf("networkingdaemonsets - style must be either 'canal' or 'flannel'")
+	}
+	if c.Kubernetes.Networking.SelfHosting.Typha && c.Kubernetes.Networking.SelfHosting.Type != "canal" {
+		return fmt.Errorf("networkingdaemonsets - you can only enable typha when deploying type 'canal'")
 	}
 
 	return nil

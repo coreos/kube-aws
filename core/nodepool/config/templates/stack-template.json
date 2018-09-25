@@ -1,43 +1,24 @@
 {{define "Metadata" -}}
 {
+  {{ if .AwsEnvironment.Enabled -}}
   "AWS::CloudFormation::Init" : {
     "configSets" : {
-      {{ if not .Kubernetes.Networking.SelfHosting.Enabled }}"etcd-client": [ "etcd-client-env" ]{{if .AwsEnvironment.Enabled}},{{end}}{{end}}
-      {{ if .AwsEnvironment.Enabled }}"aws-environment": [ "aws-environment-env" ]{{end}}
-    },
-    {{ if .AwsEnvironment.Enabled -}}
-    "aws-environment-env" : {
-      "commands": {
-         "write-environment": {
-          "command": {
-            "Fn::Join" : ["", [ "echo '",
-            {{range $variable, $function := .AwsEnvironment.Environment}}
-            "{{$variable}}=", {{$function}} , "\n",
-            {{end}}
-            "' > /etc/aws-environment" ] ]
+      "aws-environment-env" : {
+        "commands": {
+          "write-environment": {
+            "command": {
+              "Fn::Join" : ["", [ "echo '",
+              {{range $variable, $function := .AwsEnvironment.Environment}}
+              "{{$variable}}=", {{$function}} , "\n",
+              {{end}}
+              "' > /etc/aws-environment" ] ]
+            }
           }
         }
       }
-    }{{ if not .Kubernetes.Networking.SelfHosting.Enabled }},{{end}}
-    {{end -}}
-    {{ if not .Kubernetes.Networking.SelfHosting.Enabled -}}
-    "etcd-client-env": {
-      "files" : {
-        "/var/run/coreos/etcd-environment": {
-          "content": { "Fn::Join" : [ "", [
-            "ETCD_ENDPOINTS='",
-            {{range $index, $instance := $.EtcdNodes}}
-            {{if $index}}",", {{end}} "https://",
-            {{$instance.ImportedAdvertisedFQDNRef}},
-            ":2379",
-            {{end}}
-            "'\n"
-          ]]}
-        }
-      }
     }
-    {{end}}
   }
+  {{end -}}
 }
 {{end}}
 {{define "SpotFleet"}}
@@ -119,7 +100,7 @@
           {{end}}
         ]
       }
-    }{{ if or (not .Kubernetes.Networking.SelfHosting.Enabled) .AwsEnvironment.Enabled }},
+    }{{ if .AwsEnvironment.Enabled }},
     "Metadata": {{template "Metadata" .}}
     {{- end }}
   },
@@ -219,7 +200,7 @@
           "PauseTime": "PT2M"
           {{end}}
         }
-      }{{ if or (not .Kubernetes.Networking.SelfHosting.Enabled) .AwsEnvironment.Enabled }},
+      }{{ if .AwsEnvironment.Enabled }},
       "Metadata": {{template "Metadata" .}}
       {{- end }}
     },

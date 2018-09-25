@@ -509,20 +509,6 @@ func (c clusterImpl) LegacyUpdate(targets OperationTargets) (string, error) {
 
 func (c clusterImpl) update(cfSvc *cloudformation.CloudFormation, targets OperationTargets) (string, error) {
 
-	// Look at existing state of cloud formation and stacks to determine if we need to take special measures in migrating our etcd
-	// clusters from the control plane stack to their own Etcd stack.
-	exists, err := cfnstack.NestedStackExists(cfSvc, c.controlPlane.ClusterName, naming.FromStackToCfnResource(c.etcd.Etcd.LogicalName()))
-	if err != nil {
-		logger.Errorf("please check your AWS credentials/permissions")
-		return "", fmt.Errorf("can't lookup AWS CloudFormation stacks: %s", err)
-	}
-	if !exists {
-		if !c.controlPlane.Kubernetes.Networking.SelfHosting.Enabled {
-			return "", fmt.Errorf("sorry, you can only update an existing legacy cluster with Kubernetes.Networking.SelfHosting enabled")
-		}
-		logger.Warnf("your cluster does not have a separate etcd stack, this update will spin up a new etcd cluster and attempt to import your existing state.")
-	}
-
 	assets, err := c.generateAssets(c.operationTargetsFromUserInput([]OperationTargets{targets}))
 	if err != nil {
 		return "", err
