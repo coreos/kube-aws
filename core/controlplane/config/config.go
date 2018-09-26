@@ -1304,7 +1304,7 @@ func (c Cluster) validate() error {
 		}
 	}
 
-	if (c.Kubernetes.Networking.SelfHosting.Type != "canal") && (c.Kubernetes.Networking.SelfHosting.Type != "flannel") {
+	if c.Kubernetes.Networking.SelfHosting.Type != "canal" && c.Kubernetes.Networking.SelfHosting.Type != "flannel" {
 		return fmt.Errorf("networkingdaemonsets - style must be either 'canal' or 'flannel'")
 	}
 	if c.Kubernetes.Networking.SelfHosting.Typha && c.Kubernetes.Networking.SelfHosting.Type != "canal" {
