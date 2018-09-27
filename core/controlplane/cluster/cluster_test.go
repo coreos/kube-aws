@@ -485,7 +485,7 @@ stackTags:
 				ControllerTmplFile:    "../config/templates/cloud-config-controller",
 				EtcdTmplFile:          "../config/templates/cloud-config-etcd",
 				StackTemplateTmplFile: "../config/templates/stack-template.json",
-				S3URI: "s3://test-bucket/foo/bar",
+				S3URI:                 "s3://test-bucket/foo/bar",
 			}
 
 			cluster, err := NewCluster(clusterConfig, stackTemplateOptions, []*pluginmodel.Plugin{}, nil)
@@ -717,7 +717,7 @@ func TestRenderStackTemplate(t *testing.T) {
 			ControllerTmplFile:    "../config/templates/cloud-config-controller",
 			EtcdTmplFile:          "../config/templates/cloud-config-etcd",
 			StackTemplateTmplFile: "../config/templates/stack-template.json",
-			S3URI: "s3://test-bucket/foo/bar",
+			S3URI:                 "s3://test-bucket/foo/bar",
 		}
 		cluster, err := newDefaultClusterWithDeps(stackTemplateOptions)
 		if assert.NoError(t, err, "Unable to initialize Cluster") {

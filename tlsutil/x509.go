@@ -52,7 +52,7 @@ func NewSelfSignedCACertificate(cfg CACertConfig, key *rsa.PrivateKey) (*x509.Ce
 		NotAfter:              time.Now().Add(cfg.Duration).UTC(),
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		BasicConstraintsValid: true,
-		IsCA: true,
+		IsCA:                  true,
 	}
 
 	certDERBytes, err := x509.CreateCertificate(rand.Reader, &tmpl, &tmpl, key.Public(), key)
