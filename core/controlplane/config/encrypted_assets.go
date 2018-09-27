@@ -998,7 +998,7 @@ func ReadOrCreateUnencryptedCompactAssets(assetsDir string, manageCertificates b
 }
 
 func RandomTokenString() (string, error) {
-	b := make([]byte, 256)
+	b := make([]byte, 32)
 	_, err := rand.Read(b)
 	if err != nil {
 		return "", err

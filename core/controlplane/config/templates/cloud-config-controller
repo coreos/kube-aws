@@ -3425,7 +3425,7 @@ write_files:
           {{ end -}}
           {{ end -}}
           {{if .Kubernetes.EncryptionAtRest.Enabled}}
-          - --experimental-encryption-provider-config /etc/kubernetes/additional-configs/encryption-config.yaml
+          - --experimental-encryption-provider-config=/etc/kubernetes/additional-configs/encryption-config.yaml
           {{end}}
           - --cert-dir=/etc/kubernetes/ssl
           - --tls-cert-file=/etc/kubernetes/ssl/apiserver.pem
@@ -4892,6 +4892,7 @@ write_files:
 
 {{ if .Kubernetes.EncryptionAtRest.Enabled }}
   - path: /etc/kubernetes/additional-configs/encryption-config.yaml{{if .AssetsEncryptionEnabled}}.enc{{end}}
+    encoding: gzip+base64
     content: {{.AssetsConfig.EncryptionConfig}}
 {{ end }}
 

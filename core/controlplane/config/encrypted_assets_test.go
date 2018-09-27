@@ -280,7 +280,7 @@ func TestRandomTokenString(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to decode base64 token string: %v", err)
 	}
-	if len(b) != 256 {
+	if len(b) != 32 {
 		t.Errorf("expected token to be 256 bits long, but was %d", len(b))
 	}
 }
