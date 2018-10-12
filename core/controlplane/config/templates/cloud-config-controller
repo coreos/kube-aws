@@ -156,6 +156,24 @@ coreos:
         [Install]
         WantedBy=multi-user.target
 {{- end }}
+{{- if .HostOS.DisableOOMKiller }}
+    - name: disable-oom-killer.service
+      enable: true
+      command: start
+      content: |
+        [Unit]
+        Description=Disables the kernel OOM Killer
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/sbin/sysctl -w vm.overcommit_memory=2
+        ExecStart=/usr/sbin/sysctl -w vm.overcommit_ratio=100
+        ExecStart=/bin/bash -c "echo -e \"vm.overcommit_memory = 2\nvm.overcommit_ratio = 100\" >/etc/sysctl.d/10-disable-oom-killer"
+
+        [Install]
+        WantedBy=multi-user.target
+{{- end }}
 {{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
     - name: amazon-ssm-agent.service
       command: start

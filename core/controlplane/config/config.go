@@ -805,8 +805,9 @@ type SelfHosting struct {
 }
 
 type HostOS struct {
-	BashPrompt model.BashPrompt `yaml:"bashPrompt,omitempty"`
-	MOTDBanner model.MOTDBanner `yaml:"motdBanner,omitempty"`
+	BashPrompt       model.BashPrompt `yaml:"bashPrompt,omitempty"`
+	MOTDBanner       model.MOTDBanner `yaml:"motdBanner,omitempty"`
+	DisableOOMKiller bool             `yaml:"disableOOMKiller,omitempty"`
 }
 
 func (c *LocalStreaming) Interval() int64 {
