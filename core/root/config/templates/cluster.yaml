@@ -1555,3 +1555,7 @@ hostOS:
 #    kubernetes-colour: light-blue
 #    kube-aws-colour: light-blue
 
+# disableOOMKiller - [experimental] disable the linux kernel "Out Of Memory" process killer
+# Warning: Disabling this could result in system freezes in low memory situations
+#  disableOOMKiller: false
+
