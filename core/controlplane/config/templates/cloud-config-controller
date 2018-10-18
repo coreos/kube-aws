@@ -2873,12 +2873,12 @@ write_files:
           clientConnection:
             kubeconfig: /etc/kubernetes/kubeconfig/kube-proxy.yaml
           clusterCIDR: {{.PodCIDR}}
-          {{if .KubeProxy.IPVSMode.Enabled -}}
+          {{if .Kubernetes.FeatureGates.Enabled -}}
           {{if checkVersion ">=1.10" .K8sVer -}}
           featureGates:
-            SupportIPVSProxyMode: true
+          {{- .Kubernetes.FeatureGates.ToYaml() | indent 12 }}
           {{else -}}
-          featureGates: "SupportIPVSProxyMode=true"
+          featureGates: {{ .Kubernetes.FeatureGates.CommandString }}
           {{end -}}
           mode: ipvs
           ipvs:
@@ -3004,18 +3004,7 @@ write_files:
           - --authentication-token-webhook-cache-ttl={{ .Experimental.Authentication.Webhook.CacheTTL }}
           {{ end }}
           - --advertise-address=$private_ipv4
-          - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{ end }}{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.NodeAuthorizer.Enabled}},NodeRestriction{{end}},ResourceQuota{{if .Experimental.Admission.DenyEscalatingExec.Enabled}},DenyEscalatingExec{{end}}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}{{if .Experimental.Admission.Priority.Enabled}},Priority{{end}},DefaultTolerationSeconds{{if .Experimental.Admission.MutatingAdmissionWebhook.Enabled}},MutatingAdmissionWebhook{{end}}{{if .Experimental.Admission.ValidatingAdmissionWebhook.Enabled}},ValidatingAdmissionWebhook{{end}}{{if .Experimental.Admission.PersistentVolumeClaimResize.Enabled}},PersistentVolumeClaimResize{{end}}
           - --anonymous-auth=false
-          {{if .Experimental.Oidc.Enabled}}
-          - --oidc-issuer-url={{.Experimental.Oidc.IssuerUrl}}
-          - --oidc-client-id={{.Experimental.Oidc.ClientId}}
-          {{if .Experimental.Oidc.UsernameClaim}}
-          - --oidc-username-claim={{.Experimental.Oidc.UsernameClaim}}
-          {{ end -}}
-          {{if .Experimental.Oidc.GroupsClaim}}
-          - --oidc-groups-claim={{.Experimental.Oidc.GroupsClaim}}
-          {{ end -}}
-          {{ end -}}
           {{if .Kubernetes.EncryptionAtRest.Enabled}}
           - --experimental-encryption-provider-config=/etc/kubernetes/additional-configs/encryption-config.yaml
           {{end}}
@@ -3025,20 +3014,13 @@ write_files:
           - --client-ca-file=/etc/kubernetes/ssl/ca.pem
           - --service-account-key-file=/etc/kubernetes/ssl/service-account-key.pem
           - --runtime-config=extensions/v1beta1/networkpolicies=true{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},extensions/v1beta1/podsecuritypolicy=true{{ end }}{{if .Experimental.Admission.Initializers.Enabled}},admissionregistration.k8s.io/v1alpha1{{end}}{{if .Experimental.Admission.Priority.Enabled}},scheduling.k8s.io/v1alpha1=true{{end}}
-         {{if or (.Experimental.Admission.Priority.Enabled) (.Experimental.Admission.PersistentVolumeClaimResize.Enabled)}}
-          - --feature-gates=PodPriority={{.Experimental.Admission.Priority.Enabled}},ExpandPersistentVolumes={{.Experimental.Admission.PersistentVolumeClaimResize.Enabled}}
-         {{end}}
-          - --cloud-provider=aws
-          {{ if .Addons.APIServerAggregator.Enabled -}}
-          - --requestheader-client-ca-file=/etc/kubernetes/ssl/ca.pem
-          - --requestheader-allowed-names=aggregator
-          - --requestheader-extra-headers-prefix=X-Remote-Extra-
-          - --requestheader-group-headers=X-Remote-Group
-          - --requestheader-username-headers=X-Remote-User
-          - --enable-aggregator-routing=false
-          - --proxy-client-cert-file=/etc/kubernetes/ssl/apiserver-aggregator.pem
-          - --proxy-client-key-file=/etc/kubernetes/ssl/apiserver-aggregator-key.pem
+          {{ if .Kubernetes.AdmissionControllers.Enabled -}}
+          - --admission-control={{ .Kubernetes.AdmissionControllers.CommandString }}
           {{ end -}}
+          {{if .Kubernetes.FeatureGates.Enabled -}}
+          - --feature-gates={{ .Kubernetes.FeatureGates.CommandString }}
+          {{end -}}
+          - --cloud-provider=aws
           {{range $f := .APIServerFlags}}
           - --{{$f.Name}}={{$f.Value}}
           {{ end -}}
@@ -3177,6 +3159,9 @@ write_files:
           {{ if not .Addons.MetricsServer.Enabled -}}
           - --horizontal-pod-autoscaler-use-rest-clients=false
           {{end}}
+          {{if .Kubernetes.FeatureGates.Enabled -}}
+          - --feature-gates={{ .Kubernetes.FeatureGates.CommandString }}
+          {{end -}}
           resources:
             requests:
               cpu: {{ if .Kubernetes.ControllerManager.ComputeResources.Requests.Cpu }}{{ .Kubernetes.ControllerManager.ComputeResources.Requests.Cpu }}{{ else }}100m{{ end }}
@@ -3242,9 +3227,9 @@ write_files:
           - scheduler
           - --kubeconfig=/etc/kubernetes/kubeconfig/kube-scheduler.yaml
           - --leader-elect=true
-         {{if or (.Experimental.Admission.Priority.Enabled) (.Experimental.Admission.PersistentVolumeClaimResize.Enabled)}}
-          - --feature-gates=PodPriority={{.Experimental.Admission.Priority.Enabled}},ExpandPersistentVolumes={{.Experimental.Admission.PersistentVolumeClaimResize.Enabled}}
-         {{end}}
+          {{if .Kubernetes.FeatureGates.Enabled -}}
+          - --feature-gates={{ .Kubernetes.FeatureGates.CommandString }}
+          {{end -}}
           resources:
             requests:
               cpu: 100m

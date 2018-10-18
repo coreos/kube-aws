@@ -61,12 +61,14 @@ type worker struct {
 }
 
 type controller struct {
-	APIServerFlags      pluginmodel.APIServerFlags
-	APIServerVolumes    pluginmodel.APIServerVolumes
-	Files               []model.CustomFile
-	SystemdUnits        []model.CustomSystemdUnit
-	IAMPolicyStatements []model.IAMPolicyStatement
-	NodeLabels          model.NodeLabels
+	APIServerFlags       pluginmodel.APIServerFlags
+	APIServerVolumes     pluginmodel.APIServerVolumes
+	Files                []model.CustomFile
+	SystemdUnits         []model.CustomSystemdUnit
+	IAMPolicyStatements  []model.IAMPolicyStatement
+	NodeLabels           model.NodeLabels
+	FeatureGates         model.FeatureGates
+	AdmissionControllers model.AdmissionControllers
 }
 
 type etcd struct {
@@ -212,6 +214,8 @@ func (e ClusterExtension) Controller() (*controller, error) {
 	files := []model.CustomFile{}
 	iamStatements := model.IAMPolicyStatements{}
 	nodeLabels := model.NodeLabels{}
+	featureGates := model.FeatureGates{}
+	admissionControllers := model.AdmissionControllers{}
 
 	for _, p := range e.plugins {
 		if enabled, pc := p.EnabledIn(e.configs); enabled {
@@ -265,16 +269,25 @@ func (e ClusterExtension) Controller() (*controller, error) {
 			for k, v := range p.Spec.Node.Roles.Controller.Kubelet.NodeLabels {
 				nodeLabels[k] = v
 			}
+
+			for k, v := range p.Spec.Kubernetes.FeatureGates {
+				featureGates[k] = v
+			}
+			for k, v := range p.Spec.Kubernetes.APIServer.AdmissionControllers {
+				admissionControllers[k] = v
+			}
 		}
 	}
 
 	return &controller{
-		APIServerFlags:      apiServerFlags,
-		APIServerVolumes:    apiServerVolumes,
-		Files:               files,
-		SystemdUnits:        systemdUnits,
-		IAMPolicyStatements: iamStatements,
-		NodeLabels:          nodeLabels,
+		APIServerFlags:       apiServerFlags,
+		APIServerVolumes:     apiServerVolumes,
+		Files:                files,
+		SystemdUnits:         systemdUnits,
+		IAMPolicyStatements:  iamStatements,
+		NodeLabels:           nodeLabels,
+		FeatureGates:         featureGates,
+		AdmissionControllers: admissionControllers,
 	}, nil
 }
 

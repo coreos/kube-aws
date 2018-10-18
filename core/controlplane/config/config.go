@@ -231,6 +231,16 @@ func NewDefaultCluster() *Cluster {
 						TyphaImage:      model.Image{Repo: "quay.io/calico/typha", Tag: kubeNetworkingSelfHostingDefaultTyphaImageTag, RktPullDocker: false},
 					},
 				},
+				FeatureGates: model.FeatureGates{},
+				AdmissionControllers: model.AdmissionControllers{
+					"NamespaceLifecycle":       10,
+					"LimitRanger":              20,
+					"ServiceAccount":           30,
+					"PersistentVolumeLabel":    40,
+					"DefaultStorageClass":      50,
+					"ResourceQuota":            90,
+					"DefaultTolerationSeconds": 130,
+				},
 			},
 			CloudFormationStreaming:            true,
 			HyperkubeImage:                     model.Image{Repo: "k8s.gcr.io/hyperkube-amd64", Tag: k8sVer, RktPullDocker: true},
@@ -770,9 +780,11 @@ type LocalStreaming struct {
 }
 
 type Kubernetes struct {
-	EncryptionAtRest  EncryptionAtRest  `yaml:"encryptionAtRest"`
-	Networking        Networking        `yaml:"networking,omitempty"`
-	ControllerManager ControllerManager `yaml:"controllerManager,omitempty"`
+	EncryptionAtRest     EncryptionAtRest           `yaml:"encryptionAtRest"`
+	Networking           Networking                 `yaml:"networking,omitempty"`
+	ControllerManager    ControllerManager          `yaml:"controllerManager,omitempty"`
+	FeatureGates         model.FeatureGates         `yaml:"featureGates,omitempty"`
+	AdmissionControllers model.AdmissionControllers `yaml:"admissionControllers,omitempty"`
 }
 
 type ControllerManager struct {

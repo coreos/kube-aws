@@ -147,7 +147,8 @@ type Kubernetes struct {
 	APIServer KubernetesAPIServer `yaml:"apiserver,omitempty"`
 	// Manifests is a list of manifests to be installed to the cluster.
 	// Note that the list is sorted by their names by kube-aws so that it won't result in unnecessarily node replacements.
-	Manifests KubernetesManifests `yaml:"manifests,omitempty"`
+	Manifests    KubernetesManifests `yaml:"manifests,omitempty"`
+	FeatureGates model.FeatureGates  `yaml:"featureGates,omitempty"`
 }
 
 func (k *Kubernetes) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -164,8 +165,9 @@ func (k *Kubernetes) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 type KubernetesAPIServer struct {
-	Flags   APIServerFlags   `yaml:"flags,omitempty"`
-	Volumes APIServerVolumes `yaml:"volumes,omitempty"`
+	Flags                APIServerFlags             `yaml:"flags,omitempty"`
+	Volumes              APIServerVolumes           `yaml:"volumes,omitempty"`
+	AdmissionControllers model.AdmissionControllers `yaml:"admissionControllers,omitempty"`
 }
 
 type APIServerFlags []APIServerFlag
@@ -270,8 +272,8 @@ type SystemdUnit struct {
 // Keys must be included in: nodeLabels, featureGates, etc
 // kubelet can be configured per-node-pool-basic hence a part of WorkerSettings
 type Kubelet struct {
-	FeatureGates FeatureGates `yaml:"featureGates,omitempty"`
-	NodeLabels   NodeLabels   `yaml:"nodeLabels,omitempty"`
+	FeatureGates model.FeatureGates `yaml:"featureGates,omitempty"`
+	NodeLabels   NodeLabels         `yaml:"nodeLabels,omitempty"`
 }
 
 type FeatureGates map[string]string

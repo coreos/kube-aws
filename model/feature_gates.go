@@ -4,29 +4,30 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
-type FeatureGates map[string]string
+type FeatureGates map[string]bool
 
 func (l FeatureGates) Enabled() bool {
 	return len(l) > 0
 }
 
 // Returns key=value pairs separated by ',' to be passed to kubelet's `--feature-gates` flag
-func (l FeatureGates) String() string {
-	labels := []string{}
-	keys := []string{}
-	for k, _ := range l {
-		keys = append(keys, k)
+func (l FeatureGates) CommandString() string {
+	g := []string{}
+	for k, v := range l {
+		g = append(g, fmt.Sprintf("%s=%v", k, v))
 	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		v := l[k]
-		if len(v) > 0 {
-			labels = append(labels, fmt.Sprintf("%s=%s", k, v))
-		} else {
-			labels = append(labels, fmt.Sprintf("%s", k))
-		}
+	sort.Strings(g)
+	return strings.Join(g, ",")
+}
+
+func (l FeatureGates) ToYaml() string {
+	y, err := yaml.Marshal(l)
+	if err != nil {
+		return ""
 	}
-	return strings.Join(labels, ",")
+	return string(y)
 }

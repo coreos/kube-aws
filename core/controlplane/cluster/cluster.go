@@ -147,6 +147,9 @@ func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugin
 		StackConfig: stackConfig,
 	}
 
+	// Map legacy core configurations to plugin compatible models
+	c.MapLegacySettings()
+
 	// Notes:
 	// * `c.StackConfig.CustomSystemdUnits` results in an `ambiguous selector ` error
 	// * `c.Controller.CustomSystemdUnits = controllerUnits` and `c.ClusterRef.Controller.CustomSystemdUnits = controllerUnits` results in modifying invisible/duplicate CustomSystemdSettings
@@ -158,9 +161,23 @@ func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugin
 	}
 	c.StackConfig.ExtraCfnResources = extraStack.Resources
 
+	// CODE SMELL - this section is likely to continue to get larger as we implement
+	// more functionality into the plugins that will need to be merged back into the main config...
 	extraController, err := extras.Controller()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load controller node extras from plugins: %v", err)
+	}
+	// this allows the plugins to add FeatureGates and AdmissionControllers whilst also allowing them
+	// to be specified directly in the cluster.yaml...
+	if len(extraController.FeatureGates) != 0 {
+		for k, v := range extraController.FeatureGates {
+			c.StackConfig.Config.Kubernetes.FeatureGates[k] = v
+		}
+	}
+	if len(extraController.AdmissionControllers) != 0 {
+		for k, v := range extraController.AdmissionControllers {
+			c.StackConfig.Config.Kubernetes.AdmissionControllers[k] = v
+		}
 	}
 	c.StackConfig.Config.APIServerFlags = append(c.StackConfig.Config.APIServerFlags, extraController.APIServerFlags...)
 	c.StackConfig.Config.APIServerVolumes = append(c.StackConfig.Config.APIServerVolumes, extraController.APIServerVolumes...)

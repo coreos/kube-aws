@@ -370,7 +370,7 @@ coreos:
         {{- end }}
         --kubeconfig=/etc/kubernetes/kubeconfig/worker.yaml \
         {{- if .FeatureGates.Enabled }}
-        --feature-gates=\"{{.FeatureGates.String}}\" \
+        --feature-gates=\"{{ .FeatureGates.CommandString }}\" \
         {{- end }}
         {{- if .Kubelet.SystemReservedResources }}
         --system-reserved={{ .Kubelet.SystemReservedResources }} \
