@@ -39,10 +39,7 @@ func (c *Config) MapLegacySettings() error {
 		c.Cluster.Kubernetes.AdmissionControllers["MutatingAdmissionWebhook"] = 140
 	}
 	if c.Cluster.Experimental.Admission.ValidatingAdmissionWebhook.Enabled {
-		c.Cluster.Kubernetes.AdmissionControllers["MutatingAdmissionWebhook"] = 150
-	}
-	if c.Cluster.Experimental.Admission.PersistentVolumeClaimResize.Enabled {
-		c.Cluster.Kubernetes.AdmissionControllers["MutatingAdmissionWebhook"] = 150
+		c.Cluster.Kubernetes.AdmissionControllers["ValidatingAdmissionWebhook"] = 150
 	}
 
 	// PLEASE NOTE - I think we should move APIServerFlags into 'model' and then plugins should use it from model.
