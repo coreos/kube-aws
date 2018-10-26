@@ -48,7 +48,4 @@ publish-docs: generate-docs
 
 .PHONY: relnote
 relnote:
-	go get golang.org/x/oauth2
-	go get golang.org/x/net/context
-	go get github.com/google/go-github/github
-	go run hack/relnote.go
+	@hack/relnote

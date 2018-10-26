@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+COMMIT=$(git rev-parse HEAD)
+TAG=$(git describe --exact-match --abbrev=0 --tags "${COMMIT}" 2> /dev/null || true)
+
+echo "${TAG}"
