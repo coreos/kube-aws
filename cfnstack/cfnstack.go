@@ -36,6 +36,7 @@ type S3ObjectPutterService interface {
 type CFInterrogator interface {
 	ListStacks(input *cloudformation.ListStacksInput) (*cloudformation.ListStacksOutput, error)
 	ListStackResources(input *cloudformation.ListStackResourcesInput) (*cloudformation.ListStackResourcesOutput, error)
+	DescribeStacks(input *cloudformation.DescribeStacksInput) (*cloudformation.DescribeStacksOutput, error)
 }
 
 func StackEventErrMsgs(events []*cloudformation.StackEvent) []string {
@@ -92,18 +93,19 @@ func NestedStackExists(cf CFInterrogator, parentStackName, stackName string) (bo
 }
 
 func StackExists(cf CFInterrogator, stackName string) (bool, error) {
-	logger.Debugf("testing whether cf stack %s exits", stackName)
-	req := &cloudformation.ListStacksInput{}
-	logger.Debug("calling AWS cloudformation ListStacks ->")
-	stacks, err := cf.ListStacks(req)
+	logger.Debugf("testing whether cf stack %s exists", stackName)
+	req := &cloudformation.DescribeStacksInput{}
+	req.StackName = &stackName
+	logger.Debug("calling AWS cloudformation DescribeStacks ->")
+	stacks, err := cf.DescribeStacks(req)
 	if err != nil {
 		return false, fmt.Errorf("could not list cloudformation stacks: %v", err)
 	}
 	if stacks == nil {
 		return false, nil
 	}
-	logger.Debugf("<- AWS Responded with %d stacks", len(stacks.StackSummaries))
-	for _, summary := range stacks.StackSummaries {
+	logger.Debugf("<- AWS Responded with %d stacks", len(stacks.Stacks))
+	for _, summary := range stacks.Stacks {
 		if *summary.StackName == stackName {
 			logger.Debugf("found matching stack %s: %+v", *summary.StackName, *summary)
 			if summary.DeletionTime == nil {
