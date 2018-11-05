@@ -34,7 +34,6 @@ type S3ObjectPutterService interface {
 
 // Used for querying existance of stacks and nested stacks.
 type CFInterrogator interface {
-	ListStacks(input *cloudformation.ListStacksInput) (*cloudformation.ListStacksOutput, error)
 	ListStackResources(input *cloudformation.ListStackResourcesInput) (*cloudformation.ListStackResourcesOutput, error)
 	DescribeStacks(input *cloudformation.DescribeStacksInput) (*cloudformation.DescribeStacksOutput, error)
 }

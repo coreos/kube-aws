@@ -58,13 +58,8 @@ func TestStackCreationErrorMessaging(t *testing.T) {
 
 // DummyCFInterrogator is used to prevent calls to AWS - always returns empty results.
 type DummyCFInterrogator struct {
-	ListStacksResult          *cloudformation.ListStacksOutput
 	ListStacksResourcesResult *cloudformation.ListStackResourcesOutput
 	DescribeStacksResult      *cloudformation.DescribeStacksOutput
-}
-
-func (cf DummyCFInterrogator) ListStacks(input *cloudformation.ListStacksInput) (*cloudformation.ListStacksOutput, error) {
-	return cf.ListStacksResult, nil
 }
 
 func (cf DummyCFInterrogator) ListStackResources(input *cloudformation.ListStackResourcesInput) (*cloudformation.ListStackResourcesOutput, error) {
@@ -77,13 +72,13 @@ func (cf DummyCFInterrogator) DescribeStacks(input *cloudformation.DescribeStack
 
 func TestStackDoesNotExist(t *testing.T) {
 	var stackname = "the-little-stack-on-the-prairie"
-	var summary = cloudformation.StackSummary{
+	var summary = cloudformation.Stack{
 		StackName:    &stackname,
 		DeletionTime: nil,
 	}
 	cf := DummyCFInterrogator{
-		ListStacksResult: &cloudformation.ListStacksOutput{
-			StackSummaries: []*cloudformation.StackSummary{&summary},
+		DescribeStacksResult: &cloudformation.DescribeStacksOutput{
+			Stacks: []*cloudformation.Stack{&summary},
 		},
 	}
 	exists, err := StackExists(cf, "Elvis")
@@ -112,13 +107,13 @@ func TestStackDoesExist(t *testing.T) {
 func TestStackExistsIgnoresDeletedStacks(t *testing.T) {
 	testtime := time.Now()
 	var stackname = "the-little-stack-on-the-prairie"
-	var summary = cloudformation.StackSummary{
+	var summary = cloudformation.Stack{
 		StackName:    &stackname,
 		DeletionTime: &testtime,
 	}
 	cf := DummyCFInterrogator{
-		ListStacksResult: &cloudformation.ListStacksOutput{
-			StackSummaries: []*cloudformation.StackSummary{&summary, &summary},
+		DescribeStacksResult: &cloudformation.DescribeStacksOutput{
+			Stacks: []*cloudformation.Stack{&summary, &summary},
 		},
 	}
 
@@ -151,13 +146,13 @@ func TestStackExistsWithMultipleNameMatches(t *testing.T) {
 
 func TestANestedCantExistWithoutItsParent(t *testing.T) {
 	var stackname = "the-little-stack-on-the-prairie"
-	var summary = cloudformation.StackSummary{
+	var summary = cloudformation.Stack{
 		StackName:    &stackname,
 		DeletionTime: nil,
 	}
 	cf := DummyCFInterrogator{
-		ListStacksResult: &cloudformation.ListStacksOutput{
-			StackSummaries: []*cloudformation.StackSummary{&summary},
+		DescribeStacksResult: &cloudformation.DescribeStacksOutput{
+			Stacks: []*cloudformation.Stack{&summary},
 		},
 	}
 
@@ -169,17 +164,17 @@ func TestANestedCantExistWithoutItsParent(t *testing.T) {
 func TestANestedStackHasToBeAResourceOfItsParent(t *testing.T) {
 	var stackname = "the-little-stack-on-the-prairie"
 	var parentname = "root-stack"
-	var summary = cloudformation.StackSummary{
+	var summary = cloudformation.Stack{
 		StackName:    &stackname,
 		DeletionTime: nil,
 	}
-	var parentsummary = cloudformation.StackSummary{
+	var parentsummary = cloudformation.Stack{
 		StackName:    &parentname,
 		DeletionTime: nil,
 	}
 	cf := DummyCFInterrogator{
-		ListStacksResult: &cloudformation.ListStacksOutput{
-			StackSummaries: []*cloudformation.StackSummary{&parentsummary, &summary},
+		DescribeStacksResult: &cloudformation.DescribeStacksOutput{
+			Stacks: []*cloudformation.Stack{&parentsummary, &summary},
 		},
 		ListStacksResourcesResult: &cloudformation.ListStackResourcesOutput{
 			StackResourceSummaries: []*cloudformation.StackResourceSummary{},
