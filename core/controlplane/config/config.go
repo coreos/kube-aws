@@ -45,7 +45,10 @@ const (
 	// This is not needed to be unique in an AWS account because the actual name of a nested stack is generated randomly
 	// by CloudFormation by including the logical name.
 	// This is NOT intended to be used to reference stack name from cloud-config as the target of awscli or cfn-bootstrap-tools commands e.g. `cfn-init` and `cfn-signal`
-	ControlPlaneStackName = "control-plane"
+	// These names can be overridden in cluster.yaml
+	controlPlaneStackName = "control-plane"
+	networkStackName      = "network"
+	etcdStackName         = "etcd"
 )
 
 func NewDefaultCluster() *Cluster {
@@ -486,19 +489,20 @@ type ComputedDeploymentSettings struct {
 // Though it is highly configurable, it's basically users' responsibility to provide `correct` values if they're going beyond the defaults.
 type DeploymentSettings struct {
 	ComputedDeploymentSettings
-	CloudFormation                        model.CloudFormation  `yaml:"cloudformation,omitempty"`
-	ClusterName                           string                `yaml:"clusterName,omitempty"`
-	S3URI                                 string                `yaml:"s3URI,omitempty"`
-	DisableContainerLinuxAutomaticUpdates string                `yaml:"disableContainerLinuxAutomaticUpdates,omitempty"`
-	KeyName                               string                `yaml:"keyName,omitempty"`
-	Region                                model.Region          `yaml:",inline"`
-	AvailabilityZone                      string                `yaml:"availabilityZone,omitempty"`
-	ReleaseChannel                        string                `yaml:"releaseChannel,omitempty"`
-	AmiId                                 string                `yaml:"amiId,omitempty"`
-	DeprecatedVPCID                       string                `yaml:"vpcId,omitempty"`
-	VPC                                   model.VPC             `yaml:"vpc,omitempty"`
-	DeprecatedInternetGatewayID           string                `yaml:"internetGatewayId,omitempty"`
-	InternetGateway                       model.InternetGateway `yaml:"internetGateway,omitempty"`
+	CloudFormation                        model.CloudFormation    `yaml:"cloudformation,omitempty"`
+	ClusterName                           string                  `yaml:"clusterName,omitempty"`
+	StackNameOverride                     model.StackNameOverride `yaml:"stackNameOverride,omitempty"`
+	S3URI                                 string                  `yaml:"s3URI,omitempty"`
+	DisableContainerLinuxAutomaticUpdates string                  `yaml:"disableContainerLinuxAutomaticUpdates,omitempty"`
+	KeyName                               string                  `yaml:"keyName,omitempty"`
+	Region                                model.Region            `yaml:",inline"`
+	AvailabilityZone                      string                  `yaml:"availabilityZone,omitempty"`
+	ReleaseChannel                        string                  `yaml:"releaseChannel,omitempty"`
+	AmiId                                 string                  `yaml:"amiId,omitempty"`
+	DeprecatedVPCID                       string                  `yaml:"vpcId,omitempty"`
+	VPC                                   model.VPC               `yaml:"vpc,omitempty"`
+	DeprecatedInternetGatewayID           string                  `yaml:"internetGatewayId,omitempty"`
+	InternetGateway                       model.InternetGateway   `yaml:"internetGateway,omitempty"`
 	// Required for validations like e.g. if instance cidr is contained in vpc cidr
 	VPCCIDR                   string `yaml:"vpcCIDR,omitempty"`
 	InstanceCIDR              string `yaml:"instanceCIDR,omitempty"`
@@ -1097,6 +1101,27 @@ type Config struct {
 	ControllerFlags  pluginmodel.ControllerFlags
 }
 
+func (c Cluster) ControlPlaneStackName() string {
+	if c.StackNameOverride.ControlPlane != "" {
+		return c.StackNameOverride.ControlPlane
+	}
+	return controlPlaneStackName
+}
+
+func (c Cluster) NetworkStackName() string {
+	if c.StackNameOverride.Network != "" {
+		return c.StackNameOverride.Network
+	}
+	return networkStackName
+}
+
+func (c Cluster) EtcdStackName() string {
+	if c.StackNameOverride.Etcd != "" {
+		return c.StackNameOverride.Etcd
+	}
+	return etcdStackName
+}
+
 func (c Cluster) StackNameEnvFileName() string {
 	return "/etc/environment"
 }
@@ -1277,7 +1302,7 @@ func (c Cluster) validate() error {
 
 	clusterNamePlaceholder := "<my-cluster-name>"
 	nestedStackNamePlaceHolder := "<my-nested-stack-name>"
-	replacer := strings.NewReplacer(clusterNamePlaceholder, "", nestedStackNamePlaceHolder, ControlPlaneStackName)
+	replacer := strings.NewReplacer(clusterNamePlaceholder, "", nestedStackNamePlaceHolder, c.ControlPlaneStackName())
 	simulatedLcName := fmt.Sprintf("%s-%s-1N2C4K3LLBEDZ-%sLC-BC2S9P3JG2QD", clusterNamePlaceholder, nestedStackNamePlaceHolder, c.Controller.LogicalName())
 	limit := 63 - len(replacer.Replace(simulatedLcName))
 	if c.Experimental.AwsNodeLabels.Enabled && len(c.ClusterName) > limit {
@@ -1293,7 +1318,7 @@ func (c Cluster) validate() error {
 			return e
 		}
 	} else {
-		if e := cfnresource.ValidateUnstableRoleNameLength(c.ClusterName, naming.FromStackToCfnResource(ControlPlaneStackName), c.Controller.IAMConfig.Role.Name, c.Region.String()); e != nil {
+		if e := cfnresource.ValidateUnstableRoleNameLength(c.ClusterName, naming.FromStackToCfnResource(c.ControlPlaneStackName()), c.Controller.IAMConfig.Role.Name, c.Region.String()); e != nil {
 			return e
 		}
 	}

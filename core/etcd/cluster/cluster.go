@@ -143,7 +143,7 @@ func NewCluster(cfgRef *controlplaneconfig.Cluster, opts controlplaneconfig.Stac
 	clusterRef.KubeAWSVersion = controlplanecluster.VERSION
 	clusterRef.HostOS = cfgRef.HostOS
 
-	cpStackConfig, err := clusterRef.StackConfig("etcd", opts, session, plugins)
+	cpStackConfig, err := clusterRef.StackConfig(cfgRef.EtcdStackName(), opts, session, plugins)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +309,7 @@ func (c *Cluster) String() string {
 }
 
 func (c *ClusterRef) Destroy() error {
-	return cfnstack.NewDestroyer("etcd", c.session, c.CloudFormation.RoleARN).Destroy()
+	return cfnstack.NewDestroyer(c.EtcdStackName(), c.session, c.CloudFormation.RoleARN).Destroy()
 }
 
 // lookupExistingEtcdEndpoints supports the migration from embedded etcd servers to their own stack

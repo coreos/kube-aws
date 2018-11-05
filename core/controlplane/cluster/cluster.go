@@ -137,7 +137,7 @@ func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugin
 	clusterRef := newClusterRef(cfg, session)
 	// TODO Do this in a cleaner way e.g. in config.go
 	clusterRef.KubeResourcesAutosave.S3Path = model.NewS3Folders(cfg.DeploymentSettings.S3URI, clusterRef.ClusterName).ClusterBackups().Path()
-	stackConfig, err := clusterRef.StackConfig(config.ControlPlaneStackName, opts, session, plugins)
+	stackConfig, err := clusterRef.StackConfig(clusterRef.ControlPlaneStackName(), opts, session, plugins)
 	if err != nil {
 		return nil, err
 	}
@@ -279,7 +279,7 @@ func (c *Cluster) Validate() error {
 
 // NestedStackName returns a sanitized name of this control-plane which is usable as a valid cloudformation nested stack name
 func (c Cluster) NestedStackName() string {
-	return naming.FromStackToCfnResource(config.ControlPlaneStackName)
+	return naming.FromStackToCfnResource(c.ControlPlaneStackName())
 }
 
 func (c *Cluster) String() string {
@@ -287,7 +287,7 @@ func (c *Cluster) String() string {
 }
 
 func (c *ClusterRef) Destroy() error {
-	return cfnstack.NewDestroyer(config.ControlPlaneStackName, c.session, c.CloudFormation.RoleARN).Destroy()
+	return cfnstack.NewDestroyer(c.Cluster.ControlPlaneStackName(), c.session, c.CloudFormation.RoleARN).Destroy()
 }
 
 func (c *ClusterRef) validateKeyPair(ec2Svc ec2Service) error {
