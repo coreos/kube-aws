@@ -119,7 +119,7 @@ func NewCluster(cfgRef *config.Cluster, opts config.StackTemplateOptions, plugin
 	// TODO Do this in a cleaner way e.g. in config.go
 	clusterRef.KubeResourcesAutosave.S3Path = model.NewS3Folders(cfg.DeploymentSettings.S3URI, clusterRef.ClusterName).ClusterBackups().Path()
 
-	stackConfig, err := clusterRef.StackConfig("network", opts, session, plugins)
+	stackConfig, err := clusterRef.StackConfig(cfgRef.NetworkStackName(), opts, session, plugins)
 	if err != nil {
 		return nil, err
 	}
@@ -215,5 +215,5 @@ func (c *Cluster) String() string {
 }
 
 func (c *ClusterRef) Destroy() error {
-	return cfnstack.NewDestroyer("network", c.session, c.CloudFormation.RoleARN).Destroy()
+	return cfnstack.NewDestroyer(c.NetworkStackName(), c.session, c.CloudFormation.RoleARN).Destroy()
 }
