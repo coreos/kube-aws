@@ -218,7 +218,7 @@ func TestEmptyCFInterrogator(t *testing.T) {
 	cf := DummyCFInterrogator{}
 
 	exists, err := StackExists(cf, "a-new-hope")
-	require.NoError(t, err, "StackExists should not return an error when the ListStacks response is empty")
+	require.NoError(t, err, "StackExists should not return an error when the DescribeStacks response is empty")
 	assert.False(t, exists, "How does a stack exist in an empty set?")
 	exists, err = NestedStackExists(cf, "no-hope", "a-new-hope")
 	require.NoError(t, err, "NestedStackExists should not return an error when the ListStackResources response is empty")

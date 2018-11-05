@@ -15,16 +15,16 @@ type DummyCloudformationService struct {
 
 // DummyCFInterrogator is used to prevent calls to AWS - always returns empty results.
 type DummyCFInterrogator struct {
-	ListStacksResult          *cloudformation.ListStacksOutput
 	ListStacksResourcesResult *cloudformation.ListStackResourcesOutput
-}
-
-func (cf DummyCFInterrogator) ListStacks(input *cloudformation.ListStacksInput) (*cloudformation.ListStacksOutput, error) {
-	return cf.ListStacksResult, nil
+	DescribeStacksResult      *cloudformation.DescribeStacksOutput
 }
 
 func (cf DummyCFInterrogator) ListStackResources(input *cloudformation.ListStackResourcesInput) (*cloudformation.ListStackResourcesOutput, error) {
 	return cf.ListStacksResourcesResult, nil
+}
+
+func (cf DummyCFInterrogator) DescribeStacks(input *cloudformation.DescribeStacksInput) (*cloudformation.DescribeStacksOutput, error) {
+	return cf.DescribeStacksResult, nil
 }
 
 type DummyEC2Interrogator struct {
