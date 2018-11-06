@@ -21,7 +21,7 @@ import (
 //
 // The best way to use this interface is so the SDK's service client's calls
 // can be stubbed out for unit testing your code with the SDK without needing
-// to inject custom request handlers into the the SDK's request pipeline.
+// to inject custom request handlers into the SDK's request pipeline.
 //
 //    // myFunc uses an SDK service client to make a request to
 //    // Amazon API Gateway.
@@ -116,6 +116,10 @@ type APIGatewayAPI interface {
 	CreateUsagePlanKeyWithContext(aws.Context, *apigateway.CreateUsagePlanKeyInput, ...request.Option) (*apigateway.UsagePlanKey, error)
 	CreateUsagePlanKeyRequest(*apigateway.CreateUsagePlanKeyInput) (*request.Request, *apigateway.UsagePlanKey)
 
+	CreateVpcLink(*apigateway.CreateVpcLinkInput) (*apigateway.UpdateVpcLinkOutput, error)
+	CreateVpcLinkWithContext(aws.Context, *apigateway.CreateVpcLinkInput, ...request.Option) (*apigateway.UpdateVpcLinkOutput, error)
+	CreateVpcLinkRequest(*apigateway.CreateVpcLinkInput) (*request.Request, *apigateway.UpdateVpcLinkOutput)
+
 	DeleteApiKey(*apigateway.DeleteApiKeyInput) (*apigateway.DeleteApiKeyOutput, error)
 	DeleteApiKeyWithContext(aws.Context, *apigateway.DeleteApiKeyInput, ...request.Option) (*apigateway.DeleteApiKeyOutput, error)
 	DeleteApiKeyRequest(*apigateway.DeleteApiKeyInput) (*request.Request, *apigateway.DeleteApiKeyOutput)
@@ -147,6 +151,10 @@ type APIGatewayAPI interface {
 	DeleteDomainName(*apigateway.DeleteDomainNameInput) (*apigateway.DeleteDomainNameOutput, error)
 	DeleteDomainNameWithContext(aws.Context, *apigateway.DeleteDomainNameInput, ...request.Option) (*apigateway.DeleteDomainNameOutput, error)
 	DeleteDomainNameRequest(*apigateway.DeleteDomainNameInput) (*request.Request, *apigateway.DeleteDomainNameOutput)
+
+	DeleteGatewayResponse(*apigateway.DeleteGatewayResponseInput) (*apigateway.DeleteGatewayResponseOutput, error)
+	DeleteGatewayResponseWithContext(aws.Context, *apigateway.DeleteGatewayResponseInput, ...request.Option) (*apigateway.DeleteGatewayResponseOutput, error)
+	DeleteGatewayResponseRequest(*apigateway.DeleteGatewayResponseInput) (*request.Request, *apigateway.DeleteGatewayResponseOutput)
 
 	DeleteIntegration(*apigateway.DeleteIntegrationInput) (*apigateway.DeleteIntegrationOutput, error)
 	DeleteIntegrationWithContext(aws.Context, *apigateway.DeleteIntegrationInput, ...request.Option) (*apigateway.DeleteIntegrationOutput, error)
@@ -191,6 +199,10 @@ type APIGatewayAPI interface {
 	DeleteUsagePlanKey(*apigateway.DeleteUsagePlanKeyInput) (*apigateway.DeleteUsagePlanKeyOutput, error)
 	DeleteUsagePlanKeyWithContext(aws.Context, *apigateway.DeleteUsagePlanKeyInput, ...request.Option) (*apigateway.DeleteUsagePlanKeyOutput, error)
 	DeleteUsagePlanKeyRequest(*apigateway.DeleteUsagePlanKeyInput) (*request.Request, *apigateway.DeleteUsagePlanKeyOutput)
+
+	DeleteVpcLink(*apigateway.DeleteVpcLinkInput) (*apigateway.DeleteVpcLinkOutput, error)
+	DeleteVpcLinkWithContext(aws.Context, *apigateway.DeleteVpcLinkInput, ...request.Option) (*apigateway.DeleteVpcLinkOutput, error)
+	DeleteVpcLinkRequest(*apigateway.DeleteVpcLinkInput) (*request.Request, *apigateway.DeleteVpcLinkOutput)
 
 	FlushStageAuthorizersCache(*apigateway.FlushStageAuthorizersCacheInput) (*apigateway.FlushStageAuthorizersCacheOutput, error)
 	FlushStageAuthorizersCacheWithContext(aws.Context, *apigateway.FlushStageAuthorizersCacheInput, ...request.Option) (*apigateway.FlushStageAuthorizersCacheOutput, error)
@@ -291,6 +303,14 @@ type APIGatewayAPI interface {
 	GetExportWithContext(aws.Context, *apigateway.GetExportInput, ...request.Option) (*apigateway.GetExportOutput, error)
 	GetExportRequest(*apigateway.GetExportInput) (*request.Request, *apigateway.GetExportOutput)
 
+	GetGatewayResponse(*apigateway.GetGatewayResponseInput) (*apigateway.UpdateGatewayResponseOutput, error)
+	GetGatewayResponseWithContext(aws.Context, *apigateway.GetGatewayResponseInput, ...request.Option) (*apigateway.UpdateGatewayResponseOutput, error)
+	GetGatewayResponseRequest(*apigateway.GetGatewayResponseInput) (*request.Request, *apigateway.UpdateGatewayResponseOutput)
+
+	GetGatewayResponses(*apigateway.GetGatewayResponsesInput) (*apigateway.GetGatewayResponsesOutput, error)
+	GetGatewayResponsesWithContext(aws.Context, *apigateway.GetGatewayResponsesInput, ...request.Option) (*apigateway.GetGatewayResponsesOutput, error)
+	GetGatewayResponsesRequest(*apigateway.GetGatewayResponsesInput) (*request.Request, *apigateway.GetGatewayResponsesOutput)
+
 	GetIntegration(*apigateway.GetIntegrationInput) (*apigateway.Integration, error)
 	GetIntegrationWithContext(aws.Context, *apigateway.GetIntegrationInput, ...request.Option) (*apigateway.Integration, error)
 	GetIntegrationRequest(*apigateway.GetIntegrationInput) (*request.Request, *apigateway.Integration)
@@ -372,6 +392,10 @@ type APIGatewayAPI interface {
 	GetStagesWithContext(aws.Context, *apigateway.GetStagesInput, ...request.Option) (*apigateway.GetStagesOutput, error)
 	GetStagesRequest(*apigateway.GetStagesInput) (*request.Request, *apigateway.GetStagesOutput)
 
+	GetTags(*apigateway.GetTagsInput) (*apigateway.GetTagsOutput, error)
+	GetTagsWithContext(aws.Context, *apigateway.GetTagsInput, ...request.Option) (*apigateway.GetTagsOutput, error)
+	GetTagsRequest(*apigateway.GetTagsInput) (*request.Request, *apigateway.GetTagsOutput)
+
 	GetUsage(*apigateway.GetUsageInput) (*apigateway.Usage, error)
 	GetUsageWithContext(aws.Context, *apigateway.GetUsageInput, ...request.Option) (*apigateway.Usage, error)
 	GetUsageRequest(*apigateway.GetUsageInput) (*request.Request, *apigateway.Usage)
@@ -401,6 +425,17 @@ type APIGatewayAPI interface {
 	GetUsagePlansPages(*apigateway.GetUsagePlansInput, func(*apigateway.GetUsagePlansOutput, bool) bool) error
 	GetUsagePlansPagesWithContext(aws.Context, *apigateway.GetUsagePlansInput, func(*apigateway.GetUsagePlansOutput, bool) bool, ...request.Option) error
 
+	GetVpcLink(*apigateway.GetVpcLinkInput) (*apigateway.UpdateVpcLinkOutput, error)
+	GetVpcLinkWithContext(aws.Context, *apigateway.GetVpcLinkInput, ...request.Option) (*apigateway.UpdateVpcLinkOutput, error)
+	GetVpcLinkRequest(*apigateway.GetVpcLinkInput) (*request.Request, *apigateway.UpdateVpcLinkOutput)
+
+	GetVpcLinks(*apigateway.GetVpcLinksInput) (*apigateway.GetVpcLinksOutput, error)
+	GetVpcLinksWithContext(aws.Context, *apigateway.GetVpcLinksInput, ...request.Option) (*apigateway.GetVpcLinksOutput, error)
+	GetVpcLinksRequest(*apigateway.GetVpcLinksInput) (*request.Request, *apigateway.GetVpcLinksOutput)
+
+	GetVpcLinksPages(*apigateway.GetVpcLinksInput, func(*apigateway.GetVpcLinksOutput, bool) bool) error
+	GetVpcLinksPagesWithContext(aws.Context, *apigateway.GetVpcLinksInput, func(*apigateway.GetVpcLinksOutput, bool) bool, ...request.Option) error
+
 	ImportApiKeys(*apigateway.ImportApiKeysInput) (*apigateway.ImportApiKeysOutput, error)
 	ImportApiKeysWithContext(aws.Context, *apigateway.ImportApiKeysInput, ...request.Option) (*apigateway.ImportApiKeysOutput, error)
 	ImportApiKeysRequest(*apigateway.ImportApiKeysInput) (*request.Request, *apigateway.ImportApiKeysOutput)
@@ -412,6 +447,10 @@ type APIGatewayAPI interface {
 	ImportRestApi(*apigateway.ImportRestApiInput) (*apigateway.RestApi, error)
 	ImportRestApiWithContext(aws.Context, *apigateway.ImportRestApiInput, ...request.Option) (*apigateway.RestApi, error)
 	ImportRestApiRequest(*apigateway.ImportRestApiInput) (*request.Request, *apigateway.RestApi)
+
+	PutGatewayResponse(*apigateway.PutGatewayResponseInput) (*apigateway.UpdateGatewayResponseOutput, error)
+	PutGatewayResponseWithContext(aws.Context, *apigateway.PutGatewayResponseInput, ...request.Option) (*apigateway.UpdateGatewayResponseOutput, error)
+	PutGatewayResponseRequest(*apigateway.PutGatewayResponseInput) (*request.Request, *apigateway.UpdateGatewayResponseOutput)
 
 	PutIntegration(*apigateway.PutIntegrationInput) (*apigateway.Integration, error)
 	PutIntegrationWithContext(aws.Context, *apigateway.PutIntegrationInput, ...request.Option) (*apigateway.Integration, error)
@@ -433,6 +472,10 @@ type APIGatewayAPI interface {
 	PutRestApiWithContext(aws.Context, *apigateway.PutRestApiInput, ...request.Option) (*apigateway.RestApi, error)
 	PutRestApiRequest(*apigateway.PutRestApiInput) (*request.Request, *apigateway.RestApi)
 
+	TagResource(*apigateway.TagResourceInput) (*apigateway.TagResourceOutput, error)
+	TagResourceWithContext(aws.Context, *apigateway.TagResourceInput, ...request.Option) (*apigateway.TagResourceOutput, error)
+	TagResourceRequest(*apigateway.TagResourceInput) (*request.Request, *apigateway.TagResourceOutput)
+
 	TestInvokeAuthorizer(*apigateway.TestInvokeAuthorizerInput) (*apigateway.TestInvokeAuthorizerOutput, error)
 	TestInvokeAuthorizerWithContext(aws.Context, *apigateway.TestInvokeAuthorizerInput, ...request.Option) (*apigateway.TestInvokeAuthorizerOutput, error)
 	TestInvokeAuthorizerRequest(*apigateway.TestInvokeAuthorizerInput) (*request.Request, *apigateway.TestInvokeAuthorizerOutput)
@@ -440,6 +483,10 @@ type APIGatewayAPI interface {
 	TestInvokeMethod(*apigateway.TestInvokeMethodInput) (*apigateway.TestInvokeMethodOutput, error)
 	TestInvokeMethodWithContext(aws.Context, *apigateway.TestInvokeMethodInput, ...request.Option) (*apigateway.TestInvokeMethodOutput, error)
 	TestInvokeMethodRequest(*apigateway.TestInvokeMethodInput) (*request.Request, *apigateway.TestInvokeMethodOutput)
+
+	UntagResource(*apigateway.UntagResourceInput) (*apigateway.UntagResourceOutput, error)
+	UntagResourceWithContext(aws.Context, *apigateway.UntagResourceInput, ...request.Option) (*apigateway.UntagResourceOutput, error)
+	UntagResourceRequest(*apigateway.UntagResourceInput) (*request.Request, *apigateway.UntagResourceOutput)
 
 	UpdateAccount(*apigateway.UpdateAccountInput) (*apigateway.Account, error)
 	UpdateAccountWithContext(aws.Context, *apigateway.UpdateAccountInput, ...request.Option) (*apigateway.Account, error)
@@ -476,6 +523,10 @@ type APIGatewayAPI interface {
 	UpdateDomainName(*apigateway.UpdateDomainNameInput) (*apigateway.DomainName, error)
 	UpdateDomainNameWithContext(aws.Context, *apigateway.UpdateDomainNameInput, ...request.Option) (*apigateway.DomainName, error)
 	UpdateDomainNameRequest(*apigateway.UpdateDomainNameInput) (*request.Request, *apigateway.DomainName)
+
+	UpdateGatewayResponse(*apigateway.UpdateGatewayResponseInput) (*apigateway.UpdateGatewayResponseOutput, error)
+	UpdateGatewayResponseWithContext(aws.Context, *apigateway.UpdateGatewayResponseInput, ...request.Option) (*apigateway.UpdateGatewayResponseOutput, error)
+	UpdateGatewayResponseRequest(*apigateway.UpdateGatewayResponseInput) (*request.Request, *apigateway.UpdateGatewayResponseOutput)
 
 	UpdateIntegration(*apigateway.UpdateIntegrationInput) (*apigateway.Integration, error)
 	UpdateIntegrationWithContext(aws.Context, *apigateway.UpdateIntegrationInput, ...request.Option) (*apigateway.Integration, error)
@@ -520,6 +571,10 @@ type APIGatewayAPI interface {
 	UpdateUsagePlan(*apigateway.UpdateUsagePlanInput) (*apigateway.UsagePlan, error)
 	UpdateUsagePlanWithContext(aws.Context, *apigateway.UpdateUsagePlanInput, ...request.Option) (*apigateway.UsagePlan, error)
 	UpdateUsagePlanRequest(*apigateway.UpdateUsagePlanInput) (*request.Request, *apigateway.UsagePlan)
+
+	UpdateVpcLink(*apigateway.UpdateVpcLinkInput) (*apigateway.UpdateVpcLinkOutput, error)
+	UpdateVpcLinkWithContext(aws.Context, *apigateway.UpdateVpcLinkInput, ...request.Option) (*apigateway.UpdateVpcLinkOutput, error)
+	UpdateVpcLinkRequest(*apigateway.UpdateVpcLinkInput) (*request.Request, *apigateway.UpdateVpcLinkOutput)
 }
 
 var _ APIGatewayAPI = (*apigateway.APIGateway)(nil)

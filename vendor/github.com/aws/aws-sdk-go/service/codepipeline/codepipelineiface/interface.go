@@ -21,7 +21,7 @@ import (
 //
 // The best way to use this interface is so the SDK's service client's calls
 // can be stubbed out for unit testing your code with the SDK without needing
-// to inject custom request handlers into the the SDK's request pipeline.
+// to inject custom request handlers into the SDK's request pipeline.
 //
 //    // myFunc uses an SDK service client to make a request to
 //    // AWS CodePipeline.
@@ -84,6 +84,14 @@ type CodePipelineAPI interface {
 	DeletePipelineWithContext(aws.Context, *codepipeline.DeletePipelineInput, ...request.Option) (*codepipeline.DeletePipelineOutput, error)
 	DeletePipelineRequest(*codepipeline.DeletePipelineInput) (*request.Request, *codepipeline.DeletePipelineOutput)
 
+	DeleteWebhook(*codepipeline.DeleteWebhookInput) (*codepipeline.DeleteWebhookOutput, error)
+	DeleteWebhookWithContext(aws.Context, *codepipeline.DeleteWebhookInput, ...request.Option) (*codepipeline.DeleteWebhookOutput, error)
+	DeleteWebhookRequest(*codepipeline.DeleteWebhookInput) (*request.Request, *codepipeline.DeleteWebhookOutput)
+
+	DeregisterWebhookWithThirdParty(*codepipeline.DeregisterWebhookWithThirdPartyInput) (*codepipeline.DeregisterWebhookWithThirdPartyOutput, error)
+	DeregisterWebhookWithThirdPartyWithContext(aws.Context, *codepipeline.DeregisterWebhookWithThirdPartyInput, ...request.Option) (*codepipeline.DeregisterWebhookWithThirdPartyOutput, error)
+	DeregisterWebhookWithThirdPartyRequest(*codepipeline.DeregisterWebhookWithThirdPartyInput) (*request.Request, *codepipeline.DeregisterWebhookWithThirdPartyOutput)
+
 	DisableStageTransition(*codepipeline.DisableStageTransitionInput) (*codepipeline.DisableStageTransitionOutput, error)
 	DisableStageTransitionWithContext(aws.Context, *codepipeline.DisableStageTransitionInput, ...request.Option) (*codepipeline.DisableStageTransitionOutput, error)
 	DisableStageTransitionRequest(*codepipeline.DisableStageTransitionInput) (*request.Request, *codepipeline.DisableStageTransitionOutput)
@@ -116,9 +124,17 @@ type CodePipelineAPI interface {
 	ListActionTypesWithContext(aws.Context, *codepipeline.ListActionTypesInput, ...request.Option) (*codepipeline.ListActionTypesOutput, error)
 	ListActionTypesRequest(*codepipeline.ListActionTypesInput) (*request.Request, *codepipeline.ListActionTypesOutput)
 
+	ListPipelineExecutions(*codepipeline.ListPipelineExecutionsInput) (*codepipeline.ListPipelineExecutionsOutput, error)
+	ListPipelineExecutionsWithContext(aws.Context, *codepipeline.ListPipelineExecutionsInput, ...request.Option) (*codepipeline.ListPipelineExecutionsOutput, error)
+	ListPipelineExecutionsRequest(*codepipeline.ListPipelineExecutionsInput) (*request.Request, *codepipeline.ListPipelineExecutionsOutput)
+
 	ListPipelines(*codepipeline.ListPipelinesInput) (*codepipeline.ListPipelinesOutput, error)
 	ListPipelinesWithContext(aws.Context, *codepipeline.ListPipelinesInput, ...request.Option) (*codepipeline.ListPipelinesOutput, error)
 	ListPipelinesRequest(*codepipeline.ListPipelinesInput) (*request.Request, *codepipeline.ListPipelinesOutput)
+
+	ListWebhooks(*codepipeline.ListWebhooksInput) (*codepipeline.ListWebhooksOutput, error)
+	ListWebhooksWithContext(aws.Context, *codepipeline.ListWebhooksInput, ...request.Option) (*codepipeline.ListWebhooksOutput, error)
+	ListWebhooksRequest(*codepipeline.ListWebhooksInput) (*request.Request, *codepipeline.ListWebhooksOutput)
 
 	PollForJobs(*codepipeline.PollForJobsInput) (*codepipeline.PollForJobsOutput, error)
 	PollForJobsWithContext(aws.Context, *codepipeline.PollForJobsInput, ...request.Option) (*codepipeline.PollForJobsOutput, error)
@@ -151,6 +167,14 @@ type CodePipelineAPI interface {
 	PutThirdPartyJobSuccessResult(*codepipeline.PutThirdPartyJobSuccessResultInput) (*codepipeline.PutThirdPartyJobSuccessResultOutput, error)
 	PutThirdPartyJobSuccessResultWithContext(aws.Context, *codepipeline.PutThirdPartyJobSuccessResultInput, ...request.Option) (*codepipeline.PutThirdPartyJobSuccessResultOutput, error)
 	PutThirdPartyJobSuccessResultRequest(*codepipeline.PutThirdPartyJobSuccessResultInput) (*request.Request, *codepipeline.PutThirdPartyJobSuccessResultOutput)
+
+	PutWebhook(*codepipeline.PutWebhookInput) (*codepipeline.PutWebhookOutput, error)
+	PutWebhookWithContext(aws.Context, *codepipeline.PutWebhookInput, ...request.Option) (*codepipeline.PutWebhookOutput, error)
+	PutWebhookRequest(*codepipeline.PutWebhookInput) (*request.Request, *codepipeline.PutWebhookOutput)
+
+	RegisterWebhookWithThirdParty(*codepipeline.RegisterWebhookWithThirdPartyInput) (*codepipeline.RegisterWebhookWithThirdPartyOutput, error)
+	RegisterWebhookWithThirdPartyWithContext(aws.Context, *codepipeline.RegisterWebhookWithThirdPartyInput, ...request.Option) (*codepipeline.RegisterWebhookWithThirdPartyOutput, error)
+	RegisterWebhookWithThirdPartyRequest(*codepipeline.RegisterWebhookWithThirdPartyInput) (*request.Request, *codepipeline.RegisterWebhookWithThirdPartyOutput)
 
 	RetryStageExecution(*codepipeline.RetryStageExecutionInput) (*codepipeline.RetryStageExecutionOutput, error)
 	RetryStageExecutionWithContext(aws.Context, *codepipeline.RetryStageExecutionInput, ...request.Option) (*codepipeline.RetryStageExecutionOutput, error)

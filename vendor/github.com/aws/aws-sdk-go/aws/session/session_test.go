@@ -14,12 +14,15 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/defaults"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
+	"github.com/aws/aws-sdk-go/awstesting"
+	"github.com/aws/aws-sdk-go/internal/shareddefaults"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 func TestNewDefaultSession(t *testing.T) {
 	oldEnv := initSessionTestEnv()
-	defer popEnv(oldEnv)
+	defer awstesting.PopEnv(oldEnv)
 
 	s := New(&aws.Config{Region: aws.String("region")})
 
@@ -31,7 +34,7 @@ func TestNewDefaultSession(t *testing.T) {
 
 func TestNew_WithCustomCreds(t *testing.T) {
 	oldEnv := initSessionTestEnv()
-	defer popEnv(oldEnv)
+	defer awstesting.PopEnv(oldEnv)
 
 	customCreds := credentials.NewStaticCredentials("AKID", "SECRET", "TOKEN")
 	s := New(&aws.Config{Credentials: customCreds})
@@ -49,7 +52,7 @@ func (w mockLogger) Log(args ...interface{}) {
 
 func TestNew_WithSessionLoadError(t *testing.T) {
 	oldEnv := initSessionTestEnv()
-	defer popEnv(oldEnv)
+	defer awstesting.PopEnv(oldEnv)
 
 	os.Setenv("AWS_SDK_LOAD_CONFIG", "1")
 	os.Setenv("AWS_CONFIG_FILE", testConfigFilename)
@@ -72,7 +75,7 @@ func TestNew_WithSessionLoadError(t *testing.T) {
 
 func TestSessionCopy(t *testing.T) {
 	oldEnv := initSessionTestEnv()
-	defer popEnv(oldEnv)
+	defer awstesting.PopEnv(oldEnv)
 
 	os.Setenv("AWS_REGION", "orig_region")
 
@@ -88,19 +91,36 @@ func TestSessionCopy(t *testing.T) {
 }
 
 func TestSessionClientConfig(t *testing.T) {
-	s, err := NewSession(&aws.Config{Region: aws.String("orig_region")})
+	s, err := NewSession(&aws.Config{
+		Credentials: credentials.AnonymousCredentials,
+		Region:      aws.String("orig_region"),
+		EndpointResolver: endpoints.ResolverFunc(
+			func(service, region string, opts ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
+				if e, a := "mock-service", service; e != a {
+					t.Errorf("expect %q service, got %q", e, a)
+				}
+				if e, a := "other-region", region; e != a {
+					t.Errorf("expect %q region, got %q", e, a)
+				}
+				return endpoints.ResolvedEndpoint{
+					URL:           "https://" + service + "." + region + ".amazonaws.com",
+					SigningRegion: region,
+				}, nil
+			},
+		),
+	})
 	assert.NoError(t, err)
 
-	cfg := s.ClientConfig("s3", &aws.Config{Region: aws.String("us-west-2")})
+	cfg := s.ClientConfig("mock-service", &aws.Config{Region: aws.String("other-region")})
 
-	assert.Equal(t, "https://s3-us-west-2.amazonaws.com", cfg.Endpoint)
-	assert.Equal(t, "us-west-2", cfg.SigningRegion)
-	assert.Equal(t, "us-west-2", *cfg.Config.Region)
+	assert.Equal(t, "https://mock-service.other-region.amazonaws.com", cfg.Endpoint)
+	assert.Equal(t, "other-region", cfg.SigningRegion)
+	assert.Equal(t, "other-region", *cfg.Config.Region)
 }
 
 func TestNewSession_NoCredentials(t *testing.T) {
 	oldEnv := initSessionTestEnv()
-	defer popEnv(oldEnv)
+	defer awstesting.PopEnv(oldEnv)
 
 	s, err := NewSession()
 	assert.NoError(t, err)
@@ -111,7 +131,7 @@ func TestNewSession_NoCredentials(t *testing.T) {
 
 func TestNewSessionWithOptions_OverrideProfile(t *testing.T) {
 	oldEnv := initSessionTestEnv()
-	defer popEnv(oldEnv)
+	defer awstesting.PopEnv(oldEnv)
 
 	os.Setenv("AWS_SDK_LOAD_CONFIG", "1")
 	os.Setenv("AWS_SHARED_CREDENTIALS_FILE", testConfigFilename)
@@ -134,7 +154,7 @@ func TestNewSessionWithOptions_OverrideProfile(t *testing.T) {
 
 func TestNewSessionWithOptions_OverrideSharedConfigEnable(t *testing.T) {
 	oldEnv := initSessionTestEnv()
-	defer popEnv(oldEnv)
+	defer awstesting.PopEnv(oldEnv)
 
 	os.Setenv("AWS_SDK_LOAD_CONFIG", "0")
 	os.Setenv("AWS_SHARED_CREDENTIALS_FILE", testConfigFilename)
@@ -157,7 +177,7 @@ func TestNewSessionWithOptions_OverrideSharedConfigEnable(t *testing.T) {
 
 func TestNewSessionWithOptions_OverrideSharedConfigDisable(t *testing.T) {
 	oldEnv := initSessionTestEnv()
-	defer popEnv(oldEnv)
+	defer awstesting.PopEnv(oldEnv)
 
 	os.Setenv("AWS_SDK_LOAD_CONFIG", "1")
 	os.Setenv("AWS_SHARED_CREDENTIALS_FILE", testConfigFilename)
@@ -180,7 +200,7 @@ func TestNewSessionWithOptions_OverrideSharedConfigDisable(t *testing.T) {
 
 func TestNewSessionWithOptions_OverrideSharedConfigFiles(t *testing.T) {
 	oldEnv := initSessionTestEnv()
-	defer popEnv(oldEnv)
+	defer awstesting.PopEnv(oldEnv)
 
 	os.Setenv("AWS_SDK_LOAD_CONFIG", "1")
 	os.Setenv("AWS_SHARED_CREDENTIALS_FILE", testConfigFilename)
@@ -258,7 +278,7 @@ func TestNewSessionWithOptions_Overrides(t *testing.T) {
 
 	for _, c := range cases {
 		oldEnv := initSessionTestEnv()
-		defer popEnv(oldEnv)
+		defer awstesting.PopEnv(oldEnv)
 
 		for k, v := range c.InEnvs {
 			os.Setenv(k, v)
@@ -302,7 +322,7 @@ const assumeRoleRespMsg = `
 
 func TestSesisonAssumeRole(t *testing.T) {
 	oldEnv := initSessionTestEnv()
-	defer popEnv(oldEnv)
+	defer awstesting.PopEnv(oldEnv)
 
 	os.Setenv("AWS_REGION", "us-east-1")
 	os.Setenv("AWS_SDK_LOAD_CONFIG", "1")
@@ -325,7 +345,7 @@ func TestSesisonAssumeRole(t *testing.T) {
 
 func TestSessionAssumeRole_WithMFA(t *testing.T) {
 	oldEnv := initSessionTestEnv()
-	defer popEnv(oldEnv)
+	defer awstesting.PopEnv(oldEnv)
 
 	os.Setenv("AWS_REGION", "us-east-1")
 	os.Setenv("AWS_SDK_LOAD_CONFIG", "1")
@@ -368,7 +388,7 @@ func TestSessionAssumeRole_WithMFA(t *testing.T) {
 
 func TestSessionAssumeRole_WithMFA_NoTokenProvider(t *testing.T) {
 	oldEnv := initSessionTestEnv()
-	defer popEnv(oldEnv)
+	defer awstesting.PopEnv(oldEnv)
 
 	os.Setenv("AWS_REGION", "us-east-1")
 	os.Setenv("AWS_SDK_LOAD_CONFIG", "1")
@@ -386,7 +406,7 @@ func TestSessionAssumeRole_DisableSharedConfig(t *testing.T) {
 	// Backwards compatibility with Shared config disabled
 	// assume role should not be built into the config.
 	oldEnv := initSessionTestEnv()
-	defer popEnv(oldEnv)
+	defer awstesting.PopEnv(oldEnv)
 
 	os.Setenv("AWS_SDK_LOAD_CONFIG", "0")
 	os.Setenv("AWS_SHARED_CREDENTIALS_FILE", testConfigFilename)
@@ -406,7 +426,7 @@ func TestSessionAssumeRole_InvalidSourceProfile(t *testing.T) {
 	// Backwards compatibility with Shared config disabled
 	// assume role should not be built into the config.
 	oldEnv := initSessionTestEnv()
-	defer popEnv(oldEnv)
+	defer awstesting.PopEnv(oldEnv)
 
 	os.Setenv("AWS_SDK_LOAD_CONFIG", "1")
 	os.Setenv("AWS_SHARED_CREDENTIALS_FILE", testConfigFilename)
@@ -418,8 +438,230 @@ func TestSessionAssumeRole_InvalidSourceProfile(t *testing.T) {
 	assert.Nil(t, s)
 }
 
+func TestSharedConfigCredentialSource(t *testing.T) {
+	cases := []struct {
+		name              string
+		profile           string
+		expectedError     error
+		expectedAccessKey string
+		expectedSecretKey string
+		init              func(*aws.Config, string) func() error
+	}{
+		{
+			name:              "env var credential source",
+			profile:           "env_var_credential_source",
+			expectedAccessKey: "access_key",
+			expectedSecretKey: "secret_key",
+			init: func(cfg *aws.Config, profile string) func() error {
+				os.Setenv("AWS_SDK_LOAD_CONFIG", "1")
+				os.Setenv("AWS_CONFIG_FILE", "testdata/credential_source_config")
+				os.Setenv("AWS_PROFILE", profile)
+				os.Setenv("AWS_ACCESS_KEY", "access_key")
+				os.Setenv("AWS_SECRET_KEY", "secret_key")
+
+				return func() error {
+					os.Unsetenv("AWS_SDK_LOAD_CONFIG")
+					os.Unsetenv("AWS_CONFIG_FILE")
+					os.Unsetenv("AWS_PROFILE")
+					os.Unsetenv("AWS_ACCESS_KEY")
+					os.Unsetenv("AWS_SECRET_KEY")
+
+					return nil
+				}
+			},
+		},
+		{
+			name:          "credential source and source profile",
+			profile:       "invalid_source_and_credential_source",
+			expectedError: ErrSharedConfigSourceCollision,
+			init: func(cfg *aws.Config, profile string) func() error {
+				os.Setenv("AWS_SDK_LOAD_CONFIG", "1")
+				os.Setenv("AWS_CONFIG_FILE", "testdata/credential_source_config")
+				os.Setenv("AWS_PROFILE", profile)
+				os.Setenv("AWS_ACCESS_KEY", "access_key")
+				os.Setenv("AWS_SECRET_KEY", "secret_key")
+
+				return func() error {
+					os.Unsetenv("AWS_SDK_LOAD_CONFIG")
+					os.Unsetenv("AWS_CONFIG_FILE")
+					os.Unsetenv("AWS_PROFILE")
+					os.Unsetenv("AWS_ACCESS_KEY")
+					os.Unsetenv("AWS_SECRET_KEY")
+
+					return nil
+				}
+			},
+		},
+		{
+			name:              "ec2metadata credential source",
+			profile:           "ec2metadata",
+			expectedAccessKey: "AKID",
+			expectedSecretKey: "SECRET",
+			init: func(cfg *aws.Config, profile string) func() error {
+				os.Setenv("AWS_REGION", "us-east-1")
+				os.Setenv("AWS_SDK_LOAD_CONFIG", "1")
+				os.Setenv("AWS_CONFIG_FILE", "testdata/credential_source_config")
+				os.Setenv("AWS_PROFILE", "ec2metadata")
+
+				const ec2MetadataResponse = `{
+	  "Code": "Success",
+	  "Type": "AWS-HMAC",
+	  "AccessKeyId" : "access-key",
+	  "SecretAccessKey" : "secret-key",
+	  "Token" : "token",
+	  "Expiration" : "2100-01-01T00:00:00Z",
+	  "LastUpdated" : "2009-11-23T0:00:00Z"
+	}`
+
+				ec2MetadataCalled := false
+				ec2MetadataServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					if r.URL.Path == "/meta-data/iam/security-credentials/RoleName" {
+						ec2MetadataCalled = true
+						w.Write([]byte(ec2MetadataResponse))
+					} else if r.URL.Path == "/meta-data/iam/security-credentials/" {
+						w.Write([]byte("RoleName"))
+					} else {
+						w.Write([]byte(""))
+					}
+				}))
+
+				stsServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Write([]byte(fmt.Sprintf(assumeRoleRespMsg, time.Now().Add(15*time.Minute).Format("2006-01-02T15:04:05Z"))))
+				}))
+
+				cfg.EndpointResolver = endpoints.ResolverFunc(
+					func(service, region string, opts ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
+						if service == "ec2metadata" {
+							return endpoints.ResolvedEndpoint{
+								URL: ec2MetadataServer.URL,
+							}, nil
+						}
+
+						return endpoints.ResolvedEndpoint{
+							URL: stsServer.URL,
+						}, nil
+					},
+				)
+
+				return func() error {
+					os.Unsetenv("AWS_SDK_LOAD_CONFIG")
+					os.Unsetenv("AWS_CONFIG_FILE")
+					os.Unsetenv("AWS_PROFILE")
+					os.Unsetenv("AWS_REGION")
+
+					ec2MetadataServer.Close()
+					stsServer.Close()
+
+					if !ec2MetadataCalled {
+						return fmt.Errorf("expected ec2metadata to be called")
+					}
+
+					return nil
+				}
+			},
+		},
+		{
+			name:              "ecs container credential source",
+			profile:           "ecscontainer",
+			expectedAccessKey: "access-key",
+			expectedSecretKey: "secret-key",
+			init: func(cfg *aws.Config, profile string) func() error {
+				os.Setenv("AWS_REGION", "us-east-1")
+				os.Setenv("AWS_SDK_LOAD_CONFIG", "1")
+				os.Setenv("AWS_CONFIG_FILE", "testdata/credential_source_config")
+				os.Setenv("AWS_PROFILE", "ecscontainer")
+				os.Setenv("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI", "/ECS")
+
+				const ecsResponse = `{
+	  "Code": "Success",
+	  "Type": "AWS-HMAC",
+	  "AccessKeyId" : "access-key",
+	  "SecretAccessKey" : "secret-key",
+	  "Token" : "token",
+	  "Expiration" : "2100-01-01T00:00:00Z",
+	  "LastUpdated" : "2009-11-23T0:00:00Z"
+	}`
+
+				ecsCredsCalled := false
+				ecsMetadataServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					if r.URL.Path == "/ECS" {
+						ecsCredsCalled = true
+						w.Write([]byte(ecsResponse))
+					} else {
+						w.Write([]byte(""))
+					}
+				}))
+
+				shareddefaults.ECSContainerCredentialsURI = ecsMetadataServer.URL
+
+				stsServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Write([]byte(fmt.Sprintf(assumeRoleRespMsg, time.Now().Add(15*time.Minute).Format("2006-01-02T15:04:05Z"))))
+				}))
+
+				cfg.Endpoint = aws.String(stsServer.URL)
+
+				cfg.EndpointResolver = endpoints.ResolverFunc(
+					func(service, region string, opts ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
+						fmt.Println("SERVICE", service)
+						return endpoints.ResolvedEndpoint{
+							URL: stsServer.URL,
+						}, nil
+					},
+				)
+
+				return func() error {
+					os.Unsetenv("AWS_SDK_LOAD_CONFIG")
+					os.Unsetenv("AWS_CONFIG_FILE")
+					os.Unsetenv("AWS_PROFILE")
+					os.Unsetenv("AWS_REGION")
+					os.Unsetenv("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI")
+
+					ecsMetadataServer.Close()
+					stsServer.Close()
+
+					if !ecsCredsCalled {
+						return fmt.Errorf("expected ec2metadata to be called")
+					}
+
+					return nil
+				}
+			},
+		},
+	}
+
+	for _, c := range cases {
+		cfg := &aws.Config{}
+		clean := c.init(cfg, c.profile)
+		sess, err := NewSession(cfg)
+		if e, a := c.expectedError, err; e != a {
+			t.Errorf("expected %v, but received %v", e, a)
+		}
+
+		if c.expectedError != nil {
+			continue
+		}
+
+		creds, err := sess.Config.Credentials.Get()
+		if err != nil {
+			t.Errorf("expected no error, but received %v", err)
+		}
+
+		if e, a := c.expectedAccessKey, creds.AccessKeyID; e != a {
+			t.Errorf("expected %v, but received %v", e, a)
+		}
+
+		if e, a := c.expectedSecretKey, creds.SecretAccessKey; e != a {
+			t.Errorf("expected %v, but received %v", e, a)
+		}
+
+		if err := clean(); err != nil {
+			t.Errorf("expected no error, but received %v", err)
+		}
+	}
+}
+
 func initSessionTestEnv() (oldEnv []string) {
-	oldEnv = stashEnv()
+	oldEnv = awstesting.StashEnv()
 	os.Setenv("AWS_CONFIG_FILE", "file_not_exists")
 	os.Setenv("AWS_SHARED_CREDENTIALS_FILE", "file_not_exists")
 

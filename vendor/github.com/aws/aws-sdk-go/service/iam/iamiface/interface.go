@@ -21,7 +21,7 @@ import (
 //
 // The best way to use this interface is so the SDK's service client's calls
 // can be stubbed out for unit testing your code with the SDK without needing
-// to inject custom request handlers into the the SDK's request pipeline.
+// to inject custom request handlers into the SDK's request pipeline.
 //
 //    // myFunc uses an SDK service client to make a request to
 //    // AWS Identity and Access Management.
@@ -192,6 +192,10 @@ type IAMAPI interface {
 	DeleteRoleWithContext(aws.Context, *iam.DeleteRoleInput, ...request.Option) (*iam.DeleteRoleOutput, error)
 	DeleteRoleRequest(*iam.DeleteRoleInput) (*request.Request, *iam.DeleteRoleOutput)
 
+	DeleteRolePermissionsBoundary(*iam.DeleteRolePermissionsBoundaryInput) (*iam.DeleteRolePermissionsBoundaryOutput, error)
+	DeleteRolePermissionsBoundaryWithContext(aws.Context, *iam.DeleteRolePermissionsBoundaryInput, ...request.Option) (*iam.DeleteRolePermissionsBoundaryOutput, error)
+	DeleteRolePermissionsBoundaryRequest(*iam.DeleteRolePermissionsBoundaryInput) (*request.Request, *iam.DeleteRolePermissionsBoundaryOutput)
+
 	DeleteRolePolicy(*iam.DeleteRolePolicyInput) (*iam.DeleteRolePolicyOutput, error)
 	DeleteRolePolicyWithContext(aws.Context, *iam.DeleteRolePolicyInput, ...request.Option) (*iam.DeleteRolePolicyOutput, error)
 	DeleteRolePolicyRequest(*iam.DeleteRolePolicyInput) (*request.Request, *iam.DeleteRolePolicyOutput)
@@ -208,6 +212,10 @@ type IAMAPI interface {
 	DeleteServerCertificateWithContext(aws.Context, *iam.DeleteServerCertificateInput, ...request.Option) (*iam.DeleteServerCertificateOutput, error)
 	DeleteServerCertificateRequest(*iam.DeleteServerCertificateInput) (*request.Request, *iam.DeleteServerCertificateOutput)
 
+	DeleteServiceLinkedRole(*iam.DeleteServiceLinkedRoleInput) (*iam.DeleteServiceLinkedRoleOutput, error)
+	DeleteServiceLinkedRoleWithContext(aws.Context, *iam.DeleteServiceLinkedRoleInput, ...request.Option) (*iam.DeleteServiceLinkedRoleOutput, error)
+	DeleteServiceLinkedRoleRequest(*iam.DeleteServiceLinkedRoleInput) (*request.Request, *iam.DeleteServiceLinkedRoleOutput)
+
 	DeleteServiceSpecificCredential(*iam.DeleteServiceSpecificCredentialInput) (*iam.DeleteServiceSpecificCredentialOutput, error)
 	DeleteServiceSpecificCredentialWithContext(aws.Context, *iam.DeleteServiceSpecificCredentialInput, ...request.Option) (*iam.DeleteServiceSpecificCredentialOutput, error)
 	DeleteServiceSpecificCredentialRequest(*iam.DeleteServiceSpecificCredentialInput) (*request.Request, *iam.DeleteServiceSpecificCredentialOutput)
@@ -219,6 +227,10 @@ type IAMAPI interface {
 	DeleteUser(*iam.DeleteUserInput) (*iam.DeleteUserOutput, error)
 	DeleteUserWithContext(aws.Context, *iam.DeleteUserInput, ...request.Option) (*iam.DeleteUserOutput, error)
 	DeleteUserRequest(*iam.DeleteUserInput) (*request.Request, *iam.DeleteUserOutput)
+
+	DeleteUserPermissionsBoundary(*iam.DeleteUserPermissionsBoundaryInput) (*iam.DeleteUserPermissionsBoundaryOutput, error)
+	DeleteUserPermissionsBoundaryWithContext(aws.Context, *iam.DeleteUserPermissionsBoundaryInput, ...request.Option) (*iam.DeleteUserPermissionsBoundaryOutput, error)
+	DeleteUserPermissionsBoundaryRequest(*iam.DeleteUserPermissionsBoundaryInput) (*request.Request, *iam.DeleteUserPermissionsBoundaryOutput)
 
 	DeleteUserPolicy(*iam.DeleteUserPolicyInput) (*iam.DeleteUserPolicyOutput, error)
 	DeleteUserPolicyWithContext(aws.Context, *iam.DeleteUserPolicyInput, ...request.Option) (*iam.DeleteUserPolicyOutput, error)
@@ -329,6 +341,10 @@ type IAMAPI interface {
 	GetServerCertificate(*iam.GetServerCertificateInput) (*iam.GetServerCertificateOutput, error)
 	GetServerCertificateWithContext(aws.Context, *iam.GetServerCertificateInput, ...request.Option) (*iam.GetServerCertificateOutput, error)
 	GetServerCertificateRequest(*iam.GetServerCertificateInput) (*request.Request, *iam.GetServerCertificateOutput)
+
+	GetServiceLinkedRoleDeletionStatus(*iam.GetServiceLinkedRoleDeletionStatusInput) (*iam.GetServiceLinkedRoleDeletionStatusOutput, error)
+	GetServiceLinkedRoleDeletionStatusWithContext(aws.Context, *iam.GetServiceLinkedRoleDeletionStatusInput, ...request.Option) (*iam.GetServiceLinkedRoleDeletionStatusOutput, error)
+	GetServiceLinkedRoleDeletionStatusRequest(*iam.GetServiceLinkedRoleDeletionStatusInput) (*request.Request, *iam.GetServiceLinkedRoleDeletionStatusOutput)
 
 	GetUser(*iam.GetUserInput) (*iam.GetUserOutput, error)
 	GetUserWithContext(aws.Context, *iam.GetUserInput, ...request.Option) (*iam.GetUserOutput, error)
@@ -508,9 +524,17 @@ type IAMAPI interface {
 	PutGroupPolicyWithContext(aws.Context, *iam.PutGroupPolicyInput, ...request.Option) (*iam.PutGroupPolicyOutput, error)
 	PutGroupPolicyRequest(*iam.PutGroupPolicyInput) (*request.Request, *iam.PutGroupPolicyOutput)
 
+	PutRolePermissionsBoundary(*iam.PutRolePermissionsBoundaryInput) (*iam.PutRolePermissionsBoundaryOutput, error)
+	PutRolePermissionsBoundaryWithContext(aws.Context, *iam.PutRolePermissionsBoundaryInput, ...request.Option) (*iam.PutRolePermissionsBoundaryOutput, error)
+	PutRolePermissionsBoundaryRequest(*iam.PutRolePermissionsBoundaryInput) (*request.Request, *iam.PutRolePermissionsBoundaryOutput)
+
 	PutRolePolicy(*iam.PutRolePolicyInput) (*iam.PutRolePolicyOutput, error)
 	PutRolePolicyWithContext(aws.Context, *iam.PutRolePolicyInput, ...request.Option) (*iam.PutRolePolicyOutput, error)
 	PutRolePolicyRequest(*iam.PutRolePolicyInput) (*request.Request, *iam.PutRolePolicyOutput)
+
+	PutUserPermissionsBoundary(*iam.PutUserPermissionsBoundaryInput) (*iam.PutUserPermissionsBoundaryOutput, error)
+	PutUserPermissionsBoundaryWithContext(aws.Context, *iam.PutUserPermissionsBoundaryInput, ...request.Option) (*iam.PutUserPermissionsBoundaryOutput, error)
+	PutUserPermissionsBoundaryRequest(*iam.PutUserPermissionsBoundaryInput) (*request.Request, *iam.PutUserPermissionsBoundaryOutput)
 
 	PutUserPolicy(*iam.PutUserPolicyInput) (*iam.PutUserPolicyOutput, error)
 	PutUserPolicyWithContext(aws.Context, *iam.PutUserPolicyInput, ...request.Option) (*iam.PutUserPolicyOutput, error)
@@ -577,6 +601,10 @@ type IAMAPI interface {
 	UpdateOpenIDConnectProviderThumbprint(*iam.UpdateOpenIDConnectProviderThumbprintInput) (*iam.UpdateOpenIDConnectProviderThumbprintOutput, error)
 	UpdateOpenIDConnectProviderThumbprintWithContext(aws.Context, *iam.UpdateOpenIDConnectProviderThumbprintInput, ...request.Option) (*iam.UpdateOpenIDConnectProviderThumbprintOutput, error)
 	UpdateOpenIDConnectProviderThumbprintRequest(*iam.UpdateOpenIDConnectProviderThumbprintInput) (*request.Request, *iam.UpdateOpenIDConnectProviderThumbprintOutput)
+
+	UpdateRole(*iam.UpdateRoleInput) (*iam.UpdateRoleOutput, error)
+	UpdateRoleWithContext(aws.Context, *iam.UpdateRoleInput, ...request.Option) (*iam.UpdateRoleOutput, error)
+	UpdateRoleRequest(*iam.UpdateRoleInput) (*request.Request, *iam.UpdateRoleOutput)
 
 	UpdateRoleDescription(*iam.UpdateRoleDescriptionInput) (*iam.UpdateRoleDescriptionOutput, error)
 	UpdateRoleDescriptionWithContext(aws.Context, *iam.UpdateRoleDescriptionInput, ...request.Option) (*iam.UpdateRoleDescriptionOutput, error)

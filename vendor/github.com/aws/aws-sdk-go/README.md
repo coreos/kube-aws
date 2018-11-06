@@ -1,10 +1,12 @@
-[![API Reference](http://img.shields.io/badge/api-reference-blue.svg)](http://docs.aws.amazon.com/sdk-for-go/api) [![Join the chat at https://gitter.im/aws/aws-sdk-go](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/aws/aws-sdk-go?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://img.shields.io/travis/aws/aws-sdk-go.svg)](https://travis-ci.org/aws/aws-sdk-go) [![Apache V2 License](http://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/aws/aws-sdk-go/blob/master/LICENSE.txt)
+[![API Reference](https://img.shields.io/badge/api-reference-blue.svg)](https://docs.aws.amazon.com/sdk-for-go/api) [![Join the chat at https://gitter.im/aws/aws-sdk-go](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/aws/aws-sdk-go?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://img.shields.io/travis/aws/aws-sdk-go.svg)](https://travis-ci.org/aws/aws-sdk-go) [![Apache V2 License](https://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/aws/aws-sdk-go/blob/master/LICENSE.txt)
 
 # AWS SDK for Go
 
 aws-sdk-go is the official AWS SDK for the Go programming language.
 
 Checkout our [release notes](https://github.com/aws/aws-sdk-go/releases) for information about the latest bug fixes, updates, and features added to the SDK.
+
+We [announced](https://aws.amazon.com/blogs/developer/aws-sdk-for-go-2-0-developer-preview/) the Developer Preview for the [v2 AWS SDK for Go](https://github.com/aws/aws-sdk-go-v2). The v2 SDK is available at https://github.com/aws/aws-sdk-go-v2, and `go get github.com/aws/aws-sdk-go-v2` via `go get`. Check out the v2 SDK's [changes and updates](https://github.com/aws/aws-sdk-go-v2/blob/master/CHANGELOG.md), and let us know what you think. We want your feedback. 
 
 ## Installing
 
@@ -32,7 +34,7 @@ Please use these community resources for getting help. We use the GitHub issues 
 * Ask a question on [StackOverflow](http://stackoverflow.com/) and tag it with the [`aws-sdk-go`](http://stackoverflow.com/questions/tagged/aws-sdk-go) tag.
 * Come join the AWS SDK for Go community chat on [gitter](https://gitter.im/aws/aws-sdk-go).
 * Open a support ticket with [AWS Support](http://docs.aws.amazon.com/awssupport/latest/user/getting-started.html).
-* If you think you may of found a bug, please open an [issue](https://github.com/aws/aws-sdk-go/issues/new).
+* If you think you may have found a bug, please open an [issue](https://github.com/aws/aws-sdk-go/issues/new).
 
 ## Opening Issues
 
@@ -167,7 +169,7 @@ and configures the S3 service client to use that role for API requests.
 
   // Create service client value configured for credentials
   // from assumed role.
-  svc := s3.New(sess, &aws.Config{Credentials: creds})/
+  svc := s3.New(sess, &aws.Config{Credentials: creds})
 ```
 
 See the [credentials][credentials_pkg] package documentation for more information on credential
@@ -185,7 +187,7 @@ Option's SharedConfigState parameter.
   }))
 ```
 
-[credentials_pkg]: ttps://docs.aws.amazon.com/sdk-for-go/api/aws/credentials
+[credentials_pkg]: https://docs.aws.amazon.com/sdk-for-go/api/aws/credentials
 
 ### Configuring AWS Region
 
@@ -305,7 +307,7 @@ documentation for the errors that could be returned.
   // will leak connections.
   defer result.Body.Close()
 
-  fmt.Println("Object Size:", aws.StringValue(result.ContentLength))
+  fmt.Println("Object Size:", aws.Int64Value(result.ContentLength))
 ```
 
 ### API Request Pagination and Resource Waiters
@@ -332,7 +334,7 @@ take a callback function that will be called for each page of the API's response
 ```
 
 Waiter helper methods provide the functionality to wait for an AWS resource
-state. These methods abstract the logic needed to to check the state of an
+state. These methods abstract the logic needed to check the state of an
 AWS resource, and wait until that resource is in a desired state. The waiter
 will block until the resource is in the state that is desired, an error occurs,
 or the waiter times out. If a resource times out the error code returned will

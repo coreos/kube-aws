@@ -21,7 +21,7 @@ import (
 //
 // The best way to use this interface is so the SDK's service client's calls
 // can be stubbed out for unit testing your code with the SDK without needing
-// to inject custom request handlers into the the SDK's request pipeline.
+// to inject custom request handlers into the SDK's request pipeline.
 //
 //    // myFunc uses an SDK service client to make a request to
 //    // AWS OpsWorks for Chef Automate.
@@ -104,6 +104,10 @@ type OpsWorksCMAPI interface {
 	DisassociateNodeWithContext(aws.Context, *opsworkscm.DisassociateNodeInput, ...request.Option) (*opsworkscm.DisassociateNodeOutput, error)
 	DisassociateNodeRequest(*opsworkscm.DisassociateNodeInput) (*request.Request, *opsworkscm.DisassociateNodeOutput)
 
+	ExportServerEngineAttribute(*opsworkscm.ExportServerEngineAttributeInput) (*opsworkscm.ExportServerEngineAttributeOutput, error)
+	ExportServerEngineAttributeWithContext(aws.Context, *opsworkscm.ExportServerEngineAttributeInput, ...request.Option) (*opsworkscm.ExportServerEngineAttributeOutput, error)
+	ExportServerEngineAttributeRequest(*opsworkscm.ExportServerEngineAttributeInput) (*request.Request, *opsworkscm.ExportServerEngineAttributeOutput)
+
 	RestoreServer(*opsworkscm.RestoreServerInput) (*opsworkscm.RestoreServerOutput, error)
 	RestoreServerWithContext(aws.Context, *opsworkscm.RestoreServerInput, ...request.Option) (*opsworkscm.RestoreServerOutput, error)
 	RestoreServerRequest(*opsworkscm.RestoreServerInput) (*request.Request, *opsworkscm.RestoreServerOutput)
@@ -119,6 +123,9 @@ type OpsWorksCMAPI interface {
 	UpdateServerEngineAttributes(*opsworkscm.UpdateServerEngineAttributesInput) (*opsworkscm.UpdateServerEngineAttributesOutput, error)
 	UpdateServerEngineAttributesWithContext(aws.Context, *opsworkscm.UpdateServerEngineAttributesInput, ...request.Option) (*opsworkscm.UpdateServerEngineAttributesOutput, error)
 	UpdateServerEngineAttributesRequest(*opsworkscm.UpdateServerEngineAttributesInput) (*request.Request, *opsworkscm.UpdateServerEngineAttributesOutput)
+
+	WaitUntilNodeAssociated(*opsworkscm.DescribeNodeAssociationStatusInput) error
+	WaitUntilNodeAssociatedWithContext(aws.Context, *opsworkscm.DescribeNodeAssociationStatusInput, ...request.WaiterOption) error
 }
 
 var _ OpsWorksCMAPI = (*opsworkscm.OpsWorksCM)(nil)

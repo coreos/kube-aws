@@ -3,6 +3,7 @@
 package codestar
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -14,19 +15,18 @@ const opAssociateTeamMember = "AssociateTeamMember"
 
 // AssociateTeamMemberRequest generates a "aws/request.Request" representing the
 // client's request for the AssociateTeamMember operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See AssociateTeamMember for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the AssociateTeamMember method directly
-// instead.
+// See AssociateTeamMember for more information on using the AssociateTeamMember
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the AssociateTeamMemberRequest method.
 //    req, resp := client.AssociateTeamMemberRequest(params)
@@ -36,7 +36,7 @@ const opAssociateTeamMember = "AssociateTeamMember"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/AssociateTeamMember
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/AssociateTeamMember
 func (c *CodeStar) AssociateTeamMemberRequest(input *AssociateTeamMemberInput) (req *request.Request, output *AssociateTeamMemberOutput) {
 	op := &request.Operation{
 		Name:       opAssociateTeamMember,
@@ -87,7 +87,7 @@ func (c *CodeStar) AssociateTeamMemberRequest(input *AssociateTeamMemberInput) (
 //   Another modification is being made. That modification must complete before
 //   you can make your change.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/AssociateTeamMember
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/AssociateTeamMember
 func (c *CodeStar) AssociateTeamMember(input *AssociateTeamMemberInput) (*AssociateTeamMemberOutput, error) {
 	req, out := c.AssociateTeamMemberRequest(input)
 	return out, req.Send()
@@ -113,19 +113,18 @@ const opCreateProject = "CreateProject"
 
 // CreateProjectRequest generates a "aws/request.Request" representing the
 // client's request for the CreateProject operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See CreateProject for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the CreateProject method directly
-// instead.
+// See CreateProject for more information on using the CreateProject
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the CreateProjectRequest method.
 //    req, resp := client.CreateProjectRequest(params)
@@ -135,7 +134,7 @@ const opCreateProject = "CreateProject"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/CreateProject
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/CreateProject
 func (c *CodeStar) CreateProjectRequest(input *CreateProjectInput) (req *request.Request, output *CreateProjectOutput) {
 	op := &request.Operation{
 		Name:       opCreateProject,
@@ -154,7 +153,10 @@ func (c *CodeStar) CreateProjectRequest(input *CreateProjectInput) (req *request
 
 // CreateProject API operation for AWS CodeStar.
 //
-// Reserved for future use. To create a project, use the AWS CodeStar console.
+// Creates a project, including project resources. This action creates a project
+// based on a submitted project request. A set of source code files and a toolchain
+// template file can be included with the project request. If these are not
+// provided, an empty project is created.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -190,7 +192,7 @@ func (c *CodeStar) CreateProjectRequest(input *CreateProjectInput) (req *request
 //   Another modification is being made. That modification must complete before
 //   you can make your change.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/CreateProject
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/CreateProject
 func (c *CodeStar) CreateProject(input *CreateProjectInput) (*CreateProjectOutput, error) {
 	req, out := c.CreateProjectRequest(input)
 	return out, req.Send()
@@ -216,19 +218,18 @@ const opCreateUserProfile = "CreateUserProfile"
 
 // CreateUserProfileRequest generates a "aws/request.Request" representing the
 // client's request for the CreateUserProfile operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See CreateUserProfile for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the CreateUserProfile method directly
-// instead.
+// See CreateUserProfile for more information on using the CreateUserProfile
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the CreateUserProfileRequest method.
 //    req, resp := client.CreateUserProfileRequest(params)
@@ -238,7 +239,7 @@ const opCreateUserProfile = "CreateUserProfile"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/CreateUserProfile
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/CreateUserProfile
 func (c *CodeStar) CreateUserProfileRequest(input *CreateUserProfileInput) (req *request.Request, output *CreateUserProfileOutput) {
 	op := &request.Operation{
 		Name:       opCreateUserProfile,
@@ -279,7 +280,7 @@ func (c *CodeStar) CreateUserProfileRequest(input *CreateUserProfileInput) (req 
 //   * ErrCodeValidationException "ValidationException"
 //   The specified input is either not valid, or it could not be validated.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/CreateUserProfile
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/CreateUserProfile
 func (c *CodeStar) CreateUserProfile(input *CreateUserProfileInput) (*CreateUserProfileOutput, error) {
 	req, out := c.CreateUserProfileRequest(input)
 	return out, req.Send()
@@ -305,19 +306,18 @@ const opDeleteProject = "DeleteProject"
 
 // DeleteProjectRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteProject operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See DeleteProject for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the DeleteProject method directly
-// instead.
+// See DeleteProject for more information on using the DeleteProject
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the DeleteProjectRequest method.
 //    req, resp := client.DeleteProjectRequest(params)
@@ -327,7 +327,7 @@ const opDeleteProject = "DeleteProject"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DeleteProject
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DeleteProject
 func (c *CodeStar) DeleteProjectRequest(input *DeleteProjectInput) (req *request.Request, output *DeleteProjectOutput) {
 	op := &request.Operation{
 		Name:       opDeleteProject,
@@ -368,7 +368,7 @@ func (c *CodeStar) DeleteProjectRequest(input *DeleteProjectInput) (req *request
 //   * ErrCodeInvalidServiceRoleException "InvalidServiceRoleException"
 //   The service role is not valid.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DeleteProject
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DeleteProject
 func (c *CodeStar) DeleteProject(input *DeleteProjectInput) (*DeleteProjectOutput, error) {
 	req, out := c.DeleteProjectRequest(input)
 	return out, req.Send()
@@ -394,19 +394,18 @@ const opDeleteUserProfile = "DeleteUserProfile"
 
 // DeleteUserProfileRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteUserProfile operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See DeleteUserProfile for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the DeleteUserProfile method directly
-// instead.
+// See DeleteUserProfile for more information on using the DeleteUserProfile
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the DeleteUserProfileRequest method.
 //    req, resp := client.DeleteUserProfileRequest(params)
@@ -416,7 +415,7 @@ const opDeleteUserProfile = "DeleteUserProfile"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DeleteUserProfile
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DeleteUserProfile
 func (c *CodeStar) DeleteUserProfileRequest(input *DeleteUserProfileInput) (req *request.Request, output *DeleteUserProfileOutput) {
 	op := &request.Operation{
 		Name:       opDeleteUserProfile,
@@ -451,7 +450,7 @@ func (c *CodeStar) DeleteUserProfileRequest(input *DeleteUserProfileInput) (req 
 //   * ErrCodeValidationException "ValidationException"
 //   The specified input is either not valid, or it could not be validated.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DeleteUserProfile
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DeleteUserProfile
 func (c *CodeStar) DeleteUserProfile(input *DeleteUserProfileInput) (*DeleteUserProfileOutput, error) {
 	req, out := c.DeleteUserProfileRequest(input)
 	return out, req.Send()
@@ -477,19 +476,18 @@ const opDescribeProject = "DescribeProject"
 
 // DescribeProjectRequest generates a "aws/request.Request" representing the
 // client's request for the DescribeProject operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See DescribeProject for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the DescribeProject method directly
-// instead.
+// See DescribeProject for more information on using the DescribeProject
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the DescribeProjectRequest method.
 //    req, resp := client.DescribeProjectRequest(params)
@@ -499,7 +497,7 @@ const opDescribeProject = "DescribeProject"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DescribeProject
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DescribeProject
 func (c *CodeStar) DescribeProjectRequest(input *DescribeProjectInput) (req *request.Request, output *DescribeProjectOutput) {
 	op := &request.Operation{
 		Name:       opDescribeProject,
@@ -544,7 +542,7 @@ func (c *CodeStar) DescribeProjectRequest(input *DescribeProjectInput) (req *req
 //   Another modification is being made. That modification must complete before
 //   you can make your change.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DescribeProject
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DescribeProject
 func (c *CodeStar) DescribeProject(input *DescribeProjectInput) (*DescribeProjectOutput, error) {
 	req, out := c.DescribeProjectRequest(input)
 	return out, req.Send()
@@ -570,19 +568,18 @@ const opDescribeUserProfile = "DescribeUserProfile"
 
 // DescribeUserProfileRequest generates a "aws/request.Request" representing the
 // client's request for the DescribeUserProfile operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See DescribeUserProfile for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the DescribeUserProfile method directly
-// instead.
+// See DescribeUserProfile for more information on using the DescribeUserProfile
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the DescribeUserProfileRequest method.
 //    req, resp := client.DescribeUserProfileRequest(params)
@@ -592,7 +589,7 @@ const opDescribeUserProfile = "DescribeUserProfile"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DescribeUserProfile
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DescribeUserProfile
 func (c *CodeStar) DescribeUserProfileRequest(input *DescribeUserProfileInput) (req *request.Request, output *DescribeUserProfileOutput) {
 	op := &request.Operation{
 		Name:       opDescribeUserProfile,
@@ -627,7 +624,7 @@ func (c *CodeStar) DescribeUserProfileRequest(input *DescribeUserProfileInput) (
 //   * ErrCodeValidationException "ValidationException"
 //   The specified input is either not valid, or it could not be validated.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DescribeUserProfile
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DescribeUserProfile
 func (c *CodeStar) DescribeUserProfile(input *DescribeUserProfileInput) (*DescribeUserProfileOutput, error) {
 	req, out := c.DescribeUserProfileRequest(input)
 	return out, req.Send()
@@ -653,19 +650,18 @@ const opDisassociateTeamMember = "DisassociateTeamMember"
 
 // DisassociateTeamMemberRequest generates a "aws/request.Request" representing the
 // client's request for the DisassociateTeamMember operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See DisassociateTeamMember for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the DisassociateTeamMember method directly
-// instead.
+// See DisassociateTeamMember for more information on using the DisassociateTeamMember
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the DisassociateTeamMemberRequest method.
 //    req, resp := client.DisassociateTeamMemberRequest(params)
@@ -675,7 +671,7 @@ const opDisassociateTeamMember = "DisassociateTeamMember"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DisassociateTeamMember
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DisassociateTeamMember
 func (c *CodeStar) DisassociateTeamMemberRequest(input *DisassociateTeamMemberInput) (req *request.Request, output *DisassociateTeamMemberOutput) {
 	op := &request.Operation{
 		Name:       opDisassociateTeamMember,
@@ -720,7 +716,7 @@ func (c *CodeStar) DisassociateTeamMemberRequest(input *DisassociateTeamMemberIn
 //   Another modification is being made. That modification must complete before
 //   you can make your change.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DisassociateTeamMember
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DisassociateTeamMember
 func (c *CodeStar) DisassociateTeamMember(input *DisassociateTeamMemberInput) (*DisassociateTeamMemberOutput, error) {
 	req, out := c.DisassociateTeamMemberRequest(input)
 	return out, req.Send()
@@ -746,19 +742,18 @@ const opListProjects = "ListProjects"
 
 // ListProjectsRequest generates a "aws/request.Request" representing the
 // client's request for the ListProjects operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See ListProjects for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the ListProjects method directly
-// instead.
+// See ListProjects for more information on using the ListProjects
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the ListProjectsRequest method.
 //    req, resp := client.ListProjectsRequest(params)
@@ -768,7 +763,7 @@ const opListProjects = "ListProjects"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListProjects
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListProjects
 func (c *CodeStar) ListProjectsRequest(input *ListProjectsInput) (req *request.Request, output *ListProjectsOutput) {
 	op := &request.Operation{
 		Name:       opListProjects,
@@ -803,7 +798,7 @@ func (c *CodeStar) ListProjectsRequest(input *ListProjectsInput) (req *request.R
 //   * ErrCodeValidationException "ValidationException"
 //   The specified input is either not valid, or it could not be validated.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListProjects
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListProjects
 func (c *CodeStar) ListProjects(input *ListProjectsInput) (*ListProjectsOutput, error) {
 	req, out := c.ListProjectsRequest(input)
 	return out, req.Send()
@@ -829,19 +824,18 @@ const opListResources = "ListResources"
 
 // ListResourcesRequest generates a "aws/request.Request" representing the
 // client's request for the ListResources operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See ListResources for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the ListResources method directly
-// instead.
+// See ListResources for more information on using the ListResources
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the ListResourcesRequest method.
 //    req, resp := client.ListResourcesRequest(params)
@@ -851,7 +845,7 @@ const opListResources = "ListResources"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListResources
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListResources
 func (c *CodeStar) ListResourcesRequest(input *ListResourcesInput) (req *request.Request, output *ListResourcesOutput) {
 	op := &request.Operation{
 		Name:       opListResources,
@@ -889,7 +883,7 @@ func (c *CodeStar) ListResourcesRequest(input *ListResourcesInput) (req *request
 //   * ErrCodeValidationException "ValidationException"
 //   The specified input is either not valid, or it could not be validated.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListResources
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListResources
 func (c *CodeStar) ListResources(input *ListResourcesInput) (*ListResourcesOutput, error) {
 	req, out := c.ListResourcesRequest(input)
 	return out, req.Send()
@@ -911,23 +905,107 @@ func (c *CodeStar) ListResourcesWithContext(ctx aws.Context, input *ListResource
 	return out, req.Send()
 }
 
+const opListTagsForProject = "ListTagsForProject"
+
+// ListTagsForProjectRequest generates a "aws/request.Request" representing the
+// client's request for the ListTagsForProject operation. The "output" return
+// value will be populated with the request's response once the request completes
+// successfully.
+//
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
+//
+// See ListTagsForProject for more information on using the ListTagsForProject
+// API call, and error handling.
+//
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
+//
+//    // Example sending a request using the ListTagsForProjectRequest method.
+//    req, resp := client.ListTagsForProjectRequest(params)
+//
+//    err := req.Send()
+//    if err == nil { // resp is now filled
+//        fmt.Println(resp)
+//    }
+//
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListTagsForProject
+func (c *CodeStar) ListTagsForProjectRequest(input *ListTagsForProjectInput) (req *request.Request, output *ListTagsForProjectOutput) {
+	op := &request.Operation{
+		Name:       opListTagsForProject,
+		HTTPMethod: "POST",
+		HTTPPath:   "/",
+	}
+
+	if input == nil {
+		input = &ListTagsForProjectInput{}
+	}
+
+	output = &ListTagsForProjectOutput{}
+	req = c.newRequest(op, input, output)
+	return
+}
+
+// ListTagsForProject API operation for AWS CodeStar.
+//
+// Gets the tags for a project.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for AWS CodeStar's
+// API operation ListTagsForProject for usage and error information.
+//
+// Returned Error Codes:
+//   * ErrCodeProjectNotFoundException "ProjectNotFoundException"
+//   The specified AWS CodeStar project was not found.
+//
+//   * ErrCodeValidationException "ValidationException"
+//   The specified input is either not valid, or it could not be validated.
+//
+//   * ErrCodeInvalidNextTokenException "InvalidNextTokenException"
+//   The next token is not valid.
+//
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListTagsForProject
+func (c *CodeStar) ListTagsForProject(input *ListTagsForProjectInput) (*ListTagsForProjectOutput, error) {
+	req, out := c.ListTagsForProjectRequest(input)
+	return out, req.Send()
+}
+
+// ListTagsForProjectWithContext is the same as ListTagsForProject with the addition of
+// the ability to pass a context and additional request options.
+//
+// See ListTagsForProject for details on how to use this API operation.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *CodeStar) ListTagsForProjectWithContext(ctx aws.Context, input *ListTagsForProjectInput, opts ...request.Option) (*ListTagsForProjectOutput, error) {
+	req, out := c.ListTagsForProjectRequest(input)
+	req.SetContext(ctx)
+	req.ApplyOptions(opts...)
+	return out, req.Send()
+}
+
 const opListTeamMembers = "ListTeamMembers"
 
 // ListTeamMembersRequest generates a "aws/request.Request" representing the
 // client's request for the ListTeamMembers operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See ListTeamMembers for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the ListTeamMembers method directly
-// instead.
+// See ListTeamMembers for more information on using the ListTeamMembers
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the ListTeamMembersRequest method.
 //    req, resp := client.ListTeamMembersRequest(params)
@@ -937,7 +1015,7 @@ const opListTeamMembers = "ListTeamMembers"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListTeamMembers
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListTeamMembers
 func (c *CodeStar) ListTeamMembersRequest(input *ListTeamMembersInput) (req *request.Request, output *ListTeamMembersOutput) {
 	op := &request.Operation{
 		Name:       opListTeamMembers,
@@ -975,7 +1053,7 @@ func (c *CodeStar) ListTeamMembersRequest(input *ListTeamMembersInput) (req *req
 //   * ErrCodeValidationException "ValidationException"
 //   The specified input is either not valid, or it could not be validated.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListTeamMembers
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListTeamMembers
 func (c *CodeStar) ListTeamMembers(input *ListTeamMembersInput) (*ListTeamMembersOutput, error) {
 	req, out := c.ListTeamMembersRequest(input)
 	return out, req.Send()
@@ -1001,19 +1079,18 @@ const opListUserProfiles = "ListUserProfiles"
 
 // ListUserProfilesRequest generates a "aws/request.Request" representing the
 // client's request for the ListUserProfiles operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See ListUserProfiles for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the ListUserProfiles method directly
-// instead.
+// See ListUserProfiles for more information on using the ListUserProfiles
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the ListUserProfilesRequest method.
 //    req, resp := client.ListUserProfilesRequest(params)
@@ -1023,7 +1100,7 @@ const opListUserProfiles = "ListUserProfiles"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListUserProfiles
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListUserProfiles
 func (c *CodeStar) ListUserProfilesRequest(input *ListUserProfilesInput) (req *request.Request, output *ListUserProfilesOutput) {
 	op := &request.Operation{
 		Name:       opListUserProfiles,
@@ -1058,7 +1135,7 @@ func (c *CodeStar) ListUserProfilesRequest(input *ListUserProfilesInput) (req *r
 //   * ErrCodeValidationException "ValidationException"
 //   The specified input is either not valid, or it could not be validated.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListUserProfiles
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListUserProfiles
 func (c *CodeStar) ListUserProfiles(input *ListUserProfilesInput) (*ListUserProfilesOutput, error) {
 	req, out := c.ListUserProfilesRequest(input)
 	return out, req.Send()
@@ -1080,23 +1157,200 @@ func (c *CodeStar) ListUserProfilesWithContext(ctx aws.Context, input *ListUserP
 	return out, req.Send()
 }
 
+const opTagProject = "TagProject"
+
+// TagProjectRequest generates a "aws/request.Request" representing the
+// client's request for the TagProject operation. The "output" return
+// value will be populated with the request's response once the request completes
+// successfully.
+//
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
+//
+// See TagProject for more information on using the TagProject
+// API call, and error handling.
+//
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
+//
+//    // Example sending a request using the TagProjectRequest method.
+//    req, resp := client.TagProjectRequest(params)
+//
+//    err := req.Send()
+//    if err == nil { // resp is now filled
+//        fmt.Println(resp)
+//    }
+//
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/TagProject
+func (c *CodeStar) TagProjectRequest(input *TagProjectInput) (req *request.Request, output *TagProjectOutput) {
+	op := &request.Operation{
+		Name:       opTagProject,
+		HTTPMethod: "POST",
+		HTTPPath:   "/",
+	}
+
+	if input == nil {
+		input = &TagProjectInput{}
+	}
+
+	output = &TagProjectOutput{}
+	req = c.newRequest(op, input, output)
+	return
+}
+
+// TagProject API operation for AWS CodeStar.
+//
+// Adds tags to a project.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for AWS CodeStar's
+// API operation TagProject for usage and error information.
+//
+// Returned Error Codes:
+//   * ErrCodeProjectNotFoundException "ProjectNotFoundException"
+//   The specified AWS CodeStar project was not found.
+//
+//   * ErrCodeValidationException "ValidationException"
+//   The specified input is either not valid, or it could not be validated.
+//
+//   * ErrCodeLimitExceededException "LimitExceededException"
+//   A resource limit has been exceeded.
+//
+//   * ErrCodeConcurrentModificationException "ConcurrentModificationException"
+//   Another modification is being made. That modification must complete before
+//   you can make your change.
+//
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/TagProject
+func (c *CodeStar) TagProject(input *TagProjectInput) (*TagProjectOutput, error) {
+	req, out := c.TagProjectRequest(input)
+	return out, req.Send()
+}
+
+// TagProjectWithContext is the same as TagProject with the addition of
+// the ability to pass a context and additional request options.
+//
+// See TagProject for details on how to use this API operation.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *CodeStar) TagProjectWithContext(ctx aws.Context, input *TagProjectInput, opts ...request.Option) (*TagProjectOutput, error) {
+	req, out := c.TagProjectRequest(input)
+	req.SetContext(ctx)
+	req.ApplyOptions(opts...)
+	return out, req.Send()
+}
+
+const opUntagProject = "UntagProject"
+
+// UntagProjectRequest generates a "aws/request.Request" representing the
+// client's request for the UntagProject operation. The "output" return
+// value will be populated with the request's response once the request completes
+// successfully.
+//
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
+//
+// See UntagProject for more information on using the UntagProject
+// API call, and error handling.
+//
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
+//
+//    // Example sending a request using the UntagProjectRequest method.
+//    req, resp := client.UntagProjectRequest(params)
+//
+//    err := req.Send()
+//    if err == nil { // resp is now filled
+//        fmt.Println(resp)
+//    }
+//
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UntagProject
+func (c *CodeStar) UntagProjectRequest(input *UntagProjectInput) (req *request.Request, output *UntagProjectOutput) {
+	op := &request.Operation{
+		Name:       opUntagProject,
+		HTTPMethod: "POST",
+		HTTPPath:   "/",
+	}
+
+	if input == nil {
+		input = &UntagProjectInput{}
+	}
+
+	output = &UntagProjectOutput{}
+	req = c.newRequest(op, input, output)
+	return
+}
+
+// UntagProject API operation for AWS CodeStar.
+//
+// Removes tags from a project.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for AWS CodeStar's
+// API operation UntagProject for usage and error information.
+//
+// Returned Error Codes:
+//   * ErrCodeProjectNotFoundException "ProjectNotFoundException"
+//   The specified AWS CodeStar project was not found.
+//
+//   * ErrCodeValidationException "ValidationException"
+//   The specified input is either not valid, or it could not be validated.
+//
+//   * ErrCodeLimitExceededException "LimitExceededException"
+//   A resource limit has been exceeded.
+//
+//   * ErrCodeConcurrentModificationException "ConcurrentModificationException"
+//   Another modification is being made. That modification must complete before
+//   you can make your change.
+//
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UntagProject
+func (c *CodeStar) UntagProject(input *UntagProjectInput) (*UntagProjectOutput, error) {
+	req, out := c.UntagProjectRequest(input)
+	return out, req.Send()
+}
+
+// UntagProjectWithContext is the same as UntagProject with the addition of
+// the ability to pass a context and additional request options.
+//
+// See UntagProject for details on how to use this API operation.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *CodeStar) UntagProjectWithContext(ctx aws.Context, input *UntagProjectInput, opts ...request.Option) (*UntagProjectOutput, error) {
+	req, out := c.UntagProjectRequest(input)
+	req.SetContext(ctx)
+	req.ApplyOptions(opts...)
+	return out, req.Send()
+}
+
 const opUpdateProject = "UpdateProject"
 
 // UpdateProjectRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateProject operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See UpdateProject for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the UpdateProject method directly
-// instead.
+// See UpdateProject for more information on using the UpdateProject
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the UpdateProjectRequest method.
 //    req, resp := client.UpdateProjectRequest(params)
@@ -1106,7 +1360,7 @@ const opUpdateProject = "UpdateProject"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateProject
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateProject
 func (c *CodeStar) UpdateProjectRequest(input *UpdateProjectInput) (req *request.Request, output *UpdateProjectOutput) {
 	op := &request.Operation{
 		Name:       opUpdateProject,
@@ -1141,7 +1395,7 @@ func (c *CodeStar) UpdateProjectRequest(input *UpdateProjectInput) (req *request
 //   * ErrCodeValidationException "ValidationException"
 //   The specified input is either not valid, or it could not be validated.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateProject
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateProject
 func (c *CodeStar) UpdateProject(input *UpdateProjectInput) (*UpdateProjectOutput, error) {
 	req, out := c.UpdateProjectRequest(input)
 	return out, req.Send()
@@ -1167,19 +1421,18 @@ const opUpdateTeamMember = "UpdateTeamMember"
 
 // UpdateTeamMemberRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateTeamMember operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See UpdateTeamMember for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the UpdateTeamMember method directly
-// instead.
+// See UpdateTeamMember for more information on using the UpdateTeamMember
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the UpdateTeamMemberRequest method.
 //    req, resp := client.UpdateTeamMemberRequest(params)
@@ -1189,7 +1442,7 @@ const opUpdateTeamMember = "UpdateTeamMember"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateTeamMember
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateTeamMember
 func (c *CodeStar) UpdateTeamMemberRequest(input *UpdateTeamMemberInput) (req *request.Request, output *UpdateTeamMemberOutput) {
 	op := &request.Operation{
 		Name:       opUpdateTeamMember,
@@ -1242,7 +1495,7 @@ func (c *CodeStar) UpdateTeamMemberRequest(input *UpdateTeamMemberInput) (req *r
 //   * ErrCodeTeamMemberNotFoundException "TeamMemberNotFoundException"
 //   The specified team member was not found.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateTeamMember
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateTeamMember
 func (c *CodeStar) UpdateTeamMember(input *UpdateTeamMemberInput) (*UpdateTeamMemberOutput, error) {
 	req, out := c.UpdateTeamMemberRequest(input)
 	return out, req.Send()
@@ -1268,19 +1521,18 @@ const opUpdateUserProfile = "UpdateUserProfile"
 
 // UpdateUserProfileRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateUserProfile operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See UpdateUserProfile for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the UpdateUserProfile method directly
-// instead.
+// See UpdateUserProfile for more information on using the UpdateUserProfile
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the UpdateUserProfileRequest method.
 //    req, resp := client.UpdateUserProfileRequest(params)
@@ -1290,7 +1542,7 @@ const opUpdateUserProfile = "UpdateUserProfile"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateUserProfile
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateUserProfile
 func (c *CodeStar) UpdateUserProfileRequest(input *UpdateUserProfileInput) (req *request.Request, output *UpdateUserProfileOutput) {
 	op := &request.Operation{
 		Name:       opUpdateUserProfile,
@@ -1327,7 +1579,7 @@ func (c *CodeStar) UpdateUserProfileRequest(input *UpdateUserProfileInput) (req 
 //   * ErrCodeValidationException "ValidationException"
 //   The specified input is either not valid, or it could not be validated.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateUserProfile
+// See also, https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateUserProfile
 func (c *CodeStar) UpdateUserProfile(input *UpdateUserProfileInput) (*UpdateUserProfileOutput, error) {
 	req, out := c.UpdateUserProfileRequest(input)
 	return out, req.Send()
@@ -1349,7 +1601,6 @@ func (c *CodeStar) UpdateUserProfileWithContext(ctx aws.Context, input *UpdateUs
 	return out, req.Send()
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/AssociateTeamMemberRequest
 type AssociateTeamMemberInput struct {
 	_ struct{} `type:"structure"`
 
@@ -1373,8 +1624,8 @@ type AssociateTeamMemberInput struct {
 	// to remotely access project resources, for example Amazon EC2 instances.
 	RemoteAccessAllowed *bool `locationName:"remoteAccessAllowed" type:"boolean"`
 
-	// The Amazon Resource Name (ARN) for the IAM user you want to add to the DevHub
-	// project.
+	// The Amazon Resource Name (ARN) for the IAM user you want to add to the AWS
+	// CodeStar project.
 	//
 	// UserArn is a required field
 	UserArn *string `locationName:"userArn" min:"32" type:"string" required:"true"`
@@ -1448,7 +1699,6 @@ func (s *AssociateTeamMemberInput) SetUserArn(v string) *AssociateTeamMemberInpu
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/AssociateTeamMemberResult
 type AssociateTeamMemberOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -1473,25 +1723,254 @@ func (s *AssociateTeamMemberOutput) SetClientRequestToken(v string) *AssociateTe
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/CreateProjectRequest
+// Location and destination information about the source code files provided
+// with the project request. The source code is uploaded to the new project
+// source repository after project creation.
+type Code struct {
+	_ struct{} `type:"structure"`
+
+	// The repository to be created in AWS CodeStar. Valid values are AWS CodeCommit
+	// or GitHub. After AWS CodeStar provisions the new repository, the source code
+	// files provided with the project request are placed in the repository.
+	//
+	// Destination is a required field
+	Destination *CodeDestination `locationName:"destination" type:"structure" required:"true"`
+
+	// The location where the source code files provided with the project request
+	// are stored. AWS CodeStar retrieves the files during project creation.
+	//
+	// Source is a required field
+	Source *CodeSource `locationName:"source" type:"structure" required:"true"`
+}
+
+// String returns the string representation
+func (s Code) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s Code) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *Code) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "Code"}
+	if s.Destination == nil {
+		invalidParams.Add(request.NewErrParamRequired("Destination"))
+	}
+	if s.Source == nil {
+		invalidParams.Add(request.NewErrParamRequired("Source"))
+	}
+	if s.Destination != nil {
+		if err := s.Destination.Validate(); err != nil {
+			invalidParams.AddNested("Destination", err.(request.ErrInvalidParams))
+		}
+	}
+	if s.Source != nil {
+		if err := s.Source.Validate(); err != nil {
+			invalidParams.AddNested("Source", err.(request.ErrInvalidParams))
+		}
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetDestination sets the Destination field's value.
+func (s *Code) SetDestination(v *CodeDestination) *Code {
+	s.Destination = v
+	return s
+}
+
+// SetSource sets the Source field's value.
+func (s *Code) SetSource(v *CodeSource) *Code {
+	s.Source = v
+	return s
+}
+
+// Information about the AWS CodeCommit repository to be created in AWS CodeStar.
+// This is where the source code files provided with the project request will
+// be uploaded after project creation.
+type CodeCommitCodeDestination struct {
+	_ struct{} `type:"structure"`
+
+	// The name of the AWS CodeCommit repository to be created in AWS CodeStar.
+	//
+	// Name is a required field
+	Name *string `locationName:"name" min:"1" type:"string" required:"true"`
+}
+
+// String returns the string representation
+func (s CodeCommitCodeDestination) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s CodeCommitCodeDestination) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *CodeCommitCodeDestination) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "CodeCommitCodeDestination"}
+	if s.Name == nil {
+		invalidParams.Add(request.NewErrParamRequired("Name"))
+	}
+	if s.Name != nil && len(*s.Name) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("Name", 1))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetName sets the Name field's value.
+func (s *CodeCommitCodeDestination) SetName(v string) *CodeCommitCodeDestination {
+	s.Name = &v
+	return s
+}
+
+// The repository to be created in AWS CodeStar. Valid values are AWS CodeCommit
+// or GitHub. After AWS CodeStar provisions the new repository, the source code
+// files provided with the project request are placed in the repository.
+type CodeDestination struct {
+	_ struct{} `type:"structure"`
+
+	// Information about the AWS CodeCommit repository to be created in AWS CodeStar.
+	// This is where the source code files provided with the project request will
+	// be uploaded after project creation.
+	CodeCommit *CodeCommitCodeDestination `locationName:"codeCommit" type:"structure"`
+
+	// Information about the GitHub repository to be created in AWS CodeStar. This
+	// is where the source code files provided with the project request will be
+	// uploaded after project creation.
+	GitHub *GitHubCodeDestination `locationName:"gitHub" type:"structure"`
+}
+
+// String returns the string representation
+func (s CodeDestination) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s CodeDestination) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *CodeDestination) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "CodeDestination"}
+	if s.CodeCommit != nil {
+		if err := s.CodeCommit.Validate(); err != nil {
+			invalidParams.AddNested("CodeCommit", err.(request.ErrInvalidParams))
+		}
+	}
+	if s.GitHub != nil {
+		if err := s.GitHub.Validate(); err != nil {
+			invalidParams.AddNested("GitHub", err.(request.ErrInvalidParams))
+		}
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetCodeCommit sets the CodeCommit field's value.
+func (s *CodeDestination) SetCodeCommit(v *CodeCommitCodeDestination) *CodeDestination {
+	s.CodeCommit = v
+	return s
+}
+
+// SetGitHub sets the GitHub field's value.
+func (s *CodeDestination) SetGitHub(v *GitHubCodeDestination) *CodeDestination {
+	s.GitHub = v
+	return s
+}
+
+// The location where the source code files provided with the project request
+// are stored. AWS CodeStar retrieves the files during project creation.
+type CodeSource struct {
+	_ struct{} `type:"structure"`
+
+	// Information about the Amazon S3 location where the source code files provided
+	// with the project request are stored.
+	//
+	// S3 is a required field
+	S3 *S3Location `locationName:"s3" type:"structure" required:"true"`
+}
+
+// String returns the string representation
+func (s CodeSource) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s CodeSource) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *CodeSource) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "CodeSource"}
+	if s.S3 == nil {
+		invalidParams.Add(request.NewErrParamRequired("S3"))
+	}
+	if s.S3 != nil {
+		if err := s.S3.Validate(); err != nil {
+			invalidParams.AddNested("S3", err.(request.ErrInvalidParams))
+		}
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetS3 sets the S3 field's value.
+func (s *CodeSource) SetS3(v *S3Location) *CodeSource {
+	s.S3 = v
+	return s
+}
+
 type CreateProjectInput struct {
 	_ struct{} `type:"structure"`
 
-	// Reserved for future use.
+	// A user- or system-generated token that identifies the entity that requested
+	// project creation. This token can be used to repeat the request.
 	ClientRequestToken *string `locationName:"clientRequestToken" min:"1" type:"string"`
 
-	// Reserved for future use.
+	// The description of the project, if any.
 	Description *string `locationName:"description" type:"string"`
 
-	// Reserved for future use.
+	// The ID of the project to be created in AWS CodeStar.
 	//
 	// Id is a required field
 	Id *string `locationName:"id" min:"2" type:"string" required:"true"`
 
-	// Reserved for future use.
+	// The display name for the project to be created in AWS CodeStar.
 	//
 	// Name is a required field
 	Name *string `locationName:"name" min:"1" type:"string" required:"true"`
+
+	// A list of the Code objects submitted with the project request. If this parameter
+	// is specified, the request must also include the toolchain parameter.
+	SourceCode []*Code `locationName:"sourceCode" type:"list"`
+
+	// The tags created for the project.
+	Tags map[string]*string `locationName:"tags" type:"map"`
+
+	// The name of the toolchain template file submitted with the project request.
+	// If this parameter is specified, the request must also include the sourceCode
+	// parameter.
+	Toolchain *Toolchain `locationName:"toolchain" type:"structure"`
 }
 
 // String returns the string representation
@@ -1521,6 +2000,21 @@ func (s *CreateProjectInput) Validate() error {
 	}
 	if s.Name != nil && len(*s.Name) < 1 {
 		invalidParams.Add(request.NewErrParamMinLen("Name", 1))
+	}
+	if s.SourceCode != nil {
+		for i, v := range s.SourceCode {
+			if v == nil {
+				continue
+			}
+			if err := v.Validate(); err != nil {
+				invalidParams.AddNested(fmt.Sprintf("%s[%v]", "SourceCode", i), err.(request.ErrInvalidParams))
+			}
+		}
+	}
+	if s.Toolchain != nil {
+		if err := s.Toolchain.Validate(); err != nil {
+			invalidParams.AddNested("Toolchain", err.(request.ErrInvalidParams))
+		}
 	}
 
 	if invalidParams.Len() > 0 {
@@ -1553,19 +2047,37 @@ func (s *CreateProjectInput) SetName(v string) *CreateProjectInput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/CreateProjectResult
+// SetSourceCode sets the SourceCode field's value.
+func (s *CreateProjectInput) SetSourceCode(v []*Code) *CreateProjectInput {
+	s.SourceCode = v
+	return s
+}
+
+// SetTags sets the Tags field's value.
+func (s *CreateProjectInput) SetTags(v map[string]*string) *CreateProjectInput {
+	s.Tags = v
+	return s
+}
+
+// SetToolchain sets the Toolchain field's value.
+func (s *CreateProjectInput) SetToolchain(v *Toolchain) *CreateProjectInput {
+	s.Toolchain = v
+	return s
+}
+
 type CreateProjectOutput struct {
 	_ struct{} `type:"structure"`
 
-	// Reserved for future use.
+	// The Amazon Resource Name (ARN) of the created project.
 	//
 	// Arn is a required field
 	Arn *string `locationName:"arn" type:"string" required:"true"`
 
-	// Reserved for future use.
+	// A user- or system-generated token that identifies the entity that requested
+	// project creation.
 	ClientRequestToken *string `locationName:"clientRequestToken" min:"1" type:"string"`
 
-	// Reserved for future use.
+	// The ID of the project.
 	//
 	// Id is a required field
 	Id *string `locationName:"id" min:"2" type:"string" required:"true"`
@@ -1608,7 +2120,6 @@ func (s *CreateProjectOutput) SetProjectTemplateId(v string) *CreateProjectOutpu
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/CreateUserProfileRequest
 type CreateUserProfileInput struct {
 	_ struct{} `type:"structure"`
 
@@ -1697,12 +2208,11 @@ func (s *CreateUserProfileInput) SetUserArn(v string) *CreateUserProfileInput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/CreateUserProfileResult
 type CreateUserProfileOutput struct {
 	_ struct{} `type:"structure"`
 
 	// The date the user profile was created, in timestamp format.
-	CreatedTimestamp *time.Time `locationName:"createdTimestamp" type:"timestamp" timestampFormat:"unix"`
+	CreatedTimestamp *time.Time `locationName:"createdTimestamp" type:"timestamp"`
 
 	// The name that is displayed as the friendly name for the user in AWS CodeStar.
 	DisplayName *string `locationName:"displayName" min:"1" type:"string"`
@@ -1712,7 +2222,7 @@ type CreateUserProfileOutput struct {
 	EmailAddress *string `locationName:"emailAddress" min:"3" type:"string"`
 
 	// The date the user profile was last modified, in timestamp format.
-	LastModifiedTimestamp *time.Time `locationName:"lastModifiedTimestamp" type:"timestamp" timestampFormat:"unix"`
+	LastModifiedTimestamp *time.Time `locationName:"lastModifiedTimestamp" type:"timestamp"`
 
 	// The SSH public key associated with the user in AWS CodeStar. This is the
 	// public portion of the public/private keypair the user can use to access project
@@ -1771,7 +2281,6 @@ func (s *CreateUserProfileOutput) SetUserArn(v string) *CreateUserProfileOutput 
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DeleteProjectRequest
 type DeleteProjectInput struct {
 	_ struct{} `type:"structure"`
 
@@ -1838,7 +2347,6 @@ func (s *DeleteProjectInput) SetId(v string) *DeleteProjectInput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DeleteProjectResult
 type DeleteProjectOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -1872,7 +2380,6 @@ func (s *DeleteProjectOutput) SetStackId(v string) *DeleteProjectOutput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DeleteUserProfileRequest
 type DeleteUserProfileInput struct {
 	_ struct{} `type:"structure"`
 
@@ -1914,7 +2421,6 @@ func (s *DeleteUserProfileInput) SetUserArn(v string) *DeleteUserProfileInput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DeleteUserProfileResult
 type DeleteUserProfileOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -1940,7 +2446,6 @@ func (s *DeleteUserProfileOutput) SetUserArn(v string) *DeleteUserProfileOutput 
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DescribeProjectRequest
 type DescribeProjectInput struct {
 	_ struct{} `type:"structure"`
 
@@ -1982,7 +2487,6 @@ func (s *DescribeProjectInput) SetId(v string) *DescribeProjectInput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DescribeProjectResult
 type DescribeProjectOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -1994,7 +2498,7 @@ type DescribeProjectOutput struct {
 	ClientRequestToken *string `locationName:"clientRequestToken" min:"1" type:"string"`
 
 	// The date and time the project was created, in timestamp format.
-	CreatedTimeStamp *time.Time `locationName:"createdTimeStamp" type:"timestamp" timestampFormat:"unix"`
+	CreatedTimeStamp *time.Time `locationName:"createdTimeStamp" type:"timestamp"`
 
 	// The description of the project, if any.
 	Description *string `locationName:"description" type:"string"`
@@ -2011,6 +2515,9 @@ type DescribeProjectOutput struct {
 	// The ID of the primary stack in AWS CloudFormation used to generate resources
 	// for the project.
 	StackId *string `locationName:"stackId" type:"string"`
+
+	// The project creation or deletion status.
+	Status *ProjectStatus `locationName:"status" type:"structure"`
 }
 
 // String returns the string representation
@@ -2071,7 +2578,12 @@ func (s *DescribeProjectOutput) SetStackId(v string) *DescribeProjectOutput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DescribeUserProfileRequest
+// SetStatus sets the Status field's value.
+func (s *DescribeProjectOutput) SetStatus(v *ProjectStatus) *DescribeProjectOutput {
+	s.Status = v
+	return s
+}
+
 type DescribeUserProfileInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2113,7 +2625,6 @@ func (s *DescribeUserProfileInput) SetUserArn(v string) *DescribeUserProfileInpu
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DescribeUserProfileResult
 type DescribeUserProfileOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2121,7 +2632,7 @@ type DescribeUserProfileOutput struct {
 	// format.
 	//
 	// CreatedTimestamp is a required field
-	CreatedTimestamp *time.Time `locationName:"createdTimestamp" type:"timestamp" timestampFormat:"unix" required:"true"`
+	CreatedTimestamp *time.Time `locationName:"createdTimestamp" type:"timestamp" required:"true"`
 
 	// The display name shown for the user in AWS CodeStar projects. For example,
 	// this could be set to both first and last name ("Mary Major") or a single
@@ -2140,7 +2651,7 @@ type DescribeUserProfileOutput struct {
 	// The date and time when the user profile was last modified, in timestamp format.
 	//
 	// LastModifiedTimestamp is a required field
-	LastModifiedTimestamp *time.Time `locationName:"lastModifiedTimestamp" type:"timestamp" timestampFormat:"unix" required:"true"`
+	LastModifiedTimestamp *time.Time `locationName:"lastModifiedTimestamp" type:"timestamp" required:"true"`
 
 	// The SSH public key associated with the user. This SSH public key is associated
 	// with the user profile, and can be used in conjunction with the associated
@@ -2200,7 +2711,6 @@ func (s *DescribeUserProfileOutput) SetUserArn(v string) *DescribeUserProfileOut
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DisassociateTeamMemberRequest
 type DisassociateTeamMemberInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2260,7 +2770,6 @@ func (s *DisassociateTeamMemberInput) SetUserArn(v string) *DisassociateTeamMemb
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/DisassociateTeamMemberResult
 type DisassociateTeamMemberOutput struct {
 	_ struct{} `type:"structure"`
 }
@@ -2275,7 +2784,142 @@ func (s DisassociateTeamMemberOutput) GoString() string {
 	return s.String()
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListProjectsRequest
+// Information about the GitHub repository to be created in AWS CodeStar. This
+// is where the source code files provided with the project request will be
+// uploaded after project creation.
+type GitHubCodeDestination struct {
+	_ struct{} `type:"structure"`
+
+	// Description for the GitHub repository to be created in AWS CodeStar. This
+	// description displays in GitHub after the repository is created.
+	Description *string `locationName:"description" min:"1" type:"string"`
+
+	// Whether to enable issues for the GitHub repository.
+	//
+	// IssuesEnabled is a required field
+	IssuesEnabled *bool `locationName:"issuesEnabled" type:"boolean" required:"true"`
+
+	// Name of the GitHub repository to be created in AWS CodeStar.
+	//
+	// Name is a required field
+	Name *string `locationName:"name" min:"1" type:"string" required:"true"`
+
+	// The GitHub username for the owner of the GitHub repository to be created
+	// in AWS CodeStar. If this repository should be owned by a GitHub organization,
+	// provide its name.
+	//
+	// Owner is a required field
+	Owner *string `locationName:"owner" min:"1" type:"string" required:"true"`
+
+	// Whether the GitHub repository is to be a private repository.
+	//
+	// PrivateRepository is a required field
+	PrivateRepository *bool `locationName:"privateRepository" type:"boolean" required:"true"`
+
+	// The GitHub user's personal access token for the GitHub repository.
+	//
+	// Token is a required field
+	Token *string `locationName:"token" min:"1" type:"string" required:"true"`
+
+	// The type of GitHub repository to be created in AWS CodeStar. Valid values
+	// are User or Organization.
+	//
+	// Type is a required field
+	Type *string `locationName:"type" type:"string" required:"true"`
+}
+
+// String returns the string representation
+func (s GitHubCodeDestination) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s GitHubCodeDestination) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *GitHubCodeDestination) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "GitHubCodeDestination"}
+	if s.Description != nil && len(*s.Description) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("Description", 1))
+	}
+	if s.IssuesEnabled == nil {
+		invalidParams.Add(request.NewErrParamRequired("IssuesEnabled"))
+	}
+	if s.Name == nil {
+		invalidParams.Add(request.NewErrParamRequired("Name"))
+	}
+	if s.Name != nil && len(*s.Name) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("Name", 1))
+	}
+	if s.Owner == nil {
+		invalidParams.Add(request.NewErrParamRequired("Owner"))
+	}
+	if s.Owner != nil && len(*s.Owner) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("Owner", 1))
+	}
+	if s.PrivateRepository == nil {
+		invalidParams.Add(request.NewErrParamRequired("PrivateRepository"))
+	}
+	if s.Token == nil {
+		invalidParams.Add(request.NewErrParamRequired("Token"))
+	}
+	if s.Token != nil && len(*s.Token) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("Token", 1))
+	}
+	if s.Type == nil {
+		invalidParams.Add(request.NewErrParamRequired("Type"))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetDescription sets the Description field's value.
+func (s *GitHubCodeDestination) SetDescription(v string) *GitHubCodeDestination {
+	s.Description = &v
+	return s
+}
+
+// SetIssuesEnabled sets the IssuesEnabled field's value.
+func (s *GitHubCodeDestination) SetIssuesEnabled(v bool) *GitHubCodeDestination {
+	s.IssuesEnabled = &v
+	return s
+}
+
+// SetName sets the Name field's value.
+func (s *GitHubCodeDestination) SetName(v string) *GitHubCodeDestination {
+	s.Name = &v
+	return s
+}
+
+// SetOwner sets the Owner field's value.
+func (s *GitHubCodeDestination) SetOwner(v string) *GitHubCodeDestination {
+	s.Owner = &v
+	return s
+}
+
+// SetPrivateRepository sets the PrivateRepository field's value.
+func (s *GitHubCodeDestination) SetPrivateRepository(v bool) *GitHubCodeDestination {
+	s.PrivateRepository = &v
+	return s
+}
+
+// SetToken sets the Token field's value.
+func (s *GitHubCodeDestination) SetToken(v string) *GitHubCodeDestination {
+	s.Token = &v
+	return s
+}
+
+// SetType sets the Type field's value.
+func (s *GitHubCodeDestination) SetType(v string) *GitHubCodeDestination {
+	s.Type = &v
+	return s
+}
+
 type ListProjectsInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2325,7 +2969,6 @@ func (s *ListProjectsInput) SetNextToken(v string) *ListProjectsInput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListProjectsResult
 type ListProjectsOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2361,11 +3004,10 @@ func (s *ListProjectsOutput) SetProjects(v []*ProjectSummary) *ListProjectsOutpu
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListResourcesRequest
 type ListResourcesInput struct {
 	_ struct{} `type:"structure"`
 
-	// he maximum amount of data that can be contained in a single set of results.
+	// The maximum amount of data that can be contained in a single set of results.
 	MaxResults *int64 `locationName:"maxResults" min:"1" type:"integer"`
 
 	// The continuation token for the next set of results, if the results cannot
@@ -2428,7 +3070,6 @@ func (s *ListResourcesInput) SetProjectId(v string) *ListResourcesInput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListResourcesResult
 type ListResourcesOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2462,7 +3103,103 @@ func (s *ListResourcesOutput) SetResources(v []*Resource) *ListResourcesOutput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListTeamMembersRequest
+type ListTagsForProjectInput struct {
+	_ struct{} `type:"structure"`
+
+	// The ID of the project to get tags for.
+	//
+	// Id is a required field
+	Id *string `locationName:"id" min:"2" type:"string" required:"true"`
+
+	// Reserved for future use.
+	MaxResults *int64 `locationName:"maxResults" min:"1" type:"integer"`
+
+	// Reserved for future use.
+	NextToken *string `locationName:"nextToken" min:"1" type:"string"`
+}
+
+// String returns the string representation
+func (s ListTagsForProjectInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s ListTagsForProjectInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *ListTagsForProjectInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "ListTagsForProjectInput"}
+	if s.Id == nil {
+		invalidParams.Add(request.NewErrParamRequired("Id"))
+	}
+	if s.Id != nil && len(*s.Id) < 2 {
+		invalidParams.Add(request.NewErrParamMinLen("Id", 2))
+	}
+	if s.MaxResults != nil && *s.MaxResults < 1 {
+		invalidParams.Add(request.NewErrParamMinValue("MaxResults", 1))
+	}
+	if s.NextToken != nil && len(*s.NextToken) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("NextToken", 1))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetId sets the Id field's value.
+func (s *ListTagsForProjectInput) SetId(v string) *ListTagsForProjectInput {
+	s.Id = &v
+	return s
+}
+
+// SetMaxResults sets the MaxResults field's value.
+func (s *ListTagsForProjectInput) SetMaxResults(v int64) *ListTagsForProjectInput {
+	s.MaxResults = &v
+	return s
+}
+
+// SetNextToken sets the NextToken field's value.
+func (s *ListTagsForProjectInput) SetNextToken(v string) *ListTagsForProjectInput {
+	s.NextToken = &v
+	return s
+}
+
+type ListTagsForProjectOutput struct {
+	_ struct{} `type:"structure"`
+
+	// Reserved for future use.
+	NextToken *string `locationName:"nextToken" min:"1" type:"string"`
+
+	// The tags for the project.
+	Tags map[string]*string `locationName:"tags" type:"map"`
+}
+
+// String returns the string representation
+func (s ListTagsForProjectOutput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s ListTagsForProjectOutput) GoString() string {
+	return s.String()
+}
+
+// SetNextToken sets the NextToken field's value.
+func (s *ListTagsForProjectOutput) SetNextToken(v string) *ListTagsForProjectOutput {
+	s.NextToken = &v
+	return s
+}
+
+// SetTags sets the Tags field's value.
+func (s *ListTagsForProjectOutput) SetTags(v map[string]*string) *ListTagsForProjectOutput {
+	s.Tags = v
+	return s
+}
+
 type ListTeamMembersInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2529,7 +3266,6 @@ func (s *ListTeamMembersInput) SetProjectId(v string) *ListTeamMembersInput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListTeamMembersResult
 type ListTeamMembersOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2565,7 +3301,6 @@ func (s *ListTeamMembersOutput) SetTeamMembers(v []*TeamMember) *ListTeamMembers
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListUserProfilesRequest
 type ListUserProfilesInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2615,7 +3350,6 @@ func (s *ListUserProfilesInput) SetNextToken(v string) *ListUserProfilesInput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ListUserProfilesResult
 type ListUserProfilesOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2651,8 +3385,42 @@ func (s *ListUserProfilesOutput) SetUserProfiles(v []*UserProfileSummary) *ListU
 	return s
 }
 
+// An indication of whether a project creation or deletion is failed or successful.
+type ProjectStatus struct {
+	_ struct{} `type:"structure"`
+
+	// In the case of a project creation or deletion failure, a reason for the failure.
+	Reason *string `locationName:"reason" type:"string"`
+
+	// The phase of completion for a project creation or deletion.
+	//
+	// State is a required field
+	State *string `locationName:"state" type:"string" required:"true"`
+}
+
+// String returns the string representation
+func (s ProjectStatus) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s ProjectStatus) GoString() string {
+	return s.String()
+}
+
+// SetReason sets the Reason field's value.
+func (s *ProjectStatus) SetReason(v string) *ProjectStatus {
+	s.Reason = &v
+	return s
+}
+
+// SetState sets the State field's value.
+func (s *ProjectStatus) SetState(v string) *ProjectStatus {
+	s.State = &v
+	return s
+}
+
 // Information about the metadata for a project.
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/ProjectSummary
 type ProjectSummary struct {
 	_ struct{} `type:"structure"`
 
@@ -2686,7 +3454,6 @@ func (s *ProjectSummary) SetProjectId(v string) *ProjectSummary {
 }
 
 // Information about a resource for a project.
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/Resource
 type Resource struct {
 	_ struct{} `type:"structure"`
 
@@ -2712,8 +3479,134 @@ func (s *Resource) SetId(v string) *Resource {
 	return s
 }
 
+// The Amazon S3 location where the source code files provided with the project
+// request are stored.
+type S3Location struct {
+	_ struct{} `type:"structure"`
+
+	// The Amazon S3 object key where the source code files provided with the project
+	// request are stored.
+	BucketKey *string `locationName:"bucketKey" type:"string"`
+
+	// The Amazon S3 bucket name where the source code files provided with the project
+	// request are stored.
+	BucketName *string `locationName:"bucketName" min:"3" type:"string"`
+}
+
+// String returns the string representation
+func (s S3Location) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s S3Location) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *S3Location) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "S3Location"}
+	if s.BucketName != nil && len(*s.BucketName) < 3 {
+		invalidParams.Add(request.NewErrParamMinLen("BucketName", 3))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetBucketKey sets the BucketKey field's value.
+func (s *S3Location) SetBucketKey(v string) *S3Location {
+	s.BucketKey = &v
+	return s
+}
+
+// SetBucketName sets the BucketName field's value.
+func (s *S3Location) SetBucketName(v string) *S3Location {
+	s.BucketName = &v
+	return s
+}
+
+type TagProjectInput struct {
+	_ struct{} `type:"structure"`
+
+	// The ID of the project you want to add a tag to.
+	//
+	// Id is a required field
+	Id *string `locationName:"id" min:"2" type:"string" required:"true"`
+
+	// The tags you want to add to the project.
+	//
+	// Tags is a required field
+	Tags map[string]*string `locationName:"tags" type:"map" required:"true"`
+}
+
+// String returns the string representation
+func (s TagProjectInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s TagProjectInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *TagProjectInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "TagProjectInput"}
+	if s.Id == nil {
+		invalidParams.Add(request.NewErrParamRequired("Id"))
+	}
+	if s.Id != nil && len(*s.Id) < 2 {
+		invalidParams.Add(request.NewErrParamMinLen("Id", 2))
+	}
+	if s.Tags == nil {
+		invalidParams.Add(request.NewErrParamRequired("Tags"))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetId sets the Id field's value.
+func (s *TagProjectInput) SetId(v string) *TagProjectInput {
+	s.Id = &v
+	return s
+}
+
+// SetTags sets the Tags field's value.
+func (s *TagProjectInput) SetTags(v map[string]*string) *TagProjectInput {
+	s.Tags = v
+	return s
+}
+
+type TagProjectOutput struct {
+	_ struct{} `type:"structure"`
+
+	// The tags for the project.
+	Tags map[string]*string `locationName:"tags" type:"map"`
+}
+
+// String returns the string representation
+func (s TagProjectOutput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s TagProjectOutput) GoString() string {
+	return s.String()
+}
+
+// SetTags sets the Tags field's value.
+func (s *TagProjectOutput) SetTags(v map[string]*string) *TagProjectOutput {
+	s.Tags = v
+	return s
+}
+
 // Information about a team member in a project.
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/TeamMember
 type TeamMember struct {
 	_ struct{} `type:"structure"`
 
@@ -2762,7 +3655,192 @@ func (s *TeamMember) SetUserArn(v string) *TeamMember {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateProjectRequest
+// The toolchain template file provided with the project request. AWS CodeStar
+// uses the template to provision the toolchain stack in AWS CloudFormation.
+type Toolchain struct {
+	_ struct{} `type:"structure"`
+
+	// The service role ARN for AWS CodeStar to use for the toolchain template during
+	// stack provisioning.
+	RoleArn *string `locationName:"roleArn" min:"1" type:"string"`
+
+	// The Amazon S3 location where the toolchain template file provided with the
+	// project request is stored. AWS CodeStar retrieves the file during project
+	// creation.
+	//
+	// Source is a required field
+	Source *ToolchainSource `locationName:"source" type:"structure" required:"true"`
+
+	// The list of parameter overrides to be passed into the toolchain template
+	// during stack provisioning, if any.
+	StackParameters map[string]*string `locationName:"stackParameters" type:"map"`
+}
+
+// String returns the string representation
+func (s Toolchain) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s Toolchain) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *Toolchain) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "Toolchain"}
+	if s.RoleArn != nil && len(*s.RoleArn) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RoleArn", 1))
+	}
+	if s.Source == nil {
+		invalidParams.Add(request.NewErrParamRequired("Source"))
+	}
+	if s.Source != nil {
+		if err := s.Source.Validate(); err != nil {
+			invalidParams.AddNested("Source", err.(request.ErrInvalidParams))
+		}
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetRoleArn sets the RoleArn field's value.
+func (s *Toolchain) SetRoleArn(v string) *Toolchain {
+	s.RoleArn = &v
+	return s
+}
+
+// SetSource sets the Source field's value.
+func (s *Toolchain) SetSource(v *ToolchainSource) *Toolchain {
+	s.Source = v
+	return s
+}
+
+// SetStackParameters sets the StackParameters field's value.
+func (s *Toolchain) SetStackParameters(v map[string]*string) *Toolchain {
+	s.StackParameters = v
+	return s
+}
+
+// The Amazon S3 location where the toolchain template file provided with the
+// project request is stored. AWS CodeStar retrieves the file during project
+// creation.
+type ToolchainSource struct {
+	_ struct{} `type:"structure"`
+
+	// The Amazon S3 bucket where the toolchain template file provided with the
+	// project request is stored.
+	//
+	// S3 is a required field
+	S3 *S3Location `locationName:"s3" type:"structure" required:"true"`
+}
+
+// String returns the string representation
+func (s ToolchainSource) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s ToolchainSource) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *ToolchainSource) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "ToolchainSource"}
+	if s.S3 == nil {
+		invalidParams.Add(request.NewErrParamRequired("S3"))
+	}
+	if s.S3 != nil {
+		if err := s.S3.Validate(); err != nil {
+			invalidParams.AddNested("S3", err.(request.ErrInvalidParams))
+		}
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetS3 sets the S3 field's value.
+func (s *ToolchainSource) SetS3(v *S3Location) *ToolchainSource {
+	s.S3 = v
+	return s
+}
+
+type UntagProjectInput struct {
+	_ struct{} `type:"structure"`
+
+	// The ID of the project to remove tags from.
+	//
+	// Id is a required field
+	Id *string `locationName:"id" min:"2" type:"string" required:"true"`
+
+	// The tags to remove from the project.
+	//
+	// Tags is a required field
+	Tags []*string `locationName:"tags" type:"list" required:"true"`
+}
+
+// String returns the string representation
+func (s UntagProjectInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s UntagProjectInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *UntagProjectInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "UntagProjectInput"}
+	if s.Id == nil {
+		invalidParams.Add(request.NewErrParamRequired("Id"))
+	}
+	if s.Id != nil && len(*s.Id) < 2 {
+		invalidParams.Add(request.NewErrParamMinLen("Id", 2))
+	}
+	if s.Tags == nil {
+		invalidParams.Add(request.NewErrParamRequired("Tags"))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetId sets the Id field's value.
+func (s *UntagProjectInput) SetId(v string) *UntagProjectInput {
+	s.Id = &v
+	return s
+}
+
+// SetTags sets the Tags field's value.
+func (s *UntagProjectInput) SetTags(v []*string) *UntagProjectInput {
+	s.Tags = v
+	return s
+}
+
+type UntagProjectOutput struct {
+	_ struct{} `type:"structure"`
+}
+
+// String returns the string representation
+func (s UntagProjectOutput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s UntagProjectOutput) GoString() string {
+	return s.String()
+}
+
 type UpdateProjectInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2825,7 +3903,6 @@ func (s *UpdateProjectInput) SetName(v string) *UpdateProjectInput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateProjectResult
 type UpdateProjectOutput struct {
 	_ struct{} `type:"structure"`
 }
@@ -2840,7 +3917,6 @@ func (s UpdateProjectOutput) GoString() string {
 	return s.String()
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateTeamMemberRequest
 type UpdateTeamMemberInput struct {
 	_ struct{} `type:"structure"`
 
@@ -2923,7 +3999,6 @@ func (s *UpdateTeamMemberInput) SetUserArn(v string) *UpdateTeamMemberInput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateTeamMemberResult
 type UpdateTeamMemberOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -2967,7 +4042,6 @@ func (s *UpdateTeamMemberOutput) SetUserArn(v string) *UpdateTeamMemberOutput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateUserProfileRequest
 type UpdateUserProfileInput struct {
 	_ struct{} `type:"structure"`
 
@@ -3046,12 +4120,11 @@ func (s *UpdateUserProfileInput) SetUserArn(v string) *UpdateUserProfileInput {
 	return s
 }
 
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UpdateUserProfileResult
 type UpdateUserProfileOutput struct {
 	_ struct{} `type:"structure"`
 
 	// The date the user profile was created, in timestamp format.
-	CreatedTimestamp *time.Time `locationName:"createdTimestamp" type:"timestamp" timestampFormat:"unix"`
+	CreatedTimestamp *time.Time `locationName:"createdTimestamp" type:"timestamp"`
 
 	// The name that is displayed as the friendly name for the user in AWS CodeStar.
 	DisplayName *string `locationName:"displayName" min:"1" type:"string"`
@@ -3061,7 +4134,7 @@ type UpdateUserProfileOutput struct {
 	EmailAddress *string `locationName:"emailAddress" min:"3" type:"string"`
 
 	// The date the user profile was last modified, in timestamp format.
-	LastModifiedTimestamp *time.Time `locationName:"lastModifiedTimestamp" type:"timestamp" timestampFormat:"unix"`
+	LastModifiedTimestamp *time.Time `locationName:"lastModifiedTimestamp" type:"timestamp"`
 
 	// The SSH public key associated with the user in AWS CodeStar. This is the
 	// public portion of the public/private keypair the user can use to access project
@@ -3121,7 +4194,6 @@ func (s *UpdateUserProfileOutput) SetUserArn(v string) *UpdateUserProfileOutput 
 }
 
 // Information about a user's profile in AWS CodeStar.
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/codestar-2017-04-19/UserProfileSummary
 type UserProfileSummary struct {
 	_ struct{} `type:"structure"`
 

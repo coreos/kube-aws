@@ -32,8 +32,8 @@ const (
 	// ErrCodeDirectoryDeletedException for service response error code
 	// "DirectoryDeletedException".
 	//
-	// A directory that has been deleted has been attempted to be accessed. Note:
-	// The requested resource will eventually cease to exist.
+	// A directory that has been deleted and to which access has been attempted.
+	// Note: The requested resource will eventually cease to exist.
 	ErrCodeDirectoryDeletedException = "DirectoryDeletedException"
 
 	// ErrCodeDirectoryNotDisabledException for service response error code
@@ -45,7 +45,7 @@ const (
 	// ErrCodeDirectoryNotEnabledException for service response error code
 	// "DirectoryNotEnabledException".
 	//
-	// An operation can only operate on a directory that is not enabled.
+	// Operations are only permitted on enabled directories.
 	ErrCodeDirectoryNotEnabledException = "DirectoryNotEnabledException"
 
 	// ErrCodeFacetAlreadyExistsException for service response error code
@@ -57,7 +57,7 @@ const (
 	// ErrCodeFacetInUseException for service response error code
 	// "FacetInUseException".
 	//
-	// Occurs when deleting a facet that contains an attribute which is a target
+	// Occurs when deleting a facet that contains an attribute that is a target
 	// to an attribute reference in a different facet.
 	ErrCodeFacetInUseException = "FacetInUseException"
 
@@ -70,9 +70,17 @@ const (
 	// ErrCodeFacetValidationException for service response error code
 	// "FacetValidationException".
 	//
-	// The Facet you provided was not well formed or could not be validated with
-	// the schema.
+	// The Facet that you provided was not well formed or could not be validated
+	// with the schema.
 	ErrCodeFacetValidationException = "FacetValidationException"
+
+	// ErrCodeIncompatibleSchemaException for service response error code
+	// "IncompatibleSchemaException".
+	//
+	// Indicates a failure occurred while performing a check for backward compatibility
+	// between the specified schema and the schema that is currently applied to
+	// the directory.
+	ErrCodeIncompatibleSchemaException = "IncompatibleSchemaException"
 
 	// ErrCodeIndexedAttributeMissingException for service response error code
 	// "IndexedAttributeMissingException".
@@ -99,9 +107,9 @@ const (
 	// ErrCodeInvalidAttachmentException for service response error code
 	// "InvalidAttachmentException".
 	//
-	// Indicates that an attempt to attach an object with the same link name or
-	// to apply a schema with same name has occurred. Rename the link or the schema
-	// and then try again.
+	// Indicates that an attempt to make an attachment was invalid. For example,
+	// attaching two nodes with a link type that is not applicable to the nodes
+	// or attempting to apply a schema to a directory a second time.
 	ErrCodeInvalidAttachmentException = "InvalidAttachmentException"
 
 	// ErrCodeInvalidFacetUpdateException for service response error code
@@ -139,7 +147,7 @@ const (
 	// ErrCodeLimitExceededException for service response error code
 	// "LimitExceededException".
 	//
-	// Indicates limits are exceeded. See Limits (http://docs.aws.amazon.com/directoryservice/latest/admin-guide/limits.html)
+	// Indicates that limits are exceeded. See Limits (https://docs.aws.amazon.com/clouddirectory/latest/developerguide/limits.html)
 	// for more information.
 	ErrCodeLimitExceededException = "LimitExceededException"
 
@@ -153,32 +161,32 @@ const (
 	// ErrCodeNotIndexException for service response error code
 	// "NotIndexException".
 	//
-	// Indicates the requested operation can only operate on index objects.
+	// Indicates that the requested operation can only operate on index objects.
 	ErrCodeNotIndexException = "NotIndexException"
 
 	// ErrCodeNotNodeException for service response error code
 	// "NotNodeException".
 	//
-	// Occurs when any invalid operations are performed on an object which is not
+	// Occurs when any invalid operations are performed on an object that is not
 	// a node, such as calling ListObjectChildren for a leaf node object.
 	ErrCodeNotNodeException = "NotNodeException"
 
 	// ErrCodeNotPolicyException for service response error code
 	// "NotPolicyException".
 	//
-	// Indicates the requested operation can only operate on policy objects.
+	// Indicates that the requested operation can only operate on policy objects.
 	ErrCodeNotPolicyException = "NotPolicyException"
 
 	// ErrCodeObjectAlreadyDetachedException for service response error code
 	// "ObjectAlreadyDetachedException".
 	//
-	// Indicates the object is not attached to the index.
+	// Indicates that the object is not attached to the index.
 	ErrCodeObjectAlreadyDetachedException = "ObjectAlreadyDetachedException"
 
 	// ErrCodeObjectNotDetachedException for service response error code
 	// "ObjectNotDetachedException".
 	//
-	// Indicates the requested operation cannot be completed because the object
+	// Indicates that the requested operation cannot be completed because the object
 	// has not been detached from the tree.
 	ErrCodeObjectNotDetachedException = "ObjectNotDetachedException"
 
@@ -209,7 +217,7 @@ const (
 	// ErrCodeSchemaAlreadyPublishedException for service response error code
 	// "SchemaAlreadyPublishedException".
 	//
-	// Indicates a schema is already published.
+	// Indicates that a schema is already published.
 	ErrCodeSchemaAlreadyPublishedException = "SchemaAlreadyPublishedException"
 
 	// ErrCodeStillContainsLinksException for service response error code
@@ -222,12 +230,13 @@ const (
 	// ErrCodeUnsupportedIndexTypeException for service response error code
 	// "UnsupportedIndexTypeException".
 	//
-	// Indicates the requested index type is not supported.
+	// Indicates that the requested index type is not supported.
 	ErrCodeUnsupportedIndexTypeException = "UnsupportedIndexTypeException"
 
 	// ErrCodeValidationException for service response error code
 	// "ValidationException".
 	//
-	// Indicates your request is malformed in some manner. See the exception message.
+	// Indicates that your request is malformed in some manner. See the exception
+	// message.
 	ErrCodeValidationException = "ValidationException"
 )

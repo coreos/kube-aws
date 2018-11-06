@@ -21,7 +21,7 @@ import (
 //
 // The best way to use this interface is so the SDK's service client's calls
 // can be stubbed out for unit testing your code with the SDK without needing
-// to inject custom request handlers into the the SDK's request pipeline.
+// to inject custom request handlers into the SDK's request pipeline.
 //
 //    // myFunc uses an SDK service client to make a request to
 //    // Auto Scaling.
@@ -71,6 +71,14 @@ type AutoScalingAPI interface {
 	AttachLoadBalancers(*autoscaling.AttachLoadBalancersInput) (*autoscaling.AttachLoadBalancersOutput, error)
 	AttachLoadBalancersWithContext(aws.Context, *autoscaling.AttachLoadBalancersInput, ...request.Option) (*autoscaling.AttachLoadBalancersOutput, error)
 	AttachLoadBalancersRequest(*autoscaling.AttachLoadBalancersInput) (*request.Request, *autoscaling.AttachLoadBalancersOutput)
+
+	BatchDeleteScheduledAction(*autoscaling.BatchDeleteScheduledActionInput) (*autoscaling.BatchDeleteScheduledActionOutput, error)
+	BatchDeleteScheduledActionWithContext(aws.Context, *autoscaling.BatchDeleteScheduledActionInput, ...request.Option) (*autoscaling.BatchDeleteScheduledActionOutput, error)
+	BatchDeleteScheduledActionRequest(*autoscaling.BatchDeleteScheduledActionInput) (*request.Request, *autoscaling.BatchDeleteScheduledActionOutput)
+
+	BatchPutScheduledUpdateGroupAction(*autoscaling.BatchPutScheduledUpdateGroupActionInput) (*autoscaling.BatchPutScheduledUpdateGroupActionOutput, error)
+	BatchPutScheduledUpdateGroupActionWithContext(aws.Context, *autoscaling.BatchPutScheduledUpdateGroupActionInput, ...request.Option) (*autoscaling.BatchPutScheduledUpdateGroupActionOutput, error)
+	BatchPutScheduledUpdateGroupActionRequest(*autoscaling.BatchPutScheduledUpdateGroupActionInput) (*request.Request, *autoscaling.BatchPutScheduledUpdateGroupActionOutput)
 
 	CompleteLifecycleAction(*autoscaling.CompleteLifecycleActionInput) (*autoscaling.CompleteLifecycleActionOutput, error)
 	CompleteLifecycleActionWithContext(aws.Context, *autoscaling.CompleteLifecycleActionInput, ...request.Option) (*autoscaling.CompleteLifecycleActionOutput, error)

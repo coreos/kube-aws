@@ -47,8 +47,13 @@ func (a *API) AttachDocs(filename string) {
 func (d *apiDocumentation) setup() {
 	d.API.Documentation = docstring(d.Service)
 
-	for op, doc := range d.Operations {
-		d.API.Operations[op].Documentation = docstring(doc)
+	for opName, doc := range d.Operations {
+		if _, ok := d.API.Operations[opName]; !ok {
+			panic(fmt.Sprintf("%s, doc op %q not found in API op set",
+				d.API.name, opName),
+			)
+		}
+		d.API.Operations[opName].Documentation = docstring(doc)
 	}
 
 	for shape, info := range d.Shapes {
@@ -62,6 +67,10 @@ func (d *apiDocumentation) setup() {
 			}
 
 			parts := strings.Split(ref, "$")
+			if len(parts) != 2 {
+				fmt.Fprintf(os.Stderr, "Shape Doc %s has unexpected reference format, %q\n", shape, ref)
+				continue
+			}
 			if sh := d.API.Shapes[parts[0]]; sh != nil {
 				if m := sh.MemberRefs[parts[1]]; m != nil {
 					m.Documentation = docstring(doc)
