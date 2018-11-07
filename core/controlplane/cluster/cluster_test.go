@@ -169,6 +169,39 @@ func (svc dummyEC2Service) DescribeKeyPairs(input *ec2.DescribeKeyPairsInput) (*
 	return output, nil
 }
 
+func TestStackNameDefaults(t *testing.T) {
+	configBody := defaultConfigValues(t, "")
+	clusterConfig, err := config.ClusterFromBytes([]byte(configBody))
+	if err != nil {
+		t.Errorf("could not get valid cluster config in `%s`: %v", configBody, err)
+	}
+	c := &ClusterRef{Cluster: clusterConfig}
+
+	assert.Equal(t, "control-plane", c.ControlPlaneStackName(), "Invalid ControlPlane Stackname, should be set to 'control-plane' if no override is provided.")
+	assert.Equal(t, "network", c.NetworkStackName(), "Invalid Network Stackname, should be set to 'network' if no override is provided.")
+	assert.Equal(t, "etcd", c.EtcdStackName(), "Invalid Etcd Stackname, should be set to 'etcd' if no override is provided.")
+}
+
+func TestStackNameOverrides(t *testing.T) {
+	stackNameOverrideConfig := `
+cloudformation:
+  stackNameOverrides:
+    controlPlane: "control-plane-override"
+    network: "network-override"
+    etcd: "etcd-override"
+`
+	configBody := defaultConfigValues(t, stackNameOverrideConfig)
+	clusterConfig, err := config.ClusterFromBytes([]byte(configBody))
+	if err != nil {
+		t.Errorf("could not get valid cluster config in `%s`: %v", configBody, err)
+	}
+	c := &ClusterRef{Cluster: clusterConfig}
+
+	assert.Equal(t, "control-plane-override", c.ControlPlaneStackName(), "Invalid ControlPlane Stackname, should be overridden with 'control-plane-override'.")
+	assert.Equal(t, "network-override", c.NetworkStackName(), "Invalid Network Stackname, should overridden to 'network-override'.")
+	assert.Equal(t, "etcd-override", c.EtcdStackName(), "Invalid Etcd Stackname, should be overridden with 'etcd-override'.")
+}
+
 func TestExistingVPCValidation(t *testing.T) {
 
 	goodExistingVPCConfigs := []string{

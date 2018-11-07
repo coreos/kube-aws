@@ -21,7 +21,7 @@ import (
 //
 // The best way to use this interface is so the SDK's service client's calls
 // can be stubbed out for unit testing your code with the SDK without needing
-// to inject custom request handlers into the the SDK's request pipeline.
+// to inject custom request handlers into the SDK's request pipeline.
 //
 //    // myFunc uses an SDK service client to make a request to
 //    // Amazon Kinesis.
@@ -76,6 +76,10 @@ type KinesisAPI interface {
 	DeleteStreamWithContext(aws.Context, *kinesis.DeleteStreamInput, ...request.Option) (*kinesis.DeleteStreamOutput, error)
 	DeleteStreamRequest(*kinesis.DeleteStreamInput) (*request.Request, *kinesis.DeleteStreamOutput)
 
+	DeregisterStreamConsumer(*kinesis.DeregisterStreamConsumerInput) (*kinesis.DeregisterStreamConsumerOutput, error)
+	DeregisterStreamConsumerWithContext(aws.Context, *kinesis.DeregisterStreamConsumerInput, ...request.Option) (*kinesis.DeregisterStreamConsumerOutput, error)
+	DeregisterStreamConsumerRequest(*kinesis.DeregisterStreamConsumerInput) (*request.Request, *kinesis.DeregisterStreamConsumerOutput)
+
 	DescribeLimits(*kinesis.DescribeLimitsInput) (*kinesis.DescribeLimitsOutput, error)
 	DescribeLimitsWithContext(aws.Context, *kinesis.DescribeLimitsInput, ...request.Option) (*kinesis.DescribeLimitsOutput, error)
 	DescribeLimitsRequest(*kinesis.DescribeLimitsInput) (*request.Request, *kinesis.DescribeLimitsOutput)
@@ -86,6 +90,14 @@ type KinesisAPI interface {
 
 	DescribeStreamPages(*kinesis.DescribeStreamInput, func(*kinesis.DescribeStreamOutput, bool) bool) error
 	DescribeStreamPagesWithContext(aws.Context, *kinesis.DescribeStreamInput, func(*kinesis.DescribeStreamOutput, bool) bool, ...request.Option) error
+
+	DescribeStreamConsumer(*kinesis.DescribeStreamConsumerInput) (*kinesis.DescribeStreamConsumerOutput, error)
+	DescribeStreamConsumerWithContext(aws.Context, *kinesis.DescribeStreamConsumerInput, ...request.Option) (*kinesis.DescribeStreamConsumerOutput, error)
+	DescribeStreamConsumerRequest(*kinesis.DescribeStreamConsumerInput) (*request.Request, *kinesis.DescribeStreamConsumerOutput)
+
+	DescribeStreamSummary(*kinesis.DescribeStreamSummaryInput) (*kinesis.DescribeStreamSummaryOutput, error)
+	DescribeStreamSummaryWithContext(aws.Context, *kinesis.DescribeStreamSummaryInput, ...request.Option) (*kinesis.DescribeStreamSummaryOutput, error)
+	DescribeStreamSummaryRequest(*kinesis.DescribeStreamSummaryInput) (*request.Request, *kinesis.DescribeStreamSummaryOutput)
 
 	DisableEnhancedMonitoring(*kinesis.DisableEnhancedMonitoringInput) (*kinesis.EnhancedMonitoringOutput, error)
 	DisableEnhancedMonitoringWithContext(aws.Context, *kinesis.DisableEnhancedMonitoringInput, ...request.Option) (*kinesis.EnhancedMonitoringOutput, error)
@@ -106,6 +118,17 @@ type KinesisAPI interface {
 	IncreaseStreamRetentionPeriod(*kinesis.IncreaseStreamRetentionPeriodInput) (*kinesis.IncreaseStreamRetentionPeriodOutput, error)
 	IncreaseStreamRetentionPeriodWithContext(aws.Context, *kinesis.IncreaseStreamRetentionPeriodInput, ...request.Option) (*kinesis.IncreaseStreamRetentionPeriodOutput, error)
 	IncreaseStreamRetentionPeriodRequest(*kinesis.IncreaseStreamRetentionPeriodInput) (*request.Request, *kinesis.IncreaseStreamRetentionPeriodOutput)
+
+	ListShards(*kinesis.ListShardsInput) (*kinesis.ListShardsOutput, error)
+	ListShardsWithContext(aws.Context, *kinesis.ListShardsInput, ...request.Option) (*kinesis.ListShardsOutput, error)
+	ListShardsRequest(*kinesis.ListShardsInput) (*request.Request, *kinesis.ListShardsOutput)
+
+	ListStreamConsumers(*kinesis.ListStreamConsumersInput) (*kinesis.ListStreamConsumersOutput, error)
+	ListStreamConsumersWithContext(aws.Context, *kinesis.ListStreamConsumersInput, ...request.Option) (*kinesis.ListStreamConsumersOutput, error)
+	ListStreamConsumersRequest(*kinesis.ListStreamConsumersInput) (*request.Request, *kinesis.ListStreamConsumersOutput)
+
+	ListStreamConsumersPages(*kinesis.ListStreamConsumersInput, func(*kinesis.ListStreamConsumersOutput, bool) bool) error
+	ListStreamConsumersPagesWithContext(aws.Context, *kinesis.ListStreamConsumersInput, func(*kinesis.ListStreamConsumersOutput, bool) bool, ...request.Option) error
 
 	ListStreams(*kinesis.ListStreamsInput) (*kinesis.ListStreamsOutput, error)
 	ListStreamsWithContext(aws.Context, *kinesis.ListStreamsInput, ...request.Option) (*kinesis.ListStreamsOutput, error)
@@ -130,6 +153,10 @@ type KinesisAPI interface {
 	PutRecordsWithContext(aws.Context, *kinesis.PutRecordsInput, ...request.Option) (*kinesis.PutRecordsOutput, error)
 	PutRecordsRequest(*kinesis.PutRecordsInput) (*request.Request, *kinesis.PutRecordsOutput)
 
+	RegisterStreamConsumer(*kinesis.RegisterStreamConsumerInput) (*kinesis.RegisterStreamConsumerOutput, error)
+	RegisterStreamConsumerWithContext(aws.Context, *kinesis.RegisterStreamConsumerInput, ...request.Option) (*kinesis.RegisterStreamConsumerOutput, error)
+	RegisterStreamConsumerRequest(*kinesis.RegisterStreamConsumerInput) (*request.Request, *kinesis.RegisterStreamConsumerOutput)
+
 	RemoveTagsFromStream(*kinesis.RemoveTagsFromStreamInput) (*kinesis.RemoveTagsFromStreamOutput, error)
 	RemoveTagsFromStreamWithContext(aws.Context, *kinesis.RemoveTagsFromStreamInput, ...request.Option) (*kinesis.RemoveTagsFromStreamOutput, error)
 	RemoveTagsFromStreamRequest(*kinesis.RemoveTagsFromStreamInput) (*request.Request, *kinesis.RemoveTagsFromStreamOutput)
@@ -137,6 +164,14 @@ type KinesisAPI interface {
 	SplitShard(*kinesis.SplitShardInput) (*kinesis.SplitShardOutput, error)
 	SplitShardWithContext(aws.Context, *kinesis.SplitShardInput, ...request.Option) (*kinesis.SplitShardOutput, error)
 	SplitShardRequest(*kinesis.SplitShardInput) (*request.Request, *kinesis.SplitShardOutput)
+
+	StartStreamEncryption(*kinesis.StartStreamEncryptionInput) (*kinesis.StartStreamEncryptionOutput, error)
+	StartStreamEncryptionWithContext(aws.Context, *kinesis.StartStreamEncryptionInput, ...request.Option) (*kinesis.StartStreamEncryptionOutput, error)
+	StartStreamEncryptionRequest(*kinesis.StartStreamEncryptionInput) (*request.Request, *kinesis.StartStreamEncryptionOutput)
+
+	StopStreamEncryption(*kinesis.StopStreamEncryptionInput) (*kinesis.StopStreamEncryptionOutput, error)
+	StopStreamEncryptionWithContext(aws.Context, *kinesis.StopStreamEncryptionInput, ...request.Option) (*kinesis.StopStreamEncryptionOutput, error)
+	StopStreamEncryptionRequest(*kinesis.StopStreamEncryptionInput) (*request.Request, *kinesis.StopStreamEncryptionOutput)
 
 	UpdateShardCount(*kinesis.UpdateShardCountInput) (*kinesis.UpdateShardCountOutput, error)
 	UpdateShardCountWithContext(aws.Context, *kinesis.UpdateShardCountInput, ...request.Option) (*kinesis.UpdateShardCountOutput, error)

@@ -2,23 +2,30 @@
 
 
 [[projects]]
+  digest = "1:a047a7359c2d49094ffa32d3737a2f0035978e46396f4e592d78c3c479e635e6"
   name = "github.com/Masterminds/semver"
   packages = ["."]
+  pruneopts = ""
   revision = "59c29afe1a994eacb71c833025ca7acf874bb1da"
   version = "v1.2.2"
 
 [[projects]]
+  digest = "1:a05b9ec52300c1709ca61cf248dee6d9d52dfd6a1b24b2dadda4d8b93ff8aa89"
   name = "github.com/Masterminds/sprig"
   packages = ["."]
+  pruneopts = ""
   revision = "9526be0327b26ad31aa70296a7b10704883976d5"
   version = "2.12.0"
 
 [[projects]]
+  digest = "1:4cd16cfeb5c924029357ea73eeb68ec6292006d159e5a2d44ce55a0f0eabd23a"
   name = "github.com/aokoli/goutils"
   packages = ["."]
+  pruneopts = ""
   revision = "e57d01ace047c1a43e6a49ecf3ecc50ed2be81d1"
 
 [[projects]]
+  digest = "1:d0bd46c188ed61745fbe769daba6676c9d6db9122e73aed5c47be9c8631bc6bb"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -31,14 +38,23 @@
     "aws/credentials/ec2rolecreds",
     "aws/credentials/endpointcreds",
     "aws/credentials/stscreds",
+    "aws/csm",
     "aws/defaults",
     "aws/ec2metadata",
     "aws/endpoints",
     "aws/request",
     "aws/session",
     "aws/signer/v4",
+    "internal/ini",
+    "internal/s3err",
+    "internal/sdkio",
+    "internal/sdkrand",
+    "internal/sdkuri",
+    "internal/shareddefaults",
     "private/protocol",
     "private/protocol/ec2query",
+    "private/protocol/eventstream",
+    "private/protocol/eventstream/eventstreamapi",
     "private/protocol/json/jsonutil",
     "private/protocol/jsonrpc",
     "private/protocol/query",
@@ -54,131 +70,188 @@
     "service/kms",
     "service/route53",
     "service/s3",
-    "service/sts"
+    "service/sts",
   ]
-  revision = "e0cdae7a65ba3a5e66a0af747a7b3967ddac099c"
-  version = "v1.8.30"
+  pruneopts = ""
+  revision = "fa9217848bf00ff03c3c097e9c109cbe833ea130"
+  version = "v1.15.69"
 
 [[projects]]
+  digest = "1:d67d2cf6384e448151f03df3d603d88cf15ef2a1e0eb78ba464c8b15a2d0e6b1"
   name = "github.com/coreos/coreos-cloudinit"
   packages = [
     "config",
-    "config/validate"
+    "config/validate",
   ]
+  pruneopts = ""
   revision = "5be99bf577f2768193c7fb587ef5a8806c1503cf"
   version = "v1.13.0"
 
 [[projects]]
   branch = "v1"
+  digest = "1:bdd8568424f1993eeeb66741808ad093a9bf0b257e87f629dbb53ebb37b07400"
   name = "github.com/coreos/yaml"
   packages = ["."]
+  pruneopts = ""
   revision = "6b16a5714269b2f70720a45406b1babd947a17ef"
 
 [[projects]]
+  digest = "1:56c130d885a4aacae1dd9c7b71cfe39912c7ebc1ff7d2b46083c8812996dc43b"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
+  pruneopts = ""
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
 
 [[projects]]
-  name = "github.com/go-ini/ini"
-  packages = ["."]
-  revision = "afbc45e87f3ba324c532d12c71918ef52e0fb194"
-
-[[projects]]
+  digest = "1:f0620375dd1f6251d9973b5f2596228cc8042e887cd7f827e4220bc1ce8c30e2"
   name = "github.com/go-yaml/yaml"
   packages = ["."]
+  pruneopts = ""
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
   version = "v2.2.1"
 
 [[projects]]
+  digest = "1:8604036476f9d33b2d573e45b91ba2df875ca81640dd8c10f03bbaf789f7f686"
   name = "github.com/huandu/xstrings"
   packages = ["."]
+  pruneopts = ""
   revision = "3959339b333561bf62a38b424fd41517c2c90f40"
 
 [[projects]]
+  digest = "1:976b05b7862b650ce4a7a2fb67f470df2643428a9d730102bdb83e2a64e8feaf"
   name = "github.com/imdario/mergo"
   packages = ["."]
+  pruneopts = ""
   revision = "3e95a51e0639b4cf372f2ccf74c86749d747fbdc"
   version = "0.2.2"
 
 [[projects]]
+  digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
+  pruneopts = ""
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
 
 [[projects]]
+  digest = "1:6f49eae0c1e5dab1dafafee34b207aeb7a42303105960944828c2079b92fc88e"
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
-  revision = "bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d"
+  pruneopts = ""
+  revision = "0b12d6b5"
 
 [[projects]]
+  digest = "1:256484dbbcd271f9ecebc6795b2df8cad4c458dd0f5fd82a8c2fa0c29f233411"
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
+  pruneopts = ""
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:6b55df4b0517a459af9d3879c99330af4367adcf45f3d0d37ded80a6272ae057"
   name = "github.com/satori/go.uuid"
   packages = ["."]
+  pruneopts = ""
   revision = "879c5887cd475cd7864858769793b2ceb0d44feb"
   version = "v1.1.0"
 
 [[projects]]
+  digest = "1:74c32990510c9f188556aa17600313e867d1d06f5a9db244056a95d144ec34ce"
   name = "github.com/spf13/cobra"
   packages = ["."]
+  pruneopts = ""
   revision = "a1f051bc3eba734da4772d60e2d677f47cf93ef4"
   version = "v0.0.2"
 
 [[projects]]
+  digest = "1:261bc565833ef4f02121450d74eb88d5ae4bd74bfe5d0e862cddb8550ec35000"
   name = "github.com/spf13/pflag"
   packages = ["."]
+  pruneopts = ""
   revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:a30066593578732a356dc7e5d7f78d69184ca65aeeff5939241a3ab10559bb06"
   name = "github.com/stretchr/testify"
-  packages = ["assert"]
+  packages = [
+    "assert",
+    "require",
+  ]
+  pruneopts = ""
   revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
   version = "v1.2.1"
 
 [[projects]]
+  digest = "1:9ac7b403085a29c194a586b2a02b8b00a944e252272e76342d5435e3e1aa8f9b"
   name = "github.com/tidwall/gjson"
   packages = ["."]
+  pruneopts = ""
   revision = "01f00f129617a6fe98941fb920d6c760241b54d2"
   version = "v1.1.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:4db4f92bb9cb04cfc4fccb36aba2598b02a988008c4cc0692b241214ad8ac96e"
   name = "github.com/tidwall/match"
   packages = ["."]
+  pruneopts = ""
   revision = "1731857f09b1f38450e2c12409748407822dc6be"
 
 [[projects]]
+  digest = "1:ed6a1c415a0bd35c9c18eec74bfd460a57ba21fb3bc0da629afc275096edffa4"
   name = "github.com/tidwall/sjson"
   packages = ["."]
+  pruneopts = ""
   revision = "6a22caf2fd45d5e2119bfc3717e984f15a7eb7ee"
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:406b5c5fa32d27d0a323a0816762af02cbe0692ebf6516822bf75f43438e03e1"
   name = "golang.org/x/crypto"
   packages = [
     "pbkdf2",
     "scrypt",
-    "ssh/terminal"
+    "ssh/terminal",
   ]
+  pruneopts = ""
   revision = "7e9105388ebff089b3f99f0ef676ea55a6da3a7e"
 
 [[projects]]
   branch = "master"
+  digest = "1:ba4898d0f47bb5a26d7e1842bc1b29799441fbcc76aed65ba45d5b6918e35130"
   name = "golang.org/x/sys"
   packages = ["unix"]
+  pruneopts = ""
   revision = "bb9c189858d91f42db229b04d45a4c3d23a7662a"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3d26a915875916434709ce73a6b7ce10f45abb9f4a2dd9a812b6a6b8898402fc"
+  input-imports = [
+    "github.com/Masterminds/semver",
+    "github.com/Masterminds/sprig",
+    "github.com/aws/aws-sdk-go/aws",
+    "github.com/aws/aws-sdk-go/aws/awserr",
+    "github.com/aws/aws-sdk-go/aws/credentials/stscreds",
+    "github.com/aws/aws-sdk-go/aws/session",
+    "github.com/aws/aws-sdk-go/service/cloudformation",
+    "github.com/aws/aws-sdk-go/service/cloudwatchlogs",
+    "github.com/aws/aws-sdk-go/service/ec2",
+    "github.com/aws/aws-sdk-go/service/elb",
+    "github.com/aws/aws-sdk-go/service/elbv2",
+    "github.com/aws/aws-sdk-go/service/kms",
+    "github.com/aws/aws-sdk-go/service/route53",
+    "github.com/aws/aws-sdk-go/service/s3",
+    "github.com/coreos/coreos-cloudinit/config/validate",
+    "github.com/go-yaml/yaml",
+    "github.com/spf13/cobra",
+    "github.com/stretchr/testify/assert",
+    "github.com/stretchr/testify/require",
+    "github.com/tidwall/sjson",
+    "golang.org/x/crypto/ssh/terminal",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

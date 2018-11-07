@@ -125,6 +125,22 @@ func AssertXML(t *testing.T, expect, actual string, container interface{}, msgAn
 	return equal(t, expectVal, actualVal, msgAndArgs...)
 }
 
+// DidPanic returns if the function paniced and returns true if the function paniced.
+func DidPanic(fn func()) (bool, interface{}) {
+	var paniced bool
+	var msg interface{}
+	func() {
+		defer func() {
+			if msg = recover(); msg != nil {
+				paniced = true
+			}
+		}()
+		fn()
+	}()
+
+	return paniced, msg
+}
+
 // objectsAreEqual determines if two objects are considered equal.
 //
 // This function does no assertion of any kind.
@@ -149,8 +165,8 @@ func objectsAreEqual(expected, actual interface{}) bool {
 // Copied locally to prevent non-test build dependencies on testify
 func equal(t *testing.T, expected, actual interface{}, msgAndArgs ...interface{}) bool {
 	if !objectsAreEqual(expected, actual) {
-		t.Errorf("Not Equal:\n\t%#v (expected)\n\t%#v (actual), %s",
-			expected, actual, messageFromMsgAndArgs(msgAndArgs))
+		t.Errorf("%s\n%s", messageFromMsgAndArgs(msgAndArgs),
+			SprintExpectActual(expected, actual))
 		return false
 	}
 
@@ -187,4 +203,10 @@ func queryValueKeys(v url.Values) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// SprintExpectActual returns a string for test failure cases when the actual
+// value is not the same as the expected.
+func SprintExpectActual(expect, actual interface{}) string {
+	return fmt.Sprintf("expect: %+v\nactual: %+v\n", expect, actual)
 }

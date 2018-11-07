@@ -186,7 +186,11 @@ div#mobile_only {
 div#fixed {
 	position: fixed;
 	width: 100%;
+	max-width: 100%;
 	height: 100%;
+	overflow-y: scroll;
+	overflow-x: hidden;
+	-webkit-overflow-scrolling: touch;
 }
 
 div .top_link {
@@ -1040,4 +1044,11 @@ a.error {
 		border: 1px solid #BBB;
 		white-space: pre-wrap;
 	}
+}
+
+.permalink {
+	display: none;
+}
+:hover > .permalink {
+	display: inline;
 }

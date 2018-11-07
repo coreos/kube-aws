@@ -14,19 +14,18 @@ const opGenerateDataSet = "GenerateDataSet"
 
 // GenerateDataSetRequest generates a "aws/request.Request" representing the
 // client's request for the GenerateDataSet operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See GenerateDataSet for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the GenerateDataSet method directly
-// instead.
+// See GenerateDataSet for more information on using the GenerateDataSet
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the GenerateDataSetRequest method.
 //    req, resp := client.GenerateDataSetRequest(params)
@@ -36,7 +35,7 @@ const opGenerateDataSet = "GenerateDataSet"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/GenerateDataSet
+// See also, https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/GenerateDataSet
 func (c *MarketplaceCommerceAnalytics) GenerateDataSetRequest(input *GenerateDataSetInput) (req *request.Request, output *GenerateDataSetOutput) {
 	op := &request.Operation{
 		Name:       opGenerateDataSet,
@@ -74,10 +73,10 @@ func (c *MarketplaceCommerceAnalytics) GenerateDataSetRequest(input *GenerateDat
 // API operation GenerateDataSet for usage and error information.
 //
 // Returned Error Codes:
-//   * ErrCodeException "Exception"
+//   * ErrCodeException "MarketplaceCommerceAnalyticsException"
 //   This exception is thrown when an internal service error occurs.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/GenerateDataSet
+// See also, https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/GenerateDataSet
 func (c *MarketplaceCommerceAnalytics) GenerateDataSet(input *GenerateDataSetInput) (*GenerateDataSetOutput, error) {
 	req, out := c.GenerateDataSetRequest(input)
 	return out, req.Send()
@@ -103,19 +102,18 @@ const opStartSupportDataExport = "StartSupportDataExport"
 
 // StartSupportDataExportRequest generates a "aws/request.Request" representing the
 // client's request for the StartSupportDataExport operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See StartSupportDataExport for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the StartSupportDataExport method directly
-// instead.
+// See StartSupportDataExport for more information on using the StartSupportDataExport
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the StartSupportDataExportRequest method.
 //    req, resp := client.StartSupportDataExportRequest(params)
@@ -125,7 +123,7 @@ const opStartSupportDataExport = "StartSupportDataExport"
 //        fmt.Println(resp)
 //    }
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/StartSupportDataExport
+// See also, https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/StartSupportDataExport
 func (c *MarketplaceCommerceAnalytics) StartSupportDataExportRequest(input *StartSupportDataExportInput) (req *request.Request, output *StartSupportDataExportOutput) {
 	op := &request.Operation{
 		Name:       opStartSupportDataExport,
@@ -164,10 +162,10 @@ func (c *MarketplaceCommerceAnalytics) StartSupportDataExportRequest(input *Star
 // API operation StartSupportDataExport for usage and error information.
 //
 // Returned Error Codes:
-//   * ErrCodeException "Exception"
+//   * ErrCodeException "MarketplaceCommerceAnalyticsException"
 //   This exception is thrown when an internal service error occurs.
 //
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/StartSupportDataExport
+// See also, https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/StartSupportDataExport
 func (c *MarketplaceCommerceAnalytics) StartSupportDataExport(input *StartSupportDataExportInput) (*StartSupportDataExportOutput, error) {
 	req, out := c.StartSupportDataExportRequest(input)
 	return out, req.Send()
@@ -190,7 +188,6 @@ func (c *MarketplaceCommerceAnalytics) StartSupportDataExportWithContext(ctx aws
 }
 
 // Container for the parameters to the GenerateDataSet operation.
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/GenerateDataSetRequest
 type GenerateDataSetInput struct {
 	_ struct{} `type:"structure"`
 
@@ -207,54 +204,99 @@ type GenerateDataSetInput struct {
 	// granularity for the desired month (the day value will be ignored).
 	//
 	// DataSetPublicationDate is a required field
-	DataSetPublicationDate *time.Time `locationName:"dataSetPublicationDate" type:"timestamp" timestampFormat:"unix" required:"true"`
+	DataSetPublicationDate *time.Time `locationName:"dataSetPublicationDate" type:"timestamp" required:"true"`
 
 	// The desired data set type.
 	//
-	// customer_subscriber_hourly_monthly_subscriptions - Available daily by 5:00
-	// PM Pacific Time since 2014-07-21.
-	// customer_subscriber_annual_subscriptions - Available daily by 5:00 PM Pacific
-	// Time since 2014-07-21.
-	// daily_business_usage_by_instance_type - Available daily by 5:00 PM Pacific
-	// Time since 2015-01-26.
-	// daily_business_fees - Available daily by 5:00 PM Pacific Time since 2015-01-26.
+	// customer_subscriber_hourly_monthly_subscriptionsFrom 2014-07-21 to present:
+	// Available daily by 5:00 PM Pacific Time.
 	//
-	// daily_business_free_trial_conversions - Available daily by 5:00 PM Pacific
-	// Time since 2015-01-26.
-	// daily_business_new_instances - Available daily by 5:00 PM Pacific Time since
-	// 2015-01-26.
-	// daily_business_new_product_subscribers - Available daily by 5:00 PM Pacific
-	// Time since 2015-01-26.
-	// daily_business_canceled_product_subscribers - Available daily by 5:00 PM
-	// Pacific Time since 2015-01-26.
-	// monthly_revenue_billing_and_revenue_data - Available monthly on the 4th day
-	// of the month by 5:00 PM Pacific Time since 2015-02.
-	// monthly_revenue_annual_subscriptions - Available monthly on the 4th day of
-	// the month by 5:00 PM Pacific Time since 2015-02.
-	// disbursed_amount_by_product - Available every 30 days by 5:00 PM Pacific
-	// Time since 2015-01-26.
-	// disbursed_amount_by_product_with_uncollected_funds -This data set is only
-	// available from 2012-04-19 until 2015-01-25. After 2015-01-25, this data set
-	// was split into three data sets: disbursed_amount_by_product, disbursed_amount_by_age_of_uncollected_funds,
+	// customer_subscriber_annual_subscriptionsFrom 2014-07-21 to present: Available
+	// daily by 5:00 PM Pacific Time.
+	//
+	// daily_business_usage_by_instance_typeFrom 2015-01-26 to present: Available
+	// daily by 5:00 PM Pacific Time.
+	//
+	// daily_business_feesFrom 2015-01-26 to present: Available daily by 5:00 PM
+	// Pacific Time.
+	//
+	// daily_business_free_trial_conversionsFrom 2015-01-26 to present: Available
+	// daily by 5:00 PM Pacific Time.
+	//
+	// daily_business_new_instancesFrom 2015-01-26 to present: Available daily by
+	// 5:00 PM Pacific Time.
+	//
+	// daily_business_new_product_subscribersFrom 2015-01-26 to present: Available
+	// daily by 5:00 PM Pacific Time.
+	//
+	// daily_business_canceled_product_subscribersFrom 2015-01-26 to present: Available
+	// daily by 5:00 PM Pacific Time.
+	//
+	// monthly_revenue_billing_and_revenue_dataFrom 2015-02 to 2017-06: Available
+	// monthly on the 4th day of the month by 5:00pm Pacific Time. Data includes
+	// metered transactions (e.g. hourly) from two months prior.
+	//
+	// From 2017-07 to present: Available monthly on the 15th day of the month by
+	// 5:00pm Pacific Time. Data includes metered transactions (e.g. hourly) from
+	// one month prior.
+	//
+	// monthly_revenue_annual_subscriptionsFrom 2015-02 to 2017-06: Available monthly
+	// on the 4th day of the month by 5:00pm Pacific Time. Data includes up-front
+	// software charges (e.g. annual) from one month prior.
+	//
+	// From 2017-07 to present: Available monthly on the 15th day of the month by
+	// 5:00pm Pacific Time. Data includes up-front software charges (e.g. annual)
+	// from one month prior.
+	//
+	// disbursed_amount_by_productFrom 2015-01-26 to present: Available every 30
+	// days by 5:00 PM Pacific Time.
+	//
+	// disbursed_amount_by_product_with_uncollected_fundsFrom 2012-04-19 to 2015-01-25:
+	// Available every 30 days by 5:00 PM Pacific Time.
+	//
+	// From 2015-01-26 to present: This data set was split into three data sets:
+	// disbursed_amount_by_product, disbursed_amount_by_age_of_uncollected_funds,
 	// and disbursed_amount_by_age_of_disbursed_funds.
-	// disbursed_amount_by_instance_hours - Available every 30 days by 5:00 PM Pacific
-	// Time since 2012-09-04.
-	// disbursed_amount_by_customer_geo - Available every 30 days by 5:00 PM Pacific
-	// Time since 2012-04-19.
-	// disbursed_amount_by_age_of_uncollected_funds - Available every 30 days by
-	// 5:00 PM Pacific Time since 2015-01-26.
-	// disbursed_amount_by_age_of_disbursed_funds - Available every 30 days by 5:00
-	// PM Pacific Time since 2015-01-26.
-	// customer_profile_by_industry - Available daily by 5:00 PM Pacific Time since
-	// 2015-10-01.
-	// customer_profile_by_revenue - Available daily by 5:00 PM Pacific Time since
-	// 2015-10-01.
-	// customer_profile_by_geography - Available daily by 5:00 PM Pacific Time since
-	// 2015-10-01.
-	// sales_compensation_billed_revenue - Available monthly on the 4th day of the
-	// month by 5:00 PM Pacific Time since 2016-12.
-	// us_sales_and_use_tax_records - Available monthly on the 15th day of the month
-	// by 5:00 PM Pacific Time since 2017-02-15.
+	//
+	// disbursed_amount_by_instance_hoursFrom 2012-09-04 to present: Available every
+	// 30 days by 5:00 PM Pacific Time.
+	//
+	// disbursed_amount_by_customer_geoFrom 2012-04-19 to present: Available every
+	// 30 days by 5:00 PM Pacific Time.
+	//
+	// disbursed_amount_by_age_of_uncollected_fundsFrom 2015-01-26 to present: Available
+	// every 30 days by 5:00 PM Pacific Time.
+	//
+	// disbursed_amount_by_age_of_disbursed_fundsFrom 2015-01-26 to present: Available
+	// every 30 days by 5:00 PM Pacific Time.
+	//
+	// customer_profile_by_industryFrom 2015-10-01 to 2017-06-29: Available daily
+	// by 5:00 PM Pacific Time.
+	//
+	// From 2017-06-30 to present: This data set is no longer available.
+	//
+	// customer_profile_by_revenueFrom 2015-10-01 to 2017-06-29: Available daily
+	// by 5:00 PM Pacific Time.
+	//
+	// From 2017-06-30 to present: This data set is no longer available.
+	//
+	// customer_profile_by_geographyFrom 2015-10-01 to 2017-06-29: Available daily
+	// by 5:00 PM Pacific Time.
+	//
+	// From 2017-06-30 to present: This data set is no longer available.
+	//
+	// sales_compensation_billed_revenueFrom 2016-12 to 2017-06: Available monthly
+	// on the 4th day of the month by 5:00pm Pacific Time. Data includes metered
+	// transactions (e.g. hourly) from two months prior, and up-front software charges
+	// (e.g. annual) from one month prior.
+	//
+	// From 2017-06 to present: Available monthly on the 15th day of the month by
+	// 5:00pm Pacific Time. Data includes metered transactions (e.g. hourly) from
+	// one month prior, and up-front software charges (e.g. annual) from one month
+	// prior.
+	//
+	// us_sales_and_use_tax_recordsFrom 2017-02-15 to present: Available monthly
+	// on the 15th day of the month by 5:00 PM Pacific Time.
 	//
 	// DataSetType is a required field
 	DataSetType *string `locationName:"dataSetType" min:"1" type:"string" required:"true" enum:"DataSetType"`
@@ -378,7 +420,6 @@ func (s *GenerateDataSetInput) SetSnsTopicArn(v string) *GenerateDataSetInput {
 }
 
 // Container for the result of the GenerateDataSet operation.
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/GenerateDataSetResult
 type GenerateDataSetOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -405,7 +446,6 @@ func (s *GenerateDataSetOutput) SetDataSetRequestId(v string) *GenerateDataSetOu
 }
 
 // Container for the parameters to the StartSupportDataExport operation.
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/StartSupportDataExportRequest
 type StartSupportDataExportInput struct {
 	_ struct{} `type:"structure"`
 
@@ -446,7 +486,7 @@ type StartSupportDataExportInput struct {
 	// only affects the customer_support_contacts_data data set type.
 	//
 	// FromDate is a required field
-	FromDate *time.Time `locationName:"fromDate" type:"timestamp" timestampFormat:"unix" required:"true"`
+	FromDate *time.Time `locationName:"fromDate" type:"timestamp" required:"true"`
 
 	// The Amazon Resource Name (ARN) of the Role with an attached permissions policy
 	// to interact with the provided AWS services.
@@ -554,7 +594,6 @@ func (s *StartSupportDataExportInput) SetSnsTopicArn(v string) *StartSupportData
 }
 
 // Container for the result of the StartSupportDataExport operation.
-// Please also see https://docs.aws.amazon.com/goto/WebAPI/marketplacecommerceanalytics-2015-07-01/StartSupportDataExportResult
 type StartSupportDataExportOutput struct {
 	_ struct{} `type:"structure"`
 

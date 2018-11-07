@@ -24,7 +24,6 @@ import (
 	"github.com/aws/aws-sdk-go/private/protocol/jsonrpc"
 	"github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil"
 	"github.com/aws/aws-sdk-go/private/util"
-	"github.com/stretchr/testify/assert"
 )
 
 var _ bytes.Buffer // always import bytes
@@ -76,7 +75,8 @@ func newOutputService1ProtocolTestClient(cfg aws.Config, handlers request.Handle
 		Client: client.New(
 			cfg,
 			metadata.ClientInfo{
-				ServiceName:   "outputservice1protocoltest",
+				ServiceName:   "OutputService1ProtocolTest",
+				ServiceID:     "OutputService1ProtocolTest",
 				SigningName:   signingName,
 				SigningRegion: signingRegion,
 				Endpoint:      endpoint,
@@ -108,19 +108,18 @@ const opOutputService1TestCaseOperation1 = "OperationName"
 
 // OutputService1TestCaseOperation1Request generates a "aws/request.Request" representing the
 // client's request for the OutputService1TestCaseOperation1 operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See OutputService1TestCaseOperation1 for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the OutputService1TestCaseOperation1 method directly
-// instead.
+// See OutputService1TestCaseOperation1 for more information on using the OutputService1TestCaseOperation1
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the OutputService1TestCaseOperation1Request method.
 //    req, resp := client.OutputService1TestCaseOperation1Request(params)
@@ -276,7 +275,8 @@ func newOutputService2ProtocolTestClient(cfg aws.Config, handlers request.Handle
 		Client: client.New(
 			cfg,
 			metadata.ClientInfo{
-				ServiceName:   "outputservice2protocoltest",
+				ServiceName:   "OutputService2ProtocolTest",
+				ServiceID:     "OutputService2ProtocolTest",
 				SigningName:   signingName,
 				SigningRegion: signingRegion,
 				Endpoint:      endpoint,
@@ -308,19 +308,18 @@ const opOutputService2TestCaseOperation1 = "OperationName"
 
 // OutputService2TestCaseOperation1Request generates a "aws/request.Request" representing the
 // client's request for the OutputService2TestCaseOperation1 operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See OutputService2TestCaseOperation1 for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the OutputService2TestCaseOperation1 method directly
-// instead.
+// See OutputService2TestCaseOperation1 for more information on using the OutputService2TestCaseOperation1
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the OutputService2TestCaseOperation1Request method.
 //    req, resp := client.OutputService2TestCaseOperation1Request(params)
@@ -442,7 +441,8 @@ func newOutputService3ProtocolTestClient(cfg aws.Config, handlers request.Handle
 		Client: client.New(
 			cfg,
 			metadata.ClientInfo{
-				ServiceName:   "outputservice3protocoltest",
+				ServiceName:   "OutputService3ProtocolTest",
+				ServiceID:     "OutputService3ProtocolTest",
 				SigningName:   signingName,
 				SigningRegion: signingRegion,
 				Endpoint:      endpoint,
@@ -474,19 +474,18 @@ const opOutputService3TestCaseOperation1 = "OperationName"
 
 // OutputService3TestCaseOperation1Request generates a "aws/request.Request" representing the
 // client's request for the OutputService3TestCaseOperation1 operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See OutputService3TestCaseOperation1 for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the OutputService3TestCaseOperation1 method directly
-// instead.
+// See OutputService3TestCaseOperation1 for more information on using the OutputService3TestCaseOperation1
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the OutputService3TestCaseOperation1Request method.
 //    req, resp := client.OutputService3TestCaseOperation1Request(params)
@@ -548,7 +547,11 @@ type OutputService3TestShapeOutputService3TestCaseOperation1Output struct {
 
 	StructMember *OutputService3TestShapeTimeContainer `type:"structure"`
 
-	TimeMember *time.Time `type:"timestamp" timestampFormat:"unix"`
+	TimeArg *time.Time `type:"timestamp"`
+
+	TimeCustom *time.Time `type:"timestamp" timestampFormat:"rfc822"`
+
+	TimeFormat *time.Time `type:"timestamp" timestampFormat:"iso8601"`
 }
 
 // SetStructMember sets the StructMember field's value.
@@ -557,16 +560,36 @@ func (s *OutputService3TestShapeOutputService3TestCaseOperation1Output) SetStruc
 	return s
 }
 
-// SetTimeMember sets the TimeMember field's value.
-func (s *OutputService3TestShapeOutputService3TestCaseOperation1Output) SetTimeMember(v time.Time) *OutputService3TestShapeOutputService3TestCaseOperation1Output {
-	s.TimeMember = &v
+// SetTimeArg sets the TimeArg field's value.
+func (s *OutputService3TestShapeOutputService3TestCaseOperation1Output) SetTimeArg(v time.Time) *OutputService3TestShapeOutputService3TestCaseOperation1Output {
+	s.TimeArg = &v
+	return s
+}
+
+// SetTimeCustom sets the TimeCustom field's value.
+func (s *OutputService3TestShapeOutputService3TestCaseOperation1Output) SetTimeCustom(v time.Time) *OutputService3TestShapeOutputService3TestCaseOperation1Output {
+	s.TimeCustom = &v
+	return s
+}
+
+// SetTimeFormat sets the TimeFormat field's value.
+func (s *OutputService3TestShapeOutputService3TestCaseOperation1Output) SetTimeFormat(v time.Time) *OutputService3TestShapeOutputService3TestCaseOperation1Output {
+	s.TimeFormat = &v
 	return s
 }
 
 type OutputService3TestShapeTimeContainer struct {
 	_ struct{} `type:"structure"`
 
-	Foo *time.Time `locationName:"foo" type:"timestamp" timestampFormat:"unix"`
+	Bar *time.Time `locationName:"bar" type:"timestamp" timestampFormat:"iso8601"`
+
+	Foo *time.Time `locationName:"foo" type:"timestamp"`
+}
+
+// SetBar sets the Bar field's value.
+func (s *OutputService3TestShapeTimeContainer) SetBar(v time.Time) *OutputService3TestShapeTimeContainer {
+	s.Bar = &v
+	return s
 }
 
 // SetFoo sets the Foo field's value.
@@ -606,7 +629,8 @@ func newOutputService4ProtocolTestClient(cfg aws.Config, handlers request.Handle
 		Client: client.New(
 			cfg,
 			metadata.ClientInfo{
-				ServiceName:   "outputservice4protocoltest",
+				ServiceName:   "OutputService4ProtocolTest",
+				ServiceID:     "OutputService4ProtocolTest",
 				SigningName:   signingName,
 				SigningRegion: signingRegion,
 				Endpoint:      endpoint,
@@ -638,19 +662,18 @@ const opOutputService4TestCaseOperation1 = "OperationName"
 
 // OutputService4TestCaseOperation1Request generates a "aws/request.Request" representing the
 // client's request for the OutputService4TestCaseOperation1 operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See OutputService4TestCaseOperation1 for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the OutputService4TestCaseOperation1 method directly
-// instead.
+// See OutputService4TestCaseOperation1 for more information on using the OutputService4TestCaseOperation1
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the OutputService4TestCaseOperation1Request method.
 //    req, resp := client.OutputService4TestCaseOperation1Request(params)
@@ -659,7 +682,7 @@ const opOutputService4TestCaseOperation1 = "OperationName"
 //    if err == nil { // resp is now filled
 //        fmt.Println(resp)
 //    }
-func (c *OutputService4ProtocolTest) OutputService4TestCaseOperation1Request(input *OutputService4TestShapeOutputService4TestCaseOperation1Input) (req *request.Request, output *OutputService4TestShapeOutputService4TestCaseOperation2Output) {
+func (c *OutputService4ProtocolTest) OutputService4TestCaseOperation1Request(input *OutputService4TestShapeOutputService4TestCaseOperation1Input) (req *request.Request, output *OutputService4TestShapeOutputService4TestCaseOperation1Output) {
 	op := &request.Operation{
 		Name:     opOutputService4TestCaseOperation1,
 		HTTPPath: "/",
@@ -669,7 +692,7 @@ func (c *OutputService4ProtocolTest) OutputService4TestCaseOperation1Request(inp
 		input = &OutputService4TestShapeOutputService4TestCaseOperation1Input{}
 	}
 
-	output = &OutputService4TestShapeOutputService4TestCaseOperation2Output{}
+	output = &OutputService4TestShapeOutputService4TestCaseOperation1Output{}
 	req = c.newRequest(op, input, output)
 	return
 }
@@ -682,7 +705,7 @@ func (c *OutputService4ProtocolTest) OutputService4TestCaseOperation1Request(inp
 //
 // See the AWS API reference guide for 's
 // API operation OutputService4TestCaseOperation1 for usage and error information.
-func (c *OutputService4ProtocolTest) OutputService4TestCaseOperation1(input *OutputService4TestShapeOutputService4TestCaseOperation1Input) (*OutputService4TestShapeOutputService4TestCaseOperation2Output, error) {
+func (c *OutputService4ProtocolTest) OutputService4TestCaseOperation1(input *OutputService4TestShapeOutputService4TestCaseOperation1Input) (*OutputService4TestShapeOutputService4TestCaseOperation1Output, error) {
 	req, out := c.OutputService4TestCaseOperation1Request(input)
 	return out, req.Send()
 }
@@ -696,7 +719,7 @@ func (c *OutputService4ProtocolTest) OutputService4TestCaseOperation1(input *Out
 // the context is nil a panic will occur. In the future the SDK may create
 // sub-contexts for http.Requests. See https://golang.org/pkg/context/
 // for more information on using Contexts.
-func (c *OutputService4ProtocolTest) OutputService4TestCaseOperation1WithContext(ctx aws.Context, input *OutputService4TestShapeOutputService4TestCaseOperation1Input, opts ...request.Option) (*OutputService4TestShapeOutputService4TestCaseOperation2Output, error) {
+func (c *OutputService4ProtocolTest) OutputService4TestCaseOperation1WithContext(ctx aws.Context, input *OutputService4TestShapeOutputService4TestCaseOperation1Input, opts ...request.Option) (*OutputService4TestShapeOutputService4TestCaseOperation1Output, error) {
 	req, out := c.OutputService4TestCaseOperation1Request(input)
 	req.SetContext(ctx)
 	req.ApplyOptions(opts...)
@@ -707,19 +730,18 @@ const opOutputService4TestCaseOperation2 = "OperationName"
 
 // OutputService4TestCaseOperation2Request generates a "aws/request.Request" representing the
 // client's request for the OutputService4TestCaseOperation2 operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See OutputService4TestCaseOperation2 for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the OutputService4TestCaseOperation2 method directly
-// instead.
+// See OutputService4TestCaseOperation2 for more information on using the OutputService4TestCaseOperation2
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the OutputService4TestCaseOperation2Request method.
 //    req, resp := client.OutputService4TestCaseOperation2Request(params)
@@ -774,6 +796,34 @@ func (c *OutputService4ProtocolTest) OutputService4TestCaseOperation2WithContext
 
 type OutputService4TestShapeOutputService4TestCaseOperation1Input struct {
 	_ struct{} `type:"structure"`
+}
+
+type OutputService4TestShapeOutputService4TestCaseOperation1Output struct {
+	_ struct{} `type:"structure"`
+
+	ListMember []*string `type:"list"`
+
+	ListMemberMap []map[string]*string `type:"list"`
+
+	ListMemberStruct []*OutputService4TestShapeStructType `type:"list"`
+}
+
+// SetListMember sets the ListMember field's value.
+func (s *OutputService4TestShapeOutputService4TestCaseOperation1Output) SetListMember(v []*string) *OutputService4TestShapeOutputService4TestCaseOperation1Output {
+	s.ListMember = v
+	return s
+}
+
+// SetListMemberMap sets the ListMemberMap field's value.
+func (s *OutputService4TestShapeOutputService4TestCaseOperation1Output) SetListMemberMap(v []map[string]*string) *OutputService4TestShapeOutputService4TestCaseOperation1Output {
+	s.ListMemberMap = v
+	return s
+}
+
+// SetListMemberStruct sets the ListMemberStruct field's value.
+func (s *OutputService4TestShapeOutputService4TestCaseOperation1Output) SetListMemberStruct(v []*OutputService4TestShapeStructType) *OutputService4TestShapeOutputService4TestCaseOperation1Output {
+	s.ListMemberStruct = v
+	return s
 }
 
 type OutputService4TestShapeOutputService4TestCaseOperation2Input struct {
@@ -843,7 +893,8 @@ func newOutputService5ProtocolTestClient(cfg aws.Config, handlers request.Handle
 		Client: client.New(
 			cfg,
 			metadata.ClientInfo{
-				ServiceName:   "outputservice5protocoltest",
+				ServiceName:   "OutputService5ProtocolTest",
+				ServiceID:     "OutputService5ProtocolTest",
 				SigningName:   signingName,
 				SigningRegion: signingRegion,
 				Endpoint:      endpoint,
@@ -875,19 +926,18 @@ const opOutputService5TestCaseOperation1 = "OperationName"
 
 // OutputService5TestCaseOperation1Request generates a "aws/request.Request" representing the
 // client's request for the OutputService5TestCaseOperation1 operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See OutputService5TestCaseOperation1 for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the OutputService5TestCaseOperation1 method directly
-// instead.
+// See OutputService5TestCaseOperation1 for more information on using the OutputService5TestCaseOperation1
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the OutputService5TestCaseOperation1Request method.
 //    req, resp := client.OutputService5TestCaseOperation1Request(params)
@@ -987,7 +1037,8 @@ func newOutputService6ProtocolTestClient(cfg aws.Config, handlers request.Handle
 		Client: client.New(
 			cfg,
 			metadata.ClientInfo{
-				ServiceName:   "outputservice6protocoltest",
+				ServiceName:   "OutputService6ProtocolTest",
+				ServiceID:     "OutputService6ProtocolTest",
 				SigningName:   signingName,
 				SigningRegion: signingRegion,
 				Endpoint:      endpoint,
@@ -1019,19 +1070,18 @@ const opOutputService6TestCaseOperation1 = "OperationName"
 
 // OutputService6TestCaseOperation1Request generates a "aws/request.Request" representing the
 // client's request for the OutputService6TestCaseOperation1 operation. The "output" return
-// value can be used to capture response data after the request's "Send" method
-// is called.
+// value will be populated with the request's response once the request completes
+// successfully.
 //
-// See OutputService6TestCaseOperation1 for usage and error information.
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
 //
-// Creating a request object using this method should be used when you want to inject
-// custom logic into the request's lifecycle using a custom handler, or if you want to
-// access properties on the request object before or after sending the request. If
-// you just want the service response, call the OutputService6TestCaseOperation1 method directly
-// instead.
+// See OutputService6TestCaseOperation1 for more information on using the OutputService6TestCaseOperation1
+// API call, and error handling.
 //
-// Note: You must call the "Send" method on the returned request object in order
-// to execute the request.
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
 //
 //    // Example sending a request using the OutputService6TestCaseOperation1Request method.
 //    req, resp := client.OutputService6TestCaseOperation1Request(params)
@@ -1100,6 +1150,166 @@ func (s *OutputService6TestShapeOutputService6TestCaseOperation1Output) SetStrTy
 	return s
 }
 
+// OutputService7ProtocolTest provides the API operation methods for making requests to
+// . See this package's package overview docs
+// for details on the service.
+//
+// OutputService7ProtocolTest methods are safe to use concurrently. It is not safe to
+// modify mutate any of the struct's properties though.
+type OutputService7ProtocolTest struct {
+	*client.Client
+}
+
+// New creates a new instance of the OutputService7ProtocolTest client with a session.
+// If additional configuration is needed for the client instance use the optional
+// aws.Config parameter to add your extra config.
+//
+// Example:
+//     // Create a OutputService7ProtocolTest client from just a session.
+//     svc := outputservice7protocoltest.New(mySession)
+//
+//     // Create a OutputService7ProtocolTest client with additional configuration
+//     svc := outputservice7protocoltest.New(mySession, aws.NewConfig().WithRegion("us-west-2"))
+func NewOutputService7ProtocolTest(p client.ConfigProvider, cfgs ...*aws.Config) *OutputService7ProtocolTest {
+	c := p.ClientConfig("outputservice7protocoltest", cfgs...)
+	return newOutputService7ProtocolTestClient(*c.Config, c.Handlers, c.Endpoint, c.SigningRegion, c.SigningName)
+}
+
+// newClient creates, initializes and returns a new service client instance.
+func newOutputService7ProtocolTestClient(cfg aws.Config, handlers request.Handlers, endpoint, signingRegion, signingName string) *OutputService7ProtocolTest {
+	svc := &OutputService7ProtocolTest{
+		Client: client.New(
+			cfg,
+			metadata.ClientInfo{
+				ServiceName:   "OutputService7ProtocolTest",
+				ServiceID:     "OutputService7ProtocolTest",
+				SigningName:   signingName,
+				SigningRegion: signingRegion,
+				Endpoint:      endpoint,
+				APIVersion:    "",
+			},
+			handlers,
+		),
+	}
+
+	// Handlers
+	svc.Handlers.Sign.PushBackNamed(v4.SignRequestHandler)
+	svc.Handlers.Build.PushBackNamed(jsonrpc.BuildHandler)
+	svc.Handlers.Unmarshal.PushBackNamed(jsonrpc.UnmarshalHandler)
+	svc.Handlers.UnmarshalMeta.PushBackNamed(jsonrpc.UnmarshalMetaHandler)
+	svc.Handlers.UnmarshalError.PushBackNamed(jsonrpc.UnmarshalErrorHandler)
+
+	return svc
+}
+
+// newRequest creates a new request for a OutputService7ProtocolTest operation and runs any
+// custom request initialization.
+func (c *OutputService7ProtocolTest) newRequest(op *request.Operation, params, data interface{}) *request.Request {
+	req := c.NewRequest(op, params, data)
+
+	return req
+}
+
+const opOutputService7TestCaseOperation1 = "OperationName"
+
+// OutputService7TestCaseOperation1Request generates a "aws/request.Request" representing the
+// client's request for the OutputService7TestCaseOperation1 operation. The "output" return
+// value will be populated with the request's response once the request completes
+// successfully.
+//
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
+//
+// See OutputService7TestCaseOperation1 for more information on using the OutputService7TestCaseOperation1
+// API call, and error handling.
+//
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
+//
+//    // Example sending a request using the OutputService7TestCaseOperation1Request method.
+//    req, resp := client.OutputService7TestCaseOperation1Request(params)
+//
+//    err := req.Send()
+//    if err == nil { // resp is now filled
+//        fmt.Println(resp)
+//    }
+func (c *OutputService7ProtocolTest) OutputService7TestCaseOperation1Request(input *OutputService7TestShapeOutputService7TestCaseOperation1Input) (req *request.Request, output *OutputService7TestShapeOutputService7TestCaseOperation1Output) {
+	op := &request.Operation{
+		Name:     opOutputService7TestCaseOperation1,
+		HTTPPath: "/",
+	}
+
+	if input == nil {
+		input = &OutputService7TestShapeOutputService7TestCaseOperation1Input{}
+	}
+
+	output = &OutputService7TestShapeOutputService7TestCaseOperation1Output{}
+	req = c.newRequest(op, input, output)
+	return
+}
+
+// OutputService7TestCaseOperation1 API operation for .
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for 's
+// API operation OutputService7TestCaseOperation1 for usage and error information.
+func (c *OutputService7ProtocolTest) OutputService7TestCaseOperation1(input *OutputService7TestShapeOutputService7TestCaseOperation1Input) (*OutputService7TestShapeOutputService7TestCaseOperation1Output, error) {
+	req, out := c.OutputService7TestCaseOperation1Request(input)
+	return out, req.Send()
+}
+
+// OutputService7TestCaseOperation1WithContext is the same as OutputService7TestCaseOperation1 with the addition of
+// the ability to pass a context and additional request options.
+//
+// See OutputService7TestCaseOperation1 for details on how to use this API operation.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *OutputService7ProtocolTest) OutputService7TestCaseOperation1WithContext(ctx aws.Context, input *OutputService7TestShapeOutputService7TestCaseOperation1Input, opts ...request.Option) (*OutputService7TestShapeOutputService7TestCaseOperation1Output, error) {
+	req, out := c.OutputService7TestCaseOperation1Request(input)
+	req.SetContext(ctx)
+	req.ApplyOptions(opts...)
+	return out, req.Send()
+}
+
+type OutputService7TestShapeOutputService7TestCaseOperation1Input struct {
+	_ struct{} `type:"structure"`
+}
+
+type OutputService7TestShapeOutputService7TestCaseOperation1Output struct {
+	_ struct{} `type:"structure"`
+
+	FooEnum *string `type:"string" enum:"OutputService7TestShapeJSONEnumType"`
+
+	ListEnums []*string `type:"list"`
+}
+
+// SetFooEnum sets the FooEnum field's value.
+func (s *OutputService7TestShapeOutputService7TestCaseOperation1Output) SetFooEnum(v string) *OutputService7TestShapeOutputService7TestCaseOperation1Output {
+	s.FooEnum = &v
+	return s
+}
+
+// SetListEnums sets the ListEnums field's value.
+func (s *OutputService7TestShapeOutputService7TestCaseOperation1Output) SetListEnums(v []*string) *OutputService7TestShapeOutputService7TestCaseOperation1Output {
+	s.ListEnums = v
+	return s
+}
+
+const (
+	// JSONEnumTypeFoo is a OutputService7TestShapeJSONEnumType enum value
+	JSONEnumTypeFoo = "foo"
+
+	// JSONEnumTypeBar is a OutputService7TestShapeJSONEnumType enum value
+	JSONEnumTypeBar = "bar"
+)
+
 //
 // Tests begin here
 //
@@ -1116,18 +1326,38 @@ func TestOutputService1ProtocolTestScalarMembersCase1(t *testing.T) {
 	// unmarshal response
 	jsonrpc.UnmarshalMeta(req)
 	jsonrpc.Unmarshal(req)
-	assert.NoError(t, req.Error)
+	if req.Error != nil {
+		t.Errorf("expect not error, got %v", req.Error)
+	}
 
 	// assert response
-	assert.NotNil(t, out) // ensure out variable is used
-	assert.Equal(t, "a", *out.Char)
-	assert.Equal(t, 1.3, *out.Double)
-	assert.Equal(t, false, *out.FalseBool)
-	assert.Equal(t, 1.2, *out.Float)
-	assert.Equal(t, int64(200), *out.Long)
-	assert.Equal(t, int64(123), *out.Num)
-	assert.Equal(t, "myname", *out.Str)
-	assert.Equal(t, true, *out.TrueBool)
+	if out == nil {
+		t.Errorf("expect not to be nil")
+	}
+	if e, a := "a", *out.Char; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := 1.3, *out.Double; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := false, *out.FalseBool; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := 1.2, *out.Float; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := int64(200), *out.Long; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := int64(123), *out.Num; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := "myname", *out.Str; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := true, *out.TrueBool; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
 
 }
 
@@ -1143,19 +1373,27 @@ func TestOutputService2ProtocolTestBlobMembersCase1(t *testing.T) {
 	// unmarshal response
 	jsonrpc.UnmarshalMeta(req)
 	jsonrpc.Unmarshal(req)
-	assert.NoError(t, req.Error)
+	if req.Error != nil {
+		t.Errorf("expect not error, got %v", req.Error)
+	}
 
 	// assert response
-	assert.NotNil(t, out) // ensure out variable is used
-	assert.Equal(t, "hi!", string(out.BlobMember))
-	assert.Equal(t, "there!", string(out.StructMember.Foo))
+	if out == nil {
+		t.Errorf("expect not to be nil")
+	}
+	if e, a := "hi!", string(out.BlobMember); e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := "there!", string(out.StructMember.Foo); e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
 
 }
 
 func TestOutputService3ProtocolTestTimestampMembersCase1(t *testing.T) {
 	svc := NewOutputService3ProtocolTest(unit.Session, &aws.Config{Endpoint: aws.String("https://test")})
 
-	buf := bytes.NewReader([]byte("{\"TimeMember\": 1398796238, \"StructMember\": {\"foo\": 1398796238}}"))
+	buf := bytes.NewReader([]byte("{\"TimeArg\": 1398796238, \"TimeCustom\": \"Tue, 29 Apr 2014 18:30:38 GMT\", \"TimeFormat\": \"2014-04-29T18:30:38Z\", \"StructMember\": {\"foo\": 1398796238, \"bar\": \"2014-04-29T18:30:38Z\"}}"))
 	req, out := svc.OutputService3TestCaseOperation1Request(nil)
 	req.HTTPResponse = &http.Response{StatusCode: 200, Body: ioutil.NopCloser(buf), Header: http.Header{}}
 
@@ -1164,12 +1402,29 @@ func TestOutputService3ProtocolTestTimestampMembersCase1(t *testing.T) {
 	// unmarshal response
 	jsonrpc.UnmarshalMeta(req)
 	jsonrpc.Unmarshal(req)
-	assert.NoError(t, req.Error)
+	if req.Error != nil {
+		t.Errorf("expect not error, got %v", req.Error)
+	}
 
 	// assert response
-	assert.NotNil(t, out) // ensure out variable is used
-	assert.Equal(t, time.Unix(1.398796238e+09, 0).UTC().String(), out.StructMember.Foo.String())
-	assert.Equal(t, time.Unix(1.398796238e+09, 0).UTC().String(), out.TimeMember.String())
+	if out == nil {
+		t.Errorf("expect not to be nil")
+	}
+	if e, a := time.Unix(1.398796238e+09, 0).UTC().String(), out.StructMember.Bar.UTC().String(); e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := time.Unix(1.398796238e+09, 0).UTC().String(), out.StructMember.Foo.UTC().String(); e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := time.Unix(1.398796238e+09, 0).UTC().String(), out.TimeArg.UTC().String(); e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := time.Unix(1.398796238e+09, 0).UTC().String(), out.TimeCustom.UTC().String(); e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := time.Unix(1.398796238e+09, 0).UTC().String(), out.TimeFormat.UTC().String(); e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
 
 }
 
@@ -1185,12 +1440,20 @@ func TestOutputService4ProtocolTestListsCase1(t *testing.T) {
 	// unmarshal response
 	jsonrpc.UnmarshalMeta(req)
 	jsonrpc.Unmarshal(req)
-	assert.NoError(t, req.Error)
+	if req.Error != nil {
+		t.Errorf("expect not error, got %v", req.Error)
+	}
 
 	// assert response
-	assert.NotNil(t, out) // ensure out variable is used
-	assert.Equal(t, "a", *out.ListMember[0])
-	assert.Equal(t, "b", *out.ListMember[1])
+	if out == nil {
+		t.Errorf("expect not to be nil")
+	}
+	if e, a := "a", *out.ListMember[0]; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := "b", *out.ListMember[1]; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
 
 }
 
@@ -1206,16 +1469,32 @@ func TestOutputService4ProtocolTestListsCase2(t *testing.T) {
 	// unmarshal response
 	jsonrpc.UnmarshalMeta(req)
 	jsonrpc.Unmarshal(req)
-	assert.NoError(t, req.Error)
+	if req.Error != nil {
+		t.Errorf("expect not error, got %v", req.Error)
+	}
 
 	// assert response
-	assert.NotNil(t, out) // ensure out variable is used
-	assert.Equal(t, "a", *out.ListMember[0])
-	assert.Nil(t, out.ListMember[1])
-	assert.Nil(t, out.ListMemberMap[1])
-	assert.Nil(t, out.ListMemberMap[2])
-	assert.Nil(t, out.ListMemberStruct[1])
-	assert.Nil(t, out.ListMemberStruct[2])
+	if out == nil {
+		t.Errorf("expect not to be nil")
+	}
+	if e, a := "a", *out.ListMember[0]; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e := out.ListMember[1]; e != nil {
+		t.Errorf("expect nil, got %v", e)
+	}
+	if e := out.ListMemberMap[1]; e != nil {
+		t.Errorf("expect nil, got %v", e)
+	}
+	if e := out.ListMemberMap[2]; e != nil {
+		t.Errorf("expect nil, got %v", e)
+	}
+	if e := out.ListMemberStruct[1]; e != nil {
+		t.Errorf("expect nil, got %v", e)
+	}
+	if e := out.ListMemberStruct[2]; e != nil {
+		t.Errorf("expect nil, got %v", e)
+	}
 
 }
 
@@ -1231,14 +1510,26 @@ func TestOutputService5ProtocolTestMapsCase1(t *testing.T) {
 	// unmarshal response
 	jsonrpc.UnmarshalMeta(req)
 	jsonrpc.Unmarshal(req)
-	assert.NoError(t, req.Error)
+	if req.Error != nil {
+		t.Errorf("expect not error, got %v", req.Error)
+	}
 
 	// assert response
-	assert.NotNil(t, out) // ensure out variable is used
-	assert.Equal(t, int64(1), *out.MapMember["a"][0])
-	assert.Equal(t, int64(2), *out.MapMember["a"][1])
-	assert.Equal(t, int64(3), *out.MapMember["b"][0])
-	assert.Equal(t, int64(4), *out.MapMember["b"][1])
+	if out == nil {
+		t.Errorf("expect not to be nil")
+	}
+	if e, a := int64(1), *out.MapMember["a"][0]; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := int64(2), *out.MapMember["a"][1]; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := int64(3), *out.MapMember["b"][0]; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := int64(4), *out.MapMember["b"][1]; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
 
 }
 
@@ -1254,9 +1545,45 @@ func TestOutputService6ProtocolTestIgnoresExtraDataCase1(t *testing.T) {
 	// unmarshal response
 	jsonrpc.UnmarshalMeta(req)
 	jsonrpc.Unmarshal(req)
-	assert.NoError(t, req.Error)
+	if req.Error != nil {
+		t.Errorf("expect not error, got %v", req.Error)
+	}
 
 	// assert response
-	assert.NotNil(t, out) // ensure out variable is used
+	if out == nil {
+		t.Errorf("expect not to be nil")
+	}
+
+}
+
+func TestOutputService7ProtocolTestEnumOutputCase1(t *testing.T) {
+	svc := NewOutputService7ProtocolTest(unit.Session, &aws.Config{Endpoint: aws.String("https://test")})
+
+	buf := bytes.NewReader([]byte("{\"FooEnum\": \"foo\", \"ListEnums\": [\"foo\", \"bar\"]}"))
+	req, out := svc.OutputService7TestCaseOperation1Request(nil)
+	req.HTTPResponse = &http.Response{StatusCode: 200, Body: ioutil.NopCloser(buf), Header: http.Header{}}
+
+	// set headers
+
+	// unmarshal response
+	jsonrpc.UnmarshalMeta(req)
+	jsonrpc.Unmarshal(req)
+	if req.Error != nil {
+		t.Errorf("expect not error, got %v", req.Error)
+	}
+
+	// assert response
+	if out == nil {
+		t.Errorf("expect not to be nil")
+	}
+	if e, a := "foo", *out.FooEnum; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := "foo", *out.ListEnums[0]; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
+	if e, a := "bar", *out.ListEnums[1]; e != a {
+		t.Errorf("expect %v, got %v", e, a)
+	}
 
 }

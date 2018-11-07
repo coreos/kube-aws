@@ -348,24 +348,24 @@
           {{$etcdInstance.SubnetRef}}
         ]
       },
-      {{if $.WaitSignal.Enabled}}
+      {{if $.WaitSignal.Enabled -}}
       "CreationPolicy" : {
         "ResourceSignal" : {
           "Count" : "1",
-          "Timeout" : "{{$.Controller.CreateTimeout}}"
+          "Timeout" : "{{if $.EtcdMigrationEnabled}}PT3H{{else}}{{$.Controller.CreateTimeout}}{{end}}"
         }
       },
-      {{end}}
+      {{end -}}
       "UpdatePolicy" : {
         "AutoScalingRollingUpdate" : {
           "MinInstancesInService" : "0",
           "MaxBatchSize" : "1",
-          {{if $.WaitSignal.Enabled}}
+          {{if $.WaitSignal.Enabled -}}
           "WaitOnResourceSignals" : "true",
           "PauseTime": "{{$.Controller.CreateTimeout}}"
-          {{else}}
+          {{else -}}
           "PauseTime": "PT2M"
-          {{end}}
+          {{end -}}
         }
       },
       "Metadata" : {

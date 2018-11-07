@@ -10,11 +10,32 @@ const (
 	// The resource hierarchy is changing.
 	ErrCodeConcurrentModificationException = "ConcurrentModificationException"
 
+	// ErrCodeCustomMetadataLimitExceededException for service response error code
+	// "CustomMetadataLimitExceededException".
+	//
+	// The limit has been reached on the number of custom properties for the specified
+	// resource.
+	ErrCodeCustomMetadataLimitExceededException = "CustomMetadataLimitExceededException"
+
 	// ErrCodeDeactivatingLastSystemUserException for service response error code
 	// "DeactivatingLastSystemUserException".
 	//
 	// The last user in the organization is being deactivated.
 	ErrCodeDeactivatingLastSystemUserException = "DeactivatingLastSystemUserException"
+
+	// ErrCodeDocumentLockedForCommentsException for service response error code
+	// "DocumentLockedForCommentsException".
+	//
+	// This exception is thrown when the document is locked for comments and user
+	// tries to create or delete a comment on that document.
+	ErrCodeDocumentLockedForCommentsException = "DocumentLockedForCommentsException"
+
+	// ErrCodeDraftUploadOutOfSyncException for service response error code
+	// "DraftUploadOutOfSyncException".
+	//
+	// This exception is thrown when a valid checkout ID is not presented on document
+	// version upload calls for a document that has been checked out from Web client.
+	ErrCodeDraftUploadOutOfSyncException = "DraftUploadOutOfSyncException"
 
 	// ErrCodeEntityAlreadyExistsException for service response error code
 	// "EntityAlreadyExistsException".
@@ -32,8 +53,8 @@ const (
 	// "FailedDependencyException".
 	//
 	// The AWS Directory Service cannot reach an on-premises instance. Or a dependency
-	// under the control of the organization is failing, such as a connected active
-	// directory.
+	// under the control of the organization is failing, such as a connected Active
+	// Directory.
 	ErrCodeFailedDependencyException = "FailedDependencyException"
 
 	// ErrCodeIllegalUserStateException for service response error code
@@ -45,7 +66,7 @@ const (
 	// ErrCodeInvalidArgumentException for service response error code
 	// "InvalidArgumentException".
 	//
-	// The pagination marker and/or limit fields are not valid.
+	// The pagination marker or limit fields are not valid.
 	ErrCodeInvalidArgumentException = "InvalidArgumentException"
 
 	// ErrCodeInvalidOperationException for service response error code
@@ -54,10 +75,16 @@ const (
 	// The operation is invalid.
 	ErrCodeInvalidOperationException = "InvalidOperationException"
 
+	// ErrCodeInvalidPasswordException for service response error code
+	// "InvalidPasswordException".
+	//
+	// The password is invalid.
+	ErrCodeInvalidPasswordException = "InvalidPasswordException"
+
 	// ErrCodeLimitExceededException for service response error code
 	// "LimitExceededException".
 	//
-	// You've exceeded the maximum of 100,000 folders under the parent folder.
+	// The maximum of 100,000 folders under the parent folder has been exceeded.
 	ErrCodeLimitExceededException = "LimitExceededException"
 
 	// ErrCodeProhibitedStateException for service response error code
@@ -65,6 +92,12 @@ const (
 	//
 	// The specified document version is not in the INITIALIZED state.
 	ErrCodeProhibitedStateException = "ProhibitedStateException"
+
+	// ErrCodeResourceAlreadyCheckedOutException for service response error code
+	// "ResourceAlreadyCheckedOutException".
+	//
+	// The resource is already checked out.
+	ErrCodeResourceAlreadyCheckedOutException = "ResourceAlreadyCheckedOutException"
 
 	// ErrCodeServiceUnavailableException for service response error code
 	// "ServiceUnavailableException".
@@ -83,6 +116,12 @@ const (
 	//
 	// The storage limit will be exceeded.
 	ErrCodeStorageLimitWillExceedException = "StorageLimitWillExceedException"
+
+	// ErrCodeTooManyLabelsException for service response error code
+	// "TooManyLabelsException".
+	//
+	// The limit has been reached on the number of labels for the specified resource.
+	ErrCodeTooManyLabelsException = "TooManyLabelsException"
 
 	// ErrCodeTooManySubscriptionsException for service response error code
 	// "TooManySubscriptionsException".

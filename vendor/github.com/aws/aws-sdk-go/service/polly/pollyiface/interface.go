@@ -21,7 +21,7 @@ import (
 //
 // The best way to use this interface is so the SDK's service client's calls
 // can be stubbed out for unit testing your code with the SDK without needing
-// to inject custom request handlers into the the SDK's request pipeline.
+// to inject custom request handlers into the SDK's request pipeline.
 //
 //    // myFunc uses an SDK service client to make a request to
 //    // Amazon Polly.
@@ -72,13 +72,28 @@ type PollyAPI interface {
 	GetLexiconWithContext(aws.Context, *polly.GetLexiconInput, ...request.Option) (*polly.GetLexiconOutput, error)
 	GetLexiconRequest(*polly.GetLexiconInput) (*request.Request, *polly.GetLexiconOutput)
 
+	GetSpeechSynthesisTask(*polly.GetSpeechSynthesisTaskInput) (*polly.GetSpeechSynthesisTaskOutput, error)
+	GetSpeechSynthesisTaskWithContext(aws.Context, *polly.GetSpeechSynthesisTaskInput, ...request.Option) (*polly.GetSpeechSynthesisTaskOutput, error)
+	GetSpeechSynthesisTaskRequest(*polly.GetSpeechSynthesisTaskInput) (*request.Request, *polly.GetSpeechSynthesisTaskOutput)
+
 	ListLexicons(*polly.ListLexiconsInput) (*polly.ListLexiconsOutput, error)
 	ListLexiconsWithContext(aws.Context, *polly.ListLexiconsInput, ...request.Option) (*polly.ListLexiconsOutput, error)
 	ListLexiconsRequest(*polly.ListLexiconsInput) (*request.Request, *polly.ListLexiconsOutput)
 
+	ListSpeechSynthesisTasks(*polly.ListSpeechSynthesisTasksInput) (*polly.ListSpeechSynthesisTasksOutput, error)
+	ListSpeechSynthesisTasksWithContext(aws.Context, *polly.ListSpeechSynthesisTasksInput, ...request.Option) (*polly.ListSpeechSynthesisTasksOutput, error)
+	ListSpeechSynthesisTasksRequest(*polly.ListSpeechSynthesisTasksInput) (*request.Request, *polly.ListSpeechSynthesisTasksOutput)
+
+	ListSpeechSynthesisTasksPages(*polly.ListSpeechSynthesisTasksInput, func(*polly.ListSpeechSynthesisTasksOutput, bool) bool) error
+	ListSpeechSynthesisTasksPagesWithContext(aws.Context, *polly.ListSpeechSynthesisTasksInput, func(*polly.ListSpeechSynthesisTasksOutput, bool) bool, ...request.Option) error
+
 	PutLexicon(*polly.PutLexiconInput) (*polly.PutLexiconOutput, error)
 	PutLexiconWithContext(aws.Context, *polly.PutLexiconInput, ...request.Option) (*polly.PutLexiconOutput, error)
 	PutLexiconRequest(*polly.PutLexiconInput) (*request.Request, *polly.PutLexiconOutput)
+
+	StartSpeechSynthesisTask(*polly.StartSpeechSynthesisTaskInput) (*polly.StartSpeechSynthesisTaskOutput, error)
+	StartSpeechSynthesisTaskWithContext(aws.Context, *polly.StartSpeechSynthesisTaskInput, ...request.Option) (*polly.StartSpeechSynthesisTaskOutput, error)
+	StartSpeechSynthesisTaskRequest(*polly.StartSpeechSynthesisTaskInput) (*request.Request, *polly.StartSpeechSynthesisTaskOutput)
 
 	SynthesizeSpeech(*polly.SynthesizeSpeechInput) (*polly.SynthesizeSpeechOutput, error)
 	SynthesizeSpeechWithContext(aws.Context, *polly.SynthesizeSpeechInput, ...request.Option) (*polly.SynthesizeSpeechOutput, error)

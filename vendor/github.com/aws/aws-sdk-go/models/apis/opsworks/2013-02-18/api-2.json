@@ -6,6 +6,7 @@
     "jsonVersion":"1.1",
     "protocol":"json",
     "serviceFullName":"AWS OpsWorks",
+    "serviceId":"OpsWorks",
     "signatureVersion":"v4",
     "targetPrefix":"OpsWorks_20130218",
     "uid":"opsworks-2013-02-18"
@@ -406,6 +407,14 @@
       },
       "output":{"shape":"DescribeMyUserProfileResult"}
     },
+    "DescribeOperatingSystems":{
+      "name":"DescribeOperatingSystems",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "output":{"shape":"DescribeOperatingSystemsResponse"}
+    },
     "DescribePermissions":{
       "name":"DescribePermissions",
       "http":{
@@ -585,6 +594,19 @@
         {"shape":"ResourceNotFoundException"}
       ]
     },
+    "ListTags":{
+      "name":"ListTags",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"ListTagsRequest"},
+      "output":{"shape":"ListTagsResult"},
+      "errors":[
+        {"shape":"ValidationException"},
+        {"shape":"ResourceNotFoundException"}
+      ]
+    },
     "RebootInstance":{
       "name":"RebootInstance",
       "http":{
@@ -745,6 +767,18 @@
         {"shape":"ResourceNotFoundException"}
       ]
     },
+    "TagResource":{
+      "name":"TagResource",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"TagResourceRequest"},
+      "errors":[
+        {"shape":"ValidationException"},
+        {"shape":"ResourceNotFoundException"}
+      ]
+    },
     "UnassignInstance":{
       "name":"UnassignInstance",
       "http":{
@@ -764,6 +798,18 @@
         "requestUri":"/"
       },
       "input":{"shape":"UnassignVolumeRequest"},
+      "errors":[
+        {"shape":"ValidationException"},
+        {"shape":"ResourceNotFoundException"}
+      ]
+    },
+    "UntagResource":{
+      "name":"UntagResource",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"UntagResourceRequest"},
       "errors":[
         {"shape":"ValidationException"},
         {"shape":"ResourceNotFoundException"}
@@ -1675,6 +1721,12 @@
         "UserProfile":{"shape":"SelfUserProfile"}
       }
     },
+    "DescribeOperatingSystemsResponse":{
+      "type":"structure",
+      "members":{
+        "OperatingSystems":{"shape":"OperatingSystems"}
+      }
+    },
     "DescribePermissionsRequest":{
       "type":"structure",
       "members":{
@@ -1937,6 +1989,7 @@
         "AgentVersion":{"shape":"String"},
         "AmiId":{"shape":"String"},
         "Architecture":{"shape":"Architecture"},
+        "Arn":{"shape":"String"},
         "AutoScalingType":{"shape":"AutoScalingType"},
         "AvailabilityZone":{"shape":"String"},
         "BlockDeviceMappings":{"shape":"BlockDeviceMappings"},
@@ -2004,6 +2057,7 @@
         "SetupFailed":{"shape":"Integer"},
         "ShuttingDown":{"shape":"Integer"},
         "StartFailed":{"shape":"Integer"},
+        "StopFailed":{"shape":"Integer"},
         "Stopped":{"shape":"Integer"},
         "Stopping":{"shape":"Integer"},
         "Terminated":{"shape":"Integer"},
@@ -2018,6 +2072,7 @@
     "Layer":{
       "type":"structure",
       "members":{
+        "Arn":{"shape":"String"},
         "StackId":{"shape":"String"},
         "LayerId":{"shape":"String"},
         "Type":{"shape":"LayerType"},
@@ -2104,6 +2159,22 @@
         "Shutdown":{"shape":"ShutdownEventConfiguration"}
       }
     },
+    "ListTagsRequest":{
+      "type":"structure",
+      "required":["ResourceArn"],
+      "members":{
+        "ResourceArn":{"shape":"ResourceArn"},
+        "MaxResults":{"shape":"MaxResults"},
+        "NextToken":{"shape":"NextToken"}
+      }
+    },
+    "ListTagsResult":{
+      "type":"structure",
+      "members":{
+        "Tags":{"shape":"Tags"},
+        "NextToken":{"shape":"NextToken"}
+      }
+    },
     "LoadBasedAutoScalingConfiguration":{
       "type":"structure",
       "members":{
@@ -2117,11 +2188,40 @@
       "type":"list",
       "member":{"shape":"LoadBasedAutoScalingConfiguration"}
     },
+    "MaxResults":{"type":"integer"},
     "Minute":{
       "type":"integer",
       "box":true,
       "max":100,
       "min":1
+    },
+    "NextToken":{"type":"string"},
+    "OperatingSystem":{
+      "type":"structure",
+      "members":{
+        "Name":{"shape":"String"},
+        "Id":{"shape":"String"},
+        "Type":{"shape":"String"},
+        "ConfigurationManagers":{"shape":"OperatingSystemConfigurationManagers"},
+        "ReportedName":{"shape":"String"},
+        "ReportedVersion":{"shape":"String"},
+        "Supported":{"shape":"Boolean"}
+      }
+    },
+    "OperatingSystemConfigurationManager":{
+      "type":"structure",
+      "members":{
+        "Name":{"shape":"String"},
+        "Version":{"shape":"String"}
+      }
+    },
+    "OperatingSystemConfigurationManagers":{
+      "type":"list",
+      "member":{"shape":"OperatingSystemConfigurationManager"}
+    },
+    "OperatingSystems":{
+      "type":"list",
+      "member":{"shape":"OperatingSystem"}
     },
     "Parameters":{
       "type":"map",
@@ -2289,6 +2389,7 @@
         "Version":{"shape":"String"}
       }
     },
+    "ResourceArn":{"type":"string"},
     "ResourceNotFoundException":{
       "type":"structure",
       "members":{
@@ -2474,7 +2575,8 @@
       "type":"structure",
       "required":["InstanceId"],
       "members":{
-        "InstanceId":{"shape":"String"}
+        "InstanceId":{"shape":"String"},
+        "Force":{"shape":"Boolean"}
       }
     },
     "StopStackRequest":{
@@ -2490,6 +2592,28 @@
       "member":{"shape":"String"}
     },
     "Switch":{"type":"string"},
+    "TagKey":{"type":"string"},
+    "TagKeys":{
+      "type":"list",
+      "member":{"shape":"TagKey"}
+    },
+    "TagResourceRequest":{
+      "type":"structure",
+      "required":[
+        "ResourceArn",
+        "Tags"
+      ],
+      "members":{
+        "ResourceArn":{"shape":"ResourceArn"},
+        "Tags":{"shape":"Tags"}
+      }
+    },
+    "TagValue":{"type":"string"},
+    "Tags":{
+      "type":"map",
+      "key":{"shape":"TagKey"},
+      "value":{"shape":"TagValue"}
+    },
     "TemporaryCredential":{
       "type":"structure",
       "members":{
@@ -2522,6 +2646,17 @@
       "required":["VolumeId"],
       "members":{
         "VolumeId":{"shape":"String"}
+      }
+    },
+    "UntagResourceRequest":{
+      "type":"structure",
+      "required":[
+        "ResourceArn",
+        "TagKeys"
+      ],
+      "members":{
+        "ResourceArn":{"shape":"ResourceArn"},
+        "TagKeys":{"shape":"TagKeys"}
       }
     },
     "UpdateAppRequest":{
@@ -2697,7 +2832,8 @@
         "Region":{"shape":"String"},
         "AvailabilityZone":{"shape":"String"},
         "VolumeType":{"shape":"String"},
-        "Iops":{"shape":"Integer"}
+        "Iops":{"shape":"Integer"},
+        "Encrypted":{"shape":"Boolean"}
       }
     },
     "VolumeConfiguration":{
@@ -2713,7 +2849,8 @@
         "NumberOfDisks":{"shape":"Integer"},
         "Size":{"shape":"Integer"},
         "VolumeType":{"shape":"String"},
-        "Iops":{"shape":"Integer"}
+        "Iops":{"shape":"Integer"},
+        "Encrypted":{"shape":"Boolean"}
       }
     },
     "VolumeConfigurations":{

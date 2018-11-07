@@ -21,7 +21,7 @@ import (
 //
 // The best way to use this interface is so the SDK's service client's calls
 // can be stubbed out for unit testing your code with the SDK without needing
-// to inject custom request handlers into the the SDK's request pipeline.
+// to inject custom request handlers into the SDK's request pipeline.
 //
 //    // myFunc uses an SDK service client to make a request to
 //    // AWS Certificate Manager.
@@ -72,6 +72,10 @@ type ACMAPI interface {
 	DescribeCertificateWithContext(aws.Context, *acm.DescribeCertificateInput, ...request.Option) (*acm.DescribeCertificateOutput, error)
 	DescribeCertificateRequest(*acm.DescribeCertificateInput) (*request.Request, *acm.DescribeCertificateOutput)
 
+	ExportCertificate(*acm.ExportCertificateInput) (*acm.ExportCertificateOutput, error)
+	ExportCertificateWithContext(aws.Context, *acm.ExportCertificateInput, ...request.Option) (*acm.ExportCertificateOutput, error)
+	ExportCertificateRequest(*acm.ExportCertificateInput) (*request.Request, *acm.ExportCertificateOutput)
+
 	GetCertificate(*acm.GetCertificateInput) (*acm.GetCertificateOutput, error)
 	GetCertificateWithContext(aws.Context, *acm.GetCertificateInput, ...request.Option) (*acm.GetCertificateOutput, error)
 	GetCertificateRequest(*acm.GetCertificateInput) (*request.Request, *acm.GetCertificateOutput)
@@ -102,6 +106,13 @@ type ACMAPI interface {
 	ResendValidationEmail(*acm.ResendValidationEmailInput) (*acm.ResendValidationEmailOutput, error)
 	ResendValidationEmailWithContext(aws.Context, *acm.ResendValidationEmailInput, ...request.Option) (*acm.ResendValidationEmailOutput, error)
 	ResendValidationEmailRequest(*acm.ResendValidationEmailInput) (*request.Request, *acm.ResendValidationEmailOutput)
+
+	UpdateCertificateOptions(*acm.UpdateCertificateOptionsInput) (*acm.UpdateCertificateOptionsOutput, error)
+	UpdateCertificateOptionsWithContext(aws.Context, *acm.UpdateCertificateOptionsInput, ...request.Option) (*acm.UpdateCertificateOptionsOutput, error)
+	UpdateCertificateOptionsRequest(*acm.UpdateCertificateOptionsInput) (*request.Request, *acm.UpdateCertificateOptionsOutput)
+
+	WaitUntilCertificateValidated(*acm.DescribeCertificateInput) error
+	WaitUntilCertificateValidatedWithContext(aws.Context, *acm.DescribeCertificateInput, ...request.WaiterOption) error
 }
 
 var _ ACMAPI = (*acm.ACM)(nil)

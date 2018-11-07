@@ -45,7 +45,10 @@ const (
 	// This is not needed to be unique in an AWS account because the actual name of a nested stack is generated randomly
 	// by CloudFormation by including the logical name.
 	// This is NOT intended to be used to reference stack name from cloud-config as the target of awscli or cfn-bootstrap-tools commands e.g. `cfn-init` and `cfn-signal`
-	ControlPlaneStackName = "control-plane"
+	// These names can be overridden in cluster.yaml
+	controlPlaneStackName = "control-plane"
+	networkStackName      = "network"
+	etcdStackName         = "etcd"
 )
 
 func NewDefaultCluster() *Cluster {
@@ -1106,6 +1109,27 @@ type Config struct {
 	APIServerFlags   pluginmodel.APIServerFlags
 }
 
+func (c Cluster) ControlPlaneStackName() string {
+	if c.CloudFormation.StackNameOverrides.ControlPlane != "" {
+		return c.CloudFormation.StackNameOverrides.ControlPlane
+	}
+	return controlPlaneStackName
+}
+
+func (c Cluster) NetworkStackName() string {
+	if c.CloudFormation.StackNameOverrides.Network != "" {
+		return c.CloudFormation.StackNameOverrides.Network
+	}
+	return networkStackName
+}
+
+func (c Cluster) EtcdStackName() string {
+	if c.CloudFormation.StackNameOverrides.Etcd != "" {
+		return c.CloudFormation.StackNameOverrides.Etcd
+	}
+	return etcdStackName
+}
+
 func (c Cluster) StackNameEnvFileName() string {
 	return "/etc/environment"
 }
@@ -1282,7 +1306,7 @@ func (c Cluster) validate() error {
 
 	clusterNamePlaceholder := "<my-cluster-name>"
 	nestedStackNamePlaceHolder := "<my-nested-stack-name>"
-	replacer := strings.NewReplacer(clusterNamePlaceholder, "", nestedStackNamePlaceHolder, ControlPlaneStackName)
+	replacer := strings.NewReplacer(clusterNamePlaceholder, "", nestedStackNamePlaceHolder, c.ControlPlaneStackName())
 	simulatedLcName := fmt.Sprintf("%s-%s-1N2C4K3LLBEDZ-%sLC-BC2S9P3JG2QD", clusterNamePlaceholder, nestedStackNamePlaceHolder, c.Controller.LogicalName())
 	limit := 63 - len(replacer.Replace(simulatedLcName))
 	if c.Experimental.AwsNodeLabels.Enabled && len(c.ClusterName) > limit {
@@ -1298,7 +1322,7 @@ func (c Cluster) validate() error {
 			return e
 		}
 	} else {
-		if e := cfnresource.ValidateUnstableRoleNameLength(c.ClusterName, naming.FromStackToCfnResource(ControlPlaneStackName), c.Controller.IAMConfig.Role.Name, c.Region.String()); e != nil {
+		if e := cfnresource.ValidateUnstableRoleNameLength(c.ClusterName, naming.FromStackToCfnResource(c.ControlPlaneStackName()), c.Controller.IAMConfig.Role.Name, c.Region.String()); e != nil {
 			return e
 		}
 	}

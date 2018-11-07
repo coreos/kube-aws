@@ -7,6 +7,7 @@
     "protocol":"json",
     "serviceAbbreviation":"CodeDeploy",
     "serviceFullName":"AWS CodeDeploy",
+    "serviceId":"CodeDeploy",
     "signatureVersion":"v4",
     "targetPrefix":"CodeDeploy_20141006",
     "timestampFormat":"unixTimestamp",
@@ -22,6 +23,7 @@
       "input":{"shape":"AddTagsToOnPremisesInstancesInput"},
       "errors":[
         {"shape":"InstanceNameRequiredException"},
+        {"shape":"InvalidInstanceNameException"},
         {"shape":"TagRequiredException"},
         {"shape":"InvalidTagException"},
         {"shape":"TagLimitExceededException"},
@@ -151,7 +153,8 @@
         {"shape":"ApplicationNameRequiredException"},
         {"shape":"InvalidApplicationNameException"},
         {"shape":"ApplicationAlreadyExistsException"},
-        {"shape":"ApplicationLimitExceededException"}
+        {"shape":"ApplicationLimitExceededException"},
+        {"shape":"InvalidComputePlatformException"}
       ]
     },
     "CreateDeployment":{
@@ -179,7 +182,13 @@
         {"shape":"InvalidTargetInstancesException"},
         {"shape":"InvalidAutoRollbackConfigException"},
         {"shape":"InvalidLoadBalancerInfoException"},
-        {"shape":"InvalidFileExistsBehaviorException"}
+        {"shape":"InvalidFileExistsBehaviorException"},
+        {"shape":"InvalidRoleException"},
+        {"shape":"InvalidAutoScalingGroupException"},
+        {"shape":"ThrottlingException"},
+        {"shape":"InvalidUpdateOutdatedInstancesOnlyValueException"},
+        {"shape":"InvalidIgnoreApplicationStopFailuresValueException"},
+        {"shape":"InvalidGitHubAccountTokenException"}
       ]
     },
     "CreateDeploymentConfig":{
@@ -195,7 +204,9 @@
         {"shape":"DeploymentConfigNameRequiredException"},
         {"shape":"DeploymentConfigAlreadyExistsException"},
         {"shape":"InvalidMinimumHealthyHostValueException"},
-        {"shape":"DeploymentConfigLimitExceededException"}
+        {"shape":"DeploymentConfigLimitExceededException"},
+        {"shape":"InvalidComputePlatformException"},
+        {"shape":"InvalidTrafficRoutingConfigurationException"}
       ]
     },
     "CreateDeploymentGroup":{
@@ -229,7 +240,11 @@
         {"shape":"InvalidAutoRollbackConfigException"},
         {"shape":"InvalidLoadBalancerInfoException"},
         {"shape":"InvalidDeploymentStyleException"},
-        {"shape":"InvalidBlueGreenDeploymentConfigurationException"}
+        {"shape":"InvalidBlueGreenDeploymentConfigurationException"},
+        {"shape":"InvalidEC2TagCombinationException"},
+        {"shape":"InvalidOnPremisesTagCombinationException"},
+        {"shape":"TagSetListLimitExceededException"},
+        {"shape":"InvalidInputException"}
       ]
     },
     "DeleteApplication":{
@@ -272,6 +287,22 @@
         {"shape":"DeploymentGroupNameRequiredException"},
         {"shape":"InvalidDeploymentGroupNameException"},
         {"shape":"InvalidRoleException"}
+      ]
+    },
+    "DeleteGitHubAccountToken":{
+      "name":"DeleteGitHubAccountToken",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DeleteGitHubAccountTokenInput"},
+      "output":{"shape":"DeleteGitHubAccountTokenOutput"},
+      "errors":[
+        {"shape":"GitHubAccountTokenNameRequiredException"},
+        {"shape":"GitHubAccountTokenDoesNotExistException"},
+        {"shape":"InvalidGitHubAccountTokenNameException"},
+        {"shape":"ResourceValidationException"},
+        {"shape":"OperationNotSupportedException"}
       ]
     },
     "DeregisterOnPremisesInstance":{
@@ -492,6 +523,20 @@
         {"shape":"InvalidNextTokenException"}
       ]
     },
+    "ListGitHubAccountTokenNames":{
+      "name":"ListGitHubAccountTokenNames",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"ListGitHubAccountTokenNamesInput"},
+      "output":{"shape":"ListGitHubAccountTokenNamesOutput"},
+      "errors":[
+        {"shape":"InvalidNextTokenException"},
+        {"shape":"ResourceValidationException"},
+        {"shape":"OperationNotSupportedException"}
+      ]
+    },
     "ListOnPremisesInstances":{
       "name":"ListOnPremisesInstances",
       "http":{
@@ -504,6 +549,24 @@
         {"shape":"InvalidRegistrationStatusException"},
         {"shape":"InvalidTagFilterException"},
         {"shape":"InvalidNextTokenException"}
+      ]
+    },
+    "PutLifecycleEventHookExecutionStatus":{
+      "name":"PutLifecycleEventHookExecutionStatus",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"PutLifecycleEventHookExecutionStatusInput"},
+      "output":{"shape":"PutLifecycleEventHookExecutionStatusOutput"},
+      "errors":[
+        {"shape":"InvalidLifecycleEventHookExecutionStatusException"},
+        {"shape":"InvalidLifecycleEventHookExecutionIdException"},
+        {"shape":"LifecycleEventAlreadyCompletedException"},
+        {"shape":"DeploymentIdRequiredException"},
+        {"shape":"DeploymentDoesNotExistException"},
+        {"shape":"InvalidDeploymentIdException"},
+        {"shape":"UnsupportedActionForDeploymentTypeException"}
       ]
     },
     "RegisterApplicationRevision":{
@@ -551,6 +614,7 @@
       "input":{"shape":"RemoveTagsFromOnPremisesInstancesInput"},
       "errors":[
         {"shape":"InstanceNameRequiredException"},
+        {"shape":"InvalidInstanceNameException"},
         {"shape":"TagRequiredException"},
         {"shape":"InvalidTagException"},
         {"shape":"TagLimitExceededException"},
@@ -633,7 +697,11 @@
         {"shape":"InvalidAutoRollbackConfigException"},
         {"shape":"InvalidLoadBalancerInfoException"},
         {"shape":"InvalidDeploymentStyleException"},
-        {"shape":"InvalidBlueGreenDeploymentConfigurationException"}
+        {"shape":"InvalidBlueGreenDeploymentConfigurationException"},
+        {"shape":"InvalidEC2TagCombinationException"},
+        {"shape":"InvalidOnPremisesTagCombinationException"},
+        {"shape":"TagSetListLimitExceededException"},
+        {"shape":"InvalidInputException"}
       ]
     }
   },
@@ -649,7 +717,10 @@
         "instanceNames":{"shape":"InstanceNameList"}
       }
     },
-    "AdditionalDeploymentStatusInfo":{"type":"string"},
+    "AdditionalDeploymentStatusInfo":{
+      "type":"string",
+      "deprecated":true
+    },
     "Alarm":{
       "type":"structure",
       "members":{
@@ -694,7 +765,9 @@
         "applicationId":{"shape":"ApplicationId"},
         "applicationName":{"shape":"ApplicationName"},
         "createTime":{"shape":"Timestamp"},
-        "linkedToGitHub":{"shape":"Boolean"}
+        "linkedToGitHub":{"shape":"Boolean"},
+        "gitHubAccountName":{"shape":"GitHubAccountTokenName"},
+        "computePlatform":{"shape":"ComputePlatform"}
       }
     },
     "ApplicationLimitExceededException":{
@@ -787,6 +860,7 @@
     },
     "BatchGetApplicationsInput":{
       "type":"structure",
+      "required":["applicationNames"],
       "members":{
         "applicationNames":{"shape":"ApplicationsList"}
       }
@@ -835,6 +909,7 @@
     },
     "BatchGetDeploymentsInput":{
       "type":"structure",
+      "required":["deploymentIds"],
       "members":{
         "deploymentIds":{"shape":"DeploymentsList"}
       }
@@ -847,6 +922,7 @@
     },
     "BatchGetOnPremisesInstancesInput":{
       "type":"structure",
+      "required":["instanceNames"],
       "members":{
         "instanceNames":{"shape":"InstanceNameList"}
       }
@@ -890,10 +966,19 @@
       "enum":[
         "tar",
         "tgz",
-        "zip"
+        "zip",
+        "YAML",
+        "JSON"
       ]
     },
     "CommitId":{"type":"string"},
+    "ComputePlatform":{
+      "type":"string",
+      "enum":[
+        "Server",
+        "Lambda"
+      ]
+    },
     "ContinueDeploymentInput":{
       "type":"structure",
       "members":{
@@ -904,7 +989,8 @@
       "type":"structure",
       "required":["applicationName"],
       "members":{
-        "applicationName":{"shape":"ApplicationName"}
+        "applicationName":{"shape":"ApplicationName"},
+        "computePlatform":{"shape":"ComputePlatform"}
       }
     },
     "CreateApplicationOutput":{
@@ -918,7 +1004,9 @@
       "required":["deploymentConfigName"],
       "members":{
         "deploymentConfigName":{"shape":"DeploymentConfigName"},
-        "minimumHealthyHosts":{"shape":"MinimumHealthyHosts"}
+        "minimumHealthyHosts":{"shape":"MinimumHealthyHosts"},
+        "trafficRoutingConfig":{"shape":"TrafficRoutingConfig"},
+        "computePlatform":{"shape":"ComputePlatform"}
       }
     },
     "CreateDeploymentConfigOutput":{
@@ -947,7 +1035,9 @@
         "autoRollbackConfiguration":{"shape":"AutoRollbackConfiguration"},
         "deploymentStyle":{"shape":"DeploymentStyle"},
         "blueGreenDeploymentConfiguration":{"shape":"BlueGreenDeploymentConfiguration"},
-        "loadBalancerInfo":{"shape":"LoadBalancerInfo"}
+        "loadBalancerInfo":{"shape":"LoadBalancerInfo"},
+        "ec2TagSet":{"shape":"EC2TagSet"},
+        "onPremisesTagSet":{"shape":"OnPremisesTagSet"}
       }
     },
     "CreateDeploymentGroupOutput":{
@@ -1009,6 +1099,18 @@
         "hooksNotCleanedUp":{"shape":"AutoScalingGroupList"}
       }
     },
+    "DeleteGitHubAccountTokenInput":{
+      "type":"structure",
+      "members":{
+        "tokenName":{"shape":"GitHubAccountTokenName"}
+      }
+    },
+    "DeleteGitHubAccountTokenOutput":{
+      "type":"structure",
+      "members":{
+        "tokenName":{"shape":"GitHubAccountTokenName"}
+      }
+    },
     "DeploymentAlreadyCompletedException":{
       "type":"structure",
       "members":{
@@ -1040,7 +1142,9 @@
         "deploymentConfigId":{"shape":"DeploymentConfigId"},
         "deploymentConfigName":{"shape":"DeploymentConfigName"},
         "minimumHealthyHosts":{"shape":"MinimumHealthyHosts"},
-        "createTime":{"shape":"Timestamp"}
+        "createTime":{"shape":"Timestamp"},
+        "computePlatform":{"shape":"ComputePlatform"},
+        "trafficRoutingConfig":{"shape":"TrafficRoutingConfig"}
       }
     },
     "DeploymentConfigLimitExceededException":{
@@ -1108,7 +1212,12 @@
         "autoRollbackConfiguration":{"shape":"AutoRollbackConfiguration"},
         "deploymentStyle":{"shape":"DeploymentStyle"},
         "blueGreenDeploymentConfiguration":{"shape":"BlueGreenDeploymentConfiguration"},
-        "loadBalancerInfo":{"shape":"LoadBalancerInfo"}
+        "loadBalancerInfo":{"shape":"LoadBalancerInfo"},
+        "lastSuccessfulDeployment":{"shape":"LastDeploymentInfo"},
+        "lastAttemptedDeployment":{"shape":"LastDeploymentInfo"},
+        "ec2TagSet":{"shape":"EC2TagSet"},
+        "onPremisesTagSet":{"shape":"OnPremisesTagSet"},
+        "computePlatform":{"shape":"ComputePlatform"}
       }
     },
     "DeploymentGroupInfoList":{
@@ -1170,7 +1279,9 @@
         "blueGreenDeploymentConfiguration":{"shape":"BlueGreenDeploymentConfiguration"},
         "loadBalancerInfo":{"shape":"LoadBalancerInfo"},
         "additionalDeploymentStatusInfo":{"shape":"AdditionalDeploymentStatusInfo"},
-        "fileExistsBehavior":{"shape":"FileExistsBehavior"}
+        "fileExistsBehavior":{"shape":"FileExistsBehavior"},
+        "deploymentStatusMessages":{"shape":"DeploymentStatusMessageList"},
+        "computePlatform":{"shape":"ComputePlatform"}
       }
     },
     "DeploymentIsNotInReadyStateException":{
@@ -1239,6 +1350,10 @@
       "type":"list",
       "member":{"shape":"DeploymentStatus"}
     },
+    "DeploymentStatusMessageList":{
+      "type":"list",
+      "member":{"shape":"ErrorMessage"}
+    },
     "DeploymentStyle":{
       "type":"structure",
       "members":{
@@ -1305,6 +1420,16 @@
         "KEY_AND_VALUE"
       ]
     },
+    "EC2TagSet":{
+      "type":"structure",
+      "members":{
+        "ec2TagSetList":{"shape":"EC2TagSetList"}
+      }
+    },
+    "EC2TagSetList":{
+      "type":"list",
+      "member":{"shape":"EC2TagFilterList"}
+    },
     "ELBInfo":{
       "type":"structure",
       "members":{
@@ -1337,7 +1462,15 @@
         "AGENT_ISSUE",
         "AUTO_SCALING_IAM_ROLE_PERMISSIONS",
         "AUTO_SCALING_CONFIGURATION",
-        "MANUAL_STOP"
+        "MANUAL_STOP",
+        "MISSING_BLUE_GREEN_DEPLOYMENT_CONFIGURATION",
+        "MISSING_ELB_INFORMATION",
+        "MISSING_GITHUB_TOKEN",
+        "ELASTIC_LOAD_BALANCING_INVALID",
+        "ELB_INVALID_INSTANCE",
+        "INVALID_LAMBDA_CONFIGURATION",
+        "INVALID_LAMBDA_FUNCTION",
+        "HOOK_EXECUTION_FAILURE"
       ]
     },
     "ErrorInformation":{
@@ -1470,6 +1603,23 @@
       "members":{
         "instanceInfo":{"shape":"InstanceInfo"}
       }
+    },
+    "GitHubAccountTokenDoesNotExistException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
+    "GitHubAccountTokenName":{"type":"string"},
+    "GitHubAccountTokenNameList":{
+      "type":"list",
+      "member":{"shape":"GitHubAccountTokenName"}
+    },
+    "GitHubAccountTokenNameRequiredException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
     },
     "GitHubLocation":{
       "type":"structure",
@@ -1666,6 +1816,12 @@
       },
       "exception":true
     },
+    "InvalidComputePlatformException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
     "InvalidDeployedStateFilterException":{
       "type":"structure",
       "members":{
@@ -1708,6 +1864,12 @@
       },
       "exception":true
     },
+    "InvalidEC2TagCombinationException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
     "InvalidEC2TagException":{
       "type":"structure",
       "members":{
@@ -1720,6 +1882,18 @@
       },
       "exception":true
     },
+    "InvalidGitHubAccountTokenException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
+    "InvalidGitHubAccountTokenNameException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
     "InvalidIamSessionArnException":{
       "type":"structure",
       "members":{
@@ -1727,6 +1901,24 @@
       "exception":true
     },
     "InvalidIamUserArnException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
+    "InvalidIgnoreApplicationStopFailuresValueException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
+    "InvalidInputException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
+    "InvalidInstanceIdException":{
       "type":"structure",
       "members":{
       },
@@ -1756,6 +1948,18 @@
       },
       "exception":true
     },
+    "InvalidLifecycleEventHookExecutionIdException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
+    "InvalidLifecycleEventHookExecutionStatusException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
     "InvalidLoadBalancerInfoException":{
       "type":"structure",
       "members":{
@@ -1769,6 +1973,12 @@
       "exception":true
     },
     "InvalidNextTokenException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
+    "InvalidOnPremisesTagCombinationException":{
       "type":"structure",
       "members":{
       },
@@ -1834,13 +2044,34 @@
       },
       "exception":true
     },
+    "InvalidTrafficRoutingConfigurationException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
     "InvalidTriggerConfigException":{
       "type":"structure",
       "members":{
       },
       "exception":true
     },
+    "InvalidUpdateOutdatedInstancesOnlyValueException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
     "Key":{"type":"string"},
+    "LastDeploymentInfo":{
+      "type":"structure",
+      "members":{
+        "deploymentId":{"shape":"DeploymentId"},
+        "status":{"shape":"DeploymentStatus"},
+        "endTime":{"shape":"Timestamp"},
+        "createTime":{"shape":"Timestamp"}
+      }
+    },
     "LifecycleErrorCode":{
       "type":"string",
       "enum":[
@@ -1862,6 +2093,13 @@
         "status":{"shape":"LifecycleEventStatus"}
       }
     },
+    "LifecycleEventAlreadyCompletedException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
+    "LifecycleEventHookExecutionId":{"type":"string"},
     "LifecycleEventList":{
       "type":"list",
       "member":{"shape":"LifecycleEvent"}
@@ -1981,6 +2219,19 @@
         "nextToken":{"shape":"NextToken"}
       }
     },
+    "ListGitHubAccountTokenNamesInput":{
+      "type":"structure",
+      "members":{
+        "nextToken":{"shape":"NextToken"}
+      }
+    },
+    "ListGitHubAccountTokenNamesOutput":{
+      "type":"structure",
+      "members":{
+        "tokenNameList":{"shape":"GitHubAccountTokenNameList"},
+        "nextToken":{"shape":"NextToken"}
+      }
+    },
     "ListOnPremisesInstancesInput":{
       "type":"structure",
       "members":{
@@ -2007,7 +2258,8 @@
     "LoadBalancerInfo":{
       "type":"structure",
       "members":{
-        "elbInfoList":{"shape":"ELBInfoList"}
+        "elbInfoList":{"shape":"ELBInfoList"},
+        "targetGroupInfoList":{"shape":"TargetGroupInfoList"}
       }
     },
     "LogTail":{"type":"string"},
@@ -2035,6 +2287,46 @@
     },
     "NextToken":{"type":"string"},
     "NullableBoolean":{"type":"boolean"},
+    "OnPremisesTagSet":{
+      "type":"structure",
+      "members":{
+        "onPremisesTagSetList":{"shape":"OnPremisesTagSetList"}
+      }
+    },
+    "OnPremisesTagSetList":{
+      "type":"list",
+      "member":{"shape":"TagFilterList"}
+    },
+    "OperationNotSupportedException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
+    "Percentage":{"type":"integer"},
+    "PutLifecycleEventHookExecutionStatusInput":{
+      "type":"structure",
+      "members":{
+        "deploymentId":{"shape":"DeploymentId"},
+        "lifecycleEventHookExecutionId":{"shape":"LifecycleEventHookExecutionId"},
+        "status":{"shape":"LifecycleEventStatus"}
+      }
+    },
+    "PutLifecycleEventHookExecutionStatusOutput":{
+      "type":"structure",
+      "members":{
+        "lifecycleEventHookExecutionId":{"shape":"LifecycleEventHookExecutionId"}
+      }
+    },
+    "RawString":{
+      "type":"structure",
+      "members":{
+        "content":{"shape":"RawStringContent"},
+        "sha256":{"shape":"RawStringSha256"}
+      }
+    },
+    "RawStringContent":{"type":"string"},
+    "RawStringSha256":{"type":"string"},
     "RegisterApplicationRevisionInput":{
       "type":"structure",
       "required":[
@@ -2075,6 +2367,12 @@
       }
     },
     "Repository":{"type":"string"},
+    "ResourceValidationException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
     "RevisionDoesNotExistException":{
       "type":"structure",
       "members":{
@@ -2097,7 +2395,8 @@
       "members":{
         "revisionType":{"shape":"RevisionLocationType"},
         "s3Location":{"shape":"S3Location"},
-        "gitHubLocation":{"shape":"GitHubLocation"}
+        "gitHubLocation":{"shape":"GitHubLocation"},
+        "string":{"shape":"RawString"}
       }
     },
     "RevisionLocationList":{
@@ -2108,7 +2407,8 @@
       "type":"string",
       "enum":[
         "S3",
-        "GitHub"
+        "GitHub",
+        "String"
       ]
     },
     "RevisionRequiredException":{
@@ -2223,11 +2523,49 @@
       },
       "exception":true
     },
+    "TagSetListLimitExceededException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
+    "TargetGroupInfo":{
+      "type":"structure",
+      "members":{
+        "name":{"shape":"TargetGroupName"}
+      }
+    },
+    "TargetGroupInfoList":{
+      "type":"list",
+      "member":{"shape":"TargetGroupInfo"}
+    },
+    "TargetGroupName":{"type":"string"},
     "TargetInstances":{
       "type":"structure",
       "members":{
         "tagFilters":{"shape":"EC2TagFilterList"},
-        "autoScalingGroups":{"shape":"AutoScalingGroupNameList"}
+        "autoScalingGroups":{"shape":"AutoScalingGroupNameList"},
+        "ec2TagSet":{"shape":"EC2TagSet"}
+      }
+    },
+    "ThrottlingException":{
+      "type":"structure",
+      "members":{
+      },
+      "exception":true
+    },
+    "TimeBasedCanary":{
+      "type":"structure",
+      "members":{
+        "canaryPercentage":{"shape":"Percentage"},
+        "canaryInterval":{"shape":"WaitTimeInMins"}
+      }
+    },
+    "TimeBasedLinear":{
+      "type":"structure",
+      "members":{
+        "linearPercentage":{"shape":"Percentage"},
+        "linearInterval":{"shape":"WaitTimeInMins"}
       }
     },
     "TimeRange":{
@@ -2238,6 +2576,22 @@
       }
     },
     "Timestamp":{"type":"timestamp"},
+    "TrafficRoutingConfig":{
+      "type":"structure",
+      "members":{
+        "type":{"shape":"TrafficRoutingType"},
+        "timeBasedCanary":{"shape":"TimeBasedCanary"},
+        "timeBasedLinear":{"shape":"TimeBasedLinear"}
+      }
+    },
+    "TrafficRoutingType":{
+      "type":"string",
+      "enum":[
+        "TimeBasedCanary",
+        "TimeBasedLinear",
+        "AllAtOnce"
+      ]
+    },
     "TriggerConfig":{
       "type":"structure",
       "members":{
@@ -2310,7 +2664,9 @@
         "autoRollbackConfiguration":{"shape":"AutoRollbackConfiguration"},
         "deploymentStyle":{"shape":"DeploymentStyle"},
         "blueGreenDeploymentConfiguration":{"shape":"BlueGreenDeploymentConfiguration"},
-        "loadBalancerInfo":{"shape":"LoadBalancerInfo"}
+        "loadBalancerInfo":{"shape":"LoadBalancerInfo"},
+        "ec2TagSet":{"shape":"EC2TagSet"},
+        "onPremisesTagSet":{"shape":"OnPremisesTagSet"}
       }
     },
     "UpdateDeploymentGroupOutput":{
@@ -2320,6 +2676,7 @@
       }
     },
     "Value":{"type":"string"},
-    "VersionId":{"type":"string"}
+    "VersionId":{"type":"string"},
+    "WaitTimeInMins":{"type":"integer"}
   }
 }
