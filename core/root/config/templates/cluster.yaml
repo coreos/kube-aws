@@ -29,10 +29,11 @@ disableContainerLinuxAutomaticUpdates: true
 # In this scenario the name of the networkstack becomes "ControlPlane". (which is the name of the stack which holds the vpc components in a kube-aws pre 0.11 cluster)
 # For clearity it is advised also rename the stack of the controlPlane components to, for example, "masters"
 # Note that this will keep some legacy naming around in your configs and CF stacks...
-#stackNameOverride:
-#  controlPlane: "control-plane"
-#  network: "network"
-#  etcd: "etcd"
+#cloudformation:
+#  stackNameOverrides:
+#    controlPlane: "control-plane"
+#    network: "network"
+#    etcd: "etcd"
 
 # The ID of hosted zone to add the externalDNSName to.
 # Either specify hostedZoneId or hostedZone, but not both
