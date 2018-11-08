@@ -1278,6 +1278,15 @@
             "ToPort": 22
           },
           {{end -}}
+          {{ $ports := splitList "," "5473,8472,10250,4194,10255,9100" -}}
+          {{ range $_, $port := $ports -}}
+          {
+            "CidrIp": "{{ $.VPCCIDR }}",
+            "FromPort": {{ $port }},
+            "IpProtocol": "tcp",
+            "ToPort": {{ $port }}
+          },
+          {{ end -}}
           {
             "CidrIp": "0.0.0.0/0",
             "FromPort": -1,
