@@ -182,12 +182,13 @@ func TestStackNameDefaults(t *testing.T) {
 	assert.Equal(t, "etcd", c.EtcdStackName(), "Invalid Etcd Stackname, should be set to 'etcd' if no override is provided.")
 }
 
-func TestStackNameOverride(t *testing.T) {
+func TestStackNameOverrides(t *testing.T) {
 	stackNameOverrideConfig := `
-stackNameOverride:
-  controlPlane: "control-plane-override"
-  network: "network-override"
-  etcd: "etcd-override"
+cloudformation:
+  stackNameOverrides:
+    controlPlane: "control-plane-override"
+    network: "network-override"
+    etcd: "etcd-override"
 `
 	configBody := defaultConfigValues(t, stackNameOverrideConfig)
 	clusterConfig, err := config.ClusterFromBytes([]byte(configBody))
