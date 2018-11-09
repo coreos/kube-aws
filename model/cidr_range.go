@@ -14,6 +14,7 @@ type CIDRRange struct {
 	str string
 }
 
+// DefaultCIDRRanges - A default CIDR range of 0.0.0.0/0 means ACCEPT ALL!! (WARNING!)
 func DefaultCIDRRanges() CIDRRanges {
 	return CIDRRanges{
 		{"0.0.0.0/0"},

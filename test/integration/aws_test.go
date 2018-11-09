@@ -63,8 +63,8 @@ func newKubeAwsSettingsFromEnv(t *testing.T) kubeAwsSettings {
 		kmsKeyArn := env.get("KUBE_AWS_KMS_KEY_ARN")
 		region := env.get("KUBE_AWS_REGION")
 		return kubeAwsSettings{
-			clusterName: clusterName,
-			s3URI:       s3URI,
+			clusterName:                   clusterName,
+			s3URI:                         s3URI,
 			etcdNodeDefaultInternalDomain: model.RegionForName(region).PrivateDomainName(),
 			externalDNSName:               externalDnsName,
 			keyName:                       keyName,
@@ -73,8 +73,8 @@ func newKubeAwsSettingsFromEnv(t *testing.T) kubeAwsSettings {
 		}
 	} else {
 		return kubeAwsSettings{
-			clusterName: clusterName,
-			s3URI:       s3URI,
+			clusterName:                   clusterName,
+			s3URI:                         s3URI,
 			etcdNodeDefaultInternalDomain: model.RegionForName("us-west-1").PrivateDomainName(),
 			externalDNSName:               "test.staging.core-os.net",
 			keyName:                       "test-key-name",

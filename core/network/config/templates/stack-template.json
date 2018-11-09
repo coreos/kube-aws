@@ -99,7 +99,7 @@
             "ToPort": 22
           },
           {{end -}}
-          {{ if $.KubeClusterSettings.APIEndpointConfigs.HasNetworkLoadBalancers }}
+          {{ if $.KubeClusterSettings.APIEndpointConfigs.HasNetworkLoadBalancers -}}
           {{/* Needed for NLB health checks and to allow worker nodes to contact the API servers. */}}
           {
             "CidrIp": "{{.VPCCIDR}}",
@@ -107,6 +107,7 @@
             "IpProtocol": "tcp",
             "ToPort": 443
           },
+          {{ end -}}
           {{ range $_, $r := $.APIAccessAllowedSourceCIDRsForControllerSG -}}
           {
             "CidrIp": "{{$r}}",
@@ -115,7 +116,6 @@
             "ToPort": 443
           },
           {{ end -}}
-          {{ end }}
           {
             "SourceSecurityGroupId" : { "Ref" : "SecurityGroupElbAPIServer" },
             "FromPort": 443,

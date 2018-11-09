@@ -968,6 +968,40 @@ write_files:
         sleep 3
       done
 
+      {{ if $.MigrateStacks -}}
+      list_not_empty() {
+        local file=$1
+        if ! [[ -s $file ]]; then
+          return 1
+        fi
+        if cat $file | grep -se 'items: \[\]'; then
+          return 1
+        fi
+        return 0
+      }
+
+      save_webhooks() {
+        local type=$1
+        local file=$2
+
+        echo "Storing and removing all ${type} webhooks to ${file}"
+        if [[ -s $file ]]; then
+          echo "$file already saved"
+        else
+          kubectl get ${type}webhookconfigurations -o yaml --export >$file
+          if list_not_empty $file; then
+            echo "deleting $type webhooks..."
+            ensuredelete $file
+          fi
+        fi
+      }
+
+      # Disable all mutating and validating webhooks because they can interfere with the stack migration)
+      echo "Storing and removing all validating and mutating webhooks..."
+      save_webhooks validating /srv/kubernetes/validating_webhooks.yaml
+      save_webhooks mutating /srv/kubernetes/mutating_webhooks.yaml
+      {{ end -}}
+
       {{if .Experimental.KIAMSupport.Enabled }}
       kiam_tls_dir=/etc/kubernetes/ssl/kiam
       vols="${vols} -v $kiam_tls_dir:$kiam_tls_dir"
@@ -1006,7 +1040,7 @@ write_files:
         echo kube-proxy stared. apiserver should be responsive again.
       fi
       rbac=/srv/kubernetes/rbac
-
+      
       {{- if .Kubernetes.Networking.SelfHosting.Enabled }}
       # When using NetworkingDeamonSets ensure that all nodes
       # have a podCIDR attribute
@@ -1028,7 +1062,7 @@ write_files:
       applyall "${mfdir}/calico.yaml"
       {{- end }}
       {{- end }}
-
+      
       {{ if .Addons.MetricsServer.Enabled -}}
       applyall \
         "${mfdir}/metrics-server-sa.yaml" \
@@ -1039,12 +1073,12 @@ write_files:
         "${rbac}/role-bindings/metrics-server.yaml" \
         "${mfdir}/metrics-server-apisvc.yaml"
       {{- end }}
-
+      
       {{ if .KubernetesDashboard.Enabled }}
       # Secrets
       applyall "${mfdir}/kubernetes-dashboard-se.yaml"
       {{ end }}
-
+      
       # Configmaps
       applyall \
         "${mfdir}"/{kube-proxy,heapster-config}"-cm.yaml" \
@@ -1056,7 +1090,7 @@ write_files:
         "${mfdir}/{{ .KubeDns.Provider }}-sa.yaml" \
         "${mfdir}/kube-proxy-sa.yaml" \
         {{ if .KubernetesDashboard.Enabled }}"${mfdir}/kubernetes-dashboard-sa.yaml"{{ end }}
-
+      
       {{ if eq .KubeDns.Provider "coredns" -}}
       applyall \
         "${mfdir}/coredns-cr.yaml" \
@@ -1120,6 +1154,24 @@ write_files:
       if ls ${mfdir}/custom/*.yaml &> /dev/null; then
         applyall ${mfdir}/custom/*.yaml
       fi
+      
+      {{ if $.MigrateStacks -}}
+      restore_webhooks() {
+        local type=$1
+        local file=$2
+
+        if list_not_empty $file; then
+          echo "Restoring all ${type} webhooks from ${file}"
+          applyall $file
+        else
+          echo "no webhooks to restore in $file"
+        fi
+      }
+
+      echo "Restoring all validating and mutating webhooks..."
+      restore_webhooks validating /srv/kubernetes/validating_webhooks.yaml
+      restore_webhooks mutating /srv/kubernetes/mutating_webhooks.yaml
+      {{- end }}
 
   - path: /etc/kubernetes/cni/docker_opts_cni.env
     content: |

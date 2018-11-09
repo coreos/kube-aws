@@ -88,12 +88,12 @@
         "AutoScalingRollingUpdate" : {
           "MinInstancesInService" : "{{.ControllerRollingUpdateMinInstancesInService}}",
           "MaxBatchSize" : "1",
-          {{if .WaitSignal.Enabled}}
+          {{ if .WaitSignal.Enabled -}}
           "WaitOnResourceSignals" : "true",
           "PauseTime": "{{.Controller.CreateTimeout}}"
-          {{else}}
+          {{ else -}}
           "PauseTime": "PT2M"
-          {{end}}
+          {{- end }}
         }
       },
       "Metadata" : {

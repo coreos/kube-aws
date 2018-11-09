@@ -293,7 +293,7 @@ func TestAPIAccessAllowedSourceCIDRsForControllerSG(t *testing.T) {
 	}{
 		{
 			conf:  externalDNSNameConfig,
-			cidrs: []string{},
+			cidrs: []string{"0.0.0.0/0"},
 		},
 		{
 			conf: `
@@ -315,6 +315,8 @@ apiEndpoints:
   loadBalancer:
     type: network
     recordSetManaged: false
+    apiAccessAllowedSourceCIDRs:
+      - 0.0.0.0/0
 `,
 			cidrs: []string{"0.0.0.0/0"},
 		},
@@ -329,7 +331,7 @@ apiEndpoints:
     apiAccessAllowedSourceCIDRs:
       - 127.0.0.1/32
 
-# Ignores non-network load balancers
+# Includes all load balancers
 - name: endpoint-2
   dnsName: test-1.staging.core-os.net
   loadBalancer:
@@ -337,7 +339,7 @@ apiEndpoints:
     apiAccessAllowedSourceCIDRs:
       - 127.0.0.2/32
 
-# Ignores non-network load balancers
+# Includes all load balancers
 - name: endpoint-2
   dnsName: test-1.staging.core-os.net
   loadBalancer:
@@ -346,7 +348,7 @@ apiEndpoints:
     apiAccessAllowedSourceCIDRs:
       - 127.0.0.3/32
 `,
-			cidrs: []string{"127.0.0.1/32"},
+			cidrs: []string{"127.0.0.1/32", "127.0.0.2/32", "127.0.0.3/32"},
 		},
 		{
 			conf: `

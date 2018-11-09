@@ -156,6 +156,14 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 		return nil, fmt.Errorf("failed to initizlie network stack: %v", err)
 	}
 
+	// Lookup the Etcd stack and record as evidence that we are migrating stacks to the new model
+	// Set the result in the control plane stack (which needs to know)
+	cfg.MigrateStacks, err = stacksNeedMigrating(cfg, session, "Etcd")
+	if err != nil {
+		return nil, err
+	}
+	logger.Infof("Special migrate to separate 'Etcd', 'Network' Stacks: %v", cfg.MigrateStacks)
+
 	cpOpts := stackTemplateOpts
 	cpOpts.StackTemplateTmplFile = opts.ControlPlaneStackTemplateTmplFile
 	cp, err := controlplane.NewCluster(cfg.Cluster, cpOpts, plugins, session)
@@ -204,6 +212,26 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (Cluster
 	}
 
 	return c, nil
+}
+
+func stacksNeedMigrating(cfg *config.Config, session *session.Session, stack string) (bool, error) {
+	if cfg.ProvidedCFInterrogator == nil {
+		cfg.ProvidedCFInterrogator = cloudformation.New(session)
+	}
+
+	parentExists, err := cfnstack.StackExists(cfg.ProvidedCFInterrogator, cfg.ClusterName)
+	if err != nil {
+		return false, fmt.Errorf("unable to lookup cloud formation stack %s: %v", cfg.ClusterName, err)
+	}
+	if !parentExists {
+		return false, nil
+	}
+
+	exists, err := cfnstack.NestedStackExists(cfg.ProvidedCFInterrogator, cfg.ClusterName, stack)
+	if err != nil {
+		return false, fmt.Errorf("unable to lookup cloud formation stack %s: %v", stack, err)
+	}
+	return !exists, nil
 }
 
 type clusterImpl struct {
