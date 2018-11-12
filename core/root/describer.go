@@ -6,14 +6,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/kubernetes-incubator/kube-aws/awsconn"
-	"github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
-	cp "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
+	"github.com/kubernetes-incubator/kube-aws/pkg/model"
 )
 
 type Info struct {
-	ControlPlane *cluster.Info
+	ControlPlane *model.Info
 }
 
 func (i *Info) String() string {
@@ -25,7 +23,7 @@ type ClusterDescriber interface {
 }
 
 type clusterDescriberImpl struct {
-	cpConfig    *cp.Config
+	cpConfig    *model.Config
 	session     *session.Session
 	clusterName string
 	stackName   string
@@ -42,15 +40,10 @@ func ClusterDescriberFromFile(configPath string) (ClusterDescriber, error) {
 		return nil, fmt.Errorf("failed to establish aws session: %v", err)
 	}
 
-	cpConfig, err := config.Config([]*pluginmodel.Plugin{})
-	if err != nil {
-		return nil, err
-	}
-
-	return NewClusterDescriber(config.ClusterName, config.ClusterName, cpConfig, session), nil
+	return NewClusterDescriber(config.ClusterName, config.ClusterName, config.Config, session), nil
 }
 
-func NewClusterDescriber(clusterName string, stackName string, cpConfig *cp.Config, session *session.Session) ClusterDescriber {
+func NewClusterDescriber(clusterName string, stackName string, cpConfig *model.Config, session *session.Session) ClusterDescriber {
 	return clusterDescriberImpl{
 		clusterName: clusterName,
 		stackName:   stackName,
@@ -92,7 +85,7 @@ func (c clusterDescriberImpl) Info() (*Info, error) {
 			return nil, fmt.Errorf("found multiple load balancers with name %s: %v", cpStackName, resp)
 		}
 
-		cpDescriber := cluster.NewClusterDescriber(c.clusterName, cpStackName, c.cpConfig.ManagedELBLogicalNames(), c.session)
+		cpDescriber := model.NewClusterDescriber(c.clusterName, cpStackName, c.cpConfig.ManagedELBLogicalNames(), c.session)
 
 		cpInfo, err := cpDescriber.Info()
 

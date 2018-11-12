@@ -3,44 +3,53 @@ package root
 import (
 	"bytes"
 	"fmt"
-	"path/filepath"
 	"text/template"
 
-	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
-	etcd "github.com/kubernetes-incubator/kube-aws/core/etcd/config"
-	network "github.com/kubernetes-incubator/kube-aws/core/network/config"
-	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
-	"github.com/kubernetes-incubator/kube-aws/core/root/config"
-	"github.com/kubernetes-incubator/kube-aws/core/root/defaults"
+	"github.com/gobuffalo/packr"
+	"github.com/kubernetes-incubator/kube-aws/builtin"
 	"github.com/kubernetes-incubator/kube-aws/filegen"
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
+	"github.com/kubernetes-incubator/kube-aws/pkg/api"
+	"github.com/kubernetes-incubator/kube-aws/pkg/model"
+	"os"
+	"strings"
 )
 
 func RenderStack(configPath string) error {
 
-	cluster, err := controlplane.ClusterFromFile(configPath)
+	c, err := model.ClusterFromFile(configPath)
 	if err != nil {
 		return err
 	}
-	clusterConfig, err := cluster.Config([]*pluginmodel.Plugin{})
-	if err != nil {
-		return err
-	}
-	kubeconfig, err := generateKubeconfig(clusterConfig)
+	config, err := model.Compile(c, api.ClusterOptions{})
+	kubeconfig, err := generateKubeconfig(config)
 	if err != nil {
 		return err
 	}
 
+	ignoredWords := []string{
+		"etcdadm",
+		"kubeconfig.tmpl",
+		"cluster.yaml.tmpl",
+	}
+
+	if err := builtin.Box().Walk(func(path string, file packr.File) error {
+		for _, f := range ignoredWords {
+			if strings.Contains(path, f) {
+				fmt.Fprintf(os.Stderr, "ignored %s\n", path)
+				return nil
+			}
+		}
+		content, err := builtin.Box().MustBytes(path)
+		if err != nil {
+			return err
+		}
+		gen := filegen.File(path, content, 0644)
+		return filegen.Render(gen)
+	}); err != nil {
+		return err
+	}
+
 	if err := filegen.Render(
-		filegen.File(filepath.Join(defaults.AssetsDir, ".gitignore"), []byte("*"), 0644),
-		filegen.File(defaults.ControllerTmplFile, controlplane.CloudConfigController, 0644),
-		filegen.File(defaults.WorkerTmplFile, nodepool.CloudConfigWorker, 0644),
-		filegen.File(defaults.EtcdTmplFile, etcd.CloudConfigEtcd, 0644),
-		filegen.File(defaults.ControlPlaneStackTemplateTmplFile, controlplane.StackTemplateTemplate, 0644),
-		filegen.File(defaults.NetworkStackTemplateTmplFile, network.StackTemplateTemplate, 0644),
-		filegen.File(defaults.EtcdStackTemplateTmplFile, etcd.StackTemplateTemplate, 0644),
-		filegen.File(defaults.NodePoolStackTemplateTmplFile, nodepool.StackTemplateTemplate, 0644),
-		filegen.File(defaults.RootStackTemplateTmplFile, config.StackTemplateTemplate, 0644),
 		filegen.File("kubeconfig", kubeconfig, 0600),
 	); err != nil {
 		return err
@@ -49,9 +58,9 @@ func RenderStack(configPath string) error {
 	return nil
 }
 
-func generateKubeconfig(clusterConfig *controlplane.Config) ([]byte, error) {
+func generateKubeconfig(clusterConfig *model.Config) ([]byte, error) {
 
-	tmpl, err := template.New("kubeconfig.yaml").Parse(string(controlplane.KubeConfigTemplate))
+	tmpl, err := template.New("kubeconfig.yaml").Parse(builtin.String("kubeconfig.tmpl"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse default kubeconfig template: %v", err)
 	}

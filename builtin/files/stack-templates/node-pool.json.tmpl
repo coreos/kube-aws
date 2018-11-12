@@ -1,0 +1,350 @@
+{{define "Metadata" -}}
+{
+  {{ if or .AwsEnvironment.Enabled (gt (len .CfnInitConfigSets) 0) -}}
+  "AWS::CloudFormation::Init" : {
+    "configSets" : {
+      "noop": {}
+      {{ if .AwsEnvironment.Enabled }}
+      ,"aws-environment-env" : {
+        "commands": {
+          "write-environment": {
+            "command": {
+              "Fn::Join" : ["", [ "echo '",
+              {{range $variable, $function := .AwsEnvironment.Environment}}
+              "{{$variable}}=", {{$function}} , "\n",
+              {{end}}
+              "' > /etc/aws-environment" ] ]
+            }
+          }
+        }
+      }
+      {{ end }}
+      {{ range $n, $s := .CfnInitConfigSets }}
+      ,{{ $n | quote }}: {{ $s | toJSON }}
+      {{ end }}
+    }
+  }
+  {{end -}}
+}
+{{end}}
+{{define "SpotFleet"}}
+  "{{.LogicalName}}": {
+    "Type": "AWS::EC2::SpotFleet",
+    "Properties": {
+      "SpotFleetRequestConfigData": {
+        "IamFleetRole": {{$.SpotFleet.IAMFleetRoleRef}},
+        "AllocationStrategy": "diversified",
+        "TargetCapacity": {{$.SpotFleet.TargetCapacity}},
+        "SpotPrice": "{{$.SpotFleet.SpotPrice}}",
+        "LaunchSpecifications": [
+          {{range $subnetIndex, $workerSubnet := $.Subnets}}
+          {{range $specIndex, $spec := $.SpotFleet.LaunchSpecifications}}
+          {{if or (gt $subnetIndex 0) (gt $specIndex 0) }},{{end}}
+          {
+            "ImageId": "{{$.AMI}}",
+            "Monitoring": { "Enabled": "true" },
+            "InstanceType": "{{$spec.InstanceType}}",
+            {{if $.KeyName}}"KeyName": "{{$.KeyName}}",{{end}}
+            "WeightedCapacity": {{$spec.WeightedCapacity}},
+            {{if $spec.SpotPrice}}
+            "SpotPrice": "{{$spec.SpotPrice}}",
+            {{end}}
+            {{if $.IAMConfig.InstanceProfile.Arn }}
+            "IamInstanceProfile": {
+              "Arn": "{{$.IAMConfig.InstanceProfile.Arn}}"
+            },
+            {{else}}
+            "IamInstanceProfile": {
+              "Arn": {
+                "Fn::GetAtt" : ["IAMInstanceProfileWorker", "Arn"]
+              }
+            },
+            {{end}}
+            "BlockDeviceMappings": [
+              {
+                "DeviceName": "/dev/xvda",
+                "Ebs": {
+                  "VolumeSize": "{{$spec.RootVolume.Size}}",
+                  {{if gt $spec.RootVolume.IOPS 0}}
+                  "Iops": "{{$spec.RootVolume.IOPS}}",
+                  {{end}}
+                  "VolumeType": "{{$spec.RootVolume.Type}}"
+                }
+              }{{range $volumeMountSpecIndex, $volumeMountSpec := $.VolumeMounts}},
+              {
+                "DeviceName": "{{$volumeMountSpec.Device}}",
+                "Ebs": {
+                  "VolumeSize": "{{$volumeMountSpec.Size}}",
+                  {{if gt $volumeMountSpec.Iops 0}}
+                  "Iops": "{{$volumeMountSpec.Iops}}",
+                  {{end}}
+                  "VolumeType": "{{$volumeMountSpec.Type}}"
+                }
+              }{{- end -}}{{range $raid0MountSpecIndex, $raid0MountSpec := $.Raid0Mounts}}{{range $DeviceIndex, $Device := $raid0MountSpec.Devices}},
+              {
+                "DeviceName": "{{$Device}}",
+                "Ebs": {
+                  "VolumeSize": "{{$raid0MountSpec.Size}}",
+                  {{if gt $raid0MountSpec.Iops 0}}
+                  "Iops": "{{$raid0MountSpec.Iops}}",
+                  {{end}}
+                  "VolumeType": "{{$raid0MountSpec.Type}}"
+                }
+              }{{end}}
+              {{- end -}}
+            ],
+            "SecurityGroups": [
+              {{range $sgIndex, $sgRef := $.SecurityGroupRefs}}
+              {{if gt $sgIndex 0}},{{end}}
+              {"GroupId":{{$sgRef}}}
+              {{end}}
+            ],
+            "SubnetId": {{$workerSubnet.Ref}},
+            "UserData": {{ $.UserDataWorker.Parts.instance.Template }}
+          }
+          {{end}}
+          {{end}}
+        ]
+      }
+    }{{ if .AwsEnvironment.Enabled }},
+    "Metadata": {{template "Metadata" .}}
+    {{- end }}
+  },
+{{end}}
+{{define "AutoScaling"}}
+    "{{.LogicalName}}": {
+      "Properties": {
+        "HealthCheckGracePeriod": 600,
+        "HealthCheckType": "EC2",
+        "LaunchConfigurationName": {
+          "Ref": "{{.LaunchConfigurationLogicalName}}"
+        },
+        "MaxSize": "{{.MaxCount}}",
+        "MetricsCollection": [
+          {
+            "Granularity": "1Minute"
+          }
+        ],
+        "MinSize": "{{.MinCount}}",
+        "Tags": [
+          {{if .Autoscaling.ClusterAutoscaler.Enabled}}
+          {
+            "Key": "{{.Autoscaling.ClusterAutoscaler.AutoDiscoveryTagKey}}",
+            "PropagateAtLaunch": "false",
+            "Value": ""
+          },
+          {{end}}
+          {{range $k, $v := .InstanceTags -}}
+          {
+            "Key": "{{$k}}",
+            "PropagateAtLaunch": "true",
+            "Value": "{{$v}}"
+          },
+          {{end -}}
+          {
+            "Key": "kubernetes.io/cluster/{{ .ClusterName }}",
+            "PropagateAtLaunch": "true",
+            "Value": "owned"
+          },
+          {
+            "Key": "kube-aws:node-pool:name",
+            "PropagateAtLaunch": "true",
+            "Value": "{{.NodePoolName}}"
+          },
+          {
+            "Key": "Name",
+            "PropagateAtLaunch": "true",
+            "Value": "{{.ClusterName}}-{{.StackName}}-kube-aws-worker"
+          }
+        ],
+        {{if .LoadBalancer.Enabled}}
+        "LoadBalancerNames" : [
+          {{range $index, $elb := .LoadBalancer.Names}}
+          {{if $index}},{{end}}
+          "{{$elb}}"
+          {{end}}
+        ],
+        {{end}}
+        {{if .TargetGroup.Enabled}}
+        "TargetGroupARNs" : [
+          {{range $index, $tg := .TargetGroup.Arns}}
+          {{if $index}},{{end}}
+          "{{$tg}}"
+          {{end}}
+        ],
+        {{end}}
+        "VPCZoneIdentifier": [
+          {{range $index, $subnet := .Subnets}}
+          {{if gt $index 0}},{{end}}
+          {{$subnet.Ref}}
+          {{end}}
+        ]
+      },
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      {{if .WaitSignal.Enabled}}
+      "CreationPolicy" : {
+        "ResourceSignal" : {
+          "Count" : "{{.MinCount}}",
+          "Timeout" : "{{.CreateTimeout}}"
+        }
+      },
+      {{end}}
+      "UpdatePolicy" : {
+        "AutoScalingRollingUpdate" : {
+          "MinInstancesInService" :
+          {{if .SpotPrice}}
+          "0"
+          {{else}}
+          "{{.RollingUpdateMinInstancesInService}}"
+          {{end}},
+          {{if .WaitSignal.Enabled}}
+          "WaitOnResourceSignals" : "true",
+          "MaxBatchSize" : "{{.WaitSignal.MaxBatchSize}}",
+          "PauseTime": "{{.CreateTimeout}}"
+          {{else}}
+          "MaxBatchSize" : "1",
+          "PauseTime": "PT2M"
+          {{end}}
+        }
+      }{{ if .AwsEnvironment.Enabled }},
+      "Metadata": {{template "Metadata" .}}
+      {{- end }}
+    },
+    {{if .NodeDrainer.Enabled }}
+    "{{.LogicalName}}NodeDrainerLH" : {
+      "Properties" : {
+        "AutoScalingGroupName" : {
+          "Ref": "{{.LogicalName}}"
+        },
+        "DefaultResult" : "CONTINUE",
+        "HeartbeatTimeout" : "{{.NodeDrainer.DrainTimeoutInSeconds}}",
+        "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING"
+      },
+      "Type" : "AWS::AutoScaling::LifecycleHook"
+    },
+    {{end}}
+    "{{.LaunchConfigurationLogicalName}}": {
+      "Properties": {
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "VolumeSize": "{{.RootVolume.Size}}",
+              {{if gt .RootVolume.IOPS 0}}
+              "Iops": "{{.RootVolume.IOPS}}",
+              {{end}}
+              "VolumeType": "{{.RootVolume.Type}}"
+            }
+          }{{range $volumeMountSpecIndex, $volumeMountSpec := .VolumeMounts}},
+          {
+            "DeviceName": "{{$volumeMountSpec.Device}}",
+            "Ebs": {
+              "VolumeSize": "{{$volumeMountSpec.Size}}",
+              {{if gt $volumeMountSpec.Iops 0}}
+              "Iops": "{{$volumeMountSpec.Iops}}",
+              {{end}}
+              "VolumeType": "{{$volumeMountSpec.Type}}"
+            }
+          }{{- end -}}{{range $raid0MountSpecIndex, $raid0MountSpec := $.Raid0Mounts}}{{range $DeviceIndex, $Device := $raid0MountSpec.Devices}},
+            {
+              "DeviceName": "{{$Device}}",
+              "Ebs": {
+                "VolumeSize": "{{$raid0MountSpec.Size}}",
+                {{if gt $raid0MountSpec.Iops 0}}
+                "Iops": "{{$raid0MountSpec.Iops}}",
+                {{end}}
+                "VolumeType": "{{$raid0MountSpec.Type}}"
+              }
+            }{{end}}
+          {{- end -}}
+        ],
+         {{if .IAMConfig.InstanceProfile.Arn }}
+        "IamInstanceProfile": "{{.IAMConfig.InstanceProfile.Arn}}",
+        {{else}}
+        "IamInstanceProfile": { "Ref": "IAMInstanceProfileWorker" },
+        {{end}}
+        "ImageId": "{{.AMI}}",
+        "InstanceType": "{{.InstanceType}}",
+        {{if .KeyName}}"KeyName": "{{.KeyName}}",{{end}}
+        "SecurityGroups": [
+          {{range $sgIndex, $sgRef := $.SecurityGroupRefs}}
+          {{if gt $sgIndex 0}},{{end}}
+          {{$sgRef}}
+          {{end}}
+        ],
+        {{if .SpotPrice}}
+        "SpotPrice": {{.SpotPrice}},
+        {{else}}
+        "PlacementTenancy": "{{.Tenancy}}",
+        {{end}}
+        {{if EbsOptimized .InstanceType }}
+        "EbsOptimized": "true",
+        {{end}}
+        "UserData": {{ .UserDataWorker.Parts.instance.Template }}
+      },
+      "Type": "AWS::AutoScaling::LaunchConfiguration"
+    {{if not .IAMConfig.InstanceProfile.Arn}}
+    },
+    {{else}}
+    }
+    {{end}}
+{{end}}
+{{define "IAMRole"}}
+    "IAMInstanceProfileWorker": {
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {"Fn::ImportValue" : {"Fn::Sub" : "${NetworkStackName}-{{.NodePoolName}}IAMRoleWorker"}}
+        ]
+      },
+      "Type": "AWS::IAM::InstanceProfile"
+    }
+{{end}}
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "kube-aws node pool stack for {{.ClusterName}} {{.NodePoolName}}",
+  "Parameters" : {
+    "EtcdStackName": {
+      "Type": "String",
+      "Description": "The name of an etcd stack used to import values into this stack"
+    },
+    "NetworkStackName": {
+      "Type": "String",
+      "Description": "The name of a network stack used to import values into this stack"
+    }
+    {{if .CloudWatchLogging.Enabled}}
+    ,
+    "CloudWatchLogGroupARN": {
+      "Type": "String",
+      "Description": "CloudWatch LogGroup to send journald logs to"
+    }
+    {{ end }}
+  },
+  "Resources": {
+    {{if .SpotFleet.Enabled}}
+    {{template "SpotFleet" .}}
+    {{else}}
+    {{template "AutoScaling" .}}
+    {{end}}
+    {{if not .IAMConfig.InstanceProfile.Arn}}
+    {{template "IAMRole" .}}
+    {{end}}
+    {{range $n, $r := .ExtraCfnResources}}
+    ,
+    {{quote $n}}: {{toJSON $r}}
+    {{end}}
+  },
+  "Outputs": {
+    {{if not .IAMConfig.InstanceProfile.Arn }}
+    "WorkerIAMRoleArn": {
+      "Description": "The ARN of the IAM role for this Node Pool",
+      "Value": {"Fn::ImportValue" : {"Fn::Sub" : "${NetworkStackName}-{{.NodePoolName}}IAMRoleWorkerArn"}},
+      "Export": { "Name": { "Fn::Sub": "${AWS::StackName}-WorkerIAMRoleArn" } }
+    },
+    {{end}}
+    "StackName": {
+      "Description": "The name of this stack",
+      "Value": { "Ref": "AWS::StackName" }
+    }
+  }
+}

@@ -12,6 +12,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/Masterminds/sprig"
 	"github.com/kubernetes-incubator/kube-aws/fingerprint"
+	"github.com/kubernetes-incubator/kube-aws/tmpl"
 )
 
 func ParseFile(filename string, funcs template.FuncMap) (*template.Template, error) {
@@ -77,7 +78,7 @@ var funcs2 = template.FuncMap{
 }
 
 func Parse(name string, raw string, funcs template.FuncMap) (*template.Template, error) {
-	t, err := template.New(name).Funcs(sprig.HermeticTxtFuncMap()).Funcs(funcs).Funcs(funcs2).Parse(raw)
+	t, err := template.New(name).Option("missingkey=error").Funcs(sprig.HermeticTxtFuncMap()).Funcs(tmpl.New().CreateFuncMap()).Funcs(funcs).Funcs(funcs2).Parse(raw)
 	if err == nil {
 		t = t.Funcs(template.FuncMap{
 			"execTemplate": func(name string, ctx interface{}) (string, error) {

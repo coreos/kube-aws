@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/kubernetes-incubator/kube-aws/logger"
-	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 )
 
 type Provisioner struct {
@@ -21,10 +21,10 @@ type Provisioner struct {
 	session         *session.Session
 	s3URI           string
 	roleARN         string
-	region          model.Region
+	region          api.Region
 }
 
-func NewProvisioner(name string, stackTags map[string]string, s3URI string, region model.Region, stackPolicyBody string, session *session.Session, options ...string) *Provisioner {
+func NewProvisioner(name string, stackTags map[string]string, s3URI string, region api.Region, stackPolicyBody string, session *session.Session, options ...string) *Provisioner {
 	p := &Provisioner{
 		stackName:       name,
 		stackTags:       stackTags,
@@ -42,7 +42,7 @@ func NewProvisioner(name string, stackTags map[string]string, s3URI string, regi
 	return p
 }
 
-func (c *Provisioner) uploadAsset(s3Svc S3ObjectPutterService, asset model.Asset) error {
+func (c *Provisioner) uploadAsset(s3Svc S3ObjectPutterService, asset api.Asset) error {
 	bucket := asset.Bucket
 	key := asset.Key
 	content := asset.Content

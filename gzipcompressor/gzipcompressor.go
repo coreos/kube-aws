@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 )
 
-func BytesToBytes(d []byte) ([]byte, error) {
+func BytesToGzippedBytes(d []byte) ([]byte, error) {
 	var buff bytes.Buffer
 	gzw := gzip.NewWriter(&buff)
 	if _, err := gzw.Write(d); err != nil {
@@ -20,24 +20,20 @@ func BytesToBytes(d []byte) ([]byte, error) {
 	return buff.Bytes(), nil
 }
 
-func CompressData(d []byte) (string, error) {
-	var buff bytes.Buffer
-	gzw := gzip.NewWriter(&buff)
-	if _, err := gzw.Write(d); err != nil {
+func BytesToGzippedBase64String(d []byte) (string, error) {
+	bytes, err := BytesToGzippedBytes(d)
+	if err != nil {
 		return "", err
 	}
-	if err := gzw.Close(); err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(buff.Bytes()), nil
+	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
-func CompressString(str string) (string, error) {
+func StringToGzippedBase64String(str string) (string, error) {
 	bytes := []byte(str)
-	return CompressData(bytes)
+	return BytesToGzippedBase64String(bytes)
 }
 
-func DecompressString(source string) (string, error) {
+func GzippedBase64StringToString(source string) (string, error) {
 	b64Decoded, err := base64.StdEncoding.DecodeString(source)
 	if err != nil {
 		return "", fmt.Errorf("could not base 64 decode the data")

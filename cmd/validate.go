@@ -40,7 +40,7 @@ func init() {
 func runCmdValidate(_ *cobra.Command, _ []string) error {
 	opts := root.NewOptions(validateOpts.awsDebug, validateOpts.skipWait)
 
-	cluster, err := root.ClusterFromFile(configPath, opts, validateOpts.awsDebug)
+	cluster, err := root.LoadClusterFromFile(configPath, opts, validateOpts.awsDebug)
 	if err != nil {
 		return fmt.Errorf("failed to initialize cluster driver: %v", err)
 	}

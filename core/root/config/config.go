@@ -1,17 +1,15 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 
 	"github.com/go-yaml/yaml"
-	"github.com/kubernetes-incubator/kube-aws/cfnstack"
-	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
-	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
-	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/pkg/api"
+	"github.com/kubernetes-incubator/kube-aws/pkg/model"
 	"github.com/kubernetes-incubator/kube-aws/plugin"
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
+	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
+	"github.com/pkg/errors"
 )
 
 type InitialConfig struct {
@@ -23,28 +21,22 @@ type InitialConfig struct {
 	KMSKeyARN        string
 	KeyName          string
 	NoRecordSet      bool
-	Region           model.Region
+	Region           api.Region
 	S3URI            string
 }
 
 type UnmarshalledConfig struct {
-	controlplane.Cluster `yaml:",inline"`
-	Worker               `yaml:"worker,omitempty"`
-	model.UnknownKeys    `yaml:",inline"`
-}
-
-type Worker struct {
-	APIEndpointName         string                     `yaml:"apiEndpointName,omitempty"`
-	NodePools               []*nodepool.ProvidedConfig `yaml:"nodePools,omitempty"`
-	model.UnknownKeys       `yaml:",inline"`
-	NodePoolRollingStrategy string `yaml:"nodePoolRollingStrategy,omitempty"`
+	api.Cluster     `yaml:",inline"`
+	api.UnknownKeys `yaml:",inline"`
 }
 
 type Config struct {
-	*controlplane.Cluster
-	NodePools         []*nodepool.ProvidedConfig
-	model.UnknownKeys `yaml:",inline"`
-	Plugins           []*pluginmodel.Plugin
+	*model.Config
+	NodePools       []*model.NodePoolConfig
+	Plugins         []*api.Plugin
+	api.UnknownKeys `yaml:",inline"`
+
+	Extras *clusterextension.ClusterExtension
 }
 
 type unknownKeysSupport interface {
@@ -58,83 +50,51 @@ type unknownKeyValidation struct {
 
 func newDefaultUnmarshalledConfig() *UnmarshalledConfig {
 	return &UnmarshalledConfig{
-		Cluster: *controlplane.NewDefaultCluster(),
-		Worker: Worker{
-			NodePools: []*nodepool.ProvidedConfig{},
-		},
+		Cluster: *api.NewDefaultCluster(),
 	}
 }
 
-func ConfigFromBytes(data []byte, plugins []*pluginmodel.Plugin) (*Config, error) {
+func unmarshalConfig(data []byte) (*UnmarshalledConfig, error) {
 	c := newDefaultUnmarshalledConfig()
 	if err := yaml.Unmarshal(data, c); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
 	}
 	c.HyperkubeImage.Tag = c.K8sVer
 
+	return c, nil
+}
+
+func ConfigFromBytes(data []byte, plugins []*api.Plugin) (*Config, error) {
+	c, err := unmarshalConfig(data)
+	if err != nil {
+		return nil, err
+	}
+
 	cpCluster := &c.Cluster
 	if err := cpCluster.Load(); err != nil {
 		return nil, err
 	}
 
-	cpConfig, err := cpCluster.Config(plugins)
+	extras := clusterextension.NewExtrasFromPlugins(plugins, c.PluginConfigs)
+
+	opts := api.ClusterOptions{
+		S3URI: c.S3URI,
+		// TODO
+		SkipWait: false,
+	}
+
+	cpConfig, err := model.Compile(cpCluster, opts)
 	if err != nil {
 		return nil, err
 	}
 
 	nodePools := c.NodePools
 
-	anyNodePoolIsMissingAPIEndpointName := true
-	for _, np := range nodePools {
-		if np.APIEndpointName == "" {
-			anyNodePoolIsMissingAPIEndpointName = true
-			break
-		}
-	}
-
-	if len(cpConfig.APIEndpoints) > 1 && c.Worker.APIEndpointName == "" && anyNodePoolIsMissingAPIEndpointName {
-		return nil, errors.New("worker.apiEndpointName must not be empty when there're 2 or more API endpoints under the key `apiEndpoints` and one of worker.nodePools[] are missing apiEndpointName")
-	}
-
-	if c.Worker.APIEndpointName != "" {
-		if _, err := cpConfig.APIEndpoints.FindByName(c.APIEndpointName); err != nil {
-			return nil, fmt.Errorf("invalid value for worker.apiEndpointName: no API endpoint named \"%s\" found", c.APIEndpointName)
-		}
-	}
-
+	nps := []*model.NodePoolConfig{}
 	for i, np := range nodePools {
-		if np == nil {
-			return nil, fmt.Errorf("Empty nodepool definition found at index %d", i)
-		}
-		if err := np.Taints.Validate(); err != nil {
-			return nil, fmt.Errorf("invalid taints for node pool at index %d: %v", i, err)
-		}
-		if np.APIEndpointName == "" {
-			if c.Worker.APIEndpointName == "" {
-				if len(cpConfig.APIEndpoints) > 1 {
-					return nil, errors.New("worker.apiEndpointName can be omitted only when there's only 1 api endpoint under apiEndpoints")
-				}
-				np.APIEndpointName = cpConfig.APIEndpoints.GetDefault().Name
-			} else {
-				np.APIEndpointName = c.Worker.APIEndpointName
-			}
-		}
-
-		if np.NodePoolRollingStrategy != "Parallel" && np.NodePoolRollingStrategy != "Sequential" {
-			if c.Worker.NodePoolRollingStrategy != "" && (c.Worker.NodePoolRollingStrategy == "Sequential" || c.Worker.NodePoolRollingStrategy == "Parallel") {
-				np.NodePoolRollingStrategy = c.Worker.NodePoolRollingStrategy
-			} else {
-				np.NodePoolRollingStrategy = "Parallel"
-			}
-		}
-
-		if err := np.Load(cpConfig); err != nil {
-			return nil, fmt.Errorf("invalid node pool at index %d: %v", i, err)
-		}
-
-		if np.Autoscaling.ClusterAutoscaler.Enabled && !cpConfig.Addons.ClusterAutoscaler.Enabled {
-			return nil, errors.New("Autoscaling with cluster-autoscaler can't be enabled for node pools because " +
-				"you didn't enabled the cluster-autoscaler addon. Enable it by turning on `addons.clusterAutoscaler.enabled`")
+		npConf, err := model.NodePoolCompile(np, cpConfig)
+		if err != nil {
+			return nil, errors.Wrapf(err, "invalid node pool at index %d", i)
 		}
 
 		if err := failFastWhenUnknownKeysFound([]unknownKeyValidation{
@@ -145,9 +105,11 @@ func ConfigFromBytes(data []byte, plugins []*pluginmodel.Plugin) (*Config, error
 		}); err != nil {
 			return nil, err
 		}
+
+		nps = append(nps, npConf)
 	}
 
-	cfg := &Config{Cluster: cpCluster, NodePools: nodePools}
+	cfg := &Config{Config: cpConfig, NodePools: nps}
 
 	validations := []unknownKeyValidation{
 		{c, ""},
@@ -181,6 +143,7 @@ func ConfigFromBytes(data []byte, plugins []*pluginmodel.Plugin) (*Config, error
 	}
 
 	cfg.Plugins = plugins
+	cfg.Extras = &extras
 
 	return cfg, nil
 }
@@ -192,23 +155,6 @@ func failFastWhenUnknownKeysFound(vs []unknownKeyValidation) error {
 		}
 	}
 	return nil
-}
-
-func ConfigFromBytesWithStubs(data []byte, plugins []*pluginmodel.Plugin, encryptService controlplane.EncryptService, cf cfnstack.CFInterrogator, ec cfnstack.EC2Interrogator) (*Config, error) {
-	c, err := ConfigFromBytes(data, plugins)
-	if err != nil {
-		return nil, err
-	}
-	c.ProvidedEncryptService = encryptService
-	c.ProvidedCFInterrogator = cf
-	c.ProvidedEC2Interrogator = ec
-
-	// Uses the same encrypt service for node pools for consistency
-	for _, p := range c.NodePools {
-		p.ProvidedEncryptService = encryptService
-	}
-
-	return c, nil
 }
 
 func ConfigFromFile(configPath string) (*Config, error) {
@@ -224,7 +170,7 @@ func ConfigFromFile(configPath string) (*Config, error) {
 
 	c, err := ConfigFromBytes(data, plugins)
 	if err != nil {
-		return nil, fmt.Errorf("file %s: %v", configPath, err)
+		return nil, errors.Wrapf(err, "failed loading %s: %v", configPath, err)
 	}
 
 	return c, nil

@@ -7,11 +7,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/kubernetes-incubator/kube-aws/pkg/model"
 	"io/ioutil"
 	"strings"
 )
 
-func getStackTemplate(cfnSvc *cloudformation.CloudFormation, stackName string) (string, error) {
+func getStackTemplate(cfnSvc model.StackTemplateGetter, stackName string) (string, error) {
 	byRootStackName := &cloudformation.GetTemplateInput{StackName: aws.String(stackName)}
 	output, err := cfnSvc.GetTemplate(byRootStackName)
 	if err != nil {
@@ -20,7 +21,11 @@ func getStackTemplate(cfnSvc *cloudformation.CloudFormation, stackName string) (
 	return aws.StringValue(output.TemplateBody), nil
 }
 
-func getNestedStackName(cfnSvc *cloudformation.CloudFormation, stackName string, nestedStackLogicalName string) (string, error) {
+type StackResourceDescriber interface {
+	DescribeStackResource(input *cloudformation.DescribeStackResourceInput) (*cloudformation.DescribeStackResourceOutput, error)
+}
+
+func getNestedStackName(cfnSvc StackResourceDescriber, stackName string, nestedStackLogicalName string) (string, error) {
 	byRootStackName := &cloudformation.DescribeStackResourceInput{StackName: aws.String(stackName), LogicalResourceId: aws.String(nestedStackLogicalName)}
 	output, err := cfnSvc.DescribeStackResource(byRootStackName)
 	if err != nil {
@@ -29,7 +34,7 @@ func getNestedStackName(cfnSvc *cloudformation.CloudFormation, stackName string,
 	return aws.StringValue(output.StackResourceDetail.PhysicalResourceId), nil
 }
 
-func getInstanceScriptUserdata(cfnSvc *cloudformation.CloudFormation, stackJson string, nestedStackLogicalName string) (string, error) {
+func getInstanceScriptUserdata(stackJson string, nestedStackLogicalName string) (string, error) {
 	dest := map[string]interface{}{}
 	err := json.Unmarshal([]byte(stackJson), &dest)
 	if err != nil {
@@ -46,7 +51,7 @@ func getInstanceScriptUserdata(cfnSvc *cloudformation.CloudFormation, stackJson 
 	return instanceScript, nil
 }
 
-func getInstanceUserdataJson(cfnSvc *cloudformation.CloudFormation, stackJson string, nestedStackLogicalName string) (string, error) {
+func getInstanceUserdataJson(stackJson string, nestedStackLogicalName string) (string, error) {
 	dest := map[string]interface{}{}
 	err := json.Unmarshal([]byte(stackJson), &dest)
 	if err != nil {
@@ -69,7 +74,7 @@ func getInstanceUserdataJson(cfnSvc *cloudformation.CloudFormation, stackJson st
 	return buf.String(), nil
 }
 
-func getS3Userdata(cfnSvc *cloudformation.CloudFormation, s3Svc *s3.S3, instanceUserdata string) (string, error) {
+func getS3Userdata(s3Svc *s3.S3, instanceUserdata string) (string, error) {
 	a := strings.Split(instanceUserdata, " cp ")
 	b := strings.Split(a[1], " ")[0]
 	s3uri := b

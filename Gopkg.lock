@@ -154,18 +154,33 @@
   version = "v2.2.1"
 
 [[projects]]
+  digest = "1:61416415ed09917c36481eb30d3d5836c7b10e3225f412546a1f7a80fc5b33ce"
+  name = "github.com/gobuffalo/packr"
+  packages = ["."]
+  pruneopts = ""
+  revision = "5a2cbb54c4e7d482e3f518c56f1f86f133d5204f"
+  version = "v1.13.7"
+
+[[projects]]
   digest = "1:3dd078fda7500c341bc26cfbc6c6a34614f295a2457149fc1045cab767cbcf18"
   name = "github.com/golang/protobuf"
-  packages = [
-    "proto",
-    "ptypes",
-    "ptypes/any",
-    "ptypes/duration",
-    "ptypes/timestamp",
-  ]
+  packages = ["proto"]
   pruneopts = ""
   revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
   version = "v1.2.0"
+
+[[projects]]
+  digest = "1:f9f45f75f332e03fc7e9fe9188ea4e1ce4d14779ef34fa1b023da67518e36327"
+  name = "github.com/google/go-cmp"
+  packages = [
+    "cmp",
+    "cmp/internal/diff",
+    "cmp/internal/function",
+    "cmp/internal/value",
+  ]
+  pruneopts = ""
+  revision = "3af367b6b30c263d47e8895973edcca9a49cf029"
+  version = "v0.2.0"
 
 [[projects]]
   digest = "1:8604036476f9d33b2d573e45b91ba2df875ca81640dd8c10f03bbaf789f7f686"
@@ -198,14 +213,6 @@
   revision = "0b12d6b5"
 
 [[projects]]
-  digest = "1:c3eb5a6f6968c79d1ddf1fcac37d682c29850373185b41cb996b8a4628711c22"
-  name = "github.com/kubeflow/katib"
-  packages = ["pkg/api"]
-  pruneopts = ""
-  revision = "f24b520cc52920ae511aeea235636462ebc21d21"
-  version = "v0.1.2-alpha"
-
-[[projects]]
   digest = "1:9ea83adf8e96d6304f394d40436f2eb44c1dc3250d223b74088cc253a6cd0a1c"
   name = "github.com/mattn/go-colorable"
   packages = ["."]
@@ -236,26 +243,6 @@
   packages = ["."]
   pruneopts = ""
   revision = "9520e82c474b0a04dd04f8a40959027271bab992"
-
-[[projects]]
-  digest = "1:f04a78a43f55f089c919beee8ec4a1495dee1bd271548da2cb44bf44699a6a61"
-  name = "github.com/nats-io/go-nats"
-  packages = [
-    ".",
-    "encoders/builtin",
-    "util",
-  ]
-  pruneopts = ""
-  revision = "fb0396ee0bdb8018b0fef30d6d1de798ce99cd05"
-  version = "v1.6.0"
-
-[[projects]]
-  digest = "1:be61e8224b84064109eaba8157cbb4bbe6ca12443e182b6624fdfa1c0dcf53d9"
-  name = "github.com/nats-io/nuid"
-  packages = ["."]
-  pruneopts = ""
-  revision = "289cccf02c178dc782430d534e3c1f5b72af807f"
-  version = "v1.0.0"
 
 [[projects]]
   digest = "1:7365acd48986e205ccb8652cc746f09c8b7876030d53710ea6ef7d0bd0dcd7ca"
@@ -386,93 +373,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:08e41d63f8dac84d83797368b56cf0b339e42d0224e5e56668963c28aec95685"
-  name = "golang.org/x/net"
-  packages = [
-    "context",
-    "http/httpguts",
-    "http2",
-    "http2/hpack",
-    "idna",
-    "internal/timeseries",
-    "trace",
-  ]
-  pruneopts = ""
-  revision = "4dfa2610cdf3b287375bbba5b8f2a14d3b01d8de"
-
-[[projects]]
-  branch = "master"
   digest = "1:ba4898d0f47bb5a26d7e1842bc1b29799441fbcc76aed65ba45d5b6918e35130"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = ""
   revision = "bb9c189858d91f42db229b04d45a4c3d23a7662a"
-
-[[projects]]
-  digest = "1:5acd3512b047305d49e8763eef7ba423901e85d5dd2fd1e71778a0ea8de10bd4"
-  name = "golang.org/x/text"
-  packages = [
-    "collate",
-    "collate/build",
-    "internal/colltab",
-    "internal/gen",
-    "internal/tag",
-    "internal/triegen",
-    "internal/ucd",
-    "language",
-    "secure/bidirule",
-    "transform",
-    "unicode/bidi",
-    "unicode/cldr",
-    "unicode/norm",
-    "unicode/rangetable",
-  ]
-  pruneopts = ""
-  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
-  version = "v0.3.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:0c092d90af564cfe88bf7d11e7a86fdbf38fd33f9cff6fd76f4a085f125eec78"
-  name = "google.golang.org/genproto"
-  packages = ["googleapis/rpc/status"]
-  pruneopts = ""
-  revision = "0e822944c569bf5c9afd034adaa56208bd2906ac"
-
-[[projects]]
-  digest = "1:15656947b87a6a240e61dcfae9e71a55a8d5677f240d12ab48f02cdbabf1e309"
-  name = "google.golang.org/grpc"
-  packages = [
-    ".",
-    "balancer",
-    "balancer/base",
-    "balancer/roundrobin",
-    "codes",
-    "connectivity",
-    "credentials",
-    "encoding",
-    "encoding/proto",
-    "grpclog",
-    "internal",
-    "internal/backoff",
-    "internal/channelz",
-    "internal/envconfig",
-    "internal/grpcrand",
-    "internal/transport",
-    "keepalive",
-    "metadata",
-    "naming",
-    "peer",
-    "resolver",
-    "resolver/dns",
-    "resolver/passthrough",
-    "stats",
-    "status",
-    "tap",
-  ]
-  pruneopts = ""
-  revision = "8dea3dc473e90c8179e519d91302d0597c0ca1d1"
-  version = "v1.15.0"
 
 [solve-meta]
   analyzer-name = "dep"
@@ -496,15 +401,15 @@
     "github.com/aws/aws-sdk-go/service/s3",
     "github.com/coreos/coreos-cloudinit/config/validate",
     "github.com/go-yaml/yaml",
-    "github.com/kubeflow/katib/pkg/api",
+    "github.com/gobuffalo/packr",
+    "github.com/google/go-cmp/cmp",
     "github.com/mgutz/ansi",
-    "github.com/nats-io/go-nats",
+    "github.com/pkg/errors",
     "github.com/spf13/cobra",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
     "github.com/tidwall/sjson",
     "golang.org/x/crypto/ssh/terminal",
-    "google.golang.org/grpc",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

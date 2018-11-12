@@ -36,7 +36,7 @@ func runCmdUp(_ *cobra.Command, _ []string) error {
 
 	opts := root.NewOptions(upOpts.prettyPrint, upOpts.skipWait)
 
-	cluster, err := root.ClusterFromFile(configPath, opts, upOpts.awsDebug)
+	cluster, err := root.LoadClusterFromFile(configPath, opts, upOpts.awsDebug)
 	if err != nil {
 		return fmt.Errorf("failed to initialize cluster driver: %v", err)
 	}

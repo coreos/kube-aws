@@ -1,0 +1,723 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "kube-aws control plane stack for {{.ClusterName}}",
+  "Parameters": {
+    "NetworkStackName": {
+      "Type": "String",
+      "Description": "The name of a network stack used to import values into this stack"
+    },
+    "EtcdStackName": {
+      "Type": "String",
+      "Description": "The name of an etcd stack used to import values into this stack"
+    }
+    {{if .CloudWatchLogging.Enabled}},
+    "CloudWatchLogGroupARN": {
+      "Type": "String",
+      "Description": "CloudWatch LogGroup to send journald logs to"
+    }
+    {{end}}
+  },
+  "Resources": {
+    "{{.Controller.LogicalName}}": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "HealthCheckGracePeriod": 600,
+        "HealthCheckType": "EC2",
+        "LaunchConfigurationName": {
+          "Ref": "{{.Controller.LogicalName}}LC"
+        },
+        "MaxSize": "{{.MaxControllerCount}}",
+        "MetricsCollection": [
+          {
+            "Granularity": "1Minute"
+          }
+        ],
+        "MinSize": "{{.MinControllerCount}}",
+        "Tags": [
+          {{range $k, $v := $.Controller.InstanceTags -}}
+          {
+            "Key": "{{$k}}",
+            "PropagateAtLaunch": "true" ,
+            "Value": "{{$v}}"
+          },
+          {{end -}}
+          {
+            "Key": "kubernetes.io/cluster/{{.ClusterName}}",
+            "PropagateAtLaunch": "true",
+            "Value": "true"
+          },
+          {
+            "Key": "Name",
+            "PropagateAtLaunch": "true",
+            "Value": "{{.ClusterName}}-{{.StackName}}-kube-aws-controller"
+          },
+          {
+            "Key": "kubernetes.io/role/master",
+            "PropagateAtLaunch": "true",
+            "Value": ""
+          }
+        ],
+        "VPCZoneIdentifier": [
+          {{range $index, $subnet := .Controller.Subnets}}
+          {{if gt $index 0}},{{end}}
+          {{$subnet.Ref}}
+          {{end}}
+        ],
+        "LoadBalancerNames" : [
+          {{range $i, $ref := .APIEndpoints.ELBClassicRefs -}}
+          {{- if gt $i 0}},{{end}}
+          {{ $ref }}
+          {{- end}}
+        ],
+        "TargetGroupARNs": [
+          {{range $i, $ref := .APIEndpoints.ELBV2TargetGroupRefs -}}
+          {{- if gt $i 0}},{{end}}
+          {{ $ref }}
+          {{- end}}
+        ]
+      },
+      {{if .WaitSignal.Enabled}}
+      "CreationPolicy" : {
+        "ResourceSignal" : {
+          "Count" : "{{.MinControllerCount}}",
+          "Timeout" : "{{.Controller.CreateTimeout}}"
+        }
+      },
+      {{end}}
+      "UpdatePolicy" : {
+        "AutoScalingRollingUpdate" : {
+          "MinInstancesInService" : "{{.ControllerRollingUpdateMinInstancesInService}}",
+          "MaxBatchSize" : "1",
+          {{if .WaitSignal.Enabled}}
+          "WaitOnResourceSignals" : "true",
+          "PauseTime": "{{.Controller.CreateTimeout}}"
+          {{else}}
+          "PauseTime": "PT2M"
+          {{end}}
+        }
+      },
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "configSets" : {
+              "etcd-client": [ "etcd-client-env" ]{{if .Experimental.AwsEnvironment.Enabled}},
+              "aws-environment": [ "aws-environment-env" ]{{end}}
+              {{ if .SharedPersistentVolume }},
+                "load-efs-pv": [ "load-efs-pv-env" ]
+              {{end}}
+              {{ range $n, $_ := .CfnInitConfigSets }}
+              ,{{ $n | quote }}: [ {{ $n | quote }} ]
+              {{ end }}
+          },
+          {{ if .Experimental.AwsEnvironment.Enabled }}
+          "aws-environment-env" : {
+            "commands": {
+              "write-environment": {
+                "command": { "Fn::Join" : ["", [ "echo '",
+                  {{range $variable, $function := .Experimental.AwsEnvironment.Environment}}
+                  "{{$variable}}=", {{$function}} , "\n",
+                  {{end}}
+                  "' > /etc/aws-environment" ] ] }
+              }
+            }
+          },
+          {{ end }}
+          {{ if .SharedPersistentVolume }}
+          "load-efs-pv-env" : {
+            "files" : {
+              "/etc/kubernetes/efs-pv.yaml": {
+                "content": { "Fn::Join" : [ "", [
+                  "apiVersion: v1\n",
+                  "kind: PersistentVolume\n",
+                  "metadata:\n",
+                  "  name: shared-efs\n",
+                  "spec:\n",
+                  "  accessModes:\n",
+                  "  - ReadWriteMany\n",
+                  "  capacity:\n",
+                  "    storage: 500Gi\n",
+                  "  nfs:\n",
+                  "    path: /\n",
+                  "    server: ", {"Ref": "FileSystemCustom"}, ".efs.{{ $.Region }}.amazonaws.com", "\n",
+                  "  persistentVolumeReclaimPolicy: Recycle\n"
+                ]]}
+              }
+            }
+          },
+          {{ end }}
+          "etcd-client-env": {
+            "files" : {
+              "/var/run/coreos/etcd-environment": {
+                "content": { "Fn::Join" : [ "", [
+                  "ETCD_ENDPOINTS='",
+                  {{range $index, $etcdInstance := $.EtcdNodes}}
+                  {{if $index}}",", {{end}} "https://",
+                  {{$etcdInstance.ImportedAdvertisedFQDNRef}}, ":2379",
+                  {{end}}
+                  "'\n"
+                ]]}
+              }
+            }
+          }
+          {{ range $n, $s := .CfnInitConfigSets }}
+          ,{{ $n | quote }}: {{ $s | toJSON }}
+          {{ end }}
+        }
+      }
+    },
+    "SecurityGroupWorker": {
+      "Properties": {
+        "GroupDescription": {
+          "Ref": "AWS::StackName"
+        },
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": -1,
+            "IpProtocol": "icmp",
+            "ToPort": -1
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 0,
+            "IpProtocol": "tcp",
+            "ToPort": 65535
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 0,
+            "IpProtocol": "udp",
+            "ToPort": 65535
+          }
+        ],
+        "SecurityGroupIngress": [
+          {{ range $_, $r := $.SSHAccessAllowedSourceCIDRs -}}
+          {
+            "CidrIp": "{{$r}}",
+            "FromPort": 22,
+            "IpProtocol": "tcp",
+            "ToPort": 22
+          },
+          {{end -}}
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": -1,
+            "IpProtocol": "icmp",
+            "ToPort": -1
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "{{$.ClusterName}}-sg-worker"
+          }
+        ],
+        "VpcId": {{.VPCRef}}
+      },
+      "Type": "AWS::EC2::SecurityGroup"
+    },
+    {{ if not .Controller.IAMConfig.InstanceProfile.Arn }}
+    "IAMInstanceProfileController": {
+      "Properties": {
+		"Path": "/",
+                {{ .Controller.InstanceProfileRoles }}
+      },
+      "Type": "AWS::IAM::InstanceProfile"
+    },
+    "IAMManagedPolicyController" : {
+      "Type" : "AWS::IAM::ManagedPolicy",
+      "Properties" : {
+        "Description" : "Policy for managing kube-aws k8s controllers",
+				"Path" : "/",
+				{{ if and (.Controller.IAMConfig.Role.ManageExternally) (.Controller.IAMConfig.Role.Name) }}
+				"Roles" : [
+           "{{.Controller.IAMConfig.Role.Name}}"
+				],
+				{{ end }}
+        "PolicyDocument" :   {
+          "Version":"2012-10-17",
+          "Statement": [
+                {{range $s := .Controller.IAMConfig.Policy.Statements }}
+                {
+                  "Action": {{toJSON $s.Actions}},
+                  "Effect": {{toJSON $s.Effect}},
+                  "Resource": {{toJSON $s.Resources}}
+                },
+                {{end}}
+                {
+                  "Action": "ec2:*",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {
+                  "Action": "elasticloadbalancing:*",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {{if .CloudWatchLogging.Enabled}}
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "logs:DescribeLogStreams"
+                  ],
+                  "Resource": [
+                    { "Ref": "CloudWatchLogGroupARN" },
+                    { "Fn::Join" : [ "", [{ "Ref": "CloudWatchLogGroupARN" }, ":log-stream:*"]] }
+                  ]
+                },
+                {{ end }}
+                {{ if .UserDataController.Parts.s3 }}
+		            {
+                  "Effect": "Allow",
+                  "Action": [
+                  "s3:GetObject"
+                  ],
+                  "Resource": "arn:{{.Region.Partition}}:s3:::{{ .Assets.S3Prefix }}*"
+		            },
+                {{ end }}
+                {{if .WaitSignal.Enabled}}
+                {
+                  "Action": "cloudformation:SignalResource",
+                  "Effect": "Allow",
+                  "Resource":
+                    { "Fn::Join": [ "", [
+                      "arn:{{.Region.Partition}}:cloudformation:",
+                      { "Ref": "AWS::Region" },
+                      ":",
+                      { "Ref": "AWS::AccountId" },
+                      ":stack/",
+                      { "Ref": "AWS::StackName" },
+                      "/*" ]
+                    ] }
+                },
+                {{end}}
+                {{if .Experimental.AwsNodeLabels.Enabled}}
+                {
+                  "Action": "autoscaling:Describe*",
+                  "Effect": "Allow",
+                  "Resource": [ "*" ]
+                },
+                {{end}}
+                {{if .ClusterAutoscalerSupportEnabled }}
+                {
+                  "Action": [
+                    "autoscaling:DescribeAutoScalingGroups",
+                    "autoscaling:DescribeAutoScalingInstances",
+                    "autoscaling:DescribeTags",
+                    "autoscaling:DescribeLaunchConfigurations"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {
+                  "Action": [
+                    "autoscaling:SetDesiredCapacity",
+                    "autoscaling:TerminateInstanceInAutoScalingGroup"
+                  ],
+                  "Condition": {
+                    "Null": { "autoscaling:ResourceTag/kubernetes.io/cluster/{{.ClusterName}}": "false" }
+                  },
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {{end}}
+                {{if or .Experimental.Kube2IamSupport.Enabled .Experimental.KIAMSupport.Enabled }}
+                {
+                  "Action": "sts:AssumeRole",
+                  "Effect":"Allow",
+                  "Resource":"*"
+                },
+                {{end}}
+                {{if .AssetsEncryptionEnabled}}
+                {
+                  "Action" : "kms:Decrypt",
+                  "Effect" : "Allow",
+                  "Resource" : "{{.KMSKeyARN}}"
+                },
+                {{end}}
+                {{if .Experimental.NodeDrainer.Enabled }}
+                {
+                  "Action": [
+                    "autoscaling:DescribeAutoScalingInstances",
+                    "autoscaling:DescribeLifecycleHooks",
+                    "autoscaling:DescribeAutoScalingGroups"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {
+                  "Action": [
+                    "autoscaling:CompleteLifecycleAction"
+                  ],
+                  "Effect": "Allow",
+                  "Condition": {
+                    "Null": { "autoscaling:ResourceTag/kubernetes.io/cluster/{{.ClusterName}}": "false" }
+                  },
+                  "Resource": "*"
+                },
+                {{end}}
+                {{if .Kubernetes.Networking.AmazonVPC.Enabled}}
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:CreateNetworkInterface",
+                    "ec2:AttachNetworkInterface",
+                    "ec2:DeleteNetworkInterface",
+                    "ec2:DetachNetworkInterface",
+                    "ec2:DescribeNetworkInterfaces",
+                    "ec2:DescribeInstances",
+                    "ec2:ModifyNetworkInterfaceAttribute",
+                    "ec2:AssignPrivateIpAddresses"
+                  ],
+                  "Resource": [
+                    "*"
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "ec2:CreateTags",
+                  "Resource": "arn:aws:ec2:*:*:network-interface/*"
+                },
+                {{end}}
+                {
+                  "Action": [
+                    "ecr:GetAuthorizationToken",
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:GetRepositoryPolicy",
+                    "ecr:DescribeRepositories",
+                    "ecr:ListImages",
+                    "ecr:BatchGetImage"
+                  ],
+                  "Resource": "*",
+                  "Effect": "Allow"
+                }
+          ]
+        }
+      }
+    },
+    {{if and .Experimental.KIAMSupport.Enabled .KubeResourcesAutosave.Enabled }}
+    "IAMManagedPolicyResourcesAutoSave" : {
+      "Type" : "AWS::IAM::ManagedPolicy",
+      "Properties" : {
+        "Description" : "Policy for managing Resources Auto Save",
+        "Path" : "/",
+        "PolicyDocument" :   {
+          "Version":"2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:PutObject"
+              ],
+              "Resource": "arn:{{.Region.Partition}}:s3:::{{ .KubeResourcesAutosave.S3Path }}/*"
+            }
+          ]
+        }
+      }
+    },
+    "IAMRoleResourcesAutoSave": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sts:AssumeRole"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.{{.Region.PublicDomainName}}"
+                ]
+              }
+            },
+            {
+              "Action": [
+                "sts:AssumeRole"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  {"Fn::GetAtt": ["IAMRoleController", "Arn"]}
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Path": "/",
+        "RoleName":  "{{$.ClusterName}}-IAMRoleResourcesAutoSave",
+        "ManagedPolicyArns": [
+          {"Ref": "IAMManagedPolicyResourcesAutoSave"}
+        ]
+      },
+      "Type": "AWS::IAM::Role"
+    },
+    {{end}}
+    "IAMRoleController": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sts:AssumeRole"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.{{.Region.PublicDomainName}}"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Path": "/",
+        {{ if and (.Controller.IAMConfig.Role.Name) (not .Controller.IAMConfig.Role.ManageExternally) }}
+        "RoleName":  {{if .Controller.IAMConfig.Role.StrictName -}}
+        "{{ .Controller.IAMConfig.Role.Name }}",
+        {{ else -}}
+        {"Fn::Join": ["-", ["{{ $.ClusterName }}", {"Ref": "AWS::Region"}, "{{ .Controller.IAMConfig.Role.Name }}"]]},
+        {{ end -}}
+        {{ end -}}
+        "ManagedPolicyArns": [
+          {{range $policyIndex, $policyArn := .Controller.IAMConfig.Role.ManagedPolicies }}
+            "{{$policyArn.Arn}}",
+          {{end}}
+          {"Ref": "IAMManagedPolicyController"}
+        ]
+      },
+      "Type": "AWS::IAM::Role"
+    },
+    {{end}}
+    {{if .Experimental.NodeDrainer.Enabled }}
+    "{{.Controller.LogicalName}}NodeDrainerLH" : {
+      "Properties" : {
+        "AutoScalingGroupName" : {
+          "Ref": "{{.Controller.LogicalName}}"
+        },
+        "DefaultResult" : "CONTINUE",
+        "HeartbeatTimeout" : "{{.Experimental.NodeDrainer.DrainTimeoutInSeconds}}",
+        "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING"
+      },
+      "Type" : "AWS::AutoScaling::LifecycleHook"
+    },
+    {{end}}
+    {{range $i, $apiEndpoint := $.APIEndpoints -}}
+    {{if .LoadBalancer.ManageELB -}}
+    {{if .LoadBalancer.ManageELBRecordSet -}}
+    "{{.LoadBalancer.RecordSetLogicalName}}": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneId": "{{.LoadBalancer.HostedZoneRef}}",
+        "Name": "{{$apiEndpoint.DNSName}}",
+        "TTL": {{.LoadBalancer.RecordSetTTL}},
+        "ResourceRecords": [{{.LoadBalancer.DNSNameRef}}],
+        "Type": "CNAME"
+      }
+    },
+    {{ end -}}
+    {{ if .LoadBalancer.NetworkLoadBalancer }}
+    "{{.LoadBalancer.LogicalName}}TargetGroup": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "HealthCheckIntervalSeconds": "10",
+        "HealthyThresholdCount": "3",
+        "UnhealthyThresholdCount": "3",
+        "Port": "443",
+        "VpcId": {{$.VPCRef}},
+        "Protocol": "TCP"
+      }
+    },
+    "{{.LoadBalancer.LogicalName}}Listener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {"Ref": "{{.LoadBalancer.LogicalName}}TargetGroup"},
+            "Type": "forward"
+          }
+        ],
+        "LoadBalancerArn": {"Ref": "{{.LoadBalancer.LogicalName}}"},
+        "Port": "443",
+        "Protocol": "TCP"
+      }
+    },
+    "{{.LoadBalancer.LogicalName}}" : {
+      "Type" : "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties" : {
+        "Type": "network",
+        "Subnets" : [
+          {{range $index, $subnet := .LoadBalancer.Subnets}}
+          {{if gt $index 0}},{{end}}
+          {{$subnet.Ref}}
+          {{end}}
+        ],
+        {{if .LoadBalancer.Private}}
+        "Scheme": "internal"
+        {{else}}
+        "Scheme": "internet-facing"
+        {{end}}
+      }
+    },
+    {{ else }}
+    "{{.LoadBalancer.LogicalName}}" : {
+      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties" : {
+        "CrossZone" : true,
+        "HealthCheck" : {
+          "HealthyThreshold" : "3",
+          "Interval" : "10",
+          "Target" : "SSL:443",
+          "Timeout" : "8",
+          "UnhealthyThreshold" : "3"
+        },
+        "ConnectionSettings" : {
+          "IdleTimeout" : "3600"
+        },
+        "Subnets" : [
+          {{range $index, $subnet := .LoadBalancer.Subnets}}
+          {{if gt $index 0}},{{end}}
+          {{$subnet.Ref}}
+          {{end}}
+        ],
+        "Listeners" : [
+          {
+            "InstancePort" : "443",
+            "InstanceProtocol" : "TCP",
+            "LoadBalancerPort" : "443",
+            "Protocol" : "TCP"
+          }
+        ],
+        {{if .LoadBalancer.Private}}
+        "Scheme": "internal",
+        {{else}}
+        "Scheme": "internet-facing",
+        {{end}}
+        "SecurityGroups": [
+          {{range $sgIndex, $sgRef := .LoadBalancer.SecurityGroupRefs}}
+          {{if gt $sgIndex 0}},{{end}}
+          {{$sgRef}}
+          {{end}}
+        ]
+      }
+    },
+    {{ end }}
+    {{if .LoadBalancer.ManageSecurityGroup -}}
+    "{{.LoadBalancer.SecurityGroupLogicalName}}" : {
+      "Properties": {
+        "GroupDescription": {
+          "Ref": "AWS::StackName"
+        },
+        "SecurityGroupIngress": [
+          {{ range $j, $r := .LoadBalancer.APIAccessAllowedSourceCIDRs -}}
+          {{if gt $j 0}},{{end}}
+          {
+            "CidrIp": "{{$r}}",
+            "FromPort": 443,
+            "IpProtocol": "tcp",
+            "ToPort": 443
+          }
+          {{end}}
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "{{$.ClusterName}}-sg-api-endpoint-{{$i}}"
+          }
+        ],
+        "VpcId": {{$.VPCRef}}
+      },
+      "Type": "AWS::EC2::SecurityGroup"
+    },
+    {{end -}}
+    {{end -}}
+    {{end -}}
+    "{{.Controller.LaunchConfigurationLogicalName}}": {
+      "Properties": {
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "VolumeSize": "{{.Controller.RootVolume.Size}}",
+              {{if gt .Controller.RootVolume.IOPS 0}}
+              "Iops": "{{.Controller.RootVolume.IOPS}}",
+              {{end}}
+              "VolumeType": "{{.Controller.RootVolume.Type}}"
+            }
+          }{{range $volumeMountSpecIndex, $volumeMountSpec := .Controller.VolumeMounts}},
+          {
+            "DeviceName": "{{$volumeMountSpec.Device}}",
+            "Ebs": {
+              "VolumeSize": "{{$volumeMountSpec.Size}}",
+              {{if gt $volumeMountSpec.Iops 0}}
+              "Iops": "{{$volumeMountSpec.Iops}}",
+              {{end}}
+              "VolumeType": "{{$volumeMountSpec.Type}}"
+            }
+          }
+          {{- end -}}
+        ],
+        {{if .Controller.IAMConfig.InstanceProfile.Arn }}
+        "IamInstanceProfile": "{{.Controller.IAMConfig.InstanceProfile.Arn}}",
+        {{else}}
+        "IamInstanceProfile": {
+          "Ref": "IAMInstanceProfileController"
+        },
+        {{end}}
+        "ImageId": "{{.AMI}}",
+        "InstanceType": "{{.Controller.InstanceType}}",
+        {{if .KeyName}}"KeyName": "{{.KeyName}}",{{end}}
+        "SecurityGroups": [
+          {{range $sgIndex, $sgRef := $.Controller.SecurityGroupRefs}}
+          {{if gt $sgIndex 0}},{{end}}
+          {{$sgRef}}
+          {{end}}
+        ],
+        "PlacementTenancy": "{{ .Controller.Tenancy }}",
+        "UserData": {{ $.UserDataController.Parts.instance.Template | checkSizeLessThan 16384 }}
+      },
+  {{ if .Experimental.AwsEnvironment.Enabled }}
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "config" : {
+            "commands": {
+              "write-environment": {
+                "command": { "Fn::Join" : ["", [ "echo '",
+{{range $variable, $function := .Experimental.AwsEnvironment.Environment}}
+"{{$variable}}=", {{$function}} , "\n",
+{{end}}
+"' > /etc/aws-environment" ] ] }
+              }
+            }
+          }
+        }
+      },
+  {{end}}
+      "Type": "AWS::AutoScaling::LaunchConfiguration"
+    }
+    {{range $n, $r := .ExtraCfnResources}}
+    ,
+    {{quote $n}}: {{toJSON $r}}
+    {{end}}
+  },
+  "Outputs": {
+    {{ if not .Controller.IAMConfig.InstanceProfile.Arn }}
+    "ControllerIAMRoleArn": {
+      "Description": "The ARN of the IAM role for Controllers",
+      "Value": { "Fn::GetAtt": ["IAMRoleController", "Arn"] },
+      "Export": { "Name": { "Fn::Sub": "${AWS::StackName}-ControllerIAMRoleArn" } }
+    },
+    {{end}}
+    "WorkerSecurityGroup" : {
+      "Description" : "The security group assigned to worker nodes",
+      "Value" :  { "Ref" : "SecurityGroupWorker" },
+      "Export" : { "Name" : {"Fn::Sub": "${AWS::StackName}-WorkerSecurityGroup" }}
+    },
+    "StackName": {
+      "Description": "The name of this stack which is used by node pool stacks to import outputs from this stack",
+      "Value": { "Ref": "AWS::StackName" }
+    }
+  }
+}

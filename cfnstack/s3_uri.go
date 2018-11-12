@@ -3,11 +3,14 @@ package cfnstack
 import (
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 type S3URI interface {
 	Bucket() string
-	PathComponents() []string
+	KeyComponents() []string
+	BucketAndKey() string
+	String() string
 }
 
 type s3URIImpl struct {
@@ -19,13 +22,25 @@ func (u s3URIImpl) Bucket() string {
 	return u.bucket
 }
 
-func (u s3URIImpl) PathComponents() []string {
+func (u s3URIImpl) KeyComponents() []string {
 	if u.directory != "" {
 		return []string{
 			u.directory,
 		}
 	}
 	return []string{}
+}
+
+func (u s3URIImpl) BucketAndKey() string {
+	components := []string{}
+	path := u.KeyComponents()
+	components = append(components, u.bucket)
+	components = append(components, path...)
+	return strings.Join(components, "/")
+}
+
+func (u s3URIImpl) String() string {
+	return fmt.Sprintf("s3://%s", u.BucketAndKey())
 }
 
 func S3URIFromString(s3URI string) (S3URI, error) {

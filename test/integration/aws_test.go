@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
-	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/credential"
+	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 	"github.com/kubernetes-incubator/kube-aws/test/helper"
 )
 
@@ -37,7 +37,7 @@ type kubeAwsSettings struct {
 	keyName                       string
 	kmsKeyArn                     string
 	region                        string
-	encryptService                config.EncryptService
+	encryptService                credential.KMSEncryptionService
 }
 
 func newKubeAwsSettingsFromEnv(t *testing.T) kubeAwsSettings {
@@ -65,7 +65,7 @@ func newKubeAwsSettingsFromEnv(t *testing.T) kubeAwsSettings {
 		return kubeAwsSettings{
 			clusterName:                   clusterName,
 			s3URI:                         s3URI,
-			etcdNodeDefaultInternalDomain: model.RegionForName(region).PrivateDomainName(),
+			etcdNodeDefaultInternalDomain: api.RegionForName(region).PrivateDomainName(),
 			externalDNSName:               externalDnsName,
 			keyName:                       keyName,
 			kmsKeyArn:                     kmsKeyArn,
@@ -75,7 +75,7 @@ func newKubeAwsSettingsFromEnv(t *testing.T) kubeAwsSettings {
 		return kubeAwsSettings{
 			clusterName:                   clusterName,
 			s3URI:                         s3URI,
-			etcdNodeDefaultInternalDomain: model.RegionForName("us-west-1").PrivateDomainName(),
+			etcdNodeDefaultInternalDomain: api.RegionForName("us-west-1").PrivateDomainName(),
 			externalDNSName:               "test.staging.core-os.net",
 			keyName:                       "test-key-name",
 			kmsKeyArn:                     "arn:aws:kms:us-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx",

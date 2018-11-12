@@ -1,16 +1,28 @@
 #!/bin/bash
 set -euo pipefail
 
+printf 'Checking existence of the `tparse` command that is used for prettifying test results...'
+if ! which tparse 1>/dev/null; then
+  echo not found. installing...
+  go get -u github.com/mfridman/tparse
+  echo 'Installed `packr`.'
+  printf 'Ensuring that the installed command is available via PATH...'
+  export PATH=$PATH:$GOPATH/bin
+  echo 'done. PATH is now '"$PATH"
+else
+  echo found. Skipped installation.
+fi
+
 default() {
   test -z "$(find . -path ./vendor -prune -type f -o -name '*.go' -exec gofmt -d {} + | tee /dev/stderr)"
-  go test -v $(go list ./... | grep -v '/vendor/' | grep -v '/hack')
+  go test -json -v $(go list ./... | grep -v '/vendor/' | grep -v '/hack') | tparse
   go vet $(go list ./... | grep -v '/vendor/' | grep -v '/hack')
 }
 
 with-cover() {
   test -z "$(find . -path ./vendor -prune -type f -o -name '*.go' -exec gofmt -d {} + | tee /dev/stderr)"
   for d in $(go list ./... | grep -v '/vendor/' | grep -v '/hack'); do
-    go test -timeout 35m -v --race -coverprofile=profile.out -covermode=atomic $d
+    go test -timeout 35m -json -v --race -coverprofile=profile.out -covermode=atomic $d | tparse
     if [ -f profile.out ]; then
       cat profile.out >> coverage.txt
       rm profile.out

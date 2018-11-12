@@ -1,36 +1,40 @@
 package plugincontents
 
 import (
-	"fmt"
-	"io/ioutil"
 	"path/filepath"
 
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
+	"fmt"
+	"github.com/kubernetes-incubator/kube-aws/pkg/api"
+	"github.com/kubernetes-incubator/kube-aws/provisioner"
 )
 
-type Loader struct {
-	p *pluginmodel.Plugin
+type PluginFileLoader struct {
+	p *api.Plugin
+
+	FileLoader *provisioner.RemoteFileLoader
 }
 
-func LoaderFor(p *pluginmodel.Plugin) *Loader {
-	return &Loader{
+func NewPluginFileLoader(p *api.Plugin) *PluginFileLoader {
+	return &PluginFileLoader{
 		p: p,
 	}
 }
 
-func (l *Loader) StringFrom(contents pluginmodel.Contents) (string, error) {
-	if contents.Inline != "" {
-		return contents.Inline, nil
+func (l *PluginFileLoader) String(f provisioner.RemoteFileSpec) (string, error) {
+	if f.Source.Path != "" {
+		f.Source.Path = filepath.Join("plugins", l.p.Name, f.Source.Path)
 	}
 
-	if contents.Path != "" {
-		path := filepath.Join("plugins", l.p.Name, contents.Path)
-		raw, err := ioutil.ReadFile(path)
-		if err != nil {
-			return "", fmt.Errorf("failed to load %s: %v", path, err)
-		}
-		return string(raw), nil
+	loaded, err := l.FileLoader.Load(f)
+	if err != nil {
+		return "", err
 	}
 
-	return "", fmt.Errorf("failed to load string from %v: either `inline` or `path` must be specified but both of these were missing", contents)
+	res := loaded.Content.String()
+
+	if f.Source.Path != "" && len(res) == 0 {
+		return "", fmt.Errorf("[bug] empty file loaded from %s", f.Source.Path)
+	}
+
+	return res, nil
 }

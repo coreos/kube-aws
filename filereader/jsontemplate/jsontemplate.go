@@ -19,7 +19,7 @@ func GetBytes(filename string, data interface{}, prettyPrint bool) ([]byte, erro
 	if err := json.Unmarshal(renderedBytes, &jsonHolder); err != nil {
 		syntaxError, ok := err.(*json.SyntaxError)
 		if ok {
-			contextString := getContextString(renderedBytes, int(syntaxError.Offset), 3)
+			contextString := getContextString(renderedBytes, int(syntaxError.Offset), 10)
 			return nil, fmt.Errorf("%v:\njson syntax error (offset=%d), in this region:\n-------\n%s\n-------\n", err, syntaxError.Offset, contextString)
 		}
 		return nil, err

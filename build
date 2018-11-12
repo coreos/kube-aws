@@ -21,33 +21,19 @@ fi
 
 echo Building kube-aws ${VERSION}
 
-# generate controlplane templates
-pushd core/controlplane/config
-go run ../../../codegen/templates_gen.go CloudConfigController=cloud-config-controller KubeConfigTemplate=kubeconfig.tmpl StackTemplateTemplate=stack-template.json
-gofmt -w templates.go
-go run ../../../codegen/files_gen.go Etcdadm=../../../etcdadm/etcdadm
-gofmt -w files.go
-popd
+printf 'Checking existence of the `packr` command that is used for embedding files into the resulting binary...'
+if ! which packr 1>/dev/null; then
+  echo not found. installing...
+  go get -u github.com/gobuffalo/packr/packr
+  echo 'Installed `packr`.'
+  printf 'Ensuring that the installed command is available via PATH...'
+  export PATH=$PATH:$GOPATH/bin
+  echo 'done. PATH is now '"$PATH"
+else
+  echo found. Skipped installation.
+fi
 
-pushd core/network/config
-go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json
-gofmt -w templates.go
-popd
-
-pushd core/etcd/config
-go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json CloudConfigEtcd=cloud-config-etcd 
-gofmt -w templates.go
-popd
-
-pushd core/nodepool/config
-go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json CloudConfigWorker=cloud-config-worker
-gofmt -w templates.go
-popd
-
-pushd core/root/config
-go run ../../../codegen/templates_gen.go StackTemplateTemplate=stack-template.json DefaultClusterConfig=cluster.yaml 
-gofmt -w templates.go
-popd
+packr -vz
 
 if [[ ! "${BUILD_GOOS:-}" == "" ]];then
   export GOOS=$BUILD_GOOS
@@ -55,4 +41,4 @@ fi
 if [[ ! "${BUILD_GOARCH:-}" == "" ]];then
   export GOARCH=$BUILD_GOARCH
 fi
-go build -ldflags "-X github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster.VERSION=${VERSION}" -a -tags netgo -installsuffix netgo -o "$OUTPUT_PATH" ./
+go build -ldflags "-X github.com/kubernetes-incubator/kube-aws/pkg/model.VERSION=${VERSION}" -a -tags netgo -installsuffix netgo -o "$OUTPUT_PATH" ./

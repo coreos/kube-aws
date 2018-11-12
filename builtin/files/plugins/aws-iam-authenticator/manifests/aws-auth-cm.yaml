@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-iam-authenticator
+  namespace: kube-system
+data:
+  config.yaml: |
+    clusterID: {{ .Config.ClusterName }}
+    server:
+      mapRoles:
+        {{ range $i, $role := .Config.IAMRoleARNs -}}
+        - rolearn: {{$role}}
+          username: system:node:{{`{{EC2PrivateDNSName}}`}}
+          groups:
+          - system:bootstrappers
+          - system:nodes
+        {{ end -}}

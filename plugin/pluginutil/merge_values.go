@@ -3,14 +3,14 @@ package pluginutil
 import (
 	"fmt"
 
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
+	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 )
 
-func MergeValues(v pluginmodel.Values, o map[string]interface{}) pluginmodel.Values {
+func MergeValues(v api.Values, o map[string]interface{}) api.Values {
 	r := merge(map[string]interface{}(v), map[string]interface{}(o))
 	switch r := r.(type) {
 	case map[string]interface{}:
-		return pluginmodel.Values(r)
+		return api.Values(r)
 	}
 	panic(fmt.Errorf("error in type assertion to map[string]interface{} from merge result: %v", r))
 }

@@ -11,3 +11,9 @@ func SHA256(data string) string {
 	h.Write([]byte(data))
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
+
+func BytesToSha256(data []byte) []byte {
+	h := sha256.New()
+	h.Write([]byte(data))
+	return []byte(fmt.Sprintf("%x", h.Sum(nil)))
+}

@@ -6,9 +6,9 @@ This is the second step of [running Kubernetes on AWS](README.md). Before we lau
 
 ### EC2 key pair
 
-The key pair that will authenticate SSH access to your EC2 instances. The public half of this key pair will be configured on each CoreOS node.
+The keypair that will authenticate SSH access to your EC2 instances. The public half of this key pair will be configured on each CoreOS node.
 
-After creating a key pair, you will use the name you gave the keys to configure the cluster. Key pairs are only available to EC2 instances in the same region. More info in the [EC2 key pair docs](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
+After creating a key pair, you will use the name you gave the keys to configure the cluster. Key pairs are only available to EC2 instances in the same region. More info in the [EC2 Keypair docs](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
 
 ### KMS key
 
@@ -279,7 +279,7 @@ apiEndpoints:
 
 ```
 
-If `createRecordSet` is not set to true, the deployer will be responsible for making externalDNSName routable to the ELB managing the controller nodes after the cluster is created.
+If `createRecordSet` is not set to true, the deployer will be responsible for making externalDNSName routable to the the ELB managing the controller nodes after the cluster is created.
 
 ### Multi-AZ Clusters
 

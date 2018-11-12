@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
 	"github.com/kubernetes-incubator/kube-aws/logger"
+	"github.com/kubernetes-incubator/kube-aws/pkg/model"
 	"github.com/spf13/cobra"
 )
 
@@ -20,5 +20,5 @@ func init() {
 }
 
 func runCmdVersion(_ *cobra.Command, _ []string) {
-	logger.Infof("kube-aws version %s\n", cluster.VERSION)
+	logger.Infof("kube-aws version %s\n", model.VERSION)
 }

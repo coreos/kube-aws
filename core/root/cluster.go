@@ -16,20 +16,15 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/kubernetes-incubator/kube-aws/awsconn"
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
-	controlplane "github.com/kubernetes-incubator/kube-aws/core/controlplane/cluster"
-	controlplane_cfg "github.com/kubernetes-incubator/kube-aws/core/controlplane/config"
-	etcd "github.com/kubernetes-incubator/kube-aws/core/etcd/cluster"
-	network "github.com/kubernetes-incubator/kube-aws/core/network/cluster"
-	nodepool "github.com/kubernetes-incubator/kube-aws/core/nodepool/cluster"
-	nodepool_cfg "github.com/kubernetes-incubator/kube-aws/core/nodepool/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 	"github.com/kubernetes-incubator/kube-aws/core/root/defaults"
+	"github.com/kubernetes-incubator/kube-aws/credential"
 	"github.com/kubernetes-incubator/kube-aws/filereader/jsontemplate"
 	"github.com/kubernetes-incubator/kube-aws/logger"
-	"github.com/kubernetes-incubator/kube-aws/model"
 	"github.com/kubernetes-incubator/kube-aws/naming"
+	"github.com/kubernetes-incubator/kube-aws/pkg/api"
+	"github.com/kubernetes-incubator/kube-aws/pkg/model"
 	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"github.com/tidwall/sjson"
 )
 
@@ -38,8 +33,8 @@ const (
 	REMOTE_STACK_TEMPLATE_FILENAME = "stack.json"
 )
 
-func (c clusterImpl) Export() error {
-	assets, err := c.Assets()
+func (cl Cluster) Export() error {
+	assets, err := cl.EnsureAllAssetsGenerated()
 
 	if err != nil {
 		return err
@@ -55,25 +50,25 @@ func (c clusterImpl) Export() error {
 		if err := ioutil.WriteFile(path, []byte(asset.Content), 0600); err != nil {
 			return fmt.Errorf("Error writing %s : %v", path, err)
 		}
-		if strings.HasSuffix(path, "stack.json") && c.controlPlane.KMSKeyARN == "" {
+		if strings.HasSuffix(path, "stack.json") && cl.Cfg.KMSKeyARN == "" {
 			logger.Warnf("%s contains your TLS secrets!\n", path)
 		}
 	}
 	return nil
 }
 
-func (c clusterImpl) EstimateCost() ([]string, error) {
+func (cl Cluster) EstimateCost() ([]string, error) {
 
-	cfSvc := cloudformation.New(c.session)
+	cfSvc := cloudformation.New(cl.session)
 	var urls []string
 
-	controlPlaneTemplate, err := c.controlPlane.RenderStackTemplateAsString()
+	controlPlaneTemplate, err := cl.controlPlaneStack.RenderStackTemplateAsString()
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to render control plane template %v", err)
 	}
 
-	controlPlaneCost, err := c.stackProvisioner().EstimateTemplateCost(cfSvc, controlPlaneTemplate, nil)
+	controlPlaneCost, err := cl.stackProvisioner().EstimateTemplateCost(cfSvc, controlPlaneTemplate, nil)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to estimate cost for control plane %v", err)
@@ -81,14 +76,14 @@ func (c clusterImpl) EstimateCost() ([]string, error) {
 
 	urls = append(urls, *controlPlaneCost.Url)
 
-	for i, p := range c.nodePools {
+	for i, p := range cl.nodePoolStacks {
 		nodePoolsTemplate, err := p.RenderStackTemplateAsString()
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to render node pool #%d template: %v", i, err)
 		}
 
-		nodePoolsCost, err := c.stackProvisioner().EstimateTemplateCost(cfSvc, nodePoolsTemplate, []*cloudformation.Parameter{
+		nodePoolsCost, err := cl.stackProvisioner().EstimateTemplateCost(cfSvc, nodePoolsTemplate, []*cloudformation.Parameter{
 			{
 				ParameterKey:   aws.String("ControlPlaneStackName"),
 				ParameterValue: aws.String("fake-name"),
@@ -115,74 +110,109 @@ func (r *DiffResult) String() string {
 	return r.diff
 }
 
-type Cluster interface {
-	Apply(OperationTargets) error
-	Assets() (cfnstack.Assets, error)
-	LegacyCreate() error
-	Export() error
-	EstimateCost() ([]string, error)
-	Info() (*Info, error)
-	LegacyUpdate(OperationTargets) (string, error)
-	ValidateStack(...OperationTargets) (string, error)
-	ValidateTemplates() error
-	ControlPlane() *controlplane.Cluster
-	Etcd() *etcd.Cluster
-	Network() *network.Cluster
-	NodePools() []*nodepool.Cluster
-	RenderStackTemplateAsString() (string, error)
-	Diff(OperationTargets, int) ([]*DiffResult, error)
+type Cluster struct {
+	controlPlaneStack *model.Stack
+	etcdStack         *model.Stack
+	networkStack      *model.Stack
+	nodePoolStacks    []*model.Stack
+
+	ExtraCfnResources map[string]interface{}
+
+	opts     options
+	session  *session.Session
+	Context  *model.Context
+	extras   clusterextension.ClusterExtension
+	Cfg      *config.Config
+	loaded   bool
+	awsDebug bool
 }
 
-func ClusterFromFile(configPath string, opts options, awsDebug bool) (*clusterImpl, error) {
+func LoadClusterFromFile(configPath string, opts options, awsDebug bool) (*Cluster, error) {
 	cfg, err := config.ConfigFromFile(configPath)
 	if err != nil {
 		return nil, err
 	}
-	return ClusterFromConfig(cfg, opts, awsDebug)
+	return CompileClusterFromConfig(cfg, opts, awsDebug)
 }
 
-func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (*clusterImpl, error) {
+func CompileClusterFromFile(configPath string, opts options, awsDebug bool) (*Cluster, error) {
+	cfg, err := config.ConfigFromFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+	return CompileClusterFromConfig(cfg, opts, awsDebug)
+}
+
+func CompileClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (*Cluster, error) {
 	session, err := awsconn.NewSessionFromRegion(cfg.Region, awsDebug)
 	if err != nil {
 		return nil, fmt.Errorf("failed to establish aws session: %v", err)
 	}
 
-	plugins := cfg.Plugins
+	return &Cluster{Cfg: cfg, opts: opts, awsDebug: awsDebug, extras: *cfg.Extras, session: session}, nil
+}
 
-	stackTemplateOpts := controlplane_cfg.StackTemplateOptions{
+func (cl *Cluster) context() *model.Context {
+	if cl.Context == nil {
+		cfn := cloudformation.New(cl.session)
+		cl.Context = &model.Context{
+			Session:                cl.session,
+			ProvidedCFInterrogator: cfn,
+			StackTemplateGetter:    cfn,
+		}
+	}
+	return cl.Context
+}
+
+func (cl *Cluster) ensureNestedStacksLoaded() error {
+	if cl.loaded {
+		return nil
+	}
+	cl.loaded = true
+
+	rootcfg := cl.Cfg
+	opts := cl.opts
+	plugins := cl.Cfg.Plugins
+
+	extras := clusterextension.NewExtrasFromPlugins(plugins, rootcfg.PluginConfigs)
+
+	stackTemplateOpts := api.StackTemplateOptions{
 		AssetsDir:             opts.AssetsDir,
 		ControllerTmplFile:    opts.ControllerTmplFile,
 		EtcdTmplFile:          opts.EtcdTmplFile,
 		StackTemplateTmplFile: opts.ControlPlaneStackTemplateTmplFile,
 		PrettyPrint:           opts.PrettyPrint,
-		S3URI:                 cfg.DeploymentSettings.S3URI,
+		S3URI:                 rootcfg.DeploymentSettings.S3URI,
 		SkipWait:              opts.SkipWait,
+	}
+
+	cfg := cl.Cfg.Config
+
+	assetsConfig, err := cl.context().LoadCredentials(cfg, stackTemplateOpts)
+	if err != nil {
+		return fmt.Errorf("failed initializing credentials: %v", err)
 	}
 
 	netOpts := stackTemplateOpts
 	netOpts.StackTemplateTmplFile = opts.NetworkStackTemplateTmplFile
-	net, err := network.NewCluster(cfg.Cluster, netOpts, plugins, session)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initizlie network stack: %v", err)
-	}
 
 	cpOpts := stackTemplateOpts
 	cpOpts.StackTemplateTmplFile = opts.ControlPlaneStackTemplateTmplFile
-	cp, err := controlplane.NewCluster(cfg.Cluster, cpOpts, plugins, session)
+	cp, err := model.NewControlPlaneStack(cfg, cpOpts, extras, assetsConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize control-plane stack: %v", err)
+		return fmt.Errorf("failed to initialize control-plane stack: %v", err)
 	}
 
 	etcdOpts := stackTemplateOpts
 	etcdOpts.StackTemplateTmplFile = opts.EtcdStackTemplateTmplFile
-	etcd, err := etcd.NewCluster(cfg.Cluster, etcdOpts, plugins, session)
+	etcd, err := model.NewEtcdStack(cfg, etcdOpts, extras, assetsConfig, cl.context())
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize etcd stack: %v", err)
+		return fmt.Errorf("failed to initialize etcd stack: %v", err)
 	}
 
-	nodePools := []*nodepool.Cluster{}
+	nodePools := []*model.Stack{}
 	for i, c := range cfg.NodePools {
-		npOpts := nodepool_cfg.StackTemplateOptions{
+		npOpts := api.StackTemplateOptions{
 			AssetsDir:             opts.AssetsDir,
 			WorkerTmplFile:        opts.WorkerTmplFile,
 			StackTemplateTmplFile: opts.NodePoolStackTemplateTmplFile,
@@ -190,76 +220,88 @@ func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (*cluste
 			S3URI:                 cfg.DeploymentSettings.S3URI,
 			SkipWait:              opts.SkipWait,
 		}
-		np, err := nodepool.NewCluster(c, npOpts, plugins, session)
+		npCfg, err := model.NodePoolCompile(c, cfg)
 		if err != nil {
-			return nil, fmt.Errorf("failed to load node pool #%d: %v", i, err)
+			return fmt.Errorf("failed initializing worker node pool: %v", err)
+		}
+		npExtras := extras
+		npExtras.Configs = npCfg.Plugins
+		np, err := model.NewWorkerStack(cfg, npCfg, npOpts, npExtras, assetsConfig)
+		if err != nil {
+			return fmt.Errorf("failed to load node pool #%d: %v", i, err)
 		}
 		nodePools = append(nodePools, np)
 	}
 
-	extras := clusterextension.NewExtrasFromPlugins(plugins, cp.PluginConfigs)
-	extra, err := extras.RootStack()
+	net, err := model.NewNetworkStack(cfg, nodePools, netOpts, extras, assetsConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load root stack extras from plugins: %v", err)
+		return fmt.Errorf("failed to initizlie network stack: %v", err)
 	}
 
-	c := &clusterImpl{
-		opts:              opts,
-		controlPlane:      cp,
-		etcd:              etcd,
-		network:           net,
-		nodePools:         nodePools,
-		session:           session,
-		ExtraCfnResources: extra.Resources,
+	cl.etcdStack = etcd
+	cl.controlPlaneStack = cp
+	cl.networkStack = net
+	cl.nodePoolStacks = nodePools
+
+	extra, err := cl.extras.RootStack(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to load root stack extras from plugins: %v", err)
 	}
 
-	return c, nil
+	cl.ExtraCfnResources = extra.Resources
+
+	return nil
 }
 
-type clusterImpl struct {
-	controlPlane      *controlplane.Cluster
-	etcd              *etcd.Cluster
-	network           *network.Cluster
-	nodePools         []*nodepool.Cluster
-	opts              options
-	session           *session.Session
-	ExtraCfnResources map[string]interface{}
+func (cl *Cluster) GenerateAssetsOnDisk(dir string, opts credential.GeneratorOptions) (*credential.RawAssetsOnDisk, error) {
+	a, err := model.GenerateAssetsOnDisk(cl.session, cl.Cfg.Config, dir, opts)
+	if err != nil {
+		return nil, err
+	}
+	kmsConfig := credential.NewKMSConfig(cl.Cfg.KMSKeyARN, nil, cl.session)
+	enc := kmsConfig.Encryptor()
+	p := credential.NewProtectedPKI(enc)
+	specs := cl.extras.KeyPairSpecs()
+	if err := p.EnsureKeyPairsCreated(specs); err != nil {
+		return nil, err
+	}
+	return a, nil
 }
 
-func (c *clusterImpl) ControlPlane() *controlplane.Cluster {
-	return c.controlPlane
+func (cl *Cluster) ControlPlane() *model.Stack {
+	return cl.controlPlaneStack
 }
 
-func (c *clusterImpl) Etcd() *etcd.Cluster {
-	return c.etcd
+func (cl *Cluster) Etcd() *model.Stack {
+	return cl.etcdStack
 }
 
-func (c *clusterImpl) Network() *network.Cluster {
-	return c.network
+func (cl *Cluster) Network() *model.Stack {
+	return cl.networkStack
 }
 
-func (c *clusterImpl) s3URI() string {
-	return c.controlPlane.S3URI
+func (cl *Cluster) s3URI() string {
+	return cl.controlPlaneStack.S3URI
 }
 
-func (c *clusterImpl) NodePools() []*nodepool.Cluster {
-	return c.nodePools
+func (cl *Cluster) NodePools() []*model.Stack {
+	return cl.nodePoolStacks
 }
 
-func (c *clusterImpl) allOperationTargets() OperationTargets {
+func (cl *Cluster) allOperationTargets() OperationTargets {
 	names := []string{}
-	for _, np := range c.nodePools {
-		names = append(names, np.NodePoolName)
+	for _, np := range cl.nodePoolStacks {
+		names = append(names, np.StackName)
 	}
 	return AllOperationTargetsWith(names)
 }
 
-func (c *clusterImpl) operationTargetsFromUserInput(opts []OperationTargets) OperationTargets {
+func (cl *Cluster) operationTargetsFromUserInput(opts []OperationTargets) OperationTargets {
 	var targets OperationTargets
 	if len(opts) > 0 && !opts[0].IsAll() {
 		targets = OperationTargetsFromStringSlice(opts[0])
 	} else {
-		targets = c.allOperationTargets()
+		targets = cl.allOperationTargets()
 	}
 	return targets
 }
@@ -271,58 +313,62 @@ type renderer interface {
 type diffSetting struct {
 	stackName      string
 	renderer       renderer
-	userdata       *model.UserData
+	userdata       *api.UserData
 	launchConfName string
 }
 
-func (c *clusterImpl) Diff(opts OperationTargets, context int) ([]*DiffResult, error) {
-	cfnSvc := cloudformation.New(c.session)
-	s3Svc := s3.New(c.session)
+func (cl *Cluster) Diff(opts OperationTargets, context int) ([]*DiffResult, error) {
+	if err := cl.ensureNestedStacksLoaded(); err != nil {
+		return nil, err
+	}
+
+	cfnSvc := cloudformation.New(cl.session)
+	s3Svc := s3.New(cl.session)
 
 	mappings := map[string]diffSetting{}
 
 	isAll := opts.IsAll()
 	includeAll := opts.IncludeNetwork() && opts.IncludeEtcd() && opts.IncludeControlPlane()
-	for _, np := range c.nodePools {
-		includeAll = includeAll && opts.IncludeWorker(np.NodePoolName)
+	for _, np := range cl.nodePoolStacks {
+		includeAll = includeAll && opts.IncludeWorker(np.StackName)
 	}
 	if isAll || includeAll {
-		mappings["root"] = diffSetting{c.stackName(), c, nil, ""}
+		mappings["root"] = diffSetting{cl.stackName(), cl, nil, ""}
 	}
 
 	if isAll || opts.IncludeNetwork() {
-		stackName, err := getNestedStackName(cfnSvc, c.stackName(), c.network.NestedStackName())
+		stackName, err := getNestedStackName(cfnSvc, cl.stackName(), cl.networkStack.NestedStackName())
 		if err != nil {
 			return nil, err
 		}
-		mappings["network"] = diffSetting{stackName, c.network, nil, ""}
+		mappings["network"] = diffSetting{stackName, cl.networkStack, nil, ""}
 	}
 
 	staticEtcdIndex := 0
 	if isAll || opts.IncludeEtcd() {
-		stackName, err := getNestedStackName(cfnSvc, c.stackName(), c.etcd.NestedStackName())
+		stackName, err := getNestedStackName(cfnSvc, cl.stackName(), cl.etcdStack.NestedStackName())
 		if err != nil {
 			return nil, err
 		}
-		mappings["etcd"] = diffSetting{stackName, c.etcd, &c.etcd.UserDataEtcd, c.etcd.EtcdNodes[staticEtcdIndex].LaunchConfigurationLogicalName()}
+		mappings["etcd"] = diffSetting{stackName, cl.etcdStack, cl.etcdStack.GetUserData("Etcd"), cl.etcdStack.Config.EtcdNodes[staticEtcdIndex].LaunchConfigurationLogicalName()}
 	}
 
 	if isAll || opts.IncludeControlPlane() {
-		stackName, err := getNestedStackName(cfnSvc, c.stackName(), c.controlPlane.NestedStackName())
+		stackName, err := getNestedStackName(cfnSvc, cl.stackName(), cl.controlPlaneStack.NestedStackName())
 		if err != nil {
 			return nil, err
 		}
-		mappings["controller"] = diffSetting{stackName, c.controlPlane, &c.controlPlane.UserDataController, c.controlPlane.Controller.LaunchConfigurationLogicalName()}
+		mappings["controller"] = diffSetting{stackName, cl.controlPlaneStack, cl.controlPlaneStack.GetUserData("Controller"), cl.controlPlaneStack.Config.Controller.LaunchConfigurationLogicalName()}
 	}
 
-	for _, np := range c.nodePools {
-		if opts.IncludeWorker(np.NodePoolName) {
-			stackName, err := getNestedStackName(cfnSvc, c.stackName(), np.NestedStackName())
+	for _, np := range cl.nodePoolStacks {
+		if opts.IncludeWorker(np.StackName) {
+			stackName, err := getNestedStackName(cfnSvc, cl.stackName(), np.NestedStackName())
 			if err != nil {
 				return nil, err
 			}
-			id := fmt.Sprintf("worker-%s", np.NodePoolName)
-			mappings[id] = diffSetting{stackName, np, &np.UserDataWorker, np.NodePoolConfig.LaunchConfigurationLogicalName()}
+			id := fmt.Sprintf("worker-%s", np.StackName)
+			mappings[id] = diffSetting{stackName, np, np.GetUserData("Worker"), np.NodePoolConfig.WorkerNodePool.LaunchConfigurationLogicalName()}
 		}
 	}
 
@@ -346,7 +392,7 @@ func (c *clusterImpl) Diff(opts OperationTargets, context int) ([]*DiffResult, e
 		diffResults = append(diffResults, stackDiffSummary)
 
 		if len(stackDiffOutput) > 0 && setting.userdata != nil {
-			currentInsScriptUserdata, err := getInstanceScriptUserdata(cfnSvc, currentStack, setting.launchConfName)
+			currentInsScriptUserdata, err := getInstanceScriptUserdata(currentStack, setting.launchConfName)
 			if err != nil {
 				return nil, fmt.Errorf("failed to obtain %s instance userdata template: %v", id, err)
 			}
@@ -362,7 +408,7 @@ func (c *clusterImpl) Diff(opts OperationTargets, context int) ([]*DiffResult, e
 			insScriptUserdataDiffSummary := &DiffResult{fmt.Sprintf("%s-userdata-instance-script", id), insScriptUserdataDiffOutput}
 			diffResults = append(diffResults, insScriptUserdataDiffSummary)
 
-			currentInsUserdata, err := getInstanceUserdataJson(cfnSvc, currentStack, setting.launchConfName)
+			currentInsUserdata, err := getInstanceUserdataJson(currentStack, setting.launchConfName)
 			if err != nil {
 				return nil, fmt.Errorf("failed to obtain %s instance userdata template: %v", id, err)
 			}
@@ -379,7 +425,7 @@ func (c *clusterImpl) Diff(opts OperationTargets, context int) ([]*DiffResult, e
 			diffResults = append(diffResults, insUserdataDiffSummary)
 
 			{
-				currentS3Userdata, err := getS3Userdata(cfnSvc, s3Svc, currentInsUserdata)
+				currentS3Userdata, err := getS3Userdata(s3Svc, currentInsUserdata)
 				if err != nil {
 					return nil, fmt.Errorf("failed to obtain %s s3 userdata template: %v", id, err)
 				}
@@ -402,24 +448,24 @@ func (c *clusterImpl) Diff(opts OperationTargets, context int) ([]*DiffResult, e
 }
 
 // remove with legacy up command
-func (c *clusterImpl) LegacyCreate() error {
-	cfSvc := cloudformation.New(c.session)
-	return c.create(cfSvc)
+func (cl *Cluster) LegacyCreate() error {
+	cfSvc := cloudformation.New(cl.session)
+	return cl.create(cfSvc)
 }
 
-func (c *clusterImpl) create(cfSvc *cloudformation.CloudFormation) error {
+func (cl *Cluster) create(cfSvc *cloudformation.CloudFormation) error {
+	if err := cl.ensureNestedStacksLoaded(); err != nil {
+		return err
+	}
 
-	assets, err := c.generateAssets(c.allOperationTargets())
+	assets, err := cl.EnsureAllAssetsGenerated()
+
+	err = cl.uploadAssets(assets)
 	if err != nil {
 		return err
 	}
 
-	err = c.uploadAssets(assets)
-	if err != nil {
-		return err
-	}
-
-	stackTemplateURL, err := c.extractRootStackTemplateURL(assets)
+	stackTemplateURL, err := cl.extractRootStackTemplateURL(assets)
 	if err != nil {
 		return err
 	}
@@ -427,75 +473,78 @@ func (c *clusterImpl) create(cfSvc *cloudformation.CloudFormation) error {
 	q := make(chan struct{}, 1)
 	defer func() { q <- struct{}{} }()
 
-	if c.controlPlane.CloudWatchLogging.Enabled && c.controlPlane.CloudWatchLogging.LocalStreaming.Enabled {
-		go streamJournaldLogs(c, q)
+	if cl.controlPlaneStack.Config.CloudWatchLogging.Enabled && cl.controlPlaneStack.Config.CloudWatchLogging.LocalStreaming.Enabled {
+		go streamJournaldLogs(cl, q)
 	}
 
-	if c.controlPlane.CloudFormationStreaming {
-		go streamStackEvents(c, cfSvc, q)
+	if cl.controlPlaneStack.Config.CloudFormationStreaming {
+		go streamStackEvents(cl, cfSvc, q)
 	}
 
-	return c.stackProvisioner().CreateStackAtURLAndWait(cfSvc, stackTemplateURL)
+	return cl.stackProvisioner().CreateStackAtURLAndWait(cfSvc, stackTemplateURL)
 }
 
-func (c *clusterImpl) Info() (*Info, error) {
-	// TODO Cleaner way to obtain this dependency
-	cpConfig, err := c.controlPlane.Cluster.Config([]*pluginmodel.Plugin{})
-	if err != nil {
+func (cl *Cluster) Info() (*Info, error) {
+	if err := cl.ensureNestedStacksLoaded(); err != nil {
 		return nil, err
 	}
 
-	describer := NewClusterDescriber(c.controlPlane.ClusterName, c.stackName(), cpConfig, c.session)
+	describer := NewClusterDescriber(cl.controlPlaneStack.ClusterName, cl.stackName(), cl.Cfg.Config, cl.session)
 	return describer.Info()
 }
 
-func (c *clusterImpl) generateAssets(targets OperationTargets) (cfnstack.Assets, error) {
+func (cl *Cluster) generateAssets(targets OperationTargets) (cfnstack.Assets, error) {
 	logger.Infof("generating assets for %s\n", targets.String())
 	var netAssets cfnstack.Assets
 	if targets.IncludeNetwork() {
-		netAssets = c.network.Assets()
+		netAssets = cl.networkStack.Assets()
 	} else {
 		netAssets = cfnstack.EmptyAssets()
 	}
 
 	var cpAssets cfnstack.Assets
 	if targets.IncludeControlPlane() {
-		cpAssets = c.controlPlane.Assets()
+		cpAssets = cl.controlPlaneStack.Assets()
 	} else {
 		cpAssets = cfnstack.EmptyAssets()
 	}
 
 	var etcdAssets cfnstack.Assets
 	if targets.IncludeEtcd() {
-		etcdAssets = c.etcd.Assets()
+		etcdAssets = cl.etcdStack.Assets()
 	} else {
 		etcdAssets = cfnstack.EmptyAssets()
 	}
 
 	var wAssets cfnstack.Assets
 	wAssets = cfnstack.EmptyAssets()
-	for _, np := range c.nodePools {
-		if targets.IncludeWorker(np.NodePoolName) {
+	for _, np := range cl.nodePoolStacks {
+		if targets.IncludeWorker(np.StackName) {
 			wAssets = wAssets.Merge(np.Assets())
 		}
 	}
 
-	nestedStacksAssets := netAssets.Merge(cpAssets).Merge(etcdAssets).Merge(wAssets)
+	nestedStacksAssets := netAssets.Merge(cpAssets).
+		Merge(etcdAssets).
+		Merge(wAssets)
 
 	s3URI := fmt.Sprintf("%s/kube-aws/clusters/%s/exported/stacks",
-		strings.TrimSuffix(c.s3URI(), "/"),
-		c.controlPlane.ClusterName,
+		strings.TrimSuffix(cl.s3URI(), "/"),
+		cl.controlPlaneStack.ClusterName,
 	)
-	rootStackAssetsBuilder := cfnstack.NewAssetsBuilder(c.stackName(), s3URI, c.controlPlane.Region)
+	rootStackAssetsBuilder, err := cfnstack.NewAssetsBuilder(cl.stackName(), s3URI, cl.controlPlaneStack.Region)
+	if err != nil {
+		return nil, err
+	}
 
 	var stackTemplate string
 	// Do not update the root stack but update either controlplane or worker stack(s) only when specified so
 	includeAll := targets.IncludeNetwork() && targets.IncludeEtcd() && targets.IncludeControlPlane()
-	for _, np := range c.nodePools {
-		includeAll = includeAll && targets.IncludeWorker(np.NodePoolName)
+	for _, np := range cl.nodePoolStacks {
+		includeAll = includeAll && targets.IncludeWorker(np.StackName)
 	}
 	if includeAll {
-		renderedTemplate, err := c.renderTemplateAsString()
+		renderedTemplate, err := cl.renderTemplateAsString()
 		if err != nil {
 			return nil, fmt.Errorf("failed to render template : %v", err)
 		}
@@ -504,7 +553,7 @@ func (c *clusterImpl) generateAssets(targets OperationTargets) (cfnstack.Assets,
 		for _, target := range targets {
 			logger.Infof("updating template url of %s\n", target)
 
-			rootStackTemplate, err := c.getCurrentRootStackTemplate()
+			rootStackTemplate, err := cl.getCurrentRootStackTemplate()
 			if err != nil {
 				return nil, fmt.Errorf("failed to render template : %v", err)
 			}
@@ -519,7 +568,7 @@ func (c *clusterImpl) generateAssets(targets OperationTargets) (cfnstack.Assets,
 				return nil, fmt.Errorf("failed to locate %s stack template url: %v", target, err)
 			}
 
-			stackTemplate, err = c.setNestedStackTemplateURL(rootStackTemplate, target, nestedStackTemplateURL)
+			stackTemplate, err = cl.setNestedStackTemplateURL(rootStackTemplate, target, nestedStackTemplateURL)
 			if err != nil {
 				return nil, fmt.Errorf("failed to update stack template: %v", err)
 			}
@@ -532,14 +581,14 @@ func (c *clusterImpl) generateAssets(targets OperationTargets) (cfnstack.Assets,
 	return nestedStacksAssets.Merge(rootStackAssets), nil
 }
 
-func (c *clusterImpl) setNestedStackTemplateURL(template, stack string, url string) (string, error) {
+func (cl *Cluster) setNestedStackTemplateURL(template, stack string, url string) (string, error) {
 	path := fmt.Sprintf("Resources.%s.Properties.TemplateURL", naming.FromStackToCfnResource(stack))
 	return sjson.Set(template, path, url)
 }
 
-func (c *clusterImpl) getCurrentRootStackTemplate() (string, error) {
-	cfnSvc := cloudformation.New(c.session)
-	byRootStackName := &cloudformation.GetTemplateInput{StackName: aws.String(c.stackName())}
+func (cl *Cluster) getCurrentRootStackTemplate() (string, error) {
+	cfnSvc := cl.context().StackTemplateGetter
+	byRootStackName := &cloudformation.GetTemplateInput{StackName: aws.String(cl.stackName())}
 	output, err := cfnSvc.GetTemplate(byRootStackName)
 	if err != nil {
 		return "", fmt.Errorf("failed to get current root stack template: %v", err)
@@ -547,17 +596,17 @@ func (c *clusterImpl) getCurrentRootStackTemplate() (string, error) {
 	return aws.StringValue(output.TemplateBody), nil
 }
 
-func (c *clusterImpl) uploadAssets(assets cfnstack.Assets) error {
-	s3Svc := s3.New(c.session)
-	err := c.stackProvisioner().UploadAssets(s3Svc, assets)
+func (cl *Cluster) uploadAssets(assets cfnstack.Assets) error {
+	s3Svc := s3.New(cl.session)
+	err := cl.stackProvisioner().UploadAssets(s3Svc, assets)
 	if err != nil {
 		return fmt.Errorf("failed to upload assets: %v", err)
 	}
 	return nil
 }
 
-func (c *clusterImpl) extractRootStackTemplateURL(assets cfnstack.Assets) (string, error) {
-	asset, err := assets.FindAssetByStackAndFileName(c.stackName(), REMOTE_STACK_TEMPLATE_FILENAME)
+func (cl *Cluster) extractRootStackTemplateURL(assets cfnstack.Assets) (string, error) {
+	asset, err := assets.FindAssetByStackAndFileName(cl.stackName(), REMOTE_STACK_TEMPLATE_FILENAME)
 
 	if err != nil {
 		return "", fmt.Errorf("failed to find root stack template: %v", err)
@@ -566,32 +615,36 @@ func (c *clusterImpl) extractRootStackTemplateURL(assets cfnstack.Assets) (strin
 	return asset.URL()
 }
 
-func (c *clusterImpl) Assets() (cfnstack.Assets, error) {
-	return c.generateAssets(c.allOperationTargets())
+func (cl *Cluster) EnsureAllAssetsGenerated() (cfnstack.Assets, error) {
+	if err := cl.ensureNestedStacksLoaded(); err != nil {
+		return nil, err
+	}
+
+	return cl.generateAssets(cl.allOperationTargets())
 }
 
-func (c *clusterImpl) templatePath() string {
-	return c.opts.RootStackTemplateTmplFile
+func (cl *Cluster) templatePath() string {
+	return cl.opts.RootStackTemplateTmplFile
 }
 
-func (c *clusterImpl) templateParams() TemplateParams {
-	params := newTemplateParams(c)
+func (cl *Cluster) templateParams() TemplateParams {
+	params := newTemplateParams(cl)
 	return params
 }
 
-func (c *clusterImpl) RenderStackTemplateAsString() (string, error) {
-	return c.renderTemplateAsString()
+func (cl *Cluster) RenderStackTemplateAsString() (string, error) {
+	return cl.renderTemplateAsString()
 }
 
-func (c *clusterImpl) renderTemplateAsString() (string, error) {
-	template, err := jsontemplate.GetString(c.templatePath(), c.templateParams(), c.opts.PrettyPrint)
+func (cl *Cluster) renderTemplateAsString() (string, error) {
+	template, err := jsontemplate.GetString(cl.templatePath(), cl.templateParams(), cl.opts.PrettyPrint)
 	if err != nil {
 		return "", err
 	}
 	return template, nil
 }
 
-func (c *clusterImpl) stackProvisioner() *cfnstack.Provisioner {
+func (cl *Cluster) stackProvisioner() *cfnstack.Provisioner {
 	stackPolicyBody := `{
   "Statement" : [
     {
@@ -603,40 +656,40 @@ func (c *clusterImpl) stackProvisioner() *cfnstack.Provisioner {
   ]
 }`
 	return cfnstack.NewProvisioner(
-		c.stackName(),
-		c.tags(),
-		c.s3URI(),
-		c.controlPlane.Region,
+		cl.stackName(),
+		cl.tags(),
+		cl.s3URI(),
+		cl.controlPlaneStack.Region,
 		stackPolicyBody,
-		c.session,
-		c.controlPlane.CloudFormation.RoleARN,
+		cl.session,
+		cl.controlPlaneStack.Config.CloudFormation.RoleARN,
 	)
 }
 
-func (c clusterImpl) stackName() string {
-	return c.controlPlane.Cluster.ClusterName
+func (cl Cluster) stackName() string {
+	return cl.controlPlaneStack.Config.ClusterName
 }
 
-func (c clusterImpl) tags() map[string]string {
-	cptags := c.controlPlane.Cluster.StackTags
+func (cl Cluster) tags() map[string]string {
+	cptags := cl.controlPlaneStack.Config.StackTags
 	if len(cptags) == 0 {
 		cptags = make(map[string]string, 1)
 	}
-	cptags["kube-aws:version"] = controlplane.VERSION
+	cptags["kube-aws:version"] = model.VERSION
 	return cptags
 }
 
-func (c *clusterImpl) Apply(targets OperationTargets) error {
-	cfSvc := cloudformation.New(c.session)
+func (cl *Cluster) Apply(targets OperationTargets) error {
+	cfSvc := cloudformation.New(cl.session)
 
-	exists, err := cfnstack.StackExists(cfSvc, c.controlPlane.ClusterName)
+	exists, err := cfnstack.StackExists(cl.context().ProvidedCFInterrogator, cl.controlPlaneStack.ClusterName)
 	if err != nil {
 		logger.Errorf("please check your AWS credentials/permissions")
 		return fmt.Errorf("can't lookup AWS CloudFormation stacks: %s", err)
 	}
 
 	if exists {
-		report, err := c.update(cfSvc, targets)
+		report, err := cl.update(cfSvc, targets)
 		if err != nil {
 			return fmt.Errorf("error updating cluster: %v", err)
 		}
@@ -645,28 +698,28 @@ func (c *clusterImpl) Apply(targets OperationTargets) error {
 		}
 		return nil
 	}
-	return c.create(cfSvc)
+	return cl.create(cfSvc)
 }
 
 // remove with legacy up command
-func (c *clusterImpl) LegacyUpdate(targets OperationTargets) (string, error) {
-	cfSvc := cloudformation.New(c.session)
-	return c.update(cfSvc, targets)
+func (cl *Cluster) LegacyUpdate(targets OperationTargets) (string, error) {
+	cfSvc := cloudformation.New(cl.session)
+	return cl.update(cfSvc, targets)
 }
 
-func (c *clusterImpl) update(cfSvc *cloudformation.CloudFormation, targets OperationTargets) (string, error) {
+func (cl *Cluster) update(cfSvc *cloudformation.CloudFormation, targets OperationTargets) (string, error) {
 
-	assets, err := c.generateAssets(c.operationTargetsFromUserInput([]OperationTargets{targets}))
+	assets, err := cl.generateAssets(cl.operationTargetsFromUserInput([]OperationTargets{targets}))
 	if err != nil {
 		return "", err
 	}
 
-	err = c.uploadAssets(assets)
+	err = cl.uploadAssets(assets)
 	if err != nil {
 		return "", err
 	}
 
-	templateUrl, err := c.extractRootStackTemplateURL(assets)
+	templateUrl, err := cl.extractRootStackTemplateURL(assets)
 	if err != nil {
 		return "", err
 	}
@@ -674,32 +727,32 @@ func (c *clusterImpl) update(cfSvc *cloudformation.CloudFormation, targets Opera
 	q := make(chan struct{}, 1)
 	defer func() { q <- struct{}{} }()
 
-	if c.controlPlane.CloudWatchLogging.Enabled && c.controlPlane.CloudWatchLogging.LocalStreaming.Enabled {
-		go streamJournaldLogs(c, q)
+	if cl.controlPlaneStack.Config.CloudWatchLogging.Enabled && cl.controlPlaneStack.Config.CloudWatchLogging.LocalStreaming.Enabled {
+		go streamJournaldLogs(cl, q)
 	}
 
-	if c.controlPlane.CloudFormationStreaming {
-		go streamStackEvents(c, cfSvc, q)
+	if cl.controlPlaneStack.Config.CloudFormationStreaming {
+		go streamStackEvents(cl, cfSvc, q)
 	}
 
-	return c.stackProvisioner().UpdateStackAtURLAndWait(cfSvc, templateUrl)
+	return cl.stackProvisioner().UpdateStackAtURLAndWait(cfSvc, templateUrl)
 }
 
-func (c *clusterImpl) ValidateTemplates() error {
-	_, err := c.renderTemplateAsString()
+func (cl *Cluster) ValidateTemplates() error {
+	_, err := cl.renderTemplateAsString()
 	if err != nil {
 		return fmt.Errorf("failed to validate template: %v", err)
 	}
-	if _, err := c.network.RenderStackTemplateAsString(); err != nil {
+	if _, err := cl.networkStack.RenderStackTemplateAsString(); err != nil {
 		return fmt.Errorf("failed to validate network template: %v", err)
 	}
-	if _, err := c.etcd.RenderStackTemplateAsString(); err != nil {
+	if _, err := cl.etcdStack.RenderStackTemplateAsString(); err != nil {
 		return fmt.Errorf("failed to validate etcd template: %v", err)
 	}
-	if _, err := c.controlPlane.RenderStackTemplateAsString(); err != nil {
+	if _, err := cl.controlPlaneStack.RenderStackTemplateAsString(); err != nil {
 		return fmt.Errorf("failed to validate control plane template: %v", err)
 	}
-	for i, p := range c.nodePools {
+	for i, p := range cl.nodePoolStacks {
 		if _, err := p.RenderStackTemplateAsString(); err != nil {
 			return fmt.Errorf("failed to validate node pool #%d template: %v", i, err)
 		}
@@ -708,54 +761,60 @@ func (c *clusterImpl) ValidateTemplates() error {
 }
 
 // ValidateStack validates all the CloudFormation stack templates already uploaded to S3
-func (c *clusterImpl) ValidateStack(opts ...OperationTargets) (string, error) {
+func (cl *Cluster) ValidateStack(opts ...OperationTargets) (string, error) {
+	if err := cl.ensureNestedStacksLoaded(); err != nil {
+		return "", err
+	}
+
 	reports := []string{}
 
-	targets := c.operationTargetsFromUserInput(opts)
+	targets := cl.operationTargetsFromUserInput(opts)
 
-	assets, err := c.generateAssets(c.operationTargetsFromUserInput([]OperationTargets{targets}))
+	assets, err := cl.generateAssets(cl.operationTargetsFromUserInput([]OperationTargets{targets}))
 	if err != nil {
 		return "", err
 	}
 
-	// Upload all the assets including stack templates and cloud-configs for all the stacks
-	err = c.uploadAssets(assets)
+	// Send all the assets including stack templates and cloud-configs for all the stacks
+	err = cl.uploadAssets(assets)
 	if err != nil {
 		return "", err
 	}
 
-	rootStackTemplateURL, err := c.extractRootStackTemplateURL(assets)
+	rootStackTemplateURL, err := cl.extractRootStackTemplateURL(assets)
 	if err != nil {
 		return "", err
 	}
 
-	r, err := c.stackProvisioner().ValidateStackAtURL(rootStackTemplateURL)
+	r, err := cl.stackProvisioner().ValidateStackAtURL(rootStackTemplateURL)
 	if err != nil {
 		return "", err
 	}
 
 	reports = append(reports, r)
 
-	netReport, err := c.network.ValidateStack()
+	ctx := cl.context()
+
+	netReport, err := ctx.ValidateStack(cl.networkStack)
 	if err != nil {
 		return "", fmt.Errorf("failed to validate network: %v", err)
 	}
 	reports = append(reports, netReport)
 
-	cpReport, err := c.controlPlane.ValidateStack()
+	cpReport, err := ctx.ValidateStack(cl.controlPlaneStack)
 	if err != nil {
 		return "", fmt.Errorf("failed to validate control plane: %v", err)
 	}
 	reports = append(reports, cpReport)
 
-	etcdReport, err := c.etcd.ValidateStack()
+	etcdReport, err := ctx.ValidateStack(cl.etcdStack)
 	if err != nil {
 		return "", fmt.Errorf("failed to validate etcd plane: %v", err)
 	}
 	reports = append(reports, etcdReport)
 
-	for i, p := range c.nodePools {
-		npReport, err := p.ValidateStack()
+	for i, p := range cl.nodePoolStacks {
+		npReport, err := ctx.ValidateStack(p)
 		if err != nil {
 			return "", fmt.Errorf("failed to validate node pool #%d: %v", i, err)
 		}
@@ -765,14 +824,14 @@ func (c *clusterImpl) ValidateStack(opts ...OperationTargets) (string, error) {
 	return strings.Join(reports, "\n"), nil
 }
 
-func streamJournaldLogs(c *clusterImpl, q chan struct{}) error {
-	logger.Infof("Streaming filtered Journald logs for log group '%s'...\nNOTE: Due to high initial entropy, '.service' failures may occur during the early stages of booting.\n", c.controlPlane.ClusterName)
+func streamJournaldLogs(c *Cluster, q chan struct{}) error {
+	logger.Infof("Streaming filtered Journald logs for log group '%s'...\nNOTE: Due to high initial entropy, '.service' failures may occur during the early stages of booting.\n", c.controlPlaneStack.ClusterName)
 	cwlSvc := cloudwatchlogs.New(c.session)
 	s := time.Now().Unix() * 1E3
 	t := s
 	in := cloudwatchlogs.FilterLogEventsInput{
-		LogGroupName:  &c.controlPlane.ClusterName,
-		FilterPattern: &c.controlPlane.CloudWatchLogging.LocalStreaming.Filter,
+		LogGroupName:  &c.controlPlaneStack.ClusterName,
+		FilterPattern: &c.controlPlaneStack.Config.CloudWatchLogging.LocalStreaming.Filter,
 		StartTime:     &s}
 	ms := make(map[string]int64)
 
@@ -788,9 +847,9 @@ func streamJournaldLogs(c *clusterImpl, q chan struct{}) error {
 			if len(out.Events) > 1 {
 				s = *out.Events[len(out.Events)-1].Timestamp
 				for _, event := range out.Events {
-					if *event.Timestamp > ms[*event.Message]+c.controlPlane.CloudWatchLogging.LocalStreaming.Interval() {
+					if *event.Timestamp > ms[*event.Message]+c.controlPlaneStack.Config.CloudWatchLogging.LocalStreaming.IntervalSec() {
 						ms[*event.Message] = *event.Timestamp
-						res := model.SystemdMessageResponse{}
+						res := api.SystemdMessageResponse{}
 						json.Unmarshal([]byte(*event.Message), &res)
 						s := int(((*event.Timestamp) - t) / 1E3)
 						d := fmt.Sprintf("+%.2d:%.2d:%.2d", s/3600, (s/60)%60, s%60)
@@ -799,8 +858,8 @@ func streamJournaldLogs(c *clusterImpl, q chan struct{}) error {
 				}
 			}
 			in = cloudwatchlogs.FilterLogEventsInput{
-				LogGroupName:  &c.controlPlane.ClusterName,
-				FilterPattern: &c.controlPlane.CloudWatchLogging.LocalStreaming.Filter,
+				LogGroupName:  &c.controlPlaneStack.ClusterName,
+				FilterPattern: &c.controlPlaneStack.Config.CloudWatchLogging.LocalStreaming.Filter,
 				NextToken:     out.NextToken,
 				StartTime:     &s}
 		}
@@ -808,7 +867,7 @@ func streamJournaldLogs(c *clusterImpl, q chan struct{}) error {
 }
 
 // streamStackEvents streams all the events from the root, the control-plane, and worker node pool stacks using StreamEventsNested
-func streamStackEvents(c *clusterImpl, cfSvc *cloudformation.CloudFormation, q chan struct{}) error {
-	logger.Infof("Streaming CloudFormation events for the cluster '%s'...\n", c.controlPlane.ClusterName)
-	return c.stackProvisioner().StreamEventsNested(q, cfSvc, c.controlPlane.ClusterName, c.controlPlane.ClusterName, time.Now())
+func streamStackEvents(c *Cluster, cfSvc *cloudformation.CloudFormation, q chan struct{}) error {
+	logger.Infof("Streaming CloudFormation events for the cluster '%s'...\n", c.controlPlaneStack.ClusterName)
+	return c.stackProvisioner().StreamEventsNested(q, cfSvc, c.controlPlaneStack.ClusterName, c.controlPlaneStack.ClusterName, time.Now())
 }

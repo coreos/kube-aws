@@ -6,9 +6,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/kubernetes-incubator/kube-aws/core/root"
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
-	"github.com/kubernetes-incubator/kube-aws/model"
+	"github.com/kubernetes-incubator/kube-aws/pkg/api"
+	"github.com/kubernetes-incubator/kube-aws/pkg/model"
 	"github.com/kubernetes-incubator/kube-aws/plugin"
 	"github.com/kubernetes-incubator/kube-aws/test/helper"
 )
@@ -68,7 +70,7 @@ metadata:
   name: my-plugin
   version: 0.0.1
 spec:
-  configuration:
+  cluster:
     # This is the defaults for the values passed to templates like:
     # * cloudformation.stacks.{controlPlane,nodePool,root}.resources.append and
     # * kubernetes.apiserer.flags[].value
@@ -86,64 +88,59 @@ spec:
       stacks:
         controlPlane:
           resources:
-            append:
-              inline: |
-                {
-                  "QueueFromMyPlugin": {
-                    "Type": "AWS::SQS::Queue",
-                    "Properties": {
-                      "QueueName": {{quote .Values.queue.name}}
-                    }
+            content: |
+              {
+                "QueueFromMyPlugin": {
+                  "Type": "AWS::SQS::Queue",
+                  "Properties": {
+                    "QueueName": {{quote .Values.queue.name}}
                   }
                 }
+              }
         nodePool:
           resources:
-            append:
-              inline: |
-                {
-                  "QueueFromMyPlugin": {
-                    "Type": "AWS::SQS::Queue",
-                    "Properties": {
-                      "QueueName": {{quote .Values.queue.name}}
-                    }
+            content: |
+              {
+                "QueueFromMyPlugin": {
+                  "Type": "AWS::SQS::Queue",
+                  "Properties": {
+                    "QueueName": {{quote .Values.queue.name}}
                   }
                 }
+              }
         root:
           resources:
-            append:
-              inline: |
-                {
-                  "QueueFromMyPlugin": {
-                    "Type": "AWS::SQS::Queue",
-                    "Properties": {
-                    "QueueName": {{quote .Values.queue.name}}
-                    }
+            content: |
+              {
+                "QueueFromMyPlugin": {
+                  "Type": "AWS::SQS::Queue",
+                  "Properties": {
+                  "QueueName": {{quote .Values.queue.name}}
                   }
                 }
+              }
         etcd:
           resources:
-            append:
-              inline: |
-                {
-                  "QueueFromMyPlugin": {
-                    "Type": "AWS::SQS::Queue",
-                    "Properties": {
-                    "QueueName": {{quote .Values.queue.name}}
-                    }
+            content: |
+              {
+                "QueueFromMyPlugin": {
+                  "Type": "AWS::SQS::Queue",
+                  "Properties": {
+                  "QueueName": {{quote .Values.queue.name}}
                   }
                 }
+              }
         network:
           resources:
-            append:
-              inline: |
-                {
-                  "QueueFromMyPlugin": {
-                    "Type": "AWS::SQS::Queue",
-                    "Properties": {
-                    "QueueName": {{quote .Values.queue.name}}
-                    }
+            content: |
+              {
+                "QueueFromMyPlugin": {
+                  "Type": "AWS::SQS::Queue",
+                  "Properties": {
+                  "QueueName": {{quote .Values.queue.name}}
                   }
                 }
+              }
     kubernetes:
       apiserver:
         flags:
@@ -152,7 +149,7 @@ spec:
         volumes:
         - name: "mycreds"
           path: "/etc/my/creds"
-    node:
+    machine:
       roles:
         controller:
           iam:
@@ -172,17 +169,14 @@ spec:
               contents:
                 inline: |
                   [Unit]
-          storage:
-            files:
-            - path: /var/kube-aws/bar.txt
-              permissions: 0644
-              contents:
-                inline: controller-bar
-            - path: /var/kube-aws/baz.txt
-              permissions: 0644
-              contents:
-                source:
-                  path: assets/controller/baz.txt
+          files:
+          - path: /var/kube-aws/bar.txt
+            permissions: 0644
+            content: controller-bar
+          - path: /var/kube-aws/baz.txt
+            permissions: 0644
+            source:
+              path: assets/controller/baz.txt
         etcd:
           iam:
             policy:
@@ -198,17 +192,14 @@ spec:
               contents:
                 inline: |
                   [Unit]
-          storage:
-            files:
-            - path: /var/kube-aws/bar.txt
-              permissions: 0644
-              contents:
-                inline: etcd-bar
-            - path: /var/kube-aws/baz.txt
-              permissions: 0644
-              contents:
-                source:
-                  path: assets/etcd/baz.txt
+          files:
+          - path: /var/kube-aws/bar.txt
+            permissions: 0644
+            content: etcd-bar
+          - path: /var/kube-aws/baz.txt
+            permissions: 0644
+            source:
+              path: assets/etcd/baz.txt
         worker:
           iam:
             policy:
@@ -229,17 +220,14 @@ spec:
               contents:
                 inline: |
                   [Unit]
-          storage:
-            files:
-            - path: /var/kube-aws/bar.txt
-              permissions: 0644
-              contents:
-                inline: worker-bar
-            - path: /var/kube-aws/baz.txt
-              permissions: 0644
-              contents:
-                source:
-                  path: assets/worker/baz.txt
+          files:
+          - path: /var/kube-aws/bar.txt
+            permissions: 0644
+            content: worker-bar
+          - path: /var/kube-aws/baz.txt
+            permissions: 0644
+            source:
+              path: assets/worker/baz.txt
 
 `,
 				},
@@ -276,131 +264,132 @@ spec:
 				},
 			},
 			assertCluster: []ClusterTester{
-				func(c root.Cluster, t *testing.T) {
+				func(c *root.Cluster, t *testing.T) {
 					cp := c.ControlPlane()
 					np := c.NodePools()[0]
+					net := c.Network()
 					etcd := c.Etcd()
 
 					{
-						e := model.CustomFile{
+						e := api.CustomFile{
 							Path:        "/var/kube-aws/bar.txt",
 							Permissions: 0644,
 							Content:     "controller-bar",
 						}
-						a := cp.StackConfig.Controller.CustomFiles[0]
+						a := cp.Config.Controller.CustomFiles[0]
 						if !reflect.DeepEqual(e, a) {
 							t.Errorf("Unexpected controller custom file from plugin: expected=%v actual=%v", e, a)
 						}
 					}
 					{
-						e := model.CustomFile{
+						e := api.CustomFile{
 							Path:        "/var/kube-aws/baz.txt",
 							Permissions: 0644,
 							Content:     "controller-baz",
 						}
-						a := cp.StackConfig.Controller.CustomFiles[1]
+						a := cp.Config.Controller.CustomFiles[1]
 						if !reflect.DeepEqual(e, a) {
 							t.Errorf("Unexpected controller custom file from plugin: expected=%v actual=%v", e, a)
 						}
 					}
 					{
-						e := model.IAMPolicyStatements{
-							model.IAMPolicyStatement{
+						e := api.IAMPolicyStatements{
+							api.IAMPolicyStatement{
 								Effect:    "Allow",
 								Actions:   []string{"ec2:Describe*"},
 								Resources: []string{"*"},
 							},
 						}
-						a := cp.StackConfig.Controller.IAMConfig.Policy.Statements
+						a := cp.Config.Controller.IAMConfig.Policy.Statements
 						if !reflect.DeepEqual(e, a) {
 							t.Errorf("Unexpected controller iam policy statements from plugin: expected=%v actual=%v", e, a)
 						}
 					}
 
 					{
-						e := model.CustomFile{
+						e := api.CustomFile{
 							Path:        "/var/kube-aws/bar.txt",
 							Permissions: 0644,
 							Content:     "etcd-bar",
 						}
-						a := etcd.StackConfig.Etcd.CustomFiles[0]
+						a := etcd.Config.Etcd.CustomFiles[0]
 						if !reflect.DeepEqual(e, a) {
 							t.Errorf("Unexpected etcd custom file from plugin: expected=%v actual=%v", e, a)
 						}
 					}
 					{
-						e := model.CustomFile{
+						e := api.CustomFile{
 							Path:        "/var/kube-aws/baz.txt",
 							Permissions: 0644,
 							Content:     "etcd-baz",
 						}
-						a := etcd.StackConfig.Etcd.CustomFiles[1]
+						a := etcd.Config.Etcd.CustomFiles[1]
 						if !reflect.DeepEqual(e, a) {
 							t.Errorf("Unexpected etcd custom file from plugin: expected=%v actual=%v", e, a)
 						}
 					}
 					{
-						e := model.IAMPolicyStatements{
-							model.IAMPolicyStatement{
+						e := api.IAMPolicyStatements{
+							api.IAMPolicyStatement{
 								Effect:    "Allow",
 								Actions:   []string{"ec2:Describe*"},
 								Resources: []string{"*"},
 							},
 						}
-						a := etcd.StackConfig.Etcd.IAMConfig.Policy.Statements
+						a := etcd.Config.Etcd.IAMConfig.Policy.Statements
 						if !reflect.DeepEqual(e, a) {
 							t.Errorf("Unexpected etcd iam policy statements from plugin: expected=%v actual=%v", e, a)
 						}
 					}
 
 					{
-						e := model.CustomFile{
+						e := api.CustomFile{
 							Path:        "/var/kube-aws/bar.txt",
 							Permissions: 0644,
 							Content:     "worker-bar",
 						}
-						a := np.StackConfig.CustomFiles[0]
+						a := np.NodePoolConfig.CustomFiles[0]
 						if !reflect.DeepEqual(e, a) {
 							t.Errorf("Unexpected worker custom file from plugin: expected=%v actual=%v", e, a)
 						}
 					}
 					{
-						e := model.CustomFile{
+						e := api.CustomFile{
 							Path:        "/var/kube-aws/baz.txt",
 							Permissions: 0644,
 							Content:     "worker-baz",
 						}
-						a := np.StackConfig.CustomFiles[1]
+						a := np.NodePoolConfig.CustomFiles[1]
 						if !reflect.DeepEqual(e, a) {
 							t.Errorf("Unexpected worker custom file from plugin: expected=%v actual=%v", e, a)
 						}
 					}
 					{
-						e := model.IAMPolicyStatements{
-							model.IAMPolicyStatement{
+						e := api.IAMPolicyStatements{
+							api.IAMPolicyStatement{
 								Effect:    "Allow",
 								Actions:   []string{"ec2:*"},
 								Resources: []string{"*"},
 							},
 						}
-						a := np.StackConfig.IAMConfig.Policy.Statements
-						if !reflect.DeepEqual(e, a) {
-							t.Errorf("Unexpected worker iam policy statements from plugin: expected=%v actual=%v", e, a)
+						a := np.NodePoolConfig.IAMConfig.Policy.Statements
+						if diff := cmp.Diff(a, e); diff != "" {
+							t.Errorf("Unexpected worker iam policy statements from plugin: %s", diff)
 						}
 					}
 
 					// A kube-aws plugin can inject systemd units
-					controllerUserdataS3Part := cp.UserDataController.Parts[model.USERDATA_S3].Asset.Content
+					controllerUserdataS3Part := cp.UserData["Controller"].Parts[api.USERDATA_S3].Asset.Content
 					if !strings.Contains(controllerUserdataS3Part, "save-queue-name.service") {
 						t.Errorf("Invalid controller userdata: %v", controllerUserdataS3Part)
 					}
 
-					etcdUserdataS3Part := etcd.UserDataEtcd.Parts[model.USERDATA_S3].Asset.Content
+					etcdUserdataS3Part := etcd.UserData["Etcd"].Parts[api.USERDATA_S3].Asset.Content
 					if !strings.Contains(etcdUserdataS3Part, "save-queue-name.service") {
 						t.Errorf("Invalid etcd userdata: %v", etcdUserdataS3Part)
 					}
 
-					workerUserdataS3Part := np.UserDataWorker.Parts[model.USERDATA_S3].Asset.Content
+					workerUserdataS3Part := np.UserData["Worker"].Parts[api.USERDATA_S3].Asset.Content
 					if !strings.Contains(workerUserdataS3Part, "save-queue-name.service") {
 						t.Errorf("Invalid worker userdata: %v", workerUserdataS3Part)
 					}
@@ -441,11 +430,10 @@ spec:
 					if !strings.Contains(nodePoolStackTemplate, `"QueueName":"baz2"`) {
 						t.Errorf("Invalid worker node pool stack template: missing QueueName baz2: %v", nodePoolStackTemplate)
 					}
-					if !strings.Contains(nodePoolStackTemplate, `"QueueName":"baz2"`) {
-						t.Errorf("Invalid worker node pool stack template: missing QueueName baz2: %v", nodePoolStackTemplate)
-					}
-					if !strings.Contains(nodePoolStackTemplate, `"Action":["ec2:*"]`) {
-						t.Errorf("Invalid worker node pool stack template: missing iam policy statement ec2:*: %v", nodePoolStackTemplate)
+
+					netStackTemplate, err := net.RenderStackTemplateAsString()
+					if !strings.Contains(netStackTemplate, `"Action":["ec2:*"]`) {
+						t.Errorf("Invalid network stack template: missing iam policy statement ec2:*: %v", nodePoolStackTemplate)
 					}
 
 					// A kube-aws plugin can inject node labels
@@ -483,7 +471,7 @@ spec:
 
 	for _, validCase := range validCases {
 		t.Run(validCase.context, func(t *testing.T) {
-			helper.WithPlugins(validCase.plugins, func() {
+			helper.WithPlugins(t, validCase.plugins, func() {
 				plugins, err := plugin.LoadAll()
 				if err != nil {
 					t.Errorf("failed to load plugins: %v", err)
@@ -495,9 +483,9 @@ spec:
 				}
 
 				configBytes := validCase.clusterYaml
-				providedConfig, err := config.ConfigFromBytesWithStubs([]byte(configBytes), plugins, helper.DummyEncryptService{}, helper.DummyCFInterrogator{}, helper.DummyEC2Interrogator{})
+				providedConfig, err := config.ConfigFromBytes([]byte(configBytes), plugins)
 				if err != nil {
-					t.Errorf("failed to parse config %s: %v", configBytes, err)
+					t.Errorf("failed to parse config %s: %+v", configBytes, err)
 					t.FailNow()
 				}
 
@@ -510,29 +498,41 @@ spec:
 				helper.WithDummyCredentials(func(dummyAssetsDir string) {
 					var stackTemplateOptions = root.NewOptions(false, false)
 					stackTemplateOptions.AssetsDir = dummyAssetsDir
-					stackTemplateOptions.ControllerTmplFile = "../../core/controlplane/config/templates/cloud-config-controller"
-					stackTemplateOptions.WorkerTmplFile = "../../core/nodepool/config/templates/cloud-config-worker"
-					stackTemplateOptions.EtcdTmplFile = "../../core/etcd/config/templates/cloud-config-etcd"
-					stackTemplateOptions.RootStackTemplateTmplFile = "../../core/root/config/templates/stack-template.json"
-					stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../core/nodepool/config/templates/stack-template.json"
-					stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../core/controlplane/config/templates/stack-template.json"
-					stackTemplateOptions.EtcdStackTemplateTmplFile = "../../core/etcd/config/templates/stack-template.json"
-					stackTemplateOptions.NetworkStackTemplateTmplFile = "../../core/network/config/templates/stack-template.json"
+					stackTemplateOptions.ControllerTmplFile = "../../builtin/files/userdata/cloud-config-controller"
+					stackTemplateOptions.WorkerTmplFile = "../../builtin/files/userdata/cloud-config-worker"
+					stackTemplateOptions.EtcdTmplFile = "../../builtin/files/userdata/cloud-config-etcd"
+					stackTemplateOptions.RootStackTemplateTmplFile = "../../builtin/files/stack-templates/root.json.tmpl"
+					stackTemplateOptions.NodePoolStackTemplateTmplFile = "../../builtin/files/stack-templates/node-pool.json.tmpl"
+					stackTemplateOptions.ControlPlaneStackTemplateTmplFile = "../../builtin/files/stack-templates/control-plane.json.tmpl"
+					stackTemplateOptions.EtcdStackTemplateTmplFile = "../../builtin/files/stack-templates/etcd.json.tmpl"
+					stackTemplateOptions.NetworkStackTemplateTmplFile = "../../builtin/files/stack-templates/network.json.tmpl"
 
-					cluster, err := root.ClusterFromConfig(providedConfig, stackTemplateOptions, false)
+					cl, err := root.CompileClusterFromConfig(providedConfig, stackTemplateOptions, false)
 					if err != nil {
 						t.Errorf("failed to create cluster driver : %v", err)
+						t.FailNow()
+					}
+					cl.Context = &model.Context{
+						ProvidedEncryptService:  helper.DummyEncryptService{},
+						ProvidedCFInterrogator:  helper.DummyCFInterrogator{},
+						ProvidedEC2Interrogator: helper.DummyEC2Interrogator{},
+						StackTemplateGetter:     helper.DummyStackTemplateGetter{},
+					}
+
+					_, err = cl.EnsureAllAssetsGenerated()
+					if err != nil {
+						t.Errorf("%v", err)
 						t.FailNow()
 					}
 
 					t.Run("AssertCluster", func(t *testing.T) {
 						for _, assertion := range validCase.assertCluster {
-							assertion(cluster, t)
+							assertion(cl, t)
 						}
 					})
 
 					t.Run("ValidateTemplates", func(t *testing.T) {
-						if err := cluster.ValidateTemplates(); err != nil {
+						if err := cl.ValidateTemplates(); err != nil {
 							t.Errorf("failed to render stack template: %v", err)
 						}
 					})
@@ -547,7 +547,7 @@ spec:
 								t.FailNow()
 							}
 
-							report, err := cluster.ValidateStack()
+							report, err := cl.ValidateStack()
 
 							if err != nil {
 								t.Errorf("failed to validate stack: %s %v", report, err)

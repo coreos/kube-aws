@@ -37,3 +37,11 @@ ignored = ["github.com/kubernetes-incubator/kube-aws/hack*"]
 [[constraint]]
   version = "v1.2.0"
   name = "github.com/aws/amazon-vpc-cni-k8s"
+
+[[constraint]]
+  name = "github.com/google/go-cmp"
+  version = "0.2.0"
+
+[[constraint]]
+  name = "github.com/pkg/errors"
+  version = "0.8.0"

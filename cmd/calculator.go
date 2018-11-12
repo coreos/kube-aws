@@ -35,7 +35,7 @@ func runCmdCalculator(_ *cobra.Command, _ []string) error {
 
 	opts := root.NewOptions(false, false)
 
-	cluster, err := root.ClusterFromFile(configPath, opts, calculatorOpts.awsDebug)
+	cluster, err := root.LoadClusterFromFile(configPath, opts, calculatorOpts.awsDebug)
 	if err != nil {
 		return fmt.Errorf("failed to initialize cluster driver: %v", err)
 	}

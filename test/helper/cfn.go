@@ -69,3 +69,14 @@ func (cfSvc *DummyCloudformationService) CreateStack(req *cloudformation.CreateS
 
 	return resp, nil
 }
+
+type DummyStackTemplateGetter struct {
+	GetStackTemplateOutput *cloudformation.GetTemplateOutput
+}
+
+func (cfn DummyStackTemplateGetter) GetTemplate(input *cloudformation.GetTemplateInput) (*cloudformation.GetTemplateOutput, error) {
+	if cfn.GetStackTemplateOutput == nil {
+		return nil, fmt.Errorf("result is not set")
+	}
+	return cfn.GetStackTemplateOutput, nil
+}

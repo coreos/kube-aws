@@ -46,7 +46,7 @@ func runCmdApply(_ *cobra.Command, _ []string) error {
 
 	opts := root.NewOptions(applyOpts.prettyPrint, applyOpts.skipWait)
 
-	cluster, err := root.ClusterFromFile(configPath, opts, applyOpts.awsDebug)
+	cluster, err := root.LoadClusterFromFile(configPath, opts, applyOpts.awsDebug)
 	if err != nil {
 		return fmt.Errorf("failed to read cluster config: %v", err)
 	}

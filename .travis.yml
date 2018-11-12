@@ -3,7 +3,7 @@ go:
   - 1.11.x
 go_import_path: github.com/kubernetes-incubator/kube-aws
 script:
-  - make test-with-cover
+  - travis_wait 40 make test-with-cover
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 deploy:

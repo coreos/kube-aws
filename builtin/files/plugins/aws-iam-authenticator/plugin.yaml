@@ -1,0 +1,88 @@
+metadata:
+  name: aws-iam-authenticator
+  version: 0.1
+spec:
+  cluster:
+    pki:
+      keypairs:
+      - name: aws-iam-authenticator-server
+        dnsNames:
+        - localhost
+        ipAddresses:
+        - 0.0.0.0
+        - 127.0.0.1
+        duration: 8760h
+        usages:
+        - ca
+        - server
+    kubernetes:
+      manifests:
+      - source:
+          path: manifests/aws-auth-cm.yaml
+      - source:
+          path: manifests/daemonset.yaml
+      apiserver:
+        flags:
+        - name: authentication-token-webhook-config-file
+          value: /etc/kubernetes/heptio-authenticator-aws/kubeconfig.yaml
+        # TODO migrate to `mounts` like for kubelets
+        volumes:
+        - name: etc-kube-aws-iam-auth
+          path: /etc/kubernetes/heptio-authenticator-aws
+    machine:
+      roles:
+        controller:
+          kubelet:
+            # temporarily disable to prevent the chicken-and-egg prob. the controller kubelet, when this aws-iam-auth kubeconfig is used,
+            # cannot start due to that it can't deploy aws-iam-authenticator daemonset pod, which requires running kubelet.
+            # kubeconfig: /etc/kubernetes/kubeconfig/aws-iam-auth.yaml
+            mounts:
+            - /opt/bin
+          files:
+          - path: "/opt/bin/heptio-authenticator-aws"
+            permissions: 0755
+            type: binary
+            source:
+              path: "files/aws-iam-auth/opt/bin/heptio-authenticator-aws"
+              url: "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v0.3.0/heptio-authenticator-aws_0.3.0_linux_amd64"
+          - path: /etc/kubernetes/kubeconfig/aws-iam-auth.yaml
+            permissions: 0644
+            source:
+              path: files/controller-kubeconfig.yaml
+          - path: /etc/kubernetes/heptio-authenticator-aws/kubeconfig.yaml
+            permissions: 0644
+            source:
+              path: files/authentication-token-webhook-config.yaml
+          - path: /srv/kubernetes/aws-iam-authenticator/key.pem
+            permissions: 0644
+            source:
+              path: ../../credentials/aws-iam-authenticator-server-key.pem
+            # This type-specification instructs kube-aws to transfer:
+            #   credentials/aws-iam-authenticator-server-key.pem.enc
+            # to:
+            #   /srv/kubernetes/aws-iam-authenticator/key.pem.enc
+            # The decrypt-assets systemd unit then kms-decrypt the enc file into:
+            #   /srv/kubernetes/aws-iam-authenticator/key.pem
+            # And chmod it to have the specified permissions `0644`
+            # See `/opt/bin/decrypt-assets` in `cloud-config-controller` for more details
+            type: credential
+          - path: /srv/kubernetes/aws-iam-authenticator/cert.pem
+            permissions: 0644
+            source:
+              path: ../../credentials/aws-iam-authenticator-server.pem
+        worker:
+          kubelet:
+            kubeconfig: /etc/kubernetes/kubeconfig/aws-iam-auth.yaml
+            mounts:
+            - /opt/bin
+          files:
+          - path: "/opt/bin/heptio-authenticator-aws"
+            permissions: 0755
+            type: binary
+            source:
+               path: "files/aws-iam-auth/opt/bin/heptio-authenticator-aws"
+               url: "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v0.3.0/heptio-authenticator-aws_0.3.0_linux_amd64"
+          - path: /etc/kubernetes/kubeconfig/aws-iam-auth.yaml
+            permissions: 0644
+            source:
+              path: files/worker-kubeconfig.yaml

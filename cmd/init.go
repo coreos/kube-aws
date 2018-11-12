@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/kubernetes-incubator/kube-aws/builtin"
 	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/filegen"
@@ -65,7 +66,7 @@ func runCmdInit(_ *cobra.Command, _ []string) error {
 		return errors.New("missing required flags: either --hosted-zone-id or --no-record-set is required")
 	}
 
-	if err := filegen.CreateFileFromTemplate(configPath, initOpts, config.DefaultClusterConfig); err != nil {
+	if err := filegen.CreateFileFromTemplate(configPath, initOpts, builtin.Bytes("cluster.yaml.tmpl")); err != nil {
 		return fmt.Errorf("error exec-ing default config template: %v", err)
 	}
 

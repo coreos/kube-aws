@@ -3,22 +3,35 @@ package clusterextension
 import (
 	"fmt"
 
-	"github.com/kubernetes-incubator/kube-aws/model"
+	"encoding/json"
+
+	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 	"github.com/kubernetes-incubator/kube-aws/plugin/plugincontents"
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginmodel"
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginutil"
-	"github.com/kubernetes-incubator/kube-aws/plugin/pluginvalue"
+	"github.com/kubernetes-incubator/kube-aws/provisioner"
+	"github.com/kubernetes-incubator/kube-aws/tmpl"
+	//"os"
+	"path/filepath"
+
+	"github.com/kubernetes-incubator/kube-aws/logger"
 )
 
 type ClusterExtension struct {
-	plugins []*pluginmodel.Plugin
-	configs model.PluginConfigs
+	plugins []*api.Plugin
+	Configs api.PluginConfigs
 }
 
-func NewExtrasFromPlugins(plugins []*pluginmodel.Plugin, configs model.PluginConfigs) ClusterExtension {
+func NewExtrasFromPlugins(plugins []*api.Plugin, configs api.PluginConfigs) ClusterExtension {
 	return ClusterExtension{
 		plugins: plugins,
-		configs: configs,
+		Configs: configs,
+	}
+}
+
+func NewExtras() ClusterExtension {
+	return ClusterExtension{
+		plugins: []*api.Plugin{},
+		Configs: api.PluginConfigs{},
 	}
 }
 
@@ -26,220 +39,276 @@ type stack struct {
 	Resources map[string]interface{}
 }
 
-func (e ClusterExtension) RootStack() (*stack, error) {
-	resources := map[string]interface{}{}
-
-	for _, p := range e.plugins {
-		if enabled, pc := p.EnabledIn(e.configs); enabled {
-			values := pluginutil.MergeValues(p.Spec.Values, pc.Values)
-
-			render := plugincontents.TemplateRendererFor(p, values)
-
-			{
-				m, err := render.MapFromContents(p.Spec.CloudFormation.Stacks.Root.Resources.Append.Contents)
-				if err != nil {
-					return nil, fmt.Errorf("failed to load additional resources for root stack: %v", err)
-				}
-				for k, v := range m {
-					resources[k] = v
-				}
-			}
+func (e ClusterExtension) KeyPairSpecs() []api.KeyPairSpec {
+	keypairs := []api.KeyPairSpec{}
+	err := e.foreachEnabledPlugins(func(p *api.Plugin, pc *api.PluginConfig) error {
+		for _, spec := range p.Spec.Cluster.PKI.KeyPairs {
+			keypairs = append(keypairs, spec)
 		}
+		return nil
+	})
+	if err != nil {
+		panic(err)
 	}
+	return keypairs
+}
 
-	return &stack{
-		Resources: resources,
-	}, nil
+func (e ClusterExtension) RootStack(config interface{}) (*stack, error) {
+	return e.stackExt("root", config, func(p *api.Plugin) api.Stack {
+		return p.Spec.Cluster.CloudFormation.Stacks.Root
+	})
 }
 
 type worker struct {
-	Files               []model.CustomFile
-	SystemdUnits        []model.CustomSystemdUnit
-	IAMPolicyStatements []model.IAMPolicyStatement
-	NodeLabels          model.NodeLabels
-	FeatureGates        model.FeatureGates
+	ArchivedFiles       []provisioner.RemoteFileSpec
+	CfnInitConfigSets   map[string]interface{}
+	Files               []api.CustomFile
+	SystemdUnits        []api.CustomSystemdUnit
+	IAMPolicyStatements []api.IAMPolicyStatement
+	NodeLabels          api.NodeLabels
+	FeatureGates        api.FeatureGates
+	Kubeconfig          string
+	KubeletVolumeMounts []api.ContainerVolumeMount
 }
 
 type controller struct {
-	APIServerFlags      pluginmodel.APIServerFlags
-	APIServerVolumes    pluginmodel.APIServerVolumes
-	ControllerFlags     pluginmodel.ControllerFlags
-	Files               []model.CustomFile
-	SystemdUnits        []model.CustomSystemdUnit
-	IAMPolicyStatements []model.IAMPolicyStatement
-	NodeLabels          model.NodeLabels
+	ArchivedFiles       []provisioner.RemoteFileSpec
+	APIServerFlags      api.CommandLineFlags
+	APIServerVolumes    api.APIServerVolumes
+	ControllerFlags     api.CommandLineFlags
+	CfnInitConfigSets   map[string]interface{}
+	Files               []api.CustomFile
+	SystemdUnits        []api.CustomSystemdUnit
+	IAMPolicyStatements []api.IAMPolicyStatement
+	NodeLabels          api.NodeLabels
+	Kubeconfig          string
+	KubeletVolumeMounts []api.ContainerVolumeMount
+
+	KubernetesManifestFiles []*provisioner.RemoteFile
+	HelmReleaseFilesets     []api.HelmReleaseFileset
 }
 
 type etcd struct {
-	Files               []model.CustomFile
-	SystemdUnits        []model.CustomSystemdUnit
-	IAMPolicyStatements []model.IAMPolicyStatement
+	Files               []api.CustomFile
+	SystemdUnits        []api.CustomSystemdUnit
+	IAMPolicyStatements []api.IAMPolicyStatement
 }
 
-func (e ClusterExtension) NodePoolStack() (*stack, error) {
-	resources := map[string]interface{}{}
-
+func (e ClusterExtension) foreachEnabledPlugins(do func(p *api.Plugin, pc *api.PluginConfig) error) error {
 	for _, p := range e.plugins {
-		if enabled, pc := p.EnabledIn(e.configs); enabled {
-			values := pluginutil.MergeValues(p.Spec.Values, pc.Values)
-			render := plugincontents.TemplateRendererFor(p, values)
-
-			m, err := render.MapFromContents(p.Spec.CloudFormation.Stacks.NodePool.Resources.Append.Contents)
-			if err != nil {
-				return nil, fmt.Errorf("failed to load additional resources for worker node-pool stack: %v", err)
-			}
-			for k, v := range m {
-				resources[k] = v
+		if enabled, pc := p.EnabledIn(e.Configs); enabled {
+			if err := do(p, pc); err != nil {
+				return err
 			}
 		}
 	}
+	return nil
+}
+
+func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *api.Plugin) api.Stack) (*stack, error) {
+	resources := map[string]interface{}{}
+
+	err := e.foreachEnabledPlugins(func(p *api.Plugin, pc *api.PluginConfig) error {
+		values := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
+
+		render := plugincontents.NewTemplateRenderer(p, values, config)
+
+		m, err := render.MapFromJsonContents(src(p).Resources.RemoteFileSpec)
+		if err != nil {
+			return fmt.Errorf("failed to load additional resources for %s stack: %v", name, err)
+		}
+		for k, v := range m {
+			resources[k] = v
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &stack{
 		Resources: resources,
 	}, nil
 }
 
-func (e ClusterExtension) Worker() (*worker, error) {
-	files := []model.CustomFile{}
-	systemdUnits := []model.CustomSystemdUnit{}
-	iamStatements := []model.IAMPolicyStatement{}
-	nodeLabels := model.NodeLabels{}
-	featureGates := model.FeatureGates{}
+func (e ClusterExtension) NodePoolStack(config interface{}) (*stack, error) {
+	return e.stackExt("node-pool", config, func(p *api.Plugin) api.Stack {
+		return p.Spec.Cluster.CloudFormation.Stacks.NodePool
+	})
+}
+
+func regularOrConfigSetFile(f provisioner.RemoteFileSpec, render *plugincontents.TemplateRenderer) (*string, map[string]interface{}, error) {
+	goRendered, err := render.File(f)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Disable templates for files that are known to be static e.g. binaries and credentials
+	// Type "binary" is not considered here because binaries are too huge to be handled here.
+	if f.Type == "credential" {
+		return &goRendered, nil, nil
+	}
+
+	tokens := tmpl.TextToCfnExprTokens(goRendered)
+
+	if len(tokens) == 1 {
+		var out string
+		if err := json.Unmarshal([]byte(tokens[0]), &out); err != nil {
+			logger.Errorf("failed unmarshalling %s from json: %v", tokens[0], err)
+			return nil, nil, err
+		}
+		return &out, nil, nil
+	}
+
+	return nil, map[string]interface{}{"Fn::Join": []interface{}{"", tokens}}, nil
+}
+
+func (e ClusterExtension) Worker(config interface{}) (*worker, error) {
+	files := []api.CustomFile{}
+	systemdUnits := []api.CustomSystemdUnit{}
+	iamStatements := []api.IAMPolicyStatement{}
+	nodeLabels := api.NodeLabels{}
+	featureGates := api.FeatureGates{}
+	configsets := map[string]interface{}{}
+	archivedFiles := []provisioner.RemoteFileSpec{}
+	var kubeconfig string
+	kubeletMounts := []api.ContainerVolumeMount{}
 
 	for _, p := range e.plugins {
-		if enabled, _ := p.EnabledIn(e.configs); enabled {
-			load := plugincontents.LoaderFor(p)
+		if enabled, pc := p.EnabledIn(e.Configs); enabled {
+			values := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
+			render := plugincontents.NewTemplateRenderer(p, values, config)
 
-			for _, d := range p.Spec.Node.Roles.Worker.Systemd.Units {
-				u := model.CustomSystemdUnit{
+			for _, d := range p.Spec.Cluster.Machine.Roles.Worker.Systemd.Units {
+				u := api.CustomSystemdUnit{
 					Name:    d.Name,
 					Command: "start",
-					Content: d.Contents.Inline,
+					Content: d.Contents.Content.String(),
 					Enable:  true,
 					Runtime: false,
 				}
 				systemdUnits = append(systemdUnits, u)
 			}
 
-			for _, d := range p.Spec.Node.Roles.Worker.Storage.Files {
-				s, err := load.StringFrom(d.Contents)
+			configsetFiles := map[string]interface{}{}
+			for _, d := range p.Spec.Cluster.Machine.Roles.Worker.Files {
+				if d.IsBinary() {
+					archivedFiles = append(archivedFiles, d)
+					continue
+				}
+
+				s, cfg, err := regularOrConfigSetFile(d, render)
 				if err != nil {
 					return nil, fmt.Errorf("failed to load plugin worker file contents: %v", err)
 				}
-				f := model.CustomFile{
-					Path:        d.Path,
-					Permissions: d.Permissions,
-					Content:     s,
+
+				var perm uint
+				perm = d.Permissions
+
+				if s != nil {
+					f := api.CustomFile{
+						Path:        d.Path,
+						Permissions: perm,
+						Content:     *s,
+						Type:        d.Type,
+					}
+					files = append(files, f)
+				} else {
+					configsetFiles[d.Path] = map[string]interface{}{
+						"content": cfg,
+					}
 				}
-				files = append(files, f)
+			}
+			configsets[p.Name] = map[string]map[string]interface{}{
+				"files": configsetFiles,
 			}
 
-			iamStatements = append(iamStatements, p.Spec.Node.Roles.Worker.IAM.Policy.Statements...)
+			iamStatements = append(iamStatements, p.Spec.Cluster.Machine.Roles.Worker.IAM.Policy.Statements...)
 
-			for k, v := range p.Spec.Node.Roles.Worker.Kubelet.NodeLabels {
+			for k, v := range p.Spec.Cluster.Machine.Roles.Worker.Kubelet.NodeLabels {
 				nodeLabels[k] = v
 			}
 
-			for k, v := range p.Spec.Node.Roles.Worker.Kubelet.FeatureGates {
+			for k, v := range p.Spec.Cluster.Machine.Roles.Worker.Kubelet.FeatureGates {
 				featureGates[k] = v
+			}
+
+			if p.Spec.Cluster.Machine.Roles.Worker.Kubelet.Kubeconfig != "" {
+				kubeconfig = p.Spec.Cluster.Machine.Roles.Worker.Kubelet.Kubeconfig
+			}
+
+			if len(p.Spec.Cluster.Machine.Roles.Controller.Kubelet.Mounts) > 0 {
+				kubeletMounts = append(kubeletMounts, p.Spec.Cluster.Machine.Roles.Controller.Kubelet.Mounts...)
 			}
 		}
 	}
 
 	return &worker{
+		ArchivedFiles:       archivedFiles,
+		CfnInitConfigSets:   configsets,
 		Files:               files,
 		SystemdUnits:        systemdUnits,
 		IAMPolicyStatements: iamStatements,
 		NodeLabels:          nodeLabels,
 		FeatureGates:        featureGates,
+		KubeletVolumeMounts: kubeletMounts,
+		Kubeconfig:          kubeconfig,
 	}, nil
 }
 
-func (e ClusterExtension) ControlPlaneStack() (*stack, error) {
-	resources := map[string]interface{}{}
-
-	for _, p := range e.plugins {
-		if enabled, pc := p.EnabledIn(e.configs); enabled {
-			values := pluginutil.MergeValues(p.Spec.Values, pc.Values)
-
-			render := plugincontents.TemplateRendererFor(p, values)
-
-			{
-				m, err := render.MapFromContents(p.Spec.CloudFormation.Stacks.ControlPlane.Resources.Append.Contents)
-				if err != nil {
-					return nil, fmt.Errorf("failed to load additional resources for control-plane stack: %v", err)
-				}
-				for k, v := range m {
-					resources[k] = v
-				}
-			}
-		}
-	}
-
-	return &stack{
-		Resources: resources,
-	}, nil
+func (e ClusterExtension) ControlPlaneStack(config interface{}) (*stack, error) {
+	return e.stackExt("control-plane", config, func(p *api.Plugin) api.Stack {
+		return p.Spec.Cluster.CloudFormation.Stacks.ControlPlane
+	})
 }
 
-func (e ClusterExtension) EtcdStack() (*stack, error) {
-	resources := map[string]interface{}{}
-
-	for _, p := range e.plugins {
-		if enabled, pc := p.EnabledIn(e.configs); enabled {
-			values := pluginutil.MergeValues(p.Spec.Values, pc.Values)
-
-			render := plugincontents.TemplateRendererFor(p, values)
-
-			{
-				m, err := render.MapFromContents(p.Spec.CloudFormation.Stacks.Etcd.Resources.Append.Contents)
-				if err != nil {
-					return nil, fmt.Errorf("failed to load additional resources for etcd stack: %v", err)
-				}
-				for k, v := range m {
-					resources[k] = v
-				}
-			}
-		}
-	}
-
-	return &stack{
-		Resources: resources,
-	}, nil
+func (e ClusterExtension) EtcdStack(config interface{}) (*stack, error) {
+	return e.stackExt("etcd", config, func(p *api.Plugin) api.Stack {
+		return p.Spec.Cluster.CloudFormation.Stacks.Etcd
+	})
 }
 
-func (e ClusterExtension) Controller() (*controller, error) {
-	apiServerFlags := pluginmodel.APIServerFlags{}
-	apiServerVolumes := pluginmodel.APIServerVolumes{}
-	controllerFlags := pluginmodel.ControllerFlags{}
-	systemdUnits := []model.CustomSystemdUnit{}
-	files := []model.CustomFile{}
-	iamStatements := model.IAMPolicyStatements{}
-	nodeLabels := model.NodeLabels{}
+func (e ClusterExtension) Controller(clusterConfig interface{}) (*controller, error) {
+	apiServerFlags := api.CommandLineFlags{}
+	apiServerVolumes := api.APIServerVolumes{}
+	controllerFlags := api.CommandLineFlags{}
+	systemdUnits := []api.CustomSystemdUnit{}
+	files := []api.CustomFile{}
+	iamStatements := api.IAMPolicyStatements{}
+	nodeLabels := api.NodeLabels{}
+	configsets := map[string]interface{}{}
+	archivedFiles := []provisioner.RemoteFileSpec{}
+	var kubeconfig string
+	kubeletMounts := []api.ContainerVolumeMount{}
+	manifests := []*provisioner.RemoteFile{}
+	releaseFilesets := []api.HelmReleaseFileset{}
 
 	for _, p := range e.plugins {
-		if enabled, pc := p.EnabledIn(e.configs); enabled {
-			values := pluginutil.MergeValues(p.Spec.Values, pc.Values)
-
-			load := plugincontents.LoaderFor(p)
+		//fmt.Fprintf(os.Stderr, "plugin=%+v configs=%+v", p, e.configs)
+		if enabled, pc := p.EnabledIn(e.Configs); enabled {
+			values := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
+			render := plugincontents.NewTemplateRenderer(p, values, clusterConfig)
 
 			{
-				render := pluginvalue.TemplateRendererFor(p, values)
-				for _, f := range p.Spec.Kubernetes.APIServer.Flags {
-					v, err := render.StringFrom(f.Value)
+				for _, f := range p.Spec.Cluster.Kubernetes.APIServer.Flags {
+					v, err := render.String(f.Value)
 					if err != nil {
 						return nil, fmt.Errorf("failed to load apisersver flags: %v", err)
 					}
-					newFlag := pluginmodel.CommandLineFlag{
+					newFlag := api.CommandLineFlag{
 						Name:  f.Name,
 						Value: v,
 					}
 					apiServerFlags = append(apiServerFlags, newFlag)
 				}
-				for _, f := range p.Spec.Kubernetes.ControllerManager.Flags {
-					v, err := render.StringFrom(f.Value)
+				for _, f := range p.Spec.Cluster.Kubernetes.ControllerManager.Flags {
+					v, err := render.String(f.Value)
 					if err != nil {
 						return nil, fmt.Errorf("failed to load controller-manager flags: %v", err)
 					}
-					newFlag := pluginmodel.CommandLineFlag{
+					newFlag := api.CommandLineFlag{
 						Name:  f.Name,
 						Value: v,
 					}
@@ -247,85 +316,199 @@ func (e ClusterExtension) Controller() (*controller, error) {
 				}
 			}
 
-			apiServerVolumes = append(apiServerVolumes, p.Spec.Kubernetes.APIServer.Volumes...)
+			apiServerVolumes = append(apiServerVolumes, p.Spec.Cluster.Kubernetes.APIServer.Volumes...)
 
-			for _, d := range p.Spec.Node.Roles.Controller.Systemd.Units {
-				u := model.CustomSystemdUnit{
+			for _, d := range p.Spec.Cluster.Machine.Roles.Controller.Systemd.Units {
+				u := api.CustomSystemdUnit{
 					Name:    d.Name,
 					Command: "start",
-					Content: d.Contents.Inline,
+					Content: d.Contents.Content.String(),
 					Enable:  true,
 					Runtime: false,
 				}
 				systemdUnits = append(systemdUnits, u)
 			}
 
-			for _, d := range p.Spec.Node.Roles.Controller.Storage.Files {
-				s, err := load.StringFrom(d.Contents)
+			configsetFiles := map[string]interface{}{}
+			for _, d := range p.Spec.Cluster.Machine.Roles.Controller.Files {
+				if d.IsBinary() {
+					archivedFiles = append(archivedFiles, d)
+					continue
+				}
+
+				//dump, err := json.Marshal(d)
+				//if err != nil {
+				//	panic(err)
+				//}
+				//fmt.Fprintf(os.Stderr, "controller file: %s", string(dump))
+
+				s, cfg, err := regularOrConfigSetFile(d, render)
 				if err != nil {
 					return nil, fmt.Errorf("failed to load plugin controller file contents: %v", err)
 				}
-				f := model.CustomFile{
-					Path:        d.Path,
-					Permissions: d.Permissions,
-					Content:     s,
+
+				//if s != nil {
+				//	fmt.Fprintf(os.Stderr, "controller file rendering result str: %s", *s)
+				//}
+				//
+				//if cfg != nil {
+				//	fmt.Fprintf(os.Stderr, "controller file rendering result map: cfg=%+v", cfg)
+				//}
+
+				perm := d.Permissions
+
+				if s != nil {
+					f := api.CustomFile{
+						Path:        d.Path,
+						Permissions: perm,
+						Content:     *s,
+						Type:        d.Type,
+					}
+					files = append(files, f)
+				} else {
+					configsetFiles[d.Path] = map[string]interface{}{
+						"content": cfg,
+					}
 				}
-				files = append(files, f)
 			}
 
-			iamStatements = append(iamStatements, p.Spec.Node.Roles.Controller.IAM.Policy.Statements...)
+			iamStatements = append(iamStatements, p.Spec.Cluster.Machine.Roles.Controller.IAM.Policy.Statements...)
 
-			for k, v := range p.Spec.Node.Roles.Controller.Kubelet.NodeLabels {
+			for k, v := range p.Spec.Cluster.Machine.Roles.Controller.Kubelet.NodeLabels {
 				nodeLabels[k] = v
+			}
+
+			if p.Spec.Cluster.Machine.Roles.Controller.Kubelet.Kubeconfig != "" {
+				kubeconfig = p.Spec.Cluster.Machine.Roles.Controller.Kubelet.Kubeconfig
+			}
+
+			if len(p.Spec.Cluster.Machine.Roles.Controller.Kubelet.Mounts) > 0 {
+				kubeletMounts = append(kubeletMounts, p.Spec.Cluster.Machine.Roles.Controller.Kubelet.Mounts...)
+			}
+
+			for _, m := range p.Spec.Cluster.Kubernetes.Manifests {
+				rendered, ma, err := regularOrConfigSetFile(m.RemoteFileSpec, render)
+				if err != nil {
+					panic(err)
+				}
+				var name string
+				if m.Name == "" {
+					if m.RemoteFileSpec.Source.Path == "" {
+						panic(fmt.Errorf("manifest.name is required in %v", m))
+					}
+					name = filepath.Base(m.RemoteFileSpec.Source.Path)
+				} else {
+					name = m.Name
+				}
+				remotePath := filepath.Join("/srv/kube-aws/plugins", p.Metadata.Name, name)
+				if rendered != nil {
+					f := api.CustomFile{
+						Path:        remotePath,
+						Permissions: 0644,
+						Content:     *rendered,
+					}
+					files = append(files, f)
+					manifests = append(manifests, provisioner.NewRemoteFileAtPath(f.Path, []byte(f.Content)))
+				} else {
+					configsetFiles[remotePath] = map[string]interface{}{
+						"content": ma,
+					}
+					manifests = append(manifests, provisioner.NewRemoteFileAtPath(remotePath, []byte{}))
+				}
+			}
+
+			// Merge all the configset files produced from `files` and `manifessts`
+			configsets[p.Name] = map[string]map[string]interface{}{
+				"files": configsetFiles,
+			}
+
+			for _, releaseConfig := range p.Spec.Cluster.Helm.Releases {
+				valuesFilePath := filepath.Join("/srv/kube-aws/plugins", p.Metadata.Name, "helm", "releases", releaseConfig.Name, "values.yaml")
+				valuesFileContent, err := json.Marshal(releaseConfig.Values)
+				if err != nil {
+					panic(fmt.Errorf("Unexpected error in HelmReleasePlugin: %v", err))
+				}
+				releaseFileData := map[string]interface{}{
+					"values": map[string]string{
+						"file": valuesFilePath,
+					},
+					"chart": map[string]string{
+						"name":    releaseConfig.Name,
+						"version": releaseConfig.Version,
+					},
+				}
+				releaseFilePath := filepath.Join("/srv/kube-aws/plugins", p.Metadata.Name, "helm", "releases", releaseConfig.Name, "release.json")
+				releaseFileContent, err := json.Marshal(releaseFileData)
+				if err != nil {
+					panic(fmt.Errorf("Unexpected error in HelmReleasePlugin: %v", err))
+				}
+				r := api.HelmReleaseFileset{
+					ValuesFile: provisioner.NewRemoteFileAtPath(
+						valuesFilePath,
+						valuesFileContent,
+					),
+					ReleaseFile: provisioner.NewRemoteFileAtPath(
+						releaseFilePath,
+						releaseFileContent,
+					),
+				}
+				releaseFilesets = append(releaseFilesets, r)
 			}
 		}
 	}
 
 	return &controller{
-		APIServerFlags:      apiServerFlags,
-		APIServerVolumes:    apiServerVolumes,
-		ControllerFlags:     controllerFlags,
-		Files:               files,
-		SystemdUnits:        systemdUnits,
-		IAMPolicyStatements: iamStatements,
-		NodeLabels:          nodeLabels,
+		ArchivedFiles:           archivedFiles,
+		APIServerFlags:          apiServerFlags,
+		ControllerFlags:         controllerFlags,
+		APIServerVolumes:        apiServerVolumes,
+		Files:                   files,
+		SystemdUnits:            systemdUnits,
+		IAMPolicyStatements:     iamStatements,
+		NodeLabels:              nodeLabels,
+		KubeletVolumeMounts:     kubeletMounts,
+		Kubeconfig:              kubeconfig,
+		CfnInitConfigSets:       configsets,
+		KubernetesManifestFiles: manifests,
+		HelmReleaseFilesets:     releaseFilesets,
 	}, nil
 }
 
 func (e ClusterExtension) Etcd() (*etcd, error) {
-	systemdUnits := []model.CustomSystemdUnit{}
-	files := []model.CustomFile{}
-	iamStatements := model.IAMPolicyStatements{}
+	systemdUnits := []api.CustomSystemdUnit{}
+	files := []api.CustomFile{}
+	iamStatements := api.IAMPolicyStatements{}
 
 	for _, p := range e.plugins {
-		if enabled, _ := p.EnabledIn(e.configs); enabled {
-			load := plugincontents.LoaderFor(p)
+		if enabled, _ := p.EnabledIn(e.Configs); enabled {
+			load := plugincontents.NewPluginFileLoader(p)
 
-			for _, d := range p.Spec.Node.Roles.Etcd.Systemd.Units {
-				u := model.CustomSystemdUnit{
+			for _, d := range p.Spec.Cluster.Machine.Roles.Etcd.Systemd.Units {
+				u := api.CustomSystemdUnit{
 					Name:    d.Name,
 					Command: "start",
-					Content: d.Contents.Inline,
+					Content: d.Contents.Content.String(),
 					Enable:  true,
 					Runtime: false,
 				}
 				systemdUnits = append(systemdUnits, u)
 			}
 
-			for _, d := range p.Spec.Node.Roles.Etcd.Storage.Files {
-				s, err := load.StringFrom(d.Contents)
+			for _, d := range p.Spec.Cluster.Machine.Roles.Etcd.Files {
+				s, err := load.String(d)
 				if err != nil {
 					return nil, fmt.Errorf("failed to load plugin etcd file contents: %v", err)
 				}
-				f := model.CustomFile{
+				perm := d.Permissions
+				f := api.CustomFile{
 					Path:        d.Path,
-					Permissions: d.Permissions,
+					Permissions: perm,
 					Content:     s,
 				}
 				files = append(files, f)
 			}
 
-			iamStatements = append(iamStatements, p.Spec.Node.Roles.Etcd.IAM.Policy.Statements...)
+			iamStatements = append(iamStatements, p.Spec.Cluster.Machine.Roles.Etcd.IAM.Policy.Statements...)
 		}
 	}
 

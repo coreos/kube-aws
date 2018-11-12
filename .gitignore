@@ -9,6 +9,9 @@ kube-aws
 .envrc
 coverage.txt
 profile.out
+test-result.json
+pkg/model/cache
+builtin/a_builtin-packr.go
 
 # gitbook docs
 _book

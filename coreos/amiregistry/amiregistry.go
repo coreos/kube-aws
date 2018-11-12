@@ -3,6 +3,7 @@ package amiregistry
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 )
 
 func GetAMI(region, channel string) (string, error) {
@@ -10,36 +11,37 @@ func GetAMI(region, channel string) (string, error) {
 	regions, err := GetAMIData(channel)
 
 	if err != nil {
-		return "", fmt.Errorf("error getting ami data for channel %s: %v", channel, err)
+		return "", errors.Wrapf(err, "uanble to fetch AMI for channel \"%s\": %v", channel, err)
 	}
 
 	amis, ok := regions[region]
 	if !ok {
-		return "", fmt.Errorf("could not find region %s for channel %s", region, channel)
+		return "", errors.Errorf("could not find region \"%s\" for channel \"%s\"", region, channel)
 	}
 
 	if ami, ok := amis["hvm"]; ok {
 		return ami, nil
 	}
 
-	return "", fmt.Errorf("could not find hvm image for region %s, channel %s", region, channel)
+	return "", errors.Errorf("could not find \"hvm\" image for region \"%s\" and channel \"%s\"", region, channel)
 }
 
 func GetAMIData(channel string) (map[string]map[string]string, error) {
-	r, err := newHttp().Get(fmt.Sprintf("https://coreos.com/dist/aws/aws-%s.json", channel))
+	url := fmt.Sprintf("https://coreos.com/dist/aws/aws-%s.json", channel)
+	r, err := newHttp().Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get AMI data: %s: %v", channel, err)
+		return nil, errors.Wrapf(err, "failed to get AMI data from url \"%s\": %v", channel, err)
 	}
 
 	if r.StatusCode != 200 {
-		return nil, fmt.Errorf("failed to get AMI data: %s: invalid status code: %d", channel, r.StatusCode)
+		return nil, errors.Wrapf(err, "failed to get AMI data from url \"%s\": invalid status code: %d", url, r.StatusCode)
 	}
 
 	output := map[string]map[string]string{}
 
 	err = json.NewDecoder(r.Body).Decode(&output)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse AMI data: %s: %v", channel, err)
+		return nil, errors.Wrapf(err, "failed to parse AMI data from url \"%s\": %v", url, err)
 	}
 	r.Body.Close()
 

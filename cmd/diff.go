@@ -44,7 +44,7 @@ func init() {
 func runCmdDiff(c *cobra.Command, _ []string) error {
 	opts := root.NewOptions(diffOpts.prettyPrint, diffOpts.skipWait)
 
-	cluster, err := root.ClusterFromFile(configPath, opts, diffOpts.awsDebug)
+	cluster, err := root.LoadClusterFromFile(configPath, opts, diffOpts.awsDebug)
 	if err != nil {
 		return fmt.Errorf("failed to read cluster config: %v", err)
 	}
