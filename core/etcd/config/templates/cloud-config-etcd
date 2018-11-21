@@ -231,8 +231,8 @@ coreos:
           else \
              touch /var/run/coreos/etcdadm/snapshots/exported-state-file.json; \
           fi"
-        ExecStart=/bin/sleep 3600
-        TimeoutStartSec=900
+        ExecStart=/bin/sleep 10900
+        TimeoutStartSec=10800
     - name: import-existing-etcd-state.path
       enable: true
       command:  start
@@ -259,10 +259,28 @@ coreos:
         EnvironmentFile=/var/run/coreos/etcdadm-environment
         ExecStartPre=/usr/bin/systemctl is-active export-existing-etcd-state.service
         ExecStartPre=/opt/bin/etcdadm cluster-is-healthy
-        ExecStartPre=/bin/bash -c 'if [[ -s "/var/run/coreos/etcdadm/snapshots/exported-state-file.json" ]]; then \
-          /opt/bin/etcdadm migration-import-kube-state exported-state-file.json; fi'
-        ExecStart=/bin/sleep 3600
-        TimeoutStartSec=900
+        ExecStart=/bin/bash -c 'if [[ -s "/var/run/coreos/etcdadm/snapshots/exported-state-file.json" ]]; then \
+          /opt/bin/etcdadm migration-import-kube-state exported-state-file.json && touch /var/run/coreos/etcdadm/snapshots/exported-state-finished; \
+          else touch /var/run/coreos/etcdadm/snapshots/exported-state-finished; fi'
+        TimeoutStartSec=10800
+    - name: import-existing-etcd-state-finished.path
+      enable: true
+      command:  start
+      content: |
+        [Path]
+        PathExists=/var/run/coreos/etcdadm/snapshots/exported-state-finished
+
+        [Install]
+        WantedBy=default.target
+    - name: import-existing-etcd-state-finished.service
+      enable: false
+      content: |
+        [Unit]
+        Description=Service placeholder that is only active once the import is completed (or not required)
+
+        [Service]
+        Type=simple
+        ExecStart=/bin/sleep 10900
     {{ end -}}
     {{if .Etcd.DisasterRecovery.SupportsEtcdVersion .Etcd.Version -}}
     - name: etcdadm-reconfigure.service
@@ -491,7 +509,7 @@ coreos:
         Wants={{.Etcd.SystemdUnitName}}
         After={{.Etcd.SystemdUnitName}}
         {{ if .EtcdMigrationEnabled -}}
-        After=import-existing-etcd-state.service
+        After=import-existing-etcd-state-finished.service
         {{ end -}}
 
         [Service]
@@ -502,7 +520,7 @@ coreos:
         EnvironmentFile={{.EtcdNodeEnvFileName}}
         ExecStartPre=/usr/bin/systemctl is-active {{.Etcd.SystemdUnitName}}
         {{ if .EtcdMigrationEnabled -}}
-        ExecStartPre=/usr/bin/systemctl is-active import-existing-etcd-state.service
+        ExecStartPre=/usr/bin/systemctl is-active import-existing-etcd-state-finished.service
         {{ end -}}
         ExecStartPre=/usr/bin/rkt fetch {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}}
         ExecStart=-/opt/bin/cfn-signal
