@@ -98,20 +98,27 @@ func StackExists(cf CFInterrogator, stackName string) (bool, error) {
 	logger.Debug("calling AWS cloudformation DescribeStacks ->")
 	stacks, err := cf.DescribeStacks(req)
 	if err != nil {
+		if strings.HasPrefix(err.Error(), "ValidationError: Stack with id "+stackName+" does not exist") {
+			return false, nil
+		}
 		return false, fmt.Errorf("could not list cloudformation stacks: %v", err)
 	}
 	if stacks == nil {
+		logger.Debugf("<- AWS Responded with empty stacks object")
 		return false, nil
 	}
-	logger.Debugf("<- AWS Responded with %d stacks", len(stacks.Stacks))
-	for _, summary := range stacks.Stacks {
-		if *summary.StackName == stackName {
-			logger.Debugf("found matching stack %s: %+v", *summary.StackName, *summary)
-			if summary.DeletionTime == nil {
-				logger.Debugf("stack is active - matched!")
-				return true, nil
-			} else {
-				logger.Debugf("stack is not active, ignoring")
+
+	if stacks.Stacks != nil {
+		logger.Debugf("<- AWS Responded with %d stacks", len(stacks.Stacks))
+		for _, summary := range stacks.Stacks {
+			if *summary.StackName == stackName {
+				logger.Debugf("found matching stack %s: %+v", *summary.StackName, *summary)
+				if summary.DeletionTime == nil {
+					logger.Debugf("stack is active - matched!")
+					return true, nil
+				} else {
+					logger.Debugf("stack is not active, ignoring")
+				}
 			}
 		}
 	}
