@@ -231,8 +231,8 @@ coreos:
           else \
              touch /var/run/coreos/etcdadm/snapshots/exported-state-file.json; \
           fi"
-        ExecStart=/bin/sleep 3600
-        TimeoutStartSec=900
+        ExecStart=/bin/sleep 10900
+        TimeoutStartSec=10800
     - name: import-existing-etcd-state.path
       enable: true
       command:  start
