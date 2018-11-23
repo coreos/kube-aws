@@ -259,9 +259,8 @@ coreos:
         EnvironmentFile=/var/run/coreos/etcdadm-environment
         ExecStartPre=/usr/bin/systemctl is-active export-existing-etcd-state.service
         ExecStartPre=/opt/bin/etcdadm cluster-is-healthy
-        ExecStartPre=/bin/bash -c 'if [[ -s "/var/run/coreos/etcdadm/snapshots/exported-state-file.json" ]]; then \
+        ExecStart=/bin/bash -c 'if [[ -s "/var/run/coreos/etcdadm/snapshots/exported-state-file.json" ]]; then \
           /opt/bin/etcdadm migration-import-kube-state exported-state-file.json; fi'
-        ExecStart=/bin/sleep 10900
         TimeoutStartSec=10800
     {{ end -}}
     {{if .Etcd.DisasterRecovery.SupportsEtcdVersion .Etcd.Version -}}
