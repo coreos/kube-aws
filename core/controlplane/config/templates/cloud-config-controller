@@ -3634,9 +3634,6 @@ write_files:
           - --configure-cloud-routes=false {{/* no need to auto configure cloud routes when using flannel or canal */}}
           - --service-cluster-ip-range={{.ServiceCIDR}} {{/* removes the service CIDR range from the cluster CIDR if it intersects */}}
           {{- end }}
-          {{ if $.MigrateStacks -}}
-          - --controllers -resourcequota
-          {{ end -}}
           {{ if not .Addons.MetricsServer.Enabled -}}
           - --horizontal-pod-autoscaler-use-rest-clients=false
           {{end}}
