@@ -3608,6 +3608,9 @@ write_files:
           command:
           - /hyperkube
           - controller-manager
+          {{ if $.MigrateStacks -}}
+          - --v=9
+          {{ end -}}
           {{/* mandatory flags below */}}
           - --cloud-provider=aws
           - --cluster-name={{.ClusterName}}
@@ -3644,6 +3647,7 @@ write_files:
             limits:
               cpu: {{ if .Kubernetes.ControllerManager.ComputeResources.Limits.Cpu }}{{ .Kubernetes.ControllerManager.ComputeResources.Limits.Cpu }}{{ else }}250m{{ end }}
               memory: {{ if .Kubernetes.ControllerManager.ComputeResources.Limits.Memory }}{{ .Kubernetes.ControllerManager.ComputeResources.Limits.Memory }}{{ else }}512M{{ end }}
+          {{ if ! $.MigrateStacks -}}
           livenessProbe:
             httpGet:
               host: 127.0.0.1
@@ -3651,6 +3655,7 @@ write_files:
               port: 10252
             initialDelaySeconds: 15
             timeoutSeconds: 15
+          {{ end -}}
           volumeMounts:
           {{if .Experimental.DisableSecurityGroupIngress}}
           - mountPath: /etc/kubernetes/additional-configs
