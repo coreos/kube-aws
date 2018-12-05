@@ -4,13 +4,12 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
-	"net"
-	"time"
-
 	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/netutil"
 	"github.com/kubernetes-incubator/kube-aws/pki"
+	"io/ioutil"
+	"net"
+	"time"
 )
 
 type Generator struct {
