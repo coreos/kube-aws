@@ -4,10 +4,11 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"testing"
+
 	"github.com/kubernetes-incubator/kube-aws/credential"
 	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 	"github.com/kubernetes-incubator/kube-aws/pki"
-	"testing"
 )
 
 func genAssets(t *testing.T) *credential.RawAssetsOnMemory {
@@ -16,7 +17,7 @@ func genAssets(t *testing.T) *credential.RawAssetsOnMemory {
 		t.Fatalf("failed generating config: %v", err)
 	}
 
-	caKey, caCert, err := pki.NewCA(c.TLSCADurationDays)
+	caKey, caCert, err := pki.NewCA(c.TLSCADurationDays, "kube-ca")
 	if err != nil {
 		t.Fatalf("failed generating tls ca: %v", err)
 	}
