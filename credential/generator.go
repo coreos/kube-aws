@@ -4,12 +4,13 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
-	"github.com/kubernetes-incubator/kube-aws/logger"
-	"github.com/kubernetes-incubator/kube-aws/netutil"
-	"github.com/kubernetes-incubator/kube-aws/pki"
 	"io/ioutil"
 	"net"
 	"time"
+
+	"github.com/kubernetes-incubator/kube-aws/logger"
+	"github.com/kubernetes-incubator/kube-aws/netutil"
+	"github.com/kubernetes-incubator/kube-aws/pki"
 )
 
 type Generator struct {
@@ -28,6 +29,7 @@ type GeneratorOptions struct {
 	GenerateCA bool
 	CaKeyPath  string
 	CaCertPath string
+	CommonName string
 	// KIAM is set to true when you want kube-aws to render TLS assets for uswitch/kiam
 	KIAM bool
 }
@@ -38,7 +40,7 @@ func (c Generator) GenerateAssetsOnDisk(dir string, o GeneratorOptions) (*RawAss
 	var caCert *x509.Certificate
 	if o.GenerateCA {
 		var err error
-		caKey, caCert, err = pki.NewCA(c.TLSCADurationDays)
+		caKey, caCert, err = pki.NewCA(c.TLSCADurationDays, o.CommonName)
 		if err != nil {
 			return nil, fmt.Errorf("failed generating cluster CA: %v", err)
 		}

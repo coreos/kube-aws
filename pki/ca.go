@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func NewCA(caDurationDays int) (*rsa.PrivateKey, *x509.Certificate, error) {
+func NewCA(caDurationDays int, CommonName string) (*rsa.PrivateKey, *x509.Certificate, error) {
 	caKey, err := NewPrivateKey()
 	if err != nil {
 		return nil, nil, err
@@ -16,7 +16,7 @@ func NewCA(caDurationDays int) (*rsa.PrivateKey, *x509.Certificate, error) {
 	caDuration := time.Duration(caDurationDays) * 24 * time.Hour
 
 	caConfig := CACertConfig{
-		CommonName:   "kube-ca",
+		CommonName:   CommonName,
 		Organization: "kube-aws",
 		Duration:     caDuration,
 	}
