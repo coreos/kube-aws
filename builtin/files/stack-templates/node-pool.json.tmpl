@@ -294,7 +294,7 @@
       "Properties": {
         "Path": "/",
         "Roles": [
-          {"Fn::ImportValue" : {"Fn::Sub" : "${NetworkStackName}-{{.NodePoolName}}IAMRoleWorker"}}
+          {"Fn::ImportValue" : {"Fn::Sub" : "${NetworkStackName}-{{.NodePoolLogicalName}}IAMRoleWorker"}}
         ]
       },
       "Type": "AWS::IAM::InstanceProfile"
@@ -338,7 +338,7 @@
     {{if not .IAMConfig.InstanceProfile.Arn }}
     "WorkerIAMRoleArn": {
       "Description": "The ARN of the IAM role for this Node Pool",
-      "Value": {"Fn::ImportValue" : {"Fn::Sub" : "${NetworkStackName}-{{.NodePoolName}}IAMRoleWorkerArn"}},
+      "Value": {"Fn::ImportValue" : {"Fn::Sub" : "${NetworkStackName}-{{.NodePoolLogicalName}}IAMRoleWorkerArn"}},
       "Export": { "Name": { "Fn::Sub": "${AWS::StackName}-WorkerIAMRoleArn" } }
     },
     {{end}}
