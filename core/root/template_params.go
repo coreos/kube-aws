@@ -165,35 +165,38 @@ func (p nodePool) NeedToExportIAMroles() bool {
 	return p.nodePool.NodePoolConfig.IAMConfig.InstanceProfile.Arn == ""
 }
 
-// returns NodePoolRolling strategy string to be used in stack-template
-func (p nodePool) NodePoolRollingStrategy() string {
-	return p.nodePool.NodePoolConfig.WorkerNodePool.NodePoolRollingStrategy
-}
-
-func (c TemplateParams) ControlPlane() controlPlane {
+func (p TemplateParams) ControlPlane() controlPlane {
 	return controlPlane{
-		controlPlane: c.cluster.controlPlaneStack,
+		controlPlane: p.cluster.controlPlaneStack,
 	}
 }
 
-func (c TemplateParams) Etcd() etcdStack {
+func (p TemplateParams) Etcd() etcdStack {
 	return etcdStack{
-		etcd: c.cluster.Etcd(),
+		etcd: p.cluster.Etcd(),
 	}
 }
 
-func (c TemplateParams) Network() networkStack {
+func (p TemplateParams) Network() networkStack {
 	return networkStack{
-		network: c.cluster.Network(),
+		network: p.cluster.Network(),
 	}
 }
 
-func (c TemplateParams) NodePools() []nodePool {
+func (p TemplateParams) NodePools() []nodePool {
 	nps := []nodePool{}
-	for _, np := range c.cluster.nodePoolStacks {
+	for _, np := range p.cluster.nodePoolStacks {
 		nps = append(nps, nodePool{
 			nodePool: np,
 		})
 	}
 	return nps
+}
+
+func (p TemplateParams) Subnets() api.Subnets {
+	return p.cluster.Cfg.Subnets
+}
+
+func (p TemplateParams) NodePoolAvailabilityZoneDependencies(pool nodePool, subnets api.Subnets) (string, error) {
+	return p.cluster.nodePoolAvailabilityZoneDependencies(pool, subnets)
 }

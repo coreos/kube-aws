@@ -109,6 +109,11 @@
           ,"{{ (index $.NodePools (sub $i 1)).Name}}"
           {{ end -}}
         {{ end -}}
+        {{ if eq $p.NodePoolRollingStrategy "AvailabilityZone" -}}
+          {{- if ne ($.NodePoolAvailabilityZoneDependencies $p $.Subnets) "" }}
+          ,{{ $.NodePoolAvailabilityZoneDependencies $p $.Subnets }}
+          {{- end }}
+        {{ end -}}
       ]
     }{{end}}
     {{range $n, $r := .ExtraCfnResources}}

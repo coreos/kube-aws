@@ -2,10 +2,11 @@ package model
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 func Compile(cfgRef *api.Cluster, opts api.ClusterOptions) (*Config, error) {
@@ -121,8 +122,8 @@ func Compile(cfgRef *api.Cluster, opts api.ClusterOptions) (*Config, error) {
 			}
 		}
 
-		if np.NodePoolRollingStrategy != "Parallel" && np.NodePoolRollingStrategy != "Sequential" {
-			if c.Worker.NodePoolRollingStrategy != "" && (c.Worker.NodePoolRollingStrategy == "Sequential" || c.Worker.NodePoolRollingStrategy == "Parallel") {
+		if np.NodePoolRollingStrategy != "Parallel" && np.NodePoolRollingStrategy != "Sequential" && np.NodePoolRollingStrategy != "AvailabilityZone" {
+			if c.Worker.NodePoolRollingStrategy != "" && (c.Worker.NodePoolRollingStrategy == "Sequential" || c.Worker.NodePoolRollingStrategy == "Parallel" || c.Worker.NodePoolRollingStrategy == "AvailabilityZone") {
 				np.NodePoolRollingStrategy = c.Worker.NodePoolRollingStrategy
 			} else {
 				np.NodePoolRollingStrategy = "Parallel"
