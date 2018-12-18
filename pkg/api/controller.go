@@ -115,7 +115,7 @@ func (c Controller) InstanceProfileRoles() string {
 }
 
 func (c Controller) InstanceProfileRole() string {
-	if c.IAMConfig.Role.StrictName && c.IAMConfig.Role.Name != "" {
+	if c.IAMConfig.Role.ManageExternally && c.IAMConfig.Role.Name != "" {
 		return fmt.Sprintf(`"%s"`, c.IAMConfig.Role.Name)
 	} else {
 		return `{"Ref":"IAMRoleController"}`

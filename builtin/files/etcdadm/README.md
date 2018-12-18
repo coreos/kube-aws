@@ -14,7 +14,7 @@ AWS_SECRET_ACCESS_KEY=... \
 ETCDADM_AWSCLI_DOCKER_IMAGE=quay.io/coreos/awscli \
 # Required settings
 AWS_DEFAULT_REGION=ap-northeast-1 \
-ETCD_VERSION=3.2.13 \
+ETCD_VERSION=3.3.10 \
 ETCD_DATA_DIR=/var/lib/etcd \
 ETCD_INITIAL_CLUSTER=etcd0=http://127.0.0.1:3080,etcd1=http://127.0.0.1:3180,etcd2=http://127.0.0.1:3280 \
 ETCDCTL_ENDPOINTS=http://127.0.0.1:3079,etcd1=http://127.0.0.1:3179,etcd2=http://127.0.0.1:3279, \
@@ -39,6 +39,9 @@ save it in S3
 * `etcdadm replace` is used to manually recover from an etcd member from a permanent failure. It resets the etcd member running on the same node as etcdadm by:
   1. clearing the contents of the etcd data dir
   2. removing and then re-adding the etcd member by running `etcdctl member remove` and then `etcdctl memer add`
+* `etcdadm compact` performs a compaction of the etcd cluster (i.e. removes all version history of the keys leaving the last one) - warning, the operation can adversely affect etcd cluster performance whilst it is running.
+* `etcdadm defrag` performed a de-fragmentation operation on the current etcd servers datastore (does not perform this cluster-wide) - - warning, the operation can adversely affect etcd cluster performance whilst it is running.
+
 
 ## Pre-requisites
 

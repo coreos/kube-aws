@@ -409,6 +409,10 @@ coreos:
           content: |
             [Service]
             Environment="ETCD_IMAGE_TAG=v{{.Etcd.Version}}"
+        - name: 40-auto-compaction.conf
+          content: |
+            [Service]
+            Environment="ETCD_AUTO_COMPACTION_RETENTION=1"
         {{end}}
       enable: true
       command: start

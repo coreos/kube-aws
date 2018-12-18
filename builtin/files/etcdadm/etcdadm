@@ -85,7 +85,7 @@ config_etcd_endpoints() {
   echo "${ETCD_ENDPOINTS}"
 }
 
-etcd_version=${ETCD_VERSION:-3.2.13}
+etcd_version=${ETCD_VERSION:-3.3.10}
 etcd_aci_url="https://github.com/coreos/etcd/releases/download/v$etcd_version/etcd-v$etcd_version-linux-amd64.aci"
 
 member_count="${ETCDADM_MEMBER_COUNT:?missing required env}"
@@ -221,6 +221,14 @@ cluster_check() {
   else
     cluster_failure_beginning_time_record
   fi
+}
+
+cluster_compact() {
+  member_etcdctl compact 1
+}
+
+member_defrag() {
+  member_etcdctl defrag --command-timeout=60s --debug
 }
 
 member_next_index() {
@@ -914,6 +922,12 @@ etcdadm_main() {
       ;;
     "check" )
       cluster_check
+      ;;
+    "compact" )
+      cluster_compact
+      ;;
+    "defrag" )
+      member_defrag
       ;;
     * )
       if [ "$(type -t "$cmd")" == "function" ]; then
