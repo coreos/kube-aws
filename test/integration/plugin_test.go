@@ -267,7 +267,6 @@ spec:
 				func(c *root.Cluster, t *testing.T) {
 					cp := c.ControlPlane()
 					np := c.NodePools()[0]
-					net := c.Network()
 					etcd := c.Etcd()
 
 					{
@@ -430,10 +429,8 @@ spec:
 					if !strings.Contains(nodePoolStackTemplate, `"QueueName":"baz2"`) {
 						t.Errorf("Invalid worker node pool stack template: missing QueueName baz2: %v", nodePoolStackTemplate)
 					}
-
-					netStackTemplate, err := net.RenderStackTemplateAsString()
-					if !strings.Contains(netStackTemplate, `"Action":["ec2:*"]`) {
-						t.Errorf("Invalid network stack template: missing iam policy statement ec2:*: %v", nodePoolStackTemplate)
+					if !strings.Contains(nodePoolStackTemplate, `"Action":["ec2:*"]`) {
+						t.Errorf("Invalid worker node pool stack template: missing iam policy statement ec2:*: %v", nodePoolStackTemplate)
 					}
 
 					// A kube-aws plugin can inject node labels
