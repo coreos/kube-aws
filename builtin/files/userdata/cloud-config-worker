@@ -1081,7 +1081,7 @@ write_files:
         users:
         - name: kubelet
           user:
-            client-certificate: {{ if .Kubelet.RotateCerts.Enabled }}/etc/kubernetes/ssl/kubelet-client-current.pem{{else}}/etc/kubernetes/ssl/kubelet-client-current.pem{{end}}
+            client-certificate: /etc/kubernetes/ssl/kubelet-client-current.pem
             client-key: /etc/kubernetes/ssl/kubelet.key
         contexts:
         - context:
