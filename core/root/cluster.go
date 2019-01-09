@@ -235,7 +235,7 @@ func (cl *Cluster) ensureNestedStacksLoaded() error {
 
 	net, err := model.NewNetworkStack(cfg, nodePools, netOpts, extras, assetsConfig)
 	if err != nil {
-		return fmt.Errorf("failed to initizlie network stack: %v", err)
+		return fmt.Errorf("failed to initialize network stack: %v", err)
 	}
 
 	cl.etcdStack = etcd
