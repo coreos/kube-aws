@@ -4,17 +4,8 @@ import "strings"
 
 // TODO: Add etcd
 const (
-	OperationTargetControlPlane = "control-plane"
-	OperationTargetEtcd         = "etcd"
-	OperationTargetNetwork      = "network"
-	OperationTargetAll          = "all"
+	OperationTargetAll = "all"
 )
-
-var OperationTargetNames = []string{
-	OperationTargetControlPlane,
-	OperationTargetEtcd,
-	OperationTargetNetwork,
-}
 
 type OperationTargets []string
 
@@ -22,9 +13,9 @@ func AllOperationTargetsAsStringSlice() []string {
 	return []string{"all"}
 }
 
-func AllOperationTargetsWith(nodePoolNames []string) OperationTargets {
+func AllOperationTargetsWith(nodePoolNames []string, operationTargetNames []string) OperationTargets {
 	ts := []string{}
-	ts = append(ts, OperationTargetNames...)
+	ts = append(ts, operationTargetNames...)
 	ts = append(ts, nodePoolNames...)
 	return OperationTargets(ts)
 }
@@ -42,31 +33,36 @@ func (ts OperationTargets) IncludeWorker(nodePoolName string) bool {
 	return false
 }
 
-func (ts OperationTargets) IncludeNetwork() bool {
+func (ts OperationTargets) IncludeNetwork(networkStackName string) bool {
 	for _, t := range ts {
-		if t == OperationTargetNetwork {
+		if t == networkStackName {
 			return true
 		}
 	}
 	return false
 }
 
-func (ts OperationTargets) IncludeControlPlane() bool {
+func (ts OperationTargets) IncludeControlPlane(controlPlaneStackName string) bool {
 	for _, t := range ts {
-		if t == OperationTargetControlPlane {
+		if t == controlPlaneStackName {
 			return true
 		}
 	}
 	return false
 }
 
-func (ts OperationTargets) IncludeEtcd() bool {
+func (ts OperationTargets) IncludeEtcd(etcdStackName string) bool {
 	for _, t := range ts {
-		if t == OperationTargetEtcd {
+		if t == etcdStackName {
 			return true
 		}
 	}
 	return false
+}
+func (ts OperationTargets) IncludeAll(c *clusterImpl) bool {
+	return ts.IncludeNetwork(c.Network().NetworkStackName()) &&
+		ts.IncludeControlPlane(c.ControlPlane().ControlPlaneStackName()) &&
+		ts.IncludeEtcd(c.Etcd().EtcdStackName())
 }
 
 func (ts OperationTargets) IsAll() bool {
