@@ -1319,6 +1319,10 @@ kubeDns:
   # When enabled, will enable a DNS-masq DaemonSet to make PODs to resolve DNS names via locally running dnsmasq
   # It is disabled by default.
   # nodeLocalResolver: false
+  # Extra DnsMasq options to use when running the nodeLocalResolver
+  # nodeLocalResolverOptions:
+  # - --neg-ttl=10
+  # - --no-ping
 
   # When enabled, will deploy kube-dns to K8s controllers instead of workers.
   # deployToControllers: false
