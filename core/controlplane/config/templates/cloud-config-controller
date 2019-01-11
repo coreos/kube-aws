@@ -3991,6 +3991,11 @@ write_files:
                 - --server=/in-addr.arpa/{{.DNSServiceIP}}
                 - --server=/ip6.arpa/{{.DNSServiceIP}}
                 - --log-facility=-
+                {{- if ne (len .KubeDns.NodeLocalResolverOptions) 0 }}
+                  {{- range .KubeDns.NodeLocalResolverOptions }}
+                - {{.}}
+                  {{- end }}
+                {{- end }}
                 ports:
                 - containerPort: 53
                   name: dns
