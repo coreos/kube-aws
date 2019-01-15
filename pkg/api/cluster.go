@@ -189,7 +189,7 @@ func NewDefaultCluster() *Cluster {
 			KubernetesDashboard: KubernetesDashboard{
 				AdminPrivileges: true,
 				InsecureLogin:   false,
-				AllowSkip:       false,
+				AllowSkipLogin:  false,
 				Enabled:         true,
 			},
 			Kubernetes: Kubernetes{
@@ -541,7 +541,7 @@ type Cluster struct {
 type KubernetesDashboard struct {
 	AdminPrivileges  bool             `yaml:"adminPrivileges"`
 	InsecureLogin    bool             `yaml:"insecureLogin"`
-	AllowSkip        bool             `yaml:"allowSkip"`
+	AllowSkipLogin   bool             `yaml:"allowSkipLogin"`
 	Enabled          bool             `yaml:"enabled"`
 	ComputeResources ComputeResources `yaml:"resources,omitempty"`
 }

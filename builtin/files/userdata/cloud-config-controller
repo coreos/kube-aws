@@ -4327,7 +4327,7 @@ write_files:
                   {{ else }}
                   - --auto-generate-certificates
                   {{ end }}
-                  {{ if .KubernetesDashboard.AllowSkip }}
+                  {{ if .KubernetesDashboard.AllowSkipLogin }}
                   - --enable-skip-login
                   {{ end }}
                 resources:
