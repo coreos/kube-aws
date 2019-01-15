@@ -214,7 +214,7 @@ func NewDefaultCluster() *Cluster {
 			KubernetesDashboard: KubernetesDashboard{
 				AdminPrivileges: true,
 				InsecureLogin:   false,
-				AllowSkipLogin: false,
+				AllowSkipLogin:  false,
 				Enabled:         true,
 			},
 			Kubernetes: Kubernetes{
@@ -872,7 +872,7 @@ func (c *KubeDns) MergeIfEmpty(other KubeDns) {
 type KubernetesDashboard struct {
 	AdminPrivileges  bool             `yaml:"adminPrivileges"`
 	InsecureLogin    bool             `yaml:"insecureLogin"`
-	AllowSkipLogin bool `yaml:"allowSkipLogin"`
+	AllowSkipLogin   bool             `yaml:"allowSkipLogin"`
 	Enabled          bool             `yaml:"enabled"`
 	ComputeResources ComputeResources `yaml:"resources,omitempty"`
 }
