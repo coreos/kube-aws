@@ -3625,10 +3625,16 @@ write_files:
                 - -k
                 - --min-port=1024
                 - --cache-size=1000
+                - --server=//{{.DNSServiceIP}}
                 - --server=/cluster.local/{{.DNSServiceIP}}
                 - --server=/in-addr.arpa/{{.DNSServiceIP}}
                 - --server=/ip6.arpa/{{.DNSServiceIP}}
                 - --log-facility=-
+                {{- if ne (len .KubeDns.NodeLocalResolverOptions) 0 }}
+                  {{- range .KubeDns.NodeLocalResolverOptions }}
+                - {{.}}
+                  {{- end }}
+                {{- end }}
                 ports:
                 - containerPort: 53
                   name: dns

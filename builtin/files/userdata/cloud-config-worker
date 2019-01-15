@@ -148,7 +148,7 @@ coreos:
         Type=oneshot
         ExecStartPre=/usr/sbin/pvcreate {{$raid0MountSpec.DeviceList}}
         ExecStartPre=/usr/sbin/vgcreate {{$raid0MountSpec.SystemdMountName}}_group {{$raid0MountSpec.DeviceList}}
-        ExecStartPre=/usr/sbin/lvcreate -l 100%VG --stripes {{$raid0MountSpec.NumDevices}} --stripesize 256 -n {{$raid0MountSpec.SystemdMountName}}_vol {{$raid0MountSpec.SystemdMountName}}_group
+        ExecStartPre=/usr/sbin/lvcreate -l 100%%VG --stripes {{$raid0MountSpec.NumDevices}} --stripesize 256 -n {{$raid0MountSpec.SystemdMountName}}_vol {{$raid0MountSpec.SystemdMountName}}_group
         ExecStart=-/usr/sbin/mkfs.ext4 /dev/{{$raid0MountSpec.SystemdMountName}}_group/{{$raid0MountSpec.SystemdMountName}}_vol
 
         [Install]
