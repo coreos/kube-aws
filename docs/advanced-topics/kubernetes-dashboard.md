@@ -6,6 +6,7 @@
 kubernetesDashboard:
   adminPrivileges: true
   insecureLogin: false
+  allowSkipLogin: false
   enabled: true
   resources:
     requests:
