@@ -4244,6 +4244,9 @@ write_files:
                   {{ else }}
                   - --auto-generate-certificates
                   {{ end }}
+                  {{ if .KubernetesDashboard.allowSkipLogin }}
+                  - --enable-skip-login
+                  {{ end }}
                 resources:
                   requests:
                     cpu: {{ if .KubernetesDashboard.ComputeResources.Requests.Cpu }}{{ .KubernetesDashboard.ComputeResources.Requests.Cpu }}{{ else }}100m{{ end }}
