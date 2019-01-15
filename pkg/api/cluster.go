@@ -189,6 +189,7 @@ func NewDefaultCluster() *Cluster {
 			KubernetesDashboard: KubernetesDashboard{
 				AdminPrivileges: true,
 				InsecureLogin:   false,
+				AllowSkip:       false,
 				Enabled:         true,
 			},
 			Kubernetes: Kubernetes{
@@ -233,7 +234,7 @@ func NewDefaultCluster() *Cluster {
 			HeapsterImage:                      Image{Repo: "k8s.gcr.io/heapster", Tag: "v1.5.0", RktPullDocker: false},
 			MetricsServerImage:                 Image{Repo: "k8s.gcr.io/metrics-server-amd64", Tag: "v0.2.1", RktPullDocker: false},
 			AddonResizerImage:                  Image{Repo: "k8s.gcr.io/addon-resizer", Tag: "1.8.1", RktPullDocker: false},
-			KubernetesDashboardImage:           Image{Repo: "k8s.gcr.io/kubernetes-dashboard-amd64", Tag: "v1.8.3", RktPullDocker: false},
+			KubernetesDashboardImage:           Image{Repo: "k8s.gcr.io/kubernetes-dashboard-amd64", Tag: "v1.10.1", RktPullDocker: false},
 			PauseImage:                         Image{Repo: "k8s.gcr.io/pause-amd64", Tag: "3.1", RktPullDocker: false},
 			JournaldCloudWatchLogsImage:        Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
 		},
@@ -540,6 +541,7 @@ type Cluster struct {
 type KubernetesDashboard struct {
 	AdminPrivileges  bool             `yaml:"adminPrivileges"`
 	InsecureLogin    bool             `yaml:"insecureLogin"`
+	AllowSkip        bool             `yaml:"allowSkip"`
 	Enabled          bool             `yaml:"enabled"`
 	ComputeResources ComputeResources `yaml:"resources,omitempty"`
 }
