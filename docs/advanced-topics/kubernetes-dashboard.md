@@ -6,7 +6,7 @@
 kubernetesDashboard:
   adminPrivileges: true
   insecureLogin: false
-  allowSkipLogin: false
+  allowSkipLogin: false # Only set to true when using dashboard image version v1.10.1+
   enabled: true
   resources:
     requests:
@@ -127,6 +127,7 @@ spec:
     kubernetesDashboard:
       adminPrivileges: false
       insecureLogin: true
+      allowSkipLogin: false # Only set to true when using dashboard image version v1.10.1+
 ```
 Ex.
 
