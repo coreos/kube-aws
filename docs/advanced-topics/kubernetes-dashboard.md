@@ -7,6 +7,7 @@ kubernetesDashboard:
   adminPrivileges: true
   insecureLogin: false
   enabled: true
+  replicas: 1
   resources:
     requests:
       cpu: 100m
