@@ -4574,11 +4574,11 @@ write_files:
                   name: cluster-autoscaler
                   resources:
                     limits:
-                      cpu: 100m
-                      memory: 300Mi
+                      cpu: {{ .ClusterAutoscaler.ComputeResources.Limits.Cpu }}
+                      memory: {{ .ClusterAutoscaler.ComputeResources.Limits.Memory }}
                     requests:
-                      cpu: 100m
-                      memory: 300Mi
+                      cpu: {{ .ClusterAutoscaler.ComputeResources.Requests.Cpu }}
+                      memory: {{ .ClusterAutoscaler.ComputeResources.Requests.Memory }}
                   command:
                     - ./cluster-autoscaler
                     - --v=4
