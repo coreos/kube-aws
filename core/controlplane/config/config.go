@@ -214,6 +214,7 @@ func NewDefaultCluster() *Cluster {
 			KubernetesDashboard: KubernetesDashboard{
 				AdminPrivileges: true,
 				InsecureLogin:   false,
+				AllowSkipLogin:  false,
 				Enabled:         true,
 			},
 			Kubernetes: Kubernetes{
@@ -254,7 +255,7 @@ func NewDefaultCluster() *Cluster {
 			HeapsterImage:                      model.Image{Repo: "k8s.gcr.io/heapster", Tag: "v1.5.0", RktPullDocker: false},
 			MetricsServerImage:                 model.Image{Repo: "k8s.gcr.io/metrics-server-amd64", Tag: "v0.2.1", RktPullDocker: false},
 			AddonResizerImage:                  model.Image{Repo: "k8s.gcr.io/addon-resizer", Tag: "1.8.1", RktPullDocker: false},
-			KubernetesDashboardImage:           model.Image{Repo: "k8s.gcr.io/kubernetes-dashboard-amd64", Tag: "v1.8.3", RktPullDocker: false},
+			KubernetesDashboardImage:           model.Image{Repo: "k8s.gcr.io/kubernetes-dashboard-amd64", Tag: "v1.10.1", RktPullDocker: false},
 			PauseImage:                         model.Image{Repo: "k8s.gcr.io/pause-amd64", Tag: "3.1", RktPullDocker: false},
 			FlannelImage:                       model.Image{Repo: "quay.io/coreos/flannel", Tag: "v0.9.1", RktPullDocker: false},
 			JournaldCloudWatchLogsImage:        model.Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
@@ -882,6 +883,7 @@ func (c *KubeDns) MergeIfEmpty(other KubeDns) {
 type KubernetesDashboard struct {
 	AdminPrivileges  bool             `yaml:"adminPrivileges"`
 	InsecureLogin    bool             `yaml:"insecureLogin"`
+	AllowSkipLogin   bool             `yaml:"allowSkipLogin"`
 	Enabled          bool             `yaml:"enabled"`
 	ComputeResources ComputeResources `yaml:"resources,omitempty"`
 }
