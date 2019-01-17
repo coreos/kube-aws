@@ -1352,6 +1352,14 @@ addons:
   # If you want to run CA on worker nodes, turn on `worker.nodePools[].clusterAutoscalerSupport.enabled` for the node pool.
   clusterAutoscaler:
     enabled: false
+    resources:
+      # Increase these values substantially if running a cluster of 50+ nodes
+      limits:
+        cpu: 100m
+        memory: 300Mi
+      requests:
+        cpu: 100m
+        memory: 300Mi
     # Options below can be used to inject custom settings for the autoscaler.
     # Sensible defaults are already configured in the controller-cloud-config but if you wish to override them simply
     # add them here and they'll take precedence.
