@@ -1324,6 +1324,7 @@ kubernetesDashboard:
   adminPrivileges: true
   insecureLogin: false
   allowSkipLogin: false # Only set to true when using dashboard image version v1.10.1+
+  replicas: 1
   enabled: true
 # # Optional resource change for Dashboard can be done via using the resources block below and changing the values.
 # # Values below are the default already if not set.

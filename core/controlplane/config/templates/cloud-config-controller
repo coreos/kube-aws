@@ -4645,7 +4645,7 @@ write_files:
           name: kubernetes-dashboard
           namespace: kube-system
         spec:
-          replicas: 1
+          replicas: {{ .KubernetesDashboard.Replicas }}
           revisionHistoryLimit: 10
           selector:
             matchLabels:
