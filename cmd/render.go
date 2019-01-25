@@ -46,7 +46,18 @@ func init() {
 
 	cmdRenderCredentials.Flags().BoolVar(&renderCredentialsOpts.GenerateCA, "generate-ca", false, "if generating credentials, generate root CA key and cert. NOT RECOMMENDED FOR PRODUCTION USE- use '-ca-key-path' and '-ca-cert-path' options to provide your own certificate authority assets")
 	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.CaKeyPath, "ca-key-path", "./credentials/ca-key.pem", "path to pem-encoded CA RSA key")
-	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.CaCertPath, "ca-cert-path", "./credentials/ca.pem", "path to pem-encoded CA x509 certificate")
+	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.AdminKeyPath, "admin-key-path", "./credentials/admin-key.pem", "path to pem-encoded CA RSA key")
+	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.ApiServerAggregatorKeyPath, "apiserver-aggregator-key-path", "./credentials/apiserver-aggregator-key.pem", "path to pem-encoded apiserver aggregator RSA key")
+	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.ApiServerKeyPath, "apiserver-key-path", "./credentials/apiserver-key.pem", "path to pem-encoded apiserver RSA key")
+	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.CaKeyPath, "ca-key-path", "./credentials/ca-key.pem", "path to pem-encoded CA RSA key")
+	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.EtcdClientKeyPath, "etcd-client-key-path", "./credentials/etcd-client-key.pem", "path to pem-encoded etcd client RSA key")
+	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.EtcdKeyPath, "etcd-key-path", "./credentials/etcd-key.pem", "path to pem-encoded etcd RSA key")
+	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.KiamAgentKeyPath, "kiam-agent-key-path", "./credentials/kiam-agent-key.pem", "path to pem-encoded kiam agent RSA key")
+	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.KiamServerKeyPath, "kiam-server-key-path", "./credentials/kiam-server-key.pem", "path to pem-encoded kiam server RSA key")
+	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.KubeControllerManagerKeyPath, "kube-controller-manager-key-path", "./credentials/kube-controller-manager-key.pem", "path to pem-encoded kube controller manager RSA key")
+	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.KubeSchedulerKeyPath, "kube-scheduler-key-path", "./credentials/kube-scheduler-key.pem", "path to pem-encoded kube scheduler RSA key")
+	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.ServiceAccountKeyPath, "service-account-key-path", "./credentials/service-account-key.pem", "path to pem-encoded service account RSA key")
+	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.WorkerKeyPath, "worker-key-path", "./credentials/worker-key.pem", "path to pem-encoded worker RSA key")
 	cmdRenderCredentials.Flags().BoolVar(&renderCredentialsOpts.KIAM, "kiam", true, "generate TLS assets for kiam")
 }
 func runCmdRender(_ *cobra.Command, args []string) error {

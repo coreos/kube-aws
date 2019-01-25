@@ -25,7 +25,7 @@ func genAssets(t *testing.T) *RawAssetsOnMemory {
 	if err != nil {
 		t.Fatalf("failed generating tls ca: %v", err)
 	}
-	assets, err := cluster.NewAssetsOnMemory(caKey, caCert, true)
+	assets, err := cluster.NewAssetsOnMemory(caKey, caCert, CredentialsOptions{KIAM: true})
 	if err != nil {
 		t.Fatalf("failed generating assets: %v", err)
 	}

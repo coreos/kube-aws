@@ -192,10 +192,22 @@ func (c *Cluster) NewTLSCA() (*rsa.PrivateKey, *x509.Certificate, error) {
 
 type CredentialsOptions struct {
 	GenerateCA bool
-	CaKeyPath  string
 	CaCertPath string
 	// KIAM is set to true when you want kube-aws to render TLS assets for uswitch/kiam
 	KIAM bool
+	// Paths for private certificate keys.
+	AdminKeyPath                 string
+	ApiServerAggregatorKeyPath   string
+	ApiServerKeyPath             string
+	CaKeyPath                    string
+	EtcdClientKeyPath            string
+	EtcdKeyPath                  string
+	KiamAgentKeyPath             string
+	KiamServerKeyPath            string
+	KubeControllerManagerKeyPath string
+	KubeSchedulerKeyPath         string
+	ServiceAccountKeyPath        string
+	WorkerKeyPath                string
 }
 
 func (c *Cluster) NewAssetsOnDisk(dir string, o CredentialsOptions) (*RawAssetsOnDisk, error) {
@@ -228,7 +240,7 @@ func (c *Cluster) NewAssetsOnDisk(dir string, o CredentialsOptions) (*RawAssetsO
 	}
 
 	logger.Info("-> Generating new assets")
-	assets, err := c.NewAssetsOnMemory(caKey, caCert, o.KIAM)
+	assets, err := c.NewAssetsOnMemory(caKey, caCert, o)
 	if err != nil {
 		return nil, fmt.Errorf("Error generating default assets: %v", err)
 	}
@@ -257,19 +269,46 @@ func (c *Cluster) NewAssetsOnDisk(dir string, o CredentialsOptions) (*RawAssetsO
 	}
 }
 
-func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certificate, kiamEnabled bool) (*RawAssetsOnMemory, error) {
+func getOrCreatePrivateKey(keyPath string) (*rsa.PrivateKey, error) {
+	if keyPath != "" {
+		keyBytes, err := ioutil.ReadFile(keyPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed reading key file %s : %v", keyPath, err)
+		}
+
+		key, err := tlsutil.DecodePrivateKeyPEM(keyBytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed parsing key: %v", err)
+		}
+		return key, nil
+	}
+	return tlsutil.NewPrivateKey()
+}
+
+func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certificate, credentialOptions CredentialsOptions) (*RawAssetsOnMemory, error) {
 	// Convert from days to time.Duration
 	certDuration := time.Duration(c.TLSCertDurationDays) * 24 * time.Hour
 
-	// Generate keys for the various components.
-	keys := make([]*rsa.PrivateKey, 11)
-	var err error
-	for i := range keys {
-		if keys[i], err = tlsutil.NewPrivateKey(); err != nil {
+	privateKeys := map[string]*rsa.PrivateKey{
+		credentialOptions.ApiServerKeyPath:             nil,
+		credentialOptions.KubeControllerManagerKeyPath: nil,
+		credentialOptions.KubeSchedulerKeyPath:         nil,
+		credentialOptions.WorkerKeyPath:                nil,
+		credentialOptions.AdminKeyPath:                 nil,
+		credentialOptions.EtcdKeyPath:                  nil,
+		credentialOptions.EtcdClientKeyPath:            nil,
+		credentialOptions.KiamAgentKeyPath:             nil,
+		credentialOptions.KiamServerKeyPath:            nil,
+		credentialOptions.ServiceAccountKeyPath:        nil,
+		credentialOptions.ApiServerAggregatorKeyPath:   nil,
+	}
+
+	for key := range privateKeys {
+		var err error
+		if privateKeys[key], err = getOrCreatePrivateKey(key); err != nil {
 			return nil, err
 		}
 	}
-	apiServerKey, kubeControllerManagerKey, kubeSchedulerKey, workerKey, adminKey, etcdKey, etcdClientKey, kiamAgentKey, kiamServerKey, serviceAccountKey, apiServerAggregatorKey := keys[0], keys[1], keys[2], keys[3], keys[4], keys[5], keys[6], keys[7], keys[8], keys[9], keys[10]
 
 	// Compute kubernetesServiceIP from serviceCIDR
 	_, serviceNet, err := net.ParseCIDR(c.ServiceCIDR)
@@ -297,7 +336,7 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 		},
 		Duration: certDuration,
 	}
-	apiServerCert, err := tlsutil.NewSignedServerCertificate(apiServerConfig, apiServerKey, caCert, caKey)
+	apiServerCert, err := tlsutil.NewSignedServerCertificate(apiServerConfig, privateKeys[credentialOptions.ApiServerKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -310,7 +349,7 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 		Duration: certDuration,
 	}
 
-	etcdCert, err := tlsutil.NewSignedServerCertificate(etcdConfig, etcdKey, caCert, caKey)
+	etcdCert, err := tlsutil.NewSignedServerCertificate(etcdConfig, privateKeys[credentialOptions.EtcdKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +362,7 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 		},
 		Duration: certDuration,
 	}
-	workerCert, err := tlsutil.NewSignedClientCertificate(workerConfig, workerKey, caCert, caKey)
+	workerCert, err := tlsutil.NewSignedClientCertificate(workerConfig, privateKeys[credentialOptions.WorkerKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +372,7 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 		Duration:   certDuration,
 	}
 
-	etcdClientCert, err := tlsutil.NewSignedClientCertificate(etcdClientConfig, etcdClientKey, caCert, caKey)
+	etcdClientCert, err := tlsutil.NewSignedClientCertificate(etcdClientConfig, privateKeys[credentialOptions.EtcdClientKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -343,7 +382,7 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 		Organization: []string{"system:masters"},
 		Duration:     certDuration,
 	}
-	adminCert, err := tlsutil.NewSignedClientCertificate(adminConfig, adminKey, caCert, caKey)
+	adminCert, err := tlsutil.NewSignedClientCertificate(adminConfig, privateKeys[credentialOptions.AdminKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -352,7 +391,7 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 		CommonName: "system:kube-controller-manager",
 		Duration:   certDuration,
 	}
-	kubeControllerManagerCert, err := tlsutil.NewSignedClientCertificate(kubeControllerManagerConfig, kubeControllerManagerKey, caCert, caKey)
+	kubeControllerManagerCert, err := tlsutil.NewSignedClientCertificate(kubeControllerManagerConfig, privateKeys[credentialOptions.KubeControllerManagerKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -361,7 +400,7 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 		CommonName: "system:kube-scheduler",
 		Duration:   certDuration,
 	}
-	kubeSchedulerCert, err := tlsutil.NewSignedClientCertificate(kubeSchedulerConfig, kubeSchedulerKey, caCert, caKey)
+	kubeSchedulerCert, err := tlsutil.NewSignedClientCertificate(kubeSchedulerConfig, privateKeys[credentialOptions.KubeSchedulerKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -370,7 +409,7 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 		CommonName: "aggregator",
 		Duration:   certDuration,
 	}
-	apiServerAggregatorCert, err := tlsutil.NewSignedClientCertificate(apiServerAggregatorConfig, apiServerAggregatorKey, caCert, caKey)
+	apiServerAggregatorCert, err := tlsutil.NewSignedClientCertificate(apiServerAggregatorConfig, privateKeys[credentialOptions.ApiServerAggregatorKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -397,28 +436,28 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 		EtcdClientCert:            tlsutil.EncodeCertificatePEM(etcdClientCert),
 		APIServerAggregatorCert:   tlsutil.EncodeCertificatePEM(apiServerAggregatorCert),
 		CAKey:                     tlsutil.EncodePrivateKeyPEM(caKey),
-		APIServerKey:              tlsutil.EncodePrivateKeyPEM(apiServerKey),
-		KubeControllerManagerKey:  tlsutil.EncodePrivateKeyPEM(kubeControllerManagerKey),
-		KubeSchedulerKey:          tlsutil.EncodePrivateKeyPEM(kubeSchedulerKey),
-		WorkerKey:                 tlsutil.EncodePrivateKeyPEM(workerKey),
-		AdminKey:                  tlsutil.EncodePrivateKeyPEM(adminKey),
-		EtcdKey:                   tlsutil.EncodePrivateKeyPEM(etcdKey),
-		EtcdClientKey:             tlsutil.EncodePrivateKeyPEM(etcdClientKey),
-		ServiceAccountKey:         tlsutil.EncodePrivateKeyPEM(serviceAccountKey),
-		APIServerAggregatorKey:    tlsutil.EncodePrivateKeyPEM(apiServerAggregatorKey),
+		APIServerKey:              tlsutil.EncodePrivateKeyPEM(privateKeys[credentialOptions.ApiServerKeyPath]),
+		KubeControllerManagerKey:  tlsutil.EncodePrivateKeyPEM(privateKeys[credentialOptions.KubeControllerManagerKeyPath]),
+		KubeSchedulerKey:          tlsutil.EncodePrivateKeyPEM(privateKeys[credentialOptions.KubeSchedulerKeyPath]),
+		WorkerKey:                 tlsutil.EncodePrivateKeyPEM(privateKeys[credentialOptions.WorkerKeyPath]),
+		AdminKey:                  tlsutil.EncodePrivateKeyPEM(privateKeys[credentialOptions.AdminKeyPath]),
+		EtcdKey:                   tlsutil.EncodePrivateKeyPEM(privateKeys[credentialOptions.EtcdKeyPath]),
+		EtcdClientKey:             tlsutil.EncodePrivateKeyPEM(privateKeys[credentialOptions.EtcdClientKeyPath]),
+		ServiceAccountKey:         tlsutil.EncodePrivateKeyPEM(privateKeys[credentialOptions.ServiceAccountKeyPath]),
+		APIServerAggregatorKey:    tlsutil.EncodePrivateKeyPEM(privateKeys[credentialOptions.ApiServerAggregatorKeyPath]),
 
 		AuthTokens:        []byte(authTokens),
 		TLSBootstrapToken: []byte(tlsBootstrapToken),
 		EncryptionConfig:  []byte(encryptionConfig),
 	}
 
-	if kiamEnabled {
+	if credentialOptions.KIAM {
 		// See https://github.com/uswitch/kiam/blob/master/docs/agent.json
 		agentConfig := tlsutil.ClientCertConfig{
 			CommonName: "Kiam Agent",
 			Duration:   certDuration,
 		}
-		kiamAgentCert, err := tlsutil.NewSignedClientCertificate(agentConfig, kiamAgentKey, caCert, caKey)
+		kiamAgentCert, err := tlsutil.NewSignedClientCertificate(agentConfig, privateKeys[credentialOptions.KiamAgentKeyPath], caCert, caKey)
 		if err != nil {
 			return nil, err
 		}
@@ -434,16 +473,16 @@ func (c *Cluster) NewAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certific
 			),
 			Duration: certDuration,
 		}
-		kiamServerCert, err := tlsutil.NewSignedKIAMCertificate(serverConfig, kiamServerKey, caCert, caKey)
+		kiamServerCert, err := tlsutil.NewSignedKIAMCertificate(serverConfig, privateKeys[credentialOptions.KiamServerKeyPath], caCert, caKey)
 		if err != nil {
 			return nil, err
 		}
 
 		r.KIAMCACert = tlsutil.EncodeCertificatePEM(caCert)
 		r.KIAMAgentCert = tlsutil.EncodeCertificatePEM(kiamAgentCert)
-		r.KIAMAgentKey = tlsutil.EncodePrivateKeyPEM(kiamAgentKey)
+		r.KIAMAgentKey = tlsutil.EncodePrivateKeyPEM(privateKeys[credentialOptions.KiamAgentKeyPath])
 		r.KIAMServerCert = tlsutil.EncodeCertificatePEM(kiamServerCert)
-		r.KIAMServerKey = tlsutil.EncodePrivateKeyPEM(kiamServerKey)
+		r.KIAMServerKey = tlsutil.EncodePrivateKeyPEM(privateKeys[credentialOptions.KiamServerKeyPath])
 	}
 
 	return r, nil
