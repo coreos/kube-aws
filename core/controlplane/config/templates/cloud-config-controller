@@ -1040,7 +1040,7 @@ write_files:
         echo kube-proxy stared. apiserver should be responsive again.
       fi
       rbac=/srv/kubernetes/rbac
-      
+
       {{- if .Kubernetes.Networking.SelfHosting.Enabled }}
       # When using NetworkingDeamonSets ensure that all nodes
       # have a podCIDR attribute
@@ -1062,7 +1062,7 @@ write_files:
       applyall "${mfdir}/calico.yaml"
       {{- end }}
       {{- end }}
-      
+
       {{ if .Addons.MetricsServer.Enabled -}}
       applyall \
         "${mfdir}/metrics-server-sa.yaml" \
@@ -1073,12 +1073,12 @@ write_files:
         "${rbac}/role-bindings/metrics-server.yaml" \
         "${mfdir}/metrics-server-apisvc.yaml"
       {{- end }}
-      
+
       {{ if .KubernetesDashboard.Enabled }}
       # Secrets
       applyall "${mfdir}/kubernetes-dashboard-se.yaml"
       {{ end }}
-      
+
       # Configmaps
       applyall \
         "${mfdir}"/{kube-proxy,heapster-config}"-cm.yaml" \
@@ -1090,7 +1090,7 @@ write_files:
         "${mfdir}/{{ .KubeDns.Provider }}-sa.yaml" \
         "${mfdir}/kube-proxy-sa.yaml" \
         {{ if .KubernetesDashboard.Enabled }}"${mfdir}/kubernetes-dashboard-sa.yaml"{{ end }}
-      
+
       {{ if eq .KubeDns.Provider "coredns" -}}
       applyall \
         "${mfdir}/coredns-cr.yaml" \
@@ -1154,7 +1154,7 @@ write_files:
       if ls ${mfdir}/custom/*.yaml &> /dev/null; then
         applyall ${mfdir}/custom/*.yaml
       fi
-      
+
       {{ if $.MigrateStacks -}}
       restore_webhooks() {
         local type=$1
@@ -3644,7 +3644,7 @@ write_files:
             requests:
               cpu: {{ if .Kubernetes.ControllerManager.ComputeResources.Requests.Cpu }}{{ .Kubernetes.ControllerManager.ComputeResources.Requests.Cpu }}{{ else }}100m{{ end }}
               memory: {{ if .Kubernetes.ControllerManager.ComputeResources.Requests.Memory }}{{ .Kubernetes.ControllerManager.ComputeResources.Requests.Memory }}{{ else }}100M{{ end }}
-              
+
             limits:
               cpu: {{ if .Kubernetes.ControllerManager.ComputeResources.Limits.Cpu }}{{ .Kubernetes.ControllerManager.ComputeResources.Limits.Cpu }}{{ else }}250m{{ end }}
               memory: {{ if .Kubernetes.ControllerManager.ComputeResources.Limits.Memory }}{{ .Kubernetes.ControllerManager.ComputeResources.Limits.Memory }}{{ else }}512M{{ end }}
@@ -4574,11 +4574,11 @@ write_files:
                   name: cluster-autoscaler
                   resources:
                     limits:
-                      cpu: {{ .ClusterAutoscaler.ComputeResources.Limits.Cpu }}
-                      memory: {{ .ClusterAutoscaler.ComputeResources.Limits.Memory }}
+                      cpu: {{ if .Addons.ClusterAutoscaler.ComputeResources.Limits.Cpu }}{{ .Addons.ClusterAutoscaler.ComputeResources.Limits.Cpu }}{{ else }}100m{{ end }}
+                      memory: {{ if .Addons.ClusterAutoscaler.ComputeResources.Limits.Memory }}{{ .Addons.ClusterAutoscaler.ComputeResources.Limits.Memory }}{{ else }}300Mi{{ end }}
                     requests:
-                      cpu: {{ .ClusterAutoscaler.ComputeResources.Requests.Cpu }}
-                      memory: {{ .ClusterAutoscaler.ComputeResources.Requests.Memory }}
+                      cpu: {{ if .Addons.ClusterAutoscaler.ComputeResources.Requests.Cpu }}{{ .Addons.ClusterAutoscaler.ComputeResources.Requests.Cpu }}{{ else }}100m{{ end }}
+                      memory: {{ if .Addons.ClusterAutoscaler.ComputeResources.Requests.Memory }}{{ .Addons.ClusterAutoscaler.ComputeResources.Requests.Memory }}{{ else }}300Mi{{ end }}
                   command:
                     - ./cluster-autoscaler
                     - --v=4
