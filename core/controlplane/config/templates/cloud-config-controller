@@ -4143,11 +4143,15 @@ write_files:
                   name: cluster-autoscaler
                   resources:
                     limits:
-                      cpu: {{ .ClusterAutoscaler.ComputeResources.Limits.Cpu }}
-                      memory: {{ .ClusterAutoscaler.ComputeResources.Limits.Memory }}
+                      cpu: {{ if .Addons.ClusterAutoscaler.ComputeResources.Limits.Cpu }}{{ .Addons.ClusterAutoscaler.ComputeResources.Limits.Cpu }}{{ else }}100m{{ end }}
+                      memory: {{ if .Addons.ClusterAutoscaler.ComputeResources.Limits.Memory }}{{ .Addons.ClusterAutoscaler.ComputeResources.Limits.Memory }}{{ else }}300Mi{{ end }}
                     requests:
-                      cpu: {{ .ClusterAutoscaler.ComputeResources.Requests.Cpu }}
-                      memory: {{ .ClusterAutoscaler.ComputeResources.Requests.Memory }}
+                      cpu: {{ if .Addons.ClusterAutoscaler.ComputeResources.Requests.Cpu }}{{ .Addons.ClusterAutoscaler.ComputeResources.Requests.Cpu }}{{ else }}100m{{ end }}
+                      memory: {{ if .Addons.ClusterAutoscaler.ComputeResources.Requests.Memory }}{{ .Addons.ClusterAutoscaler.ComputeResources.Requests.Memory }}{{ else }}300Mi{{ end }}
+                command:
+                  - ./cluster-autoscaler
+                  - --v=4
+
                   command:
                     - ./cluster-autoscaler
                     - --v=4
