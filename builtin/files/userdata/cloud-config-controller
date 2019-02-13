@@ -2304,7 +2304,7 @@ write_files:
            cat $authDir/tokens.csv.tmp >> $authDir/tokens.csv
            {{- end }}
            {{- end }}
- 
+
            {{ if .Controller.CustomFiles -}}
            {{ range $i, $f := .Controller.CustomFiles -}}
            {{ if $f.Encrypted -}}
@@ -4226,11 +4226,15 @@ write_files:
                   name: cluster-autoscaler
                   resources:
                     limits:
-                      cpu: 100m
-                      memory: 300Mi
+                      cpu: {{ if .Addons.ClusterAutoscaler.ComputeResources.Limits.Cpu }}{{ .Addons.ClusterAutoscaler.ComputeResources.Limits.Cpu }}{{ else }}100m{{ end }}
+                      memory: {{ if .Addons.ClusterAutoscaler.ComputeResources.Limits.Memory }}{{ .Addons.ClusterAutoscaler.ComputeResources.Limits.Memory }}{{ else }}300Mi{{ end }}
                     requests:
-                      cpu: 100m
-                      memory: 300Mi
+                      cpu: {{ if .Addons.ClusterAutoscaler.ComputeResources.Requests.Cpu }}{{ .Addons.ClusterAutoscaler.ComputeResources.Requests.Cpu }}{{ else }}100m{{ end }}
+                      memory: {{ if .Addons.ClusterAutoscaler.ComputeResources.Requests.Memory }}{{ .Addons.ClusterAutoscaler.ComputeResources.Requests.Memory }}{{ else }}300Mi{{ end }}
+                command:
+                  - ./cluster-autoscaler
+                  - --v=4
+
                   command:
                     - ./cluster-autoscaler
                     - --v=4
