@@ -4231,10 +4231,6 @@ write_files:
                     requests:
                       cpu: {{ if .Addons.ClusterAutoscaler.ComputeResources.Requests.Cpu }}{{ .Addons.ClusterAutoscaler.ComputeResources.Requests.Cpu }}{{ else }}100m{{ end }}
                       memory: {{ if .Addons.ClusterAutoscaler.ComputeResources.Requests.Memory }}{{ .Addons.ClusterAutoscaler.ComputeResources.Requests.Memory }}{{ else }}300Mi{{ end }}
-                command:
-                  - ./cluster-autoscaler
-                  - --v=4
-
                   command:
                     - ./cluster-autoscaler
                     - --v=4
