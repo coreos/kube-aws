@@ -275,7 +275,7 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #  # User defined files that will be added to the Controller cluster cloud-init configuration in the "write_files:" section.
 #  # Writing a kubernetes manifest to path /srv/kubernetes/manifests/custom/*.yaml will be automatically
 #  # installed when the controllers start up.
-# 
+#
 #  customFiles:
 #    - path: "/etc/rkt/auth.d/docker.json"
 #      permissions: 0600
@@ -818,7 +818,7 @@ worker:
 #        Description=Example Custom Service
 #        [Service]
 #        ExecStart=/bin/rkt run --set-env TAGS=Controller ...
-#  # extra etcd options 
+#  # extra etcd options
 #  userSuppliedArgs:
 #    # for example, setting the --quota-backend-bytes and --auto-compaction-retention options
 #    quotaBackendBytes:
@@ -1254,7 +1254,7 @@ kubernetes:
 #kubeResourcesAutosave:
 #  enabled: false
 #
-      
+
 # Set kube-system namespace labels:
 # In order to target a namespace for network policies the namepace needs to be labeled.
 # Feel free to remove or alter this setting to change the labels for the kube-system namespace.
@@ -1360,12 +1360,20 @@ addons:
   # If you want to run CA on worker nodes, turn on `worker.nodePools[].clusterAutoscalerSupport.enabled` for the node pool.
   clusterAutoscaler:
     enabled: false
+    resources:
+      # Increase these values substantially if running a cluster of 50+ nodes
+      limits:
+        cpu: 100m
+        memory: 300Mi
+      requests:
+        cpu: 100m
+        memory: 300Mi
     # Options below can be used to inject custom settings for the autoscaler.
     # Sensible defaults are already configured in the controller-cloud-config but if you wish to override them simply
     # add them here and they'll take precedence.
     #options:
     #  flag-name: value
-    #  v: 5 
+    #  v: 5
     #  expander: least-waste
 
   # When enabled, Kubernetes rescheduler is deployed to the cluster controller(s)
@@ -1466,16 +1474,16 @@ experimental:
   # This is intended to be used in combination with .controller.iam.role.name. See #297 for more information.
   kiamSupport:
     enabled: false
-    image: 
+    image:
       repo: quay.io/uswitch/kiam
       tag: v2.8
       rktPullDocker: false
-    sessionDuration: 15m  
+    sessionDuration: 15m
     serverAddresses:
       serverAddress: localhost:443
       agentAddress: kiam-server:443
     # Optional resource change for kiam servers/agents can be done via using the resources block below and changing the values.
-    # Values below are the default if not set. 
+    # Values below are the default if not set.
     # serverResources:
     #   requests:
     #     cpu: 50m
@@ -1570,9 +1578,9 @@ hostOS:
 #    include-pwd: true                      # Include the present directory in each prompt.
 #    include-hostname: true                 # Include the hostname in each prompt.
 #    include-user: true                     # Include the username in each prompt.
-#    cluster-colour: light-cyan            
+#    cluster-colour: light-cyan
 #    divider: "|"                           # Divider between server type and cluster name, e.g. etcd|mycluster
-#    divider-colour: default-colour  
+#    divider-colour: default-colour
 #    etcd-label: etcd                       # Start prompt 'etcd' on prompts for etcd servers.
 #    etcd-colour: light-green
 #    controller-label: master               # Start prompt with 'master' on controllers.
