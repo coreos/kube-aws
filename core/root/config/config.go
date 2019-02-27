@@ -12,19 +12,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type InitialConfig struct {
-	AmiId            string
-	AvailabilityZone string
-	ClusterName      string
-	ExternalDNSName  string
-	HostedZoneID     string
-	KMSKeyARN        string
-	KeyName          string
-	NoRecordSet      bool
-	Region           api.Region
-	S3URI            string
-}
-
 type UnmarshalledConfig struct {
 	api.Cluster     `yaml:",inline"`
 	api.UnknownKeys `yaml:",inline"`

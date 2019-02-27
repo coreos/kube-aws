@@ -3,14 +3,30 @@ package cmd
 import (
 	"errors"
 	"fmt"
-
 	"github.com/kubernetes-incubator/kube-aws/builtin"
-	"github.com/kubernetes-incubator/kube-aws/core/root/config"
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
-	"github.com/kubernetes-incubator/kube-aws/filegen"
 	"github.com/kubernetes-incubator/kube-aws/logger"
+	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 	"github.com/spf13/cobra"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"text/template"
 )
+
+type initialConfig struct {
+	AmiId            string
+	AvailabilityZone string
+	ClusterName      string
+	ExternalDNSName  string
+	HostedZoneID     string
+	KMSKeyARN        string
+	KeyName          string
+	NoRecordSet      bool
+	Region           api.Region
+	S3URI            string
+}
 
 var (
 	cmdInit = &cobra.Command{
@@ -21,12 +37,26 @@ var (
 		SilenceUsage: true,
 	}
 
-	initOpts = config.InitialConfig{}
+	initOpts = initialConfig{}
 )
 
-const (
-	defaultReleaseChannel = "stable"
-)
+type flag struct {
+	name string
+	val  string
+}
+
+func validateRequiredFlags(required ...flag) error {
+	var missing []string
+	for _, req := range required {
+		if req.val == "" {
+			missing = append(missing, strconv.Quote(req.name))
+		}
+	}
+	if len(missing) != 0 {
+		return fmt.Errorf("missing required flag(s): %s", strings.Join(missing, ", "))
+	}
+	return nil
+}
 
 func init() {
 	RootCmd.AddCommand(cmdInit)
@@ -44,7 +74,7 @@ func init() {
 
 func runCmdInit(_ *cobra.Command, _ []string) error {
 	// Validate flags.
-	if err := validateRequired(
+	if err := validateRequiredFlags(
 		flag{"--s3-uri", initOpts.S3URI},
 		flag{"--cluster-name", initOpts.ClusterName},
 		flag{"--external-dns-name", initOpts.ExternalDNSName},
@@ -55,6 +85,7 @@ func runCmdInit(_ *cobra.Command, _ []string) error {
 	}
 
 	if initOpts.AmiId == "" {
+		defaultReleaseChannel := "stable"
 		amiID, err := amiregistry.GetAMI(initOpts.Region.Name, defaultReleaseChannel)
 		initOpts.AmiId = amiID
 		if err != nil {
@@ -66,7 +97,7 @@ func runCmdInit(_ *cobra.Command, _ []string) error {
 		return errors.New("missing required flags: either --hosted-zone-id or --no-record-set is required")
 	}
 
-	if err := filegen.CreateFileFromTemplate(configPath, initOpts, builtin.Bytes("cluster.yaml.tmpl")); err != nil {
+	if err := createClusterConfigFromTemplate(configPath, initOpts, builtin.String("cluster.yaml.tmpl")); err != nil {
 		return fmt.Errorf("error exec-ing default config template: %v", err)
 	}
 
@@ -78,5 +109,31 @@ Next steps:
 2. Use the "kube-aws render" command to render the CloudFormation stack template and coreos-cloudinit userdata.
 `
 	logger.Infof(successMsg, configPath, configPath)
+	return nil
+}
+
+func createClusterConfigFromTemplate(outputFilePath string, templateOpts interface{}, fileTemplate string) error {
+	// Render the default cluster config.
+	cfgTemplate, err := template.New("cluster.yaml").Parse(fileTemplate)
+	if err != nil {
+		return fmt.Errorf("error parsing default config template: %v", err)
+	}
+
+	dir := filepath.Dir(outputFilePath)
+
+	if _, err := os.Stat(dir); err != nil && os.IsNotExist(err) {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("error creating directory: %v", err)
+		}
+	}
+
+	out, err := os.OpenFile(outputFilePath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600)
+	if err != nil {
+		return fmt.Errorf("error opening %s : %v", outputFilePath, err)
+	}
+	defer out.Close()
+	if err := cfgTemplate.Execute(out, templateOpts); err != nil {
+		return fmt.Errorf("error exec-ing default config template: %v", err)
+	}
 	return nil
 }
