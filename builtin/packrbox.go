@@ -32,10 +32,6 @@ func Bytes(path string) []byte {
 	return bytes
 }
 
-func MustBytes(path string) ([]byte, error) {
-	return Box().MustBytes(path)
-}
-
 func String(path string) string {
 	str, err := Box().MustString(path)
 	if err != nil {
