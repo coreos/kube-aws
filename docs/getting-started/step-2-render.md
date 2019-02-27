@@ -120,8 +120,14 @@ There will now be a `cluster.yaml` file in the asset directory. This is the main
   ```sh
 
   ls -R credentials/
-  admin-key.pem       apiserver-key.pem   ca-key.pem          etcd-client-key.pem etcd-key.pem        worker-key.pem
-  admin.pem           apiserver.pem       ca.pem              etcd-client.pem     etcd.pem            worker.pem
+  admin-key.pem                   encryption-config.yaml          kiam-ca.pem                     service-account-key.pem
+  admin.pem                       etcd-client-key.pem             kiam-server-key.pem             tokens.csv
+  apiserver-aggregator-key.pem    etcd-client.pem                 kiam-server.pem                 worker-ca-key.pem
+  apiserver-aggregator.pem        etcd-key.pem                    kube-controller-manager-key.pem worker-ca.pem
+  apiserver-key.pem               etcd-trusted-ca.pem             kube-controller-manager.pem     worker-key.pem
+  apiserver.pem                   etcd.pem                        kube-scheduler-key.pem          worker.pem
+  ca-key.pem                      kiam-agent-key.pem              kube-scheduler.pem
+  ca.pem                          kiam-agent.pem                  kubelet-tls-bootstrap-token
   ```
 
 ### Render cluster assets
@@ -141,20 +147,54 @@ $ tree
 ├── credentials
 │   ├── admin-key.pem
 │   ├── admin.pem
+│   ├── apiserver-aggregator-key.pem
+│   ├── apiserver-aggregator.pem
 │   ├── apiserver-key.pem
 │   ├── apiserver.pem
 │   ├── ca-key.pem
 │   ├── ca.pem
+│   ├── encryption-config.yaml
+│   ├── etcd-client-key.pem
+│   ├── etcd-client.pem
+│   ├── etcd-key.pem
+│   ├── etcd-trusted-ca.pem -> ca.pem
+│   ├── etcd.pem
+│   ├── kiam-agent-key.pem
+│   ├── kiam-agent.pem
+│   ├── kiam-ca.pem
+│   ├── kiam-server-key.pem
+│   ├── kiam-server.pem
+│   ├── kube-controller-manager-key.pem
+│   ├── kube-controller-manager.pem
+│   ├── kube-scheduler-key.pem
+│   ├── kube-scheduler.pem
+│   ├── kubelet-tls-bootstrap-token
+│   ├── service-account-key.pem
+│   ├── tokens.csv
+│   ├── worker-ca-key.pem -> ca-key.pem
+│   ├── worker-ca.pem -> ca.pem
 │   ├── worker-key.pem
 │   └── worker.pem
-│   ├── etcd-key.pem
-│   └── etcd.pem
-│   ├── etcd-client-key.pem
-│   └── etcd-client.pem
 ├── kubeconfig
-├── stack-template.json
+├── plugins
+│   └── aws-iam-authenticator
+│       ├── files
+│       │   ├── authentication-token-webhook-config.yaml
+│       │   ├── controller-kubeconfig.yaml
+│       │   └── worker-kubeconfig.yaml
+│       ├── manifests
+│       │   ├── aws-auth-cm.yaml
+│       │   └── daemonset.yaml
+│       └── plugin.yaml
+├── stack-templates
+│   ├── control-plane.json.tmpl
+│   ├── etcd.json.tmpl
+│   ├── network.json.tmpl
+│   ├── node-pool.json.tmpl
+│   └── root.json.tmpl
 └── userdata
     ├── cloud-config-controller
+    ├── cloud-config-etcd
     └── cloud-config-worker
 ```
 
