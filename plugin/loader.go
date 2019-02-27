@@ -26,7 +26,6 @@ func (l Loader) Load() ([]*api.Plugin, error) {
 				return []*api.Plugin{}, fmt.Errorf("Failed to load plugin from the directory %s: %v", f.Name(), err)
 			}
 			plugins = append(plugins, p)
-			//fmt.Fprintf(os.Stderr, "loaded plugin %v\n", p)
 		}
 	}
 	return plugins, nil
