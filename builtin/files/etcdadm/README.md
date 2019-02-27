@@ -14,7 +14,7 @@ AWS_SECRET_ACCESS_KEY=... \
 ETCDADM_AWSCLI_DOCKER_IMAGE=quay.io/coreos/awscli \
 # Required settings
 AWS_DEFAULT_REGION=ap-northeast-1 \
-ETCD_VERSION=3.3.10 \
+ETCD_VERSION=3.2.13 \
 ETCD_DATA_DIR=/var/lib/etcd \
 ETCD_INITIAL_CLUSTER=etcd0=http://127.0.0.1:3080,etcd1=http://127.0.0.1:3180,etcd2=http://127.0.0.1:3280 \
 ETCDCTL_ENDPOINTS=http://127.0.0.1:3079,etcd1=http://127.0.0.1:3179,etcd2=http://127.0.0.1:3279, \

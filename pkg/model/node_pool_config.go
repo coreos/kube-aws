@@ -84,6 +84,15 @@ func (c NodePoolConfig) FeatureGates() api.FeatureGates {
 	if c.Kubelet.RotateCerts.Enabled {
 		gates["RotateKubeletClientCertificate"] = "true"
 	}
+	//From kube 1.11 PodPriority and ExpandPersistentVolumes have become enabled by default,
+	//so making sure it is not enabled if user has explicitly set them to false
+	//https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-1.11.md#changelog-since-v1110
+	if !c.Experimental.Admission.Priority.Enabled {
+		gates["PodPriority"] = "false"
+	}
+	if !c.Experimental.Admission.PersistentVolumeClaimResize.Enabled {
+		gates["ExpandPersistentVolumes"] = "false"
+	}
 	return gates
 }
 

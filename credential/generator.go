@@ -26,11 +26,23 @@ type Generator struct {
 type GeneratorOptions struct {
 	AwsDebug   bool
 	GenerateCA bool
-	CaKeyPath  string
 	CaCertPath string
 	CommonName string
 	// KIAM is set to true when you want kube-aws to render TLS assets for uswitch/kiam
 	KIAM bool
+	// Paths for private certificate keys.
+	AdminKeyPath                 string
+	ApiServerAggregatorKeyPath   string
+	ApiServerKeyPath             string
+	CaKeyPath                    string
+	EtcdClientKeyPath            string
+	EtcdKeyPath                  string
+	KiamAgentKeyPath             string
+	KiamServerKeyPath            string
+	KubeControllerManagerKeyPath string
+	KubeSchedulerKeyPath         string
+	ServiceAccountKeyPath        string
+	WorkerKeyPath                string
 }
 
 func (c Generator) GenerateAssetsOnDisk(dir string, o GeneratorOptions) (*RawAssetsOnDisk, error) {
@@ -63,7 +75,7 @@ func (c Generator) GenerateAssetsOnDisk(dir string, o GeneratorOptions) (*RawAss
 	}
 
 	logger.Info("-> Generating new assets")
-	assets, err := c.GenerateAssetsOnMemory(caKey, caCert, o.KIAM)
+	assets, err := c.GenerateAssetsOnMemory(caKey, caCert, o)
 	if err != nil {
 		return nil, fmt.Errorf("Error generating default assets: %v", err)
 	}
@@ -92,19 +104,47 @@ func (c Generator) GenerateAssetsOnDisk(dir string, o GeneratorOptions) (*RawAss
 	}
 }
 
-func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certificate, kiamEnabled bool) (*RawAssetsOnMemory, error) {
+func getOrCreatePrivateKey(keyPath string) (*rsa.PrivateKey, error) {
+	if keyPath != "" {
+		keyBytes, err := ioutil.ReadFile(keyPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed reading key file %s : %v", keyPath, err)
+		}
+
+		key, err := pki.DecodePrivateKeyPEM(keyBytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed parsing key: %v", err)
+		}
+		return key, nil
+	}
+	return pki.NewPrivateKey()
+}
+
+func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Certificate, generatorOptions GeneratorOptions) (*RawAssetsOnMemory, error) {
 	// Convert from days to time.Duration
 	certDuration := time.Duration(c.TLSCertDurationDays) * 24 * time.Hour
 
 	// Generate keys for the various components.
-	keys := make([]*rsa.PrivateKey, 11)
-	var err error
-	for i := range keys {
-		if keys[i], err = pki.NewPrivateKey(); err != nil {
+	privateKeys := map[string]*rsa.PrivateKey{
+		generatorOptions.ApiServerKeyPath:             nil,
+		generatorOptions.KubeControllerManagerKeyPath: nil,
+		generatorOptions.KubeSchedulerKeyPath:         nil,
+		generatorOptions.WorkerKeyPath:                nil,
+		generatorOptions.AdminKeyPath:                 nil,
+		generatorOptions.EtcdKeyPath:                  nil,
+		generatorOptions.EtcdClientKeyPath:            nil,
+		generatorOptions.KiamAgentKeyPath:             nil,
+		generatorOptions.KiamServerKeyPath:            nil,
+		generatorOptions.ServiceAccountKeyPath:        nil,
+		generatorOptions.ApiServerAggregatorKeyPath:   nil,
+	}
+
+	for key := range privateKeys {
+		var err error
+		if privateKeys[key], err = getOrCreatePrivateKey(key); err != nil {
 			return nil, err
 		}
 	}
-	apiServerKey, kubeControllerManagerKey, kubeSchedulerKey, workerKey, adminKey, etcdKey, etcdClientKey, kiamAgentKey, kiamServerKey, serviceAccountKey, apiServerAggregatorKey := keys[0], keys[1], keys[2], keys[3], keys[4], keys[5], keys[6], keys[7], keys[8], keys[9], keys[10]
 
 	// Compute kubernetesServiceIP from serviceCIDR
 	_, serviceNet, err := net.ParseCIDR(c.ServiceCIDR)
@@ -132,7 +172,7 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 		},
 		Duration: certDuration,
 	}
-	apiServerCert, err := pki.NewSignedServerCertificate(apiServerConfig, apiServerKey, caCert, caKey)
+	apiServerCert, err := pki.NewSignedServerCertificate(apiServerConfig, privateKeys[generatorOptions.ApiServerKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +185,7 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 		Duration: certDuration,
 	}
 
-	etcdCert, err := pki.NewSignedServerCertificate(etcdConfig, etcdKey, caCert, caKey)
+	etcdCert, err := pki.NewSignedServerCertificate(etcdConfig, privateKeys[generatorOptions.EtcdKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +198,7 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 		},
 		Duration: certDuration,
 	}
-	workerCert, err := pki.NewSignedClientCertificate(workerConfig, workerKey, caCert, caKey)
+	workerCert, err := pki.NewSignedClientCertificate(workerConfig, privateKeys[generatorOptions.WorkerKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +208,7 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 		Duration:   certDuration,
 	}
 
-	etcdClientCert, err := pki.NewSignedClientCertificate(etcdClientConfig, etcdClientKey, caCert, caKey)
+	etcdClientCert, err := pki.NewSignedClientCertificate(etcdClientConfig, privateKeys[generatorOptions.EtcdClientKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +218,7 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 		Organization: []string{"system:masters"},
 		Duration:     certDuration,
 	}
-	adminCert, err := pki.NewSignedClientCertificate(adminConfig, adminKey, caCert, caKey)
+	adminCert, err := pki.NewSignedClientCertificate(adminConfig, privateKeys[generatorOptions.AdminKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +227,7 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 		CommonName: "system:kube-controller-manager",
 		Duration:   certDuration,
 	}
-	kubeControllerManagerCert, err := pki.NewSignedClientCertificate(kubeControllerManagerConfig, kubeControllerManagerKey, caCert, caKey)
+	kubeControllerManagerCert, err := pki.NewSignedClientCertificate(kubeControllerManagerConfig, privateKeys[generatorOptions.KubeControllerManagerKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +236,7 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 		CommonName: "system:kube-scheduler",
 		Duration:   certDuration,
 	}
-	kubeSchedulerCert, err := pki.NewSignedClientCertificate(kubeSchedulerConfig, kubeSchedulerKey, caCert, caKey)
+	kubeSchedulerCert, err := pki.NewSignedClientCertificate(kubeSchedulerConfig, privateKeys[generatorOptions.KubeSchedulerKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +245,7 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 		CommonName: "aggregator",
 		Duration:   certDuration,
 	}
-	apiServerAggregatorCert, err := pki.NewSignedClientCertificate(apiServerAggregatorConfig, apiServerAggregatorKey, caCert, caKey)
+	apiServerAggregatorCert, err := pki.NewSignedClientCertificate(apiServerAggregatorConfig, privateKeys[generatorOptions.ApiServerAggregatorKeyPath], caCert, caKey)
 	if err != nil {
 		return nil, err
 	}
@@ -232,28 +272,28 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 		EtcdClientCert:            pki.EncodeCertificatePEM(etcdClientCert),
 		APIServerAggregatorCert:   pki.EncodeCertificatePEM(apiServerAggregatorCert),
 		CAKey:                     pki.EncodePrivateKeyPEM(caKey),
-		APIServerKey:              pki.EncodePrivateKeyPEM(apiServerKey),
-		KubeControllerManagerKey:  pki.EncodePrivateKeyPEM(kubeControllerManagerKey),
-		KubeSchedulerKey:          pki.EncodePrivateKeyPEM(kubeSchedulerKey),
-		WorkerKey:                 pki.EncodePrivateKeyPEM(workerKey),
-		AdminKey:                  pki.EncodePrivateKeyPEM(adminKey),
-		EtcdKey:                   pki.EncodePrivateKeyPEM(etcdKey),
-		EtcdClientKey:             pki.EncodePrivateKeyPEM(etcdClientKey),
-		ServiceAccountKey:         pki.EncodePrivateKeyPEM(serviceAccountKey),
-		APIServerAggregatorKey:    pki.EncodePrivateKeyPEM(apiServerAggregatorKey),
+		APIServerKey:              pki.EncodePrivateKeyPEM(privateKeys[generatorOptions.ApiServerKeyPath]),
+		KubeControllerManagerKey:  pki.EncodePrivateKeyPEM(privateKeys[generatorOptions.KubeControllerManagerKeyPath]),
+		KubeSchedulerKey:          pki.EncodePrivateKeyPEM(privateKeys[generatorOptions.KubeSchedulerKeyPath]),
+		WorkerKey:                 pki.EncodePrivateKeyPEM(privateKeys[generatorOptions.WorkerKeyPath]),
+		AdminKey:                  pki.EncodePrivateKeyPEM(privateKeys[generatorOptions.AdminKeyPath]),
+		EtcdKey:                   pki.EncodePrivateKeyPEM(privateKeys[generatorOptions.EtcdKeyPath]),
+		EtcdClientKey:             pki.EncodePrivateKeyPEM(privateKeys[generatorOptions.EtcdClientKeyPath]),
+		ServiceAccountKey:         pki.EncodePrivateKeyPEM(privateKeys[generatorOptions.ServiceAccountKeyPath]),
+		APIServerAggregatorKey:    pki.EncodePrivateKeyPEM(privateKeys[generatorOptions.ApiServerAggregatorKeyPath]),
 
 		AuthTokens:        []byte(authTokens),
 		TLSBootstrapToken: []byte(tlsBootstrapToken),
 		EncryptionConfig:  []byte(encryptionConfig),
 	}
 
-	if kiamEnabled {
+	if generatorOptions.KIAM {
 		// See https://github.com/uswitch/kiam/blob/master/docs/agent.json
 		agentConfig := pki.ClientCertConfig{
 			CommonName: "Kiam Agent",
 			Duration:   certDuration,
 		}
-		kiamAgentCert, err := pki.NewSignedClientCertificate(agentConfig, kiamAgentKey, caCert, caKey)
+		kiamAgentCert, err := pki.NewSignedClientCertificate(agentConfig, privateKeys[generatorOptions.KiamAgentKeyPath], caCert, caKey)
 		if err != nil {
 			return nil, err
 		}
@@ -269,16 +309,16 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 			),
 			Duration: certDuration,
 		}
-		kiamServerCert, err := pki.NewSignedKIAMCertificate(serverConfig, kiamServerKey, caCert, caKey)
+		kiamServerCert, err := pki.NewSignedKIAMCertificate(serverConfig, privateKeys[generatorOptions.KiamServerKeyPath], caCert, caKey)
 		if err != nil {
 			return nil, err
 		}
 
 		r.KIAMCACert = pki.EncodeCertificatePEM(caCert)
 		r.KIAMAgentCert = pki.EncodeCertificatePEM(kiamAgentCert)
-		r.KIAMAgentKey = pki.EncodePrivateKeyPEM(kiamAgentKey)
+		r.KIAMAgentKey = pki.EncodePrivateKeyPEM(privateKeys[generatorOptions.KiamAgentKeyPath])
 		r.KIAMServerCert = pki.EncodeCertificatePEM(kiamServerCert)
-		r.KIAMServerKey = pki.EncodePrivateKeyPEM(kiamServerKey)
+		r.KIAMServerKey = pki.EncodePrivateKeyPEM(privateKeys[generatorOptions.KiamServerKeyPath])
 	}
 
 	return r, nil

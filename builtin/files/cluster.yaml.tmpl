@@ -275,7 +275,7 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #  # User defined files that will be added to the Controller cluster cloud-init configuration in the "write_files:" section.
 #  # Writing a kubernetes manifest to path /srv/kubernetes/manifests/custom/*.yaml will be automatically
 #  # installed when the controllers start up.
-# 
+#
 #  customFiles:
 #    - path: "/etc/rkt/auth.d/docker.json"
 #      permissions: 0600
@@ -464,10 +464,28 @@ worker:
 #        maxBatchSize: 1
 #
 #      # Auto Scaling Group definition for workers. If only `workerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
+#      # NOTE: Starting kube-aws 0.13, this creates a LaunchTemplate instead of a LaunchConfiguration. This makes new autoscaling options possible
 #      autoScalingGroup:
 #        minSize: 1
 #        maxSize: 3
 #        rollingUpdateMinInstancesInService: 2
+#
+#        # Configure mixedInstances for autoscalinggroups
+#        # See https://aws.amazon.com/blogs/aws/new-ec2-auto-scaling-groups-with-multiple-instance-types-purchase-options/
+#        # and https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-autoscaling-autoscalinggroup-instancesdistribution.html for valid values
+#        # NOTE: mixedInstances and full cluster autoscaler support is being worked on at the moment see: https://github.com/kubernetes/autoscaler/pull/1473
+#        mixedInstances:
+#          enabled: false
+#          onDemandAllocationStrategy: prioritized
+#          onDemandBaseCapacity: 0
+#          onDemandPercentageAboveBaseCapacity: 0
+#          spotAllocationStrategy: lowest-price
+#          spotInstancePools: 2
+#          # Omit spotMaxPrice for default behaviour: max price = on-demand price
+#          spotMaxPrice: 2
+#          instanceTypes:
+#          - t2.medium
+#          - t3.medium
 #
 #      #
 #      # Spot fleet config for worker nodes
@@ -734,6 +752,8 @@ worker:
 #      arn: "arn:aws:iam::YOURACCOUNTID:instance-profile/INSTANCEPROFILENAME"
 #
 #  # The version of etcd to be used. Set to e.g. "3.2.1" to use etcd3
+#  # CAUTION: Increasing etcd version will permanently change the state of etcd and a cloud formation rollback, will not succeed due to etcd 
+#  being unable to downgrade. 
 #  version: 3.2.13
 #
 #  snapshot:
@@ -818,7 +838,7 @@ worker:
 #        Description=Example Custom Service
 #        [Service]
 #        ExecStart=/bin/rkt run --set-env TAGS=Controller ...
-#  # extra etcd options 
+#  # extra etcd options
 #  userSuppliedArgs:
 #    # for example, setting the --quota-backend-bytes and --auto-compaction-retention options
 #    quotaBackendBytes:
@@ -1152,7 +1172,7 @@ worker:
 # Kube Dashboard image repository to use.
 #kubernetesDashboardImage:
 #  repo: k8s.gcr.io/kubernetes-dashboard-amd64
-#  tag: v1.8.3
+#  tag: v1.10.1
 #  rktPullDocker: false
 
 # Pause image repository to use.This works only if you are deploying your cluster in "cn-north-1" region.
@@ -1254,7 +1274,7 @@ kubernetes:
 #kubeResourcesAutosave:
 #  enabled: false
 #
-      
+
 # Set kube-system namespace labels:
 # In order to target a namespace for network policies the namepace needs to be labeled.
 # Feel free to remove or alter this setting to change the labels for the kube-system namespace.
@@ -1279,6 +1299,8 @@ kubeSystemNamespaceLabels:
 kubernetesDashboard:
   adminPrivileges: true
   insecureLogin: false
+  allowSkipLogin: false
+  replicas: 1
   enabled: true
 # # Optional resource change for Dashboard can be done via using the resources block below and changing the values.
 # # Values below are the default already if not set.
@@ -1358,12 +1380,20 @@ addons:
   # If you want to run CA on worker nodes, turn on `worker.nodePools[].clusterAutoscalerSupport.enabled` for the node pool.
   clusterAutoscaler:
     enabled: false
+    resources:
+      # Increase these values substantially if running a cluster of 50+ nodes
+      limits:
+        cpu: 100m
+        memory: 300Mi
+      requests:
+        cpu: 100m
+        memory: 300Mi
     # Options below can be used to inject custom settings for the autoscaler.
     # Sensible defaults are already configured in the controller-cloud-config but if you wish to override them simply
     # add them here and they'll take precedence.
     #options:
     #  flag-name: value
-    #  v: 5 
+    #  v: 5
     #  expander: least-waste
 
   # When enabled, Kubernetes rescheduler is deployed to the cluster controller(s)
@@ -1464,16 +1494,16 @@ experimental:
   # This is intended to be used in combination with .controller.iam.role.name. See #297 for more information.
   kiamSupport:
     enabled: false
-    image: 
+    image:
       repo: quay.io/uswitch/kiam
       tag: v2.8
       rktPullDocker: false
-    sessionDuration: 15m  
+    sessionDuration: 15m
     serverAddresses:
       serverAddress: localhost:443
       agentAddress: kiam-server:443
     # Optional resource change for kiam servers/agents can be done via using the resources block below and changing the values.
-    # Values below are the default if not set. 
+    # Values below are the default if not set.
     # serverResources:
     #   requests:
     #     cpu: 50m
@@ -1568,9 +1598,9 @@ hostOS:
 #    include-pwd: true                      # Include the present directory in each prompt.
 #    include-hostname: true                 # Include the hostname in each prompt.
 #    include-user: true                     # Include the username in each prompt.
-#    cluster-colour: light-cyan            
+#    cluster-colour: light-cyan
 #    divider: "|"                           # Divider between server type and cluster name, e.g. etcd|mycluster
-#    divider-colour: default-colour  
+#    divider-colour: default-colour
 #    etcd-label: etcd                       # Start prompt 'etcd' on prompts for etcd servers.
 #    etcd-colour: light-green
 #    controller-label: master               # Start prompt with 'master' on controllers.

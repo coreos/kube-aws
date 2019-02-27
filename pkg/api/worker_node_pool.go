@@ -99,6 +99,10 @@ func (c WorkerNodePool) LaunchConfigurationLogicalName() string {
 	return c.LogicalName() + "LC"
 }
 
+func (c WorkerNodePool) LaunchTemplateLogicalName() string {
+	return c.LogicalName() + "LT"
+}
+
 // NodePoolLogicalName returns a sanitized name of this pool which is usable as a valid cloudformation nested stack name
 func (c WorkerNodePool) NodePoolLogicalName() string {
 	return naming.FromStackToCfnResource(c.NodePoolName)

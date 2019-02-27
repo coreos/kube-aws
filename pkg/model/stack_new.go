@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+
 	"github.com/kubernetes-incubator/kube-aws/credential"
 	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/pkg/api"
@@ -124,6 +125,11 @@ func NewNetworkStack(conf *Config, nodePools []*Stack, opts api.StackTemplateOpt
 			}, nil
 		},
 		func(stack *Stack) error {
+			extraStack, err := extras.NetworkStack(stack)
+			if err != nil {
+				return fmt.Errorf("failed to load network stack extras from plugins: %v", err)
+			}
+			stack.ExtraCfnResources = extraStack.Resources
 			return nil
 		},
 	)

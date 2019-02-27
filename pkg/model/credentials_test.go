@@ -23,7 +23,7 @@ func genAssets(t *testing.T) *credential.RawAssetsOnMemory {
 	}
 	cfg, err := Compile(c, api.ClusterOptions{})
 	r := NewCredentialGenerator(cfg)
-	assets, err := r.GenerateAssetsOnMemory(caKey, caCert, true)
+	assets, err := r.GenerateAssetsOnMemory(caKey, caCert, credential.GeneratorOptions{KIAM: true})
 	if err != nil {
 		t.Fatalf("failed generating assets: %v", err)
 	}

@@ -36,8 +36,8 @@ func TestEtcd(t *testing.T) {
 		t.Errorf("name tag key incorrect, expected: kube-aws:etcd:name, got: %s", etcdTest.NameTagKey())
 	}
 
-	if etcdTest.Version() != "3.3.10" {
-		t.Errorf("etcd version incorrect, epxected: 3.3.10, got: %s", etcdTest.Version())
+	if etcdTest.Version() != "3.2.13" {
+		t.Errorf("etcd version incorrect, epxected: 3.2.13, got: %s", etcdTest.Version())
 	}
 
 	if !etcdTest.NodeShouldHaveEIP() {

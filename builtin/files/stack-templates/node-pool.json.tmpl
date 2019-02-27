@@ -113,12 +113,10 @@
 {{end}}
 {{define "AutoScaling"}}
     "{{.LogicalName}}": {
+      "DependsOn": "{{.LaunchTemplateLogicalName}}",
       "Properties": {
         "HealthCheckGracePeriod": 600,
         "HealthCheckType": "EC2",
-        "LaunchConfigurationName": {
-          "Ref": "{{.LaunchConfigurationLogicalName}}"
-        },
         "MaxSize": "{{.MaxCount}}",
         "MetricsCollection": [
           {
@@ -126,6 +124,43 @@
           }
         ],
         "MinSize": "{{.MinCount}}",
+        {{if .AutoScalingGroup.MixedInstances.Enabled }}
+        "MixedInstancesPolicy": {
+          "InstancesDistribution" : {
+            {{if .AutoScalingGroup.MixedInstances.OnDemandAllocationStrategy}}
+            "OnDemandAllocationStrategy" : "{{.AutoScalingGroup.MixedInstances.OnDemandAllocationStrategy}}",
+            {{end}}
+            "OnDemandBaseCapacity" : {{.AutoScalingGroup.MixedInstances.OnDemandBaseCapacity}},
+            "OnDemandPercentageAboveBaseCapacity" : {{.AutoScalingGroup.MixedInstances.OnDemandPercentageAboveBaseCapacity}},
+            {{if .AutoScalingGroup.MixedInstances.SpotAllocationStrategy}}
+            "SpotAllocationStrategy" : "{{.AutoScalingGroup.MixedInstances.SpotAllocationStrategy}}",
+            {{end}}
+            {{if .AutoScalingGroup.MixedInstances.SpotMaxPrice}}
+            "SpotMaxPrice" : "{{.AutoScalingGroup.MixedInstances.SpotMaxPrice}}",
+            {{end}}
+            "SpotInstancePools" : {{.AutoScalingGroup.MixedInstances.SpotInstancePools}}
+          },
+          "LaunchTemplate" : {
+            "LaunchTemplateSpecification" : {
+              "LaunchTemplateId": { "Ref": "{{.LaunchTemplateLogicalName}}" },
+              "Version": { "Fn::GetAtt" : [ "{{.LaunchTemplateLogicalName}}", "LatestVersionNumber" ] }
+            },
+            "Overrides" : [
+              {{range $index, $instanceType := .AutoScalingGroup.MixedInstances.InstanceTypes}}
+              {{if $index}},{{end}}
+              {
+                "InstanceType": "{{$instanceType}}"
+              }
+              {{end}}
+            ]
+          }
+        },
+        {{else}}
+        "LaunchTemplate": {
+          "LaunchTemplateId": { "Ref": "{{.LaunchTemplateLogicalName}}" },
+          "Version": { "Fn::GetAtt" : [ "{{.LaunchTemplateLogicalName}}", "LatestVersionNumber" ] }
+        },
+        {{end}}
         "Tags": [
           {{if .Autoscaling.ClusterAutoscaler.Enabled}}
           {
@@ -223,66 +258,79 @@
       "Type" : "AWS::AutoScaling::LifecycleHook"
     },
     {{end}}
-    "{{.LaunchConfigurationLogicalName}}": {
+    "{{.LaunchTemplateLogicalName}}": {
       "Properties": {
-        "BlockDeviceMappings": [
-          {
-            "DeviceName": "/dev/xvda",
-            "Ebs": {
-              "VolumeSize": "{{.RootVolume.Size}}",
-              {{if gt .RootVolume.IOPS 0}}
-              "Iops": "{{.RootVolume.IOPS}}",
-              {{end}}
-              "VolumeType": "{{.RootVolume.Type}}"
-            }
-          }{{range $volumeMountSpecIndex, $volumeMountSpec := .VolumeMounts}},
-          {
-            "DeviceName": "{{$volumeMountSpec.Device}}",
-            "Ebs": {
-              "VolumeSize": "{{$volumeMountSpec.Size}}",
-              {{if gt $volumeMountSpec.Iops 0}}
-              "Iops": "{{$volumeMountSpec.Iops}}",
-              {{end}}
-              "VolumeType": "{{$volumeMountSpec.Type}}"
-            }
-          }{{- end -}}{{range $raid0MountSpecIndex, $raid0MountSpec := $.Raid0Mounts}}{{range $DeviceIndex, $Device := $raid0MountSpec.Devices}},
+        "LaunchTemplateName": "{{.NodePoolName}}",
+        "LaunchTemplateData": {
+          "BlockDeviceMappings": [
             {
-              "DeviceName": "{{$Device}}",
+              "DeviceName": "/dev/xvda",
               "Ebs": {
-                "VolumeSize": "{{$raid0MountSpec.Size}}",
-                {{if gt $raid0MountSpec.Iops 0}}
-                "Iops": "{{$raid0MountSpec.Iops}}",
+                "VolumeSize": "{{.RootVolume.Size}}",
+                {{if gt .RootVolume.IOPS 0}}
+                "Iops": "{{.RootVolume.IOPS}}",
                 {{end}}
-                "VolumeType": "{{$raid0MountSpec.Type}}"
+                "VolumeType": "{{.RootVolume.Type}}"
               }
-            }{{end}}
-          {{- end -}}
-        ],
-         {{if .IAMConfig.InstanceProfile.Arn }}
-        "IamInstanceProfile": "{{.IAMConfig.InstanceProfile.Arn}}",
-        {{else}}
-        "IamInstanceProfile": { "Ref": "IAMInstanceProfileWorker" },
-        {{end}}
-        "ImageId": "{{.AMI}}",
-        "InstanceType": "{{.InstanceType}}",
-        {{if .KeyName}}"KeyName": "{{.KeyName}}",{{end}}
-        "SecurityGroups": [
-          {{range $sgIndex, $sgRef := $.SecurityGroupRefs}}
-          {{if gt $sgIndex 0}},{{end}}
-          {{$sgRef}}
+            }{{range $volumeMountSpecIndex, $volumeMountSpec := .VolumeMounts}},
+            {
+              "DeviceName": "{{$volumeMountSpec.Device}}",
+              "Ebs": {
+                "VolumeSize": "{{$volumeMountSpec.Size}}",
+                {{if gt $volumeMountSpec.Iops 0}}
+                "Iops": "{{$volumeMountSpec.Iops}}",
+                {{end}}
+                "VolumeType": "{{$volumeMountSpec.Type}}"
+              }
+            }{{- end -}}{{range $raid0MountSpecIndex, $raid0MountSpec := $.Raid0Mounts}}{{range $DeviceIndex, $Device := $raid0MountSpec.Devices}},
+              {
+                "DeviceName": "{{$Device}}",
+                "Ebs": {
+                  "VolumeSize": "{{$raid0MountSpec.Size}}",
+                  {{if gt $raid0MountSpec.Iops 0}}
+                  "Iops": "{{$raid0MountSpec.Iops}}",
+                  {{end}}
+                  "VolumeType": "{{$raid0MountSpec.Type}}"
+                }
+              }{{end}}
+            {{- end -}}
+          ],
+          "IamInstanceProfile": {
+             {{if .IAMConfig.InstanceProfile.Arn }}
+              "Arn": "{{.IAMConfig.InstanceProfile.Arn}}"
+            {{else}}
+              "Name": { "Ref": "IAMInstanceProfileWorker" }
+            {{end}}
+          },
+          "ImageId": "{{.AMI}}",
+          "InstanceType": "{{.InstanceType}}",
+          {{if .KeyName}}"KeyName": "{{.KeyName}}",{{end}}
+          "SecurityGroupIds": [
+            {{range $sgIndex, $sgRef := $.SecurityGroupRefs}}
+            {{if gt $sgIndex 0}},{{end}}
+            {{$sgRef}}
+            {{end}}
+          ],
+          {{if not .AutoScalingGroup.MixedInstances.Enabled }}
+            {{if .SpotPrice}}
+              "InstanceMarketOptions": {
+                "MarketType": "spot",
+                "SpotOptions": {
+                  "MaxPrice": "{{.SpotPrice}}"
+                }
+              },
+            {{end}}
+            {{if EbsOptimized .InstanceType }}
+              "EbsOptimized": "true",
+            {{end}}
           {{end}}
-        ],
-        {{if .SpotPrice}}
-        "SpotPrice": {{.SpotPrice}},
-        {{else}}
-        "PlacementTenancy": "{{.Tenancy}}",
-        {{end}}
-        {{if EbsOptimized .InstanceType }}
-        "EbsOptimized": "true",
-        {{end}}
-        "UserData": {{ .UserDataWorker.Parts.instance.Template }}
+          "Placement": {
+            "Tenancy": "{{.Tenancy}}"
+          },
+          "UserData": {{ .UserDataWorker.Parts.instance.Template }}
+        }
       },
-      "Type": "AWS::AutoScaling::LaunchConfiguration"
+      "Type": "AWS::EC2::LaunchTemplate"
     {{if not .IAMConfig.InstanceProfile.Arn}}
     },
     {{else}}

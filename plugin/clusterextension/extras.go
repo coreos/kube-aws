@@ -10,6 +10,7 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/plugin/pluginutil"
 	"github.com/kubernetes-incubator/kube-aws/provisioner"
 	"github.com/kubernetes-incubator/kube-aws/tmpl"
+
 	//"os"
 	"path/filepath"
 
@@ -56,6 +57,12 @@ func (e ClusterExtension) KeyPairSpecs() []api.KeyPairSpec {
 func (e ClusterExtension) RootStack(config interface{}) (*stack, error) {
 	return e.stackExt("root", config, func(p *api.Plugin) api.Stack {
 		return p.Spec.Cluster.CloudFormation.Stacks.Root
+	})
+}
+
+func (e ClusterExtension) NetworkStack(config interface{}) (*stack, error) {
+	return e.stackExt("network", config, func(p *api.Plugin) api.Stack {
+		return p.Spec.Cluster.CloudFormation.Stacks.Network
 	})
 }
 

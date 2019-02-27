@@ -578,6 +578,11 @@
       "Type": "AWS::AutoScaling::LaunchConfiguration"
     }
     {{end}}
+    {{range $n, $r := .ExtraCfnResources}}
+    ,
+    {{quote $n}}: {{toJSON $r}}
+    {{end}}
+    
   },
   "Outputs": {
     {{range $index, $etcdInstance := $.EtcdNodes}}

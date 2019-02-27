@@ -284,6 +284,14 @@ func (cl *Cluster) s3URI() string {
 	return cl.controlPlaneStack.S3URI
 }
 
+func (cl *Cluster) operationTargetNames() []string {
+	return []string{
+		cl.controlPlaneStack.Config.ControlPlaneStackName(),
+		cl.networkStack.Config.NetworkStackName(),
+		cl.etcdStack.Config.EtcdStackName(),
+	}
+}
+
 func (cl *Cluster) NodePools() []*model.Stack {
 	return cl.nodePoolStacks
 }
@@ -293,7 +301,7 @@ func (cl *Cluster) allOperationTargets() OperationTargets {
 	for _, np := range cl.nodePoolStacks {
 		names = append(names, np.StackName)
 	}
-	return AllOperationTargetsWith(names)
+	return AllOperationTargetsWith(names, cl.operationTargetNames())
 }
 
 func (cl *Cluster) operationTargetsFromUserInput(opts []OperationTargets) OperationTargets {
@@ -328,7 +336,7 @@ func (cl *Cluster) Diff(opts OperationTargets, context int) ([]*DiffResult, erro
 	mappings := map[string]diffSetting{}
 
 	isAll := opts.IsAll()
-	includeAll := opts.IncludeNetwork() && opts.IncludeEtcd() && opts.IncludeControlPlane()
+	includeAll := opts.IncludeAll(cl)
 	for _, np := range cl.nodePoolStacks {
 		includeAll = includeAll && opts.IncludeWorker(np.StackName)
 	}
@@ -336,7 +344,7 @@ func (cl *Cluster) Diff(opts OperationTargets, context int) ([]*DiffResult, erro
 		mappings["root"] = diffSetting{cl.stackName(), cl, nil, ""}
 	}
 
-	if isAll || opts.IncludeNetwork() {
+	if isAll || opts.IncludeNetwork(cl.networkStack.Config.NetworkStackName()) {
 		stackName, err := getNestedStackName(cfnSvc, cl.stackName(), cl.networkStack.NestedStackName())
 		if err != nil {
 			return nil, err
@@ -345,7 +353,7 @@ func (cl *Cluster) Diff(opts OperationTargets, context int) ([]*DiffResult, erro
 	}
 
 	staticEtcdIndex := 0
-	if isAll || opts.IncludeEtcd() {
+	if isAll || opts.IncludeEtcd(cl.etcdStack.Config.EtcdStackName()) {
 		stackName, err := getNestedStackName(cfnSvc, cl.stackName(), cl.etcdStack.NestedStackName())
 		if err != nil {
 			return nil, err
@@ -353,7 +361,7 @@ func (cl *Cluster) Diff(opts OperationTargets, context int) ([]*DiffResult, erro
 		mappings["etcd"] = diffSetting{stackName, cl.etcdStack, cl.etcdStack.GetUserData("Etcd"), cl.etcdStack.Config.EtcdNodes[staticEtcdIndex].LaunchConfigurationLogicalName()}
 	}
 
-	if isAll || opts.IncludeControlPlane() {
+	if isAll || opts.IncludeControlPlane(cl.controlPlaneStack.Config.ControlPlaneStackName()) {
 		stackName, err := getNestedStackName(cfnSvc, cl.stackName(), cl.controlPlaneStack.NestedStackName())
 		if err != nil {
 			return nil, err
@@ -496,21 +504,21 @@ func (cl *Cluster) Info() (*Info, error) {
 func (cl *Cluster) generateAssets(targets OperationTargets) (cfnstack.Assets, error) {
 	logger.Infof("generating assets for %s\n", targets.String())
 	var netAssets cfnstack.Assets
-	if targets.IncludeNetwork() {
+	if targets.IncludeNetwork(cl.networkStack.Config.NetworkStackName()) {
 		netAssets = cl.networkStack.Assets()
 	} else {
 		netAssets = cfnstack.EmptyAssets()
 	}
 
 	var cpAssets cfnstack.Assets
-	if targets.IncludeControlPlane() {
+	if targets.IncludeControlPlane(cl.controlPlaneStack.Config.ControlPlaneStackName()) {
 		cpAssets = cl.controlPlaneStack.Assets()
 	} else {
 		cpAssets = cfnstack.EmptyAssets()
 	}
 
 	var etcdAssets cfnstack.Assets
-	if targets.IncludeEtcd() {
+	if targets.IncludeEtcd(cl.etcdStack.Config.EtcdStackName()) {
 		etcdAssets = cl.etcdStack.Assets()
 	} else {
 		etcdAssets = cfnstack.EmptyAssets()
@@ -539,7 +547,7 @@ func (cl *Cluster) generateAssets(targets OperationTargets) (cfnstack.Assets, er
 
 	var stackTemplate string
 	// Do not update the root stack but update either controlplane or worker stack(s) only when specified so
-	includeAll := targets.IncludeNetwork() && targets.IncludeEtcd() && targets.IncludeControlPlane()
+	includeAll := targets.IncludeAll(cl)
 	for _, np := range cl.nodePoolStacks {
 		includeAll = includeAll && targets.IncludeWorker(np.StackName)
 	}

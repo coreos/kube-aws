@@ -3,6 +3,7 @@ package integration
 import (
 	"os"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -268,6 +269,7 @@ spec:
 					cp := c.ControlPlane()
 					np := c.NodePools()[0]
 					etcd := c.Etcd()
+					network := c.Network()
 
 					{
 						e := api.CustomFile{
@@ -408,6 +410,35 @@ spec:
 						t.Errorf("Invalid control-plane stack template: missing iam policy statement ec2:Describe*: %v", controlPlaneStackTemplate)
 					}
 
+					// A kube-aws plugin can inject custom cfn stack resources into the etcd stack
+					etcdStackTemplate, err := etcd.RenderStackTemplateAsString()
+
+					if err != nil {
+						t.Errorf("failed to render control-plane stack template: %v", err)
+					}
+					if !strings.Contains(etcdStackTemplate, "QueueFromMyPlugin") {
+						t.Errorf("Invalid etcd stack template: missing resource QueueFromMyPlugin: %v", etcdStackTemplate)
+					}
+					if !strings.Contains(etcdStackTemplate, `"QueueName":"baz1"`) {
+						t.Errorf("Invalid etcd stack template: missing QueueName baz1: %v", etcdStackTemplate)
+					}
+					if !strings.Contains(etcdStackTemplate, `"Action":["ec2:Describe*"]`) {
+						t.Errorf("Invalid etcd stack template: missing iam policy statement ec2:Describe*: %v", etcdStackTemplate)
+					}
+
+					// A kube-aws plugin can inject custom cfn stack resources into the network stack
+					networkStackTemplate, err := network.RenderStackTemplateAsString()
+
+					if err != nil {
+						t.Errorf("failed to render control-plane stack template: %v", err)
+					}
+					if !strings.Contains(networkStackTemplate, "QueueFromMyPlugin") {
+						t.Errorf("Invalid networks stack template: missing resource QueueFromMyPlugin: %v", networkStackTemplate)
+					}
+					if !strings.Contains(networkStackTemplate, `"QueueName":"baz1"`) {
+						t.Errorf("Invalid network stack template: missing QueueName baz1: %v", networkStackTemplate)
+					}
+
 					rootStackTemplate, err := c.RenderStackTemplateAsString()
 					if err != nil {
 						t.Errorf("failed to render root stack template: %v", err)
@@ -443,7 +474,7 @@ spec:
 					}
 
 					// A kube-aws plugin can activate feature gates
-					if !strings.Contains(workerUserdataS3Part, `--feature-gates=\"Accelerators=true\"`) {
+					if match, _ := regexp.MatchString(`--feature-gates=.*Accelerators=true`, workerUserdataS3Part); !match {
 						t.Error("missing worker feature gate: Accelerators=true")
 					}
 

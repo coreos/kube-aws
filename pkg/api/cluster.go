@@ -189,7 +189,9 @@ func NewDefaultCluster() *Cluster {
 			KubernetesDashboard: KubernetesDashboard{
 				AdminPrivileges: true,
 				InsecureLogin:   false,
+				AllowSkipLogin:  false,
 				Enabled:         true,
+				Replicas:        1,
 			},
 			Kubernetes: Kubernetes{
 				Authentication: KubernetesAuthentication{
@@ -233,7 +235,7 @@ func NewDefaultCluster() *Cluster {
 			HeapsterImage:                      Image{Repo: "k8s.gcr.io/heapster", Tag: "v1.5.0", RktPullDocker: false},
 			MetricsServerImage:                 Image{Repo: "k8s.gcr.io/metrics-server-amd64", Tag: "v0.2.1", RktPullDocker: false},
 			AddonResizerImage:                  Image{Repo: "k8s.gcr.io/addon-resizer", Tag: "1.8.1", RktPullDocker: false},
-			KubernetesDashboardImage:           Image{Repo: "k8s.gcr.io/kubernetes-dashboard-amd64", Tag: "v1.8.3", RktPullDocker: false},
+			KubernetesDashboardImage:           Image{Repo: "k8s.gcr.io/kubernetes-dashboard-amd64", Tag: "v1.10.1", RktPullDocker: false},
 			PauseImage:                         Image{Repo: "k8s.gcr.io/pause-amd64", Tag: "3.1", RktPullDocker: false},
 			JournaldCloudWatchLogsImage:        Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
 		},
@@ -540,7 +542,9 @@ type Cluster struct {
 type KubernetesDashboard struct {
 	AdminPrivileges  bool             `yaml:"adminPrivileges"`
 	InsecureLogin    bool             `yaml:"insecureLogin"`
+	AllowSkipLogin   bool             `yaml:"allowSkipLogin"`
 	Enabled          bool             `yaml:"enabled"`
+	Replicas         int              `yaml:"replicas,omitempty"`
 	ComputeResources ComputeResources `yaml:"resources,omitempty"`
 }
 
@@ -882,6 +886,20 @@ func (c *Cluster) AvailabilityZones() []string {
 		}
 	}
 	return result
+}
+
+func (c *Cluster) ControllerFeatureGates() FeatureGates {
+	gates := c.Controller.NodeSettings.FeatureGates
+	//From kube 1.11 PodPriority and ExpandPersistentVolumes have become enabled by default,
+	//so making sure it is not enabled if user has explicitly set them to false
+	//https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-1.11.md#changelog-since-v1110
+	if !c.Experimental.Admission.Priority.Enabled {
+		gates["PodPriority"] = "false"
+	}
+	if !c.Experimental.Admission.PersistentVolumeClaimResize.Enabled {
+		gates["ExpandPersistentVolumes"] = "false"
+	}
+	return gates
 }
 
 /*
