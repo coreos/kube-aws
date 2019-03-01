@@ -7,12 +7,12 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/pkg/api"
+	"github.com/kubernetes-incubator/kube-aws/tmpl"
 	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"text/template"
 )
 
 type initialConfig struct {
@@ -97,7 +97,7 @@ func runCmdInit(_ *cobra.Command, _ []string) error {
 		return errors.New("missing required flags: either --hosted-zone-id or --no-record-set is required")
 	}
 
-	if err := createClusterConfigFromTemplate(configPath, initOpts, builtin.String("cluster.yaml.tmpl")); err != nil {
+	if err := createClusterConfigFromTemplate(configPath, builtin.String("cluster.yaml.tmpl"), initOpts); err != nil {
 		return fmt.Errorf("error exec-ing default config template: %v", err)
 	}
 
@@ -112,13 +112,7 @@ Next steps:
 	return nil
 }
 
-func createClusterConfigFromTemplate(outputFilePath string, templateOpts interface{}, fileTemplate string) error {
-	// Render the default cluster config.
-	cfgTemplate, err := template.New("cluster.yaml").Parse(fileTemplate)
-	if err != nil {
-		return fmt.Errorf("error parsing default config template: %v", err)
-	}
-
+func createClusterConfigFromTemplate(outputFilePath, fileTemplate string, templateOpts interface{}) error {
 	dir := filepath.Dir(outputFilePath)
 
 	if _, err := os.Stat(dir); err != nil && os.IsNotExist(err) {
@@ -132,8 +126,10 @@ func createClusterConfigFromTemplate(outputFilePath string, templateOpts interfa
 		return fmt.Errorf("error opening %s : %v", outputFilePath, err)
 	}
 	defer out.Close()
-	if err := cfgTemplate.Execute(out, templateOpts); err != nil {
-		return fmt.Errorf("error exec-ing default config template: %v", err)
+
+	if err := tmpl.WriteTemplateWithOptions(out, fileTemplate, templateOpts); err != nil {
+		return fmt.Errorf("cannot create cluster config from template: %v", err)
 	}
+
 	return nil
 }

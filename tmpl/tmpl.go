@@ -2,6 +2,7 @@ package tmpl
 
 import (
 	"bytes"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -54,4 +55,15 @@ func indent(spaces int, input string) string {
 		}
 	}
 	return buf.String()
+}
+
+// WriteTemplateWithOptions parses the template with its options
+// and writes the result to the provided Writer
+func WriteTemplateWithOptions(w io.Writer, fileTemplate string, templateOpts interface{}) error {
+	cfgTemplate, err := template.ParseFiles(fileTemplate)
+	if err != nil {
+		return err
+	}
+
+	return cfgTemplate.Execute(w, templateOpts)
 }
