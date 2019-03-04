@@ -467,6 +467,7 @@ coreos:
             -ec \
             'echo decrypting tls assets; \
              shopt -s nullglob; \
+             set -o pipefail; \
              for encKey in /etc/ssl/certs/*.pem.enc; do \
              echo decrypting $encKey; \
              /usr/bin/aws \
