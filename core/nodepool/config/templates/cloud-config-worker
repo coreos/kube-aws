@@ -1064,6 +1064,7 @@ write_files:
           -ec \
           'echo decrypting assets
            shopt -s nullglob
+           set -o pipefail
            for encKey in /etc/kubernetes/{ssl,{{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}auth{{end}}}/*.enc; do
              echo decrypting $encKey
              f=$(mktemp $encKey.XXXXXXXX)

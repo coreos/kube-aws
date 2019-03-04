@@ -2657,6 +2657,7 @@ write_files:
           -ec \
           'echo decrypting assets
            shopt -s nullglob
+           set -o pipefail
            for encKey in /etc/kubernetes/{ssl,additional-configs,{{ if or (.AssetsConfig.HasAuthTokens) ( and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken) }}auth{{end}}}/{,kiam/}*.enc; do
              if [ ! -f $encKey ]; then
                echo skipping non-existent file: $encKey 1>&2
