@@ -1,0 +1,55 @@
+metadata:
+  name: cluster-autoscaler
+  version: 0.1.0
+spec:
+  cluster:
+    values: {}
+    kubernetes:
+      manifests:
+      - source:
+          path: manifests/deployment.yaml
+      - source:
+          path: manifests/pdb.yaml
+      - source:
+          path: manifests/service.yaml
+
+    cloudformation:
+      stacks:
+        controlPlane:
+          resources:
+            content: |
+              {
+                "IAMManagedPolicyController" : {
+                  "Type" : "AWS::IAM::ManagedPolicy",
+                  "Properties" : {
+                    "Description" : "Policy for managing kube-aws k8s controllers",
+                    "Path" : "/",
+                    "PolicyDocument" :   {
+                      "Version":"2012-10-17",
+                      "Statement": [
+                      {
+                        "Action": [
+                          "autoscaling:DescribeAutoScalingGroups",
+                          "autoscaling:DescribeAutoScalingInstances",
+                          "autoscaling:DescribeTags",
+                          "autoscaling:DescribeLaunchConfigurations"
+                        ],
+                        "Effect": "Allow",
+                        "Resource": "*"
+                      },
+                      {
+                        "Action": [
+                          "autoscaling:SetDesiredCapacity",
+                          "autoscaling:TerminateInstanceInAutoScalingGroup"
+                        ],
+                        "Condition": {
+                          "Null": { "autoscaling:ResourceTag/kubernetes.io/cluster/{{ .Config.ClusterName }}": "false" }
+                        },
+                        "Effect": "Allow",
+                        "Resource": "*"
+                      }
+                      ]
+                    }
+                  }
+                }
+              }
