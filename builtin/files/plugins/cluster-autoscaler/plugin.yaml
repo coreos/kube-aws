@@ -19,11 +19,12 @@ spec:
           resources:
             content: |
               {
-                "IAMManagedPolicyController" : {
+                "IAMManagedPolicyAutoscaler" : {
                   "Type" : "AWS::IAM::ManagedPolicy",
                   "Properties" : {
                     "Description" : "Policy for managing kube-aws k8s controllers",
                     "Path" : "/",
+                    "Roles":[ { "Ref" : "IAMRoleController" } ],
                     "PolicyDocument" :   {
                       "Version":"2012-10-17",
                       "Statement": [
@@ -33,6 +34,44 @@ spec:
                           "autoscaling:DescribeAutoScalingInstances",
                           "autoscaling:DescribeTags",
                           "autoscaling:DescribeLaunchConfigurations"
+                        ],
+                        "Effect": "Allow",
+                        "Resource": "*"
+                      },
+                      {
+                        "Action": [
+                          "autoscaling:SetDesiredCapacity",
+                          "autoscaling:TerminateInstanceInAutoScalingGroup"
+                        ],
+                        "Condition": {
+                          "Null": { "autoscaling:ResourceTag/kubernetes.io/cluster/{{ .Config.ClusterName }}": "false" }
+                        },
+                        "Effect": "Allow",
+                        "Resource": "*"
+                      }
+                      ]
+                    }
+                  }
+                }
+              }
+        nodePool:
+          resources:
+            content: |
+              {
+                "IAMManagedPolicyAutoscaler" : {
+                  "Type" : "AWS::IAM::ManagedPolicy",
+                  "Properties" : {
+                    "Description" : "Policy for managing kube-aws k8s Node Pool",
+                    "Path" : "/",
+                    "Roles":[ { "Ref" : "IAMRoleWorker" } ],
+                    "PolicyDocument" :   {
+                      "Version":"2012-10-17",
+                      "Statement": [
+                      {
+                        "Action": [
+                          "autoscaling:DescribeAutoScalingGroups",
+                          "autoscaling:DescribeAutoScalingInstances",
+                          "autoscaling:DescribeTags"
                         ],
                         "Effect": "Allow",
                         "Resource": "*"

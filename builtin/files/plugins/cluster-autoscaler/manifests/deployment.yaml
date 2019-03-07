@@ -20,7 +20,7 @@ spec:
             - ./cluster-autoscaler
             - --cloud-provider=aws
             - --namespace=kube-system
-            - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,kubernetes.io/cluster/{{ .Config.ClusterName }}
+            - --node-group-auto-discovery=kube-aws:node-pool:name,kubernetes.io/cluster/{{ .Config.ClusterName }}
             - --logtostderr=true
             - --stderrthreshold=info
             - --v=4
