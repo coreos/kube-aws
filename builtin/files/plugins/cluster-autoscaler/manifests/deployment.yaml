@@ -6,7 +6,7 @@ metadata:
     app: cluster-autoscaler
   name: cluster-autoscaler
 spec:
-  replicas: 2
+  replicas: {{ .Values.replicas }}
   template:
     metadata:
       labels:
@@ -26,14 +26,20 @@ spec:
             - --v=4
           env:
             - name: AWS_REGION
-              value: {{ .Values.replicas }}
+              value: {{ .Values.region }}
           livenessProbe:
             httpGet:
               path: /health-check
               port: 8085
           ports:
             - containerPort: 8085
-          resources: {{ .Values.resources }}
+          resources:
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
           volumeMounts:
             - name: ssl-certs
               mountPath: /etc/ssl/certs/ca-certificates.crt
@@ -72,9 +78,10 @@ spec:
             - labelSelector:
                 matchExpressions:
                   - key: app
-                    operator: Equal
+                    operator: In
                     values:
                       - "cluster-autoscaler"
+              topologyKey: failure-domain.beta.kubernetes.io/zone
 
       volumes:
         - name: ssl-certs
