@@ -5,6 +5,7 @@ metadata:
   labels:
     app: cluster-autoscaler
   name: cluster-autoscaler
+  namespace: kube-system
 spec:
   selector:
     matchLabels:

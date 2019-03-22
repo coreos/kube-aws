@@ -181,6 +181,11 @@
             "PropagateAtLaunch": "true",
             "Value": "owned"
           },
+          {{range $n, $r := .ExtraCfnTags}}
+          {{range $i, $j := $r}}
+          {{toJson $j}},
+          {{end}}
+          {{end}}
           {
             "Key": "kube-aws:node-pool:name",
             "PropagateAtLaunch": "true",
@@ -622,5 +627,9 @@
       "Description": "The name of this stack",
       "Value": { "Ref": "AWS::StackName" }
     }
+    {{range $n, $r := .ExtraCfnOutputs}}
+    ,
+    {{quote $n}}: {{toJSON $r}}
+    {{end}}
   }
 }

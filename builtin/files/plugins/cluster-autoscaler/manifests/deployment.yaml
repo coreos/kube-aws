@@ -5,6 +5,7 @@ metadata:
   labels:
     app: cluster-autoscaler
   name: cluster-autoscaler
+  namespace: kube-system
 spec:
   replicas: {{ .Values.replicas }}
   template:
@@ -20,7 +21,7 @@ spec:
             - ./cluster-autoscaler
             - --cloud-provider=aws
             - --namespace=kube-system
-            - --node-group-auto-discovery=kube-aws:node-pool:name,kubernetes.io/cluster/{{ .Config.ClusterName }}
+            - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,kubernetes.io/cluster/{{ .Config.ClusterName }}
             - --logtostderr=true
             - --stderrthreshold=info
             - --v=4
@@ -65,10 +66,6 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: kube-aws.coreos.com/cluster-autoscaler-supported
-                operator: In
-                values:
-                - "true"
               - key: kubernetes.io/role
                 operator: In
                 values:

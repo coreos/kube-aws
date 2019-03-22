@@ -117,6 +117,8 @@ type Cluster struct {
 	nodePoolStacks    []*model.Stack
 
 	ExtraCfnResources map[string]interface{}
+	ExtraCfnTags      map[string]interface{}
+	ExtraCfnOutputs   map[string]interface{}
 
 	opts     options
 	session  *session.Session
@@ -249,6 +251,8 @@ func (cl *Cluster) ensureNestedStacksLoaded() error {
 	}
 
 	cl.ExtraCfnResources = extra.Resources
+	cl.ExtraCfnTags = extra.Tags
+	cl.ExtraCfnOutputs = extra.Outputs
 
 	return nil
 }

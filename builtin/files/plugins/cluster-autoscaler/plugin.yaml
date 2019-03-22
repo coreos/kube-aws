@@ -92,3 +92,14 @@ spec:
                   }
                 }
               }
+          tags:
+            content: |
+              {
+                "Tags": [
+                  {
+                    "Key": "k8s.io/cluster-autoscaler/enabled",
+                    "PropagateAtLaunch": "false",
+                    "Value": ""
+                  }
+                ]
+              }
