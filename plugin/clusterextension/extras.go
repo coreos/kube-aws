@@ -38,6 +38,8 @@ func NewExtras() ClusterExtension {
 
 type stack struct {
 	Resources map[string]interface{}
+	Outputs   map[string]interface{}
+	Tags      map[string]interface{}
 }
 
 func (e ClusterExtension) KeyPairSpecs() []api.KeyPairSpec {
@@ -114,6 +116,8 @@ func (e ClusterExtension) foreachEnabledPlugins(do func(p *api.Plugin, pc *api.P
 
 func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *api.Plugin) api.Stack) (*stack, error) {
 	resources := map[string]interface{}{}
+	outputs := map[string]interface{}{}
+	tags := map[string]interface{}{}
 
 	err := e.foreachEnabledPlugins(func(p *api.Plugin, pc *api.PluginConfig) error {
 		values := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
@@ -128,6 +132,22 @@ func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *
 			resources[k] = v
 		}
 
+		m, err = render.MapFromJsonContents(src(p).Outputs.RemoteFileSpec)
+		if err != nil {
+			return fmt.Errorf("failed to load additional outputs for %s stack: %v", name, err)
+		}
+		for k, v := range m {
+			outputs[k] = v
+		}
+
+		m, err = render.MapFromJsonContents(src(p).Tags.RemoteFileSpec)
+		if err != nil {
+			return fmt.Errorf("failed to load additional tags for %s stack: %v", name, err)
+		}
+		for k, v := range m {
+			tags[k] = v
+		}
+
 		return nil
 	})
 
@@ -137,6 +157,8 @@ func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *
 
 	return &stack{
 		Resources: resources,
+		Outputs:   outputs,
+		Tags:      tags,
 	}, nil
 }
 

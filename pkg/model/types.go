@@ -30,8 +30,11 @@ type Stack struct {
 	UserData          map[string]api.UserData
 	CfnInitConfigSets map[string]interface{}
 	ExtraCfnResources map[string]interface{}
-	AssetsConfig      *credential.CompactAssets
-	assets            cfnstack.Assets
+	ExtraCfnTags      map[string]interface{}
+	ExtraCfnOutputs   map[string]interface{}
+
+	AssetsConfig *credential.CompactAssets
+	assets       cfnstack.Assets
 }
 
 type ec2Service interface {

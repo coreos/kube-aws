@@ -46,6 +46,11 @@
             "PropagateAtLaunch": "true",
             "Value": "true"
           },
+          {{range $n, $r := .ExtraCfnTags}}
+          {{range $i, $j := $r}}
+          {{toJson $j}},
+          {{end}}
+          {{end}}
           {
             "Key": "Name",
             "PropagateAtLaunch": "true",
@@ -719,5 +724,9 @@
       "Description": "The name of this stack which is used by node pool stacks to import outputs from this stack",
       "Value": { "Ref": "AWS::StackName" }
     }
+    {{range $n, $r := .ExtraCfnOutputs}}
+    ,
+    {{quote $n}}: {{toJSON $r}}
+    {{end}}
   }
 }

@@ -16,6 +16,14 @@ func (p TemplateParams) ExtraCfnResources() map[string]interface{} {
 	return p.cluster.ExtraCfnResources
 }
 
+func (p TemplateParams) ExtraCfnOutputs() map[string]interface{} {
+	return p.cluster.ExtraCfnOutputs
+}
+
+func (p TemplateParams) ExtraCfnTags() map[string]interface{} {
+	return p.cluster.ExtraCfnTags
+}
+
 func (p TemplateParams) ClusterName() string {
 	return p.cluster.controlPlaneStack.ClusterName
 }

@@ -910,5 +910,9 @@
       "Description": "The name of this stack which is used by node pool stacks to import outputs from this stack",
       "Value": { "Ref": "AWS::StackName" }
     }
+    {{range $n, $r := .ExtraCfnOutputs}}
+    ,
+    {{quote $n}}: {{toJSON $r}}
+    {{end}}
   }
 }

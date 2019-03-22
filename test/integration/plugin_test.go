@@ -98,6 +98,25 @@ spec:
                   }
                 }
               }
+          tags:
+            content: |
+              {
+                "Tags": [
+                  {
+                    "Key": "control/tag",
+                    "PropagateAtLaunch": "false",
+                    "Value": ""
+                  }
+                ]
+              }
+          outputs:
+            content: |
+              {
+                "ControlStack": {
+                  "Description": "ControlStack",
+                  "Value": "ControlOutput"
+                }
+              }
         nodePool:
           resources:
             content: |
@@ -107,6 +126,25 @@ spec:
                   "Properties": {
                     "QueueName": {{quote .Values.queue.name}}
                   }
+                }
+              }
+          tags:
+            content: |
+              {
+                "Tags": [
+                  {
+                    "Key": "nodepool/tag",
+                    "PropagateAtLaunch": "false",
+                    "Value": ""
+                  }
+                ]
+              }
+          outputs:
+            content: |
+              {
+                "NodeStack": {
+                  "Description": "NodeStack",
+                  "Value": "NodeOutput"
                 }
               }
         root:
@@ -131,6 +169,14 @@ spec:
                   }
                 }
               }
+          outputs:
+            content: |
+              {
+                "EtcdStack": {
+                  "Description": "EtcdStack",
+                  "Value": "EtcdOutput"
+                }
+              }
         network:
           resources:
             content: |
@@ -140,6 +186,14 @@ spec:
                   "Properties": {
                   "QueueName": {{quote .Values.queue.name}}
                   }
+                }
+              }
+          outputs:
+            content: |
+              {
+                "NetworkStack": {
+                  "Description": "NetworkStack",
+                  "Value": "NetworkOutput"
                 }
               }
     kubernetes:
@@ -462,6 +516,28 @@ spec:
 					}
 					if !strings.Contains(nodePoolStackTemplate, `"Action":["ec2:*"]`) {
 						t.Errorf("Invalid worker node pool stack template: missing iam policy statement ec2:*: %v", nodePoolStackTemplate)
+					}
+
+					// A kube-aws plugin can inject control plane and node pool tags
+					if !strings.Contains(controlPlaneStackTemplate, `"Key":"control/tag"`) {
+						t.Errorf("Invalid control-plane stack template: missing tag control/tag: %v", controlPlaneStackTemplate)
+					}
+					if !strings.Contains(nodePoolStackTemplate, `"Key":"nodepool/tag"`) {
+						t.Errorf("Invalid node-pool stack template: missing tag nodepool/tag: %v", nodePoolStackTemplate)
+					}
+
+					// A kube-aws plugin can inject cfn outputs
+					if !strings.Contains(controlPlaneStackTemplate, `"Value":"ControlOutput"`) {
+						t.Errorf("Invalid control-plane stack template: missing output ControlOutput: %v", controlPlaneStackTemplate)
+					}
+					if !strings.Contains(nodePoolStackTemplate, `"Value":"NodeOutput"`) {
+						t.Errorf("Invalid node-pool stack template: missing output NodeOutput: %v", nodePoolStackTemplate)
+					}
+					if !strings.Contains(etcdStackTemplate, `"Value":"EtcdOutput"`) {
+						t.Errorf("Invalid etcd stack template: missing output EtcdOutput: %v", etcdStackTemplate)
+					}
+					if !strings.Contains(networkStackTemplate, `"Value":"NetworkOutput"`) {
+						t.Errorf("Invalid network stack template: missing output Network: %v", networkStackTemplate)
 					}
 
 					// A kube-aws plugin can inject node labels

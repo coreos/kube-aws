@@ -104,6 +104,7 @@ type Stacks struct {
 type Stack struct {
 	Resources `yaml:"resources,omitempty"`
 	Outputs   `yaml:"outputs,omitempty"`
+	Tags      `yaml:"tags,omitempty"`
 }
 
 type Resources struct {
@@ -111,6 +112,10 @@ type Resources struct {
 }
 
 type Outputs struct {
+	provisioner.RemoteFileSpec `yaml:",inline"`
+}
+
+type Tags struct {
 	provisioner.RemoteFileSpec `yaml:",inline"`
 }
 
