@@ -1059,67 +1059,6 @@ encryptionAtRest:
 	}
 }
 
-func TestRotateCerts(t *testing.T) {
-
-	validConfigs := []struct {
-		conf        string
-		rotateCerts api.RotateCerts
-	}{
-		{
-			conf: `
-`,
-			rotateCerts: api.RotateCerts{
-				Enabled: false,
-			},
-		},
-		{
-			conf: `
-kubelet:
-  rotateCerts:
-    enabled: false
-`,
-			rotateCerts: api.RotateCerts{
-				Enabled: false,
-			},
-		},
-		{
-			conf: `
-kubelet:
-  rotateCerts:
-    enabled: true
-`,
-			rotateCerts: api.RotateCerts{
-				Enabled: true,
-			},
-		},
-		{
-			conf: `
-rotateCerts:
-  enabled: true
-`,
-			rotateCerts: api.RotateCerts{
-				Enabled: false,
-			},
-		},
-	}
-
-	for _, conf := range validConfigs {
-		confBody := singleAzConfigYaml + conf.conf
-		c, err := ClusterFromBytes([]byte(confBody))
-		if err != nil {
-			t.Errorf("failed to parse config %s: %v", confBody, err)
-			continue
-		}
-		if !reflect.DeepEqual(c.Kubelet.RotateCerts, conf.rotateCerts) {
-			t.Errorf(
-				"parsed Rotate Certificates settings %+v does not match config: %s",
-				c.Kubelet.RotateCerts,
-				confBody,
-			)
-		}
-	}
-}
-
 func TestKubeletReserved(t *testing.T) {
 
 	validConfigs := []struct {
@@ -1180,7 +1119,7 @@ func TestKubeDns(t *testing.T) {
 			conf: `
 `,
 			kubeDns: api.KubeDns{
-				Provider:            "kube-dns",
+				Provider:            "coredns",
 				NodeLocalResolver:   false,
 				DeployToControllers: false,
 				Autoscaler: api.KubeDnsAutoscaler{
@@ -1197,7 +1136,7 @@ kubeDns:
   deployToControllers: false
 `,
 			kubeDns: api.KubeDns{
-				Provider:            "kube-dns",
+				Provider:            "coredns",
 				NodeLocalResolver:   false,
 				DeployToControllers: false,
 				Autoscaler: api.KubeDnsAutoscaler{
@@ -1218,7 +1157,7 @@ kubeDns:
     min: 15
 `,
 			kubeDns: api.KubeDns{
-				Provider:            "kube-dns",
+				Provider:            "coredns",
 				NodeLocalResolver:   true,
 				DeployToControllers: true,
 				Autoscaler: api.KubeDnsAutoscaler{
@@ -1259,145 +1198,6 @@ kubeDns:
 				c.KubeDns,
 				confBody,
 			)
-		}
-	}
-}
-
-func TestTLSBootstrapConfig(t *testing.T) {
-
-	validConfigs := []struct {
-		conf         string
-		tlsBootstrap api.TLSBootstrap
-	}{
-		{
-			conf: `
-`,
-			tlsBootstrap: api.TLSBootstrap{
-				Enabled: false,
-			},
-		},
-		{
-			conf: `
-experimental:
-  tlsBootstrap:
-    enabled: false
-`,
-			tlsBootstrap: api.TLSBootstrap{
-				Enabled: false,
-			},
-		},
-		{
-			conf: `
-experimental:
-  tlsBootstrap:
-    enabled: true
-`,
-			tlsBootstrap: api.TLSBootstrap{
-				Enabled: true,
-			},
-		},
-		{
-			conf: `
-# Settings for an experimental feature must be under the "experimental" field. Ignored.
-tlsBootstrap:
-  enabled: true
-`,
-			tlsBootstrap: api.TLSBootstrap{
-				Enabled: false,
-			},
-		},
-	}
-
-	for _, conf := range validConfigs {
-		confBody := singleAzConfigYaml + conf.conf
-		c, err := ClusterFromBytes([]byte(confBody))
-		if err != nil {
-			t.Errorf("failed to parse config %s: %v", confBody, err)
-			continue
-		}
-		if !reflect.DeepEqual(c.Experimental.TLSBootstrap, conf.tlsBootstrap) {
-			t.Errorf(
-				"parsed TLS bootstrap settings %+v does not match config: %s",
-				c.Experimental.TLSBootstrap,
-				confBody,
-			)
-		}
-	}
-}
-
-func TestNodeAuthorizerConfig(t *testing.T) {
-	validConfigs := []struct {
-		conf           string
-		nodeAuthorizer api.NodeAuthorizer
-	}{
-		{
-			conf: `
-`,
-			nodeAuthorizer: api.NodeAuthorizer{
-				Enabled: false,
-			},
-		},
-		{
-			conf: `
-experimental:
-  nodeAuthorizer:
-    enabled: false
-`,
-			nodeAuthorizer: api.NodeAuthorizer{
-				Enabled: false,
-			},
-		},
-		{
-			conf: `
-experimental:
-  nodeAuthorizer:
-    enabled: true
-  tlsBootstrap:
-    enabled: true
-`,
-			nodeAuthorizer: api.NodeAuthorizer{
-				Enabled: true,
-			},
-		},
-	}
-
-	invalidConfigs := []string{
-		`
-# TLS bootstrap must be enabled as well
-experimental:
-  nodeAuthorizer:
-    enabled: true
-`,
-		`
-# TLS bootstrap must be enabled as well
-experimental:
-  nodeAuthorizer:
-    enabled: true
-  tlsBootstrap:
-    enabled: false
-`}
-
-	for _, conf := range validConfigs {
-		confBody := singleAzConfigYaml + conf.conf
-		c, err := ClusterFromBytes([]byte(confBody))
-		if err != nil {
-			t.Errorf("failed to parse config %s: %v", confBody, err)
-			continue
-		}
-		if !reflect.DeepEqual(c.Experimental.NodeAuthorizer, conf.nodeAuthorizer) {
-			t.Errorf(
-				"parsed node authorizer settings %+v does not match config: %s",
-				c.Experimental.NodeAuthorizer,
-				confBody,
-			)
-		}
-	}
-
-	for _, conf := range invalidConfigs {
-		confBody := singleAzConfigYaml + conf
-		_, err := ClusterFromBytes([]byte(confBody))
-		if err == nil {
-			t.Errorf("expected error parsing invalid config: %s", confBody)
 		}
 	}
 }

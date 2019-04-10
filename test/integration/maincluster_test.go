@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"reflect"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -92,18 +91,6 @@ func TestMainClusterConfig(t *testing.T) {
 				DenyEscalatingExec: api.DenyEscalatingExec{
 					Enabled: false,
 				},
-				Priority: api.Priority{
-					Enabled: false,
-				},
-				MutatingAdmissionWebhook: api.MutatingAdmissionWebhook{
-					Enabled: false,
-				},
-				ValidatingAdmissionWebhook: api.ValidatingAdmissionWebhook{
-					Enabled: false,
-				},
-				PersistentVolumeClaimResize: api.PersistentVolumeClaimResize{
-					Enabled: false,
-				},
 			},
 			AuditLog: api.AuditLog{
 				Enabled:   false,
@@ -129,9 +116,6 @@ func TestMainClusterConfig(t *testing.T) {
 				Enabled: true,
 				Options: map[string]string{},
 			},
-			TLSBootstrap: api.TLSBootstrap{
-				Enabled: false,
-			},
 			EphemeralImageStorage: api.EphemeralImageStorage{
 				Enabled:    false,
 				Disk:       "xvdb",
@@ -139,7 +123,7 @@ func TestMainClusterConfig(t *testing.T) {
 			},
 			KIAMSupport: api.KIAMSupport{
 				Enabled:         false,
-				Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.8", RktPullDocker: false},
+				Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v3.2", RktPullDocker: false},
 				SessionDuration: "15m",
 				ServerAddresses: api.KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
 			},
@@ -1307,14 +1291,6 @@ experimental:
       enabled: true
     alwaysPullImages:
       enabled: true
-    priority:
-      enabled: true
-    mutatingAdmissionWebhook:
-      enabled: true
-    validatingAdmissionWebhook:
-      enabled: true
-    persistentVolumeClaimResize:
-      enabled: false
   auditLog:
     enabled: true
     logPath: "/var/log/audit.log"
@@ -1331,8 +1307,6 @@ experimental:
     environment:
       CFNSTACK: '{ "Ref" : "AWS::StackId" }'
   awsNodeLabels:
-    enabled: true
-  tlsBootstrap:
     enabled: true
   ephemeralImageStorage:
     enabled: true
@@ -1389,18 +1363,6 @@ worker:
 							DenyEscalatingExec: api.DenyEscalatingExec{
 								Enabled: true,
 							},
-							Priority: api.Priority{
-								Enabled: true,
-							},
-							MutatingAdmissionWebhook: api.MutatingAdmissionWebhook{
-								Enabled: true,
-							},
-							ValidatingAdmissionWebhook: api.ValidatingAdmissionWebhook{
-								Enabled: true,
-							},
-							PersistentVolumeClaimResize: api.PersistentVolumeClaimResize{
-								Enabled: false,
-							},
 						},
 						AuditLog: api.AuditLog{
 							Enabled:   true,
@@ -1429,9 +1391,6 @@ worker:
 							Enabled: true,
 							Options: map[string]string{},
 						},
-						TLSBootstrap: api.TLSBootstrap{
-							Enabled: true,
-						},
 						EphemeralImageStorage: api.EphemeralImageStorage{
 							Enabled:    true,
 							Disk:       "xvdb",
@@ -1439,7 +1398,7 @@ worker:
 						},
 						KIAMSupport: api.KIAMSupport{
 							Enabled:         false,
-							Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.8", RktPullDocker: false},
+							Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v3.2", RktPullDocker: false},
 							SessionDuration: "15m",
 							ServerAddresses: api.KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
 						},
@@ -1488,26 +1447,6 @@ worker:
 
 				},
 			},
-			assertCluster: []ClusterTester{
-				hasDefaultCluster,
-				func(c *root.Cluster, t *testing.T) {
-					cp := c.ControlPlane()
-					controllerUserdataS3Part := cp.UserData["Controller"].Parts[api.USERDATA_S3].Asset.Content
-					if match, _ := regexp.MatchString(`--feature-gates=.*ExpandPersistentVolumes=false`, controllerUserdataS3Part); !match {
-						t.Error("missing controller feature gate: ExpandPersistentVolumes=false")
-					}
-
-					if !strings.Contains(controllerUserdataS3Part, `scheduling.k8s.io/v1alpha1=true`) {
-						t.Error("missing controller runtime config: scheduling.k8s.io/v1alpha1=true")
-					}
-
-					re, _ := regexp.Compile("--enable-admission-plugins=[a-zA-z,]*,Priority")
-					if len(re.FindString(controllerUserdataS3Part)) == 0 {
-						t.Error("missing controller --enable-admission-plugins config: Priority")
-					}
-
-				},
-			},
 		},
 		{
 			context: "WithExperimentalFeaturesForWorkerNodePool",
@@ -1533,8 +1472,6 @@ worker:
       enabled: true
     clusterAutoscalerSupport:
       enabled: true
-    tlsBootstrap:
-      enabled: true # Must be ignored, value is synced with the one from control plane
     ephemeralImageStorage:
       enabled: true
     kube2IamSupport:
@@ -1579,9 +1516,6 @@ worker:
 						ClusterAutoscalerSupport: api.ClusterAutoscalerSupport{
 							Enabled: true,
 							Options: map[string]string{},
-						},
-						TLSBootstrap: api.TLSBootstrap{
-							Enabled: false,
 						},
 						EphemeralImageStorage: api.EphemeralImageStorage{
 							Enabled:    true,
@@ -1683,7 +1617,7 @@ worker:
 					expected := api.Experimental{
 						KIAMSupport: api.KIAMSupport{
 							Enabled:         true,
-							Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.8", RktPullDocker: false},
+							Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v3.2", RktPullDocker: false},
 							SessionDuration: "15m",
 							ServerAddresses: api.KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
 						},

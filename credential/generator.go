@@ -4,12 +4,13 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
-	"github.com/kubernetes-incubator/kube-aws/logger"
-	"github.com/kubernetes-incubator/kube-aws/netutil"
-	"github.com/kubernetes-incubator/kube-aws/pki"
 	"io/ioutil"
 	"net"
 	"time"
+
+	"github.com/kubernetes-incubator/kube-aws/logger"
+	"github.com/kubernetes-incubator/kube-aws/netutil"
+	"github.com/kubernetes-incubator/kube-aws/pki"
 )
 
 type Generator struct {
@@ -82,21 +83,17 @@ func (c Generator) GenerateAssetsOnDisk(dir string, o GeneratorOptions) (*RawAss
 		return nil, fmt.Errorf("Error generating default assets: %v", err)
 	}
 
-	tlsBootstrappingEnabled := c.TLSBootstrapEnabled
-	certsManagedByKubeAws := c.ManageCertificates
-	caKeyRequiredOnController := certsManagedByKubeAws && tlsBootstrappingEnabled
-
-	logger.Infof("--> Summarizing the configuration\n    Kubelet TLS bootstrapping enabled=%v, TLS certificates managed by kube-aws=%v, CA key required on controller nodes=%v\n", tlsBootstrappingEnabled, certsManagedByKubeAws, caKeyRequiredOnController)
+	logger.Infof("--> Summarizing the configuration\n    TLS certificates managed by kube-aws=%v, CA key required on controller nodes=%v\n", c.ManageCertificates, true)
 
 	logger.Info("--> Writing to the storage")
-	alsoWriteCAKey := o.GenerateCA || caKeyRequiredOnController
+	alsoWriteCAKey := o.GenerateCA || c.ManageCertificates
 	if err := assets.WriteToDir(dir, alsoWriteCAKey, o.KIAM); err != nil {
 		return nil, fmt.Errorf("Error creating assets: %v", err)
 	}
 
 	{
 		logger.Info("--> Verifying the result")
-		verified, err := ReadRawAssets(dir, certsManagedByKubeAws, tlsBootstrappingEnabled, o.KIAM)
+		verified, err := ReadRawAssets(dir, c.ManageCertificates, c.ManageCertificates, o.KIAM)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed verifying the result: %v", err)
@@ -302,6 +299,7 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 			CommonName: "Kiam Server",
 			DNSNames: append(
 				[]string{
+					"kiam-server",
 					"kiam-server:443",
 					"localhost:443",
 					"localhost:9610",

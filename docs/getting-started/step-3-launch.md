@@ -10,7 +10,7 @@ Now for the exciting part, creating your cluster:
 $ kube-aws apply
 ```
 
-**NOTE**: It can take some time after `kube-aws apply` completes before the cluster is available. When the cluster is first being launched, it must download all container images for the cluster components (Kubernetes, dns, heapster, etc). Depending on the speed of your connection, it can take a few minutes before the Kubernetes api-server is available.
+**NOTE**: It can take some time after `kube-aws apply` completes before the cluster is available. When the cluster is first being launched, it must download all container images for the cluster components (Kubernetes, dns, metrics, etc). Depending on the speed of your connection, it can take a few minutes before the Kubernetes api-server is available.
 
 ## Configure DNS
 

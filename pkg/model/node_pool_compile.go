@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
 	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 	"github.com/pkg/errors"
@@ -20,10 +21,8 @@ func nodePoolPreprocess(c api.WorkerNodePool, main *Config) (*api.WorkerNodePool
 	// Inherit parameters from the control plane stack
 	c.KubeClusterSettings = main.KubeClusterSettings
 	c.HostOS = main.HostOS
-	c.Experimental.TLSBootstrap = main.DeploymentSettings.Experimental.TLSBootstrap
 	c.Experimental.NodeDrainer = main.DeploymentSettings.Experimental.NodeDrainer
 	c.Experimental.GpuSupport = main.DeploymentSettings.Experimental.GpuSupport
-	c.Kubelet.RotateCerts = main.DeploymentSettings.Kubelet.RotateCerts
 	c.Kubelet.SystemReservedResources = main.DeploymentSettings.Kubelet.SystemReservedResources
 	c.Kubelet.KubeReservedResources = main.DeploymentSettings.Kubelet.KubeReservedResources
 

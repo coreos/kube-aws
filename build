@@ -6,6 +6,7 @@ TAG=$(git describe --exact-match --abbrev=0 --tags "${COMMIT}" 2> /dev/null || t
 BRANCH=$(git branch | grep \* | cut -d ' ' -f2 | sed -e 's/[^a-zA-Z0-9+=._:/-]*//g' || true)
 OUTPUT_PATH=${OUTPUT_PATH:-"bin/kube-aws"}
 VERSION=""
+KUBERNETES_VERSION="v1.13.5"
 
 if [ -z "$TAG" ]; then
         [[ -n "$BRANCH" ]] && VERSION="${BRANCH}/"
@@ -19,7 +20,7 @@ if [ -n "$(git diff --shortstat 2> /dev/null | tail -n1)" ]; then
     VERSION="${VERSION}+dirty"
 fi
 
-echo Building kube-aws ${VERSION}
+echo "Building kube-aws ${VERSION} (default Kubernetes version ${KUBERNETES_VERSION})"
 
 printf 'Checking existence of the `packr` command that is used for embedding files into the resulting binary...'
 if ! which packr 1>/dev/null; then
@@ -30,7 +31,7 @@ if ! which packr 1>/dev/null; then
   export PATH=$PATH:$GOPATH/bin
   echo 'done. PATH is now '"$PATH"
 else
-  echo found. Skipped installation.
+  echo "found. Skipped installation."
 fi
 
 packr -vz
@@ -41,4 +42,4 @@ fi
 if [[ ! "${BUILD_GOARCH:-}" == "" ]];then
   export GOARCH=$BUILD_GOARCH
 fi
-go build -ldflags "-X github.com/kubernetes-incubator/kube-aws/pkg/model.VERSION=${VERSION}" -a -tags netgo -installsuffix netgo -o "$OUTPUT_PATH" ./
+go build -ldflags "-X github.com/kubernetes-incubator/kube-aws/pkg/model.VERSION=${VERSION} -X github.com/kubernetes-incubator/kube-aws/pkg/api.KUBERNETES_VERSION=${KUBERNETES_VERSION}" -a -tags netgo -installsuffix netgo -o "$OUTPUT_PATH" ./

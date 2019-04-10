@@ -350,7 +350,7 @@ coreos:
         --cni-bin-dir=/opt/cni/bin \
         --network-plugin={{.K8sNetworkPlugin}} \
         --container-runtime={{.ContainerRuntime}} \
-        --node-labels=kubernetes.io/role=node,node-role.kubernetes.io/node=\"\",node-role.kubernetes.io/{{ toLabel .NodePoolName }}=\"\"{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
+        --node-labels=node.kubernetes.io/role="node",node.kubernetes.io/role="{{ toLabel .NodePoolName }}"{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
         --register-node=true \
         {{if .Taints}}--register-with-taints={{.Taints.String}}\
         {{end}}--allow-privileged=true \
@@ -361,19 +361,12 @@ coreos:
         {{ end }}--cluster-domain=cluster.local \
         --cloud-provider=aws \
         --cert-dir=/etc/kubernetes/ssl \
-        {{- if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
-        --experimental-bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \
-        {{- if .Kubelet.RotateCerts.Enabled }}
+        --bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \
         --rotate-certificates \
-        {{- end }}
-        {{- else }}
-        --tls-cert-file=/etc/kubernetes/ssl/worker.pem \
-        --tls-private-key-file=/etc/kubernetes/ssl/worker-key.pem \
-        {{- end }}
         {{- if .Kubelet.Kubeconfig }}
         --kubeconfig={{ .Kubelet.Kubeconfig }} \
         {{- else }}
-        --kubeconfig=/etc/kubernetes/kubeconfig/worker.yaml \
+        --kubeconfig=/etc/kubernetes/kubeconfig/kubelet.yaml \
         {{- end }}
         {{- if .FeatureGates.Enabled }}
         --feature-gates=\"{{.FeatureGates.String}}\" \
@@ -741,7 +734,7 @@ write_files:
           {{end -}}
           {{.HyperkubeImage.RepoWithTag}} /bin/bash \
             -ec 'echo "placing labels and annotations with additional AWS parameters."; \
-             kctl="/kubectl --server={{.APIEndpointURL}}:443 --kubeconfig=/etc/kubernetes/kubeconfig/worker.yaml"; \
+             kctl="/kubectl --server={{.APIEndpointURL}}:443 --kubeconfig=/etc/kubernetes/kubeconfig/kubelet.yaml"; \
              kctl_label="$kctl label --overwrite nodes/$(hostname)"; \
              kctl_annotate="$kctl annotate --overwrite nodes/$(hostname)"; \
              {{if not .SpotFleet.Enabled -}}
@@ -837,16 +830,6 @@ write_files:
     encoding: gzip+base64
     content: {{.AssetsConfig.EtcdTrustedCA}}
 
-{{ if not .Experimental.TLSBootstrap.Enabled }}
-  - path: /etc/kubernetes/ssl/worker.pem
-    encoding: gzip+base64
-    content: {{.AssetsConfig.WorkerCert}}
-
-  - path: /etc/kubernetes/ssl/worker-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
-    encoding: gzip+base64
-    content: {{.AssetsConfig.WorkerKey}}
-{{ end }}
-
   - path: /etc/kubernetes/ssl/ca.pem
     encoding: gzip+base64
     content: {{.AssetsConfig.CACert}}
@@ -863,10 +846,8 @@ write_files:
       rkt run \
         --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
         --mount=volume=ssl,target=/etc/kubernetes/ssl \
-        {{- if .Experimental.TLSBootstrap.Enabled }}
         --volume=kube,kind=host,source=/etc/kubernetes,readOnly=false \
         --mount=volume=kube,target=/etc/kubernetes \
-        {{- end }}
         --uuid-file-save=/var/run/coreos/decrypt-assets.uuid \
         --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
         --net=host \
@@ -876,7 +857,7 @@ write_files:
           'echo decrypting assets
            shopt -s nullglob
            set -o pipefail
-           for encKey in /etc/kubernetes/{ssl,{{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}auth{{end}}}/*.enc; do
+           for encKey in /etc/kubernetes/{ssl,auth}/*.enc; do
              echo decrypting $encKey
              f=$(mktemp $encKey.XXXXXXXX)
              /usr/bin/aws \
@@ -888,11 +869,9 @@ write_files:
              mv -f $f ${encKey%.enc}
            done;
 
-           {{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
            echo injecting token into the kubelet bootstrap kubeconfig file
            bootstrap_token=$(cat /etc/kubernetes/auth/kubelet-tls-bootstrap-token.tmp);
            sed -i -e "s#\$KUBELET_BOOTSTRAP_TOKEN#$bootstrap_token#g" /etc/kubernetes/kubeconfig/worker-bootstrap.yaml
-           {{ end }}
 
            {{ if .CustomFiles -}}
            {{ range $i, $f := .CustomFiles -}}
@@ -1053,7 +1032,6 @@ write_files:
           name: default
         current-context: default
 
-{{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
   - path: /etc/kubernetes/kubeconfig/worker-bootstrap.yaml
     content: |
         apiVersion: v1
@@ -1073,7 +1051,8 @@ write_files:
             user: tls-bootstrap
           name: tls-bootstrap-context
         current-context: tls-bootstrap-context
-  - path: /etc/kubernetes/kubeconfig/worker.yaml
+
+  - path: /etc/kubernetes/kubeconfig/kubelet.yaml
     content: |
         apiVersion: v1
         kind: Config
@@ -1093,34 +1072,10 @@ write_files:
             user: kubelet
           name: kubelet-context
         current-context: kubelet-context
-{{ else }}
-  - path: /etc/kubernetes/kubeconfig/worker.yaml
-    content: |
-        apiVersion: v1
-        kind: Config
-        clusters:
-        - name: local
-          cluster:
-            certificate-authority: /etc/kubernetes/ssl/ca.pem
-            server: {{.APIEndpointURL}}:443
-        users:
-        - name: kubelet
-          user:
-            client-certificate: /etc/kubernetes/ssl/worker.pem
-            client-key: /etc/kubernetes/ssl/worker-key.pem
-        contexts:
-        - context:
-            cluster: local
-            user: kubelet
-          name: kubelet-context
-        current-context: kubelet-context
-{{ end }}
 
-{{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
   - path: /etc/kubernetes/auth/kubelet-tls-bootstrap-token.tmp{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.AssetsConfig.TLSBootstrapToken}}
-{{ end }}
 
 {{if .Kubernetes.Networking.AmazonVPC.Enabled}}
   - path: /opt/bin/aws-k8s-cni-max-pods

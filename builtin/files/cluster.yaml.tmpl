@@ -1159,12 +1159,6 @@ worker:
 #  tag: v2.7.2
 #  rktPullDocker: false
 
-# Heapster image repository to use.
-#heapsterImage:
-#  repo: k8s.gcr.io/heapster
-#  tag: v1.5.0
-#  rktPullDocker: false
-
 # Metrics Server image repository to use.
 #metricsServerImage:
 #  repo: k8s.gcr.io/metrics-server-amd64
@@ -1343,8 +1337,8 @@ kubernetesDashboard:
 
 # KubeDNS
 kubeDns:
-  # Define which DNS provider to use (kube-dns or coredns), default kube-dns.
-  provider: kube-dns
+  # Define which DNS provider to use (kube-dns or coredns), default coredns.
+  provider: coredns
 
   # When enabled, will enable a DNS-masq DaemonSet to make PODs to resolve DNS names via locally running dnsmasq
   # It is disabled by default.
@@ -1411,7 +1405,7 @@ addons:
 
   # Metrics Server (https://github.com/kubernetes-incubator/metrics-server)
   metricsServer:
-    enabled: false
+    enabled: true
 
   # When set to true this configures security groups for prometheus between nodes.
   # This includes the following ports: 10252, 10251, 10250, 9100, and 4194
@@ -1434,19 +1428,7 @@ experimental:
       enabled: false
     initializers:
       enabled: false
-    # Priority enables PodPriority in the API server, scheduler and kubelet. you need to manually add the
-    # featureGate PodPriority:true in the worker
-    priority:
-      enabled: false
-    mutatingAdmissionWebhook:
-      enabled: false
-    validatingAdmissionWebhook:
-      enabled: false
     OwnerReferencesPermissionEnforcement:
-      enabled: false
-    # persistentVolumeClaimResize enables PersistentVolumeClaim in the API server, scheduler and kubelet. you need to manually add the
-    # featureGate ExpandPersistentVolumes:true in the worker
-    persistentVolumeClaimResize:
       enabled: false
 
   # Used to provide `/etc/environment` env vars with values from arbitrary CloudFormation refs
@@ -1478,19 +1460,6 @@ experimental:
   # Provision controller nodes with IAM permissions and node labels to run cluster-autoscaler (assuming `addons.clusterAutoscaler.enabled` is true)
   clusterAutoscalerSupport:
     enabled: true
-
-  # If enabled, instructs the controller manager to automatically issue TLS certificates to worker nodes via
-  # certificate signing requests (csr) made to the API server using the bootstrap token. It's recommended to
-  # also enable the rbac plugin in order to limit requests using the bootstrap token to only be able to make
-  # requests related to certificate provisioning.
-  # The bootstrap token is automatically generated in ./credentials/kubelet-tls-bootstrap-token.
-  tlsBootstrap:
-    enabled: false
-
-  # Enables the Node authorization + node restriction admission controller (requires Kubernetes 1.7.4+)
-  # Requires TLS bootstrapping to be enabled as well
-  nodeAuthorizer:
-    enabled: false
 
   # This option has not yet been tested with rkt as container runtime
   ephemeralImageStorage:
@@ -1567,11 +1536,6 @@ experimental:
   # nodeMonitorGracePeriod: "40s"
 
 kubelet:
-  # Tell Kubelet to renew its certificate as its expiration time is approaching
-  # Requires Experimental.tlsBootstrap to be enabled
-  RotateCerts:
-    enabled: true
-
   # Currently CPU, memory and storage are supported.
   # How resources are reserved: https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/
   # How to size these limits: https://kubernetes.io/blog/2016/11/visualize-kubelet-performance-with-node-dashboard/

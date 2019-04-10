@@ -283,18 +283,6 @@ experimental:
     enabled: true" >> cluster.yaml
   fi
 
-  if [ "${NODE_AUTHORIZER}" != "" -o "${TLS_BOOTSTRAP}" != "" ]; then
-    echo -e "
-  tlsBootstrap:
-    enabled: true" >> cluster.yaml
-  fi
-
-  if [ "${NODE_AUTHORIZER}" != "" ]; then
-    echo -e "
-  nodeAuthorizer:
-    enabled: true" >> cluster.yaml
-  fi
-
   echo -e "
 addons:
   clusterAutoscaler:

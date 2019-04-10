@@ -14,14 +14,14 @@ func LoadCredentials(sess *session.Session, cfg *Config, opts api.StackTemplateO
 func (s *Context) LoadCredentials(cfg *Config, opts api.StackTemplateOptions) (*credential.CompactAssets, error) {
 	if cfg.AssetsEncryptionEnabled() {
 		kmsConfig := credential.NewKMSConfig(cfg.KMSKeyARN, s.ProvidedEncryptService, s.Session)
-		compactAssets, err := credential.ReadOrCreateCompactAssets(opts.AssetsDir, cfg.ManageCertificates, cfg.Experimental.TLSBootstrap.Enabled, cfg.Experimental.KIAMSupport.Enabled, kmsConfig)
+		compactAssets, err := credential.ReadOrCreateCompactAssets(opts.AssetsDir, cfg.ManageCertificates, true, cfg.Experimental.KIAMSupport.Enabled, kmsConfig)
 		if err != nil {
 			return nil, err
 		}
 
 		return compactAssets, nil
 	} else {
-		rawAssets, err := credential.ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir, cfg.ManageCertificates, cfg.Experimental.TLSBootstrap.Enabled, cfg.Experimental.KIAMSupport.Enabled)
+		rawAssets, err := credential.ReadOrCreateUnencryptedCompactAssets(opts.AssetsDir, cfg.ManageCertificates, true, cfg.Experimental.KIAMSupport.Enabled)
 		if err != nil {
 			return nil, err
 		}
@@ -34,7 +34,6 @@ func NewCredentialGenerator(c *Config) *credential.Generator {
 	r := &credential.Generator{
 		TLSCADurationDays:                c.TLSCADurationDays,
 		TLSCertDurationDays:              c.TLSCertDurationDays,
-		TLSBootstrapEnabled:              c.Experimental.TLSBootstrap.Enabled,
 		ManageCertificates:               c.ManageCertificates,
 		Region:                           c.Region.String(),
 		APIServerExternalDNSNames:        c.ExternalDNSNames(),
