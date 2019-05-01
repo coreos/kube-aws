@@ -168,7 +168,7 @@ func NewEtcdStack(conf *Config, opts api.StackTemplateOptions, extras clusterext
 				for i := 0; i < len(subnets); i++ {
 					for _, v := range stack.Config.Etcd.Subnets {
 						if v.Name == subnets[i].Name {
-							etcdSubnets = append(etcdSubnets, v)
+							etcdSubnets = append(etcdSubnets, subnets[i])
 						}
 					}
 				}
