@@ -308,6 +308,7 @@
           },
           "ImageId": "{{.AMI}}",
           "InstanceType": "{{.InstanceType}}",
+          "Monitoring": {"Enabled": "true"},
           {{if .KeyName}}"KeyName": "{{.KeyName}}",{{end}}
           "SecurityGroupIds": [
             {{range $sgIndex, $sgRef := $.SecurityGroupRefs}}
