@@ -160,10 +160,24 @@ func NewEtcdStack(conf *Config, opts api.StackTemplateOptions, extras clusterext
 				return nil, fmt.Errorf("failed to import subnets from network stack: %v", err)
 			}
 
+			etcdSubnets := subnets
+
+			// If etcd subnets declared, use those instead.
+			if len(stack.Config.Etcd.Subnets) != 0 {
+				etcdSubnets = []api.Subnet{}
+				for i := 0; i < len(subnets); i++ {
+					for _, v := range stack.Config.Etcd.Subnets {
+						if v.Name == subnets[i].Name {
+							etcdSubnets = append(etcdSubnets, v)
+						}
+					}
+				}
+			}
+
 			nodes := []EtcdNode{}
 			for i, n := range stack.Config.EtcdNodes {
 				n2 := n
-				n2.subnet = subnets[i%len(subnets)]
+				n2.subnet = etcdSubnets[i%len(etcdSubnets)]
 				nodes = append(nodes, n2)
 			}
 
