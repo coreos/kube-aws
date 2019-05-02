@@ -519,6 +519,11 @@ type EtcdSettings struct {
 	Etcd `yaml:"etcd,omitempty"`
 }
 
+type CustomApiServerSettings struct {
+	AdditionalDnsSANs     []string `yaml:"additionalDnsSans,omitempty"`
+	AdditionalIPAddresses []string `yaml:"additionalIPAddressSans,omitempty"`
+}
+
 // Cluster is the container of all the configurable parameters of a kube-aws cluster, customizable via cluster.yaml
 type Cluster struct {
 	KubeClusterSettings   `yaml:",inline"`
@@ -534,8 +539,9 @@ type Cluster struct {
 	Worker                `yaml:"worker"`
 	PluginConfigs         PluginConfigs `yaml:"kubeAwsPlugins,omitempty"`
 	// SSHAccessAllowedSourceCIDRs is network ranges of sources you'd like SSH accesses to be allowed from, in CIDR notation
-	SSHAccessAllowedSourceCIDRs CIDRRanges             `yaml:"sshAccessAllowedSourceCIDRs,omitempty"`
-	CustomSettings              map[string]interface{} `yaml:"customSettings,omitempty"`
+	SSHAccessAllowedSourceCIDRs CIDRRanges              `yaml:"sshAccessAllowedSourceCIDRs,omitempty"`
+	CustomApiServerSettings     CustomApiServerSettings `yaml:"customApiServerSettings,omitempty"`
+	CustomSettings              map[string]interface{}  `yaml:"customSettings,omitempty"`
 	KubeResourcesAutosave       `yaml:"kubeResourcesAutosave,omitempty"`
 }
 

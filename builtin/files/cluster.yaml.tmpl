@@ -51,6 +51,14 @@ disableContainerLinuxAutomaticUpdates: true
 #sshAccessAllowedSourceCIDRs:
 #- 0.0.0.0/0
 
+# Custom API Server settings that allow additional SANs attached to the generated certificate.
+# customApiServerSettings:
+#  additionalDnsSans:
+#  - my.host.com
+#  additionalIPAddressSans:
+#  - 0.0.0.0
+
+
 # The name of one of API endpoints defined in `apiEndpoints` below to be written in kubeconfig and then used by admins
 # to access k8s API from their laptops, CI servers, or etc.
 # Required if there are 2 or more API endpoints defined in `apiEndpoints`

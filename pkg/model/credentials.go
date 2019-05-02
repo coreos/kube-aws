@@ -32,14 +32,16 @@ func (s *Context) LoadCredentials(cfg *Config, opts api.StackTemplateOptions) (*
 
 func NewCredentialGenerator(c *Config) *credential.Generator {
 	r := &credential.Generator{
-		TLSCADurationDays:         c.TLSCADurationDays,
-		TLSCertDurationDays:       c.TLSCertDurationDays,
-		TLSBootstrapEnabled:       c.Experimental.TLSBootstrap.Enabled,
-		ManageCertificates:        c.ManageCertificates,
-		Region:                    c.Region.String(),
-		APIServerExternalDNSNames: c.ExternalDNSNames(),
-		EtcdNodeDNSNames:          c.EtcdCluster().DNSNames(),
-		ServiceCIDR:               c.ServiceCIDR,
+		TLSCADurationDays:                c.TLSCADurationDays,
+		TLSCertDurationDays:              c.TLSCertDurationDays,
+		TLSBootstrapEnabled:              c.Experimental.TLSBootstrap.Enabled,
+		ManageCertificates:               c.ManageCertificates,
+		Region:                           c.Region.String(),
+		APIServerExternalDNSNames:        c.ExternalDNSNames(),
+		APIServerAdditionalDNSSans:       c.CustomApiServerSettings.AdditionalDnsSANs,
+		APIServerAdditionalIPAddressSans: c.CustomApiServerSettings.AdditionalIPAddresses,
+		EtcdNodeDNSNames:                 c.EtcdCluster().DNSNames(),
+		ServiceCIDR:                      c.ServiceCIDR,
 	}
 
 	return r

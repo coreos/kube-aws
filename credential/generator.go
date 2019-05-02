@@ -13,14 +13,16 @@ import (
 )
 
 type Generator struct {
-	TLSCADurationDays         int
-	TLSCertDurationDays       int
-	TLSBootstrapEnabled       bool
-	ManageCertificates        bool
-	Region                    string
-	APIServerExternalDNSNames []string
-	EtcdNodeDNSNames          []string
-	ServiceCIDR               string
+	TLSCADurationDays                int
+	TLSCertDurationDays              int
+	TLSBootstrapEnabled              bool
+	ManageCertificates               bool
+	Region                           string
+	APIServerExternalDNSNames        []string
+	APIServerAdditionalDNSSans       []string
+	APIServerAdditionalIPAddressSans []string
+	EtcdNodeDNSNames                 []string
+	ServiceCIDR                      string
 }
 
 type GeneratorOptions struct {
@@ -153,24 +155,22 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 	}
 	kubernetesServiceIPAddr := netutil.IncrementIP(serviceNet.IP)
 
-	apiServerConfig := pki.ServerCertConfig{
-		CommonName: "kube-apiserver",
-		DNSNames: append(
-			[]string{
-				"kubernetes",
-				"kubernetes.default",
-				"kubernetes.default.svc",
-				"kubernetes.default.svc.cluster.local",
-			},
-			c.APIServerExternalDNSNames...,
-		),
-		IPAddresses: []string{
-			kubernetesServiceIPAddr.String(),
+	dnsNames := append(
+		[]string{
+			"kubernetes",
+			"kubernetes.default",
+			"kubernetes.default.svc",
+			"kubernetes.default.svc.cluster.local",
+		}, c.APIServerExternalDNSNames...)
 
-			// Also allows control plane components to reach the apiserver via HTTPS at localhost
-			"127.0.0.1",
-		},
-		Duration: certDuration,
+	// 127.0.0.1 also allows control plane components to reach the apiserver via HTTPS at localhost
+	ipAddresses := []string{kubernetesServiceIPAddr.String(), "127.0.0.1"}
+
+	apiServerConfig := pki.ServerCertConfig{
+		CommonName:  "kube-apiserver",
+		DNSNames:    append(dnsNames, c.APIServerExternalDNSNames...),
+		IPAddresses: append(ipAddresses, c.APIServerAdditionalIPAddressSans...),
+		Duration:    certDuration,
 	}
 	apiServerCert, err := pki.NewSignedServerCertificate(apiServerConfig, privateKeys[generatorOptions.ApiServerKeyPath], caCert, caKey)
 	if err != nil {

@@ -650,6 +650,34 @@ kubeProxy:
 			configYaml: kubeAwsSettings.withClusterName("my-cluster").minimumValidClusterYaml(),
 		},
 		{
+			context: "WithcustomApiServerSettings",
+			configYaml: minimalValidConfigYaml + `
+customApiServerSettings:
+  additionalDnsSans:
+  - my.host.com
+  additionalIPAddressSans:
+  - 0.0.0.0
+`,
+			assertConfig: []ConfigTester{
+				func(c *config.Config, t *testing.T) {
+					expectedDnsSans := []string{"my.host.com"}
+					actualDnsSans := c.CustomApiServerSettings.AdditionalDnsSANs
+					if !reflect.DeepEqual(expectedDnsSans, actualDnsSans) {
+						t.Errorf("additionalDnsSans didn't match : expected=%v actual=%v", expectedDnsSans, actualDnsSans)
+					}
+
+					expectedIPSans := []string{"0.0.0.0"}
+					actualIPSans := c.CustomApiServerSettings.AdditionalIPAddresses
+					if !reflect.DeepEqual(expectedIPSans, actualIPSans) {
+						t.Errorf("additionalIPAddressSans didn't match : expected=%v actual=%v", expectedIPSans, actualIPSans)
+					}
+				},
+			},
+			assertCluster: []ClusterTester{
+				hasDefaultCluster,
+			},
+		},
+		{
 			context: "WithCustomSettings",
 			configYaml: minimalValidConfigYaml + `
 customSettings:
