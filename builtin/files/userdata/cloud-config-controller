@@ -363,7 +363,7 @@ coreos:
         --cni-bin-dir=/opt/cni/bin \
         --network-plugin={{.K8sNetworkPlugin}} \
         --container-runtime={{.ContainerRuntime}} \
-        --node-labels=node.kubernetes.io/role="master",service-cidr={{ .ServiceCIDR | toLabel }}{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
+        --node-labels=node.kubernetes.io/role="master",node-role.kubernetes.io/master=\"\",kubernetes.io/role=master,service-cidr={{ .ServiceCIDR | toLabel }}{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
         --register-with-taints=node.alpha.kubernetes.io/role=master:NoSchedule \
         --allow-privileged=true \
         --pod-manifest-path=/etc/kubernetes/manifests \
@@ -1359,7 +1359,7 @@ write_files:
                 requiredDuringSchedulingIgnoredDuringExecution:
                   nodeSelectorTerms:
                   - matchExpressions:
-                    - key: node.kubernetes.io/role
+                    - key: kubernetes.io/role
                       operator: In
                       values:
                       - "master"
@@ -1581,7 +1581,7 @@ write_files:
                 requiredDuringSchedulingIgnoredDuringExecution:
                   nodeSelectorTerms:
                   - matchExpressions:
-                    - key: node.kubernetes.io/role
+                    - key: kubernetes.io/role
                       operator: NotIn
                       values:
                       - "master"
@@ -3093,7 +3093,7 @@ write_files:
           {{- else }}
           - --apiserver-count={{if .MinControllerCount}}{{ .MinControllerCount }}{{else}}{{ .Controller.Count }}{{end}}
           {{- end }}
-          - --enable-admission-plugins=EventRateLimit,ExtendedResourceToleration,NodeRestriction{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{end}}{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.Admission.DenyEscalatingExec.Enabled}},DenyEscalatingExec{{end}}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}
+          - --enable-admission-plugins=EventRateLimit,ExtendedResourceToleration{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{end}}{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.Admission.DenyEscalatingExec.Enabled}},DenyEscalatingExec{{end}}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}
           - --admission-control-config-file=/etc/kubernetes/auth/admission-control-config.yaml
           - --bind-address=0.0.0.0
           - --etcd-servers=#ETCD_ENDPOINTS#
@@ -3752,10 +3752,11 @@ write_files:
                   requiredDuringSchedulingIgnoredDuringExecution:
                     nodeSelectorTerms:
                     - matchExpressions:
-                      - key: node.kubernetes.io/role
+                      - key: kubernetes.io/role
                         operator: In
                         values:
                         - "master"
+
               tolerations:
                - key: "CriticalAddonsOnly"
                  operator: "Exists"
@@ -3851,7 +3852,7 @@ write_files:
                   requiredDuringSchedulingIgnoredDuringExecution:
                     nodeSelectorTerms:
                     - matchExpressions:
-                      - key: node.kubernetes.io/role
+                      - key: kubernetes.io/role
                         operator: In
                         values:
                         - "master"
@@ -5275,7 +5276,7 @@ write_files:
               key: CriticalAddonsOnly
             serviceAccountName: kiam-server
             nodeSelector:
-              node.kubernetes.io/role: "master"
+              kubernetes.io/role: "master"
             volumes:
               - name: ssl-certs
                 hostPath:
@@ -5447,7 +5448,7 @@ write_files:
                 requiredDuringSchedulingIgnoredDuringExecution:
                   nodeSelectorTerms:
                   - matchExpressions:
-                    - key: node.kubernetes.io/role
+                    - key: kubernetes.io/role
                       operator: NotIn
                       values:
                       - master
@@ -6087,7 +6088,7 @@ write_files:
         exit 1
       fi
 
-      NUM_WORKERS=$(kubectl get nodes -l node.kubernetes.io/role!="master" 2>/dev/null)
+      NUM_WORKERS=$(kubectl get nodes -l kubernetes.io/role!="master" 2>/dev/null)
       if [[ -z ${NUM_WORKERS} ]]; then
         echo "Fresh cluster, not checking for existing workers."
         exit 0
