@@ -872,7 +872,7 @@ write_files:
       #!/bin/bash -e
       echo >&2 "Running kubectl in ${PWD}"
       vols="-v /srv/kubernetes:/srv/kubernetes:ro -v /etc/kubernetes:/etc/kubernetes:ro -v ${PWD}:/work:rw"
-      /usr/bin/docker run -i -t --rm -w /work $vols --net=host k8s.gcr.io/hyperkube-amd64:v1.13.5 /hyperkube kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml --request-timeout=1s $@
+      /usr/bin/docker run -i -t --rm -w /work $vols --net=host {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml --request-timeout=1s $@
 
   - path: /opt/bin/install-kube-system
     permissions: 0700
