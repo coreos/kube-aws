@@ -343,12 +343,12 @@ coreos:
         ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/cni/net.d
         ExecStartPre=/usr/bin/mkdir -p /var/run/calico
         ExecStartPre=/usr/bin/mkdir -p /var/lib/calico
+        ExecStartPre=/bin/sed -e "s/COREOS_PRIVATE_IPV4/${COREOS_PRIVATE_IPV4}/g" -i /etc/kubernetes/config/kubelet.yaml
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/manifests /srv/kubernetes/manifests  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
         ExecStart=/bin/sh -c "exec /usr/lib/coreos/kubelet-wrapper \
         --cloud-provider=aws \
         {{ if checkVersion ">= 1.14" .K8sVer -}}
         --bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \
-        --rotate-certificates \
         {{- end }}
         {{ if .Kubelet.Kubeconfig -}}
         --kubeconfig={{ .Kubelet.Kubeconfig }} \
@@ -363,25 +363,11 @@ coreos:
         --cni-bin-dir=/opt/cni/bin \
         --network-plugin={{.K8sNetworkPlugin}} \
         --container-runtime={{.ContainerRuntime}} \
+        --register-node=true \
         --node-labels=node.kubernetes.io/role="master",node-role.kubernetes.io/master=\"\",kubernetes.io/role=master,service-cidr={{ .ServiceCIDR | toLabel }}{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
         --register-with-taints=node.alpha.kubernetes.io/role=master:NoSchedule \
+        --config=/etc/kubernetes/config/kubelet.yaml \
         --allow-privileged=true \
-        --pod-manifest-path=/etc/kubernetes/manifests \
-        {{ if .KubeDns.NodeLocalResolver -}}
-        --cluster-dns=${COREOS_PRIVATE_IPV4} \
-        {{ else -}}
-        --cluster-dns={{.DNSServiceIP}} \
-        {{ end -}}
-        --cluster-domain=cluster.local \
-        {{- if .ControllerFeatureGates.Enabled }}
-        --feature-gates={{.ControllerFeatureGates.String}} \
-        {{- end }}
-        {{- if .Kubelet.SystemReservedResources }}
-        --system-reserved={{ .Kubelet.SystemReservedResources }} \
-        {{- end }}
-        {{- if .Kubelet.KubeReservedResources }}
-        --kube-reserved={{ .Kubelet.KubeReservedResources }} \
-        {{- end }}
         {{- if .Kubernetes.Networking.AmazonVPC.Enabled }}
         --node-ip=$$(curl http://169.254.169.254/latest/meta-data/local-ipv4) \
         --max-pods=$$(/opt/bin/aws-k8s-cni-max-pods) \
@@ -598,6 +584,29 @@ write_files:
       ip_vs_wrr
       ip_vs_sh
       nf_conntrack_ipv4
+
+  - path: /etc/kubernetes/config/kubelet.yaml
+    content: |
+      kind: KubeletConfiguration
+      apiVersion: kubelet.config.k8s.io/v1beta1
+      evictionHard:
+        memory.available:  "200Mi"
+      staticPodPath: /etc/kubernetes/manifests
+      clusterDomain: cluster.local
+      clusterDNS: {{ if .KubeDns.NodeLocalResolver }}COREOS_PRIVATE_IPV4{{ else }}{{.DNSServiceIP}}{{end}}
+      serverTLSBootstrap: true
+      rotateCertificates: true
+      {{- if .Kubelet.SystemReservedResources }}
+      systemReserved: {{ .Kubelet.SystemReservedResources }}
+      {{- end }}
+      {{- if .Kubelet.KubeReservedResources }}
+      kubeReserved: {{ .Kubelet.KubeReservedResources }}
+      {{- end }}
+      {{- if .ControllerFeatureGates.Enabled }}
+      featureGates:
+{{.ControllerFeatureGates.Yaml | indent 8}} 
+      {{- end }}
+
 {{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
   - path: "/opt/ssm/bin/install-ssm-agent.sh"
     permissions: 0700

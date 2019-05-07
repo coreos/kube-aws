@@ -565,8 +565,8 @@ spec:
 					}
 
 					// A kube-aws plugin can activate feature gates
-					if match, _ := regexp.MatchString(`--feature-gates=.*Accelerators=true`, workerUserdataS3Part); !match {
-						t.Error("missing worker feature gate: Accelerators=true")
+					if match, _ := regexp.MatchString(`Accelerators: true`, workerUserdataS3Part); !match {
+						t.Error("missing worker feature gate: Accelerators: true")
 					}
 
 					// A kube-aws plugin can add volume mounts to apiserver pod

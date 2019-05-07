@@ -344,6 +344,7 @@ coreos:
         ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/cni/net.d
         ExecStartPre=/usr/bin/mkdir -p /var/run/calico
         ExecStartPre=/usr/bin/mkdir -p /var/lib/calico
+        ExecStartPre=/bin/sed -e "s/COREOS_PRIVATE_IPV4/${COREOS_PRIVATE_IPV4}/g" -i /etc/kubernetes/config/kubelet.yaml
         ExecStart=/bin/sh -c "exec /usr/lib/coreos/kubelet-wrapper \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
         {{/* Work-around until https://github.com/kubernetes/kubernetes/issues/43967 is fixed via https://github.com/kubernetes/kubernetes/pull/43995 */ -}}
@@ -352,30 +353,16 @@ coreos:
         --container-runtime={{.ContainerRuntime}} \
         --node-labels=node.kubernetes.io/role="node",node.kubernetes.io/role="{{ toLabel .NodePoolName }}",kubernetes.io/role=node,node-role.kubernetes.io/node=\"\",node-role.kubernetes.io/{{ toLabel .NodePoolName }}=\"\"{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
         --register-node=true \
+        --config=/etc/kubernetes/config/kubelet.yaml \
         {{if .Taints}}--register-with-taints={{.Taints.String}}\
         {{end}}--allow-privileged=true \
-        {{if .NodeStatusUpdateFrequency}}--node-status-update-frequency={{.NodeStatusUpdateFrequency}} \
-        {{end}}--pod-manifest-path=/etc/kubernetes/manifests \
-        {{ if .KubeDns.NodeLocalResolver }}--cluster-dns=${COREOS_PRIVATE_IPV4} \
-        {{ else }}--cluster-dns={{.DNSServiceIP}} \
-        {{ end }}--cluster-domain=cluster.local \
         --cloud-provider=aws \
         --cert-dir=/etc/kubernetes/ssl \
         --bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \
-        --rotate-certificates \
         {{- if .Kubelet.Kubeconfig }}
         --kubeconfig={{ .Kubelet.Kubeconfig }} \
         {{- else }}
         --kubeconfig=/etc/kubernetes/kubeconfig/kubelet.yaml \
-        {{- end }}
-        {{- if .FeatureGates.Enabled }}
-        --feature-gates=\"{{.FeatureGates.String}}\" \
-        {{- end }}
-        {{- if .Kubelet.SystemReservedResources }}
-        --system-reserved={{ .Kubelet.SystemReservedResources }} \
-        {{- end }}
-        {{- if .Kubelet.KubeReservedResources }}
-        --kube-reserved={{ .Kubelet.KubeReservedResources }} \
         {{- end }}
         {{- if .Kubernetes.Networking.AmazonVPC.Enabled }}
         --node-ip=$$(curl http://169.254.169.254/latest/meta-data/local-ipv4) \
@@ -622,6 +609,31 @@ write_files:
       PrintMotd no # handled by PAM
       PasswordAuthentication no
       ChallengeResponseAuthentication no
+
+  - path: /etc/kubernetes/config/kubelet.yaml
+    content: |
+      kind: KubeletConfiguration
+      apiVersion: kubelet.config.k8s.io/v1beta1
+      evictionHard:
+        memory.available:  "200Mi"
+      staticPodPath: /etc/kubernetes/manifests
+      clusterDomain: cluster.local
+      clusterDNS: {{ if .KubeDns.NodeLocalResolver }}COREOS_PRIVATE_IPV4{{ else }}{{.DNSServiceIP}}{{end}}
+      serverTLSBootstrap: true
+      rotateCertificates: true
+      {{- if .NodeStatusUpdateFrequency }}
+      nodeStatusUpdateFrequency: {{.NodeStatusUpdateFrequency}}
+      {{- end }}
+      {{- if .Kubelet.SystemReservedResources }}
+      systemReserved: {{ .Kubelet.SystemReservedResources }}
+      {{- end }}
+      {{- if .Kubelet.KubeReservedResources }}
+      kubeReserved: {{ .Kubelet.KubeReservedResources }}
+      {{- end }}
+      {{- if .FeatureGates.Enabled }}
+      featureGates:
+{{.FeatureGates.Yaml | indent 8}} 
+      {{- end }}
 
   {{ if .CustomFiles -}}
   {{ range $i, $w := .CustomFiles -}}
