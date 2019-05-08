@@ -597,6 +597,17 @@ write_files:
       - {{ if .KubeDns.NodeLocalResolver }}COREOS_PRIVATE_IPV4{{ else }}{{.DNSServiceIP}}{{end}}
       serverTLSBootstrap: false
       rotateCertificates: true
+      authentication:
+        anonymous:
+          enabled: true
+        webhook:
+          enabled: true
+          cacheTTL: "2m"
+      authorization:
+        mode: Webhook
+        webhook:
+          cacheAuthorizedTTL: "2m"
+          cacheUnauthorizedTTL: "1m"
       {{- if .Kubelet.SystemReservedResources }}
       systemReserved: {{ .Kubelet.SystemReservedResources }}
       {{- end }}
@@ -996,9 +1007,9 @@ write_files:
       deploy "${rbac}/cluster-role-bindings"/{nodes-can-create-csrs,automatically-sign-node-certificate-requests,automatically-sign-node-certificate-renewals}".yaml"
       
       # General Cluster roles and bindings
-      deploy "${rbac}/cluster-roles/node-extensions.yaml" \
-        "${rbac}/cluster-role-bindings"/{kube-admin,system-worker,node,node-proxier,node-extensions}".yaml"
-      
+      deploy "${rbac}/cluster-roles/"{node-extensions,node-healthz-access}".yaml" \
+        "${rbac}/cluster-role-bindings"/{kube-admin,system-worker,node,node-proxier,node-extensions,node-healthz-access}".yaml"
+
       # CLUSTER NETWORKING
       deploy "${rbac}/network-daemonsets.yaml"
       {{- if .Kubernetes.Networking.AmazonVPC.Enabled }}
@@ -2787,6 +2798,33 @@ write_files:
           kind: ClusterRole
           name: kube-aws:node-extensions
           apiGroup: rbac.authorization.k8s.io
+
+  # RBAC Rules to Allow Kubelet authentication to be enabled but accept unauthenticated GET calls to the /metrics endpoint
+  - path: /srv/kubernetes/rbac/cluster-roles/node-healthz-access.yaml
+    content: |
+      kind: ClusterRole
+      apiVersion: rbac.authorization.k8s.io/v1beta1
+      metadata:
+        name: node-healthz-access
+      rules:
+      - apiGroups: [""]
+        resources: ["nodes/proxy"]
+        verbs: ["get"]
+
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/node-healthz-access.yaml
+    content: |
+      kind: ClusterRoleBinding
+      apiVersion: rbac.authorization.k8s.io/v1beta1
+      metadata:
+        name: node-healthz-access
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: node-healthz-access
+      subjects:
+      - kind: Group
+        name: system:unauthenticated
+        apiGroup: rbac.authorization.k8s.io
 
   # metrics-server
   - path: /srv/kubernetes/rbac/cluster-role-bindings/metrics-server.yaml
