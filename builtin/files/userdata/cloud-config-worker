@@ -620,8 +620,9 @@ write_files:
       clusterDomain: cluster.local
       clusterDNS: 
       - {{ if .KubeDns.NodeLocalResolver }}COREOS_PRIVATE_IPV4{{ else }}{{.DNSServiceIP}}{{end}}
-      serverTLSBootstrap: true
+      serverTLSBootstrap: false
       rotateCertificates: true
+      
       {{- if .NodeStatusUpdateFrequency }}
       nodeStatusUpdateFrequency: {{.NodeStatusUpdateFrequency}}
       {{- end }}
