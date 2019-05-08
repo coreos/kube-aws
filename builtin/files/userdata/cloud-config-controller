@@ -593,7 +593,8 @@ write_files:
         memory.available:  "200Mi"
       staticPodPath: /etc/kubernetes/manifests
       clusterDomain: cluster.local
-      clusterDNS: {{ if .KubeDns.NodeLocalResolver }}COREOS_PRIVATE_IPV4{{ else }}{{.DNSServiceIP}}{{end}}
+      clusterDNS:
+      - {{ if .KubeDns.NodeLocalResolver }}COREOS_PRIVATE_IPV4{{ else }}{{.DNSServiceIP}}{{end}}
       serverTLSBootstrap: true
       rotateCertificates: true
       {{- if .Kubelet.SystemReservedResources }}
