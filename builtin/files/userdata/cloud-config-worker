@@ -622,7 +622,17 @@ write_files:
       - {{ if .KubeDns.NodeLocalResolver }}COREOS_PRIVATE_IPV4{{ else }}{{.DNSServiceIP}}{{end}}
       serverTLSBootstrap: false
       rotateCertificates: true
-      
+      authentication:
+        anonymous:
+          enabled: true
+        webhook:
+          enabled: true
+          cacheTTL: "2m"
+      authorization:
+        mode: Webhook
+        webhook:
+          cacheAuthorizedTTL: "2m"
+          cacheUnauthorizedTTL: "1m"
       {{- if .NodeStatusUpdateFrequency }}
       nodeStatusUpdateFrequency: {{.NodeStatusUpdateFrequency}}
       {{- end }}
