@@ -1,5 +1,14 @@
 # Using Cloud-Config
 
+---
+
+**NOTE**: coreos-cloudinit is no longer under active development and has been superseded by [Ignition][ignition]. For more information about the recommended tools for provisioning Container Linux, refer to the [provisioning documentation][provisioning].
+
+[ignition]: https://github.com/coreos/ignition
+[provisioning]: https://github.com/coreos/docs/blob/master/os/provisioning.md
+
+---
+
 CoreOS allows you to declaratively customize various OS-level items, such as network configuration, user accounts, and systemd units. This document describes the full list of items we can configure. The `coreos-cloudinit` program uses these files as it configures the OS after startup or during runtime.
 
 Your cloud-config is processed during each boot. Invalid cloud-config won't be processed but will be logged in the journal. You can validate your cloud-config with the [CoreOS online validator](https://coreos.com/validate/) or by running `coreos-cloudinit -validate`.  In addition to these two validation methods you can debug `coreos-cloudinit` system output through the `journalctl` tool:
@@ -12,7 +21,7 @@ It will show `coreos-cloudinit` run output which was triggered by system boot.
 
 ## Configuration File
 
-The file used by this system initialization program is called a "cloud-config" file. It is inspired by the [cloud-init][cloud-init] project's [cloud-config][cloud-config] file, which is "the defacto multi-distribution package that handles early initialization of a cloud instance" ([cloud-init docs][cloud-init-docs]). Because the cloud-init project includes tools which aren't used by CoreOS, only the relevant subset of its configuration items will be implemented in our cloud-config file. In addition to those, we added a few CoreOS-specific items, such as etcd configuration, OEM definition, and systemd units.
+The file used by this system initialization program is called a "cloud-config" file. It is inspired by the [cloud-init][cloud-init] project's [cloud-config][cloud-config] file, which is "the defacto multi-distribution package that handles early initialization of a cloud instance" ([cloud-init docs][cloud-init-docs]). Because the cloud-init project includes tools which aren't used by CoreOS, only the relevant subset of its configuration items will be implemented in our cloud-config file. In addition to those, we added a few CoreOS-specific items, such as etcd configuration (deprecated), OEM definition, and systemd units.
 
 We've designed our implementation to allow the same cloud-config file to work across all of our supported platforms.
 
@@ -24,7 +33,7 @@ We've designed our implementation to allow the same cloud-config file to work ac
 
 The cloud-config file uses the [YAML][yaml] file format, which uses whitespace and new-lines to delimit lists, associative arrays, and values.
 
-A cloud-config file must contain a header: either `#cloud-config` for processing as cloud-config (suggested) or `#!` for processing as a shell script (advanced). If cloud-config has #cloud-config header, it should followed by an associative array which has zero or more of the following keys:
+A cloud-config file must contain a header: either `#cloud-config` for processing as cloud-config (suggested) or `#!` for processing as a shell script (advanced). If cloud-config has the `#cloud-config` header, it should followed by an associative array which has zero or more of the following keys:
 
 - `coreos`
 - `ssh_authorized_keys`
@@ -47,7 +56,7 @@ CoreOS tries to conform to each platform's native method to provide user data. E
 
 ### coreos
 
-#### etcd (deprecated. see etcd2)
+#### etcd (deprecated)
 
 The `coreos.etcd.*` parameters will be translated to a partial systemd unit acting as an etcd configuration file.
 If the platform environment supports the templating feature of coreos-cloudinit it is possible to automate etcd configuration with the `$private_ipv4` and `$public_ipv4` fields. For example, the following cloud-config document...
@@ -81,7 +90,7 @@ _Note: The `$private_ipv4` and `$public_ipv4` substitution variables referenced 
 
 [etcd-config]: https://github.com/coreos/etcd/blob/release-0.4/Documentation/configuration.md
 
-#### etcd2
+#### etcd2 (deprecated)
 
 The `coreos.etcd2.*` parameters will be translated to a partial systemd unit acting as an etcd configuration file.
 If the platform environment supports the templating feature of coreos-cloudinit it is possible to automate etcd configuration with the `$private_ipv4` and `$public_ipv4` fields. When generating a [discovery token](https://discovery.etcd.io/new?size=3), set the `size` parameter, since etcd uses this to determine if all members have joined the cluster. After the cluster is bootstrapped, it can grow or shrink from this configured size.
@@ -244,10 +253,9 @@ The `coreos.update.*` parameters manipulate settings related to how CoreOS insta
 These fields will be written out to and replace `/etc/coreos/update.conf`. If only one of the parameters is given it will only overwrite the given field.
 The `reboot-strategy` parameter also affects the behaviour of [locksmith](https://github.com/coreos/locksmith).
 
-- **reboot-strategy**: One of "reboot", "etcd-lock", "best-effort" or "off" for controlling when reboots are issued after an update is performed.
+- **reboot-strategy**: One of "reboot", "etcd-lock", or "off" for controlling when reboots are issued after an update is performed.
   - _reboot_: Reboot immediately after an update is applied.
   - _etcd-lock_: Reboot after first taking a distributed lock in etcd, this guarantees that only one host will reboot concurrently and that the cluster will remain available during the update.
-  - _best-effort_ - If etcd is running, "etcd-lock", otherwise simply "reboot".
   - _off_ - Disable rebooting after updates are applied (not recommended).
 - **server**: The location of the [CoreUpdate][coreupdate] server which will be queried for updates. Also known as the [omaha][omaha-docs] server endpoint.
 - **group**:  signifies the channel which should be used for automatic updates.  This value defaults to the version of the image initially downloaded. (one of "master", "alpha", "beta", "stable")
@@ -274,7 +282,7 @@ Each item is an object with the following fields:
 
 - **name**: String representing unit's name. Required.
 - **runtime**: Boolean indicating whether or not to persist the unit across reboots. This is analogous to the `--runtime` argument to `systemctl enable`. The default value is false.
-- **enable**: Boolean indicating whether or not to handle the [Install] section of the unit file. This is similar to running `systemctl enable <name>`. The default value is false.
+- **enable**: Boolean indicating whether or not to handle the `[Install]` section of the unit file. This is similar to running `systemctl enable <name>`. The default value is false.
 - **content**: Plaintext string representing entire unit file. If no value is provided, the unit is assumed to exist already.
 - **command**: Command to execute on unit: start, stop, reload, restart, try-restart, reload-or-restart, reload-or-try-restart. The default behavior is to not execute any commands.
 - **mask**: Whether to mask the unit file by symlinking it to `/dev/null` (analogous to `systemctl mask <name>`). Note that unlike `systemctl mask`, **this will destructively remove any existing unit file** located at `/etc/systemd/system/<unit>`, to ensure that the mask succeeds. The default value is false.
@@ -375,9 +383,9 @@ All but the `passwd` and `ssh-authorized-keys` fields will be ignored if the use
 - **groups**: Add user to these additional groups
 - **no-user-group**: Boolean. Skip default group creation.
 - **ssh-authorized-keys**: List of public SSH keys to authorize for this user
-- **coreos-ssh-import-github** [DEPRECATED]: Authorize SSH keys from GitHub user
-- **coreos-ssh-import-github-users** [DEPRECATED]: Authorize SSH keys from a list of GitHub users
-- **coreos-ssh-import-url** [DEPRECATED]: Authorize SSH keys imported from a url endpoint.
+- **coreos-ssh-import-github** (DEPRECATED): Authorize SSH keys from GitHub user
+- **coreos-ssh-import-github-users** (DEPRECATED): Authorize SSH keys from a list of GitHub users
+- **coreos-ssh-import-url** (DEPRECATED): Authorize SSH keys imported from a url endpoint.
 - **system**: Create the user as a system user. No home directory will be created.
 - **no-log-init**: Boolean. Skip initialization of lastlog and faillog databases.
 - **shell**: User's login shell.

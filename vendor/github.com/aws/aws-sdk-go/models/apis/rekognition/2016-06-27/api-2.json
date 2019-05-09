@@ -976,7 +976,8 @@
       "type":"structure",
       "members":{
         "Labels":{"shape":"Labels"},
-        "OrientationCorrection":{"shape":"OrientationCorrection"}
+        "OrientationCorrection":{"shape":"OrientationCorrection"},
+        "LabelModelVersion":{"shape":"String"}
       }
     },
     "DetectModerationLabelsRequest":{
@@ -990,7 +991,8 @@
     "DetectModerationLabelsResponse":{
       "type":"structure",
       "members":{
-        "ModerationLabels":{"shape":"ModerationLabels"}
+        "ModerationLabels":{"shape":"ModerationLabels"},
+        "ModerationModelVersion":{"shape":"String"}
       }
     },
     "DetectTextRequest":{
@@ -1229,7 +1231,8 @@
         "StatusMessage":{"shape":"StatusMessage"},
         "VideoMetadata":{"shape":"VideoMetadata"},
         "ModerationLabels":{"shape":"ContentModerationDetections"},
-        "NextToken":{"shape":"PaginationToken"}
+        "NextToken":{"shape":"PaginationToken"},
+        "ModerationModelVersion":{"shape":"String"}
       }
     },
     "GetFaceDetectionRequest":{
@@ -1288,7 +1291,8 @@
         "StatusMessage":{"shape":"StatusMessage"},
         "VideoMetadata":{"shape":"VideoMetadata"},
         "NextToken":{"shape":"PaginationToken"},
-        "Labels":{"shape":"LabelDetections"}
+        "Labels":{"shape":"LabelDetections"},
+        "LabelModelVersion":{"shape":"String"}
       }
     },
     "GetPersonTrackingRequest":{
@@ -1370,6 +1374,17 @@
         "UnindexedFaces":{"shape":"UnindexedFaces"}
       }
     },
+    "Instance":{
+      "type":"structure",
+      "members":{
+        "BoundingBox":{"shape":"BoundingBox"},
+        "Confidence":{"shape":"Percent"}
+      }
+    },
+    "Instances":{
+      "type":"list",
+      "member":{"shape":"Instance"}
+    },
     "InternalServerError":{
       "type":"structure",
       "members":{
@@ -1437,7 +1452,9 @@
       "type":"structure",
       "members":{
         "Name":{"shape":"String"},
-        "Confidence":{"shape":"Percent"}
+        "Confidence":{"shape":"Percent"},
+        "Instances":{"shape":"Instances"},
+        "Parents":{"shape":"Parents"}
       }
     },
     "LabelDetection":{
@@ -1497,7 +1514,12 @@
         "mouthUp",
         "mouthDown",
         "leftPupil",
-        "rightPupil"
+        "rightPupil",
+        "upperJawlineLeft",
+        "midJawlineLeft",
+        "chinBottom",
+        "midJawlineRight",
+        "upperJawlineRight"
       ]
     },
     "Landmarks":{
@@ -1623,6 +1645,16 @@
     "PaginationToken":{
       "type":"string",
       "max":255
+    },
+    "Parent":{
+      "type":"structure",
+      "members":{
+        "Name":{"shape":"String"}
+      }
+    },
+    "Parents":{
+      "type":"list",
+      "member":{"shape":"Parent"}
     },
     "Percent":{
       "type":"float",

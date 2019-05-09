@@ -11,17 +11,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build !windows
+
 package sysfs
 
 import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
-	"syscall"
+
+	"github.com/prometheus/procfs/internal/util"
 )
+
+const netclassPath = "class/net"
 
 // NetClassIface contains info from files in /sys/class/net/<iface>
 // for single interface (iface).
@@ -69,26 +75,42 @@ func NewNetClass() (NetClass, error) {
 	return fs.NewNetClass()
 }
 
-// NewNetClass returns info for all net interfaces (iface) read from /sys/class/net/<iface>.
-func (fs FS) NewNetClass() (NetClass, error) {
-	path := fs.Path("class/net")
+// NetClassDevices scans /sys/class/net for devices and returns them as a list of names.
+func (fs FS) NetClassDevices() ([]string, error) {
+	var res []string
+	path := fs.sys.Path(netclassPath)
 
 	devices, err := ioutil.ReadDir(path)
 	if err != nil {
-		return NetClass{}, fmt.Errorf("cannot access %s dir %s", path, err)
+		return res, fmt.Errorf("cannot access %s dir %s", path, err)
 	}
 
-	netClass := NetClass{}
 	for _, deviceDir := range devices {
 		if deviceDir.Mode().IsRegular() {
 			continue
 		}
-		interfaceClass, err := netClass.parseNetClassIface(path + "/" + deviceDir.Name())
+		res = append(res, deviceDir.Name())
+	}
+
+	return res, nil
+}
+
+// NewNetClass returns info for all net interfaces (iface) read from /sys/class/net/<iface>.
+func (fs FS) NewNetClass() (NetClass, error) {
+	devices, err := fs.NetClassDevices()
+	if err != nil {
+		return nil, err
+	}
+
+	path := fs.sys.Path(netclassPath)
+	netClass := NetClass{}
+	for _, deviceDir := range devices {
+		interfaceClass, err := netClass.parseNetClassIface(filepath.Join(path, deviceDir))
 		if err != nil {
 			return nil, err
 		}
-		interfaceClass.Name = deviceDir.Name()
-		netClass[deviceDir.Name()] = *interfaceClass
+		interfaceClass.Name = deviceDir
+		netClass[deviceDir] = *interfaceClass
 	}
 	return netClass, nil
 }
@@ -109,7 +131,7 @@ func (nc NetClass) parseNetClassIface(devicePath string) (*NetClassIface, error)
 			panic(fmt.Errorf("field %s does not have a filename tag", fieldType.Name))
 		}
 
-		fileContents, err := sysReadFile(devicePath + "/" + fieldType.Tag.Get("fileName"))
+		value, err := util.SysReadFile(devicePath + "/" + fieldType.Tag.Get("fileName"))
 
 		if err != nil {
 			if os.IsNotExist(err) || err.Error() == "operation not supported" || err.Error() == "invalid argument" {
@@ -117,7 +139,6 @@ func (nc NetClass) parseNetClassIface(devicePath string) (*NetClassIface, error)
 			}
 			return nil, fmt.Errorf("could not access file %s: %s", fieldType.Tag.Get("fileName"), err)
 		}
-		value := strings.TrimSpace(string(fileContents))
 
 		switch fieldValue.Kind() {
 		case reflect.String:
@@ -148,27 +169,4 @@ func (nc NetClass) parseNetClassIface(devicePath string) (*NetClassIface, error)
 	}
 
 	return &interfaceClass, nil
-}
-
-// sysReadFile is a simplified ioutil.ReadFile that invokes syscall.Read directly.
-// https://github.com/prometheus/node_exporter/pull/728/files
-func sysReadFile(file string) ([]byte, error) {
-	f, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	// On some machines, hwmon drivers are broken and return EAGAIN.  This causes
-	// Go's ioutil.ReadFile implementation to poll forever.
-	//
-	// Since we either want to read data or bail immediately, do the simplest
-	// possible read using syscall directly.
-	b := make([]byte, 128)
-	n, err := syscall.Read(int(f.Fd()), b)
-	if err != nil {
-		return nil, err
-	}
-
-	return b[:n], nil
 }

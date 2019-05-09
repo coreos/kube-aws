@@ -1,5 +1,14 @@
 # Deprecated Cloud-Config Features
 
+---
+
+**NOTE**: coreos-cloudinit is no longer under active development and has been superseded by [Ignition][ignition]. For more information about the recommended tools for provisioning Container Linux, refer to the [provisioning documentation][provisioning].
+
+[ignition]: https://github.com/coreos/ignition
+[provisioning]: https://github.com/coreos/docs/blob/master/os/provisioning.md
+
+---
+
 ## Retrieving SSH Authorized Keys
 
 ### From a GitHub User

@@ -112,20 +112,17 @@ func TestCheckStructure(t *testing.T) {
 			entries: []Entry{{entryWarning, "unrecognized key \"test\"", 1}},
 		},
 		{
-			config:  "coreos:\n  etcd:\n    bad:",
+			config:  "coreos:\n  flannel:\n    bad:",
 			entries: []Entry{{entryWarning, "unrecognized key \"bad\"", 3}},
 		},
 		{
-			config: "coreos:\n  etcd:\n    discovery: good",
+			config: "coreos:\n  flannel:\n    interface: good",
 		},
 
 		// Test for deprecated keys
 		{
-			config: "coreos:\n  etcd:\n    addr: hi",
-		},
-		{
 			config:  "coreos:\n  etcd:\n    proxy: hi",
-			entries: []Entry{{entryWarning, "deprecated key \"proxy\" (etcd2 options no longer work for etcd)", 3}},
+			entries: []Entry{{entryWarning, "deprecated key \"etcd\" (etcd is no longer shipped in Container Linux)", 2}, {entryWarning, "deprecated key \"proxy\" (etcd2 options no longer work for etcd)", 3}},
 		},
 
 		// Test for error on list of nodes
@@ -188,9 +185,6 @@ func TestCheckStructure(t *testing.T) {
 		{
 			config:  "coreos: hello",
 			entries: []Entry{{entryWarning, "incorrect type for \"coreos\" (want struct)", 1}},
-		},
-		{
-			config: "coreos:\n  etcd:\n    discovery: fire in the disco",
 		},
 		{
 			config:  "coreos:\n  - hello",

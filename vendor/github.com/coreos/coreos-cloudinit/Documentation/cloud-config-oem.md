@@ -1,5 +1,14 @@
 ## OEM configuration
 
+---
+
+**NOTE**: coreos-cloudinit is no longer under active development and has been superseded by [Ignition][ignition]. For more information about the recommended tools for provisioning Container Linux, refer to the [provisioning documentation][provisioning].
+
+[ignition]: https://github.com/coreos/ignition
+[provisioning]: https://github.com/coreos/docs/blob/master/os/provisioning.md
+
+---
+
 The `coreos.oem.*` parameters follow the [os-release spec][os-release], but have been repurposed as a way for coreos-cloudinit to know about the OEM partition on this machine. Customizing this section is only needed when generating a new OEM of CoreOS from the SDK. The fields include:
 
 - **id**: Lowercase string identifying the OEM

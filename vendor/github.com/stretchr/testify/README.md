@@ -164,6 +164,29 @@ func TestSomething(t *testing.T) {
   // assert that the expectations were met
   testObj.AssertExpectations(t)
 
+
+}
+
+// TestSomethingElse is a second example of how to use our test object to
+// make assertions about some target code we are testing.
+// This time using a placeholder. Placeholders might be used when the
+// data being passed in is normally dynamically generated and cannot be
+// predicted beforehand (eg. containing hashes that are time sensitive)
+func TestSomethingElse(t *testing.T) {
+
+  // create an instance of our test object
+  testObj := new(MyMockedObject)
+
+  // setup expectations with a placeholder in the argument list
+  testObj.On("DoSomething", mock.Anything).Return(true, nil)
+
+  // call the code we are testing
+  targetFuncThatDoesSomethingWithObj(testObj)
+
+  // assert that the expectations were met
+  testObj.AssertExpectations(t)
+
+
 }
 ```
 
@@ -264,8 +287,10 @@ To install Testify, use `go get`:
 This will then make the following packages available to you:
 
     github.com/stretchr/testify/assert
+    github.com/stretchr/testify/require
     github.com/stretchr/testify/mock
-    github.com/stretchr/testify/http
+    github.com/stretchr/testify/suite
+    github.com/stretchr/testify/http (deprecated)
 
 Import the `testify/assert` package into your code using this template:
 
@@ -293,9 +318,23 @@ To update Testify to the latest version, use `go get -u github.com/stretchr/test
 
 ------
 
+Supported go versions
+==================
+
+We support the three major Go versions, which are 1.9, 1.10, and 1.11 at the moment.
+
+------
+
 Contributing
 ============
 
 Please feel free to submit issues, fork the repository and send pull requests!
 
 When submitting an issue, we ask that you please include a complete test function that demonstrates the issue.  Extra credit for those using Testify to write the test code that demonstrates it.
+
+------
+
+License
+=======
+
+This project is licensed under the terms of the MIT license.

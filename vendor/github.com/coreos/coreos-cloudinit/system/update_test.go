@@ -46,14 +46,6 @@ func TestUpdateUnits(t *testing.T) {
 			}}},
 		},
 		{
-			config: config.Update{RebootStrategy: "best-effort"},
-			units: []Unit{{config.Unit{
-				Name:    "locksmithd.service",
-				Command: "restart",
-				Runtime: true,
-			}}},
-		},
-		{
 			config: config.Update{RebootStrategy: "etcd-lock"},
 			units: []Unit{{config.Unit{
 				Name:    "locksmithd.service",
@@ -98,20 +90,12 @@ func TestUpdateFile(t *testing.T) {
 		},
 		{
 			config: config.Update{RebootStrategy: "wizzlewazzle"},
-			err:    &config.ErrorValid{Value: "wizzlewazzle", Field: "RebootStrategy", Valid: "^(best-effort|etcd-lock|reboot|off)$"},
+			err:    &config.ErrorValid{Value: "wizzlewazzle", Field: "RebootStrategy", Valid: "^(etcd-lock|reboot|off)$"},
 		},
 		{
 			config: config.Update{Group: "master", Server: "http://foo.com"},
 			file: &File{config.File{
 				Content:            "GROUP=master\nSERVER=http://foo.com\n",
-				Path:               "etc/coreos/update.conf",
-				RawFilePermissions: "0644",
-			}},
-		},
-		{
-			config: config.Update{RebootStrategy: "best-effort"},
-			file: &File{config.File{
-				Content:            "REBOOT_STRATEGY=best-effort\n",
 				Path:               "etc/coreos/update.conf",
 				RawFilePermissions: "0644",
 			}},
