@@ -983,8 +983,8 @@ write_files:
       deploy "${rbac}/cluster-role-bindings"/{nodes-can-create-csrs,automatically-sign-node-certificate-requests,automatically-sign-node-certificate-renewals}".yaml"
       
       # General Cluster roles and bindings
-      deploy "${rbac}/cluster-roles/"{node-extensions,node-healthz-access}".yaml" \
-        "${rbac}/cluster-role-bindings"/{kube-admin,system-worker,node,node-proxier,node-extensions,node-healthz-access}".yaml"
+      deploy "${rbac}/cluster-roles/"{node-extensions,node-access}".yaml" \
+        "${rbac}/cluster-role-bindings"/{kube-admin,system-worker,node,node-proxier,node-extensions,node-access}".yaml"
 
       # CLUSTER NETWORKING
       deploy "${rbac}/network-daemonsets.yaml"
@@ -2792,7 +2792,7 @@ write_files:
           apiGroup: rbac.authorization.k8s.io
 
   # RBAC Rules to Allow Kubelet authentication to be enabled but accept unauthenticated GET calls to the /metrics endpoint
-  - path: /srv/kubernetes/rbac/cluster-roles/node-healthz-access.yaml
+  - path: /srv/kubernetes/rbac/cluster-roles/node-access.yaml
     content: |
       kind: ClusterRole
       apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -2802,8 +2802,22 @@ write_files:
       - apiGroups: [""]
         resources: ["nodes/proxy"]
         verbs: ["get"]
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRole
+      metadata:
+        name: node-logs-metrics
+      rules:
+      - apiGroups:
+        - ""
+        resources:
+        - nodes/log
+        - nodes/stats
+        - nodes/metrics
+        verbs:
+        - "*"
 
-  - path: /srv/kubernetes/rbac/cluster-role-bindings/node-healthz-access.yaml
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/node-access.yaml
     content: |
       kind: ClusterRoleBinding
       apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -2817,6 +2831,22 @@ write_files:
       - kind: Group
         name: system:unauthenticated
         apiGroup: rbac.authorization.k8s.io
+      - kind: Group
+        name: system:authenticated
+        apiGroup: rbac.authorization.k8s.io
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: node-logs-metrics
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: node-logs-metrics
+      subjects:
+      - apiGroup: rbac.authorization.k8s.io
+        kind: Group
+        name: system:authenticated
 
   # metrics-server
   - path: /srv/kubernetes/rbac/cluster-role-bindings/metrics-server.yaml
