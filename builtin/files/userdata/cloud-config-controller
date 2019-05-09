@@ -4110,6 +4110,7 @@ write_files:
                 - /metrics-server
                 - --logtostderr
                 - --v=2
+                - --kubelet-insecure-tls
                 - --requestheader-client-ca-file=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
                 - --requestheader-username-headers=X-Remote-User
                 - --requestheader-group-headers=X-Remote-Group
