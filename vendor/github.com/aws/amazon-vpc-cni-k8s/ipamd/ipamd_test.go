@@ -20,6 +20,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/pkg/errors"
+	"github.com/vishvananda/netlink"
 
 	"github.com/aws/amazon-vpc-cni-k8s/ipamd/datastore"
 	"github.com/aws/amazon-vpc-cni-k8s/pkg/apis/crd/v1alpha1"
@@ -45,8 +46,8 @@ const (
 	eniID            = "eni-5731da78"
 	primaryMAC       = "12:ef:2a:98:e5:5a"
 	secMAC           = "12:ef:2a:98:e5:5b"
-	primaryDevice    = 2
-	secDevice        = 0
+	primaryDevice    = 0
+	secDevice        = 2
 	primarySubnet    = "10.10.10.0/24"
 	secSubnet        = "10.10.20.0/24"
 	ipaddr01         = "10.10.10.11"
@@ -98,6 +99,7 @@ func TestNodeInit(t *testing.T) {
 		SubnetIPv4CIDR: secSubnet,
 		LocalIPv4s:     []string{ipaddr11, ipaddr12},
 	}
+	var cidrs []*string
 	mockAWS.EXPECT().GetENILimit().Return(4, nil)
 	mockAWS.EXPECT().GetENIipLimit().Return(int64(56), nil)
 	mockAWS.EXPECT().GetAttachedENIs().Return([]awsutils.ENIMetadata{eni1, eni2}, nil)
@@ -105,7 +107,9 @@ func TestNodeInit(t *testing.T) {
 
 	_, vpcCIDR, _ := net.ParseCIDR(vpcCIDR)
 	primaryIP := net.ParseIP(ipaddr01)
-	mockNetwork.EXPECT().SetupHostNetwork(vpcCIDR, &primaryIP).Return(nil)
+	mockAWS.EXPECT().GetVPCIPv4CIDRs().Return(cidrs)
+	mockAWS.EXPECT().GetPrimaryENImac().Return("")
+	mockNetwork.EXPECT().SetupHostNetwork(vpcCIDR, cidrs, "", &primaryIP).Return(nil)
 
 	//primaryENIid
 	mockAWS.EXPECT().GetPrimaryENI().Return(primaryENIid)
@@ -113,11 +117,12 @@ func TestNodeInit(t *testing.T) {
 	testAddr1 := ipaddr01
 	testAddr2 := ipaddr02
 	primary := true
+	notPrimary := false
 	eniResp := []*ec2.NetworkInterfacePrivateIpAddress{
 		{
 			PrivateIpAddress: &testAddr1, Primary: &primary},
 		{
-			PrivateIpAddress: &testAddr2, Primary: &primary}}
+			PrivateIpAddress: &testAddr2, Primary: &notPrimary}}
 	mockAWS.EXPECT().GetENIipLimit().Return(int64(56), nil)
 	mockAWS.EXPECT().GetPrimaryENI().Return(primaryENIid)
 	mockAWS.EXPECT().DescribeENI(primaryENIid).Return(eniResp, &attachmentID, nil)
@@ -127,12 +132,11 @@ func TestNodeInit(t *testing.T) {
 	attachmentID = testAttachmentID
 	testAddr11 := ipaddr11
 	testAddr12 := ipaddr12
-	primary = false
 	eniResp = []*ec2.NetworkInterfacePrivateIpAddress{
 		{
 			PrivateIpAddress: &testAddr11, Primary: &primary},
 		{
-			PrivateIpAddress: &testAddr12, Primary: &primary}}
+			PrivateIpAddress: &testAddr12, Primary: &notPrimary}}
 	mockAWS.EXPECT().GetENIipLimit().Return(int64(56), nil)
 	mockAWS.EXPECT().GetPrimaryENI().Return(primaryENIid)
 	mockAWS.EXPECT().DescribeENI(secENIid).Return(eniResp, &attachmentID, nil)
@@ -147,6 +151,13 @@ func TestNodeInit(t *testing.T) {
 	dockerList["pod-uid"] = &docker.ContainerInfo{ID: "docker-id",
 		Name: k8sName, K8SUID: "pod-uid"}
 	mockDocker.EXPECT().GetRunningContainers().Return(dockerList, nil)
+
+	var rules []netlink.Rule
+	mockNetwork.EXPECT().GetRuleList().Return(rules, nil)
+
+	mockAWS.EXPECT().GetVPCIPv4CIDRs().Return(cidrs)
+	mockNetwork.EXPECT().UseExternalSNAT().Return(false)
+	mockNetwork.EXPECT().UpdateRuleListBySrc(gomock.Any(), gomock.Any(), gomock.Any(), true)
 
 	err := mockContext.nodeInit()
 	assert.NoError(t, err)
@@ -242,7 +253,8 @@ func testIncreaseIPPool(t *testing.T, useENIConfig bool) {
 	mockAWS.EXPECT().GetENIipLimit().Return(int64(5), nil)
 	mockAWS.EXPECT().GetPrimaryENI().Return(primaryENIid)
 
-	primary := false
+	primary := true
+	notPrimary := false
 	attachmentID := testAttachmentID
 	testAddr11 := ipaddr11
 	testAddr12 := ipaddr12
@@ -252,7 +264,7 @@ func testIncreaseIPPool(t *testing.T, useENIConfig bool) {
 			{
 				PrivateIpAddress: &testAddr11, Primary: &primary},
 			{
-				PrivateIpAddress: &testAddr12, Primary: &primary}}, &attachmentID, nil)
+				PrivateIpAddress: &testAddr12, Primary: &notPrimary}}, &attachmentID, nil)
 
 	mockAWS.EXPECT().GetPrimaryENI().Return(primaryENIid)
 	mockNetwork.EXPECT().SetupENINetwork(gomock.Any(), secMAC, secDevice, secSubnet)
@@ -347,6 +359,41 @@ func TestGetWarmENITarget(t *testing.T) {
 	os.Setenv("WARM_IP_TARGET", "non-integer-string")
 	warmIPTarget = getWarmIPTarget()
 	assert.Equal(t, warmIPTarget, noWarmIPTarget)
+}
+
+func TestGetMaxENI(t *testing.T) {
+	ctrl, _, _, _, _, _ := setup(t)
+	defer ctrl.Finish()
+
+	// MaxENI 5 is less than lower bound of 10, so 5
+	os.Setenv("MAX_ENI", "5")
+	maxENI := getMaxENI(10)
+	assert.Equal(t, maxENI, 5)
+
+	// MaxENI 5 is greater than lower bound of 4, so 4
+	os.Setenv("MAX_ENI", "5")
+	maxENI = getMaxENI(4)
+	assert.Equal(t, maxENI, 4)
+
+	// MaxENI 0 is 0, which means disabled; so use lower bound
+	os.Setenv("MAX_ENI", "0")
+	maxENI = getMaxENI(4)
+	assert.Equal(t, maxENI, 4)
+
+	// MaxENI 1 is less than lower bound of 4, so 1.
+	os.Setenv("MAX_ENI", "1")
+	maxENI = getMaxENI(4)
+	assert.Equal(t, maxENI, 1)
+
+	// Empty MaxENI means disabled, so use lower bound
+	os.Unsetenv("MAX_ENI")
+	maxENI = getMaxENI(10)
+	assert.Equal(t, maxENI, 10)
+
+	// Invalid MaxENI means disabled, so use lower bound
+	os.Setenv("MAX_ENI", "non-integer-string")
+	maxENI = getMaxENI(10)
+	assert.Equal(t, maxENI, 10)
 }
 
 func TestGetCurWarmIPTarget(t *testing.T) {

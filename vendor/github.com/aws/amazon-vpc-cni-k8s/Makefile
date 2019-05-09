@@ -12,45 +12,64 @@
 # language governing permissions and limitations under the License.
 #
 
-.PHONY: build-linux clean docker docker-build lint unit-test vet
+.PHONY: build-linux clean docker docker-build lint unit-test vet download-portmap
 
+IMAGE   ?= amazon/amazon-k8s-cni
 VERSION ?= $(shell git describe --tags --always --dirty)
 LDFLAGS ?= -X main.version=$(VERSION)
+
+ARCH ?= $(shell uname -m)
+
+ifeq ($(ARCH),aarch64)
+  ARCH = arm64
+else
+endif
+ifeq ($(ARCH),x86_64)
+  ARCH = amd64
+endif
 
 # Download portmap plugin
 download-portmap:
 	mkdir -p tmp/downloads
 	mkdir -p tmp/plugins
-	curl -L -o tmp/downloads/cni-plugins-amd64.tgz https://github.com/containernetworking/plugins/releases/download/v0.6.0/cni-plugins-amd64-v0.6.0.tgz
-	tar -vxf tmp/downloads/cni-plugins-amd64.tgz -C tmp/plugins
+	curl -L -o tmp/downloads/cni-plugins-$(ARCH).tgz https://github.com/containernetworking/plugins/releases/download/v0.6.0/cni-plugins-$(ARCH)-v0.6.0.tgz
+	tar -vxf tmp/downloads/cni-plugins-$(ARCH).tgz -C tmp/plugins
 	cp tmp/plugins/portmap .
 	rm -rf tmp
 
 # Default to build the Linux binary
 build-linux:
-	GOOS=linux CGO_ENABLED=0 go build -o aws-k8s-agent -ldflags "$(LDFLAGS)"
-	GOOS=linux CGO_ENABLED=0 go build -o aws-cni -ldflags "$(LDFLAGS)" ./plugins/routed-eni/
+	GOOS=linux GOARCH=$(ARCH) CGO_ENABLED=0 go build -o aws-k8s-agent -ldflags "$(LDFLAGS)"
+	GOOS=linux GOARCH=$(ARCH) CGO_ENABLED=0 go build -o aws-cni -ldflags "$(LDFLAGS)" ./plugins/routed-eni/
 
 docker-build:
 	docker run -v $(shell pwd):/usr/src/app/src/github.com/aws/amazon-vpc-cni-k8s \
 		--workdir=/usr/src/app/src/github.com/aws/amazon-vpc-cni-k8s \
 		--env GOPATH=/usr/src/app \
+		--env ARCH=$(ARCH) \
 		golang:1.10 make build-linux && make download-portmap
 
 
 # Build docker image
 docker: docker-build
-	@docker build -f scripts/dockerfiles/Dockerfile.release -t "amazon/amazon-k8s-cni:$(VERSION)" .
-	@echo "Built Docker image \"amazon/amazon-k8s-cni:$(VERSION)\""
+	@docker build -f scripts/dockerfiles/Dockerfile.release -t "$(IMAGE):$(VERSION)" .
+	@echo "Built Docker image \"$(IMAGE):$(VERSION)\""
 
 # unit-test
 unit-test:
 	GOOS=linux CGO_ENABLED=1 go test -v -cover -race -timeout 150s ./pkg/awsutils/...
 	GOOS=linux CGO_ENABLED=1 go test -v -cover -race -timeout 10s ./plugins/routed-eni/...
-	GOOS=linux CGO_ENABLED=1 go test -v -cover -race -timeout 10s ./plugins/routed-eni/driver
 	GOOS=linux CGO_ENABLED=1 go test -v -cover -race -timeout 10s ./pkg/k8sapi/...
 	GOOS=linux CGO_ENABLED=1 go test -v -cover -race -timeout 10s ./pkg/networkutils/...
+	GOOS=linux CGO_ENABLED=1 go test -v -cover -race -timeout 10s ./pkg/utils/...
+	GOOS=linux CGO_ENABLED=1 go test -v -cover -race -timeout 10s ./pkg/eniconfig/...
 	GOOS=linux CGO_ENABLED=1 go test -v -cover -race -timeout 10s ./ipamd/...
+
+docker-unit-test:
+	docker run -v $(shell pwd):/usr/src/app/src/github.com/aws/amazon-vpc-cni-k8s \
+		--workdir=/usr/src/app/src/github.com/aws/amazon-vpc-cni-k8s \
+		--env GOPATH=/usr/src/app \
+		golang:1.10 make unit-test
 
 # golint
 # To install: go get -u golang.org/x/lint/golint

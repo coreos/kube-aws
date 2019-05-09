@@ -26,7 +26,6 @@ func TestRebootStrategyValid(t *testing.T) {
 
 		isValid bool
 	}{
-		{value: "best-effort", isValid: true},
 		{value: "etcd-lock", isValid: true},
 		{value: "reboot", isValid: true},
 		{value: "off", isValid: true},

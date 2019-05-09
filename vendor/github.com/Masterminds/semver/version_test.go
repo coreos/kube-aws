@@ -1,6 +1,8 @@
 package semver
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 )
 
@@ -32,6 +34,9 @@ func TestNewVersion(t *testing.T) {
 		{"v1.2.3-rc1-with-hypen", false},
 		{"1.2.3.4", true},
 		{"v1.2.3.4", true},
+		{"1.2.2147483648", false},
+		{"1.2147483648.3", false},
+		{"2147483648.3.0", false},
 	}
 
 	for _, tc := range tests {
@@ -154,9 +159,9 @@ func TestCompare(t *testing.T) {
 		{"4.2-beta.2", "4.2-beta.1", 1},
 		{"4.2-beta2", "4.2-beta1", 1},
 		{"4.2-beta", "4.2-beta.2", -1},
-		{"4.2-beta", "4.2-beta.foo", 1},
+		{"4.2-beta", "4.2-beta.foo", -1},
 		{"4.2-beta.2", "4.2-beta", 1},
-		{"4.2-beta.foo", "4.2-beta", -1},
+		{"4.2-beta.foo", "4.2-beta", 1},
 		{"1.2+bar", "1.2+baz", 0},
 	}
 
@@ -224,6 +229,11 @@ func TestGreaterThan(t *testing.T) {
 		{"1.2.3", "1.5.1", false},
 		{"2.2.3", "1.5.1", true},
 		{"3.2-beta", "3.2-beta", false},
+		{"3.2.0-beta.1", "3.2.0-beta.5", false},
+		{"3.2-beta.4", "3.2-beta.2", true},
+		{"7.43.0-SNAPSHOT.99", "7.43.0-SNAPSHOT.103", false},
+		{"7.43.0-SNAPSHOT.FOO", "7.43.0-SNAPSHOT.103", true},
+		{"7.43.0-SNAPSHOT.99", "7.43.0-SNAPSHOT.BAR", false},
 	}
 
 	for _, tc := range tests {
@@ -309,7 +319,6 @@ func TestInc(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error parsing version: %s", err)
 		}
-
 		var v2 Version
 		switch tc.how {
 		case "patch":
@@ -446,5 +455,36 @@ func TestOriginalVPrefix(t *testing.T) {
 		if a != e {
 			t.Errorf("Expected vprefix=%q, but got %q", e, a)
 		}
+	}
+}
+
+func TestJsonMarshal(t *testing.T) {
+	sVer := "1.1.1"
+	x, err := NewVersion(sVer)
+	if err != nil {
+		t.Errorf("Error creating version: %s", err)
+	}
+	out, err2 := json.Marshal(x)
+	if err2 != nil {
+		t.Errorf("Error marshaling version: %s", err2)
+	}
+	got := string(out)
+	want := fmt.Sprintf("%q", sVer)
+	if got != want {
+		t.Errorf("Error marshaling unexpected marshaled content: got=%q want=%q", got, want)
+	}
+}
+
+func TestJsonUnmarshal(t *testing.T) {
+	sVer := "1.1.1"
+	ver := &Version{}
+	err := json.Unmarshal([]byte(fmt.Sprintf("%q", sVer)), ver)
+	if err != nil {
+		t.Errorf("Error unmarshaling version: %s", err)
+	}
+	got := ver.String()
+	want := sVer
+	if got != want {
+		t.Errorf("Error unmarshaling unexpected object content: got=%q want=%q", got, want)
 	}
 }

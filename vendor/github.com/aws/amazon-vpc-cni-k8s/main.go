@@ -43,28 +43,41 @@ func _main() int {
 
 	log.Infof("Starting L-IPAMD %s  ...", version)
 
-	kubeClient, err := k8sapi.CreateKubeClient("", "")
+	kubeClient, err := k8sapi.CreateKubeClient()
 	if err != nil {
 		log.Errorf("Failed to create client: %v", err)
-		os.Exit(1)
+		return 1
 	}
 
 	discoverController := k8sapi.NewController(kubeClient)
 	go discoverController.DiscoverK8SPods()
 
 	eniConfigController := eniconfig.NewENIConfigController()
-	go eniConfigController.Start()
+	if ipamd.UseCustomNetworkCfg() {
+		go eniConfigController.Start()
+	}
 
 	awsK8sAgent, err := ipamd.New(discoverController, eniConfigController)
 
 	if err != nil {
-		log.Error("initialization failure", err)
+		log.Error("Initialization failure ", err)
 		return 1
 	}
 
+	// Pool manager
 	go awsK8sAgent.StartNodeIPPoolManager()
-	go awsK8sAgent.SetupHTTP()
-	awsK8sAgent.RunRPCHandler()
+
+	// Prometheus metrics
+	go awsK8sAgent.ServeMetrics()
+
+	// CNI introspection endpoints
+	go awsK8sAgent.ServeIntrospection()
+
+	err = awsK8sAgent.RunRPCHandler()
+	if err != nil {
+		log.Error("Failed to set up gRPC handler ", err)
+		return 1
+	}
 
 	return 0
 }

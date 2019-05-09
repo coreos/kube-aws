@@ -18,7 +18,7 @@ const opBatchPutMessage = "BatchPutMessage"
 // BatchPutMessageRequest generates a "aws/request.Request" representing the
 // client's request for the BatchPutMessage operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -109,7 +109,7 @@ const opCancelPipelineReprocessing = "CancelPipelineReprocessing"
 // CancelPipelineReprocessingRequest generates a "aws/request.Request" representing the
 // client's request for the CancelPipelineReprocessing operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -143,6 +143,7 @@ func (c *IoTAnalytics) CancelPipelineReprocessingRequest(input *CancelPipelineRe
 
 	output = &CancelPipelineReprocessingOutput{}
 	req = c.newRequest(op, input, output)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -200,7 +201,7 @@ const opCreateChannel = "CreateChannel"
 // CreateChannelRequest generates a "aws/request.Request" representing the
 // client's request for the CreateChannel operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -295,7 +296,7 @@ const opCreateDataset = "CreateDataset"
 // CreateDatasetRequest generates a "aws/request.Request" representing the
 // client's request for the CreateDataset operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -393,7 +394,7 @@ const opCreateDatasetContent = "CreateDatasetContent"
 // CreateDatasetContentRequest generates a "aws/request.Request" representing the
 // client's request for the CreateDatasetContent operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -432,7 +433,8 @@ func (c *IoTAnalytics) CreateDatasetContentRequest(input *CreateDatasetContentIn
 
 // CreateDatasetContent API operation for AWS IoT Analytics.
 //
-// Creates the content of a data set by applying a SQL action.
+// Creates the content of a data set by applying a "queryAction" (a SQL query)
+// or a "containerAction" (executing a containerized application).
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -484,7 +486,7 @@ const opCreateDatastore = "CreateDatastore"
 // CreateDatastoreRequest generates a "aws/request.Request" representing the
 // client's request for the CreateDatastore operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -578,7 +580,7 @@ const opCreatePipeline = "CreatePipeline"
 // CreatePipelineRequest generates a "aws/request.Request" representing the
 // client's request for the CreatePipeline operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -619,6 +621,8 @@ func (c *IoTAnalytics) CreatePipelineRequest(input *CreatePipelineInput) (req *r
 //
 // Creates a pipeline. A pipeline consumes messages from one or more channels
 // and allows you to process the messages before storing them in a data store.
+// You must specify both a channel and a datastore activity and, optionally,
+// as many as 23 additional activities in the pipelineActivities array.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -673,7 +677,7 @@ const opDeleteChannel = "DeleteChannel"
 // DeleteChannelRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteChannel operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -707,8 +711,7 @@ func (c *IoTAnalytics) DeleteChannelRequest(input *DeleteChannelInput) (req *req
 
 	output = &DeleteChannelOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -766,7 +769,7 @@ const opDeleteDataset = "DeleteDataset"
 // DeleteDatasetRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteDataset operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -800,8 +803,7 @@ func (c *IoTAnalytics) DeleteDatasetRequest(input *DeleteDatasetInput) (req *req
 
 	output = &DeleteDatasetOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -862,7 +864,7 @@ const opDeleteDatasetContent = "DeleteDatasetContent"
 // DeleteDatasetContentRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteDatasetContent operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -896,8 +898,7 @@ func (c *IoTAnalytics) DeleteDatasetContentRequest(input *DeleteDatasetContentIn
 
 	output = &DeleteDatasetContentOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -955,7 +956,7 @@ const opDeleteDatastore = "DeleteDatastore"
 // DeleteDatastoreRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteDatastore operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -989,8 +990,7 @@ func (c *IoTAnalytics) DeleteDatastoreRequest(input *DeleteDatastoreInput) (req 
 
 	output = &DeleteDatastoreOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -1048,7 +1048,7 @@ const opDeletePipeline = "DeletePipeline"
 // DeletePipelineRequest generates a "aws/request.Request" representing the
 // client's request for the DeletePipeline operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1082,8 +1082,7 @@ func (c *IoTAnalytics) DeletePipelineRequest(input *DeletePipelineInput) (req *r
 
 	output = &DeletePipelineOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -1141,7 +1140,7 @@ const opDescribeChannel = "DescribeChannel"
 // DescribeChannelRequest generates a "aws/request.Request" representing the
 // client's request for the DescribeChannel operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1232,7 +1231,7 @@ const opDescribeDataset = "DescribeDataset"
 // DescribeDatasetRequest generates a "aws/request.Request" representing the
 // client's request for the DescribeDataset operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1323,7 +1322,7 @@ const opDescribeDatastore = "DescribeDatastore"
 // DescribeDatastoreRequest generates a "aws/request.Request" representing the
 // client's request for the DescribeDatastore operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1414,7 +1413,7 @@ const opDescribeLoggingOptions = "DescribeLoggingOptions"
 // DescribeLoggingOptionsRequest generates a "aws/request.Request" representing the
 // client's request for the DescribeLoggingOptions operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1505,7 +1504,7 @@ const opDescribePipeline = "DescribePipeline"
 // DescribePipelineRequest generates a "aws/request.Request" representing the
 // client's request for the DescribePipeline operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1596,7 +1595,7 @@ const opGetDatasetContent = "GetDatasetContent"
 // GetDatasetContentRequest generates a "aws/request.Request" representing the
 // client's request for the GetDatasetContent operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1687,7 +1686,7 @@ const opListChannels = "ListChannels"
 // ListChannelsRequest generates a "aws/request.Request" representing the
 // client's request for the ListChannels operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1831,7 +1830,7 @@ const opListDatasetContents = "ListDatasetContents"
 // ListDatasetContentsRequest generates a "aws/request.Request" representing the
 // client's request for the ListDatasetContents operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1978,7 +1977,7 @@ const opListDatasets = "ListDatasets"
 // ListDatasetsRequest generates a "aws/request.Request" representing the
 // client's request for the ListDatasets operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2122,7 +2121,7 @@ const opListDatastores = "ListDatastores"
 // ListDatastoresRequest generates a "aws/request.Request" representing the
 // client's request for the ListDatastores operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2266,7 +2265,7 @@ const opListPipelines = "ListPipelines"
 // ListPipelinesRequest generates a "aws/request.Request" representing the
 // client's request for the ListPipelines operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2410,7 +2409,7 @@ const opListTagsForResource = "ListTagsForResource"
 // ListTagsForResourceRequest generates a "aws/request.Request" representing the
 // client's request for the ListTagsForResource operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2504,7 +2503,7 @@ const opPutLoggingOptions = "PutLoggingOptions"
 // PutLoggingOptionsRequest generates a "aws/request.Request" representing the
 // client's request for the PutLoggingOptions operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2538,8 +2537,7 @@ func (c *IoTAnalytics) PutLoggingOptionsRequest(input *PutLoggingOptionsInput) (
 
 	output = &PutLoggingOptionsOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -2600,7 +2598,7 @@ const opRunPipelineActivity = "RunPipelineActivity"
 // RunPipelineActivityRequest generates a "aws/request.Request" representing the
 // client's request for the RunPipelineActivity operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2688,7 +2686,7 @@ const opSampleChannelData = "SampleChannelData"
 // SampleChannelDataRequest generates a "aws/request.Request" representing the
 // client's request for the SampleChannelData operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2780,7 +2778,7 @@ const opStartPipelineReprocessing = "StartPipelineReprocessing"
 // StartPipelineReprocessingRequest generates a "aws/request.Request" representing the
 // client's request for the StartPipelineReprocessing operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2874,7 +2872,7 @@ const opTagResource = "TagResource"
 // TagResourceRequest generates a "aws/request.Request" representing the
 // client's request for the TagResource operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2908,6 +2906,7 @@ func (c *IoTAnalytics) TagResourceRequest(input *TagResourceInput) (req *request
 
 	output = &TagResourceOutput{}
 	req = c.newRequest(op, input, output)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -2969,7 +2968,7 @@ const opUntagResource = "UntagResource"
 // UntagResourceRequest generates a "aws/request.Request" representing the
 // client's request for the UntagResource operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -3003,6 +3002,7 @@ func (c *IoTAnalytics) UntagResourceRequest(input *UntagResourceInput) (req *req
 
 	output = &UntagResourceOutput{}
 	req = c.newRequest(op, input, output)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -3063,7 +3063,7 @@ const opUpdateChannel = "UpdateChannel"
 // UpdateChannelRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateChannel operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -3097,8 +3097,7 @@ func (c *IoTAnalytics) UpdateChannelRequest(input *UpdateChannelInput) (req *req
 
 	output = &UpdateChannelOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -3156,7 +3155,7 @@ const opUpdateDataset = "UpdateDataset"
 // UpdateDatasetRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateDataset operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -3190,8 +3189,7 @@ func (c *IoTAnalytics) UpdateDatasetRequest(input *UpdateDatasetInput) (req *req
 
 	output = &UpdateDatasetOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -3249,7 +3247,7 @@ const opUpdateDatastore = "UpdateDatastore"
 // UpdateDatastoreRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateDatastore operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -3283,8 +3281,7 @@ func (c *IoTAnalytics) UpdateDatastoreRequest(input *UpdateDatastoreInput) (req 
 
 	output = &UpdateDatastoreOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -3342,7 +3339,7 @@ const opUpdatePipeline = "UpdatePipeline"
 // UpdatePipelineRequest generates a "aws/request.Request" representing the
 // client's request for the UpdatePipeline operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -3376,14 +3373,15 @@ func (c *IoTAnalytics) UpdatePipelineRequest(input *UpdatePipelineInput) (req *r
 
 	output = &UpdatePipelineOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
 // UpdatePipeline API operation for AWS IoT Analytics.
 //
-// Updates the settings of a pipeline.
+// Updates the settings of a pipeline. You must specify both a channel and a
+// datastore activity and, optionally, as many as 23 additional activities in
+// the pipelineActivities array.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -3563,6 +3561,27 @@ type BatchPutMessageInput struct {
 	// The list of messages to be sent. Each message has format: '{ "messageId":
 	// "string", "payload": "string"}'.
 	//
+	// Note that the field names of message payloads (data) that you send to AWS
+	// IoT Analytics:
+	//
+	//    * Must contain only alphanumeric characters and undescores (_); no other
+	//    special characters are allowed.
+	//
+	//    * Must begin with an alphabetic character or single underscore (_).
+	//
+	//    * Cannot contain hyphens (-).
+	//
+	//    * In regular expression terms: "^[A-Za-z_]([A-Za-z0-9]*|[A-Za-z0-9][A-Za-z0-9_]*)$".
+	//
+	//
+	//    * Cannot be greater than 255 characters.
+	//
+	//    * Are case-insensitive. (Fields named "foo" and "FOO" in the same payload
+	//    are considered duplicates.)
+	//
+	// For example, {"temp_01": 29} or {"_temp_01": 29} are valid, but {"temp-01":
+	// 29}, {"01_temp": 29} or {"__temp_01": 29} are invalid in message payloads.
+	//
 	// Messages is a required field
 	Messages []*Message `locationName:"messages" type:"list" required:"true"`
 }
@@ -3676,6 +3695,9 @@ func (s *CancelPipelineReprocessingInput) Validate() error {
 	}
 	if s.ReprocessingId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ReprocessingId"))
+	}
+	if s.ReprocessingId != nil && len(*s.ReprocessingId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ReprocessingId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -4218,15 +4240,20 @@ type CreateDatasetInput struct {
 	// Actions is a required field
 	Actions []*DatasetAction `locationName:"actions" min:"1" type:"list" required:"true"`
 
+	// When data set contents are created they are delivered to destinations specified
+	// here.
+	ContentDeliveryRules []*DatasetContentDeliveryRule `locationName:"contentDeliveryRules" type:"list"`
+
 	// The name of the data set.
 	//
 	// DatasetName is a required field
 	DatasetName *string `locationName:"datasetName" min:"1" type:"string" required:"true"`
 
-	// [Optional] How long, in days, message data is kept for the data set. If not
-	// given or set to null, the latest version of the dataset content plus the
-	// latest succeeded version (if they are different) are retained for at most
-	// 90 days.
+	// [Optional] How long, in days, versions of data set contents are kept for
+	// the data set. If not specified or set to null, versions of data set contents
+	// are retained for at most 90 days. The number of versions of data set contents
+	// retained is determined by the versioningConfiguration parameter. (For more
+	// information, see https://docs.aws.amazon.com/iotanalytics/latest/userguide/getting-started.html#aws-iot-analytics-dataset-versions)
 	RetentionPeriod *RetentionPeriod `locationName:"retentionPeriod" type:"structure"`
 
 	// Metadata which can be used to manage the data set.
@@ -4236,6 +4263,12 @@ type CreateDatasetInput struct {
 	// a specified time interval or when another data set's contents are created.
 	// The list of triggers can be empty or contain up to five DataSetTrigger objects.
 	Triggers []*DatasetTrigger `locationName:"triggers" type:"list"`
+
+	// [Optional] How many versions of data set contents are kept. If not specified
+	// or set to null, only the latest version plus the latest succeeded version
+	// (if they are different) are kept for the time period specified by the "retentionPeriod"
+	// parameter. (For more information, see https://docs.aws.amazon.com/iotanalytics/latest/userguide/getting-started.html#aws-iot-analytics-dataset-versions)
+	VersioningConfiguration *VersioningConfiguration `locationName:"versioningConfiguration" type:"structure"`
 }
 
 // String returns the string representation
@@ -4276,6 +4309,16 @@ func (s *CreateDatasetInput) Validate() error {
 			}
 		}
 	}
+	if s.ContentDeliveryRules != nil {
+		for i, v := range s.ContentDeliveryRules {
+			if v == nil {
+				continue
+			}
+			if err := v.Validate(); err != nil {
+				invalidParams.AddNested(fmt.Sprintf("%s[%v]", "ContentDeliveryRules", i), err.(request.ErrInvalidParams))
+			}
+		}
+	}
 	if s.RetentionPeriod != nil {
 		if err := s.RetentionPeriod.Validate(); err != nil {
 			invalidParams.AddNested("RetentionPeriod", err.(request.ErrInvalidParams))
@@ -4301,6 +4344,11 @@ func (s *CreateDatasetInput) Validate() error {
 			}
 		}
 	}
+	if s.VersioningConfiguration != nil {
+		if err := s.VersioningConfiguration.Validate(); err != nil {
+			invalidParams.AddNested("VersioningConfiguration", err.(request.ErrInvalidParams))
+		}
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -4311,6 +4359,12 @@ func (s *CreateDatasetInput) Validate() error {
 // SetActions sets the Actions field's value.
 func (s *CreateDatasetInput) SetActions(v []*DatasetAction) *CreateDatasetInput {
 	s.Actions = v
+	return s
+}
+
+// SetContentDeliveryRules sets the ContentDeliveryRules field's value.
+func (s *CreateDatasetInput) SetContentDeliveryRules(v []*DatasetContentDeliveryRule) *CreateDatasetInput {
+	s.ContentDeliveryRules = v
 	return s
 }
 
@@ -4338,6 +4392,12 @@ func (s *CreateDatasetInput) SetTriggers(v []*DatasetTrigger) *CreateDatasetInpu
 	return s
 }
 
+// SetVersioningConfiguration sets the VersioningConfiguration field's value.
+func (s *CreateDatasetInput) SetVersioningConfiguration(v *VersioningConfiguration) *CreateDatasetInput {
+	s.VersioningConfiguration = v
+	return s
+}
+
 type CreateDatasetOutput struct {
 	_ struct{} `type:"structure"`
 
@@ -4347,7 +4407,7 @@ type CreateDatasetOutput struct {
 	// The name of the data set.
 	DatasetName *string `locationName:"datasetName" min:"1" type:"string"`
 
-	// How long, in days, message data is kept for the data set.
+	// How long, in days, data set contents are kept for the data set.
 	RetentionPeriod *RetentionPeriod `locationName:"retentionPeriod" type:"structure"`
 }
 
@@ -4500,13 +4560,18 @@ func (s *CreateDatastoreOutput) SetRetentionPeriod(v *RetentionPeriod) *CreateDa
 type CreatePipelineInput struct {
 	_ struct{} `type:"structure"`
 
-	// A list of pipeline activities.
-	//
-	// The list can be 1-25 PipelineActivity objects. Activities perform transformations
-	// on your messages, such as removing, renaming, or adding message attributes;
+	// A list of "PipelineActivity" objects. Activities perform transformations
+	// on your messages, such as removing, renaming or adding message attributes;
 	// filtering messages based on attribute values; invoking your Lambda functions
 	// on messages for advanced processing; or performing mathematical transformations
 	// to normalize device data.
+	//
+	// The list can be 2-25 PipelineActivity objects and must contain both a channel
+	// and a datastore activity. Each entry in the list must contain only one activity,
+	// for example:
+	//
+	// pipelineActivities = [ { "channel": { ... } }, { "lambda": { ... } }, ...
+	// ]
 	//
 	// PipelineActivities is a required field
 	PipelineActivities []*PipelineActivity `locationName:"pipelineActivities" min:"1" type:"list" required:"true"`
@@ -4635,6 +4700,10 @@ type Dataset struct {
 	// The ARN of the data set.
 	Arn *string `locationName:"arn" type:"string"`
 
+	// When data set contents are created they are delivered to destinations specified
+	// here.
+	ContentDeliveryRules []*DatasetContentDeliveryRule `locationName:"contentDeliveryRules" type:"list"`
+
 	// When the data set was created.
 	CreationTime *time.Time `locationName:"creationTime" type:"timestamp"`
 
@@ -4653,6 +4722,12 @@ type Dataset struct {
 	// The "DatasetTrigger" objects that specify when the data set is automatically
 	// updated.
 	Triggers []*DatasetTrigger `locationName:"triggers" type:"list"`
+
+	// [Optional] How many versions of data set contents are kept. If not specified
+	// or set to null, only the latest version plus the latest succeeded version
+	// (if they are different) are kept for the time period specified by the "retentionPeriod"
+	// parameter. (For more information, see https://docs.aws.amazon.com/iotanalytics/latest/userguide/getting-started.html#aws-iot-analytics-dataset-versions)
+	VersioningConfiguration *VersioningConfiguration `locationName:"versioningConfiguration" type:"structure"`
 }
 
 // String returns the string representation
@@ -4674,6 +4749,12 @@ func (s *Dataset) SetActions(v []*DatasetAction) *Dataset {
 // SetArn sets the Arn field's value.
 func (s *Dataset) SetArn(v string) *Dataset {
 	s.Arn = &v
+	return s
+}
+
+// SetContentDeliveryRules sets the ContentDeliveryRules field's value.
+func (s *Dataset) SetContentDeliveryRules(v []*DatasetContentDeliveryRule) *Dataset {
+	s.ContentDeliveryRules = v
 	return s
 }
 
@@ -4713,7 +4794,14 @@ func (s *Dataset) SetTriggers(v []*DatasetTrigger) *Dataset {
 	return s
 }
 
-// A "DatasetAction" object specifying the query that creates the data set content.
+// SetVersioningConfiguration sets the VersioningConfiguration field's value.
+func (s *Dataset) SetVersioningConfiguration(v *VersioningConfiguration) *Dataset {
+	s.VersioningConfiguration = v
+	return s
+}
+
+// A "DatasetAction" object that specifies how data set contents are automatically
+// created.
 type DatasetAction struct {
 	_ struct{} `type:"structure"`
 
@@ -4726,8 +4814,8 @@ type DatasetAction struct {
 	// container along with any needed support libraries.
 	ContainerAction *ContainerDatasetAction `locationName:"containerAction" type:"structure"`
 
-	// An "SqlQueryDatasetAction" object that contains the SQL query to modify the
-	// message.
+	// An "SqlQueryDatasetAction" object that uses an SQL query to automatically
+	// create data set contents.
 	QueryAction *SqlQueryDatasetAction `locationName:"queryAction" type:"structure"`
 }
 
@@ -4811,6 +4899,99 @@ func (s *DatasetActionSummary) SetActionName(v string) *DatasetActionSummary {
 // SetActionType sets the ActionType field's value.
 func (s *DatasetActionSummary) SetActionType(v string) *DatasetActionSummary {
 	s.ActionType = &v
+	return s
+}
+
+// The destination to which data set contents are delivered.
+type DatasetContentDeliveryDestination struct {
+	_ struct{} `type:"structure"`
+
+	// Configuration information for delivery of data set contents to AWS IoT Events.
+	IotEventsDestinationConfiguration *IotEventsDestinationConfiguration `locationName:"iotEventsDestinationConfiguration" type:"structure"`
+}
+
+// String returns the string representation
+func (s DatasetContentDeliveryDestination) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s DatasetContentDeliveryDestination) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *DatasetContentDeliveryDestination) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "DatasetContentDeliveryDestination"}
+	if s.IotEventsDestinationConfiguration != nil {
+		if err := s.IotEventsDestinationConfiguration.Validate(); err != nil {
+			invalidParams.AddNested("IotEventsDestinationConfiguration", err.(request.ErrInvalidParams))
+		}
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetIotEventsDestinationConfiguration sets the IotEventsDestinationConfiguration field's value.
+func (s *DatasetContentDeliveryDestination) SetIotEventsDestinationConfiguration(v *IotEventsDestinationConfiguration) *DatasetContentDeliveryDestination {
+	s.IotEventsDestinationConfiguration = v
+	return s
+}
+
+// When data set contents are created they are delivered to destination specified
+// here.
+type DatasetContentDeliveryRule struct {
+	_ struct{} `type:"structure"`
+
+	// The destination to which data set contents are delivered.
+	//
+	// Destination is a required field
+	Destination *DatasetContentDeliveryDestination `locationName:"destination" type:"structure" required:"true"`
+
+	// The name of the data set content delivery rules entry.
+	EntryName *string `locationName:"entryName" type:"string"`
+}
+
+// String returns the string representation
+func (s DatasetContentDeliveryRule) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s DatasetContentDeliveryRule) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *DatasetContentDeliveryRule) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "DatasetContentDeliveryRule"}
+	if s.Destination == nil {
+		invalidParams.Add(request.NewErrParamRequired("Destination"))
+	}
+	if s.Destination != nil {
+		if err := s.Destination.Validate(); err != nil {
+			invalidParams.AddNested("Destination", err.(request.ErrInvalidParams))
+		}
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetDestination sets the Destination field's value.
+func (s *DatasetContentDeliveryRule) SetDestination(v *DatasetContentDeliveryDestination) *DatasetContentDeliveryRule {
+	s.Destination = v
+	return s
+}
+
+// SetEntryName sets the EntryName field's value.
+func (s *DatasetContentDeliveryRule) SetEntryName(v string) *DatasetContentDeliveryRule {
+	s.EntryName = &v
 	return s
 }
 
@@ -4899,13 +5080,12 @@ func (s *DatasetContentSummary) SetVersion(v string) *DatasetContentSummary {
 	return s
 }
 
-// The data set whose latest contents will be used as input to the notebook
-// or application.
+// The data set whose latest contents are used as input to the notebook or application.
 type DatasetContentVersionValue struct {
 	_ struct{} `type:"structure"`
 
-	// The name of the data set whose latest contents will be used as input to the
-	// notebook or application.
+	// The name of the data set whose latest contents are used as input to the notebook
+	// or application.
 	//
 	// DatasetName is a required field
 	DatasetName *string `locationName:"datasetName" min:"1" type:"string" required:"true"`
@@ -5051,8 +5231,8 @@ func (s *DatasetSummary) SetTriggers(v []*DatasetTrigger) *DatasetSummary {
 type DatasetTrigger struct {
 	_ struct{} `type:"structure"`
 
-	// The data set whose content creation will trigger the creation of this data
-	// set's contents.
+	// The data set whose content creation triggers the creation of this data set's
+	// contents.
 	Dataset *TriggeringDataset `locationName:"dataset" type:"structure"`
 
 	// The "Schedule" when the trigger is initiated.
@@ -5594,18 +5774,20 @@ func (s DeletePipelineOutput) GoString() string {
 	return s.String()
 }
 
-// When you create data set contents using message data from a specified time
-// frame, some message data may still be "in flight" when processing begins,
-// and so will not arrive in time to be processed. Use this field to make allowances
-// for the "in flight" time of your message data, so that data not processed
-// from the previous time frame will be included with the next time frame. Without
-// this, missed message data would be excluded from processing during the next
-// time frame as well, because its timestamp places it within the previous time
-// frame.
+// Used to limit data to that which has arrived since the last execution of
+// the action.
 type DeltaTime struct {
 	_ struct{} `type:"structure"`
 
 	// The number of seconds of estimated "in flight" lag time of message data.
+	// When you create data set contents using message data from a specified time
+	// frame, some message data may still be "in flight" when processing begins,
+	// and so will not arrive in time to be processed. Use this field to make allowances
+	// for the "in flight" time of your message data, so that data not processed
+	// from a previous time frame will be included with the next time frame. Without
+	// this, missed message data would be excluded from processing during the next
+	// time frame as well, because its timestamp places it within the previous time
+	// frame.
 	//
 	// OffsetSeconds is a required field
 	OffsetSeconds *int64 `locationName:"offsetSeconds" type:"integer" required:"true"`
@@ -6402,6 +6584,66 @@ func (s *GetDatasetContentOutput) SetTimestamp(v time.Time) *GetDatasetContentOu
 	return s
 }
 
+// Configuration information for delivery of data set contents to AWS IoT Events.
+type IotEventsDestinationConfiguration struct {
+	_ struct{} `type:"structure"`
+
+	// The name of the AWS IoT Events input to which data set contents are delivered.
+	//
+	// InputName is a required field
+	InputName *string `locationName:"inputName" min:"1" type:"string" required:"true"`
+
+	// The ARN of the role which grants AWS IoT Analytics permission to deliver
+	// data set contents to an AWS IoT Events input.
+	//
+	// RoleArn is a required field
+	RoleArn *string `locationName:"roleArn" min:"20" type:"string" required:"true"`
+}
+
+// String returns the string representation
+func (s IotEventsDestinationConfiguration) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s IotEventsDestinationConfiguration) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *IotEventsDestinationConfiguration) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "IotEventsDestinationConfiguration"}
+	if s.InputName == nil {
+		invalidParams.Add(request.NewErrParamRequired("InputName"))
+	}
+	if s.InputName != nil && len(*s.InputName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("InputName", 1))
+	}
+	if s.RoleArn == nil {
+		invalidParams.Add(request.NewErrParamRequired("RoleArn"))
+	}
+	if s.RoleArn != nil && len(*s.RoleArn) < 20 {
+		invalidParams.Add(request.NewErrParamMinLen("RoleArn", 20))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetInputName sets the InputName field's value.
+func (s *IotEventsDestinationConfiguration) SetInputName(v string) *IotEventsDestinationConfiguration {
+	s.InputName = &v
+	return s
+}
+
+// SetRoleArn sets the RoleArn field's value.
+func (s *IotEventsDestinationConfiguration) SetRoleArn(v string) *IotEventsDestinationConfiguration {
+	s.RoleArn = &v
+	return s
+}
+
 // An activity that runs a Lambda function to modify the message.
 type LambdaActivity struct {
 	_ struct{} `type:"structure"`
@@ -6586,6 +6828,16 @@ type ListDatasetContentsInput struct {
 
 	// The token for the next set of results.
 	NextToken *string `location:"querystring" locationName:"nextToken" type:"string"`
+
+	// A filter to limit results to those data set contents whose creation is scheduled
+	// before the given time. See the field triggers.schedule in the CreateDataset
+	// request. (timestamp)
+	ScheduledBefore *time.Time `location:"querystring" locationName:"scheduledBefore" type:"timestamp"`
+
+	// A filter to limit results to those data set contents whose creation is scheduled
+	// on or after the given time. See the field triggers.schedule in the CreateDataset
+	// request. (timestamp)
+	ScheduledOnOrAfter *time.Time `location:"querystring" locationName:"scheduledOnOrAfter" type:"timestamp"`
 }
 
 // String returns the string representation
@@ -6632,6 +6884,18 @@ func (s *ListDatasetContentsInput) SetMaxResults(v int64) *ListDatasetContentsIn
 // SetNextToken sets the NextToken field's value.
 func (s *ListDatasetContentsInput) SetNextToken(v string) *ListDatasetContentsInput {
 	s.NextToken = &v
+	return s
+}
+
+// SetScheduledBefore sets the ScheduledBefore field's value.
+func (s *ListDatasetContentsInput) SetScheduledBefore(v time.Time) *ListDatasetContentsInput {
+	s.ScheduledBefore = &v
+	return s
+}
+
+// SetScheduledOnOrAfter sets the ScheduledOnOrAfter field's value.
+func (s *ListDatasetContentsInput) SetScheduledOnOrAfter(v time.Time) *ListDatasetContentsInput {
+	s.ScheduledOnOrAfter = &v
 	return s
 }
 
@@ -7047,7 +7311,7 @@ func (s *LoggingOptions) SetRoleArn(v string) *LoggingOptions {
 type MathActivity struct {
 	_ struct{} `type:"structure"`
 
-	// The name of the attribute that will contain the result of the math operation.
+	// The name of the attribute that contains the result of the math operation.
 	//
 	// Attribute is a required field
 	Attribute *string `locationName:"attribute" min:"1" type:"string" required:"true"`
@@ -7193,8 +7457,7 @@ func (s *Message) SetPayload(v []byte) *Message {
 	return s
 }
 
-// The URI of the location where data set contents are stored, usually the URI
-// of a file in an S3 bucket.
+// The value of the variable as a structure that specifies an output file URI.
 type OutputFileUriValue struct {
 	_ struct{} `type:"structure"`
 
@@ -7584,14 +7847,7 @@ type QueryFilter struct {
 	_ struct{} `type:"structure"`
 
 	// Used to limit data to that which has arrived since the last execution of
-	// the action. When you create data set contents using message data from a specified
-	// time frame, some message data may still be "in flight" when processing begins,
-	// and so will not arrive in time to be processed. Use this field to make allowances
-	// for the "in flight" time of you message data, so that data not processed
-	// from a previous time frame will be included with the next time frame. Without
-	// this, missed message data would be excluded from processing during the next
-	// time frame as well, because its timestamp places it within the previous time
-	// frame.
+	// the action.
 	DeltaTime *DeltaTime `locationName:"deltaTime" type:"structure"`
 }
 
@@ -8044,7 +8300,7 @@ type Schedule struct {
 
 	// The expression that defines when to trigger an update. For more information,
 	// see  Schedule Expressions for Rules (https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html)
-	// in the Amazon CloudWatch documentation.
+	// in the Amazon CloudWatch Events User Guide.
 	Expression *string `locationName:"expression" type:"string"`
 }
 
@@ -8338,7 +8594,7 @@ func (s *Tag) SetValue(v string) *Tag {
 type TagResourceInput struct {
 	_ struct{} `type:"structure"`
 
-	// The ARN of the resource whose tags will be modified.
+	// The ARN of the resource whose tags you want to modify.
 	//
 	// ResourceArn is a required field
 	ResourceArn *string `location:"querystring" locationName:"resourceArn" min:"20" type:"string" required:"true"`
@@ -8417,13 +8673,13 @@ func (s TagResourceOutput) GoString() string {
 	return s.String()
 }
 
-// Information about the data set whose content generation will trigger the
-// new data set content generation.
+// Information about the data set whose content generation triggers the new
+// data set content generation.
 type TriggeringDataset struct {
 	_ struct{} `type:"structure"`
 
-	// The name of the data set whose content generation will trigger the new data
-	// set content generation.
+	// The name of the data set whose content generation triggers the new data set
+	// content generation.
 	//
 	// Name is a required field
 	Name *string `locationName:"name" min:"1" type:"string" required:"true"`
@@ -8464,12 +8720,12 @@ func (s *TriggeringDataset) SetName(v string) *TriggeringDataset {
 type UntagResourceInput struct {
 	_ struct{} `type:"structure"`
 
-	// The ARN of the resource whose tags will be removed.
+	// The ARN of the resource whose tags you want to remove.
 	//
 	// ResourceArn is a required field
 	ResourceArn *string `location:"querystring" locationName:"resourceArn" min:"20" type:"string" required:"true"`
 
-	// The keys of those tags which will be removed.
+	// The keys of those tags which you want to remove.
 	//
 	// TagKeys is a required field
 	TagKeys []*string `location:"querystring" locationName:"tagKeys" min:"1" type:"list" required:"true"`
@@ -8610,17 +8866,27 @@ type UpdateDatasetInput struct {
 	// Actions is a required field
 	Actions []*DatasetAction `locationName:"actions" min:"1" type:"list" required:"true"`
 
+	// When data set contents are created they are delivered to destinations specified
+	// here.
+	ContentDeliveryRules []*DatasetContentDeliveryRule `locationName:"contentDeliveryRules" type:"list"`
+
 	// The name of the data set to update.
 	//
 	// DatasetName is a required field
 	DatasetName *string `location:"uri" locationName:"datasetName" min:"1" type:"string" required:"true"`
 
-	// How long, in days, message data is kept for the data set.
+	// How long, in days, data set contents are kept for the data set.
 	RetentionPeriod *RetentionPeriod `locationName:"retentionPeriod" type:"structure"`
 
 	// A list of "DatasetTrigger" objects. The list can be empty or can contain
 	// up to five DataSetTrigger objects.
 	Triggers []*DatasetTrigger `locationName:"triggers" type:"list"`
+
+	// [Optional] How many versions of data set contents are kept. If not specified
+	// or set to null, only the latest version plus the latest succeeded version
+	// (if they are different) are kept for the time period specified by the "retentionPeriod"
+	// parameter. (For more information, see https://docs.aws.amazon.com/iotanalytics/latest/userguide/getting-started.html#aws-iot-analytics-dataset-versions)
+	VersioningConfiguration *VersioningConfiguration `locationName:"versioningConfiguration" type:"structure"`
 }
 
 // String returns the string representation
@@ -8658,6 +8924,16 @@ func (s *UpdateDatasetInput) Validate() error {
 			}
 		}
 	}
+	if s.ContentDeliveryRules != nil {
+		for i, v := range s.ContentDeliveryRules {
+			if v == nil {
+				continue
+			}
+			if err := v.Validate(); err != nil {
+				invalidParams.AddNested(fmt.Sprintf("%s[%v]", "ContentDeliveryRules", i), err.(request.ErrInvalidParams))
+			}
+		}
+	}
 	if s.RetentionPeriod != nil {
 		if err := s.RetentionPeriod.Validate(); err != nil {
 			invalidParams.AddNested("RetentionPeriod", err.(request.ErrInvalidParams))
@@ -8673,6 +8949,11 @@ func (s *UpdateDatasetInput) Validate() error {
 			}
 		}
 	}
+	if s.VersioningConfiguration != nil {
+		if err := s.VersioningConfiguration.Validate(); err != nil {
+			invalidParams.AddNested("VersioningConfiguration", err.(request.ErrInvalidParams))
+		}
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -8683,6 +8964,12 @@ func (s *UpdateDatasetInput) Validate() error {
 // SetActions sets the Actions field's value.
 func (s *UpdateDatasetInput) SetActions(v []*DatasetAction) *UpdateDatasetInput {
 	s.Actions = v
+	return s
+}
+
+// SetContentDeliveryRules sets the ContentDeliveryRules field's value.
+func (s *UpdateDatasetInput) SetContentDeliveryRules(v []*DatasetContentDeliveryRule) *UpdateDatasetInput {
+	s.ContentDeliveryRules = v
 	return s
 }
 
@@ -8701,6 +8988,12 @@ func (s *UpdateDatasetInput) SetRetentionPeriod(v *RetentionPeriod) *UpdateDatas
 // SetTriggers sets the Triggers field's value.
 func (s *UpdateDatasetInput) SetTriggers(v []*DatasetTrigger) *UpdateDatasetInput {
 	s.Triggers = v
+	return s
+}
+
+// SetVersioningConfiguration sets the VersioningConfiguration field's value.
+func (s *UpdateDatasetInput) SetVersioningConfiguration(v *VersioningConfiguration) *UpdateDatasetInput {
+	s.VersioningConfiguration = v
 	return s
 }
 
@@ -8790,13 +9083,18 @@ func (s UpdateDatastoreOutput) GoString() string {
 type UpdatePipelineInput struct {
 	_ struct{} `type:"structure"`
 
-	// A list of "PipelineActivity" objects.
-	//
-	// The list can be 1-25 PipelineActivity objects. Activities perform transformations
+	// A list of "PipelineActivity" objects. Activities perform transformations
 	// on your messages, such as removing, renaming or adding message attributes;
 	// filtering messages based on attribute values; invoking your Lambda functions
 	// on messages for advanced processing; or performing mathematical transformations
 	// to normalize device data.
+	//
+	// The list can be 2-25 PipelineActivity objects and must contain both a channel
+	// and a datastore activity. Each entry in the list must contain only one activity,
+	// for example:
+	//
+	// pipelineActivities = [ { "channel": { ... } }, { "lambda": { ... } }, ...
+	// ]
 	//
 	// PipelineActivities is a required field
 	PipelineActivities []*PipelineActivity `locationName:"pipelineActivities" min:"1" type:"list" required:"true"`
@@ -8963,6 +9261,52 @@ func (s *Variable) SetOutputFileUriValue(v *OutputFileUriValue) *Variable {
 // SetStringValue sets the StringValue field's value.
 func (s *Variable) SetStringValue(v string) *Variable {
 	s.StringValue = &v
+	return s
+}
+
+type VersioningConfiguration struct {
+	_ struct{} `type:"structure"`
+
+	// How many versions of data set contents will be kept. The "unlimited" parameter
+	// must be false.
+	MaxVersions *int64 `locationName:"maxVersions" min:"1" type:"integer"`
+
+	// If true, unlimited versions of data set contents will be kept.
+	Unlimited *bool `locationName:"unlimited" type:"boolean"`
+}
+
+// String returns the string representation
+func (s VersioningConfiguration) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s VersioningConfiguration) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *VersioningConfiguration) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "VersioningConfiguration"}
+	if s.MaxVersions != nil && *s.MaxVersions < 1 {
+		invalidParams.Add(request.NewErrParamMinValue("MaxVersions", 1))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetMaxVersions sets the MaxVersions field's value.
+func (s *VersioningConfiguration) SetMaxVersions(v int64) *VersioningConfiguration {
+	s.MaxVersions = &v
+	return s
+}
+
+// SetUnlimited sets the Unlimited field's value.
+func (s *VersioningConfiguration) SetUnlimited(v bool) *VersioningConfiguration {
+	s.Unlimited = &v
 	return s
 }
 

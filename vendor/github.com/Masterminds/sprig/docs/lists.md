@@ -99,10 +99,20 @@ That would produce `[2 4]`
 Test to see if a list has a particular element.
 
 ```
-has $myList 4
+has 4 $myList
 ```
 
-The above would return `true`, while `has $myList "hello"` would return false.
+The above would return `true`, while `has "hello" $myList` would return false.
+
+## slice
+
+To get partial elements of a list, use `slice list [n] [m]`. It is
+equivalent of `list[n:m]`.
+
+- `slice $myList` returns `[1 2 3 4 5]`. It is same as `myList[:]`.
+- `slice $myList 3` returns `[4 5]`. It is same as `myList[3:]`.
+- `slice $myList 1 3` returns `[2 3]`. It is same as `myList[1:3]`.
+- `slice $myList 0 3` returns `[1 2 3]`. It is same as `myList[:3]`.
 
 ## A Note on List Internals
 
