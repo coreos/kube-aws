@@ -406,20 +406,6 @@ coreos:
 
         ExecStart=/opt/bin/retry 10 /opt/bin/install-kube-system
 
-    - name: apply-kube-aws-plugins.service
-      command: start
-      runtime: true
-      content: |
-        [Unit]
-        Requires=install-kube-system.service
-        After=install-kube-system.service
-
-        [Service]
-        Type=oneshot
-        StartLimitInterval=0
-        RemainAfterExit=true
-        ExecStart=/opt/bin/retry 3 /opt/bin/apply-kube-aws-plugins
-
 {{ if $.ElasticFileSystemID }}
     - name: efs.service
       command: start
@@ -441,8 +427,8 @@ coreos:
       command: start
       content: |
         [Unit]
-        Wants=kubelet.service docker.service install-kube-system.service apply-kube-aws-plugins.service
-        After=kubelet.service install-kube-system.service apply-kube-aws-plugins.service
+        Wants=kubelet.service docker.service install-kube-system.service
+        After=kubelet.service install-kube-system.service
 
         [Service]
         Type=simple
@@ -452,7 +438,6 @@ coreos:
         StartLimitBurst=10
         EnvironmentFile={{.StackNameEnvFileName}}
         ExecStartPre=/usr/bin/systemctl is-active install-kube-system.service
-        ExecStartPre=/usr/bin/systemctl is-active apply-kube-aws-plugins.service
         ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl -s -m 20 -k  https://127.0.0.1/healthz > /dev/null &&  /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10252/healthz > /dev/null && /usr/bin/curl -s -m 20 -f  http://127.0.0.1:10251/healthz > /dev/null &&  /usr/bin/curl --insecure -s -m 20 -f  https://127.0.0.1:10250/healthz > /dev/null && /usr/bin/curl -s -m 20 -f http://127.0.0.1:10256/healthz > /dev/null; then break ; fi;  done"
 
         {{if .Experimental.AuditLog.Enabled -}}
@@ -662,43 +647,6 @@ write_files:
       [global]
       DisableSecurityGroupIngress = true
 {{end}}
-
-  - path: /opt/bin/apply-kube-aws-plugins
-    permissions: 0700
-    owner: root:root
-    content: |
-      #!/bin/bash -vxe
-
-      kubectl() {
-          /usr/bin/docker run --rm --net=host \
-            -v /etc/resolv.conf:/etc/resolv.conf \
-            -v /etc/kubernetes:/etc/kubernetes \
-            -v {{.KubernetesManifestPlugin.Directory}}:{{.KubernetesManifestPlugin.Directory}} \
-            {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml "$@"
-      }
-
-      helm() {
-          /usr/bin/docker run --rm --net=host \
-            -v /etc/resolv.conf:/etc/resolv.conf \
-            -v {{.HelmReleasePlugin.Directory}}:{{.HelmReleasePlugin.Directory}} \
-            {{.HelmImage.RepoWithTag}} helm "$@"
-      }
-
-      while read m || [[ -n $m ]]; do
-        kubectl apply -f $m
-      done <{{.KubernetesManifestPlugin.ManifestListFile.Path}}
-
-      while read r || [[ -n $r ]]; do
-        release_name=$(jq .name $r)
-        chart_name=$(jq .chart.name $r)
-        chart_version=$(jq .chart.version $r)
-        values_file=$(jq .values.file $r)
-        if helm status $release_name; then
-          helm upgrade $release_name $chart_name --version $chart_version -f $values_file
-        else
-          helm install $release_name $chart_name --version $chart_version -f $values_file
-        fi
-      done <{{.HelmReleasePlugin.ReleaseListFile.Path}}
 
 {{if .Experimental.AwsEnvironment.Enabled}}
   - path: /opt/bin/set-aws-environment
@@ -914,6 +862,13 @@ write_files:
           /usr/bin/docker run -i --rm $vols --net=host {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml --request-timeout=1s "$@"
       }
       
+      helm() {
+        /usr/bin/docker run --rm --net=host \
+          -v /etc/resolv.conf:/etc/resolv.conf \
+          -v {{.HelmReleasePlugin.Directory}}:{{.HelmReleasePlugin.Directory}} \
+          {{.HelmImage.RepoWithTag}} helm --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml "$@"
+      }
+      
       # Add manifests to the deployment list
       deploy() {
           until [ -z "$1" ]
@@ -954,7 +909,28 @@ write_files:
       apply_manifest_deletes() {
         kubectl delete --cascade=true --ignore-not-found=true -f $(echo "$@" | tr ' ' ',')
       }
-
+      
+      # Deploy a list of helm charts
+      apply_helm_deploys() {
+        until [ -z "$1" ]
+        do
+          while read r || [[ -n $r ]]; do
+            local release_name=$(jq .name $r)
+            local chart_name=$(jq .chart.name $r)
+            local chart_version=$(jq .chart.version $r)
+            local values_file=$(jq .values.file $r)
+            echo "Checking status of helm release $release_name"
+            if helm status $release_name; then
+              echo "Upgrading helm release ${release_name} of chart ${chart_name} with version ${chart_version} and values ${values_file}"
+              helm upgrade $release_name $chart_name --version $chart_version -f $values_file
+            else
+              echo "Installing helm release ${release_name} of chart ${chart_name} with version ${chart_version} and values ${values_file}"
+              helm install $release_name $chart_name --version $chart_version -f $values_file
+            fi
+          done <$1
+        done
+      }
+      
       # Delete of the objects listed by reference object:name or object:namespace/name
       apply_object_deletes() {
           until [ -z "$1" ]
@@ -1124,7 +1100,7 @@ write_files:
       {{ if .Experimental.GpuSupport.Enabled -}}
       # NVIDIA GPU SUPPORT
       deploy "${mfdir}/nvidia-driver-installer.yaml"
-
+      
       {{ end -}}
       
       # CUSTOMER SUPPLIED MANIFESTS
@@ -1132,7 +1108,16 @@ write_files:
       if ls ${mfdir}/custom/*.yaml &> /dev/null; then
         deploy ${mfdir}/custom/*.yaml
       fi
-
+      
+      {{ if .KubernetesManifestPlugin.ManifestListFile.Path -}}
+      # PLUGIN SUPPLIED MANIFESTS
+      if [[ -s {{.KubernetesManifestPlugin.ManifestListFile.Path}} ]]; then
+        while read m || [[ -n $m ]]; do
+          deploy $m
+        done <{{.KubernetesManifestPlugin.ManifestListFile.Path}}
+      fi
+      
+      {{- end }}
       # REMOVE LEGACY HEAPSTER
       remove_object ClusterRoleBinding heapster
       remove_object RoleBinding kube-system/heapster-nanny
@@ -1140,11 +1125,18 @@ write_files:
       remove_object ServiceAccount kube-system/heapster
       remove_object Deployment kube-system/heapster
       remove_object Service kube-system/heapster
-
+      
       # DEPLOY SELECTED MANIFESTS
       apply_manifest_deletes ${DELETE_MANIFEST_LIST[@]}
       apply_object_deletes ${DELETE_REFERENCE_LIST[@]}
       apply_deploys ${DEPLOY_MANIFEST_LIST[@]}
+
+      {{ if .HelmReleasePlugin.ReleaseListFile.Path -}}
+      # APPLY KUBE-AWS PLUGIN SUPPLIED HELM CHARTS
+      if [[ -s {{.HelmReleasePlugin.ReleaseListFile.Path}} ]]; then
+      apply_helm_deploys {{.HelmReleasePlugin.ReleaseListFile.Path}}
+      fi
+      {{- end }}
 
   - path: /etc/kubernetes/cni/docker_opts_cni.env
     content: |
