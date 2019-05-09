@@ -354,8 +354,9 @@ coreos:
         --node-labels=node.kubernetes.io/role="node",node.kubernetes.io/role="{{ toLabel .NodePoolName }}"{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
         --register-node=true \
         --config=/etc/kubernetes/config/kubelet.yaml \
-        {{if .Taints}}--register-with-taints={{.Taints.String}}\
-        {{end}}--allow-privileged=true \
+        {{if .Taints -}}
+        --register-with-taints={{.Taints.String}} \
+        {{- end }}
         --cloud-provider=aws \
         --cert-dir=/etc/kubernetes/ssl \
         --bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \

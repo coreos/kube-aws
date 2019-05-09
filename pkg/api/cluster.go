@@ -34,13 +34,7 @@ func NewDefaultCluster() *Cluster {
 	}
 	experimental := Experimental{
 		Admission: Admission{
-			PodSecurityPolicy{
-				Enabled: false,
-			},
 			AlwaysPullImages{
-				Enabled: false,
-			},
-			DenyEscalatingExec{
 				Enabled: false,
 			},
 			Initializers{

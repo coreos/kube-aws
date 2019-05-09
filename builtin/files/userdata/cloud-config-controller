@@ -367,7 +367,6 @@ coreos:
         --node-labels=node.kubernetes.io/role="master",node-role.kubernetes.io/master=\"\",kubernetes.io/role=master,service-cidr={{ .ServiceCIDR | toLabel }}{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
         --register-with-taints=node.alpha.kubernetes.io/role=master:NoSchedule \
         --config=/etc/kubernetes/config/kubelet.yaml \
-        --allow-privileged=true \
         {{- if .Kubernetes.Networking.AmazonVPC.Enabled }}
         --node-ip=$$(curl http://169.254.169.254/latest/meta-data/local-ipv4) \
         --max-pods=$$(/opt/bin/aws-k8s-cni-max-pods) \
@@ -966,6 +965,14 @@ write_files:
         set -e
       }
       
+      count_objects() {
+        if [[ -n "$2" ]]; then
+          kubectl get $1 --ignore-not-found=true --no-headers=true $2 | wc -l
+        else
+          kubectl get $1 --ignore-not-found=true --no-headers=true | wc -l
+        fi
+      }
+      
       while ! kubectl get ns kube-system; do
         echo Waiting until kube-system created.
         sleep 3
@@ -985,7 +992,12 @@ write_files:
       # General Cluster roles and bindings
       deploy "${rbac}/cluster-roles/"{node-extensions,node-access}".yaml" \
         "${rbac}/cluster-role-bindings"/{kube-admin,system-worker,node,node-proxier,node-extensions,node-access}".yaml"
-
+      
+      # CORE KUBE-AWS PSP (Ensure kube-system service accounts can create priviliged pods via PodSecurityPolicy)
+      deploy ${mfdir}/core-psp.yaml \
+        ${rbac}/cluster-roles/core-psp.yaml \
+        ${rbac}/role-bindings/core-psp.yaml
+      
       # CLUSTER NETWORKING
       deploy "${rbac}/network-daemonsets.yaml"
       {{- if .Kubernetes.Networking.AmazonVPC.Enabled }}
@@ -1136,7 +1148,90 @@ write_files:
       if [[ -s {{.HelmReleasePlugin.ReleaseListFile.Path}} ]]; then
       apply_helm_deploys {{.HelmReleasePlugin.ReleaseListFile.Path}}
       fi
+      
       {{- end }}
+      # Check for the existence of any PodSecurityPolices after the system and plugins have been deployed.
+      # Bind all serviceaccounts and authenitcated users to the kube-aws permissive policy is there are no other policies defined.
+      if [[ "$(count_objects PodSecurityPolicy)" == "1" ]]; then
+        echo "Only default kube-aws psp found: Binding all service accounts and authenticated users to this permissive policy"
+        apply_deploys ${rbac}/cluster-role-bindings/default-permissive-psp.yaml
+      fi
+      
+      echo "install-kube-system finished successfully :)"
+
+  - path: /srv/kubernetes/manifests/core-psp.yaml
+    content: |
+      apiVersion: policy/v1beta1
+      kind: PodSecurityPolicy
+      metadata:
+        name: 00-kube-aws-permissive
+        annotations:
+          seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
+      spec:
+        privileged: true
+        allowPrivilegeEscalation: true
+        allowedCapabilities:
+        - '*'
+        volumes:
+        - '*'
+        hostNetwork: true
+        hostPorts:
+        - min: 0
+          max: 65535
+        hostIPC: true
+        hostPID: true
+        runAsUser:
+          rule: 'RunAsAny'
+        seLinux:
+          rule: 'RunAsAny'
+        supplementalGroups:
+          rule: 'RunAsAny'
+        fsGroup:
+          rule: 'RunAsAny'
+    
+  - path: /srv/kubernetes/rbac/cluster-roles/core-psp.yaml
+    content: |
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRole
+      metadata:
+        name: kube-aws:permissive-psp
+      rules:
+      - apiGroups: ['policy']
+        resources: ['podsecuritypolicies']
+        verbs:     ['use']
+        resourceNames:
+        - 00-kube-aws-permissive
+
+  - path: /srv/kubernetes/rbac/role-bindings/core-psp.yaml
+    content: |
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: kube-aws:permissive-psp-kube-system
+        namespace: kube-system
+      roleRef:
+        kind: ClusterRole
+        name: kube-aws:permissive-psp
+        apiGroup: rbac.authorization.k8s.io
+      subjects:
+      - kind: Group
+        name: system:serviceaccounts
+
+  - path: /srv/kubernetes/rbac/cluster-role-bindings/default-permissive-psp.yaml
+    content: |
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: kube-aws:permissive-psp-cluster-wide
+      roleRef:
+        kind: ClusterRole
+        name: kube-aws:permissive-psp
+        apiGroup: rbac.authorization.k8s.io
+      subjects:
+      - kind: Group
+        name: system:serviceaccounts
+      - kind: Group
+        name: system:autheniticated
 
   - path: /etc/kubernetes/cni/docker_opts_cni.env
     content: |
@@ -3163,7 +3258,7 @@ write_files:
           {{- else }}
           - --apiserver-count={{if .MinControllerCount}}{{ .MinControllerCount }}{{else}}{{ .Controller.Count }}{{end}}
           {{- end }}
-          - --enable-admission-plugins=EventRateLimit,ExtendedResourceToleration,NodeRestriction{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},PodSecurityPolicy{{end}}{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.Admission.DenyEscalatingExec.Enabled}},DenyEscalatingExec{{end}}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}
+          - --enable-admission-plugins=EventRateLimit,ExtendedResourceToleration,NodeRestriction,PodSecurityPolicy{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}
           - --admission-control-config-file=/etc/kubernetes/auth/admission-control-config.yaml
           - --bind-address=0.0.0.0
           - --etcd-servers=#ETCD_ENDPOINTS#
@@ -3214,7 +3309,7 @@ write_files:
           - --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
           - --client-ca-file=/etc/kubernetes/ssl/ca.pem
           - --service-account-key-file=/etc/kubernetes/ssl/service-account-key.pem
-          - --runtime-config=extensions/v1beta1/networkpolicies=true{{if .Experimental.Admission.PodSecurityPolicy.Enabled}},extensions/v1beta1/podsecuritypolicy=true{{ end }}{{if .Experimental.Admission.Initializers.Enabled}},admissionregistration.k8s.io/v1alpha1{{end}}
+          - --runtime-config=extensions/v1beta1/networkpolicies=true,extensions/v1beta1/podsecuritypolicy=true{{if .Experimental.Admission.Initializers.Enabled}},admissionregistration.k8s.io/v1alpha1{{end}}
           {{- if .ControllerFeatureGates.Enabled }}
           - --feature-gates={{.ControllerFeatureGates.String}}
           {{- end }}

@@ -82,13 +82,7 @@ func TestMainClusterConfig(t *testing.T) {
 	hasDefaultExperimentalFeatures := func(c *config.Config, t *testing.T) {
 		expected := api.Experimental{
 			Admission: api.Admission{
-				PodSecurityPolicy: api.PodSecurityPolicy{
-					Enabled: false,
-				},
 				AlwaysPullImages: api.AlwaysPullImages{
-					Enabled: false,
-				},
-				DenyEscalatingExec: api.DenyEscalatingExec{
 					Enabled: false,
 				},
 			},
@@ -1285,10 +1279,6 @@ etcd:
 			configYaml: minimalValidConfigYaml + `
 experimental:
   admission:
-    podSecurityPolicy:
-      enabled: true
-    denyEscalatingExec:
-      enabled: true
     alwaysPullImages:
       enabled: true
   auditLog:
@@ -1354,13 +1344,7 @@ worker:
 				func(c *config.Config, t *testing.T) {
 					expected := api.Experimental{
 						Admission: api.Admission{
-							PodSecurityPolicy: api.PodSecurityPolicy{
-								Enabled: true,
-							},
 							AlwaysPullImages: api.AlwaysPullImages{
-								Enabled: true,
-							},
-							DenyEscalatingExec: api.DenyEscalatingExec{
 								Enabled: true,
 							},
 						},
@@ -1457,9 +1441,6 @@ addons:
 worker:
   nodePools:
   - name: pool1
-    admission:
-      podSecurityPolicy:
-        enabled: true
     auditLog:
       enabled: true
       maxage: 100

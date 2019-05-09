@@ -54,9 +54,7 @@ func (c Experimental) Validate(name string) error {
 }
 
 type Admission struct {
-	PodSecurityPolicy                    PodSecurityPolicy                    `yaml:"podSecurityPolicy"`
 	AlwaysPullImages                     AlwaysPullImages                     `yaml:"alwaysPullImages"`
-	DenyEscalatingExec                   DenyEscalatingExec                   `yaml:"denyEscalatingExec"`
 	Initializers                         Initializers                         `yaml:"initializers"`
 	OwnerReferencesPermissionEnforcement OwnerReferencesPermissionEnforcement `yaml:"ownerReferencesPermissionEnforcement"`
 }
@@ -65,19 +63,7 @@ type AlwaysPullImages struct {
 	Enabled bool `yaml:"enabled"`
 }
 
-type PodSecurityPolicy struct {
-	Enabled bool `yaml:"enabled"`
-}
-
-type DenyEscalatingExec struct {
-	Enabled bool `yaml:"enabled"`
-}
-
 type Initializers struct {
-	Enabled bool `yaml:"enabled"`
-}
-
-type Priority struct {
 	Enabled bool `yaml:"enabled"`
 }
 
