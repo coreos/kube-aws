@@ -9,8 +9,8 @@ import (
 	"testing"
 )
 
-func TestToSnakeCase(t *testing.T) {
-	runTestCases(t, ToSnakeCase, _M{
+func TestToSnakeCaseAndToKebabCase(t *testing.T) {
+	cases := _M{
 		"HTTPServer":         "http_server",
 		"_camelCase":         "_camel_case",
 		"NoHTTPS":            "no_https",
@@ -22,10 +22,26 @@ func TestToSnakeCase(t *testing.T) {
 		"HELLO____WORLD":     "hello____world",
 		"TW":                 "tw",
 		"_C":                 "_c",
+		"http2xx":            "http_2xx",
+		"HTTP2XX":            "http_2xx",
+		"HTTP20xOK":          "http_20x_ok",
+		"HTTP20XStatus":      "http_20x_status",
+		"HTTP-20xStatus":     "http_20x_status",
 
 		"  sentence case  ":                                    "__sentence_case__",
 		" Mixed-hyphen case _and SENTENCE_case and UPPER-case": "_mixed_hyphen_case__and_sentence_case_and_upper_case",
-	})
+
+		"": "",
+		"Abc\uFFFDE\uFFFDf\uFFFDd\uFFFD2\uFFFD00Z\uFFFDZZ\uFFFDZZ": "abc\uFFFD_e\uFFFDf\uFFFDd\uFFFD_2\uFFFD_00z\uFFFD_zz\uFFFD_zz",
+	}
+
+	runTestCases(t, ToSnakeCase, cases)
+
+	for k, v := range cases {
+		cases[k] = strings.Replace(v, "_", "-", -1)
+	}
+
+	runTestCases(t, ToKebabCase, cases)
 }
 
 func TestToCamelCase(t *testing.T) {
@@ -35,6 +51,10 @@ func TestToCamelCase(t *testing.T) {
 		"no_https":        "NoHttps",
 		"_complex__case_": "_Complex_Case_",
 		"all":             "All",
+		"GOLANG_IS_GREAT": "GolangIsGreat",
+		"GOLANG":          "Golang",
+
+		"": "",
 	})
 }
 
@@ -42,6 +62,8 @@ func TestSwapCase(t *testing.T) {
 	runTestCases(t, SwapCase, _M{
 		"swapCase": "SWAPcASE",
 		"Θ~λa云Ξπ":  "θ~ΛA云ξΠ",
+
+		"": "",
 	})
 }
 
@@ -50,6 +72,8 @@ func TestFirstRuneToUpper(t *testing.T) {
 		"hello, world!": "Hello, world!",
 		"Hello, world!": "Hello, world!",
 		"你好，世界！":        "你好，世界！",
+
+		"": "",
 	})
 }
 
@@ -58,6 +82,8 @@ func TestFirstRuneToLower(t *testing.T) {
 		"hello, world!": "hello, world!",
 		"Hello, world!": "hello, world!",
 		"你好，世界！":        "你好，世界！",
+
+		"": "",
 	})
 }
 

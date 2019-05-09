@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 
 	"github.com/aws/amazon-vpc-cni-k8s/pkg/ec2metadata/mocks"
 	"github.com/aws/amazon-vpc-cni-k8s/pkg/ec2wrapper/mocks"
@@ -74,6 +75,7 @@ func TestInitWithEC2metadata(t *testing.T) {
 	mockMetadata.EXPECT().GetMetadata(metadataMACPath+primaryMAC+metadataSGs).Return(sgs, nil)
 	mockMetadata.EXPECT().GetMetadata(metadataMACPath+primaryMAC+metadataSubnetID).Return(subnetID, nil)
 	mockMetadata.EXPECT().GetMetadata(metadataMACPath+primaryMAC+metadataVPCcidr).Return(vpcCIDR, nil)
+	mockMetadata.EXPECT().GetMetadata(metadataMACPath+primaryMAC+metadataVPCcidrs).Return(vpcCIDR, nil)
 
 	ins := &EC2InstanceMetadataCache{ec2Metadata: mockMetadata}
 
@@ -314,6 +316,36 @@ func TestAWSGetFreeDeviceNumberNoDevice(t *testing.T) {
 
 }
 
+func TestDescribeENI(t *testing.T) {
+	ctrl, _, mockEC2 := setup(t)
+	defer ctrl.Finish()
+
+	attachmentID := eniAttachID
+	attachment := &ec2.NetworkInterfaceAttachment{AttachmentId: &attachmentID}
+	result := &ec2.DescribeNetworkInterfacesOutput{
+		NetworkInterfaces: []*ec2.NetworkInterface{{Attachment: attachment}}}
+
+	testCases := []struct {
+		name   string
+		expID  *string
+		awsErr error
+		expErr error
+	}{
+		{"success DescribeENI", &attachmentID, nil, nil},
+		{"not found error", nil, awserr.New("InvalidNetworkInterfaceID.NotFound", "", nil), ErrENINotFound},
+	}
+
+	for _, tc := range testCases {
+		mockEC2.EXPECT().DescribeNetworkInterfaces(gomock.Any()).Return(result, tc.awsErr)
+
+		ins := &EC2InstanceMetadataCache{ec2SVC: mockEC2}
+		_, id, err := ins.DescribeENI("test-eni")
+		assert.Equal(t, tc.expErr, err, tc.name)
+		assert.Equal(t, tc.expID, id, tc.name)
+	}
+
+}
+
 func TestAllocENI(t *testing.T) {
 	ctrl, _, mockEC2 := setup(t)
 	defer ctrl.Finish()
@@ -535,14 +567,14 @@ func TestAllocAllIPAddress(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	// the expected addresses for r4.16xlarge
+	// the expected addresses for c5n.18xlarge
 	input = &ec2.AssignPrivateIpAddressesInput{
 		NetworkInterfaceId:             aws.String("eni-id"),
-		SecondaryPrivateIpAddressCount: aws.Int64(49),
+		SecondaryPrivateIpAddressCount: aws.Int64(30),
 	}
 	mockEC2.EXPECT().AssignPrivateIpAddresses(input).Return(nil, nil)
 
-	ins = &EC2InstanceMetadataCache{ec2SVC: mockEC2, instanceType: "r4.16xlarge"}
+	ins = &EC2InstanceMetadataCache{ec2SVC: mockEC2, instanceType: "c5n.18xlarge"}
 
 	err = ins.AllocAllIPAddress("eni-id")
 
@@ -553,29 +585,29 @@ func TestAllocIPAddresses(t *testing.T) {
 	ctrl, _, mockEC2 := setup(t)
 	defer ctrl.Finish()
 
-	// when required IP numbers(5) is below ENI's limit(49)
+	// when required IP numbers(5) is below ENI's limit(30)
 	input := &ec2.AssignPrivateIpAddressesInput{
 		NetworkInterfaceId:             aws.String("eni-id"),
 		SecondaryPrivateIpAddressCount: aws.Int64(5),
 	}
 	mockEC2.EXPECT().AssignPrivateIpAddresses(input).Return(nil, nil)
 
-	ins := &EC2InstanceMetadataCache{ec2SVC: mockEC2, instanceType: "r4.16xlarge"}
+	ins := &EC2InstanceMetadataCache{ec2SVC: mockEC2, instanceType: "c5n.18xlarge"}
 
 	err := ins.AllocIPAddresses("eni-id", 5)
 
 	assert.NoError(t, err)
 
-	// when required IP numbers(60) is higher than ENI's limit(49)
+	// when required IP numbers(31) is higher than ENI's limit(30)
 	input = &ec2.AssignPrivateIpAddressesInput{
 		NetworkInterfaceId:             aws.String("eni-id"),
-		SecondaryPrivateIpAddressCount: aws.Int64(49),
+		SecondaryPrivateIpAddressCount: aws.Int64(30),
 	}
 	mockEC2.EXPECT().AssignPrivateIpAddresses(input).Return(nil, nil)
 
-	ins = &EC2InstanceMetadataCache{ec2SVC: mockEC2, instanceType: "r4.16xlarge"}
+	ins = &EC2InstanceMetadataCache{ec2SVC: mockEC2, instanceType: "c5n.18xlarge"}
 
-	err = ins.AllocIPAddresses("eni-id", 49)
+	err = ins.AllocIPAddresses("eni-id", 30)
 
 	assert.NoError(t, err)
 }

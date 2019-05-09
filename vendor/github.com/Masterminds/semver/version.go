@@ -2,6 +2,7 @@ package semver
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -63,14 +64,14 @@ func NewVersion(v string) (*Version, error) {
 	}
 
 	var temp int64
-	temp, err := strconv.ParseInt(m[1], 10, 32)
+	temp, err := strconv.ParseInt(m[1], 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("Error parsing version segment: %s", err)
 	}
 	sv.major = temp
 
 	if m[2] != "" {
-		temp, err = strconv.ParseInt(strings.TrimPrefix(m[2], "."), 10, 32)
+		temp, err = strconv.ParseInt(strings.TrimPrefix(m[2], "."), 10, 64)
 		if err != nil {
 			return nil, fmt.Errorf("Error parsing version segment: %s", err)
 		}
@@ -80,7 +81,7 @@ func NewVersion(v string) (*Version, error) {
 	}
 
 	if m[3] != "" {
-		temp, err = strconv.ParseInt(strings.TrimPrefix(m[3], "."), 10, 32)
+		temp, err = strconv.ParseInt(strings.TrimPrefix(m[3], "."), 10, 64)
 		if err != nil {
 			return nil, fmt.Errorf("Error parsing version segment: %s", err)
 		}
@@ -291,6 +292,31 @@ func (v *Version) Compare(o *Version) int {
 	return comparePrerelease(ps, po)
 }
 
+// UnmarshalJSON implements JSON.Unmarshaler interface.
+func (v *Version) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	temp, err := NewVersion(s)
+	if err != nil {
+		return err
+	}
+	v.major = temp.major
+	v.minor = temp.minor
+	v.patch = temp.patch
+	v.pre = temp.pre
+	v.metadata = temp.metadata
+	v.original = temp.original
+	temp = nil
+	return nil
+}
+
+// MarshalJSON implements JSON.Marshaler interface.
+func (v *Version) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.String())
+}
+
 func compareSegment(v, o int64) int {
 	if v < o {
 		return -1
@@ -353,23 +379,43 @@ func comparePrePart(s, o string) int {
 
 	// When s or o are empty we can use the other in an attempt to determine
 	// the response.
-	if o == "" {
-		_, n := strconv.ParseInt(s, 10, 64)
-		if n != nil {
+	if s == "" {
+		if o != "" {
 			return -1
 		}
 		return 1
 	}
-	if s == "" {
-		_, n := strconv.ParseInt(o, 10, 64)
-		if n != nil {
+
+	if o == "" {
+		if s != "" {
 			return 1
 		}
 		return -1
 	}
 
-	if s > o {
+	// When comparing strings "99" is greater than "103". To handle
+	// cases like this we need to detect numbers and compare them.
+
+	oi, n1 := strconv.ParseInt(o, 10, 64)
+	si, n2 := strconv.ParseInt(s, 10, 64)
+
+	// The case where both are strings compare the strings
+	if n1 != nil && n2 != nil {
+		if s > o {
+			return 1
+		}
+		return -1
+	} else if n1 != nil {
+		// o is a string and s is a number
+		return -1
+	} else if n2 != nil {
+		// s is a string and o is a number
+		return 1
+	}
+	// Both are numbers
+	if si > oi {
 		return 1
 	}
 	return -1
+
 }

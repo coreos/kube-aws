@@ -4,15 +4,21 @@ import (
 	"encoding/base32"
 	"encoding/base64"
 	"fmt"
-	"math/rand"
 	"testing"
+	"unicode/utf8"
 
-	"github.com/aokoli/goutils"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSubstr(t *testing.T) {
 	tpl := `{{"fooo" | substr 0 3 }}`
+	if err := runt(tpl, "foo"); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestSubstr_shorterString(t *testing.T) {
+	tpl := `{{"foo" | substr 0 10 }}`
 	if err := runt(tpl, "foo"); err != nil {
 		t.Error(err)
 	}
@@ -38,6 +44,11 @@ func TestQuote(t *testing.T) {
 	if err := runt(tpl, `"1" "2" "3"`); err != nil {
 		t.Error(err)
 	}
+	tpl = `{{ .value | quote }}`
+	values := map[string]interface{}{"value": nil}
+	if err := runtv(tpl, ``, values); err != nil {
+		t.Error(err)
+	}
 }
 func TestSquote(t *testing.T) {
 	tpl := `{{squote "a" "b" "c"}}`
@@ -46,6 +57,11 @@ func TestSquote(t *testing.T) {
 	}
 	tpl = `{{squote 1 2 3 }}`
 	if err := runt(tpl, `'1' '2' '3'`); err != nil {
+		t.Error(err)
+	}
+	tpl = `{{ .value | squote }}`
+	values := map[string]interface{}{"value": nil}
+	if err := runtv(tpl, ``, values); err != nil {
 		t.Error(err)
 	}
 }
@@ -85,6 +101,13 @@ func TestSplit(t *testing.T) {
 	}
 }
 
+func TestSplitn(t *testing.T) {
+	tpl := `{{$v := "foo$bar$baz" | splitn "$" 2}}{{$v._0}}`
+	if err := runt(tpl, "foo"); err != nil {
+		t.Error(err)
+	}
+}
+
 func TestToString(t *testing.T) {
 	tpl := `{{ toString 1 | kindOf }}`
 	assert.NoError(t, runt(tpl, "string"))
@@ -93,6 +116,11 @@ func TestToString(t *testing.T) {
 func TestToStrings(t *testing.T) {
 	tpl := `{{ $s := list 1 2 3 | toStrings }}{{ index $s 1 | kindOf }}`
 	assert.NoError(t, runt(tpl, "string"))
+	tpl = `{{ list 1 .value 2 | toStrings }}`
+	values := map[string]interface{}{"value": nil}
+	if err := runtv(tpl, `[1 2]`, values); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestJoin(t *testing.T) {
@@ -101,6 +129,7 @@ func TestJoin(t *testing.T) {
 	assert.NoError(t, runtv(`{{ join "-" .V }}`, "a-b-c", map[string]interface{}{"V": []string{"a", "b", "c"}}))
 	assert.NoError(t, runtv(`{{ join "-" .V }}`, "abc", map[string]interface{}{"V": "abc"}))
 	assert.NoError(t, runtv(`{{ join "-" .V }}`, "1-2-3", map[string]interface{}{"V": []int{1, 2, 3}}))
+	assert.NoError(t, runtv(`{{ join "-" .value }}`, "1-2", map[string]interface{}{"value": []interface{}{"1", nil, "2"}}))
 }
 
 func TestSortAlpha(t *testing.T) {
@@ -161,30 +190,35 @@ func TestGoutils(t *testing.T) {
 	for k, v := range tests {
 		t.Log(k)
 		if err := runt(k, v); err != nil {
-			t.Errorf("Error on tpl %s: %s", err)
+			t.Errorf("Error on tpl %q: %s", k, err)
 		}
 	}
 }
 
 func TestRandom(t *testing.T) {
-	// One of the things I love about Go:
-	goutils.RANDOM = rand.New(rand.NewSource(1))
+	// Randome strings are now using Masterminds/goutils's cryptographically secure random string functions
+	// by default. Consequently, these tests now have no predictable character sequence. No checks for exact
+	// string output are necessary.
 
-	// Because we're using a random number generator, we need these to go in
-	// a predictable sequence:
-	if err := runt(`{{randAlphaNum 5}}`, "9bzRv"); err != nil {
-		t.Errorf("Error on tpl %s: %s", err)
-	}
-	if err := runt(`{{randAlpha 5}}`, "VjwGe"); err != nil {
-		t.Errorf("Error on tpl %s: %s", err)
-	}
-	if err := runt(`{{randAscii 5}}`, "1KA5p"); err != nil {
-		t.Errorf("Error on tpl %s: %s", err)
-	}
-	if err := runt(`{{randNumeric 5}}`, "26018"); err != nil {
-		t.Errorf("Error on tpl %s: %s", err)
+	// {{randAlphaNum 5}} should yield five random characters
+	if x, _ := runRaw(`{{randAlphaNum 5}}`, nil); utf8.RuneCountInString(x) != 5 {
+		t.Errorf("String should be 5 characters; string was %v characters", utf8.RuneCountInString(x))
 	}
 
+	// {{randAlpha 5}} should yield five random characters
+	if x, _ := runRaw(`{{randAlpha 5}}`, nil); utf8.RuneCountInString(x) != 5 {
+		t.Errorf("String should be 5 characters; string was %v characters", utf8.RuneCountInString(x))
+	}
+
+	// {{randAscii 5}} should yield five random characters
+	if x, _ := runRaw(`{{randAscii 5}}`, nil); utf8.RuneCountInString(x) != 5 {
+		t.Errorf("String should be 5 characters; string was %v characters", utf8.RuneCountInString(x))
+	}
+
+	// {{randNumeric 5}} should yield five random characters
+	if x, _ := runRaw(`{{randNumeric 5}}`, nil); utf8.RuneCountInString(x) != 5 {
+		t.Errorf("String should be 5 characters; string was %v characters", utf8.RuneCountInString(x))
+	}
 }
 
 func TestCat(t *testing.T) {
@@ -192,11 +226,23 @@ func TestCat(t *testing.T) {
 	if err := runt(tpl, "a b c"); err != nil {
 		t.Error(err)
 	}
+	tpl = `{{ .value | cat "a" "b"}}`
+	values := map[string]interface{}{"value": nil}
+	if err := runtv(tpl, "a b", values); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestIndent(t *testing.T) {
 	tpl := `{{indent 4 "a\nb\nc"}}`
 	if err := runt(tpl, "    a\n    b\n    c"); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestNindent(t *testing.T) {
+	tpl := `{{nindent 4 "a\nb\nc"}}`
+	if err := runt(tpl, "\n    a\n    b\n    c"); err != nil {
 		t.Error(err)
 	}
 }

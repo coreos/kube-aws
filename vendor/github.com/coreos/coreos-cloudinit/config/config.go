@@ -37,10 +37,10 @@ type CloudConfig struct {
 }
 
 type CoreOS struct {
-	Etcd      Etcd      `yaml:"etcd"`
-	Etcd2     Etcd2     `yaml:"etcd2"`
+	Etcd      Etcd      `yaml:"etcd"      deprecated:"etcd is no longer shipped in Container Linux"`
+	Etcd2     Etcd2     `yaml:"etcd2"     deprecated:"etcd2 is no longer shipped in Container Linux"`
 	Flannel   Flannel   `yaml:"flannel"`
-	Fleet     Fleet     `yaml:"fleet"`
+	Fleet     Fleet     `yaml:"fleet"     deprecated:"fleet is no longer shipped in Container Linux"`
 	Locksmith Locksmith `yaml:"locksmith"`
 	OEM       OEM       `yaml:"oem"`
 	Update    Update    `yaml:"update"`

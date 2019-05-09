@@ -391,6 +391,27 @@ func TestAllowable(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestIsPattern(t *testing.T) {
+	patterns := []string{
+		"*", "hello*", "hello*world", "*world",
+		"?", "hello?", "hello?world", "?world",
+	}
+	nonPatterns := []string{
+		"", "hello",
+	}
+	for _, pattern := range patterns {
+		if !IsPattern(pattern) {
+			t.Fatalf("expected true")
+		}
+	}
+
+	for _, s := range nonPatterns {
+		if IsPattern(s) {
+			t.Fatalf("expected false")
+		}
+	}
+}
 func BenchmarkAscii(t *testing.B) {
 	for i := 0; i < t.N; i++ {
 		if !Match("hello", "hello") {

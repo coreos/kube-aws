@@ -1,6 +1,10 @@
-# packr
+# packr (v1)
 
 [![GoDoc](https://godoc.org/github.com/gobuffalo/packr?status.svg)](https://godoc.org/github.com/gobuffalo/packr)
+
+## Packr has been updated to `v2`! Please read the `./v2/README.md` file for more details.
+
+---
 
 Packr is a simple solution for bundling static assets inside of Go binaries. Most importantly it does it in a way that is friendly to developers while they are developing.
 
@@ -10,8 +14,16 @@ To get an idea of the what and why of packr, please enjoy this short video: [htt
 
 ## Installation
 
+To install Packr utility
+
 ```text
-$ go get -u github.com/gobuffalo/packr/...
+$ go get -u github.com/gobuffalo/packr/packr
+```
+
+To get the dependency
+
+```text
+$ go get -u github.com/gobuffalo/packr
 ```
 
 ## Usage
@@ -24,17 +36,11 @@ The first step in using Packr is to create a new box. A box represents a folder 
 // set up a new box by giving it a (relative) path to a folder on disk:
 box := packr.NewBox("./templates")
 
-// Get the string representation of a file:
-html := box.String("index.html")
-
 // Get the string representation of a file, or an error if it doesn't exist:
-html, err := box.MustString("index.html")
-
-// Get the []byte representation of a file:
-html := box.Bytes("index.html")
+html, err := box.FindString("index.html")
 
 // Get the []byte representation of a file, or an error if it doesn't exist:
-html, err := box.MustBytes("index.html")
+html, err := box.FindBytes("index.html")
 ```
 
 ### What is a Box?
@@ -59,16 +65,19 @@ The following program will read the `./templates/admin/index.html` file and prin
 package main
 
 import (
-	"fmt"
+  "fmt"
 
-	"github.com/gobuffalo/packr"
+  "github.com/gobuffalo/packr"
 )
 
 func main() {
-	box := packr.NewBox("./templates")
+  box := packr.NewBox("./templates")
 
-	s := box.String("admin/index.html")
-	fmt.Println(s)
+  s, err := box.FindString("admin/index.html")
+  if err != nil {
+    log.Fatal(err)
+  }
+  fmt.Println(s)
 }
 ```
 
@@ -85,28 +94,28 @@ Packr uses the following resolution rules when looking for a file:
 
 Because Packr knows how to fall through to the file system, developers don't need to worry about constantly compiling their static files into a binary. They can work unimpeded.
 
-Packr takes file resolution a step further. When declaring a new box you use a relative path, `./templates`. When Packr recieves this call it calculates out the absolute path to that directory. By doing this it means you can be guaranteed that Packr can find your files correctly, even if you're not running in the directory that the box was created in. This helps with the problem of testing, where Go changes the `pwd` for each package, making relative paths difficult to work with. This is not a problem when using Packr.
+Packr takes file resolution a step further. When declaring a new box you use a relative path, `./templates`. When Packr receives this call it calculates out the absolute path to that directory. By doing this it means you can be guaranteed that Packr can find your files correctly, even if you're not running in the directory that the box was created in. This helps with the problem of testing, where Go changes the `pwd` for each package, making relative paths difficult to work with. This is not a problem when using Packr.
 
 ---
 
 ## Usage with HTTP
 
-A box implements the [`http.FileSystem`](https://golang.org/pkg/net/http/#FileSystemhttps://golang.org/pkg/net/http/#FileSystem) interface, meaning it can be used to serve static files.
+A box implements the [`http.FileSystem`](https://golang.org/pkg/net/http/#FileSystem) interface, meaning it can be used to serve static files.
 
 ```go
 package main
 
 import (
-	"net/http"
+  "net/http"
 
-	"github.com/gobuffalo/packr"
+  "github.com/gobuffalo/packr"
 )
 
 func main() {
-	box := packr.NewBox("./templates")
+  box := packr.NewBox("./templates")
 
-	http.Handle("/", http.FileServer(box))
-	http.ListenAndServe(":3000", nil)
+  http.Handle("/", http.FileServer(box))
+  http.ListenAndServe(":3000", nil)
 }
 ```
 
@@ -162,7 +171,7 @@ Linux/macOS/Windows (bash)
 mv ./project_name ./releases
 ```
 
-Windows (cmd): 
+Windows (cmd):
 
 ```cmd
 move ./project_name ./releases

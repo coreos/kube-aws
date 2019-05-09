@@ -15,19 +15,25 @@
 // effectively create a unique key for each sector.
 //
 // XTS does not provide any authentication. An attacker can manipulate the
-// ciphertext and randomise a block (16 bytes) of the plaintext.
+// ciphertext and randomise a block (16 bytes) of the plaintext. This package
+// does not implement ciphertext-stealing so sectors must be a multiple of 16
+// bytes.
 //
-// (Note: this package does not implement ciphertext-stealing so sectors must
-// be a multiple of 16 bytes.)
+// Note that XTS is usually not appropriate for any use besides disk encryption.
+// Most users should use an AEAD mode like GCM (from crypto/cipher.NewGCM) instead.
 package xts // import "golang.org/x/crypto/xts"
 
 import (
 	"crypto/cipher"
+	"encoding/binary"
 	"errors"
+	"sync"
+
+	"golang.org/x/crypto/internal/subtle"
 )
 
-// Cipher contains an expanded key structure. It doesn't contain mutable state
-// and therefore can be used concurrently.
+// Cipher contains an expanded key structure. It is safe for concurrent use if
+// the underlying block cipher is safe for concurrent use.
 type Cipher struct {
 	k1, k2 cipher.Block
 }
@@ -35,6 +41,12 @@ type Cipher struct {
 // blockSize is the block size that the underlying cipher must have. XTS is
 // only defined for 16-byte ciphers.
 const blockSize = 16
+
+var tweakPool = sync.Pool{
+	New: func() interface{} {
+		return new([blockSize]byte)
+	},
+}
 
 // NewCipher creates a Cipher given a function for creating the underlying
 // block cipher (which must have a block size of 16 bytes). The key must be
@@ -54,7 +66,7 @@ func NewCipher(cipherFunc func([]byte) (cipher.Block, error), key []byte) (c *Ci
 }
 
 // Encrypt encrypts a sector of plaintext and puts the result into ciphertext.
-// Plaintext and ciphertext may be the same slice but should not overlap.
+// Plaintext and ciphertext must overlap entirely or not at all.
 // Sectors must be a multiple of 16 bytes and less than 2²⁴ bytes.
 func (c *Cipher) Encrypt(ciphertext, plaintext []byte, sectorNum uint64) {
 	if len(ciphertext) < len(plaintext) {
@@ -63,30 +75,37 @@ func (c *Cipher) Encrypt(ciphertext, plaintext []byte, sectorNum uint64) {
 	if len(plaintext)%blockSize != 0 {
 		panic("xts: plaintext is not a multiple of the block size")
 	}
-
-	var tweak [blockSize]byte
-	for i := 0; i < 8; i++ {
-		tweak[i] = byte(sectorNum)
-		sectorNum >>= 8
+	if subtle.InexactOverlap(ciphertext[:len(plaintext)], plaintext) {
+		panic("xts: invalid buffer overlap")
 	}
+
+	tweak := tweakPool.Get().(*[blockSize]byte)
+	for i := range tweak {
+		tweak[i] = 0
+	}
+	binary.LittleEndian.PutUint64(tweak[:8], sectorNum)
 
 	c.k2.Encrypt(tweak[:], tweak[:])
 
-	for i := 0; i < len(plaintext); i += blockSize {
-		for j := 0; j < blockSize; j++ {
-			ciphertext[i+j] = plaintext[i+j] ^ tweak[j]
+	for len(plaintext) > 0 {
+		for j := range tweak {
+			ciphertext[j] = plaintext[j] ^ tweak[j]
 		}
-		c.k1.Encrypt(ciphertext[i:], ciphertext[i:])
-		for j := 0; j < blockSize; j++ {
-			ciphertext[i+j] ^= tweak[j]
+		c.k1.Encrypt(ciphertext, ciphertext)
+		for j := range tweak {
+			ciphertext[j] ^= tweak[j]
 		}
+		plaintext = plaintext[blockSize:]
+		ciphertext = ciphertext[blockSize:]
 
-		mul2(&tweak)
+		mul2(tweak)
 	}
+
+	tweakPool.Put(tweak)
 }
 
 // Decrypt decrypts a sector of ciphertext and puts the result into plaintext.
-// Plaintext and ciphertext may be the same slice but should not overlap.
+// Plaintext and ciphertext must overlap entirely or not at all.
 // Sectors must be a multiple of 16 bytes and less than 2²⁴ bytes.
 func (c *Cipher) Decrypt(plaintext, ciphertext []byte, sectorNum uint64) {
 	if len(plaintext) < len(ciphertext) {
@@ -95,26 +114,33 @@ func (c *Cipher) Decrypt(plaintext, ciphertext []byte, sectorNum uint64) {
 	if len(ciphertext)%blockSize != 0 {
 		panic("xts: ciphertext is not a multiple of the block size")
 	}
-
-	var tweak [blockSize]byte
-	for i := 0; i < 8; i++ {
-		tweak[i] = byte(sectorNum)
-		sectorNum >>= 8
+	if subtle.InexactOverlap(plaintext[:len(ciphertext)], ciphertext) {
+		panic("xts: invalid buffer overlap")
 	}
+
+	tweak := tweakPool.Get().(*[blockSize]byte)
+	for i := range tweak {
+		tweak[i] = 0
+	}
+	binary.LittleEndian.PutUint64(tweak[:8], sectorNum)
 
 	c.k2.Encrypt(tweak[:], tweak[:])
 
-	for i := 0; i < len(plaintext); i += blockSize {
-		for j := 0; j < blockSize; j++ {
-			plaintext[i+j] = ciphertext[i+j] ^ tweak[j]
+	for len(ciphertext) > 0 {
+		for j := range tweak {
+			plaintext[j] = ciphertext[j] ^ tweak[j]
 		}
-		c.k1.Decrypt(plaintext[i:], plaintext[i:])
-		for j := 0; j < blockSize; j++ {
-			plaintext[i+j] ^= tweak[j]
+		c.k1.Decrypt(plaintext, plaintext)
+		for j := range tweak {
+			plaintext[j] ^= tweak[j]
 		}
+		plaintext = plaintext[blockSize:]
+		ciphertext = ciphertext[blockSize:]
 
-		mul2(&tweak)
+		mul2(tweak)
 	}
+
+	tweakPool.Put(tweak)
 }
 
 // mul2 multiplies tweak by 2 in GF(2¹²⁸) with an irreducible polynomial of
