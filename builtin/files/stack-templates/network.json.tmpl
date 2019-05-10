@@ -178,6 +178,20 @@
       },
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
+    "SecurityGroupControllerIngressFromWorkerToKubelet": {
+      "Properties": {
+        "FromPort": 10250,
+        "GroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 10250
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
     "SecurityGroupWorker": {
       "Properties": {
         "GroupDescription": {
@@ -296,6 +310,20 @@
         "IpProtocol": "tcp",
         "SourceSecurityGroupId": {
           "Ref": "SecurityGroupController"
+        },
+        "ToPort": 10250
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToKubelet": {
+      "Properties": {
+        "FromPort": 10250,
+        "GroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
         },
         "ToPort": 10250
       },
@@ -444,34 +472,6 @@
     },
     {{ end }}
     {{if .Addons.Prometheus.SecurityGroupsEnabled}}
-    "SecurityGroupWorkerIngressFromWorkerToControllerKubelet": {
-      "Properties": {
-        "FromPort": 10250,
-        "GroupId": {
-          "Ref": "SecurityGroupController"
-        },
-        "IpProtocol": "tcp",
-        "SourceSecurityGroupId": {
-          "Ref": "SecurityGroupWorker"
-        },
-        "ToPort": 10250
-      },
-      "Type": "AWS::EC2::SecurityGroupIngress"
-    },
-    "SecurityGroupWorkerIngressFromWorkerToWorkerKubelet": {
-      "Properties": {
-        "FromPort": 10250,
-        "GroupId": {
-          "Ref": "SecurityGroupWorker"
-        },
-        "IpProtocol": "tcp",
-        "SourceSecurityGroupId": {
-          "Ref": "SecurityGroupWorker"
-        },
-        "ToPort": 10250
-      },
-      "Type": "AWS::EC2::SecurityGroupIngress"
-    },
     "SecurityGroupWorkerIngressFromWorkerToWorkerCadvisor": {
       "Properties": {
         "FromPort": 4194,
