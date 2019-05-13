@@ -151,7 +151,6 @@ coreos:
         Type=oneshot
         RemainAfterExit=yes
         ExecStart=/bin/bash -c "echo -e \"{{.HostOS.MOTDBanner.EtcdColour.On}}Etcd Server{{.HostOS.MOTDBanner.EtcdColour.Off}} v{{.Etcd.Version}}\" >>/etc/motd"
-        ExecStart=/bin/bash -c "echo -e \"{{.HostOS.MOTDBanner.KubeAWSColour.On}}kube-aws{{.HostOS.MOTDBanner.KubeAWSColour.Off}} {{ .KubeAWSVersion }}\" >>/etc/motd"
 
         [Install]
         WantedBy=multi-user.target
