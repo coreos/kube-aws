@@ -350,7 +350,7 @@ coreos:
         --cni-bin-dir=/opt/cni/bin \
         --network-plugin={{.K8sNetworkPlugin}} \
         --container-runtime={{.ContainerRuntime}} \
-        --node-labels=node.kubernetes.io/role="{{ toLabel .NodePoolName }}",kubernetes.io/role="{{ toLabel .NodePoolName }}",node-role.kubernetes.io/{{ toLabel .NodePoolName }}=""{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
+        --node-labels=node.kubernetes.io/role="node",node.kubernetes.io/role="{{ toLabel .NodePoolName }}",kubernetes.io/role=node,node-role.kubernetes.io/node=\"\",node-role.kubernetes.io/{{ toLabel .NodePoolName }}=\"\"{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
         --register-node=true \
         --config=/etc/kubernetes/config/kubelet.yaml \
         {{if .Taints -}}
