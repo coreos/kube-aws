@@ -301,6 +301,7 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 				[]string{
 					"kiam-server",
 					"kiam-server:443",
+					"localhost",
 					"localhost:443",
 					"localhost:9610",
 				},
