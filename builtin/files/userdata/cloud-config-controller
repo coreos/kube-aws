@@ -5545,8 +5545,9 @@ write_files:
               - name: kiam
                 image: {{.Experimental.KIAMSupport.Image.RepoWithTag}}
                 command:
-                  - /server
+                  - /kiam
                 args:
+                  - server
                   - --json-log
                   - --bind=0.0.0.0:443
                   - --cert=/etc/kiam/tls/server.pem
@@ -5565,7 +5566,8 @@ write_files:
                 livenessProbe:
                   exec:
                     command:
-                    - /health
+                    - /kiam
+                    - health
                     - --cert=/etc/kiam/tls/server.pem
                     - --key=/etc/kiam/tls/server-key.pem
                     - --ca=/etc/kiam/tls/ca.pem
@@ -5578,7 +5580,8 @@ write_files:
                 readinessProbe:
                   exec:
                     command:
-                    - /health
+                    - /kiam
+                    - health
                     - --cert=/etc/kiam/tls/server.pem
                     - --key=/etc/kiam/tls/server-key.pem
                     - --ca=/etc/kiam/tls/ca.pem
@@ -5722,11 +5725,13 @@ write_files:
             containers:
               - name: kiam
                 securityContext:
-                  privileged: true
+                  capabilities:
+                    add: ["NET_ADMIN"]
                 image: {{.Experimental.KIAMSupport.Image.RepoWithTag}}
                 command:
-                  - /agent
+                  - /kiam
                 args:
+                  - agent
                   - --iptables
            {{- if .Kubernetes.Networking.AmazonVPC.Enabled }}
                   - --host-interface=!eni0
@@ -5743,6 +5748,7 @@ write_files:
                   - --server-address={{.Experimental.KIAMSupport.ServerAddresses.AgentAddress}}
                   - --prometheus-listen-addr=0.0.0.0:9620
                   - --prometheus-sync-interval=5s
+                  - --gateway-timeout-creation=1s
                 env:
                   - name: HOST_IP
                     valueFrom:
