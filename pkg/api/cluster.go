@@ -173,10 +173,11 @@ func NewDefaultCluster() *Cluster {
 				Replicas:        1,
 				ComputeResources: ComputeResources{
 					Requests: ResourceQuota{
-						Cpu:    "1",
+						Cpu:    "0.5",
 						Memory: "500Mi",
 					},
 					Limits: ResourceQuota{
+						Cpu:    "4",
 						Memory: "5000Mi",
 					},
 				},
