@@ -760,8 +760,8 @@ worker:
 #      arn: "arn:aws:iam::YOURACCOUNTID:instance-profile/INSTANCEPROFILENAME"
 #
 #  # The version of etcd to be used. Set to e.g. "3.2.1" to use etcd3
-#  # CAUTION: Increasing etcd version will permanently change the state of etcd and a cloud formation rollback, will not succeed due to etcd 
-#  being unable to downgrade. 
+#  # CAUTION: Increasing etcd version will permanently change the state of etcd and a cloud formation rollback, will not succeed due to etcd
+#  being unable to downgrade.
 #  version: 3.2.13
 #
 #  snapshot:
@@ -1591,3 +1591,27 @@ kubeAwsPlugins:
   # See plugins/aws-iam-authenticator/plugin.yaml for more info
   awsIamAuthenticator:
     enabled: false
+    # see plugins/cluster-autoscaler/plugin.yaml for more info
+  clusterAutoscaler:
+    enabled: false
+    replicas: 2
+    region: "us-west-2"
+    # autoscaler image
+    image: "k8s.gcr.io/cluster-autoscaler:v1.13.1"
+    # autoscaler resources
+    resources:
+      limits:
+        cpu: 100m
+        memory: 300Mi
+      requests:
+        cpu: 100m
+        memory: 300Mi
+    # configuration if you want autoscaler metrics picked up by prometheus
+    prometheusMetrics:
+      enabled: false
+      interval: "10s"
+      # namespace prometheus-operator is running in
+      namespace: monitoring
+      # selectors for autodiscovery
+      selector:
+        prometheus: monitoring

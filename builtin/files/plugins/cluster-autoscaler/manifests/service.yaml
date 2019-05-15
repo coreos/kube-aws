@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: cluster-autoscaler
+  name: cluster-autoscaler
+  namespace: kube-system
+spec:
+  ports:
+    - port: 8085
+      protocol: TCP
+      targetPort: 8085
+      name: http
+  selector:
+    app: cluster-autoscaler
+  type: "ClusterIP"
