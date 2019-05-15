@@ -365,8 +365,14 @@ func (c *Cluster) ControllerFeatureGates() model.FeatureGates {
 	if !c.Experimental.Admission.Priority.Enabled {
 		gates["PodPriority"] = "false"
 	}
+	if c.Experimental.Admission.Priority.Enabled {
+		gates["PodPriority"] = "true"
+	}
 	if !c.Experimental.Admission.PersistentVolumeClaimResize.Enabled {
 		gates["ExpandPersistentVolumes"] = "false"
+	}
+	if c.Experimental.Admission.PersistentVolumeClaimResize.Enabled {
+		gates["ExpandPersistentVolumes"] = "true"
 	}
 	return gates
 }
