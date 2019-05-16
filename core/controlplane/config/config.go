@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -362,18 +363,9 @@ func (c *Cluster) ControllerFeatureGates() model.FeatureGates {
 	//From kube 1.11 PodPriority and ExpandPersistentVolumes have become enabled by default,
 	//so making sure it is not enabled if user has explicitly set them to false
 	//https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-1.11.md#changelog-since-v1110
-	if !c.Experimental.Admission.Priority.Enabled {
-		gates["PodPriority"] = "false"
-	}
-	if c.Experimental.Admission.Priority.Enabled {
-		gates["PodPriority"] = "true"
-	}
-	if !c.Experimental.Admission.PersistentVolumeClaimResize.Enabled {
-		gates["ExpandPersistentVolumes"] = "false"
-	}
-	if c.Experimental.Admission.PersistentVolumeClaimResize.Enabled {
-		gates["ExpandPersistentVolumes"] = "true"
-	}
+	gates["PodPriority"] = strconv.FormatBool(c.Experimental.Admission.Priority.Enabled)
+	gates["ExpandPersistentVolumes"] = strconv.FormatBool(c.Experimental.Admission.PersistentVolumeClaimResize.Enabled)
+
 	return gates
 }
 
