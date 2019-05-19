@@ -783,6 +783,16 @@
     ,
     "{{$ngw.LogicalName}}": {
       "Properties": {
+       "Tags": [
+          {
+            "Key": "kubernetes.io/cluster/{{$.ClusterName}}",
+            "Value": "owned"
+          },
+          {
+            "Key": "Name",
+            "Value": "{{$.ClusterName}}-{{$ngw.LogicalName}}"
+          }
+        ],
         "AllocationId": {{$ngw.EIPAllocationIDRef}},
         "SubnetId": {{$ngw.PublicSubnetRef}}
       },
