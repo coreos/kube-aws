@@ -66,12 +66,6 @@ type EtcdTmplCtx struct {
 	EtcdNodes []EtcdNode
 }
 
-// UserDataEtcd is here for backward-compatibility.
-// You should use `Userdata.Etcd` instead in your templates.
-func (c EtcdTmplCtx) UserDataEtcd() *api.UserData {
-	return c.GetUserData("Etcd")
-}
-
 // ControllerTmplCtx is used for rendering controller stack and userdata
 type ControllerTmplCtx struct {
 	*Stack
@@ -80,34 +74,10 @@ type ControllerTmplCtx struct {
 	Subnets api.Subnets
 }
 
-// UserDataController is here for backward-compatibility.
-// You should use `Userdata.Controller` instead in your templates.
-func (c ControllerTmplCtx) UserDataController() *api.UserData {
-	return c.GetUserData("Controller")
-}
-
-func (c ControllerTmplCtx) MinControllerCount() int {
-	return c.Controller.MinControllerCount()
-}
-
-func (c ControllerTmplCtx) MaxControllerCount() int {
-	return c.Controller.MaxControllerCount()
-}
-
-func (c ControllerTmplCtx) ControllerRollingUpdateMinInstancesInService() int {
-	return c.Controller.ControllerRollingUpdateMinInstancesInService()
-}
-
 // WorkerTmplCtx is used for rendering worker stacks and userdata
 type WorkerTmplCtx struct {
 	*Stack
 	*NodePoolConfig
-}
-
-// UserDataWorker is here for backward-compatibility.
-// You should use `Userdata.Worker` instead in your templates.
-func (c WorkerTmplCtx) UserDataWorker() *api.UserData {
-	return c.GetUserData("Worker")
 }
 
 type NetworkTmplCtx struct {

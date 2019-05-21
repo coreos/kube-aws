@@ -10,7 +10,7 @@ import (
 )
 
 func newStack(stackName string, conf *Config, opts api.StackTemplateOptions, assetsConfig *credential.CompactAssets, tmplCtx func(stack *Stack) (interface{}, error), init func(stack *Stack) error) (*Stack, error) {
-	logger.Debugf("Called newStack")
+	logger.Debugf("model.newStack: create stack %s", stackName)
 
 	stack := &Stack{
 		StackName:            stackName,
@@ -22,28 +22,33 @@ func newStack(stackName string, conf *Config, opts api.StackTemplateOptions, ass
 		Config:               conf,
 	}
 
+	logger.Debugf("model.newStack: %s: calling stack tmplCtx function", stackName)
 	ctx, err := tmplCtx(stack)
 	if err != nil {
 		return nil, err
 	}
 	stack.tmplCtx = ctx
 
+	logger.Debugf("model.newStack: %s: calling stack init function", stackName)
 	if err := init(stack); err != nil {
 		return nil, err
 	}
 
+	logger.Debugf("model.newStack: %s: calling buildAssets", stackName)
 	assets, err := stack.buildAssets()
 	if err != nil {
 		return nil, err
 	}
 	stack.assets = assets
 
+	logger.Debugf("model.newStack: %s: completed successfully", stackName)
 	return stack, nil
 }
 
 // NewControlPlaneStack reads the specified cluster spec along with all the referenced files into memory.
 // Any configuration error like a reference to a missing file results in kube-aws existing with an error.
 func NewControlPlaneStack(conf *Config, opts api.StackTemplateOptions, extras clusterextension.ClusterExtension, assetsConfig *credential.CompactAssets) (*Stack, error) {
+	logger.Debugf("NewControlPlaneStack: Generating new Control-Plane stack")
 	return newStack(
 		conf.ControlPlaneStackName(),
 		conf,
@@ -56,13 +61,14 @@ func NewControlPlaneStack(conf *Config, opts api.StackTemplateOptions, extras cl
 				return nil, fmt.Errorf("failed to import subnets from network stack: %v", err)
 			}
 			vpc := stack.Config.VPC.ImportFromNetworkStack()
-
-			return ControllerTmplCtx{
-				Stack:   stack,
+			retval := ControllerTmplCtx{
 				Config:  conf,
+				Stack:   stack,
 				VPC:     vpc,
 				Subnets: subnets,
-			}, nil
+			}
+			logger.Debugf("NewControlPlaneStack: Returning ControllerTmplCtx struct: %+v", retval)
+			return retval, nil
 		},
 		func(stack *Stack) error {
 			extraStack, err := extras.ControlPlaneStack(stack)
@@ -112,6 +118,7 @@ func NewControlPlaneStack(conf *Config, opts api.StackTemplateOptions, extras cl
 }
 
 func NewNetworkStack(conf *Config, nodePools []*Stack, opts api.StackTemplateOptions, extras clusterextension.ClusterExtension, assetsConfig *credential.CompactAssets) (*Stack, error) {
+	logger.Debugf("Generating new Network stack")
 	return newStack(
 		conf.NetworkStackName(),
 		conf,
@@ -124,8 +131,8 @@ func NewNetworkStack(conf *Config, nodePools []*Stack, opts api.StackTemplateOpt
 			}
 
 			return NetworkTmplCtx{
-				Stack:           stack,
 				Config:          conf,
+				Stack:           stack,
 				WorkerNodePools: nps,
 			}, nil
 		},
@@ -142,6 +149,7 @@ func NewNetworkStack(conf *Config, nodePools []*Stack, opts api.StackTemplateOpt
 }
 
 func NewEtcdStack(conf *Config, opts api.StackTemplateOptions, extras clusterextension.ClusterExtension, assetsConfig *credential.CompactAssets, s *Context) (*Stack, error) {
+	logger.Debugf("Generating new Etcd stack")
 	return newStack(
 		conf.EtcdStackName(),
 		conf,
@@ -182,8 +190,8 @@ func NewEtcdStack(conf *Config, opts api.StackTemplateOptions, extras clusterext
 			}
 
 			return EtcdTmplCtx{
-				Stack:             stack,
 				Config:            conf,
+				Stack:             stack,
 				EtcdExistingState: existingState,
 				EtcdNodes:         nodes,
 			}, nil
@@ -213,7 +221,7 @@ func NewEtcdStack(conf *Config, opts api.StackTemplateOptions, extras clusterext
 }
 
 func NewWorkerStack(conf *Config, npconf *NodePoolConfig, opts api.StackTemplateOptions, extras clusterextension.ClusterExtension, assetsConfig *credential.CompactAssets) (*Stack, error) {
-
+	logger.Debugf("Generating new Worker stack %s...", npconf.NodePoolName)
 	return newStack(
 		npconf.StackName(),
 		conf,

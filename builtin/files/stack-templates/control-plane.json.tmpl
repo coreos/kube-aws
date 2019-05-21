@@ -26,13 +26,13 @@
         "LaunchConfigurationName": {
           "Ref": "{{.Controller.LogicalName}}LC"
         },
-        "MaxSize": "{{.MaxControllerCount}}",
+        "MaxSize": "{{.Controller.MaxControllerCount}}",
         "MetricsCollection": [
           {
             "Granularity": "1Minute"
           }
         ],
-        "MinSize": "{{.MinControllerCount}}",
+        "MinSize": "{{.Controller.MinControllerCount}}",
         "Tags": [
           {{range $k, $v := $.Controller.InstanceTags -}}
           {
@@ -65,7 +65,7 @@
         "VPCZoneIdentifier": [
           {{range $index, $subnet := .Controller.Subnets}}
           {{if gt $index 0}},{{end}}
-          {{$subnet.Ref}}
+          {{$.Subnets.RefByName $subnet.Name }}
           {{end}}
         ],
         "LoadBalancerNames" : [
@@ -84,14 +84,14 @@
       {{if .WaitSignal.Enabled}}
       "CreationPolicy" : {
         "ResourceSignal" : {
-          "Count" : "{{.MinControllerCount}}",
+          "Count" : "{{.Controller.MinControllerCount}}",
           "Timeout" : "{{.Controller.CreateTimeout}}"
         }
       },
       {{end}}
       "UpdatePolicy" : {
         "AutoScalingRollingUpdate" : {
-          "MinInstancesInService" : "{{.ControllerRollingUpdateMinInstancesInService}}",
+          "MinInstancesInService" : "{{.Controller.ControllerRollingUpdateMinInstancesInService}}",
           "MaxBatchSize" : "1",
           {{if .WaitSignal.Enabled}}
           "WaitOnResourceSignals" : "true",
@@ -272,7 +272,7 @@
                   ]
                 },
                 {{ end }}
-                {{ if .UserDataController.Parts.s3 }}
+                {{ if .UserData.Controller.Parts.s3 }}
 		            {
                   "Effect": "Allow",
                   "Action": [
@@ -556,7 +556,7 @@
         "Subnets" : [
           {{range $index, $subnet := .LoadBalancer.Subnets}}
           {{if gt $index 0}},{{end}}
-          {{$subnet.Ref}}
+          {{$.Subnets.RefByName $subnet.Name }}
           {{end}}
         ],
         {{if .LoadBalancer.Private}}
@@ -584,7 +584,7 @@
         "Subnets" : [
           {{range $index, $subnet := .LoadBalancer.Subnets}}
           {{if gt $index 0}},{{end}}
-          {{$subnet.Ref}}
+          {{$.Subnets.RefByName $subnet.Name }}
           {{end}}
         ],
         "Listeners" : [
@@ -681,7 +681,7 @@
           {{end}}
         ],
         "PlacementTenancy": "{{ .Controller.Tenancy }}",
-        "UserData": {{ $.UserDataController.Parts.instance.Template | checkSizeLessThan 16384 }}
+        "UserData": {{ $.UserData.Controller.Parts.instance.Template | checkSizeLessThan 16384 }}
       },
   {{ if .Experimental.AwsEnvironment.Enabled }}
       "Metadata" : {

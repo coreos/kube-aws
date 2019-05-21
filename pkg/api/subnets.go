@@ -1,6 +1,10 @@
 package api
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/kubernetes-incubator/kube-aws/logger"
+)
 
 type Subnets []Subnet
 
@@ -19,6 +23,7 @@ func (ss Subnets) ImportFromNetworkStack() (Subnets, error) {
 	// Import all the managed subnets from the main cluster i.e. don't create subnets inside the node pool cfn stack
 	for i, s := range ss {
 		if !s.HasIdentifier() {
+			logger.Debugf("Subnet %s does not have an identifier, importing from NetworkStack...", s.Name)
 			logicalName, err := s.LogicalNameOrErr()
 			if err != nil {
 				return result, err
@@ -31,6 +36,7 @@ func (ss Subnets) ImportFromNetworkStack() (Subnets, error) {
 				result[i] = NewPublicSubnetFromFn(az, stackOutputName)
 			}
 		} else {
+			logger.Debugf("Subnet %s has an identifier, using that: %+v", s.Name, s)
 			result[i] = s
 		}
 	}
@@ -43,7 +49,17 @@ func (ss Subnets) ImportFromNetworkStackRetainingNames() (Subnets, error) {
 		return result, err
 	}
 	for i, s := range ss {
+		logger.Debugf("ImportFromNetworkStackRetainingNames restoring name to %s", s.Name)
 		result[i].Name = s.Name
 	}
 	return result, nil
+}
+
+func (ss Subnets) RefByName(name string) (string, error) {
+	for _, subnet := range ss {
+		if subnet.Name == name {
+			return subnet.Ref(), nil
+		}
+	}
+	return "", fmt.Errorf("No subnets found with name: %s", name)
 }

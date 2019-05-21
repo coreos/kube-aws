@@ -100,7 +100,7 @@
               {{end}}
             ],
             "SubnetId": {{$workerSubnet.Ref}},
-            "UserData": {{ $.UserDataWorker.Parts.instance.Template }}
+            "UserData": {{ $.UserData.Worker.Parts.instance.Template }}
           }
           {{end}}
           {{end}}
@@ -332,7 +332,7 @@
           "Placement": {
             "Tenancy": "{{.Tenancy}}"
           },
-          "UserData": {{ .UserDataWorker.Parts.instance.Template }}
+          "UserData": {{ .UserData.Worker.Parts.instance.Template }}
         }
       },
       "Type": "AWS::EC2::LaunchTemplate"
@@ -384,7 +384,7 @@
                   "Effect": "Allow",
                   "Resource": "*"
                 },
-                {{- if $.UserDataWorker.Parts.s3 }}
+                {{- if $.UserData.Worker.Parts.s3 }}
                 {
                   "Effect": "Allow",
                   "Action": [

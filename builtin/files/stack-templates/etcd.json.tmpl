@@ -112,13 +112,13 @@
               "Resource": "*"
             },
             {{end -}}
-            {{- if $.UserDataEtcd.Parts.s3 }}
+            {{- if $.UserData.Etcd.Parts.s3 }}
             {
               "Effect": "Allow",
               "Action": [
                 "s3:GetObject"
               ],
-              "Resource": "arn:{{.Region.Partition}}:s3:::{{ $.UserDataEtcd.Parts.s3.Asset.S3Prefix }}*"
+              "Resource": "arn:{{.Region.Partition}}:s3:::{{ $.UserData.Etcd.Parts.s3.Asset.S3Prefix }}*"
             },
             {{- end }}
             {{/* Required for `etcdadm reconfigure` to check existence of an etcd snapshot in S3 */}}
@@ -573,7 +573,7 @@
           {{end}}
         ],
         "PlacementTenancy": "{{$.Etcd.Tenancy}}",
-        "UserData": {{ $.UserDataEtcd.Parts.instance.Template (dict "etcdIndex" $etcdIndex) | checkSizeLessThan 16384 }}
+        "UserData": {{ $.UserData.Etcd.Parts.instance.Template (dict "etcdIndex" $etcdIndex) | checkSizeLessThan 16384 }}
       },
       "Type": "AWS::AutoScaling::LaunchConfiguration"
     }
