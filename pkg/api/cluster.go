@@ -76,7 +76,7 @@ func NewDefaultCluster() *Cluster {
 		KIAMSupport: KIAMSupport{
 			Enabled:         false,
 			Image:           Image{Repo: "quay.io/uswitch/kiam", Tag: "v3.2", RktPullDocker: false},
-			SessionDuration: "15m",
+			SessionDuration: "30m",
 			ServerAddresses: KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
 		},
 		Kube2IamSupport: Kube2IamSupport{

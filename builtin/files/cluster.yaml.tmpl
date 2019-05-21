@@ -1467,14 +1467,14 @@ experimental:
   # This is intended to be used in combination with .controller.iam.role.name. See #297 for more information.
   kiamSupport:
     enabled: false
-    image:
-      repo: quay.io/uswitch/kiam
-      tag: v2.8
-      rktPullDocker: false
-    sessionDuration: 15m
-    serverAddresses:
-      serverAddress: localhost:443
-      agentAddress: kiam-server:443
+    # image:
+    #  repo: quay.io/uswitch/kiam
+    #  tag: v3.2
+    #  rktPullDocker: false
+    # sessionDuration: 30m
+    # serverAddresses:
+    #  serverAddress: localhost:443
+    #  agentAddress: kiam-server:443
     # Optional resource change for kiam servers/agents can be done via using the resources block below and changing the values.
     # Values below are the default if not set.
     # serverResources:

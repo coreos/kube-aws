@@ -5548,9 +5548,11 @@ write_files:
               - name: kiam
                 image: {{.Experimental.KIAMSupport.Image.RepoWithTag}}
                 command:
-                  - /kiam
+                  - {{if checkVersion ">= 3.0" .Experimental.KIAMSupport.Image.Tag}}/kiam{{else}}/server{{end}}
                 args:
+                  {{if checkVersion ">= 3.0" .Experimental.KIAMSupport.Image.Tag -}}
                   - server
+                  {{ end -}}
                   - --json-log
                   - --bind=0.0.0.0:443
                   - --cert=/etc/kiam/tls/server.pem
@@ -5569,13 +5571,18 @@ write_files:
                 livenessProbe:
                   exec:
                     command:
+                    {{if checkVersion ">= 3.0" .Experimental.KIAMSupport.Image.Tag -}}
                     - /kiam
                     - health
+                    - --gateway-timeout-creation=1s
+                    {{ else -}}
+                    - /health
+                    - --server-address-refresh=2s
+                    {{ end -}}
                     - --cert=/etc/kiam/tls/server.pem
                     - --key=/etc/kiam/tls/server-key.pem
                     - --ca=/etc/kiam/tls/ca.pem
                     - --server-address={{.Experimental.KIAMSupport.ServerAddresses.ServerAddress}}
-                    - --gateway-timeout-creation=1s
                     - --timeout=5s
                   initialDelaySeconds: 10
                   periodSeconds: 10
@@ -5583,13 +5590,18 @@ write_files:
                 readinessProbe:
                   exec:
                     command:
+                    {{if checkVersion ">= 3.0" .Experimental.KIAMSupport.Image.Tag -}}
                     - /kiam
                     - health
+                    - --gateway-timeout-creation=1s
+                    {{ else -}}
+                    - /health
+                    - --server-address-refresh=2s
+                    {{ end -}}
                     - --cert=/etc/kiam/tls/server.pem
                     - --key=/etc/kiam/tls/server-key.pem
                     - --ca=/etc/kiam/tls/ca.pem
                     - --server-address={{.Experimental.KIAMSupport.ServerAddresses.ServerAddress}}
-                    - --gateway-timeout-creation=1s
                     - --timeout=5s
                   initialDelaySeconds: 3
                   periodSeconds: 10
@@ -5732,9 +5744,13 @@ write_files:
                     add: ["NET_ADMIN"]
                 image: {{.Experimental.KIAMSupport.Image.RepoWithTag}}
                 command:
-                  - /kiam
+                  - {{if checkVersion ">= 3.0" .Experimental.KIAMSupport.Image.Tag}}/kiam{{else}}/agent{{end}}
                 args:
+                  {{if checkVersion ">= 3.0" .Experimental.KIAMSupport.Image.Tag -}}
                   - agent
+                  - --whitelist-route-regexp=.*
+                  - --gateway-timeout-creation=1s
+                  {{ end -}}
                   - --iptables
            {{- if .Kubernetes.Networking.AmazonVPC.Enabled }}
                   - --host-interface=!eni0
@@ -5749,10 +5765,8 @@ write_files:
                   - --key=/etc/kiam/tls/agent-key.pem
                   - --ca=/etc/kiam/tls/ca.pem
                   - --server-address={{.Experimental.KIAMSupport.ServerAddresses.AgentAddress}}
-                  - --whitelist-route-regexp=.*
                   - --prometheus-listen-addr=0.0.0.0:9620
                   - --prometheus-sync-interval=5s
-                  - --gateway-timeout-creation=1s
                 env:
                   - name: HOST_IP
                     valueFrom:
