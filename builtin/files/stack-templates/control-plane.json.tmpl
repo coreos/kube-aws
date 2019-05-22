@@ -304,29 +304,6 @@
                   "Resource": [ "*" ]
                 },
                 {{end}}
-                {{if .ClusterAutoscalerSupportEnabled }}
-                {
-                  "Action": [
-                    "autoscaling:DescribeAutoScalingGroups",
-                    "autoscaling:DescribeAutoScalingInstances",
-                    "autoscaling:DescribeTags",
-                    "autoscaling:DescribeLaunchConfigurations"
-                  ],
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {
-                  "Action": [
-                    "autoscaling:SetDesiredCapacity",
-                    "autoscaling:TerminateInstanceInAutoScalingGroup"
-                  ],
-                  "Condition": {
-                    "Null": { "autoscaling:ResourceTag/kubernetes.io/cluster/{{.ClusterName}}": "false" }
-                  },
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {{end}}
                 {{if or .Experimental.Kube2IamSupport.Enabled .Experimental.KIAMSupport.Enabled }}
                 {
                   "Action": "sts:AssumeRole",

@@ -363,11 +363,6 @@ This implies that you rely on AWS AutoScaling for selecting which subnet hence w
 
 Please read [the AWS documentation for more details about AWS Auto Scaling](http://docs.aws.amazon.com/autoscaling/latest/userguide/WhatIsAutoScaling.html).
 
-#### For production cluster requiring cluster-autoscaler
-
-You must utilize [an experimental feature called Node Pool][node-pool] to achieve this deployment.
-Please read [the documentation for experimental features](aws-experimental-features) for more instructions.
-
 ### Certificates and Keys
 
 `kube-aws render` begins by initializing the TLS infrastructure needed to securely operate Kubernetes. If you have your own key/certificate management system, you can overwrite the generated TLS assets after `kube-aws render`. More information on [Kubernetes certificate generation.][k8s-openssl]

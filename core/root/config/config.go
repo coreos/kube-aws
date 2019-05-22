@@ -100,7 +100,6 @@ func ConfigFromBytes(data []byte, plugins []*api.Plugin) (*Config, error) {
 		if err := failFastWhenUnknownKeysFound([]unknownKeyValidation{
 			{np, fmt.Sprintf("worker.nodePools[%d]", i)},
 			{np.AutoScalingGroup, fmt.Sprintf("worker.nodePools[%d].autoScalingGroup", i)},
-			{np.Autoscaling.ClusterAutoscaler, fmt.Sprintf("worker.nodePools[%d].autoscaling.clusterAutoscaler", i)},
 			{np.SpotFleet, fmt.Sprintf("worker.nodePools[%d].spotFleet", i)},
 		}); err != nil {
 			return nil, err
@@ -119,12 +118,10 @@ func ConfigFromBytes(data []byte, plugins []*api.Plugin) (*Config, error) {
 		{c.Etcd.DataVolume, "etcd.dataVolume"},
 		{c.Controller, "controller"},
 		{c.Controller.AutoScalingGroup, "controller.autoScalingGroup"},
-		{c.Controller.Autoscaling.ClusterAutoscaler, "controller.autoscaling.clusterAutoscaler"},
 		{c.Controller.RootVolume, "controller.rootVolume"},
 		{c.Experimental, "experimental"},
 		{c.Addons, "addons"},
 		{c.Addons.Rescheduler, "addons.rescheduler"},
-		{c.Addons.ClusterAutoscaler, "addons.clusterAutoscaler"},
 		{c.Addons.MetricsServer, "addons.metricsServer"},
 	}
 

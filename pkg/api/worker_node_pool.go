@@ -3,8 +3,6 @@ package api
 import (
 	"fmt"
 
-	"errors"
-
 	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/naming"
 )
@@ -20,7 +18,6 @@ type WorkerNodePool struct {
 	NodePoolName string        `yaml:"name,omitempty"`
 
 	APIEndpointName           string           `yaml:"apiEndpointName,omitempty"`
-	Autoscaling               Autoscaling      `yaml:"autoscaling,omitempty"`
 	AutoScalingGroup          AutoScalingGroup `yaml:"autoScalingGroup,omitempty"`
 	SpotFleet                 SpotFleet        `yaml:"spotFleet,omitempty"`
 	EC2Instance               `yaml:",inline"`
@@ -48,15 +45,6 @@ func (c *WorkerNodePool) UnmarshalYAML(unmarshal func(interface{}) error) error 
 	*c = WorkerNodePool(work)
 
 	return nil
-}
-
-type ClusterAutoscaler struct {
-	Enabled     bool `yaml:"enabled,omitempty"`
-	UnknownKeys `yaml:",inline"`
-}
-
-func (a ClusterAutoscaler) AutoDiscoveryTagKey() string {
-	return "k8s.io/cluster-autoscaler/enabled"
 }
 
 func NewDefaultNodePoolConfig() WorkerNodePool {
@@ -195,11 +183,6 @@ func (c WorkerNodePool) validate(experimentalGpuSupportEnabled bool) error {
 
 	if err := c.Experimental.Validate(c.NodePoolName); err != nil {
 		return err
-	}
-
-	if len(c.Subnets) > 1 && c.Autoscaling.ClusterAutoscaler.Enabled {
-		return errors.New("cluster-autoscaler can't be enabled for a node pool with 2 or more subnets because allowing so" +
-			"results in unreliability while scaling nodes out. ")
 	}
 
 	return nil

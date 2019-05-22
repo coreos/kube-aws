@@ -936,10 +936,6 @@ write_files:
       TAGS="${TAGS}Key=\"kube-aws:node-pool:name\",Value=\"{{.NodePoolName}}\" "
       TAGS="${TAGS}Key=\"Name\",Value=\"{{.ClusterName}}-{{.StackName}}-kube-aws-worker\" "
 
-      {{if .Autoscaling.ClusterAutoscaler.Enabled -}}
-      TAGS="${TAGS}Key=\"{{.Autoscaling.ClusterAutoscaler.AutoDiscoveryTagKey}}\",Value=\"\" "
-      {{end -}}
-
       {{range $k, $v := .StackTags -}}
       TAGS="${TAGS}Key=\"{{$k}}\",Value=\"{{$v}}\" "
       {{end -}}

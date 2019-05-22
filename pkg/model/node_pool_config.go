@@ -62,11 +62,7 @@ func (c NodePoolConfig) AWSIAMAuthenticatorClusterIDRef() string {
 }
 
 func (c NodePoolConfig) NodeLabels() api.NodeLabels {
-	labels := c.NodeSettings.NodeLabels
-	if c.ClusterAutoscalerSupport.Enabled {
-		labels["kube-aws.coreos.com/cluster-autoscaler-supported"] = "true"
-	}
-	return labels
+	return c.NodeSettings.NodeLabels
 }
 
 func (c NodePoolConfig) FeatureGates() api.FeatureGates {

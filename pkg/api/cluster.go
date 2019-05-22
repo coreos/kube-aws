@@ -64,10 +64,6 @@ func NewDefaultCluster() *Cluster {
 		AwsNodeLabels: AwsNodeLabels{
 			Enabled: false,
 		},
-		ClusterAutoscalerSupport: ClusterAutoscalerSupport{
-			Enabled: true,
-			Options: map[string]string{},
-		},
 		EphemeralImageStorage: EphemeralImageStorage{
 			Enabled:    false,
 			Disk:       "xvdb",
@@ -210,7 +206,6 @@ func NewDefaultCluster() *Cluster {
 			CloudFormationStreaming:            true,
 			HyperkubeImage:                     Image{Repo: "k8s.gcr.io/hyperkube-amd64", Tag: KUBERNETES_VERSION, RktPullDocker: true},
 			AWSCliImage:                        Image{Repo: "quay.io/coreos/awscli", Tag: "master", RktPullDocker: false},
-			ClusterAutoscalerImage:             Image{Repo: "k8s.gcr.io/cluster-autoscaler", Tag: "v1.13.4", RktPullDocker: false},
 			ClusterProportionalAutoscalerImage: Image{Repo: "k8s.gcr.io/cluster-proportional-autoscaler-amd64", Tag: "1.5.0", RktPullDocker: false},
 			CoreDnsImage:                       Image{Repo: "coredns/coredns", Tag: "1.5.0", RktPullDocker: false},
 			Kube2IAMImage:                      Image{Repo: "jtblin/kube2iam", Tag: "0.9.0", RktPullDocker: false},
@@ -468,7 +463,6 @@ type DeploymentSettings struct {
 	// Images repository
 	HyperkubeImage                     Image      `yaml:"hyperkubeImage,omitempty"`
 	AWSCliImage                        Image      `yaml:"awsCliImage,omitempty"`
-	ClusterAutoscalerImage             Image      `yaml:"clusterAutoscalerImage,omitempty"`
 	ClusterProportionalAutoscalerImage Image      `yaml:"clusterProportionalAutoscalerImage,omitempty"`
 	CoreDnsImage                       Image      `yaml:"coreDnsImage,omitempty"`
 	Kube2IAMImage                      Image      `yaml:"kube2iamImage,omitempty"`
@@ -658,16 +652,8 @@ func (c Cluster) APIAccessAllowedSourceCIDRsForControllerSG() []string {
 	return cidrs
 }
 
-func (c Cluster) ClusterAutoscalerSupportEnabled() bool {
-	return c.Addons.ClusterAutoscaler.Enabled && c.Experimental.ClusterAutoscalerSupport.Enabled
-}
-
 func (c Cluster) NodeLabels() NodeLabels {
-	labels := c.Controller.NodeLabels
-	if c.ClusterAutoscalerSupportEnabled() {
-		labels["kube-aws.coreos.com/cluster-autoscaler-supported"] = "true"
-	}
-	return labels
+	return c.Controller.NodeLabels
 }
 
 func (c Cluster) validate(cpStackName string) error {

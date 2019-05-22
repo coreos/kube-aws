@@ -162,13 +162,6 @@
         },
         {{end}}
         "Tags": [
-          {{if .Autoscaling.ClusterAutoscaler.Enabled}}
-          {
-            "Key": "{{.Autoscaling.ClusterAutoscaler.AutoDiscoveryTagKey}}",
-            "PropagateAtLaunch": "false",
-            "Value": ""
-          },
-          {{end}}
           {{range $k, $v := .InstanceTags -}}
           {
             "Key": "{{$k}}",
@@ -451,28 +444,6 @@
                   "Action": "autoscaling:Describe*",
                   "Effect": "Allow",
                   "Resource": [ "*" ]
-                },
-                {{end}}
-                {{if .ClusterAutoscalerSupport.Enabled}}
-                {
-                  "Action": [
-                    "autoscaling:DescribeAutoScalingGroups",
-                    "autoscaling:DescribeAutoScalingInstances",
-                    "autoscaling:DescribeTags"
-                  ],
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {
-                  "Action": [
-                    "autoscaling:SetDesiredCapacity",
-                    "autoscaling:TerminateInstanceInAutoScalingGroup"
-                  ],
-                  "Condition": {
-                    "Null": { "autoscaling:ResourceTag/kubernetes.io/cluster/{{.ClusterName}}": "false" }
-                  },
-                  "Effect": "Allow",
-                  "Resource": "*"
                 },
                 {{end}}
                 {{if .SpotFleet.Enabled}}

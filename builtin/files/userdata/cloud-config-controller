@@ -851,7 +851,7 @@ write_files:
       DELETE_MANIFEST_LIST=()
       DELETE_REFERENCE_LIST=()
       
-      vols="-v /srv/kubernetes:/srv/kubernetes:ro -v /etc/kubernetes:/etc/kubernetes:ro"
+      vols="-v /srv/kubernetes:/srv/kubernetes:ro -v /etc/kubernetes:/etc/kubernetes:ro -v /srv/kube-aws:/srv/kube-aws:ro"
       mfdir=/srv/kubernetes/manifests
       rbac=/srv/kubernetes/rbac
       kubectl() {
@@ -1050,13 +1050,8 @@ write_files:
         "${rbac}/cluster-role-bindings/metrics-server.yaml" \
         "${rbac}/role-bindings/metrics-server.yaml" \
         "${mfdir}/metrics-server-apisvc.yaml"
-      {{- end }}
-      
-      {{ if .Addons.ClusterAutoscaler.Enabled -}}
-      # AUTOSCALER
-      deploy "${mfdir}/cluster-autoscaler-de.yaml"
 
-      {{ end -}}
+      {{- end }}
       {{ if .Addons.Rescheduler.Enabled -}}
       # RESCHEDULER
       deploy "${mfdir}/kube-rescheduler-de.yaml"
@@ -4371,74 +4366,6 @@ write_files:
           - port: 443
             protocol: TCP
             targetPort: 443
-
-  {{if .Addons.ClusterAutoscaler.Enabled}}
-  - path: /srv/kubernetes/manifests/cluster-autoscaler-de.yaml
-    content: |
-        apiVersion: extensions/v1beta1
-        kind: Deployment
-        metadata:
-          name: cluster-autoscaler
-          namespace: kube-system
-          labels:
-            app: cluster-autoscaler
-        spec:
-          replicas: 1
-          selector:
-            matchLabels:
-              app: cluster-autoscaler
-          template:
-            metadata:
-              labels:
-                app: cluster-autoscaler
-              annotations:
-                scheduler.alpha.kubernetes.io/critical-pod: ''
-            spec:
-              priorityClassName: system-cluster-critical
-              affinity:
-                nodeAffinity:
-                  requiredDuringSchedulingIgnoredDuringExecution:
-                    nodeSelectorTerms:
-                    - matchExpressions:
-                      - key: "kube-aws.coreos.com/cluster-autoscaler-supported"
-                        operator: "In"
-                        values:
-                        - "true"
-              tolerations:
-              - key: "node.alpha.kubernetes.io/role"
-                operator: "Equal"
-                value: "master"
-                effect: "NoSchedule"
-              - key: "CriticalAddonsOnly"
-                operator: "Exists"
-              containers:
-                - image: {{ .ClusterAutoscalerImage.RepoWithTag }}
-                  name: cluster-autoscaler
-                  resources:
-                    limits:
-                      cpu: {{ if .Addons.ClusterAutoscaler.ComputeResources.Limits.Cpu }}{{ .Addons.ClusterAutoscaler.ComputeResources.Limits.Cpu }}{{ else }}100m{{ end }}
-                      memory: {{ if .Addons.ClusterAutoscaler.ComputeResources.Limits.Memory }}{{ .Addons.ClusterAutoscaler.ComputeResources.Limits.Memory }}{{ else }}300Mi{{ end }}
-                    requests:
-                      cpu: {{ if .Addons.ClusterAutoscaler.ComputeResources.Requests.Cpu }}{{ .Addons.ClusterAutoscaler.ComputeResources.Requests.Cpu }}{{ else }}100m{{ end }}
-                      memory: {{ if .Addons.ClusterAutoscaler.ComputeResources.Requests.Memory }}{{ .Addons.ClusterAutoscaler.ComputeResources.Requests.Memory }}{{ else }}300Mi{{ end }}
-                  command:
-                    - ./cluster-autoscaler
-                    - --v=4
-                    - --stderrthreshold=info
-                    - --cloud-provider=aws
-                    - --skip-nodes-with-local-storage=false
-                    - --skip-nodes-with-system-pods=false
-                    - --expander=least-waste
-                    - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,kubernetes.io/cluster/{{.ClusterName}}
-                    {{- range $flag, $value := .Addons.ClusterAutoscaler.Options }}
-                    - --{{ $flag }}={{ $value }}
-                    {{- end }}
-                  env:
-                    - name: AWS_REGION
-                      value: {{.Region}}
-                  imagePullPolicy: "Always"
-              dnsPolicy: Default
-  {{end}}
 
 {{ if .KubernetesDashboard.Enabled }}
   - path: /srv/kubernetes/manifests/kubernetes-dashboard-se.yaml

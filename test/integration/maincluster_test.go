@@ -106,10 +106,6 @@ func TestMainClusterConfig(t *testing.T) {
 			AwsNodeLabels: api.AwsNodeLabels{
 				Enabled: false,
 			},
-			ClusterAutoscalerSupport: api.ClusterAutoscalerSupport{
-				Enabled: true,
-				Options: map[string]string{},
-			},
 			EphemeralImageStorage: api.EphemeralImageStorage{
 				Enabled:    false,
 				Disk:       "xvdb",
@@ -157,10 +153,6 @@ func TestMainClusterConfig(t *testing.T) {
 
 		if c.WaitSignal.MaxBatchSize() != 1 {
 			t.Errorf("waitSignal.maxBatchSize should be 1 but was %d: %v", c.WaitSignal.MaxBatchSize(), c.WaitSignal)
-		}
-
-		if len(c.NodePools) > 0 && c.NodePools[0].ClusterAutoscalerSupport.Enabled {
-			t.Errorf("ClusterAutoscalerSupport must be disabled by default on node pools")
 		}
 	}
 
@@ -439,11 +431,6 @@ availabilityZone: us-west-1c
 addons:
   rescheduler:
     enabled: true
-  clusterAutoscaler:
-    enabled: true
-    options:
-      v: 5
-      test: present
   metricsServer:
     enabled: true
 worker:
@@ -458,10 +445,6 @@ worker:
 						Rescheduler: api.Rescheduler{
 							Enabled: true,
 						},
-						ClusterAutoscaler: api.ClusterAutoscalerSupport{
-							Enabled: true,
-							Options: map[string]string{"v": "5", "test": "present"},
-						},
 						MetricsServer: api.MetricsServer{
 							Enabled: true,
 						},
@@ -474,36 +457,6 @@ worker:
 
 					if !reflect.DeepEqual(expected, actual) {
 						t.Errorf("addons didn't match : expected=%+v actual=%+v", expected, actual)
-					}
-				},
-			},
-			assertCluster: []ClusterTester{
-				hasDefaultCluster,
-			},
-		},
-		{
-			context: "WithAutoscalingByClusterAutoscaler",
-			configYaml: minimalValidConfigYaml + `
-addons:
-  clusterAutoscaler:
-    enabled: true
-worker:
-  nodePools:
-  - name: pool1
-    autoscaling:
-      clusterAutoscaler:
-        enabled: true
-`,
-			assertConfig: []ConfigTester{
-				hasDefaultEtcdSettings,
-				asgBasedNodePoolHasWaitSignalEnabled,
-				func(c *config.Config, t *testing.T) {
-					p := c.NodePools[0]
-
-					expected := true
-					actual := p.Autoscaling.ClusterAutoscaler.Enabled
-					if !reflect.DeepEqual(expected, actual) {
-						t.Errorf("autoscaling.clusterAutoscaler.enabled didn't match : expected=%v actual=%v", expected, actual)
 					}
 				},
 			},
@@ -1371,10 +1324,6 @@ worker:
 						AwsNodeLabels: api.AwsNodeLabels{
 							Enabled: true,
 						},
-						ClusterAutoscalerSupport: api.ClusterAutoscalerSupport{
-							Enabled: true,
-							Options: map[string]string{},
-						},
 						EphemeralImageStorage: api.EphemeralImageStorage{
 							Enabled:    true,
 							Disk:       "xvdb",
@@ -1435,9 +1384,6 @@ worker:
 		{
 			context: "WithExperimentalFeaturesForWorkerNodePool",
 			configYaml: minimalValidConfigYaml + `
-addons:
-  clusterAutoscaler:
-    enabled: true
 worker:
   nodePools:
   - name: pool1
@@ -1450,8 +1396,6 @@ worker:
       environment:
         CFNSTACK: '{ "Ref" : "AWS::StackId" }'
     awsNodeLabels:
-      enabled: true
-    clusterAutoscalerSupport:
       enabled: true
     ephemeralImageStorage:
       enabled: true
@@ -1494,10 +1438,6 @@ worker:
 						AwsNodeLabels: api.AwsNodeLabels{
 							Enabled: true,
 						},
-						ClusterAutoscalerSupport: api.ClusterAutoscalerSupport{
-							Enabled: true,
-							Options: map[string]string{},
-						},
 						EphemeralImageStorage: api.EphemeralImageStorage{
 							Enabled:    true,
 							Disk:       "xvdb",
@@ -1527,8 +1467,7 @@ worker:
 					}
 
 					expectedNodeLabels := api.NodeLabels{
-						"kube-aws.coreos.com/cluster-autoscaler-supported": "true",
-						"kube-aws.coreos.com/role":                         "worker",
+						"kube-aws.coreos.com/role": "worker",
 					}
 					actualNodeLabels := c.NodePools[0].NodeLabels()
 					if !reflect.DeepEqual(expectedNodeLabels, actualNodeLabels) {
@@ -3682,47 +3621,6 @@ apiEndpoints:
 			expectedErrorMessage: `invalid cluster: invalid apiEndpoint "default" at index 0: invalid loadBalancer: either apiAccessAllowedSourceCIDRs or securityGroupIds must be present. Try not to explicitly empty apiAccessAllowedSourceCIDRs or set one or more securityGroupIDs`,
 		},
 		{
-			context: "WithAutoscalingEnabledButClusterAutoscalerIsDefault",
-			configYaml: minimalValidConfigYaml + `
-worker:
-  nodePools:
-  - name: pool1
-    autoscaling:
-      clusterAutoscaler:
-        enabled: true
-`,
-			expectedErrorMessage: "Autoscaling with cluster-autoscaler can't be enabled for node pools because " +
-				"you didn't enabled the cluster-autoscaler addon. Enable it by turning on `addons.clusterAutoscaler.enabled`",
-		},
-		{
-			context: "WithAutoscalingEnabledButClusterAutoscalerIsNot",
-			configYaml: minimalValidConfigYaml + `
-addons:
-  clusterAutoscaler:
-    enabled: false
-worker:
-  nodePools:
-  - name: pool1
-    autoscaling:
-      clusterAutoscaler:
-        enabled: true
-`,
-			expectedErrorMessage: "Autoscaling with cluster-autoscaler can't be enabled for node pools because " +
-				"you didn't enabled the cluster-autoscaler addon. Enable it by turning on `addons.clusterAutoscaler.enabled`",
-		},
-		{
-			context: "WithClusterAutoscalerEnabledForControlPlane",
-			configYaml: minimalValidConfigYaml + `
-controller:
-  autoscaling:
-    clusterAutoscaler:
-      enabled: true
-`,
-			expectedErrorMessage: "cluster-autoscaler can't be enabled for a control plane because " +
-				"allowing so for a group of controller nodes spreading over 2 or more availability zones " +
-				"results in unreliability while scaling nodes out.",
-		},
-		{
 			// See https://github.com/kubernetes-incubator/kube-aws/issues/365
 			context:              "WithClusterNameContainsDots",
 			configYaml:           kubeAwsSettings.withClusterName("my.cluster").minimumValidClusterYaml(),
@@ -4407,18 +4305,6 @@ worker:
 			expectedErrorMessage: "unknown keys found in worker.nodePools[0].spotFleet: bar",
 		},
 		{
-			context: "WithUnknownKeyInWorkerNodePoolCA",
-			configYaml: minimalValidConfigYaml + `
-worker:
-  nodePools:
-  - name: pool1
-    autoscaling:
-      clusterAutoscaler:
-        baz: 1
-`,
-			expectedErrorMessage: "unknown keys found in worker.nodePools[0].autoscaling.clusterAutoscaler: baz",
-		},
-		{
 			context: "WithUnknownKeyInAddons",
 			configYaml: minimalValidConfigYaml + `
 addons:
@@ -4434,15 +4320,6 @@ addons:
     foo: yeah
 `,
 			expectedErrorMessage: "unknown keys found in addons.rescheduler: foo",
-		},
-		{
-			context: "WithUnknownKeyInClusterAutoscalerAddon",
-			configYaml: minimalValidConfigYaml + `
-addons:
-  clusterAutoscaler:
-    foo: yeah
-`,
-			expectedErrorMessage: "unknown keys found in addons.clusterAutoscaler: foo",
 		},
 		{
 			context: "WithTooLongControllerIAMRoleName",

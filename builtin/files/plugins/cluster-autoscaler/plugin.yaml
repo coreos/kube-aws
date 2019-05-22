@@ -1,11 +1,21 @@
 metadata:
   name: cluster-autoscaler
-  version: 0.1.0
+  version: 0.1.1
 spec:
   cluster:
-    values: {}
+    values:
+      image: k8s.gcr.io/cluster-autoscaler:v1.13.4
+      resources:
+        limits:
+          cpu: 100m
+          memory: 300Mi
+        requests:
+          cpu: 100m
+          memory: 300Mi
     kubernetes:
       manifests:
+      - source:
+          path: manifests/rbac.yaml
       - source:
           path: manifests/deployment.yaml
       - source:
@@ -35,7 +45,8 @@ spec:
                           "autoscaling:DescribeAutoScalingGroups",
                           "autoscaling:DescribeAutoScalingInstances",
                           "autoscaling:DescribeTags",
-                          "autoscaling:DescribeLaunchConfigurations"
+                          "autoscaling:DescribeLaunchConfigurations",
+                          "ec2:DescribeLaunchTemplateVersions"
                         ],
                         "Effect": "Allow",
                         "Resource": "*"
@@ -57,50 +68,13 @@ spec:
                 }
               }
         nodePool:
-          resources:
-            content: |
-              {
-                "IAMManagedPolicyAutoscaler" : {
-                  "Type" : "AWS::IAM::ManagedPolicy",
-                  "Properties" : {
-                    "Description" : "Policy for managing kube-aws k8s Node Pool",
-                    "Path" : "/",
-                    "Roles":[ { "Ref" : "IAMRoleWorker" } ],
-                    "PolicyDocument" :   {
-                      "Version":"2012-10-17",
-                      "Statement": [
-                      {
-                        "Action": [
-                          "autoscaling:DescribeAutoScalingGroups",
-                          "autoscaling:DescribeAutoScalingInstances",
-                          "autoscaling:DescribeTags"
-                        ],
-                        "Effect": "Allow",
-                        "Resource": "*"
-                      },
-                      {
-                        "Action": [
-                          "autoscaling:SetDesiredCapacity",
-                          "autoscaling:TerminateInstanceInAutoScalingGroup"
-                        ],
-                        "Condition": {
-                          "Null": { "autoscaling:ResourceTag/kubernetes.io/cluster/{{ .Config.ClusterName }}": "false" }
-                        },
-                        "Effect": "Allow",
-                        "Resource": "*"
-                      }
-                      ]
-                    }
-                  }
-                }
-              }
           tags:
             content: |
               {
                 "Tags": [
                   {
                     "Key": "k8s.io/cluster-autoscaler/enabled",
-                    "PropagateAtLaunch": "false",
+                    "PropagateAtLaunch": "true",
                     "Value": ""
                   }
                 ]

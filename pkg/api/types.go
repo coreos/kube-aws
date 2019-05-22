@@ -19,25 +19,22 @@ type Kubelet struct {
 }
 
 type Experimental struct {
-	Admission      Admission      `yaml:"admission"`
-	AuditLog       AuditLog       `yaml:"auditLog"`
-	Authentication Authentication `yaml:"authentication"`
-	AwsEnvironment AwsEnvironment `yaml:"awsEnvironment"`
-	AwsNodeLabels  AwsNodeLabels  `yaml:"awsNodeLabels"`
-	// When cluster-autoscaler support is enabled, not only controller nodes but this node pool is also given
-	// a node label and IAM permissions to run cluster-autoscaler
-	ClusterAutoscalerSupport    ClusterAutoscalerSupport `yaml:"clusterAutoscalerSupport"`
-	EphemeralImageStorage       EphemeralImageStorage    `yaml:"ephemeralImageStorage"`
-	KIAMSupport                 KIAMSupport              `yaml:"kiamSupport,omitempty"`
-	Kube2IamSupport             Kube2IamSupport          `yaml:"kube2IamSupport,omitempty"`
-	GpuSupport                  GpuSupport               `yaml:"gpuSupport,omitempty"`
-	KubeletOpts                 string                   `yaml:"kubeletOpts,omitempty"`
-	LoadBalancer                LoadBalancer             `yaml:"loadBalancer"`
-	TargetGroup                 TargetGroup              `yaml:"targetGroup"`
-	NodeDrainer                 NodeDrainer              `yaml:"nodeDrainer"`
-	Oidc                        Oidc                     `yaml:"oidc"`
-	DisableSecurityGroupIngress bool                     `yaml:"disableSecurityGroupIngress"`
-	NodeMonitorGracePeriod      string                   `yaml:"nodeMonitorGracePeriod"`
+	Admission                   Admission             `yaml:"admission"`
+	AuditLog                    AuditLog              `yaml:"auditLog"`
+	Authentication              Authentication        `yaml:"authentication"`
+	AwsEnvironment              AwsEnvironment        `yaml:"awsEnvironment"`
+	AwsNodeLabels               AwsNodeLabels         `yaml:"awsNodeLabels"`
+	EphemeralImageStorage       EphemeralImageStorage `yaml:"ephemeralImageStorage"`
+	KIAMSupport                 KIAMSupport           `yaml:"kiamSupport,omitempty"`
+	Kube2IamSupport             Kube2IamSupport       `yaml:"kube2IamSupport,omitempty"`
+	GpuSupport                  GpuSupport            `yaml:"gpuSupport,omitempty"`
+	KubeletOpts                 string                `yaml:"kubeletOpts,omitempty"`
+	LoadBalancer                LoadBalancer          `yaml:"loadBalancer"`
+	TargetGroup                 TargetGroup           `yaml:"targetGroup"`
+	NodeDrainer                 NodeDrainer           `yaml:"nodeDrainer"`
+	Oidc                        Oidc                  `yaml:"oidc"`
+	DisableSecurityGroupIngress bool                  `yaml:"disableSecurityGroupIngress"`
+	NodeMonitorGracePeriod      string                `yaml:"nodeMonitorGracePeriod"`
 	UnknownKeys                 `yaml:",inline"`
 }
 
