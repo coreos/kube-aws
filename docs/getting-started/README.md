@@ -24,7 +24,6 @@ Each of the steps will cover:
 * [Step 5: Add Node Pool][getting-started-step-5]
   * Create the additional pool of worker nodes
   * Adjust template configuration for each pool of worker nodes
-  * Required to support [cluster-autoscaler](https://github.com/kubernetes/contrib/tree/master/cluster-autoscaler)
 * [Step 6: Configure add-ons][getting-started-step-6]
   * Configure various Kubernetes add-ons
 * [Step 7: Destroy][getting-started-step-7]

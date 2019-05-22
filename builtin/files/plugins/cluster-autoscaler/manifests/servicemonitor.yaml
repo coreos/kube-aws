@@ -5,6 +5,7 @@ metadata:
   name: cluster-autoscaler
   namespace: {{ .Values.prometheusMetrics.namespace }}
   labels:
+    app: cluster-autoscaler
     {{- range $key, $value := .Values.prometheusMetrics.selector }}
       {{ $key }}: {{ $value | quote }}
     {{- end }}

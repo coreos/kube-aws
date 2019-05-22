@@ -124,6 +124,7 @@ func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *
 
 	err := e.foreachEnabledPlugins(func(p *api.Plugin, pc *api.PluginConfig) error {
 		values := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
+		logger.Debugf("PLUGINS: Extending stack %s with values: %+v", name, values)
 
 		render := plugincontents.NewTemplateRenderer(p, values, config)
 
@@ -157,6 +158,11 @@ func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *
 	if err != nil {
 		return nil, err
 	}
+
+	logger.Debugf("PLUGINS: StackExt Additions for stack %s", name)
+	logger.Debugf("Resources: %+v", resources)
+	logger.Debugf("Outputs: %+v", outputs)
+	logger.Debugf("Tags: %+v", tags)
 
 	return &stack{
 		Resources: resources,

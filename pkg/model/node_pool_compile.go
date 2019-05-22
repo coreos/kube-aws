@@ -26,14 +26,7 @@ func nodePoolPreprocess(c api.WorkerNodePool, main *Config) (*api.WorkerNodePool
 	c.Kubelet.SystemReservedResources = main.DeploymentSettings.Kubelet.SystemReservedResources
 	c.Kubelet.KubeReservedResources = main.DeploymentSettings.Kubelet.KubeReservedResources
 
-	if c.Experimental.ClusterAutoscalerSupport.Enabled {
-		if !main.Addons.ClusterAutoscaler.Enabled {
-			return nil, errors.New("clusterAutoscalerSupport can't be enabled on node pools when cluster-autoscaler is not going to be deployed to the cluster")
-		}
-	}
-
 	// Default to public subnets defined in the main cluster
-	// CAUTION: cluster-autoscaler Won't work if there're 2 or more subnets spanning over different AZs
 	if len(c.Subnets) == 0 {
 		var defaults []api.Subnet
 		if c.Private {
@@ -96,6 +89,7 @@ func NodePoolCompile(spec api.WorkerNodePool, main *Config) (*NodePoolConfig, er
 
 	c.EtcdNodes = main.EtcdNodes
 	c.KubeResourcesAutosave = main.KubeResourcesAutosave
+	c.Plugins = main.PluginConfigs
 
 	var apiEndpoint APIEndpoint
 	if c.APIEndpointName != "" {
@@ -118,11 +112,6 @@ kube-aws can't save users from mistakes like that
 `, c.NodePoolName, apiEndpoint.DNSName)
 	}
 	c.APIEndpoint = apiEndpoint
-
-	if spec.Autoscaling.ClusterAutoscaler.Enabled && !main.Addons.ClusterAutoscaler.Enabled {
-		return nil, errors.New("Autoscaling with cluster-autoscaler can't be enabled for node pools because " +
-			"you didn't enabled the cluster-autoscaler addon. Enable it by turning on `addons.clusterAutoscaler.enabled`")
-	}
 
 	if err := c.Validate(); err != nil {
 		return nil, errors.Wrapf(err, "invalid node pool spec")

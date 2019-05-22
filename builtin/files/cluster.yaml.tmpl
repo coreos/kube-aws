@@ -551,16 +551,6 @@ worker:
 #
 #      #
 #      # Optional settings for both ASG-based and SpotFleet-based node pools
-#      #
-#
-#      # Autoscaling by adding/removing nodes according to resource usage
-#      autoscaling:
-#        # Make this node pool an autoscaling-target of k8s cluster-autoscaler
-#        #
-#        # Beware that making this an autoscaing-target doesn't automatically deploy cluster-autoscaler itself -
-#        # turn on `addons.clusterAutoscaler.enabled` to deploy it on controller nodes.
-#        clusterAutoscaler:
-#          enabled: true
 #
 #      # Used to provide `/etc/environment` env vars with values from arbitrary CloudFormation refs
 #      awsEnvironment:
@@ -571,10 +561,6 @@ worker:
 #      # Add predefined set of labels to the nodes
 #      # The set includes names of launch configurations and autoscaling groups
 #      awsNodeLabels:
-#        enabled: true
-#
-#      # Provision worker nodes with IAM permissions and node labels to run cluster-autoscaler (assuming `addons.clusterAutoscaler.enabled` is true)
-#      clusterAutoscalerSupport:
 #        enabled: true
 #
 #      # Mount an EFS only to a specific node pool.
@@ -1093,12 +1079,6 @@ worker:
 #   tag: master
 #   rktPullDocker: false
 
-# Cluster Autoscaler image repository to use.
-#clusterAutoscalerImage:
-#  repo: k8s.gcr.io/cluster-autoscaler
-#  tag: v1.1.0
-#  rktPullDocker: false
-
 # Cluster Proportional Autoscaler image repository to use.
 #clusterProportionalAutoscalerImage:
 #  repo: k8s.gcr.io/cluster-proportional-autoscaler-amd64
@@ -1377,27 +1357,6 @@ kubeProxy:
 
 # Addon features
 addons:
-  # Will create a cluster-autoscaler (CA) deployment in the cluster.
-  # CA runs only on controller nodes by default, to turn this off set `experimental.clusterAutoscalerSupport.enabled` to false.
-  # If you want to run CA on worker nodes, turn on `worker.nodePools[].clusterAutoscalerSupport.enabled` for the node pool.
-  clusterAutoscaler:
-    enabled: false
-    resources:
-      # Increase these values substantially if running a cluster of 50+ nodes
-      limits:
-        cpu: 100m
-        memory: 300Mi
-      requests:
-        cpu: 100m
-        memory: 300Mi
-    # Options below can be used to inject custom settings for the autoscaler.
-    # Sensible defaults are already configured in the controller-cloud-config but if you wish to override them simply
-    # add them here and they'll take precedence.
-    #options:
-    #  flag-name: value
-    #  v: 5
-    #  expander: least-waste
-
   # When enabled, Kubernetes rescheduler is deployed to the cluster controller(s)
   # This feature is experimental currently so may not be production ready
   rescheduler:
@@ -1452,10 +1411,6 @@ experimental:
   # The set includes names of launch configurations and autoscaling groups
   awsNodeLabels:
     enabled: false
-
-  # Provision controller nodes with IAM permissions and node labels to run cluster-autoscaler (assuming `addons.clusterAutoscaler.enabled` is true)
-  clusterAutoscalerSupport:
-    enabled: true
 
   # This option has not yet been tested with rkt as container runtime
   ephemeralImageStorage:
@@ -1586,7 +1541,6 @@ hostOS:
 #    kubernetes-colour: light-blue
 #    kube-aws-colour: light-blue
 
-
 kubeAwsPlugins:
   # See plugins/aws-iam-authenticator/plugin.yaml for more info
   awsIamAuthenticator:
@@ -1597,7 +1551,7 @@ kubeAwsPlugins:
     replicas: 2
     region: "us-west-2"
     # autoscaler image
-    image: "k8s.gcr.io/cluster-autoscaler:v1.13.1"
+    # image: "k8s.gcr.io/cluster-autoscaler:v1.13.4"
     # autoscaler resources
     resources:
       limits:
@@ -1606,6 +1560,13 @@ kubeAwsPlugins:
       requests:
         cpu: 100m
         memory: 300Mi
+    # Options below can be used to inject custom settings for the autoscaler.
+    # Sensible defaults are already configured in the controller-cloud-config but if you wish to override them simply
+    # add them here and they'll take precedence.
+    #options:
+    #  flag-name: value
+    #  v: 5
+    #  expander: least-waste
     # configuration if you want autoscaler metrics picked up by prometheus
     prometheusMetrics:
       enabled: false

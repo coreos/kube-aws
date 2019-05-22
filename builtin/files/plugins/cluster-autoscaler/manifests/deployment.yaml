@@ -13,6 +13,7 @@ spec:
       labels:
         app: cluster-autoscaler
     spec:
+      priorityClassName: system-cluster-critical
       containers:
         - name: cluster-autoscaler
           image: {{ .Values.image }}
@@ -25,6 +26,14 @@ spec:
             - --logtostderr=true
             - --stderrthreshold=info
             - --v=4
+            - --skip-nodes-with-local-storage=false
+            - --skip-nodes-with-system-pods=false
+            - --expander=least-waste
+            {{- if index .Values "options" }}
+              {{- range $flag, $value := .Values.options }}
+              - --{{ $flag }}={{ $value }}
+              {{- end }}
+            {{- end }}
           env:
             - name: AWS_REGION
               value: {{ .Values.region }}
@@ -45,7 +54,7 @@ spec:
             - name: ssl-certs
               mountPath: /etc/ssl/certs/ca-certificates.crt
               readOnly: true
-      serviceAccountName: "default"
+      serviceAccountName: cluster-autoscaler
       tolerations:
         - effect: NoSchedule
           key: node.alpha.kubernetes.io/role
@@ -66,20 +75,10 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: kubernetes.io/role
+              - key: node.kubernetes.io/role
                 operator: In
                 values:
                 - "master"
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                      - "cluster-autoscaler"
-              topologyKey: failure-domain.beta.kubernetes.io/zone
-
       volumes:
         - name: ssl-certs
           hostPath:

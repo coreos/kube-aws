@@ -237,7 +237,7 @@ func NewWorkerStack(conf *Config, npconf *NodePoolConfig, opts api.StackTemplate
 		func(stack *Stack) error {
 			stack.NodePoolConfig = npconf
 
-			extraStack, err := extras.NodePoolStack(conf)
+			extraStack, err := extras.NodePoolStack(stack)
 			if err != nil {
 				return fmt.Errorf("failed to load node pool stack extras from plugins: %v", err)
 			}
