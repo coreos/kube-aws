@@ -1388,6 +1388,21 @@ experimental:
       enabled: false
     OwnerReferencesPermissionEnforcement:
       enabled: false
+    # eventRateLimit Note
+    # We recommend that you leave this admission controller on/enabled by default as it protects your cluster
+    # apiserver from becomming overloaded with events from failing deployments etc.  Tweak the limits to your needs.
+    # The limits field is a 'string' representation of the yaml limits section defined here:-
+    # https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit
+    eventRateLimit:
+      enabled: true
+      limits: |
+        - type: Namespace
+          qps: 250
+          burst: 500
+          cacheSize: 4096
+        - type: User
+          qps: 50
+          burst: 250
 
   # Used to provide `/etc/environment` env vars with values from arbitrary CloudFormation refs
   awsEnvironment:

@@ -85,6 +85,16 @@ func TestMainClusterConfig(t *testing.T) {
 				AlwaysPullImages: api.AlwaysPullImages{
 					Enabled: false,
 				},
+				EventRateLimit: api.EventRateLimit{
+					Enabled: true,
+					Limits: `- type: Namespace
+  qps: 250
+  burst: 500
+  cacheSize: 4096
+- type: User
+  qps: 50
+  burst: 250`,
+				},
 			},
 			AuditLog: api.AuditLog{
 				Enabled:   false,
@@ -1299,6 +1309,16 @@ worker:
 						Admission: api.Admission{
 							AlwaysPullImages: api.AlwaysPullImages{
 								Enabled: true,
+							},
+							EventRateLimit: api.EventRateLimit{
+								Enabled: true,
+								Limits: `- type: Namespace
+  qps: 250
+  burst: 500
+  cacheSize: 4096
+- type: User
+  qps: 50
+  burst: 250`,
 							},
 						},
 						AuditLog: api.AuditLog{

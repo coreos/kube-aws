@@ -43,6 +43,16 @@ func NewDefaultCluster() *Cluster {
 			OwnerReferencesPermissionEnforcement{
 				Enabled: false,
 			},
+			EventRateLimit{
+				Enabled: true,
+				Limits: `- type: Namespace
+  qps: 250
+  burst: 500
+  cacheSize: 4096
+- type: User
+  qps: 50
+  burst: 250`,
+			},
 		},
 		AuditLog: AuditLog{
 			Enabled:   false,
