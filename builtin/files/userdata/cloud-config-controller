@@ -3348,8 +3348,10 @@ write_files:
           {{- else }}
           - --apiserver-count={{if .MinControllerCount}}{{ .MinControllerCount }}{{else}}{{ .Controller.Count }}{{end}}
           {{- end }}
-          - --enable-admission-plugins=EventRateLimit,ExtendedResourceToleration,NodeRestriction,PodSecurityPolicy{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}
+          - --enable-admission-plugins=ExtendedResourceToleration,NodeRestriction,PodSecurityPolicy{{if .Experimental.Admission.AlwaysPullImages.Enabled}},AlwaysPullImages{{ end }}{{if .Experimental.Admission.Initializers.Enabled}},Initializers{{end}}{{ if .Experimental.Admission.EventRateLimit.Enabled }},EventRateLimit{{end}}
+          {{ if .Experimental.Admission.EventRateLimit.Enabled -}}
           - --admission-control-config-file=/etc/kubernetes/auth/admission-control-config.yaml
+          {{ end -}}
           - --bind-address=0.0.0.0
           - --etcd-servers=#ETCD_ENDPOINTS#
           - --etcd-cafile=/etc/kubernetes/ssl/etcd-trusted-ca.pem
@@ -3494,6 +3496,7 @@ write_files:
           name: {{quote $v.Name}}
         {{end}}
   
+  {{ if .Experimental.Admission.EventRateLimit.Enabled -}}
   - path: /etc/kubernetes/auth/admission-control-config.yaml
     content: |
       kind: AdmissionConfiguration
@@ -3507,14 +3510,9 @@ write_files:
       kind: Configuration
       apiVersion: eventratelimit.admission.k8s.io/v1alpha1
       limits:
-      - type: Namespace
-        qps: 250
-        burst: 500
-        cacheSize: 4096
-      - type: User
-        qps: 50
-        burst: 250
-  
+{{ .Experimental.Admission.EventRateLimit.Limits | indent 6 }}
+  {{- end }}
+
   - path: /etc/kubernetes/manifests/kube-controller-manager.yaml
     content: |
       apiVersion: v1

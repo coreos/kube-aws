@@ -54,6 +54,7 @@ type Admission struct {
 	AlwaysPullImages                     AlwaysPullImages                     `yaml:"alwaysPullImages"`
 	Initializers                         Initializers                         `yaml:"initializers"`
 	OwnerReferencesPermissionEnforcement OwnerReferencesPermissionEnforcement `yaml:"ownerReferencesPermissionEnforcement"`
+	EventRateLimit                       EventRateLimit                       `yaml:"eventRateLimit"`
 }
 
 type AlwaysPullImages struct {
@@ -70,6 +71,11 @@ type OwnerReferencesPermissionEnforcement struct {
 
 type PersistentVolumeClaimResize struct {
 	Enabled bool `yaml:"enabled"`
+}
+
+type EventRateLimit struct {
+	Enabled bool   `yaml:"enabled"`
+	Limits  string `yaml:"limits"`
 }
 
 type AuditLog struct {
