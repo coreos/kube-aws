@@ -154,6 +154,7 @@ func NewDefaultCluster() *Cluster {
 				Provider:            "coredns",
 				NodeLocalResolver:   false,
 				DeployToControllers: false,
+				TTL:                 30,
 				Autoscaler: KubeDnsAutoscaler{
 					CoresPerReplica: 256,
 					NodesPerReplica: 16,

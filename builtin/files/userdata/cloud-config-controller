@@ -3784,13 +3784,14 @@ write_files:
                     pods insecure
                     upstream
                     fallthrough in-addr.arpa ip6.arpa
+                    ttl {{ .KubeDns.TTL }}
                 }
                 forward . /etc/resolv.conf {
                     except cluster.local
                     health_check 5s
                 }
                 prometheus :9153
-                cache 30
+                cache {{ .KubeDns.TTL }}
                 loop
                 reload
                 loadbalance

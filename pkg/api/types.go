@@ -209,6 +209,7 @@ type KubeDns struct {
 	NodeLocalResolver        bool              `yaml:"nodeLocalResolver"`
 	NodeLocalResolverOptions []string          `yaml:"nodeLocalResolverOptions"`
 	DeployToControllers      bool              `yaml:"deployToControllers"`
+	TTL                      int               `yaml:"ttl"`
 	Autoscaler               KubeDnsAutoscaler `yaml:"autoscaler"`
 }
 
