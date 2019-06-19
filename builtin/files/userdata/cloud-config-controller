@@ -600,7 +600,7 @@ write_files:
       {{- end }}
       {{- if .ControllerFeatureGates.Enabled }}
       featureGates:
-{{.ControllerFeatureGates.Yaml | indent 8}} 
+{{.ControllerFeatureGates.Yaml | indent 8}}
       {{- end }}
 
 {{if and (.AmazonSsmAgent.Enabled) (ne .AmazonSsmAgent.DownloadUrl "")}}
@@ -850,7 +850,7 @@ write_files:
       DEPLOY_MANIFEST_LIST=()
       DELETE_MANIFEST_LIST=()
       DELETE_REFERENCE_LIST=()
-      
+
       vols="-v /srv/kubernetes:/srv/kubernetes:ro -v /etc/kubernetes:/etc/kubernetes:ro -v /srv/kube-aws:/srv/kube-aws:ro"
       mfdir=/srv/kubernetes/manifests
       rbac=/srv/kubernetes/rbac
@@ -860,14 +860,14 @@ write_files:
           # affect the whole controller bootstrap process.
           /usr/bin/docker run -i --rm $vols --net=host {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml --request-timeout=1s "$@"
       }
-      
+
       helm() {
         /usr/bin/docker run --rm --net=host \
           -v /etc/resolv.conf:/etc/resolv.conf \
           -v {{.HelmReleasePlugin.Directory}}:{{.HelmReleasePlugin.Directory}} \
           {{.HelmImage.RepoWithTag}} helm --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml "$@"
       }
-      
+
       # Add manifests to the deployment list
       deploy() {
           until [ -z "$1" ]
@@ -877,7 +877,7 @@ write_files:
               shift
           done
       }
-      
+
       # Delete manifests - add manifests to the delete by manifest list
       remove() {
           until [ -z "$1" ]
@@ -894,21 +894,21 @@ write_files:
       remove_object() {
           local object=$1
           local reference=$2
-          
+
           echo "Adding ${object} ${reference} to the delete by reference list"
           DELETE_REFERENCE_LIST+=("${object}:${reference}")
       }
-      
+
       # Use --force to ensure immutable objects are deleted+added if can not be applied.
       apply_deploys() {
         kubectl apply --force -f $(echo "$@" | tr ' ' ',')
       }
-      
+
       # Manage the deletion of services
       apply_manifest_deletes() {
         kubectl delete --cascade=true --ignore-not-found=true -f $(echo "$@" | tr ' ' ',')
       }
-      
+
       # Deploy a list of helm charts
       apply_helm_deploys() {
         until [ -z "$1" ]
@@ -929,7 +929,7 @@ write_files:
           done <$1
         done
       }
-      
+
       # Delete of the objects listed by reference object:name or object:namespace/name
       apply_object_deletes() {
           until [ -z "$1" ]
@@ -952,7 +952,7 @@ write_files:
               shift
           done
       }
-      
+
       # forceapply - remove and retry if apply fails (does not rely on the kubectl --force method)
       # this is needed for allowing the updating of pod disruption budgets
       forceapply() {
@@ -964,7 +964,7 @@ write_files:
         fi
         set -e
       }
-      
+
       count_objects() {
         if [[ -n "$2" ]]; then
           kubectl get $1 --ignore-not-found=true --no-headers=true $2 | wc -l
@@ -972,27 +972,27 @@ write_files:
           kubectl get $1 --ignore-not-found=true --no-headers=true | wc -l
         fi
       }
-      
+
       while ! kubectl get ns kube-system; do
         echo Waiting until kube-system created.
         sleep 3
       done
-      
+
       # KUBE_SYSTEM NAMESPACE
       deploy "/srv/kubernetes/manifests/kube-system-ns.yaml"
-      
+
       # KUBE_PROXY
       deploy "${mfdir}/kube-proxy-sa.yaml" \
         "${mfdir}/kube-proxy-cm.yaml" \
         "${mfdir}/kube-proxy-ds.yaml"
-      
+
       # TLS BOOTSTRAP
       deploy "${rbac}/cluster-role-bindings"/{nodes-can-create-csrs,automatically-sign-node-certificate-requests,automatically-sign-node-certificate-renewals}".yaml"
-      
+
       # General Cluster roles and bindings
       deploy "${rbac}/cluster-roles/"{node-extensions,node-access}".yaml" \
         "${rbac}/cluster-role-bindings"/{kube-admin,system-worker,node,node-proxier,node-extensions,node-access}".yaml"
-      
+
       # CORE KUBE-AWS PSP
       # Ensure kube-system service accounts can create priviliged pods via PodSecurityPolicy
       # Ensure that nodes can create shadow pods for their manifest services
@@ -1000,7 +1000,7 @@ write_files:
         ${rbac}/cluster-roles/core-psp.yaml \
         ${rbac}/role-bindings/core-psp.yaml \
         ${rbac}/cluster-role-bindings/core-psp-node.yaml
-      
+
       # CLUSTER NETWORKING
       deploy "${rbac}/network-daemonsets.yaml"
       {{- if .Kubernetes.Networking.AmazonVPC.Enabled }}
@@ -1014,7 +1014,7 @@ write_files:
       remove "${mfdir}/canal.yaml"
       deploy "${mfdir}/flannel.yaml"
       {{- end }}
-      
+
       # CLUSTER DNS
       {{ if eq .KubeDns.Provider "coredns" -}}
       remove_object ConfigMap kube-system/kubedns-cm
@@ -1039,7 +1039,7 @@ write_files:
       deploy "${mfdir}/dnsmasq-node-ds.yaml"
       {{ end -}}
       forceapply "${mfdir}/kube-dns-pdb.yaml"
-      
+
       {{ if .Addons.MetricsServer.Enabled -}}
       # METRICS SERVER
       deploy \
@@ -1073,23 +1073,23 @@ write_files:
         "${rbac}/cluster-role-bindings/kubernetes-dashboard-admin.yaml" \
         {{- end }}
         "${mfdir}/kubernetes-dashboard-de.yaml"
-      
+
       {{ end -}}
       # HELM/TILLER
       deploy "${mfdir}/tiller-rbac.yaml" \
         "${mfdir}/tiller.yaml"
-      
+
       {{ if .Experimental.NodeDrainer.Enabled -}}
       # NODE DRAINER
       deploy "${mfdir}/kube-node-drainer-ds.yaml" \
         "${mfdir}/kube-node-drainer-asg-status-updater-de.yaml"
-      
+
       {{ end -}}
       {{if .Experimental.KIAMSupport.Enabled -}}
       # KIAM
       kiam_tls_dir=/etc/kubernetes/ssl/kiam
       vols="${vols} -v $kiam_tls_dir:$kiam_tls_dir"
-      
+
       kubectl create secret generic kiam-server-tls -n kube-system \
         --from-file=$kiam_tls_dir/ca.pem \
         --from-file=$kiam_tls_dir/server.pem \
@@ -1105,20 +1105,20 @@ write_files:
       # KUBE2IAM
       deploy "${mfdir}/kube2iam-rbac.yaml" \
         "${mfdir}/kube2iam-ds.yaml"
-      
+
       {{ end -}}
       {{ if .Experimental.GpuSupport.Enabled -}}
       # NVIDIA GPU SUPPORT
       deploy "${mfdir}/nvidia-driver-installer.yaml"
-      
+
       {{ end -}}
-      
+
       # CUSTOMER SUPPLIED MANIFESTS
       # Allow installing kubernetes manifests via customFiles in the controller config - installs all manifests in mfdir/custom directory.
       if ls ${mfdir}/custom/*.yaml &> /dev/null; then
         deploy ${mfdir}/custom/*.yaml
       fi
-      
+
       {{ if .KubernetesManifestPlugin.ManifestListFile.Path -}}
       # PLUGIN SUPPLIED MANIFESTS
       if [[ -s {{.KubernetesManifestPlugin.ManifestListFile.Path}} ]]; then
@@ -1126,7 +1126,7 @@ write_files:
           deploy $m
         done <{{.KubernetesManifestPlugin.ManifestListFile.Path}}
       fi
-      
+
       {{- end }}
       # REMOVE LEGACY HEAPSTER
       remove_object ClusterRoleBinding heapster
@@ -1135,7 +1135,7 @@ write_files:
       remove_object ServiceAccount kube-system/heapster
       remove_object Deployment kube-system/heapster
       remove_object Service kube-system/heapster
-      
+
       # DEPLOY SELECTED MANIFESTS
       apply_manifest_deletes ${DELETE_MANIFEST_LIST[@]}
       apply_object_deletes ${DELETE_REFERENCE_LIST[@]}
@@ -1146,7 +1146,7 @@ write_files:
       if [[ -s {{.HelmReleasePlugin.ReleaseListFile.Path}} ]]; then
       apply_helm_deploys {{.HelmReleasePlugin.ReleaseListFile.Path}}
       fi
-      
+
       {{- end }}
       # Check for the existence of any PodSecurityPolices after the system and plugins have been deployed.
       # Bind all serviceaccounts and authenitcated users to the kube-aws permissive policy is there are no other policies defined.
@@ -1154,7 +1154,7 @@ write_files:
         echo "Only default kube-aws psp found: Binding all service accounts and authenticated users to this permissive policy"
         apply_deploys ${rbac}/cluster-role-bindings/default-permissive-psp.yaml
       fi
-      
+
       echo "install-kube-system finished successfully :)"
 
   - path: /srv/kubernetes/manifests/core-psp.yaml
@@ -1186,7 +1186,7 @@ write_files:
           rule: 'RunAsAny'
         fsGroup:
           rule: 'RunAsAny'
-    
+
   - path: /srv/kubernetes/rbac/cluster-roles/core-psp.yaml
     content: |
       apiVersion: rbac.authorization.k8s.io/v1
@@ -1214,7 +1214,7 @@ write_files:
       subjects:
       - kind: Group
         name: system:serviceaccounts
-  
+
   - path: /srv/kubernetes/rbac/cluster-role-bindings/core-psp-node.yaml
     content: |
       apiVersion: rbac.authorization.k8s.io/v1
@@ -1232,7 +1232,7 @@ write_files:
       - apiGroup: rbac.authorization.k8s.io
         kind: User
         name: kube-worker
-  
+
   - path: /srv/kubernetes/rbac/cluster-role-bindings/default-permissive-psp.yaml
     content: |
       apiVersion: rbac.authorization.k8s.io/v1
@@ -2600,7 +2600,7 @@ write_files:
            {{- if .AssetsConfig.HasAuthTokens }}
            cat $authDir/tokens.csv.tmp >> $authDir/tokens.csv
            {{- end }}
-          
+
            {{ if .Controller.CustomFiles -}}
            {{ range $i, $f := .Controller.CustomFiles -}}
            {{ if $f.Encrypted -}}
@@ -3336,6 +3336,7 @@ write_files:
           k8s-app: kube-apiserver
       spec:
         priority: 2000001000
+        priorityClassName: system-node-critical
         hostNetwork: true
         containers:
         - name: kube-apiserver
@@ -3495,7 +3496,7 @@ write_files:
             path: {{quote $v.Path}}
           name: {{quote $v.Name}}
         {{end}}
-  
+
   {{ if .Experimental.Admission.EventRateLimit.Enabled -}}
   - path: /etc/kubernetes/auth/admission-control-config.yaml
     content: |
@@ -3524,6 +3525,7 @@ write_files:
           k8s-app: kube-controller-manager
       spec:
         priority: 2000001000
+        priorityClassName: system-node-critical
         containers:
         - name: kube-controller-manager
           image: {{.HyperkubeImage.RepoWithTag}}
@@ -3621,6 +3623,7 @@ write_files:
           k8s-app: kube-scheduler
       spec:
         priority: 2000001000
+        priorityClassName: system-node-critical
         hostNetwork: true
         containers:
         - name: kube-scheduler
@@ -4659,7 +4662,7 @@ write_files:
             user: tls-bootstrap
           name: tls-bootstrap-context
         current-context: tls-bootstrap-context
-  
+
   - path: /etc/kubernetes/kubeconfig/kubelet.yaml
     content: |
         apiVersion: v1
