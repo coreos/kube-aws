@@ -4246,7 +4246,7 @@ write_files:
           annotations:
             prometheus.io/port: "9153"
             prometheus.io/scrape: "true"
-          {{- else }}         
+          {{- end }}         
           labels:
             k8s-app: kube-dns
             kubernetes.io/cluster-service: "true"
