@@ -4242,6 +4242,11 @@ write_files:
         metadata:
           name: kube-dns
           namespace: kube-system
+          {{- if eq .KubeDns.Provider "coredns" }}
+          annotations:
+            prometheus.io/port: "9153"
+            prometheus.io/scrape: "true"
+          {{- else }}         
           labels:
             k8s-app: kube-dns
             kubernetes.io/cluster-service: "true"
