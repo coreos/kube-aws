@@ -47,6 +47,26 @@ coreos:
         ExecStart=/usr/bin/sh -c 'for u in update-engine locksmithd; do systemctl stop $${u}.service; systemctl mask $${u}.service; systemctl disable $${u}.service; done; systemctl reset-failed'
 {{end}}
 
+    - name: handle-disable-request.service
+      enable: true
+      command: start
+      content: |
+        [Unit]
+        Description=Shuts down core services when requested
+        After=kubelet.service network-online.target
+        Wants=kubelet.service
+
+        [Service]
+        Type=simple
+        TimeoutStartSec=60m
+        Restart=on-failure
+        RestartSec=30
+        ExecStartPre=/usr/bin/systemctl is-active kubelet
+        ExecStart=/opt/bin/handle-disable-request
+
+        [Install]
+        WantedBy=multi-user.target
+
     - name: handle-cluster-cidr-changes.service
       enable: true
       command: start
@@ -5451,6 +5471,128 @@ write_files:
           fi
       done
 
+  - path: /opt/bin/handle-disable-request
+    permissions: 0755
+    content: |
+      #!/bin/bash
+      # Allows a controller to disable its core services upon request
+      # Created to allow more ambitious kubernetes upgrades
+      # and changes such as changing cluster settings such as service_cidr or pod_cidr
+      #
+      # A request to disable is a configmap matching the hostname and kubernetes version containing a list of core service to stop: -
+      # apiVersion: v1
+      # kind: ConfigMap
+      # metadata:
+      #   name: kube-aws-migration-disable-ip-10-29-26-83.us-west-2.compute.internal
+      #   namespace: kube-system
+      # data:
+      #   kubernetesVersion: v1.9.3
+      #   disable: "kube-apiserver kube-controller-manager kube-scheduler"
+
+      retries=5
+      hyperkube_image="{{.HyperkubeImage.RepoWithTag}}"
+      my_kubernetes_version="{{.HyperkubeImage.Tag}}"
+      myhostname=$(hostname -f)
+      disable_confmap_name="kube-aws-migration-disable-${myhostname}"
+      valid_services="kube-apiserver kube-controller-manager kube-scheduler"
+
+      kubectl() {
+        local tries=0
+        local result_text=""
+        local return_code=0
+
+        while [ "$tries" -lt "$retries" ]; do
+          result_text=$(docker run --rm -i --net=host -v /tmp:/tmp:rw -v /etc/kubernetes:/etc/kubernetes:ro  -v /etc/resolv.conf:/etc/resolv.conf:ro $hyperkube_image /kubectl "$@")
+          return_code=$?
+          if [ "$return_code" -eq "0" ]; then
+            echo "${result_text}"
+            break
+          fi
+          sleep 10
+          tries=$((tries+1))
+        done
+        return $return_code
+      }
+
+      log() {
+        echo "$@" >&2
+      }
+
+      get_disable_request() {
+        kubectl get cm -n kube-system $disable_confmap_name -o json --ignore-not-found
+      }
+
+      valid_disable_request() {
+        local disable_payload=$1
+
+        if [[ -n "${disable_payload}" ]]; then
+          log "found a disable request"
+          local kubernetes_version=$(echo ${disable_payload} | jq -er '.data.kubernetesVersion')
+          if [[ "${kubernetes_version}" == "${my_kubernetes_version}" ]]; then
+            log "valid request: kubernetes version match: ${kubernetes_version}"
+            return 0
+          else
+            log "invalid request: kubernetes version ${kubernetes_version} does not match my version ${my_kubernetes_version}"
+            return 1
+          fi
+        fi
+        log "no disable request found"
+        return 1
+      }
+
+      valid_service() {
+        for s in $valid_services; do
+          if [[ "$s" == $1 ]]; then
+            return 0
+          fi
+        done
+        return 1
+      }
+
+      disable_service() {
+        local service=$1
+
+        if [[ -f "/etc/kubernetes/manifests/${service}.yaml" ]]; then
+          log "Moving manifest /etc/kubernetes/manifests/${service}.yaml to /etc/kubernetes/${service}.yaml"
+          mv /etc/kubernetes/manifests/${service}.yaml /etc/kubernetes/${service}.yaml
+        else
+          log "No manifest found when looking for /etc/kubernetes/manifests/${service}.yaml"
+        fi
+
+        local container=$(docker ps | grep "k8s_${service}" | awk '{print $1}')
+        if [[ -n "${container}" ]]; then
+          log "stopping ${service} container ${container}..."
+          docker stop $container && docker rm $container
+        else
+          log "no docker container found matching k8s_${service}"
+        fi
+      }
+
+      # MAIN
+
+      log "Running watcher for requests to disable core services..."
+      while true
+      do
+        log "checking disable request kube-system/${disable_confmap_name} ..."
+        request=$(get_disable_request)
+        if valid_disable_request "${request}"; then
+          log "I've received a valid disable request!"
+          disable=$(echo "${request}" | jq -erc '.data.disable')
+          for d in ${disable}; do
+            log "disabling $d..."
+            if valid_service $d; then
+              disable_service $d
+            else
+              log "ERROR: service %d is not valid - valid services are ${valid_services}"
+            fi
+          done
+        else
+          log "no request to disable services found"
+        fi
+
+        sleep 10
+      done
+  
   - path: /opt/bin/handle-cluster-cidr-changes
     permissions: 0755
     content: |
@@ -5769,104 +5911,31 @@ write_files:
         rm -f ${tmpfile}
       }
 
-      # curl a controller by its healthz port (10252), if it fails then the controller isn't running.
-      controller_running() {
+      # stop a controller by writing a special kube-aws disable service configmap
+      disable_controller() {
         local controller=$1
+        local version=$2
 
-        curl -s --fail --connect-timeout 2 ${controller}:10252/healthz 2>&1 >/dev/null
-      }
-
-      # stop a controller by running a job to remove its manifests from /etc/kubernetes/manifests
-      shoot_controller_in_head() {
-        local controller=$1
-        local return_value=0
-
-        local jobspec="$(cat <<EOT
-      apiVersion: batch/v1
-      kind: Job
+        local request="$(cat <<EOT
+      apiVersion: v1
+      kind: ConfigMap
       metadata:
-        name: kill-master-${controller}
-      spec:
-        template:
-          metadata:
-            annotations:
-              scheduler.alpha.kubernetes.io/critical-pod: ""
-          spec:
-            hostNetwork: true
-            nodeSelector:
-              kubernetes.io/hostname: ${controller}
-            tolerations:
-            # Tolerate this effect so the pods will be schedulable at all times
-            - effect: NoSchedule
-              operator: Exists
-            - effect: NoExecute
-              operator: Exists
-            - key: CriticalAddonsOnly
-              operator: Exists
-            containers:
-            - name: bang-bang-night-night
-              image: ${hyperkube_image}
-              command:
-              - /bin/sh
-              - -c
-              - mv /etc/kubernetes/manifests/*.yaml /etc/kubernetes/
-              volumeMounts:
-              - mountPath: /etc/kubernetes
-                name: etc-kubernetes
-              securityContext:
-                privileged: true
-            restartPolicy: Never
-            volumes:
-            - name: etc-kubernetes
-              hostPath:
-                path: /etc/kubernetes
-        backoffLimit: 0
+        name: kube-aws-migration-disable-${controller}
+        namespace: kube-system
+      data:
+        kubernetesVersion: ${version}
+        disable: "kube-controller-manager"
       EOT
       )"
+          
+        log "Creating disable service configmap kubw-system/kube-aws-migration-disable-${controller}"
+        echo "${request}" | kubectl -n kube-system create -f - || return 1
+        return 0
+      }
 
-        log "Creating kubernetes job to kill the kubernetes control-plane on ${controller}"
-        echo "${jobspec}" | kubectl -n kube-system create -f - || return 1
-
-        local started_time=$(date +%s)
-        while [ "$(date +%s)" -lt "$((started_time+job_timeout_seconds))" ]; do
-          if status=$(kubectl -n kube-system get job "kill-master-${controller}" -o json | jq -r '.status'); then
-            [[ "$(echo $status | jq -r '.conditions[0].type')" =~ Complete|Failed ]] && break
-          fi
-          log "Waiting for job to complete..."
-          sleep 10
-        done
-
-        # Check that the job succeeded
-        if [[ "$(echo $status | jq -r '.conditions[0].type')" == "Failed" ]]; then
-          log "Job kill-master-${controller} failed."
-          log "Failure message: $(echo $status | jq -r .conditions[0].message)"
-          return_value=1
-        else
-          log "Job kill-master-${controller} succeeded"
-        fi
-
-        log "Cleaning up the job.."
-        kubectl -n kube-system delete job kill-master-${controller} || return_value=1
-
-        # Makes sure that the control-plane containers have stopped...
-        for pod in kube-controller-manager kube-apiserver kube-scheduler; do
-          if pod_exists kube-system "${pod}-${node}"; then
-            log "Killing running pod ${pod}-${node}..."
-            delete_pod kube-system "${pod}-${node}"
-          fi
-        done
-
-        local started_time=$(date +%s)
-        while controller_running ${controller}; do
-          if [ "$(date +%s)" -gt "$((started_time+job_timeout_seconds))" ]; then
-              log "Timed out waiting for controller to stop!"
-              break
-          fi
-          log "Waiting for contoller to actually stop..."
-          sleep 10
-        done
-
-        return $return_value
+      node_version() {
+        local node=$1
+        kubectl get node $node --no-headers --ignore-not-found | awk '{print $5}'
       }
 
       # serviceCIDRmatch - looks at a nodes labels for a service-cidr label that matches the current known servicecidr.
@@ -5924,7 +5993,7 @@ write_files:
             action_stop_controller=1
           fi
 
-          [[ "${action_stop_controller}" == "1" ]] && controller_running $node && shoot_controller_in_head $node
+          [[ "${action_stop_controller}" == "1" ]] && disable_controller $node $(node_version $node)
           [[ "${action_delete_node}" == "1" ]] && delete_node $node
         done
       }
