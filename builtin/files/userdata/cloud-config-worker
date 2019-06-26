@@ -207,7 +207,6 @@ coreos:
         Type=oneshot
         RemainAfterExit=yes
         ExecStart=/bin/bash -c "echo -e \"{{.HostOS.MOTDBanner.KubernetesColour.On}}Kubernetes{{.HostOS.MOTDBanner.KubernetesColour.Off}} {{ .K8sVer }}\" >>/etc/motd"
-        ExecStart=/bin/bash -c "echo -e \"{{.HostOS.MOTDBanner.KubeAWSColour.On}}kube-aws{{.HostOS.MOTDBanner.KubeAWSColour.Off}} {{ .KubeAWSVersion }}\" >>/etc/motd"
 
         [Install]
         WantedBy=multi-user.target
@@ -344,45 +343,26 @@ coreos:
         ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/cni/net.d
         ExecStartPre=/usr/bin/mkdir -p /var/run/calico
         ExecStartPre=/usr/bin/mkdir -p /var/lib/calico
+        ExecStartPre=/bin/sed -e "s/COREOS_PRIVATE_IPV4/${COREOS_PRIVATE_IPV4}/g" -i /etc/kubernetes/config/kubelet.yaml
         ExecStart=/bin/sh -c "exec /usr/lib/coreos/kubelet-wrapper \
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
         {{/* Work-around until https://github.com/kubernetes/kubernetes/issues/43967 is fixed via https://github.com/kubernetes/kubernetes/pull/43995 */ -}}
         --cni-bin-dir=/opt/cni/bin \
         --network-plugin={{.K8sNetworkPlugin}} \
         --container-runtime={{.ContainerRuntime}} \
-        --node-labels=kubernetes.io/role=node,node-role.kubernetes.io/node=\"\",node-role.kubernetes.io/{{ toLabel .NodePoolName }}=\"\"{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
+        --node-labels=node.kubernetes.io/role="node",node.kubernetes.io/role="{{ toLabel .NodePoolName }}",kubernetes.io/role=node,node-role.kubernetes.io/node=\"\",node-role.kubernetes.io/{{ toLabel .NodePoolName }}=\"\"{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
         --register-node=true \
-        {{if .Taints}}--register-with-taints={{.Taints.String}}\
-        {{end}}--allow-privileged=true \
-        {{if .NodeStatusUpdateFrequency}}--node-status-update-frequency={{.NodeStatusUpdateFrequency}} \
-        {{end}}--pod-manifest-path=/etc/kubernetes/manifests \
-        {{ if .KubeDns.NodeLocalResolver }}--cluster-dns=${COREOS_PRIVATE_IPV4} \
-        {{ else }}--cluster-dns={{.DNSServiceIP}} \
-        {{ end }}--cluster-domain=cluster.local \
+        --config=/etc/kubernetes/config/kubelet.yaml \
+        {{if .Taints -}}
+        --register-with-taints={{.Taints.String}} \
+        {{- end }}
         --cloud-provider=aws \
         --cert-dir=/etc/kubernetes/ssl \
-        {{- if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
-        --experimental-bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \
-        {{- if .Kubelet.RotateCerts.Enabled }}
-        --rotate-certificates \
-        {{- end }}
-        {{- else }}
-        --tls-cert-file=/etc/kubernetes/ssl/worker.pem \
-        --tls-private-key-file=/etc/kubernetes/ssl/worker-key.pem \
-        {{- end }}
+        --bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \
         {{- if .Kubelet.Kubeconfig }}
         --kubeconfig={{ .Kubelet.Kubeconfig }} \
         {{- else }}
-        --kubeconfig=/etc/kubernetes/kubeconfig/worker.yaml \
-        {{- end }}
-        {{- if .FeatureGates.Enabled }}
-        --feature-gates=\"{{.FeatureGates.String}}\" \
-        {{- end }}
-        {{- if .Kubelet.SystemReservedResources }}
-        --system-reserved={{ .Kubelet.SystemReservedResources }} \
-        {{- end }}
-        {{- if .Kubelet.KubeReservedResources }}
-        --kube-reserved={{ .Kubelet.KubeReservedResources }} \
+        --kubeconfig=/etc/kubernetes/kubeconfig/kubelet.yaml \
         {{- end }}
         {{- if .Kubernetes.Networking.AmazonVPC.Enabled }}
         --node-ip=$$(curl http://169.254.169.254/latest/meta-data/local-ipv4) \
@@ -630,6 +610,43 @@ write_files:
       PasswordAuthentication no
       ChallengeResponseAuthentication no
 
+  - path: /etc/kubernetes/config/kubelet.yaml
+    content: |
+      kind: KubeletConfiguration
+      apiVersion: kubelet.config.k8s.io/v1beta1
+      evictionHard:
+        memory.available:  "200Mi"
+      staticPodPath: /etc/kubernetes/manifests
+      clusterDomain: cluster.local
+      clusterDNS: 
+      - {{ if .KubeDns.NodeLocalResolver }}COREOS_PRIVATE_IPV4{{ else }}{{.DNSServiceIP}}{{end}}
+      serverTLSBootstrap: false
+      rotateCertificates: true
+      authentication:
+        anonymous:
+          enabled: true
+        webhook:
+          enabled: true
+          cacheTTL: "2m"
+      authorization:
+        mode: Webhook
+        webhook:
+          cacheAuthorizedTTL: "2m"
+          cacheUnauthorizedTTL: "1m"
+      {{- if .NodeStatusUpdateFrequency }}
+      nodeStatusUpdateFrequency: {{.NodeStatusUpdateFrequency}}
+      {{- end }}
+      {{- if .Kubelet.SystemReservedResources }}
+      systemReserved: {{ .Kubelet.SystemReservedResources }}
+      {{- end }}
+      {{- if .Kubelet.KubeReservedResources }}
+      kubeReserved: {{ .Kubelet.KubeReservedResources }}
+      {{- end }}
+      {{- if .FeatureGates.Enabled }}
+      featureGates:
+{{.FeatureGates.Yaml | indent 8}} 
+      {{- end }}
+
   {{ if .CustomFiles -}}
   {{ range $i, $w := .CustomFiles -}}
   - path: {{$w.Path}}{{ if $w.Encrypted }}.enc{{end}}
@@ -741,7 +758,7 @@ write_files:
           {{end -}}
           {{.HyperkubeImage.RepoWithTag}} /bin/bash \
             -ec 'echo "placing labels and annotations with additional AWS parameters."; \
-             kctl="/kubectl --server={{.APIEndpointURL}}:443 --kubeconfig=/etc/kubernetes/kubeconfig/worker.yaml"; \
+             kctl="/kubectl --server={{.APIEndpointURL}}:443 --kubeconfig=/etc/kubernetes/kubeconfig/kubelet.yaml"; \
              kctl_label="$kctl label --overwrite nodes/$(hostname)"; \
              kctl_annotate="$kctl annotate --overwrite nodes/$(hostname)"; \
              {{if not .SpotFleet.Enabled -}}
@@ -837,16 +854,6 @@ write_files:
     encoding: gzip+base64
     content: {{.AssetsConfig.EtcdTrustedCA}}
 
-{{ if not .Experimental.TLSBootstrap.Enabled }}
-  - path: /etc/kubernetes/ssl/worker.pem
-    encoding: gzip+base64
-    content: {{.AssetsConfig.WorkerCert}}
-
-  - path: /etc/kubernetes/ssl/worker-key.pem{{if .AssetsEncryptionEnabled}}.enc{{end}}
-    encoding: gzip+base64
-    content: {{.AssetsConfig.WorkerKey}}
-{{ end }}
-
   - path: /etc/kubernetes/ssl/ca.pem
     encoding: gzip+base64
     content: {{.AssetsConfig.CACert}}
@@ -863,10 +870,8 @@ write_files:
       rkt run \
         --volume=ssl,kind=host,source=/etc/kubernetes/ssl,readOnly=false \
         --mount=volume=ssl,target=/etc/kubernetes/ssl \
-        {{- if .Experimental.TLSBootstrap.Enabled }}
         --volume=kube,kind=host,source=/etc/kubernetes,readOnly=false \
         --mount=volume=kube,target=/etc/kubernetes \
-        {{- end }}
         --uuid-file-save=/var/run/coreos/decrypt-assets.uuid \
         --volume=dns,kind=host,source=/etc/resolv.conf,readOnly=true --mount volume=dns,target=/etc/resolv.conf \
         --net=host \
@@ -876,7 +881,7 @@ write_files:
           'echo decrypting assets
            shopt -s nullglob
            set -o pipefail
-           for encKey in /etc/kubernetes/{ssl,{{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}auth{{end}}}/*.enc; do
+           for encKey in /etc/kubernetes/{ssl,auth}/*.enc; do
              echo decrypting $encKey
              f=$(mktemp $encKey.XXXXXXXX)
              /usr/bin/aws \
@@ -888,11 +893,9 @@ write_files:
              mv -f $f ${encKey%.enc}
            done;
 
-           {{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
            echo injecting token into the kubelet bootstrap kubeconfig file
            bootstrap_token=$(cat /etc/kubernetes/auth/kubelet-tls-bootstrap-token.tmp);
            sed -i -e "s#\$KUBELET_BOOTSTRAP_TOKEN#$bootstrap_token#g" /etc/kubernetes/kubeconfig/worker-bootstrap.yaml
-           {{ end }}
 
            {{ if .CustomFiles -}}
            {{ range $i, $f := .CustomFiles -}}
@@ -932,10 +935,6 @@ write_files:
       TAGS="${TAGS}Key=\"kubernetes.io/cluster/{{ .ClusterName }}\",Value=\"owned\" "
       TAGS="${TAGS}Key=\"kube-aws:node-pool:name\",Value=\"{{.NodePoolName}}\" "
       TAGS="${TAGS}Key=\"Name\",Value=\"{{.ClusterName}}-{{.StackName}}-kube-aws-worker\" "
-
-      {{if .Autoscaling.ClusterAutoscaler.Enabled -}}
-      TAGS="${TAGS}Key=\"{{.Autoscaling.ClusterAutoscaler.AutoDiscoveryTagKey}}\",Value=\"\" "
-      {{end -}}
 
       {{range $k, $v := .StackTags -}}
       TAGS="${TAGS}Key=\"{{$k}}\",Value=\"{{$v}}\" "
@@ -1053,7 +1052,6 @@ write_files:
           name: default
         current-context: default
 
-{{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
   - path: /etc/kubernetes/kubeconfig/worker-bootstrap.yaml
     content: |
         apiVersion: v1
@@ -1073,7 +1071,8 @@ write_files:
             user: tls-bootstrap
           name: tls-bootstrap-context
         current-context: tls-bootstrap-context
-  - path: /etc/kubernetes/kubeconfig/worker.yaml
+
+  - path: /etc/kubernetes/kubeconfig/kubelet.yaml
     content: |
         apiVersion: v1
         kind: Config
@@ -1093,34 +1092,10 @@ write_files:
             user: kubelet
           name: kubelet-context
         current-context: kubelet-context
-{{ else }}
-  - path: /etc/kubernetes/kubeconfig/worker.yaml
-    content: |
-        apiVersion: v1
-        kind: Config
-        clusters:
-        - name: local
-          cluster:
-            certificate-authority: /etc/kubernetes/ssl/ca.pem
-            server: {{.APIEndpointURL}}:443
-        users:
-        - name: kubelet
-          user:
-            client-certificate: /etc/kubernetes/ssl/worker.pem
-            client-key: /etc/kubernetes/ssl/worker-key.pem
-        contexts:
-        - context:
-            cluster: local
-            user: kubelet
-          name: kubelet-context
-        current-context: kubelet-context
-{{ end }}
 
-{{ if and .Experimental.TLSBootstrap.Enabled .AssetsConfig.HasTLSBootstrapToken }}
   - path: /etc/kubernetes/auth/kubelet-tls-bootstrap-token.tmp{{if .AssetsEncryptionEnabled}}.enc{{end}}
     encoding: gzip+base64
     content: {{.AssetsConfig.TLSBootstrapToken}}
-{{ end }}
 
 {{if .Kubernetes.Networking.AmazonVPC.Enabled}}
   - path: /opt/bin/aws-k8s-cni-max-pods

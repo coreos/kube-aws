@@ -7,6 +7,9 @@ import (
 
 	"errors"
 
+	"net/url"
+	"time"
+
 	"github.com/kubernetes-incubator/kube-aws/cfnstack"
 	"github.com/kubernetes-incubator/kube-aws/filereader/jsontemplate"
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
@@ -16,8 +19,6 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 	"github.com/kubernetes-incubator/kube-aws/pki"
 	"github.com/kubernetes-incubator/kube-aws/provisioner"
-	"net/url"
-	"time"
 )
 
 // VERSION set by build script
@@ -74,8 +75,7 @@ func (c *Stack) Assets() cfnstack.Assets {
 }
 
 func (c *Stack) buildAssets() (cfnstack.Assets, error) {
-	logger.Debugf("Building assets for %s", c.StackName)
-	logger.Debugf("Context is: %+v", c)
+	logger.Debugf("buildAssets: Building assets for %s", c.StackName)
 
 	var err error
 
@@ -92,7 +92,7 @@ func (c *Stack) buildAssets() (cfnstack.Assets, error) {
 		userdataS3PartAssetName := "userdata-" + strings.ToLower(id)
 
 		if err = assetsBuilder.AddUserDataPart(c.UserData[id], api.USERDATA_S3, userdataS3PartAssetName); err != nil {
-			return nil, fmt.Errorf("failed to addd %s: %v", userdataS3PartAssetName, err)
+			return nil, fmt.Errorf("failed to add %s: %v", userdataS3PartAssetName, err)
 		}
 	}
 

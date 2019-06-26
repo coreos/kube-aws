@@ -77,22 +77,62 @@ matching key out of a collection of dictionaries.
 
 ## merge
 
-Merge two dictionaries into one, giving precedence to the dest dictionary:
+Merge two or more dictionaries into one, giving precedence to the dest dictionary:
 
 ```
-$newdict := merge $dest $source
+$newdict := merge $dest $source1 $source2
+```
+
+This is a deep merge operation.
+
+## mergeOverwrite
+
+Merge two or more dictionaries into one, giving precedence from **right to left**, effectively
+overwriting values in the dest dictionary:
+
+Given:
+
+```
+dst:
+  default: default
+  overwrite: me
+  key: true
+
+src:
+  overwrite: overwritten
+  key: false
+```
+
+will result in:
+
+```
+newdict:
+  default: default
+  overwrite: overwritten
+  key: false
+```
+
+```
+$newdict := mergeOverwrite $dest $source1 $source2
 ```
 
 This is a deep merge operation.
 
 ## keys
 
-The `keys` function will return a `list` of all of the keys in a `dict`. Since
-a dictionary is _unordered_, the keys will not be in a predictable order. They
-can be sorted with `sortAlpha`.
+The `keys` function will return a `list` of all of the keys in one or more `dict`
+types. Since a dictionary is _unordered_, the keys will not be in a predictable order.
+They can be sorted with `sortAlpha`.
 
 ```
 keys $myDict | sortAlpha
+```
+
+When supplying multiple dictionaries, the keys will be concatenated. Use the `uniq`
+function along with `sortAlpha` to get a unqiue, sorted list of keys.
+
+```
+keys $myDict $myOtherDict | uniq | sortAlpha
 ```
 
 ## pick
@@ -101,7 +141,7 @@ The `pick` function selects just the given keys out of a dictionary, creating a
 new `dict`.
 
 ```
-$new := pick $myDict "name1" "name3"
+$new := pick $myDict "name1" "name2"
 ```
 
 The above returns `{name1: value1, name2: value2}`
@@ -116,6 +156,19 @@ $new := omit $myDict "name1" "name3"
 ```
 
 The above returns `{name2: value2}`
+
+## values
+
+The `values` function is similar to `keys`, except it returns a new `list` with
+all the values of the source `dict`.
+
+```
+$vals := values $myDict
+```
+
+The above returns `list["value1", "value2", "value 3"]`. Note that the `values`
+function gives no guarantees about the result ordering- if you care about this,
+then use `sortAlpha`.
 
 ## A Note on Dict Internals
 

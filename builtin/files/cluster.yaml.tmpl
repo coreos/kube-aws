@@ -51,6 +51,14 @@ disableContainerLinuxAutomaticUpdates: true
 #sshAccessAllowedSourceCIDRs:
 #- 0.0.0.0/0
 
+# Custom API Server settings that allow additional SANs attached to the generated certificate.
+# customApiServerSettings:
+#  additionalDnsSans:
+#  - my.host.com
+#  additionalIPAddressSans:
+#  - 0.0.0.0
+
+
 # The name of one of API endpoints defined in `apiEndpoints` below to be written in kubeconfig and then used by admins
 # to access k8s API from their laptops, CI servers, or etc.
 # Required if there are 2 or more API endpoints defined in `apiEndpoints`
@@ -543,16 +551,6 @@ worker:
 #
 #      #
 #      # Optional settings for both ASG-based and SpotFleet-based node pools
-#      #
-#
-#      # Autoscaling by adding/removing nodes according to resource usage
-#      autoscaling:
-#        # Make this node pool an autoscaling-target of k8s cluster-autoscaler
-#        #
-#        # Beware that making this an autoscaing-target doesn't automatically deploy cluster-autoscaler itself -
-#        # turn on `addons.clusterAutoscaler.enabled` to deploy it on controller nodes.
-#        clusterAutoscaler:
-#          enabled: true
 #
 #      # Used to provide `/etc/environment` env vars with values from arbitrary CloudFormation refs
 #      awsEnvironment:
@@ -563,10 +561,6 @@ worker:
 #      # Add predefined set of labels to the nodes
 #      # The set includes names of launch configurations and autoscaling groups
 #      awsNodeLabels:
-#        enabled: true
-#
-#      # Provision worker nodes with IAM permissions and node labels to run cluster-autoscaler (assuming `addons.clusterAutoscaler.enabled` is true)
-#      clusterAutoscalerSupport:
 #        enabled: true
 #
 #      # Mount an EFS only to a specific node pool.
@@ -751,10 +745,10 @@ worker:
 #    instanceProfile:
 #      arn: "arn:aws:iam::YOURACCOUNTID:instance-profile/INSTANCEPROFILENAME"
 #
-#  # The version of etcd to be used. Set to e.g. "3.2.1" to use etcd3
-#  # CAUTION: Increasing etcd version will permanently change the state of etcd and a cloud formation rollback, will not succeed due to etcd 
-#  being unable to downgrade. 
-#  version: 3.2.13
+#  # The version of etcd to be used.
+#  # CAUTION: Increasing etcd version will permanently change the state of etcd and a cloud formation rollback, will not succeed due to etcd
+#  being unable to downgrade.
+#  version: 3.2.26
 #
 #  snapshot:
 #    # Set to true to periodically take an etcd snapshot
@@ -1085,12 +1079,6 @@ worker:
 #   tag: master
 #   rktPullDocker: false
 
-# Cluster Autoscaler image repository to use.
-#clusterAutoscalerImage:
-#  repo: k8s.gcr.io/cluster-autoscaler
-#  tag: v1.1.0
-#  rktPullDocker: false
-
 # Cluster Proportional Autoscaler image repository to use.
 #clusterProportionalAutoscalerImage:
 #  repo: k8s.gcr.io/cluster-proportional-autoscaler-amd64
@@ -1149,12 +1137,6 @@ worker:
 #tillerImage:
 #  repo: gcr.io/kubernetes-helm/tiller
 #  tag: v2.7.2
-#  rktPullDocker: false
-
-# Heapster image repository to use.
-#heapsterImage:
-#  repo: k8s.gcr.io/heapster
-#  tag: v1.5.0
 #  rktPullDocker: false
 
 # Metrics Server image repository to use.
@@ -1335,8 +1317,8 @@ kubernetesDashboard:
 
 # KubeDNS
 kubeDns:
-  # Define which DNS provider to use (kube-dns or coredns), default kube-dns.
-  provider: kube-dns
+  # Define which DNS provider to use (kube-dns or coredns), default coredns.
+  provider: coredns
 
   # When enabled, will enable a DNS-masq DaemonSet to make PODs to resolve DNS names via locally running dnsmasq
   # It is disabled by default.
@@ -1345,6 +1327,9 @@ kubeDns:
   # nodeLocalResolverOptions:
   # - --neg-ttl=10
   # - --no-ping
+
+  # When enabled, will modify the TTL of the coredns service.
+  # ttl: 30
 
   # When enabled, will deploy kube-dns to K8s controllers instead of workers.
   # deployToControllers: false
@@ -1375,27 +1360,6 @@ kubeProxy:
 
 # Addon features
 addons:
-  # Will create a cluster-autoscaler (CA) deployment in the cluster.
-  # CA runs only on controller nodes by default, to turn this off set `experimental.clusterAutoscalerSupport.enabled` to false.
-  # If you want to run CA on worker nodes, turn on `worker.nodePools[].clusterAutoscalerSupport.enabled` for the node pool.
-  clusterAutoscaler:
-    enabled: false
-    resources:
-      # Increase these values substantially if running a cluster of 50+ nodes
-      limits:
-        cpu: 100m
-        memory: 300Mi
-      requests:
-        cpu: 100m
-        memory: 300Mi
-    # Options below can be used to inject custom settings for the autoscaler.
-    # Sensible defaults are already configured in the controller-cloud-config but if you wish to override them simply
-    # add them here and they'll take precedence.
-    #options:
-    #  flag-name: value
-    #  v: 5
-    #  expander: least-waste
-
   # When enabled, Kubernetes rescheduler is deployed to the cluster controller(s)
   # This feature is experimental currently so may not be production ready
   rescheduler:
@@ -1403,7 +1367,7 @@ addons:
 
   # Metrics Server (https://github.com/kubernetes-incubator/metrics-server)
   metricsServer:
-    enabled: false
+    enabled: true
 
   # When set to true this configures security groups for prometheus between nodes.
   # This includes the following ports: 10252, 10251, 10250, 9100, and 4194
@@ -1414,32 +1378,31 @@ addons:
 experimental:
   # Enable admission controllers
   admission:
-    podSecurityPolicy:
-      enabled: false
     # alwaysPullImages Note
     # Recommended to turn this on when and only when docker registries are reliable enough.
     # Otherwise, automatic pod restarts can be delayed due to temporally docker registry outages.
     # Please see https://github.com/kubernetes-incubator/kube-aws/pull/1009#discussion_r151197787 for more info.
     alwaysPullImages:
       enabled: false
-    denyEscalatingExec:
-      enabled: false
     initializers:
-      enabled: false
-    # Priority enables PodPriority in the API server, scheduler and kubelet. you need to manually add the
-    # featureGate PodPriority:true in the worker
-    priority:
-      enabled: false
-    mutatingAdmissionWebhook:
-      enabled: false
-    validatingAdmissionWebhook:
       enabled: false
     OwnerReferencesPermissionEnforcement:
       enabled: false
-    # persistentVolumeClaimResize enables PersistentVolumeClaim in the API server, scheduler and kubelet. you need to manually add the
-    # featureGate ExpandPersistentVolumes:true in the worker
-    persistentVolumeClaimResize:
-      enabled: false
+    # eventRateLimit Note
+    # We recommend that you leave this admission controller on/enabled by default as it protects your cluster
+    # apiserver from becomming overloaded with events from failing deployments etc.  Tweak the limits to your needs.
+    # The limits field is a 'string' representation of the yaml limits section defined here:-
+    # https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit
+    eventRateLimit:
+      enabled: true
+      limits: |
+        - type: Namespace
+          qps: 250
+          burst: 500
+          cacheSize: 4096
+        - type: User
+          qps: 50
+          burst: 250
 
   # Used to provide `/etc/environment` env vars with values from arbitrary CloudFormation refs
   awsEnvironment:
@@ -1467,23 +1430,6 @@ experimental:
   awsNodeLabels:
     enabled: false
 
-  # Provision controller nodes with IAM permissions and node labels to run cluster-autoscaler (assuming `addons.clusterAutoscaler.enabled` is true)
-  clusterAutoscalerSupport:
-    enabled: true
-
-  # If enabled, instructs the controller manager to automatically issue TLS certificates to worker nodes via
-  # certificate signing requests (csr) made to the API server using the bootstrap token. It's recommended to
-  # also enable the rbac plugin in order to limit requests using the bootstrap token to only be able to make
-  # requests related to certificate provisioning.
-  # The bootstrap token is automatically generated in ./credentials/kubelet-tls-bootstrap-token.
-  tlsBootstrap:
-    enabled: false
-
-  # Enables the Node authorization + node restriction admission controller (requires Kubernetes 1.7.4+)
-  # Requires TLS bootstrapping to be enabled as well
-  nodeAuthorizer:
-    enabled: false
-
   # This option has not yet been tested with rkt as container runtime
   ephemeralImageStorage:
     enabled: false
@@ -1494,14 +1440,14 @@ experimental:
   # This is intended to be used in combination with .controller.iam.role.name. See #297 for more information.
   kiamSupport:
     enabled: false
-    image:
-      repo: quay.io/uswitch/kiam
-      tag: v2.8
-      rktPullDocker: false
-    sessionDuration: 15m
-    serverAddresses:
-      serverAddress: localhost:443
-      agentAddress: kiam-server:443
+    # image:
+    #  repo: quay.io/uswitch/kiam
+    #  tag: v3.2
+    #  rktPullDocker: false
+    # sessionDuration: 30m
+    # serverAddresses:
+    #  serverAddress: localhost:443
+    #  agentAddress: kiam-server:443
     # Optional resource change for kiam servers/agents can be done via using the resources block below and changing the values.
     # Values below are the default if not set.
     # serverResources:
@@ -1559,11 +1505,6 @@ experimental:
   # nodeMonitorGracePeriod: "40s"
 
 kubelet:
-  # Tell Kubelet to renew its certificate as its expiration time is approaching
-  # Requires Experimental.tlsBootstrap to be enabled
-  RotateCerts:
-    enabled: true
-
   # Currently CPU, memory and storage are supported.
   # How resources are reserved: https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/
   # How to size these limits: https://kubernetes.io/blog/2016/11/visualize-kubelet-performance-with-node-dashboard/
@@ -1618,8 +1559,38 @@ hostOS:
 #    kubernetes-colour: light-blue
 #    kube-aws-colour: light-blue
 
-
 kubeAwsPlugins:
   # See plugins/aws-iam-authenticator/plugin.yaml for more info
   awsIamAuthenticator:
     enabled: false
+    # see plugins/cluster-autoscaler/plugin.yaml for more info
+  clusterAutoscaler:
+    enabled: false
+    replicas: 2
+    region: "us-west-2"
+    # autoscaler image
+    # image: "k8s.gcr.io/cluster-autoscaler:v1.13.4"
+    # autoscaler resources
+    resources:
+      limits:
+        cpu: 100m
+        memory: 300Mi
+      requests:
+        cpu: 100m
+        memory: 300Mi
+    # Options below can be used to inject custom settings for the autoscaler.
+    # Sensible defaults are already configured in the controller-cloud-config but if you wish to override them simply
+    # add them here and they'll take precedence.
+    #options:
+    #  flag-name: value
+    #  v: 5
+    #  expander: least-waste
+    # configuration if you want autoscaler metrics picked up by prometheus
+    prometheusMetrics:
+      enabled: false
+      interval: "10s"
+      # namespace prometheus-operator is running in
+      namespace: monitoring
+      # selectors for autodiscovery
+      selector:
+        prometheus: monitoring

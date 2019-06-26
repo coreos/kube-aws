@@ -150,8 +150,7 @@ coreos:
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=/bin/bash -c "echo -e \"{{.HostOS.MOTDBanner.EtcdColour.On}}Etcd Server{{.HostOS.MOTDBanner.EtcdColour.Off}} v{{.Etcd.Version}}\" >>/etc/motd"
-        ExecStart=/bin/bash -c "echo -e \"{{.HostOS.MOTDBanner.KubeAWSColour.On}}kube-aws{{.HostOS.MOTDBanner.KubeAWSColour.Off}} {{ .KubeAWSVersion }}\" >>/etc/motd"
+        ExecStart=/bin/bash -c "echo -e \"{{.HostOS.MOTDBanner.EtcdColour.On}}Etcd Server{{.HostOS.MOTDBanner.EtcdColour.Off}} {{.Etcd.Version}}\" >>/etc/motd"
 
         [Install]
         WantedBy=multi-user.target
@@ -264,14 +263,13 @@ coreos:
         ExecStart=/bin/sleep 3600
         TimeoutStartSec=900
     {{ end -}}
-    {{if .Etcd.DisasterRecovery.SupportsEtcdVersion .Etcd.Version -}}
     - name: etcdadm-reconfigure.service
       enable: true
       content: |
         [Unit]
         Description=etcdadm reconfigure runner
-        BindsTo={{.Etcd.SystemdUnitName}}
-        Before={{.Etcd.SystemdUnitName}}
+        BindsTo=etcd-member.service
+        Before=etcd-member.service
         Wants=cfn-etcd-environment.service
         After=cfn-etcd-environment.service
         After=network.target
@@ -287,7 +285,7 @@ coreos:
         ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
         ExecStartPre=/usr/bin/mkdir -p /var/run/coreos/etcdadm/snapshots
         ExecStart=/opt/bin/etcdadm reconfigure
-        {{if .Etcd.DisasterRecovery.IsAutomatedForEtcdVersion .Etcd.Version -}}
+        {{if .Etcd.DisasterRecovery.Automated -}}
         ExecStartPost=/usr/bin/systemctl start etcdadm-check.timer
         {{end -}}
         TimeoutStartSec=120
@@ -297,8 +295,8 @@ coreos:
       content: |
         [Unit]
         Description=etcdadm update status
-        BindsTo={{.Etcd.SystemdUnitName}}
-        After={{.Etcd.SystemdUnitName}}
+        BindsTo=etcd-member.service
+        After=etcd-member.service
         After=network.target
 
         [Service]
@@ -308,11 +306,10 @@ coreos:
         EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=-/var/run/coreos/etcdadm-environment
         ExecStart=/opt/bin/etcdadm member_status_set_started
-        {{if .Etcd.Snapshot.IsAutomatedForEtcdVersion .Etcd.Version -}}
+        {{if .Etcd.Snapshot.Automated -}}
         ExecStartPost=/usr/bin/systemctl start etcdadm-save.timer
         {{end -}}
         TimeoutStartSec=120
-    {{- end}}
 
     - name: etcdadm-check.service
       enable: true
@@ -324,11 +321,11 @@ coreos:
         Type=oneshot
         EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=-/var/run/coreos/etcdadm-environment
-        ExecStartPre=/usr/bin/systemctl is-active {{.Etcd.SystemdUnitName}}
+        ExecStartPre=/usr/bin/systemctl is-active etcd-member.service
         ExecStart=/opt/bin/etcdadm check
         TimeoutStartSec=120
 
-    {{if .Etcd.DisasterRecovery.IsAutomatedForEtcdVersion .Etcd.Version -}}
+    {{if .Etcd.DisasterRecovery.Automated -}}
     - name: etcdadm-check.timer
       enable: true
       content: |
@@ -355,11 +352,11 @@ coreos:
         Type=oneshot
         EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=-/var/run/coreos/etcdadm-environment
-        ExecStartPre=/usr/bin/systemctl is-active {{.Etcd.SystemdUnitName}}
+        ExecStartPre=/usr/bin/systemctl is-active etcd-member.service
         ExecStart=/opt/bin/etcdadm save
         TimeoutStartSec=300
 
-    {{if .Etcd.Snapshot.IsAutomatedForEtcdVersion .Etcd.Version -}}
+    {{if .Etcd.Snapshot.Automated -}}
     - name: etcdadm-save.timer
       enable: true
       content: |
@@ -376,7 +373,7 @@ coreos:
         WantedBy=timers.target
     {{- end}}
 
-    - name: {{.Etcd.SystemdUnitName}}
+    - name: etcd-member.service
       drop-ins:
         - name: 20-aws-cluster.conf
           content: |
@@ -387,12 +384,9 @@ coreos:
             Wants=decrypt-assets.service
             After=decrypt-assets.service
             {{- end}}
-            {{if .Etcd.DisasterRecovery.SupportsEtcdVersion .Etcd.Version -}}
-            {{/* can be `Wants` if you like etcd-member to not stop when etcdadm-reconfigure failed */}}
             BindsTo=etcdadm-reconfigure.service etcdadm-update-status.service
             After=etcdadm-reconfigure.service
             Before=etcdadm-update-status.service
-            {{end -}}
 
             [Service]
             EnvironmentFile=-/etc/etcd-environment
@@ -404,16 +398,14 @@ coreos:
             ExecStartPre=/usr/bin/systemctl is-active decrypt-assets.service
             {{- end}}
             ExecStartPre=/usr/bin/chown -R etcd:etcd /var/lib/etcd2
-        {{if .Etcd.Version.Is3 }}
         - name: 40-version.conf
           content: |
             [Service]
-            Environment="ETCD_IMAGE_TAG=v{{.Etcd.Version}}"
+            Environment="ETCD_IMAGE_TAG={{.Etcd.Version}}"
         - name: 40-auto-compaction.conf
           content: |
             [Service]
             Environment="ETCD_AUTO_COMPACTION_RETENTION=1"
-        {{end}}
       enable: true
       command: start
 
@@ -421,7 +413,7 @@ coreos:
       enable: true
       content: |
         [Unit]
-        Before={{.Etcd.SystemdUnitName}}
+        Before=etcd-member.service
 
         [Mount]
         What=/dev/xvdf
@@ -429,7 +421,7 @@ coreos:
         Type=ext4
 
         [Install]
-        RequiredBy={{.Etcd.SystemdUnitName}}
+        RequiredBy=etcd-member.service
 
     - name: format-etcd2-volume.service
       enable: true
@@ -454,7 +446,7 @@ coreos:
       content: |
         [Unit]
         Description=decrypt etcd2 tls assets using amazon kms
-        Before={{.Etcd.SystemdUnitName}}
+        Before=etcd-member.service
 
         [Service]
         Restart=on-failure
@@ -485,7 +477,7 @@ coreos:
         ExecStart=-/usr/bin/rkt rm --uuid-file=/var/run/coreos/decrypt-assets.uuid
 
         [Install]
-        RequiredBy={{.Etcd.SystemdUnitName}}
+        RequiredBy=etcd-member.service
 {{ end }}
 
 {{ if .WaitSignal.Enabled }}
@@ -493,8 +485,8 @@ coreos:
       command: start
       content: |
         [Unit]
-        Wants={{.Etcd.SystemdUnitName}}
-        After={{.Etcd.SystemdUnitName}}
+        Wants=etcd-member.service
+        After=etcd-member.service
         {{ if .EtcdMigrationEnabled -}}
         After=import-existing-etcd-state.service
         {{ end -}}
@@ -505,7 +497,7 @@ coreos:
         RestartSec=10
 
         EnvironmentFile={{.EtcdNodeEnvFileName}}
-        ExecStartPre=/usr/bin/systemctl is-active {{.Etcd.SystemdUnitName}}
+        ExecStartPre=/usr/bin/systemctl is-active etcd-member.service
         {{ if .EtcdMigrationEnabled -}}
         ExecStartPre=/usr/bin/systemctl is-active import-existing-etcd-state.service
         {{ end -}}

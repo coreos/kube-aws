@@ -1,9 +1,10 @@
 package model
 
 import (
+	"testing"
+
 	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 const cluster_config = `
@@ -19,10 +20,6 @@ apiEndpoints:
   loadBalancer:
     hostedZone:
       id: hostedzone-xxxxxx
-
-kubelet:
-  rotateCerts: 
-    enabled: true
 `
 
 func ConfigFromBytes(data []byte) (*Config, error) {
@@ -51,22 +48,6 @@ func NodePoolConfigFromBytes(data []byte) (*NodePoolConfig, error) {
 	}
 
 	return NodePoolCompile(c.Worker.NodePools[0], c)
-}
-
-func TestNodePoolRotateCerts(t *testing.T) {
-	npconfig := NodePoolConfig{
-		WorkerNodePool: api.WorkerNodePool{
-			Kubelet: api.Kubelet{
-				RotateCerts: api.RotateCerts{
-					Enabled: true,
-				},
-			},
-		},
-	}
-
-	if !(npconfig.FeatureGates()["RotateKubeletClientCertificate"] == "true") {
-		t.Errorf("When RotateCerts is enabled, Feature Gate RotateKubeletClientCertificate should be automatically enabled too")
-	}
 }
 
 const externalDNSNameConfig = `externalDNSName: test.staging.core-os.net

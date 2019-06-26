@@ -58,7 +58,7 @@ func (a *API) resolveReferences() {
 		// Resolve references for errors also
 		for i := range o.ErrorRefs {
 			resolver.resolveReference(&o.ErrorRefs[i])
-			o.ErrorRefs[i].Shape.IsError = true
+			o.ErrorRefs[i].Shape.Exception = true
 			o.ErrorRefs[i].Shape.ErrorInfo.Type = o.ErrorRefs[i].Shape.ShapeName
 		}
 	}
@@ -81,7 +81,6 @@ func (r *referenceResolver) resolveReference(ref *ShapeRef) {
 	shape, ok := r.API.Shapes[ref.ShapeName]
 	if !ok {
 		panic(fmt.Sprintf("unable resolve reference, %s", ref.ShapeName))
-		return
 	}
 
 	if ref.JSONValue {
@@ -173,6 +172,10 @@ func (a *API) renameExportable() {
 		}
 
 		for mName, member := range s.MemberRefs {
+			ref := s.MemberRefs[mName]
+			ref.OrigShapeName = mName
+			s.MemberRefs[mName] = ref
+
 			newName := a.ExportableName(mName)
 			if newName != mName {
 				delete(s.MemberRefs, mName)
@@ -375,20 +378,11 @@ func (a *API) setMetadataEndpointsKey() {
 	}
 }
 
-// Suppress event stream must be run before setup event stream
-func (a *API) suppressHTTP2EventStreams() {
-	if a.Metadata.ProtocolSettings.HTTP2 != "eventstream" {
-		return
-	}
-
-	for name, op := range a.Operations {
-		outbound := hasEventStream(op.InputRef.Shape)
-		inbound := hasEventStream(op.OutputRef.Shape)
-
-		if !(outbound || inbound) {
-			continue
+func (a *API) findEndpointDiscoveryOp() {
+	for _, op := range a.Operations {
+		if op.IsEndpointDiscoveryOp {
+			a.EndpointDiscoveryOp = op
+			return
 		}
-
-		a.removeOperation(name)
 	}
 }

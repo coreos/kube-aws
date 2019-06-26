@@ -112,7 +112,7 @@ coreos:
 	    home-url: https://github.com/coreos/coreos-cloudinit
 	    bug-report-url: https://github.com/coreos/coreos-cloudinit
 	update:
-		reboot-strategy: best-effort
+		reboot-strategy: etcd-lock
 `
 
 	client := NewHttpClient()

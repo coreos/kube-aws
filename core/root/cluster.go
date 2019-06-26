@@ -482,6 +482,8 @@ func (cl *Cluster) create(cfSvc *cloudformation.CloudFormation) error {
 		return err
 	}
 
+	logger.Infof("Creating cluster %s with Kubernetes %s and etcd %s ...", cl.Cfg.ClusterName, cl.Cfg.K8sVer, cl.Cfg.Etcd.Version())
+
 	q := make(chan struct{}, 1)
 	defer func() { q <- struct{}{} }()
 
@@ -735,6 +737,8 @@ func (cl *Cluster) update(cfSvc *cloudformation.CloudFormation, targets Operatio
 	if err != nil {
 		return "", err
 	}
+
+	logger.Infof("Updating cluster %s with Kubernetes %s and etcd %s ...", cl.Cfg.ClusterName, cl.Cfg.K8sVer, cl.Cfg.Etcd.Version())
 
 	q := make(chan struct{}, 1)
 	defer func() { q <- struct{}{} }()

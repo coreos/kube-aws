@@ -36,16 +36,8 @@ func TestEtcd(t *testing.T) {
 		t.Errorf("name tag key incorrect, expected: kube-aws:etcd:name, got: %s", etcdTest.NameTagKey())
 	}
 
-	if etcdTest.Version() != "3.2.13" {
-		t.Errorf("etcd version incorrect, epxected: 3.2.13, got: %s", etcdTest.Version())
-	}
-
 	if !etcdTest.NodeShouldHaveEIP() {
 		t.Error("expected: true, got: false")
-	}
-
-	if etcdTest.SystemdUnitName() != "etcd-member.service" {
-		t.Errorf("etcd systemd unit name incorrect, expected: etcd-member.service, got %s", etcdTest.SystemdUnitName())
 	}
 
 	if etcdTest.SecurityGroupRefs()[0] != `{"Fn::ImportValue" : {"Fn::Sub" : "${NetworkStackName}-EtcdSecurityGroup"}}` {

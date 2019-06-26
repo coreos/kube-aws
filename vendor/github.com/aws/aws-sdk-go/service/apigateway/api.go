@@ -17,7 +17,7 @@ const opCreateApiKey = "CreateApiKey"
 // CreateApiKeyRequest generates a "aws/request.Request" representing the
 // client's request for the CreateApiKey operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -113,7 +113,7 @@ const opCreateAuthorizer = "CreateAuthorizer"
 // CreateAuthorizerRequest generates a "aws/request.Request" representing the
 // client's request for the CreateAuthorizer operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -205,7 +205,7 @@ const opCreateBasePathMapping = "CreateBasePathMapping"
 // CreateBasePathMappingRequest generates a "aws/request.Request" representing the
 // client's request for the CreateBasePathMapping operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -296,7 +296,7 @@ const opCreateDeployment = "CreateDeployment"
 // CreateDeploymentRequest generates a "aws/request.Request" representing the
 // client's request for the CreateDeployment operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -395,7 +395,7 @@ const opCreateDocumentationPart = "CreateDocumentationPart"
 // CreateDocumentationPartRequest generates a "aws/request.Request" representing the
 // client's request for the CreateDocumentationPart operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -487,7 +487,7 @@ const opCreateDocumentationVersion = "CreateDocumentationVersion"
 // CreateDocumentationVersionRequest generates a "aws/request.Request" representing the
 // client's request for the CreateDocumentationVersion operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -579,7 +579,7 @@ const opCreateDomainName = "CreateDomainName"
 // CreateDomainNameRequest generates a "aws/request.Request" representing the
 // client's request for the CreateDomainName operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -667,7 +667,7 @@ const opCreateModel = "CreateModel"
 // CreateModelRequest generates a "aws/request.Request" representing the
 // client's request for the CreateModel operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -761,7 +761,7 @@ const opCreateRequestValidator = "CreateRequestValidator"
 // CreateRequestValidatorRequest generates a "aws/request.Request" representing the
 // client's request for the CreateRequestValidator operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -851,7 +851,7 @@ const opCreateResource = "CreateResource"
 // CreateResourceRequest generates a "aws/request.Request" representing the
 // client's request for the CreateResource operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -945,7 +945,7 @@ const opCreateRestApi = "CreateRestApi"
 // CreateRestApiRequest generates a "aws/request.Request" representing the
 // client's request for the CreateRestApi operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1032,7 +1032,7 @@ const opCreateStage = "CreateStage"
 // CreateStageRequest generates a "aws/request.Request" representing the
 // client's request for the CreateStage operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1127,7 +1127,7 @@ const opCreateUsagePlan = "CreateUsagePlan"
 // CreateUsagePlanRequest generates a "aws/request.Request" representing the
 // client's request for the CreateUsagePlan operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1222,7 +1222,7 @@ const opCreateUsagePlanKey = "CreateUsagePlanKey"
 // CreateUsagePlanKeyRequest generates a "aws/request.Request" representing the
 // client's request for the CreateUsagePlanKey operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1313,7 +1313,7 @@ const opCreateVpcLink = "CreateVpcLink"
 // CreateVpcLinkRequest generates a "aws/request.Request" representing the
 // client's request for the CreateVpcLink operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1400,7 +1400,7 @@ const opDeleteApiKey = "DeleteApiKey"
 // DeleteApiKeyRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteApiKey operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1432,8 +1432,7 @@ func (c *APIGateway) DeleteApiKeyRequest(input *DeleteApiKeyInput) (req *request
 
 	output = &DeleteApiKeyOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -1485,7 +1484,7 @@ const opDeleteAuthorizer = "DeleteAuthorizer"
 // DeleteAuthorizerRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteAuthorizer operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1517,8 +1516,7 @@ func (c *APIGateway) DeleteAuthorizerRequest(input *DeleteAuthorizerInput) (req 
 
 	output = &DeleteAuthorizerOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -1580,7 +1578,7 @@ const opDeleteBasePathMapping = "DeleteBasePathMapping"
 // DeleteBasePathMappingRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteBasePathMapping operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1612,8 +1610,7 @@ func (c *APIGateway) DeleteBasePathMappingRequest(input *DeleteBasePathMappingIn
 
 	output = &DeleteBasePathMappingOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -1673,7 +1670,7 @@ const opDeleteClientCertificate = "DeleteClientCertificate"
 // DeleteClientCertificateRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteClientCertificate operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1705,8 +1702,7 @@ func (c *APIGateway) DeleteClientCertificateRequest(input *DeleteClientCertifica
 
 	output = &DeleteClientCertificateOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -1762,7 +1758,7 @@ const opDeleteDeployment = "DeleteDeployment"
 // DeleteDeploymentRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteDeployment operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1794,8 +1790,7 @@ func (c *APIGateway) DeleteDeploymentRequest(input *DeleteDeploymentInput) (req 
 
 	output = &DeleteDeploymentOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -1852,7 +1847,7 @@ const opDeleteDocumentationPart = "DeleteDocumentationPart"
 // DeleteDocumentationPartRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteDocumentationPart operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1884,8 +1879,7 @@ func (c *APIGateway) DeleteDocumentationPartRequest(input *DeleteDocumentationPa
 
 	output = &DeleteDocumentationPartOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -1943,7 +1937,7 @@ const opDeleteDocumentationVersion = "DeleteDocumentationVersion"
 // DeleteDocumentationVersionRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteDocumentationVersion operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -1975,8 +1969,7 @@ func (c *APIGateway) DeleteDocumentationVersionRequest(input *DeleteDocumentatio
 
 	output = &DeleteDocumentationVersionOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -2034,7 +2027,7 @@ const opDeleteDomainName = "DeleteDomainName"
 // DeleteDomainNameRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteDomainName operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2066,8 +2059,7 @@ func (c *APIGateway) DeleteDomainNameRequest(input *DeleteDomainNameInput) (req 
 
 	output = &DeleteDomainNameOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -2119,7 +2111,7 @@ const opDeleteGatewayResponse = "DeleteGatewayResponse"
 // DeleteGatewayResponseRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteGatewayResponse operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2151,8 +2143,7 @@ func (c *APIGateway) DeleteGatewayResponseRequest(input *DeleteGatewayResponseIn
 
 	output = &DeleteGatewayResponseOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -2213,7 +2204,7 @@ const opDeleteIntegration = "DeleteIntegration"
 // DeleteIntegrationRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteIntegration operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2245,8 +2236,7 @@ func (c *APIGateway) DeleteIntegrationRequest(input *DeleteIntegrationInput) (re
 
 	output = &DeleteIntegrationOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -2302,7 +2292,7 @@ const opDeleteIntegrationResponse = "DeleteIntegrationResponse"
 // DeleteIntegrationResponseRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteIntegrationResponse operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2334,8 +2324,7 @@ func (c *APIGateway) DeleteIntegrationResponseRequest(input *DeleteIntegrationRe
 
 	output = &DeleteIntegrationResponseOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -2395,7 +2384,7 @@ const opDeleteMethod = "DeleteMethod"
 // DeleteMethodRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteMethod operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2427,8 +2416,7 @@ func (c *APIGateway) DeleteMethodRequest(input *DeleteMethodInput) (req *request
 
 	output = &DeleteMethodOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -2484,7 +2472,7 @@ const opDeleteMethodResponse = "DeleteMethodResponse"
 // DeleteMethodResponseRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteMethodResponse operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2516,8 +2504,7 @@ func (c *APIGateway) DeleteMethodResponseRequest(input *DeleteMethodResponseInpu
 
 	output = &DeleteMethodResponseOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -2577,7 +2564,7 @@ const opDeleteModel = "DeleteModel"
 // DeleteModelRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteModel operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2609,8 +2596,7 @@ func (c *APIGateway) DeleteModelRequest(input *DeleteModelInput) (req *request.R
 
 	output = &DeleteModelOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -2670,7 +2656,7 @@ const opDeleteRequestValidator = "DeleteRequestValidator"
 // DeleteRequestValidatorRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteRequestValidator operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2702,8 +2688,7 @@ func (c *APIGateway) DeleteRequestValidatorRequest(input *DeleteRequestValidator
 
 	output = &DeleteRequestValidatorOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -2763,7 +2748,7 @@ const opDeleteResource = "DeleteResource"
 // DeleteResourceRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteResource operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2795,8 +2780,7 @@ func (c *APIGateway) DeleteResourceRequest(input *DeleteResourceInput) (req *req
 
 	output = &DeleteResourceOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -2856,7 +2840,7 @@ const opDeleteRestApi = "DeleteRestApi"
 // DeleteRestApiRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteRestApi operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2888,8 +2872,7 @@ func (c *APIGateway) DeleteRestApiRequest(input *DeleteRestApiInput) (req *reque
 
 	output = &DeleteRestApiOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -2945,7 +2928,7 @@ const opDeleteStage = "DeleteStage"
 // DeleteStageRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteStage operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -2977,8 +2960,7 @@ func (c *APIGateway) DeleteStageRequest(input *DeleteStageInput) (req *request.R
 
 	output = &DeleteStageOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -3034,7 +3016,7 @@ const opDeleteUsagePlan = "DeleteUsagePlan"
 // DeleteUsagePlanRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteUsagePlan operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -3066,8 +3048,7 @@ func (c *APIGateway) DeleteUsagePlanRequest(input *DeleteUsagePlanInput) (req *r
 
 	output = &DeleteUsagePlanOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -3123,7 +3104,7 @@ const opDeleteUsagePlanKey = "DeleteUsagePlanKey"
 // DeleteUsagePlanKeyRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteUsagePlanKey operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -3155,8 +3136,7 @@ func (c *APIGateway) DeleteUsagePlanKeyRequest(input *DeleteUsagePlanKeyInput) (
 
 	output = &DeleteUsagePlanKeyOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -3217,7 +3197,7 @@ const opDeleteVpcLink = "DeleteVpcLink"
 // DeleteVpcLinkRequest generates a "aws/request.Request" representing the
 // client's request for the DeleteVpcLink operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -3249,8 +3229,7 @@ func (c *APIGateway) DeleteVpcLinkRequest(input *DeleteVpcLinkInput) (req *reque
 
 	output = &DeleteVpcLinkOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -3306,7 +3285,7 @@ const opFlushStageAuthorizersCache = "FlushStageAuthorizersCache"
 // FlushStageAuthorizersCacheRequest generates a "aws/request.Request" representing the
 // client's request for the FlushStageAuthorizersCache operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -3338,8 +3317,7 @@ func (c *APIGateway) FlushStageAuthorizersCacheRequest(input *FlushStageAuthoriz
 
 	output = &FlushStageAuthorizersCacheOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -3395,7 +3373,7 @@ const opFlushStageCache = "FlushStageCache"
 // FlushStageCacheRequest generates a "aws/request.Request" representing the
 // client's request for the FlushStageCache operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -3427,8 +3405,7 @@ func (c *APIGateway) FlushStageCacheRequest(input *FlushStageCacheInput) (req *r
 
 	output = &FlushStageCacheOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -3484,7 +3461,7 @@ const opGenerateClientCertificate = "GenerateClientCertificate"
 // GenerateClientCertificateRequest generates a "aws/request.Request" representing the
 // client's request for the GenerateClientCertificate operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -3567,7 +3544,7 @@ const opGetAccount = "GetAccount"
 // GetAccountRequest generates a "aws/request.Request" representing the
 // client's request for the GetAccount operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -3650,7 +3627,7 @@ const opGetApiKey = "GetApiKey"
 // GetApiKeyRequest generates a "aws/request.Request" representing the
 // client's request for the GetApiKey operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -3733,7 +3710,7 @@ const opGetApiKeys = "GetApiKeys"
 // GetApiKeysRequest generates a "aws/request.Request" representing the
 // client's request for the GetApiKeys operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -3873,7 +3850,7 @@ const opGetAuthorizer = "GetAuthorizer"
 // GetAuthorizerRequest generates a "aws/request.Request" representing the
 // client's request for the GetAuthorizer operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -3958,7 +3935,7 @@ const opGetAuthorizers = "GetAuthorizers"
 // GetAuthorizersRequest generates a "aws/request.Request" representing the
 // client's request for the GetAuthorizers operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -4047,7 +4024,7 @@ const opGetBasePathMapping = "GetBasePathMapping"
 // GetBasePathMappingRequest generates a "aws/request.Request" representing the
 // client's request for the GetBasePathMapping operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -4130,7 +4107,7 @@ const opGetBasePathMappings = "GetBasePathMappings"
 // GetBasePathMappingsRequest generates a "aws/request.Request" representing the
 // client's request for the GetBasePathMappings operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -4269,7 +4246,7 @@ const opGetClientCertificate = "GetClientCertificate"
 // GetClientCertificateRequest generates a "aws/request.Request" representing the
 // client's request for the GetClientCertificate operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -4352,7 +4329,7 @@ const opGetClientCertificates = "GetClientCertificates"
 // GetClientCertificatesRequest generates a "aws/request.Request" representing the
 // client's request for the GetClientCertificates operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -4492,7 +4469,7 @@ const opGetDeployment = "GetDeployment"
 // GetDeploymentRequest generates a "aws/request.Request" representing the
 // client's request for the GetDeployment operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -4579,7 +4556,7 @@ const opGetDeployments = "GetDeployments"
 // GetDeploymentsRequest generates a "aws/request.Request" representing the
 // client's request for the GetDeployments operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -4723,7 +4700,7 @@ const opGetDocumentationPart = "GetDocumentationPart"
 // GetDocumentationPartRequest generates a "aws/request.Request" representing the
 // client's request for the GetDocumentationPart operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -4804,7 +4781,7 @@ const opGetDocumentationParts = "GetDocumentationParts"
 // GetDocumentationPartsRequest generates a "aws/request.Request" representing the
 // client's request for the GetDocumentationParts operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -4889,7 +4866,7 @@ const opGetDocumentationVersion = "GetDocumentationVersion"
 // GetDocumentationVersionRequest generates a "aws/request.Request" representing the
 // client's request for the GetDocumentationVersion operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -4970,7 +4947,7 @@ const opGetDocumentationVersions = "GetDocumentationVersions"
 // GetDocumentationVersionsRequest generates a "aws/request.Request" representing the
 // client's request for the GetDocumentationVersions operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -5055,7 +5032,7 @@ const opGetDomainName = "GetDomainName"
 // GetDomainNameRequest generates a "aws/request.Request" representing the
 // client's request for the GetDomainName operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -5143,7 +5120,7 @@ const opGetDomainNames = "GetDomainNames"
 // GetDomainNamesRequest generates a "aws/request.Request" representing the
 // client's request for the GetDomainNames operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -5283,7 +5260,7 @@ const opGetExport = "GetExport"
 // GetExportRequest generates a "aws/request.Request" representing the
 // client's request for the GetExport operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -5374,7 +5351,7 @@ const opGetGatewayResponse = "GetGatewayResponse"
 // GetGatewayResponseRequest generates a "aws/request.Request" representing the
 // client's request for the GetGatewayResponse operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -5457,7 +5434,7 @@ const opGetGatewayResponses = "GetGatewayResponses"
 // GetGatewayResponsesRequest generates a "aws/request.Request" representing the
 // client's request for the GetGatewayResponses operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -5547,7 +5524,7 @@ const opGetIntegration = "GetIntegration"
 // GetIntegrationRequest generates a "aws/request.Request" representing the
 // client's request for the GetIntegration operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -5630,7 +5607,7 @@ const opGetIntegrationResponse = "GetIntegrationResponse"
 // GetIntegrationResponseRequest generates a "aws/request.Request" representing the
 // client's request for the GetIntegrationResponse operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -5713,7 +5690,7 @@ const opGetMethod = "GetMethod"
 // GetMethodRequest generates a "aws/request.Request" representing the
 // client's request for the GetMethod operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -5796,7 +5773,7 @@ const opGetMethodResponse = "GetMethodResponse"
 // GetMethodResponseRequest generates a "aws/request.Request" representing the
 // client's request for the GetMethodResponse operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -5879,7 +5856,7 @@ const opGetModel = "GetModel"
 // GetModelRequest generates a "aws/request.Request" representing the
 // client's request for the GetModel operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -5962,7 +5939,7 @@ const opGetModelTemplate = "GetModelTemplate"
 // GetModelTemplateRequest generates a "aws/request.Request" representing the
 // client's request for the GetModelTemplate operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -6050,7 +6027,7 @@ const opGetModels = "GetModels"
 // GetModelsRequest generates a "aws/request.Request" representing the
 // client's request for the GetModels operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -6193,7 +6170,7 @@ const opGetRequestValidator = "GetRequestValidator"
 // GetRequestValidatorRequest generates a "aws/request.Request" representing the
 // client's request for the GetRequestValidator operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -6276,7 +6253,7 @@ const opGetRequestValidators = "GetRequestValidators"
 // GetRequestValidatorsRequest generates a "aws/request.Request" representing the
 // client's request for the GetRequestValidators operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -6363,7 +6340,7 @@ const opGetResource = "GetResource"
 // GetResourceRequest generates a "aws/request.Request" representing the
 // client's request for the GetResource operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -6446,7 +6423,7 @@ const opGetResources = "GetResources"
 // GetResourcesRequest generates a "aws/request.Request" representing the
 // client's request for the GetResources operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -6589,7 +6566,7 @@ const opGetRestApi = "GetRestApi"
 // GetRestApiRequest generates a "aws/request.Request" representing the
 // client's request for the GetRestApi operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -6672,7 +6649,7 @@ const opGetRestApis = "GetRestApis"
 // GetRestApisRequest generates a "aws/request.Request" representing the
 // client's request for the GetRestApis operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -6812,7 +6789,7 @@ const opGetSdk = "GetSdk"
 // GetSdkRequest generates a "aws/request.Request" representing the
 // client's request for the GetSdk operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -6903,7 +6880,7 @@ const opGetSdkType = "GetSdkType"
 // GetSdkTypeRequest generates a "aws/request.Request" representing the
 // client's request for the GetSdkType operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -6984,7 +6961,7 @@ const opGetSdkTypes = "GetSdkTypes"
 // GetSdkTypesRequest generates a "aws/request.Request" representing the
 // client's request for the GetSdkTypes operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -7062,7 +7039,7 @@ const opGetStage = "GetStage"
 // GetStageRequest generates a "aws/request.Request" representing the
 // client's request for the GetStage operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -7145,7 +7122,7 @@ const opGetStages = "GetStages"
 // GetStagesRequest generates a "aws/request.Request" representing the
 // client's request for the GetStages operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -7228,7 +7205,7 @@ const opGetTags = "GetTags"
 // GetTagsRequest generates a "aws/request.Request" representing the
 // client's request for the GetTags operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -7318,7 +7295,7 @@ const opGetUsage = "GetUsage"
 // GetUsageRequest generates a "aws/request.Request" representing the
 // client's request for the GetUsage operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -7461,7 +7438,7 @@ const opGetUsagePlan = "GetUsagePlan"
 // GetUsagePlanRequest generates a "aws/request.Request" representing the
 // client's request for the GetUsagePlan operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -7548,7 +7525,7 @@ const opGetUsagePlanKey = "GetUsagePlanKey"
 // GetUsagePlanKeyRequest generates a "aws/request.Request" representing the
 // client's request for the GetUsagePlanKey operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -7635,7 +7612,7 @@ const opGetUsagePlanKeys = "GetUsagePlanKeys"
 // GetUsagePlanKeysRequest generates a "aws/request.Request" representing the
 // client's request for the GetUsagePlanKeys operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -7779,7 +7756,7 @@ const opGetUsagePlans = "GetUsagePlans"
 // GetUsagePlansRequest generates a "aws/request.Request" representing the
 // client's request for the GetUsagePlans operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -7926,7 +7903,7 @@ const opGetVpcLink = "GetVpcLink"
 // GetVpcLinkRequest generates a "aws/request.Request" representing the
 // client's request for the GetVpcLink operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -8009,7 +7986,7 @@ const opGetVpcLinks = "GetVpcLinks"
 // GetVpcLinksRequest generates a "aws/request.Request" representing the
 // client's request for the GetVpcLinks operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -8149,7 +8126,7 @@ const opImportApiKeys = "ImportApiKeys"
 // ImportApiKeysRequest generates a "aws/request.Request" representing the
 // client's request for the ImportApiKeys operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -8243,7 +8220,7 @@ const opImportDocumentationParts = "ImportDocumentationParts"
 // ImportDocumentationPartsRequest generates a "aws/request.Request" representing the
 // client's request for the ImportDocumentationParts operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -8331,7 +8308,7 @@ const opImportRestApi = "ImportRestApi"
 // ImportRestApiRequest generates a "aws/request.Request" representing the
 // client's request for the ImportRestApi operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -8423,7 +8400,7 @@ const opPutGatewayResponse = "PutGatewayResponse"
 // PutGatewayResponseRequest generates a "aws/request.Request" representing the
 // client's request for the PutGatewayResponse operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -8514,7 +8491,7 @@ const opPutIntegration = "PutIntegration"
 // PutIntegrationRequest generates a "aws/request.Request" representing the
 // client's request for the PutIntegration operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -8605,7 +8582,7 @@ const opPutIntegrationResponse = "PutIntegrationResponse"
 // PutIntegrationResponseRequest generates a "aws/request.Request" representing the
 // client's request for the PutIntegrationResponse operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -8699,7 +8676,7 @@ const opPutMethod = "PutMethod"
 // PutMethodRequest generates a "aws/request.Request" representing the
 // client's request for the PutMethod operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -8793,7 +8770,7 @@ const opPutMethodResponse = "PutMethodResponse"
 // PutMethodResponseRequest generates a "aws/request.Request" representing the
 // client's request for the PutMethodResponse operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -8887,7 +8864,7 @@ const opPutRestApi = "PutRestApi"
 // PutRestApiRequest generates a "aws/request.Request" representing the
 // client's request for the PutRestApi operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -8984,7 +8961,7 @@ const opTagResource = "TagResource"
 // TagResourceRequest generates a "aws/request.Request" representing the
 // client's request for the TagResource operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -9016,8 +8993,7 @@ func (c *APIGateway) TagResourceRequest(input *TagResourceInput) (req *request.R
 
 	output = &TagResourceOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -9080,7 +9056,7 @@ const opTestInvokeAuthorizer = "TestInvokeAuthorizer"
 // TestInvokeAuthorizerRequest generates a "aws/request.Request" representing the
 // client's request for the TestInvokeAuthorizer operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -9170,7 +9146,7 @@ const opTestInvokeMethod = "TestInvokeMethod"
 // TestInvokeMethodRequest generates a "aws/request.Request" representing the
 // client's request for the TestInvokeMethod operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -9258,7 +9234,7 @@ const opUntagResource = "UntagResource"
 // UntagResourceRequest generates a "aws/request.Request" representing the
 // client's request for the UntagResource operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -9290,8 +9266,7 @@ func (c *APIGateway) UntagResourceRequest(input *UntagResourceInput) (req *reque
 
 	output = &UntagResourceOutput{}
 	req = c.newRequest(op, input, output)
-	req.Handlers.Unmarshal.Remove(restjson.UnmarshalHandler)
-	req.Handlers.Unmarshal.PushBackNamed(protocol.UnmarshalDiscardBodyHandler)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
 	return
 }
 
@@ -9351,7 +9326,7 @@ const opUpdateAccount = "UpdateAccount"
 // UpdateAccountRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateAccount operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -9438,7 +9413,7 @@ const opUpdateApiKey = "UpdateApiKey"
 // UpdateApiKeyRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateApiKey operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -9529,7 +9504,7 @@ const opUpdateAuthorizer = "UpdateAuthorizer"
 // UpdateAuthorizerRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateAuthorizer operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -9618,7 +9593,7 @@ const opUpdateBasePathMapping = "UpdateBasePathMapping"
 // UpdateBasePathMappingRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateBasePathMapping operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -9709,7 +9684,7 @@ const opUpdateClientCertificate = "UpdateClientCertificate"
 // UpdateClientCertificateRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateClientCertificate operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -9796,7 +9771,7 @@ const opUpdateDeployment = "UpdateDeployment"
 // UpdateDeploymentRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateDeployment operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -9887,7 +9862,7 @@ const opUpdateDocumentationPart = "UpdateDocumentationPart"
 // UpdateDocumentationPartRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateDocumentationPart operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -9979,7 +9954,7 @@ const opUpdateDocumentationVersion = "UpdateDocumentationVersion"
 // UpdateDocumentationVersionRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateDocumentationVersion operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -10068,7 +10043,7 @@ const opUpdateDomainName = "UpdateDomainName"
 // UpdateDomainNameRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateDomainName operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -10159,7 +10134,7 @@ const opUpdateGatewayResponse = "UpdateGatewayResponse"
 // UpdateGatewayResponseRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateGatewayResponse operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -10246,7 +10221,7 @@ const opUpdateIntegration = "UpdateIntegration"
 // UpdateIntegrationRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateIntegration operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -10337,7 +10312,7 @@ const opUpdateIntegrationResponse = "UpdateIntegrationResponse"
 // UpdateIntegrationResponseRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateIntegrationResponse operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -10428,7 +10403,7 @@ const opUpdateMethod = "UpdateMethod"
 // UpdateMethodRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateMethod operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -10519,7 +10494,7 @@ const opUpdateMethodResponse = "UpdateMethodResponse"
 // UpdateMethodResponseRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateMethodResponse operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -10613,7 +10588,7 @@ const opUpdateModel = "UpdateModel"
 // UpdateModelRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateModel operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -10704,7 +10679,7 @@ const opUpdateRequestValidator = "UpdateRequestValidator"
 // UpdateRequestValidatorRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateRequestValidator operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -10791,7 +10766,7 @@ const opUpdateResource = "UpdateResource"
 // UpdateResourceRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateResource operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -10882,7 +10857,7 @@ const opUpdateRestApi = "UpdateRestApi"
 // UpdateRestApiRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateRestApi operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -10973,7 +10948,7 @@ const opUpdateStage = "UpdateStage"
 // UpdateStageRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateStage operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -11064,7 +11039,7 @@ const opUpdateUsage = "UpdateUsage"
 // UpdateUsageRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateUsage operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -11152,7 +11127,7 @@ const opUpdateUsagePlan = "UpdateUsagePlan"
 // UpdateUsagePlanRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateUsagePlan operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -11243,7 +11218,7 @@ const opUpdateVpcLink = "UpdateVpcLink"
 // UpdateVpcLinkRequest generates a "aws/request.Request" representing the
 // client's request for the UpdateVpcLink operation. The "output" return
 // value will be populated with the request's response once the request completes
-// successfuly.
+// successfully.
 //
 // Use "Send" method on the returned Request to send the API call to the service.
 // the "output" return value is not valid until after Send returns without error.
@@ -12094,6 +12069,9 @@ func (s *CreateAuthorizerInput) Validate() error {
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.Type == nil {
 		invalidParams.Add(request.NewErrParamRequired("Type"))
 	}
@@ -12206,6 +12184,9 @@ func (s *CreateBasePathMappingInput) Validate() error {
 	if s.DomainName == nil {
 		invalidParams.Add(request.NewErrParamRequired("DomainName"))
 	}
+	if s.DomainName != nil && len(*s.DomainName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DomainName", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
@@ -12293,6 +12274,9 @@ func (s *CreateDeploymentInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "CreateDeploymentInput"}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -12400,6 +12384,9 @@ func (s *CreateDocumentationPartInput) Validate() error {
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.Location != nil {
 		if err := s.Location.Validate(); err != nil {
 			invalidParams.AddNested("Location", err.(request.ErrInvalidParams))
@@ -12469,6 +12456,9 @@ func (s *CreateDocumentationVersionInput) Validate() error {
 	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -12676,6 +12666,9 @@ func (s *CreateModelInput) Validate() error {
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -12750,6 +12743,9 @@ func (s *CreateRequestValidatorInput) Validate() error {
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -12817,11 +12813,17 @@ func (s *CreateResourceInput) Validate() error {
 	if s.ParentId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ParentId"))
 	}
+	if s.ParentId != nil && len(*s.ParentId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ParentId", 1))
+	}
 	if s.PathPart == nil {
 		invalidParams.Add(request.NewErrParamRequired("PathPart"))
 	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -13037,6 +13039,9 @@ func (s *CreateStageInput) Validate() error {
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.StageName == nil {
 		invalidParams.Add(request.NewErrParamRequired("StageName"))
 	}
@@ -13234,6 +13239,9 @@ func (s *CreateUsagePlanKeyInput) Validate() error {
 	if s.UsagePlanId == nil {
 		invalidParams.Add(request.NewErrParamRequired("UsagePlanId"))
 	}
+	if s.UsagePlanId != nil && len(*s.UsagePlanId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("UsagePlanId", 1))
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -13352,6 +13360,9 @@ func (s *DeleteApiKeyInput) Validate() error {
 	if s.ApiKey == nil {
 		invalidParams.Add(request.NewErrParamRequired("ApiKey"))
 	}
+	if s.ApiKey != nil && len(*s.ApiKey) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ApiKey", 1))
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -13410,8 +13421,14 @@ func (s *DeleteAuthorizerInput) Validate() error {
 	if s.AuthorizerId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AuthorizerId"))
 	}
+	if s.AuthorizerId != nil && len(*s.AuthorizerId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AuthorizerId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -13477,8 +13494,14 @@ func (s *DeleteBasePathMappingInput) Validate() error {
 	if s.BasePath == nil {
 		invalidParams.Add(request.NewErrParamRequired("BasePath"))
 	}
+	if s.BasePath != nil && len(*s.BasePath) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("BasePath", 1))
+	}
 	if s.DomainName == nil {
 		invalidParams.Add(request.NewErrParamRequired("DomainName"))
+	}
+	if s.DomainName != nil && len(*s.DomainName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DomainName", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -13539,6 +13562,9 @@ func (s *DeleteClientCertificateInput) Validate() error {
 	if s.ClientCertificateId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ClientCertificateId"))
 	}
+	if s.ClientCertificateId != nil && len(*s.ClientCertificateId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ClientCertificateId", 1))
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -13597,8 +13623,14 @@ func (s *DeleteDeploymentInput) Validate() error {
 	if s.DeploymentId == nil {
 		invalidParams.Add(request.NewErrParamRequired("DeploymentId"))
 	}
+	if s.DeploymentId != nil && len(*s.DeploymentId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DeploymentId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -13664,8 +13696,14 @@ func (s *DeleteDocumentationPartInput) Validate() error {
 	if s.DocumentationPartId == nil {
 		invalidParams.Add(request.NewErrParamRequired("DocumentationPartId"))
 	}
+	if s.DocumentationPartId != nil && len(*s.DocumentationPartId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DocumentationPartId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -13731,8 +13769,14 @@ func (s *DeleteDocumentationVersionInput) Validate() error {
 	if s.DocumentationVersion == nil {
 		invalidParams.Add(request.NewErrParamRequired("DocumentationVersion"))
 	}
+	if s.DocumentationVersion != nil && len(*s.DocumentationVersion) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DocumentationVersion", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -13792,6 +13836,9 @@ func (s *DeleteDomainNameInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "DeleteDomainNameInput"}
 	if s.DomainName == nil {
 		invalidParams.Add(request.NewErrParamRequired("DomainName"))
+	}
+	if s.DomainName != nil && len(*s.DomainName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DomainName", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -13872,8 +13919,14 @@ func (s *DeleteGatewayResponseInput) Validate() error {
 	if s.ResponseType == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResponseType"))
 	}
+	if s.ResponseType != nil && len(*s.ResponseType) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResponseType", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -13944,11 +13997,20 @@ func (s *DeleteIntegrationInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
 	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -14030,14 +14092,26 @@ func (s *DeleteIntegrationResponseInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
+	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
 	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.StatusCode == nil {
 		invalidParams.Add(request.NewErrParamRequired("StatusCode"))
+	}
+	if s.StatusCode != nil && len(*s.StatusCode) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("StatusCode", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -14120,11 +14194,20 @@ func (s *DeleteMethodInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
 	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -14206,14 +14289,26 @@ func (s *DeleteMethodResponseInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
+	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
 	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.StatusCode == nil {
 		invalidParams.Add(request.NewErrParamRequired("StatusCode"))
+	}
+	if s.StatusCode != nil && len(*s.StatusCode) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("StatusCode", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -14291,8 +14386,14 @@ func (s *DeleteModelInput) Validate() error {
 	if s.ModelName == nil {
 		invalidParams.Add(request.NewErrParamRequired("ModelName"))
 	}
+	if s.ModelName != nil && len(*s.ModelName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ModelName", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -14358,8 +14459,14 @@ func (s *DeleteRequestValidatorInput) Validate() error {
 	if s.RequestValidatorId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RequestValidatorId"))
 	}
+	if s.RequestValidatorId != nil && len(*s.RequestValidatorId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RequestValidatorId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -14425,8 +14532,14 @@ func (s *DeleteResourceInput) Validate() error {
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
 	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -14487,6 +14600,9 @@ func (s *DeleteRestApiInput) Validate() error {
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -14545,8 +14661,14 @@ func (s *DeleteStageInput) Validate() error {
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.StageName == nil {
 		invalidParams.Add(request.NewErrParamRequired("StageName"))
+	}
+	if s.StageName != nil && len(*s.StageName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("StageName", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -14607,6 +14729,9 @@ func (s *DeleteUsagePlanInput) Validate() error {
 	if s.UsagePlanId == nil {
 		invalidParams.Add(request.NewErrParamRequired("UsagePlanId"))
 	}
+	if s.UsagePlanId != nil && len(*s.UsagePlanId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("UsagePlanId", 1))
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -14653,8 +14778,14 @@ func (s *DeleteUsagePlanKeyInput) Validate() error {
 	if s.KeyId == nil {
 		invalidParams.Add(request.NewErrParamRequired("KeyId"))
 	}
+	if s.KeyId != nil && len(*s.KeyId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("KeyId", 1))
+	}
 	if s.UsagePlanId == nil {
 		invalidParams.Add(request.NewErrParamRequired("UsagePlanId"))
+	}
+	if s.UsagePlanId != nil && len(*s.UsagePlanId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("UsagePlanId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -14729,6 +14860,9 @@ func (s *DeleteVpcLinkInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "DeleteVpcLinkInput"}
 	if s.VpcLinkId == nil {
 		invalidParams.Add(request.NewErrParamRequired("VpcLinkId"))
+	}
+	if s.VpcLinkId != nil && len(*s.VpcLinkId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("VpcLinkId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -15282,8 +15416,14 @@ func (s *FlushStageAuthorizersCacheInput) Validate() error {
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.StageName == nil {
 		invalidParams.Add(request.NewErrParamRequired("StageName"))
+	}
+	if s.StageName != nil && len(*s.StageName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("StageName", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -15349,8 +15489,14 @@ func (s *FlushStageCacheInput) Validate() error {
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.StageName == nil {
 		invalidParams.Add(request.NewErrParamRequired("StageName"))
+	}
+	if s.StageName != nil && len(*s.StageName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("StageName", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -15453,6 +15599,9 @@ func (s *GetApiKeyInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetApiKeyInput"}
 	if s.ApiKey == nil {
 		invalidParams.Add(request.NewErrParamRequired("ApiKey"))
+	}
+	if s.ApiKey != nil && len(*s.ApiKey) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ApiKey", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -15611,8 +15760,14 @@ func (s *GetAuthorizerInput) Validate() error {
 	if s.AuthorizerId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AuthorizerId"))
 	}
+	if s.AuthorizerId != nil && len(*s.AuthorizerId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AuthorizerId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -15665,6 +15820,9 @@ func (s *GetAuthorizersInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetAuthorizersInput"}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -15759,8 +15917,14 @@ func (s *GetBasePathMappingInput) Validate() error {
 	if s.BasePath == nil {
 		invalidParams.Add(request.NewErrParamRequired("BasePath"))
 	}
+	if s.BasePath != nil && len(*s.BasePath) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("BasePath", 1))
+	}
 	if s.DomainName == nil {
 		invalidParams.Add(request.NewErrParamRequired("DomainName"))
+	}
+	if s.DomainName != nil && len(*s.DomainName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DomainName", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -15813,6 +15977,9 @@ func (s *GetBasePathMappingsInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetBasePathMappingsInput"}
 	if s.DomainName == nil {
 		invalidParams.Add(request.NewErrParamRequired("DomainName"))
+	}
+	if s.DomainName != nil && len(*s.DomainName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DomainName", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -15898,6 +16065,9 @@ func (s *GetClientCertificateInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetClientCertificateInput"}
 	if s.ClientCertificateId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ClientCertificateId"))
+	}
+	if s.ClientCertificateId != nil && len(*s.ClientCertificateId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ClientCertificateId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -16020,8 +16190,14 @@ func (s *GetDeploymentInput) Validate() error {
 	if s.DeploymentId == nil {
 		invalidParams.Add(request.NewErrParamRequired("DeploymentId"))
 	}
+	if s.DeploymentId != nil && len(*s.DeploymentId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DeploymentId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -16080,6 +16256,9 @@ func (s *GetDeploymentsInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetDeploymentsInput"}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -16180,8 +16359,14 @@ func (s *GetDocumentationPartInput) Validate() error {
 	if s.DocumentationPartId == nil {
 		invalidParams.Add(request.NewErrParamRequired("DocumentationPartId"))
 	}
+	if s.DocumentationPartId != nil && len(*s.DocumentationPartId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DocumentationPartId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -16249,6 +16434,9 @@ func (s *GetDocumentationPartsInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetDocumentationPartsInput"}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -16364,8 +16552,14 @@ func (s *GetDocumentationVersionInput) Validate() error {
 	if s.DocumentationVersion == nil {
 		invalidParams.Add(request.NewErrParamRequired("DocumentationVersion"))
 	}
+	if s.DocumentationVersion != nil && len(*s.DocumentationVersion) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DocumentationVersion", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -16418,6 +16612,9 @@ func (s *GetDocumentationVersionsInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetDocumentationVersionsInput"}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -16507,6 +16704,9 @@ func (s *GetDomainNameInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetDomainNameInput"}
 	if s.DomainName == nil {
 		invalidParams.Add(request.NewErrParamRequired("DomainName"))
+	}
+	if s.DomainName != nil && len(*s.DomainName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DomainName", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -16640,11 +16840,20 @@ func (s *GetExportInput) Validate() error {
 	if s.ExportType == nil {
 		invalidParams.Add(request.NewErrParamRequired("ExportType"))
 	}
+	if s.ExportType != nil && len(*s.ExportType) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ExportType", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.StageName == nil {
 		invalidParams.Add(request.NewErrParamRequired("StageName"))
+	}
+	if s.StageName != nil && len(*s.StageName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("StageName", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -16777,8 +16986,14 @@ func (s *GetGatewayResponseInput) Validate() error {
 	if s.ResponseType == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResponseType"))
 	}
+	if s.ResponseType != nil && len(*s.ResponseType) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResponseType", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -16836,6 +17051,9 @@ func (s *GetGatewayResponsesInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetGatewayResponsesInput"}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -17089,11 +17307,20 @@ func (s *GetIntegrationInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
 	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -17161,14 +17388,26 @@ func (s *GetIntegrationResponseInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
+	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
 	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.StatusCode == nil {
 		invalidParams.Add(request.NewErrParamRequired("StatusCode"))
+	}
+	if s.StatusCode != nil && len(*s.StatusCode) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("StatusCode", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -17237,11 +17476,20 @@ func (s *GetMethodInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
 	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -17309,14 +17557,26 @@ func (s *GetMethodResponseInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
+	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
 	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.StatusCode == nil {
 		invalidParams.Add(request.NewErrParamRequired("StatusCode"))
+	}
+	if s.StatusCode != nil && len(*s.StatusCode) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("StatusCode", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -17385,8 +17645,14 @@ func (s *GetModelInput) Validate() error {
 	if s.ModelName == nil {
 		invalidParams.Add(request.NewErrParamRequired("ModelName"))
 	}
+	if s.ModelName != nil && len(*s.ModelName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ModelName", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -17444,8 +17710,14 @@ func (s *GetModelTemplateInput) Validate() error {
 	if s.ModelName == nil {
 		invalidParams.Add(request.NewErrParamRequired("ModelName"))
 	}
+	if s.ModelName != nil && len(*s.ModelName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ModelName", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -17525,6 +17797,9 @@ func (s *GetModelsInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetModelsInput"}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -17616,8 +17891,14 @@ func (s *GetRequestValidatorInput) Validate() error {
 	if s.RequestValidatorId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RequestValidatorId"))
 	}
+	if s.RequestValidatorId != nil && len(*s.RequestValidatorId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RequestValidatorId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -17670,6 +17951,9 @@ func (s *GetRequestValidatorsInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetRequestValidatorsInput"}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -17773,8 +18057,14 @@ func (s *GetResourceInput) Validate() error {
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
 	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -17841,6 +18131,9 @@ func (s *GetResourcesInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetResourcesInput"}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -17932,6 +18225,9 @@ func (s *GetRestApiInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetRestApiInput"}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -18059,11 +18355,20 @@ func (s *GetSdkInput) Validate() error {
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.SdkType == nil {
 		invalidParams.Add(request.NewErrParamRequired("SdkType"))
 	}
+	if s.SdkType != nil && len(*s.SdkType) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("SdkType", 1))
+	}
 	if s.StageName == nil {
 		invalidParams.Add(request.NewErrParamRequired("StageName"))
+	}
+	if s.StageName != nil && len(*s.StageName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("StageName", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -18163,6 +18468,9 @@ func (s *GetSdkTypeInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetSdkTypeInput"}
 	if s.Id == nil {
 		invalidParams.Add(request.NewErrParamRequired("Id"))
+	}
+	if s.Id != nil && len(*s.Id) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("Id", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -18274,8 +18582,14 @@ func (s *GetStageInput) Validate() error {
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.StageName == nil {
 		invalidParams.Add(request.NewErrParamRequired("StageName"))
+	}
+	if s.StageName != nil && len(*s.StageName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("StageName", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -18324,6 +18638,9 @@ func (s *GetStagesInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetStagesInput"}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -18404,6 +18721,9 @@ func (s *GetTagsInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetTagsInput"}
 	if s.ResourceArn == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceArn"))
+	}
+	if s.ResourceArn != nil && len(*s.ResourceArn) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceArn", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -18507,6 +18827,9 @@ func (s *GetUsageInput) Validate() error {
 	if s.UsagePlanId == nil {
 		invalidParams.Add(request.NewErrParamRequired("UsagePlanId"))
 	}
+	if s.UsagePlanId != nil && len(*s.UsagePlanId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("UsagePlanId", 1))
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -18576,6 +18899,9 @@ func (s *GetUsagePlanInput) Validate() error {
 	if s.UsagePlanId == nil {
 		invalidParams.Add(request.NewErrParamRequired("UsagePlanId"))
 	}
+	if s.UsagePlanId != nil && len(*s.UsagePlanId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("UsagePlanId", 1))
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -18622,8 +18948,14 @@ func (s *GetUsagePlanKeyInput) Validate() error {
 	if s.KeyId == nil {
 		invalidParams.Add(request.NewErrParamRequired("KeyId"))
 	}
+	if s.KeyId != nil && len(*s.KeyId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("KeyId", 1))
+	}
 	if s.UsagePlanId == nil {
 		invalidParams.Add(request.NewErrParamRequired("UsagePlanId"))
+	}
+	if s.UsagePlanId != nil && len(*s.UsagePlanId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("UsagePlanId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -18681,6 +19013,9 @@ func (s *GetUsagePlanKeysInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetUsagePlanKeysInput"}
 	if s.UsagePlanId == nil {
 		invalidParams.Add(request.NewErrParamRequired("UsagePlanId"))
+	}
+	if s.UsagePlanId != nil && len(*s.UsagePlanId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("UsagePlanId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -18851,6 +19186,9 @@ func (s *GetVpcLinkInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "GetVpcLinkInput"}
 	if s.VpcLinkId == nil {
 		invalidParams.Add(request.NewErrParamRequired("VpcLinkId"))
+	}
+	if s.VpcLinkId != nil && len(*s.VpcLinkId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("VpcLinkId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -19077,6 +19415,9 @@ func (s *ImportDocumentationPartsInput) Validate() error {
 	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -20300,8 +20641,14 @@ func (s *PutGatewayResponseInput) Validate() error {
 	if s.ResponseType == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResponseType"))
 	}
+	if s.ResponseType != nil && len(*s.ResponseType) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResponseType", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -20477,11 +20824,20 @@ func (s *PutIntegrationInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
 	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 	if s.Type == nil {
 		invalidParams.Add(request.NewErrParamRequired("Type"))
@@ -20662,14 +21018,26 @@ func (s *PutIntegrationResponseInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
+	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
 	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.StatusCode == nil {
 		invalidParams.Add(request.NewErrParamRequired("StatusCode"))
+	}
+	if s.StatusCode != nil && len(*s.StatusCode) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("StatusCode", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -20813,11 +21181,20 @@ func (s *PutMethodInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
 	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -20951,14 +21328,26 @@ func (s *PutMethodResponseInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
+	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
 	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.StatusCode == nil {
 		invalidParams.Add(request.NewErrParamRequired("StatusCode"))
+	}
+	if s.StatusCode != nil && len(*s.StatusCode) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("StatusCode", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -21053,6 +21442,9 @@ func (s *PutRestApiInput) Validate() error {
 	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -21554,6 +21946,9 @@ type Stage struct {
 	// can have alphanumeric and underscore characters, and the values must match
 	// [A-Za-z0-9-._~:/?#&=,]+.
 	Variables map[string]*string `locationName:"variables" type:"map"`
+
+	// The ARN of the WebAcl associated with the Stage.
+	WebAclArn *string `locationName:"webAclArn" type:"string"`
 }
 
 // String returns the string representation
@@ -21662,6 +22057,12 @@ func (s *Stage) SetVariables(v map[string]*string) *Stage {
 	return s
 }
 
+// SetWebAclArn sets the WebAclArn field's value.
+func (s *Stage) SetWebAclArn(v string) *Stage {
+	s.WebAclArn = &v
+	return s
+}
+
 // A reference to a unique stage identified in the format {restApiId}/{stage}.
 type StageKey struct {
 	_ struct{} `type:"structure"`
@@ -21729,6 +22130,9 @@ func (s *TagResourceInput) Validate() error {
 	if s.ResourceArn == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceArn"))
 	}
+	if s.ResourceArn != nil && len(*s.ResourceArn) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceArn", 1))
+	}
 	if s.Tags == nil {
 		invalidParams.Add(request.NewErrParamRequired("Tags"))
 	}
@@ -21785,6 +22189,11 @@ type TestInvokeAuthorizerInput struct {
 	// should be specified.
 	Headers map[string]*string `locationName:"headers" type:"map"`
 
+	// [Optional] The headers as a map from string to list of values to simulate
+	// an incoming invocation request. This is where the incoming authorization
+	// token, or identity source, may be specified.
+	MultiValueHeaders map[string][]*string `locationName:"multiValueHeaders" type:"map"`
+
 	// [Optional] The URI path, including query string, of the simulated invocation
 	// request. Use this to specify path parameters and query string parameters.
 	PathWithQueryString *string `locationName:"pathWithQueryString" type:"string"`
@@ -21815,8 +22224,14 @@ func (s *TestInvokeAuthorizerInput) Validate() error {
 	if s.AuthorizerId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AuthorizerId"))
 	}
+	if s.AuthorizerId != nil && len(*s.AuthorizerId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AuthorizerId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -21846,6 +22261,12 @@ func (s *TestInvokeAuthorizerInput) SetBody(v string) *TestInvokeAuthorizerInput
 // SetHeaders sets the Headers field's value.
 func (s *TestInvokeAuthorizerInput) SetHeaders(v map[string]*string) *TestInvokeAuthorizerInput {
 	s.Headers = v
+	return s
+}
+
+// SetMultiValueHeaders sets the MultiValueHeaders field's value.
+func (s *TestInvokeAuthorizerInput) SetMultiValueHeaders(v map[string][]*string) *TestInvokeAuthorizerInput {
+	s.MultiValueHeaders = v
 	return s
 }
 
@@ -21967,6 +22388,10 @@ type TestInvokeMethodInput struct {
 	// HttpMethod is a required field
 	HttpMethod *string `location:"uri" locationName:"http_method" type:"string" required:"true"`
 
+	// The headers as a map from string to list of values to simulate an incoming
+	// invocation request.
+	MultiValueHeaders map[string][]*string `locationName:"multiValueHeaders" type:"map"`
+
 	// The URI path, including query string, of the simulated invocation request.
 	// Use this to specify path parameters and query string parameters.
 	PathWithQueryString *string `locationName:"pathWithQueryString" type:"string"`
@@ -22002,11 +22427,20 @@ func (s *TestInvokeMethodInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
 	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -22036,6 +22470,12 @@ func (s *TestInvokeMethodInput) SetHeaders(v map[string]*string) *TestInvokeMeth
 // SetHttpMethod sets the HttpMethod field's value.
 func (s *TestInvokeMethodInput) SetHttpMethod(v string) *TestInvokeMethodInput {
 	s.HttpMethod = &v
+	return s
+}
+
+// SetMultiValueHeaders sets the MultiValueHeaders field's value.
+func (s *TestInvokeMethodInput) SetMultiValueHeaders(v map[string][]*string) *TestInvokeMethodInput {
+	s.MultiValueHeaders = v
 	return s
 }
 
@@ -22081,6 +22521,9 @@ type TestInvokeMethodOutput struct {
 	// The API Gateway execution log for the test invoke request.
 	Log *string `locationName:"log" type:"string"`
 
+	// The headers of the HTTP response as a map from string to list of values.
+	MultiValueHeaders map[string][]*string `locationName:"multiValueHeaders" type:"map"`
+
 	// The HTTP status code.
 	Status *int64 `locationName:"status" type:"integer"`
 }
@@ -22116,6 +22559,12 @@ func (s *TestInvokeMethodOutput) SetLatency(v int64) *TestInvokeMethodOutput {
 // SetLog sets the Log field's value.
 func (s *TestInvokeMethodOutput) SetLog(v string) *TestInvokeMethodOutput {
 	s.Log = &v
+	return s
+}
+
+// SetMultiValueHeaders sets the MultiValueHeaders field's value.
+func (s *TestInvokeMethodOutput) SetMultiValueHeaders(v map[string][]*string) *TestInvokeMethodOutput {
+	s.MultiValueHeaders = v
 	return s
 }
 
@@ -22191,6 +22640,9 @@ func (s *UntagResourceInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "UntagResourceInput"}
 	if s.ResourceArn == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceArn"))
+	}
+	if s.ResourceArn != nil && len(*s.ResourceArn) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceArn", 1))
 	}
 	if s.TagKeys == nil {
 		invalidParams.Add(request.NewErrParamRequired("TagKeys"))
@@ -22283,6 +22735,9 @@ func (s *UpdateApiKeyInput) Validate() error {
 	if s.ApiKey == nil {
 		invalidParams.Add(request.NewErrParamRequired("ApiKey"))
 	}
+	if s.ApiKey != nil && len(*s.ApiKey) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ApiKey", 1))
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -22337,8 +22792,14 @@ func (s *UpdateAuthorizerInput) Validate() error {
 	if s.AuthorizerId == nil {
 		invalidParams.Add(request.NewErrParamRequired("AuthorizerId"))
 	}
+	if s.AuthorizerId != nil && len(*s.AuthorizerId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("AuthorizerId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -22400,8 +22861,14 @@ func (s *UpdateBasePathMappingInput) Validate() error {
 	if s.BasePath == nil {
 		invalidParams.Add(request.NewErrParamRequired("BasePath"))
 	}
+	if s.BasePath != nil && len(*s.BasePath) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("BasePath", 1))
+	}
 	if s.DomainName == nil {
 		invalidParams.Add(request.NewErrParamRequired("DomainName"))
+	}
+	if s.DomainName != nil && len(*s.DomainName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DomainName", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -22458,6 +22925,9 @@ func (s *UpdateClientCertificateInput) Validate() error {
 	if s.ClientCertificateId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ClientCertificateId"))
 	}
+	if s.ClientCertificateId != nil && len(*s.ClientCertificateId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ClientCertificateId", 1))
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -22513,8 +22983,14 @@ func (s *UpdateDeploymentInput) Validate() error {
 	if s.DeploymentId == nil {
 		invalidParams.Add(request.NewErrParamRequired("DeploymentId"))
 	}
+	if s.DeploymentId != nil && len(*s.DeploymentId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DeploymentId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -22576,8 +23052,14 @@ func (s *UpdateDocumentationPartInput) Validate() error {
 	if s.DocumentationPartId == nil {
 		invalidParams.Add(request.NewErrParamRequired("DocumentationPartId"))
 	}
+	if s.DocumentationPartId != nil && len(*s.DocumentationPartId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DocumentationPartId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -22639,8 +23121,14 @@ func (s *UpdateDocumentationVersionInput) Validate() error {
 	if s.DocumentationVersion == nil {
 		invalidParams.Add(request.NewErrParamRequired("DocumentationVersion"))
 	}
+	if s.DocumentationVersion != nil && len(*s.DocumentationVersion) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DocumentationVersion", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -22696,6 +23184,9 @@ func (s *UpdateDomainNameInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "UpdateDomainNameInput"}
 	if s.DomainName == nil {
 		invalidParams.Add(request.NewErrParamRequired("DomainName"))
+	}
+	if s.DomainName != nil && len(*s.DomainName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("DomainName", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -22771,8 +23262,14 @@ func (s *UpdateGatewayResponseInput) Validate() error {
 	if s.ResponseType == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResponseType"))
 	}
+	if s.ResponseType != nil && len(*s.ResponseType) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResponseType", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -22963,11 +23460,20 @@ func (s *UpdateIntegrationInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
 	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -23045,14 +23551,26 @@ func (s *UpdateIntegrationResponseInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
+	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
 	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.StatusCode == nil {
 		invalidParams.Add(request.NewErrParamRequired("StatusCode"))
+	}
+	if s.StatusCode != nil && len(*s.StatusCode) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("StatusCode", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -23131,11 +23649,20 @@ func (s *UpdateMethodInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
 	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -23213,14 +23740,26 @@ func (s *UpdateMethodResponseInput) Validate() error {
 	if s.HttpMethod == nil {
 		invalidParams.Add(request.NewErrParamRequired("HttpMethod"))
 	}
+	if s.HttpMethod != nil && len(*s.HttpMethod) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("HttpMethod", 1))
+	}
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
+	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
 	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.StatusCode == nil {
 		invalidParams.Add(request.NewErrParamRequired("StatusCode"))
+	}
+	if s.StatusCode != nil && len(*s.StatusCode) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("StatusCode", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -23294,8 +23833,14 @@ func (s *UpdateModelInput) Validate() error {
 	if s.ModelName == nil {
 		invalidParams.Add(request.NewErrParamRequired("ModelName"))
 	}
+	if s.ModelName != nil && len(*s.ModelName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ModelName", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -23357,8 +23902,14 @@ func (s *UpdateRequestValidatorInput) Validate() error {
 	if s.RequestValidatorId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RequestValidatorId"))
 	}
+	if s.RequestValidatorId != nil && len(*s.RequestValidatorId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RequestValidatorId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -23481,8 +24032,14 @@ func (s *UpdateResourceInput) Validate() error {
 	if s.ResourceId == nil {
 		invalidParams.Add(request.NewErrParamRequired("ResourceId"))
 	}
+	if s.ResourceId != nil && len(*s.ResourceId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("ResourceId", 1))
+	}
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
+	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -23539,6 +24096,9 @@ func (s *UpdateRestApiInput) Validate() error {
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -23593,8 +24153,14 @@ func (s *UpdateStageInput) Validate() error {
 	if s.RestApiId == nil {
 		invalidParams.Add(request.NewErrParamRequired("RestApiId"))
 	}
+	if s.RestApiId != nil && len(*s.RestApiId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("RestApiId", 1))
+	}
 	if s.StageName == nil {
 		invalidParams.Add(request.NewErrParamRequired("StageName"))
+	}
+	if s.StageName != nil && len(*s.StageName) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("StageName", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -23658,8 +24224,14 @@ func (s *UpdateUsageInput) Validate() error {
 	if s.KeyId == nil {
 		invalidParams.Add(request.NewErrParamRequired("KeyId"))
 	}
+	if s.KeyId != nil && len(*s.KeyId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("KeyId", 1))
+	}
 	if s.UsagePlanId == nil {
 		invalidParams.Add(request.NewErrParamRequired("UsagePlanId"))
+	}
+	if s.UsagePlanId != nil && len(*s.UsagePlanId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("UsagePlanId", 1))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -23716,6 +24288,9 @@ func (s *UpdateUsagePlanInput) Validate() error {
 	if s.UsagePlanId == nil {
 		invalidParams.Add(request.NewErrParamRequired("UsagePlanId"))
 	}
+	if s.UsagePlanId != nil && len(*s.UsagePlanId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("UsagePlanId", 1))
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -23765,6 +24340,9 @@ func (s *UpdateVpcLinkInput) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "UpdateVpcLinkInput"}
 	if s.VpcLinkId == nil {
 		invalidParams.Add(request.NewErrParamRequired("VpcLinkId"))
+	}
+	if s.VpcLinkId != nil && len(*s.VpcLinkId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("VpcLinkId", 1))
 	}
 
 	if invalidParams.Len() > 0 {

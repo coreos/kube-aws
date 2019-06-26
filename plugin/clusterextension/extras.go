@@ -57,12 +57,14 @@ func (e ClusterExtension) KeyPairSpecs() []api.KeyPairSpec {
 }
 
 func (e ClusterExtension) RootStack(config interface{}) (*stack, error) {
+	logger.Debugf("Generating Plugin extras for root cloudformation stack")
 	return e.stackExt("root", config, func(p *api.Plugin) api.Stack {
 		return p.Spec.Cluster.CloudFormation.Stacks.Root
 	})
 }
 
 func (e ClusterExtension) NetworkStack(config interface{}) (*stack, error) {
+	logger.Debugf("Generating Plugin extras for network cloudformation stack")
 	return e.stackExt("network", config, func(p *api.Plugin) api.Stack {
 		return p.Spec.Cluster.CloudFormation.Stacks.Network
 	})
@@ -123,7 +125,12 @@ func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *
 	tags := map[string]interface{}{}
 
 	err := e.foreachEnabledPlugins(func(p *api.Plugin, pc *api.PluginConfig) error {
-		values := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
+		logger.Debugf("extras.go stackExt() foreachEnabledPlugins extending stack %s: %+v into %+v", name, pc.Values, p.Spec.Cluster.Values)
+		values, err := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
+		if err != nil {
+			return err
+		}
+		logger.Debugf("extras.go stackExt() resultant values: %+v", values)
 
 		render := plugincontents.NewTemplateRenderer(p, values, config)
 
@@ -158,6 +165,11 @@ func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *
 		return nil, err
 	}
 
+	logger.Debugf("PLUGINS: StackExt Additions for stack %s", name)
+	logger.Debugf("Resources: %+v", resources)
+	logger.Debugf("Outputs: %+v", outputs)
+	logger.Debugf("Tags: %+v", tags)
+
 	return &stack{
 		Resources: resources,
 		Outputs:   outputs,
@@ -166,6 +178,7 @@ func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *
 }
 
 func (e ClusterExtension) NodePoolStack(config interface{}) (*stack, error) {
+	logger.Debugf("Generating Plugin extras for nodepool cloudformation stack")
 	return e.stackExt("node-pool", config, func(p *api.Plugin) api.Stack {
 		return p.Spec.Cluster.CloudFormation.Stacks.NodePool
 	})
@@ -198,6 +211,7 @@ func regularOrConfigSetFile(f provisioner.RemoteFileSpec, render *plugincontents
 }
 
 func (e ClusterExtension) Worker(config interface{}) (*worker, error) {
+	logger.Debugf("Generating Plugin Worker user-data extras")
 	files := []api.CustomFile{}
 	systemdUnits := []api.CustomSystemdUnit{}
 	iamStatements := []api.IAMPolicyStatement{}
@@ -210,7 +224,10 @@ func (e ClusterExtension) Worker(config interface{}) (*worker, error) {
 
 	for _, p := range e.plugins {
 		if enabled, pc := p.EnabledIn(e.Configs); enabled {
-			values := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
+			values, err := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
+			if err != nil {
+				return nil, err
+			}
 			render := plugincontents.NewTemplateRenderer(p, values, config)
 
 			for _, d := range p.Spec.Cluster.Machine.Roles.Worker.Systemd.Units {
@@ -291,18 +308,21 @@ func (e ClusterExtension) Worker(config interface{}) (*worker, error) {
 }
 
 func (e ClusterExtension) ControlPlaneStack(config interface{}) (*stack, error) {
+	logger.Debugf("Generating Plugin extras for control-plane cloudformation stack")
 	return e.stackExt("control-plane", config, func(p *api.Plugin) api.Stack {
 		return p.Spec.Cluster.CloudFormation.Stacks.ControlPlane
 	})
 }
 
 func (e ClusterExtension) EtcdStack(config interface{}) (*stack, error) {
+	logger.Debugf("Generating Plugin extras for etcd cloudformation stack")
 	return e.stackExt("etcd", config, func(p *api.Plugin) api.Stack {
 		return p.Spec.Cluster.CloudFormation.Stacks.Etcd
 	})
 }
 
 func (e ClusterExtension) Controller(clusterConfig interface{}) (*controller, error) {
+	logger.Debugf("Generating Plugin Controller user-data extras")
 	apiServerFlags := api.CommandLineFlags{}
 	apiServerVolumes := api.APIServerVolumes{}
 	controllerFlags := api.CommandLineFlags{}
@@ -324,7 +344,10 @@ func (e ClusterExtension) Controller(clusterConfig interface{}) (*controller, er
 	for _, p := range e.plugins {
 		//fmt.Fprintf(os.Stderr, "plugin=%+v configs=%+v", p, e.configs)
 		if enabled, pc := p.EnabledIn(e.Configs); enabled {
-			values := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
+			values, err := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
+			if err != nil {
+				return nil, err
+			}
 			render := plugincontents.NewTemplateRenderer(p, values, clusterConfig)
 
 			{
@@ -539,6 +562,7 @@ func (e ClusterExtension) Controller(clusterConfig interface{}) (*controller, er
 }
 
 func (e ClusterExtension) Etcd() (*etcd, error) {
+	logger.Debugf("Generating Plugin Etcd user-data extras")
 	systemdUnits := []api.CustomSystemdUnit{}
 	files := []api.CustomFile{}
 	iamStatements := api.IAMPolicyStatements{}

@@ -12,6 +12,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/Masterminds/sprig"
 	"github.com/kubernetes-incubator/kube-aws/fingerprint"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/tmpl"
 )
 
@@ -92,6 +93,7 @@ func Parse(name string, raw string, funcs template.FuncMap) (*template.Template,
 }
 
 func GetBytesBuffer(filename string, data interface{}) (*bytes.Buffer, error) {
+	logger.Debugf("Rendering filename %s with following data: \n%+v", filename, data)
 	tmpl, err := ParseFile(filename, nil)
 	if err != nil {
 		return nil, err

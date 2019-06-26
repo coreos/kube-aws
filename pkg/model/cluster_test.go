@@ -1059,67 +1059,6 @@ encryptionAtRest:
 	}
 }
 
-func TestRotateCerts(t *testing.T) {
-
-	validConfigs := []struct {
-		conf        string
-		rotateCerts api.RotateCerts
-	}{
-		{
-			conf: `
-`,
-			rotateCerts: api.RotateCerts{
-				Enabled: false,
-			},
-		},
-		{
-			conf: `
-kubelet:
-  rotateCerts:
-    enabled: false
-`,
-			rotateCerts: api.RotateCerts{
-				Enabled: false,
-			},
-		},
-		{
-			conf: `
-kubelet:
-  rotateCerts:
-    enabled: true
-`,
-			rotateCerts: api.RotateCerts{
-				Enabled: true,
-			},
-		},
-		{
-			conf: `
-rotateCerts:
-  enabled: true
-`,
-			rotateCerts: api.RotateCerts{
-				Enabled: false,
-			},
-		},
-	}
-
-	for _, conf := range validConfigs {
-		confBody := singleAzConfigYaml + conf.conf
-		c, err := ClusterFromBytes([]byte(confBody))
-		if err != nil {
-			t.Errorf("failed to parse config %s: %v", confBody, err)
-			continue
-		}
-		if !reflect.DeepEqual(c.Kubelet.RotateCerts, conf.rotateCerts) {
-			t.Errorf(
-				"parsed Rotate Certificates settings %+v does not match config: %s",
-				c.Kubelet.RotateCerts,
-				confBody,
-			)
-		}
-	}
-}
-
 func TestKubeletReserved(t *testing.T) {
 
 	validConfigs := []struct {
@@ -1180,9 +1119,10 @@ func TestKubeDns(t *testing.T) {
 			conf: `
 `,
 			kubeDns: api.KubeDns{
-				Provider:            "kube-dns",
+				Provider:            "coredns",
 				NodeLocalResolver:   false,
 				DeployToControllers: false,
+				TTL:                 30,
 				Autoscaler: api.KubeDnsAutoscaler{
 					CoresPerReplica: 256,
 					NodesPerReplica: 16,
@@ -1197,9 +1137,10 @@ kubeDns:
   deployToControllers: false
 `,
 			kubeDns: api.KubeDns{
-				Provider:            "kube-dns",
+				Provider:            "coredns",
 				NodeLocalResolver:   false,
 				DeployToControllers: false,
+				TTL:                 30,
 				Autoscaler: api.KubeDnsAutoscaler{
 					CoresPerReplica: 256,
 					NodesPerReplica: 16,
@@ -1218,9 +1159,10 @@ kubeDns:
     min: 15
 `,
 			kubeDns: api.KubeDns{
-				Provider:            "kube-dns",
+				Provider:            "coredns",
 				NodeLocalResolver:   true,
 				DeployToControllers: true,
+				TTL:                 30,
 				Autoscaler: api.KubeDnsAutoscaler{
 					CoresPerReplica: 5,
 					NodesPerReplica: 10,
@@ -1237,6 +1179,25 @@ kubeDns:
 				Provider:            "coredns",
 				NodeLocalResolver:   false,
 				DeployToControllers: false,
+				TTL:                 30,
+				Autoscaler: api.KubeDnsAutoscaler{
+					CoresPerReplica: 256,
+					NodesPerReplica: 16,
+					Min:             2,
+				},
+			},
+		},
+		{
+			conf: `
+kubeDns:
+  provider: coredns
+  ttl: 5
+`,
+			kubeDns: api.KubeDns{
+				Provider:            "coredns",
+				NodeLocalResolver:   false,
+				DeployToControllers: false,
+				TTL:                 5,
 				Autoscaler: api.KubeDnsAutoscaler{
 					CoresPerReplica: 256,
 					NodesPerReplica: 16,
@@ -1259,145 +1220,6 @@ kubeDns:
 				c.KubeDns,
 				confBody,
 			)
-		}
-	}
-}
-
-func TestTLSBootstrapConfig(t *testing.T) {
-
-	validConfigs := []struct {
-		conf         string
-		tlsBootstrap api.TLSBootstrap
-	}{
-		{
-			conf: `
-`,
-			tlsBootstrap: api.TLSBootstrap{
-				Enabled: false,
-			},
-		},
-		{
-			conf: `
-experimental:
-  tlsBootstrap:
-    enabled: false
-`,
-			tlsBootstrap: api.TLSBootstrap{
-				Enabled: false,
-			},
-		},
-		{
-			conf: `
-experimental:
-  tlsBootstrap:
-    enabled: true
-`,
-			tlsBootstrap: api.TLSBootstrap{
-				Enabled: true,
-			},
-		},
-		{
-			conf: `
-# Settings for an experimental feature must be under the "experimental" field. Ignored.
-tlsBootstrap:
-  enabled: true
-`,
-			tlsBootstrap: api.TLSBootstrap{
-				Enabled: false,
-			},
-		},
-	}
-
-	for _, conf := range validConfigs {
-		confBody := singleAzConfigYaml + conf.conf
-		c, err := ClusterFromBytes([]byte(confBody))
-		if err != nil {
-			t.Errorf("failed to parse config %s: %v", confBody, err)
-			continue
-		}
-		if !reflect.DeepEqual(c.Experimental.TLSBootstrap, conf.tlsBootstrap) {
-			t.Errorf(
-				"parsed TLS bootstrap settings %+v does not match config: %s",
-				c.Experimental.TLSBootstrap,
-				confBody,
-			)
-		}
-	}
-}
-
-func TestNodeAuthorizerConfig(t *testing.T) {
-	validConfigs := []struct {
-		conf           string
-		nodeAuthorizer api.NodeAuthorizer
-	}{
-		{
-			conf: `
-`,
-			nodeAuthorizer: api.NodeAuthorizer{
-				Enabled: false,
-			},
-		},
-		{
-			conf: `
-experimental:
-  nodeAuthorizer:
-    enabled: false
-`,
-			nodeAuthorizer: api.NodeAuthorizer{
-				Enabled: false,
-			},
-		},
-		{
-			conf: `
-experimental:
-  nodeAuthorizer:
-    enabled: true
-  tlsBootstrap:
-    enabled: true
-`,
-			nodeAuthorizer: api.NodeAuthorizer{
-				Enabled: true,
-			},
-		},
-	}
-
-	invalidConfigs := []string{
-		`
-# TLS bootstrap must be enabled as well
-experimental:
-  nodeAuthorizer:
-    enabled: true
-`,
-		`
-# TLS bootstrap must be enabled as well
-experimental:
-  nodeAuthorizer:
-    enabled: true
-  tlsBootstrap:
-    enabled: false
-`}
-
-	for _, conf := range validConfigs {
-		confBody := singleAzConfigYaml + conf.conf
-		c, err := ClusterFromBytes([]byte(confBody))
-		if err != nil {
-			t.Errorf("failed to parse config %s: %v", confBody, err)
-			continue
-		}
-		if !reflect.DeepEqual(c.Experimental.NodeAuthorizer, conf.nodeAuthorizer) {
-			t.Errorf(
-				"parsed node authorizer settings %+v does not match config: %s",
-				c.Experimental.NodeAuthorizer,
-				confBody,
-			)
-		}
-	}
-
-	for _, conf := range invalidConfigs {
-		confBody := singleAzConfigYaml + conf
-		_, err := ClusterFromBytes([]byte(confBody))
-		if err == nil {
-			t.Errorf("expected error parsing invalid config: %s", confBody)
 		}
 	}
 }
@@ -1576,82 +1398,5 @@ kmsKeyArn: "arn:aws:kms:eu-west-1:xxxxxxxxx:key/xxxxxxxxxxxxxxxxxxx"
 	_, err := ClusterFromBytes([]byte(confBody))
 	if err == nil || !strings.Contains(err.Error(), "same region") {
 		t.Errorf("Expecting validation error for mismatching KMS key ARN and region config: %s\n%s", err, confBody)
-	}
-}
-func TestClusterAutoscalerDisabled(t *testing.T) {
-	disabledConfigs := []string{
-		`
-addons:
-  clusterAutoscaler:
-    enabled: false
-experimental:
-  clusterAutoscalerSupport:
-    enabled: true
-`,
-		`
-addons:
-  clusterAutoscaler:
-    enabled: true
-experimental:
-  clusterAutoscalerSupport:
-    enabled: false
-`}
-
-	for _, testCase := range disabledConfigs {
-		confBody := singleAzConfigYaml + testCase
-		c, err := ClusterFromBytes([]byte(confBody))
-		if err != nil {
-			t.Errorf("failed to parse config %s: %v", confBody, err)
-		}
-
-		for label, _ := range c.NodeLabels() {
-			if label == "kube-aws.coreos.com/cluster-autoscaler-supported" {
-				t.Errorf("Controllers should not be labelled for autoscaler with config: %s", confBody)
-			}
-		}
-
-		if c.ClusterAutoscalerSupportEnabled() {
-			t.Errorf("Controllers should not have autoscaling enabled with config: %s", confBody)
-		}
-	}
-}
-
-func TestClusterAutoscalerEnabled(t *testing.T) {
-	enabledConfigs := []string{
-		`
-addons:
-  clusterAutoscaler:
-    enabled: true
-experimental:
-  clusterAutoscalerSupport:
-    enabled: true
-`,
-		// `experimental.clusterAutoscalerSupport.enabled` should default to true
-		`
-addons:
-  clusterAutoscaler:
-    enabled: true
-`}
-
-	for _, testCase := range enabledConfigs {
-		confBody := singleAzConfigYaml + testCase
-		c, err := ClusterFromBytes([]byte(confBody))
-		if err != nil {
-			t.Errorf("failed to parse config %s: %v", confBody, err)
-		}
-
-		found := false
-		for label, _ := range c.NodeLabels() {
-			if label == "kube-aws.coreos.com/cluster-autoscaler-supported" {
-				found = true
-			}
-		}
-		if !found {
-			t.Errorf("Controllers should be labelled for autoscaler with config: %s", confBody)
-		}
-
-		if !c.ClusterAutoscalerSupportEnabled() {
-			t.Errorf("Controllers should have autoscaling enabled with config: %s", confBody)
-		}
 	}
 }

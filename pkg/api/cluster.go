@@ -15,53 +15,43 @@ import (
 	"github.com/kubernetes-incubator/kube-aws/netutil"
 )
 
-const (
-	k8sVer = "v1.11.3"
+// The version of kubernetes should be set through the top level 'build' script (not hidden away here)
+var KUBERNETES_VERSION = "v99.99"
 
+const (
 	// Experimental SelfHosting feature default images.
-	kubeNetworkingSelfHostingDefaultCalicoNodeImageTag = "v3.2.3"
-	kubeNetworkingSelfHostingDefaultCalicoCniImageTag  = "v3.2.3"
-	kubeNetworkingSelfHostingDefaultFlannelImageTag    = "v0.10.0"
+	kubeNetworkingSelfHostingDefaultCalicoNodeImageTag = "v3.6.1"
+	kubeNetworkingSelfHostingDefaultCalicoCniImageTag  = "v3.6.1"
+	kubeNetworkingSelfHostingDefaultFlannelImageTag    = "v0.11.0"
 	kubeNetworkingSelfHostingDefaultFlannelCniImageTag = "v0.3.0"
-	kubeNetworkingSelfHostingDefaultTyphaImageTag      = "v3.2.3"
+	kubeNetworkingSelfHostingDefaultTyphaImageTag      = "v3.6.1"
 )
 
 func NewDefaultCluster() *Cluster {
 	kubelet := Kubelet{
-		RotateCerts: RotateCerts{
-			Enabled: false,
-		},
 		SystemReservedResources: "",
 		KubeReservedResources:   "",
 	}
 	experimental := Experimental{
 		Admission: Admission{
-			PodSecurityPolicy{
-				Enabled: false,
-			},
 			AlwaysPullImages{
-				Enabled: false,
-			},
-			DenyEscalatingExec{
 				Enabled: false,
 			},
 			Initializers{
 				Enabled: false,
 			},
-			Priority{
-				Enabled: false,
-			},
-			MutatingAdmissionWebhook{
-				Enabled: false,
-			},
-			ValidatingAdmissionWebhook{
-				Enabled: false,
-			},
 			OwnerReferencesPermissionEnforcement{
 				Enabled: false,
 			},
-			PersistentVolumeClaimResize{
-				Enabled: false,
+			EventRateLimit{
+				Enabled: true,
+				Limits: `- type: Namespace
+  qps: 250
+  burst: 500
+  cacheSize: 4096
+- type: User
+  qps: 50
+  burst: 250`,
 			},
 		},
 		AuditLog: AuditLog{
@@ -84,16 +74,6 @@ func NewDefaultCluster() *Cluster {
 		AwsNodeLabels: AwsNodeLabels{
 			Enabled: false,
 		},
-		ClusterAutoscalerSupport: ClusterAutoscalerSupport{
-			Enabled: true,
-			Options: map[string]string{},
-		},
-		TLSBootstrap: TLSBootstrap{
-			Enabled: false,
-		},
-		NodeAuthorizer: NodeAuthorizer{
-			Enabled: false,
-		},
 		EphemeralImageStorage: EphemeralImageStorage{
 			Enabled:    false,
 			Disk:       "xvdb",
@@ -101,8 +81,8 @@ func NewDefaultCluster() *Cluster {
 		},
 		KIAMSupport: KIAMSupport{
 			Enabled:         false,
-			Image:           Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.8", RktPullDocker: false},
-			SessionDuration: "15m",
+			Image:           Image{Repo: "quay.io/uswitch/kiam", Tag: "v3.2", RktPullDocker: false},
+			SessionDuration: "30m",
 			ServerAddresses: KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
 		},
 		Kube2IamSupport: Kube2IamSupport{
@@ -147,13 +127,18 @@ func NewDefaultCluster() *Cluster {
 			VPCCIDR:            "10.0.0.0/16",
 			ReleaseChannel:     "stable",
 			KubeAWSVersion:     "UNKNOWN",
-			K8sVer:             k8sVer,
+			K8sVer:             KUBERNETES_VERSION,
 			ContainerRuntime:   "docker",
 			Subnets:            []Subnet{},
 			EIPAllocationIDs:   []string{},
 			Experimental:       experimental,
 			Kubelet:            kubelet,
 			ManageCertificates: true,
+			Addons: Addons{
+				MetricsServer: MetricsServer{
+					Enabled: true,
+				},
+			},
 			AmazonSsmAgent: AmazonSsmAgent{
 				Enabled:     false,
 				DownloadUrl: "",
@@ -176,9 +161,10 @@ func NewDefaultCluster() *Cluster {
 				IPVSMode: ipvsMode,
 			},
 			KubeDns: KubeDns{
-				Provider:            "kube-dns",
+				Provider:            "coredns",
 				NodeLocalResolver:   false,
 				DeployToControllers: false,
+				TTL:                 30,
 				Autoscaler: KubeDnsAutoscaler{
 					CoresPerReplica: 256,
 					NodesPerReplica: 16,
@@ -192,6 +178,16 @@ func NewDefaultCluster() *Cluster {
 				AllowSkipLogin:  false,
 				Enabled:         true,
 				Replicas:        1,
+				ComputeResources: ComputeResources{
+					Requests: ResourceQuota{
+						Cpu:    "0.5",
+						Memory: "500Mi",
+					},
+					Limits: ResourceQuota{
+						Cpu:    "4",
+						Memory: "5000Mi",
+					},
+				},
 			},
 			Kubernetes: Kubernetes{
 				Authentication: KubernetesAuthentication{
@@ -219,22 +215,20 @@ func NewDefaultCluster() *Cluster {
 				},
 			},
 			CloudFormationStreaming:            true,
-			HyperkubeImage:                     Image{Repo: "k8s.gcr.io/hyperkube-amd64", Tag: k8sVer, RktPullDocker: true},
+			HyperkubeImage:                     Image{Repo: "k8s.gcr.io/hyperkube-amd64", Tag: KUBERNETES_VERSION, RktPullDocker: true},
 			AWSCliImage:                        Image{Repo: "quay.io/coreos/awscli", Tag: "master", RktPullDocker: false},
-			ClusterAutoscalerImage:             Image{Repo: "k8s.gcr.io/cluster-autoscaler", Tag: "v1.1.0", RktPullDocker: false},
-			ClusterProportionalAutoscalerImage: Image{Repo: "k8s.gcr.io/cluster-proportional-autoscaler-amd64", Tag: "1.1.2", RktPullDocker: false},
-			CoreDnsImage:                       Image{Repo: "coredns/coredns", Tag: "1.1.3", RktPullDocker: false},
+			ClusterProportionalAutoscalerImage: Image{Repo: "k8s.gcr.io/cluster-proportional-autoscaler-amd64", Tag: "1.5.0", RktPullDocker: false},
+			CoreDnsImage:                       Image{Repo: "coredns/coredns", Tag: "1.5.0", RktPullDocker: false},
 			Kube2IAMImage:                      Image{Repo: "jtblin/kube2iam", Tag: "0.9.0", RktPullDocker: false},
-			KubeDnsImage:                       Image{Repo: "k8s.gcr.io/k8s-dns-kube-dns-amd64", Tag: "1.14.7", RktPullDocker: false},
-			KubeDnsMasqImage:                   Image{Repo: "k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64", Tag: "1.14.7", RktPullDocker: false},
+			KubeDnsImage:                       Image{Repo: "k8s.gcr.io/k8s-dns-kube-dns-amd64", Tag: "1.15.2", RktPullDocker: false},
+			KubeDnsMasqImage:                   Image{Repo: "k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64", Tag: "1.15.2", RktPullDocker: false},
 			KubeReschedulerImage:               Image{Repo: "k8s.gcr.io/rescheduler-amd64", Tag: "v0.3.2", RktPullDocker: false},
-			DnsMasqMetricsImage:                Image{Repo: "k8s.gcr.io/k8s-dns-sidecar-amd64", Tag: "1.14.7", RktPullDocker: false},
+			DnsMasqMetricsImage:                Image{Repo: "k8s.gcr.io/k8s-dns-sidecar-amd64", Tag: "1.15.2", RktPullDocker: false},
 			ExecHealthzImage:                   Image{Repo: "k8s.gcr.io/exechealthz-amd64", Tag: "1.2", RktPullDocker: false},
-			HelmImage:                          Image{Repo: "quay.io/kube-aws/helm", Tag: "v2.6.0", RktPullDocker: false},
-			TillerImage:                        Image{Repo: "gcr.io/kubernetes-helm/tiller", Tag: "v2.7.2", RktPullDocker: false},
-			HeapsterImage:                      Image{Repo: "k8s.gcr.io/heapster", Tag: "v1.5.0", RktPullDocker: false},
-			MetricsServerImage:                 Image{Repo: "k8s.gcr.io/metrics-server-amd64", Tag: "v0.2.1", RktPullDocker: false},
-			AddonResizerImage:                  Image{Repo: "k8s.gcr.io/addon-resizer", Tag: "1.8.1", RktPullDocker: false},
+			HelmImage:                          Image{Repo: "quay.io/kube-aws/helm", Tag: "v2.13.1", RktPullDocker: false},
+			TillerImage:                        Image{Repo: "gcr.io/kubernetes-helm/tiller", Tag: "v2.13.1", RktPullDocker: false},
+			MetricsServerImage:                 Image{Repo: "k8s.gcr.io/metrics-server-amd64", Tag: "v0.3.2", RktPullDocker: false},
+			AddonResizerImage:                  Image{Repo: "k8s.gcr.io/addon-resizer", Tag: "2.1", RktPullDocker: false},
 			KubernetesDashboardImage:           Image{Repo: "k8s.gcr.io/kubernetes-dashboard-amd64", Tag: "v1.10.1", RktPullDocker: false},
 			PauseImage:                         Image{Repo: "k8s.gcr.io/pause-amd64", Tag: "3.1", RktPullDocker: false},
 			JournaldCloudWatchLogsImage:        Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
@@ -480,7 +474,6 @@ type DeploymentSettings struct {
 	// Images repository
 	HyperkubeImage                     Image      `yaml:"hyperkubeImage,omitempty"`
 	AWSCliImage                        Image      `yaml:"awsCliImage,omitempty"`
-	ClusterAutoscalerImage             Image      `yaml:"clusterAutoscalerImage,omitempty"`
 	ClusterProportionalAutoscalerImage Image      `yaml:"clusterProportionalAutoscalerImage,omitempty"`
 	CoreDnsImage                       Image      `yaml:"coreDnsImage,omitempty"`
 	Kube2IAMImage                      Image      `yaml:"kube2iamImage,omitempty"`
@@ -491,7 +484,6 @@ type DeploymentSettings struct {
 	ExecHealthzImage                   Image      `yaml:"execHealthzImage,omitempty"`
 	HelmImage                          Image      `yaml:"helmImage,omitempty"`
 	TillerImage                        Image      `yaml:"tillerImage,omitempty"`
-	HeapsterImage                      Image      `yaml:"heapsterImage,omitempty"`
 	MetricsServerImage                 Image      `yaml:"metricsServerImage,omitempty"`
 	AddonResizerImage                  Image      `yaml:"addonResizerImage,omitempty"`
 	KubernetesDashboardImage           Image      `yaml:"kubernetesDashboardImage,omitempty"`
@@ -519,6 +511,11 @@ type EtcdSettings struct {
 	Etcd `yaml:"etcd,omitempty"`
 }
 
+type CustomApiServerSettings struct {
+	AdditionalDnsSANs     []string `yaml:"additionalDnsSans,omitempty"`
+	AdditionalIPAddresses []string `yaml:"additionalIPAddressSans,omitempty"`
+}
+
 // Cluster is the container of all the configurable parameters of a kube-aws cluster, customizable via cluster.yaml
 type Cluster struct {
 	KubeClusterSettings   `yaml:",inline"`
@@ -534,8 +531,9 @@ type Cluster struct {
 	Worker                `yaml:"worker"`
 	PluginConfigs         PluginConfigs `yaml:"kubeAwsPlugins,omitempty"`
 	// SSHAccessAllowedSourceCIDRs is network ranges of sources you'd like SSH accesses to be allowed from, in CIDR notation
-	SSHAccessAllowedSourceCIDRs CIDRRanges             `yaml:"sshAccessAllowedSourceCIDRs,omitempty"`
-	CustomSettings              map[string]interface{} `yaml:"customSettings,omitempty"`
+	SSHAccessAllowedSourceCIDRs CIDRRanges              `yaml:"sshAccessAllowedSourceCIDRs,omitempty"`
+	CustomApiServerSettings     CustomApiServerSettings `yaml:"customApiServerSettings,omitempty"`
+	CustomSettings              map[string]interface{}  `yaml:"customSettings,omitempty"`
 	KubeResourcesAutosave       `yaml:"kubeResourcesAutosave,omitempty"`
 }
 
@@ -665,16 +663,8 @@ func (c Cluster) APIAccessAllowedSourceCIDRsForControllerSG() []string {
 	return cidrs
 }
 
-func (c Cluster) ClusterAutoscalerSupportEnabled() bool {
-	return c.Addons.ClusterAutoscaler.Enabled && c.Experimental.ClusterAutoscalerSupport.Enabled
-}
-
 func (c Cluster) NodeLabels() NodeLabels {
-	labels := c.Controller.NodeLabels
-	if c.ClusterAutoscalerSupportEnabled() {
-		labels["kube-aws.coreos.com/cluster-autoscaler-supported"] = "true"
-	}
-	return labels
+	return c.Controller.NodeLabels
 }
 
 func (c Cluster) validate(cpStackName string) error {
@@ -777,12 +767,6 @@ func (c Cluster) validate(cpStackName string) error {
 		}
 	}
 
-	if c.Experimental.NodeAuthorizer.Enabled {
-		if !c.Experimental.TLSBootstrap.Enabled {
-			return fmt.Errorf("TLS bootstrap is required in order to enable the node authorizer")
-		}
-	}
-
 	for i, e := range c.APIEndpointConfigs {
 		if e.LoadBalancer.NetworkLoadBalancer() && !c.Region.SupportsNetworkLoadBalancers() {
 			return fmt.Errorf("api endpoint %d is not valid: network load balancer not supported in region", i)
@@ -852,17 +836,8 @@ func (e EtcdSettings) Validate() error {
 		return err
 	}
 
-	if e.Etcd.Version().Is3() {
-		if e.Etcd.DisasterRecovery.Automated && !e.Etcd.Snapshot.Automated {
-			return errors.New("`etcd.disasterRecovery.automated` is set to true but `etcd.snapshot.automated` is not - automated disaster recovery requires snapshot to be also automated")
-		}
-	} else {
-		if e.Etcd.DisasterRecovery.Automated {
-			return errors.New("`etcd.disasterRecovery.automated` is set to true for enabling automated disaster recovery. However the feature is available only for etcd version 3")
-		}
-		if e.Etcd.Snapshot.Automated {
-			return errors.New("`etcd.snapshot.automated` is set to true for enabling automated snapshot. However the feature is available only for etcd version 3")
-		}
+	if e.Etcd.DisasterRecovery.Automated && !e.Etcd.Snapshot.Automated {
+		return errors.New("`etcd.disasterRecovery.automated` is set to true but `etcd.snapshot.automated` is not - automated disaster recovery requires snapshot to be also automated")
 	}
 
 	return nil
@@ -890,15 +865,6 @@ func (c *Cluster) AvailabilityZones() []string {
 
 func (c *Cluster) ControllerFeatureGates() FeatureGates {
 	gates := c.Controller.NodeSettings.FeatureGates
-	//From kube 1.11 PodPriority and ExpandPersistentVolumes have become enabled by default,
-	//so making sure it is not enabled if user has explicitly set them to false
-	//https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG-1.11.md#changelog-since-v1110
-	if !c.Experimental.Admission.Priority.Enabled {
-		gates["PodPriority"] = "false"
-	}
-	if !c.Experimental.Admission.PersistentVolumeClaimResize.Enabled {
-		gates["ExpandPersistentVolumes"] = "false"
-	}
 	return gates
 }
 

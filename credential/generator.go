@@ -4,23 +4,26 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
-	"github.com/kubernetes-incubator/kube-aws/logger"
-	"github.com/kubernetes-incubator/kube-aws/netutil"
-	"github.com/kubernetes-incubator/kube-aws/pki"
 	"io/ioutil"
 	"net"
 	"time"
+
+	"github.com/kubernetes-incubator/kube-aws/logger"
+	"github.com/kubernetes-incubator/kube-aws/netutil"
+	"github.com/kubernetes-incubator/kube-aws/pki"
 )
 
 type Generator struct {
-	TLSCADurationDays         int
-	TLSCertDurationDays       int
-	TLSBootstrapEnabled       bool
-	ManageCertificates        bool
-	Region                    string
-	APIServerExternalDNSNames []string
-	EtcdNodeDNSNames          []string
-	ServiceCIDR               string
+	TLSCADurationDays                int
+	TLSCertDurationDays              int
+	TLSBootstrapEnabled              bool
+	ManageCertificates               bool
+	Region                           string
+	APIServerExternalDNSNames        []string
+	APIServerAdditionalDNSSans       []string
+	APIServerAdditionalIPAddressSans []string
+	EtcdNodeDNSNames                 []string
+	ServiceCIDR                      string
 }
 
 type GeneratorOptions struct {
@@ -80,21 +83,17 @@ func (c Generator) GenerateAssetsOnDisk(dir string, o GeneratorOptions) (*RawAss
 		return nil, fmt.Errorf("Error generating default assets: %v", err)
 	}
 
-	tlsBootstrappingEnabled := c.TLSBootstrapEnabled
-	certsManagedByKubeAws := c.ManageCertificates
-	caKeyRequiredOnController := certsManagedByKubeAws && tlsBootstrappingEnabled
-
-	logger.Infof("--> Summarizing the configuration\n    Kubelet TLS bootstrapping enabled=%v, TLS certificates managed by kube-aws=%v, CA key required on controller nodes=%v\n", tlsBootstrappingEnabled, certsManagedByKubeAws, caKeyRequiredOnController)
+	logger.Infof("--> Summarizing the configuration\n    TLS certificates managed by kube-aws=%v, CA key required on controller nodes=%v\n", c.ManageCertificates, true)
 
 	logger.Info("--> Writing to the storage")
-	alsoWriteCAKey := o.GenerateCA || caKeyRequiredOnController
+	alsoWriteCAKey := o.GenerateCA || c.ManageCertificates
 	if err := assets.WriteToDir(dir, alsoWriteCAKey, o.KIAM); err != nil {
 		return nil, fmt.Errorf("Error creating assets: %v", err)
 	}
 
 	{
 		logger.Info("--> Verifying the result")
-		verified, err := ReadRawAssets(dir, certsManagedByKubeAws, tlsBootstrappingEnabled, o.KIAM)
+		verified, err := ReadRawAssets(dir, c.ManageCertificates, c.ManageCertificates, o.KIAM)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed verifying the result: %v", err)
@@ -153,24 +152,22 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 	}
 	kubernetesServiceIPAddr := netutil.IncrementIP(serviceNet.IP)
 
-	apiServerConfig := pki.ServerCertConfig{
-		CommonName: "kube-apiserver",
-		DNSNames: append(
-			[]string{
-				"kubernetes",
-				"kubernetes.default",
-				"kubernetes.default.svc",
-				"kubernetes.default.svc.cluster.local",
-			},
-			c.APIServerExternalDNSNames...,
-		),
-		IPAddresses: []string{
-			kubernetesServiceIPAddr.String(),
+	dnsNames := append(
+		[]string{
+			"kubernetes",
+			"kubernetes.default",
+			"kubernetes.default.svc",
+			"kubernetes.default.svc.cluster.local",
+		}, c.APIServerExternalDNSNames...)
 
-			// Also allows control plane components to reach the apiserver via HTTPS at localhost
-			"127.0.0.1",
-		},
-		Duration: certDuration,
+	// 127.0.0.1 also allows control plane components to reach the apiserver via HTTPS at localhost
+	ipAddresses := []string{kubernetesServiceIPAddr.String(), "127.0.0.1"}
+
+	apiServerConfig := pki.ServerCertConfig{
+		CommonName:  "kube-apiserver",
+		DNSNames:    append(dnsNames, c.APIServerExternalDNSNames...),
+		IPAddresses: append(ipAddresses, c.APIServerAdditionalIPAddressSans...),
+		Duration:    certDuration,
 	}
 	apiServerCert, err := pki.NewSignedServerCertificate(apiServerConfig, privateKeys[generatorOptions.ApiServerKeyPath], caCert, caKey)
 	if err != nil {
@@ -302,7 +299,9 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 			CommonName: "Kiam Server",
 			DNSNames: append(
 				[]string{
+					"kiam-server",
 					"kiam-server:443",
+					"localhost",
 					"localhost:443",
 					"localhost:9610",
 				},

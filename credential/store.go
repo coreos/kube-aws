@@ -2,8 +2,9 @@ package credential
 
 import (
 	"fmt"
-	"github.com/kubernetes-incubator/kube-aws/logger"
 	"os"
+
+	"github.com/kubernetes-incubator/kube-aws/logger"
 )
 
 func (e Store) EncryptedCredentialFromPath(filePath string, defaultValue *string) (*EncryptedFile, error) {
@@ -17,12 +18,12 @@ func (e Store) EncryptedCredentialFromPath(filePath string, defaultValue *string
 		if err != nil {
 			return nil, err
 		}
-		logger.Infof("generated \"%s\" by encrypting \"%s\"\n", cache.filePath, raw.filePath)
+		logger.Debugf("generated \"%s\" by encrypting \"%s\"\n", cache.filePath, raw.filePath)
 	} else {
 		// we verify fingreprints only if non .enc version is present, so there is something there to compare against
 		// otherwise we assume that user provided correct .enc files to be used as-is
 		if errRaw == nil && raw.Fingerprint() != cache.Fingerprint() {
-			logger.Infof("\"%s\" is not up-to-date. kube-aws is regenerating it from \"%s\"\n", cache.filePath, raw.filePath)
+			logger.Debugf("\"%s\" is not up-to-date. kube-aws is regenerating it from \"%s\"\n", cache.filePath, raw.filePath)
 			cache, err = EncryptedCredentialCacheFromRawCredential(raw, e.Encryptor)
 			if err != nil {
 				return nil, err

@@ -5,17 +5,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/gobuffalo/packd"
 )
 
-type WalkFunc func(string, File) error
+type WalkFunc = packd.WalkFunc
 
 // Walk will traverse the box and call the WalkFunc for each file in the box/folder.
 func (b Box) Walk(wf WalkFunc) error {
 	if data[b.Path] == nil {
 		base, err := filepath.EvalSymlinks(filepath.Join(b.callingDir, b.Path))
 		if err != nil {
-			return errors.WithStack(err)
+			return err
 		}
 		return filepath.Walk(base, func(path string, info os.FileInfo, err error) error {
 			cleanName, err := filepath.Rel(base, path)
@@ -55,7 +55,7 @@ func (b Box) WalkPrefix(prefix string, wf WalkFunc) error {
 	return b.Walk(func(path string, f File) error {
 		if strings.HasPrefix(osPath(path), opre) {
 			if err := wf(path, f); err != nil {
-				return errors.WithStack(err)
+				return err
 			}
 		}
 		return nil

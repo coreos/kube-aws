@@ -1,0 +1,22 @@
+{{ if .Values.prometheusMetrics.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cluster-autoscaler
+  namespace: {{ .Values.prometheusMetrics.namespace }}
+  labels:
+    app: cluster-autoscaler
+    {{- range $key, $value := .Values.prometheusMetrics.selector }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: cluster-autoscaler
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: {{ .Values.prometheusMetrics.interval }}
+  namespaceSelector:
+    any: true
+{{ end }}

@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"reflect"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -83,26 +82,18 @@ func TestMainClusterConfig(t *testing.T) {
 	hasDefaultExperimentalFeatures := func(c *config.Config, t *testing.T) {
 		expected := api.Experimental{
 			Admission: api.Admission{
-				PodSecurityPolicy: api.PodSecurityPolicy{
-					Enabled: false,
-				},
 				AlwaysPullImages: api.AlwaysPullImages{
 					Enabled: false,
 				},
-				DenyEscalatingExec: api.DenyEscalatingExec{
-					Enabled: false,
-				},
-				Priority: api.Priority{
-					Enabled: false,
-				},
-				MutatingAdmissionWebhook: api.MutatingAdmissionWebhook{
-					Enabled: false,
-				},
-				ValidatingAdmissionWebhook: api.ValidatingAdmissionWebhook{
-					Enabled: false,
-				},
-				PersistentVolumeClaimResize: api.PersistentVolumeClaimResize{
-					Enabled: false,
+				EventRateLimit: api.EventRateLimit{
+					Enabled: true,
+					Limits: `- type: Namespace
+  qps: 250
+  burst: 500
+  cacheSize: 4096
+- type: User
+  qps: 50
+  burst: 250`,
 				},
 			},
 			AuditLog: api.AuditLog{
@@ -125,13 +116,6 @@ func TestMainClusterConfig(t *testing.T) {
 			AwsNodeLabels: api.AwsNodeLabels{
 				Enabled: false,
 			},
-			ClusterAutoscalerSupport: api.ClusterAutoscalerSupport{
-				Enabled: true,
-				Options: map[string]string{},
-			},
-			TLSBootstrap: api.TLSBootstrap{
-				Enabled: false,
-			},
 			EphemeralImageStorage: api.EphemeralImageStorage{
 				Enabled:    false,
 				Disk:       "xvdb",
@@ -139,8 +123,8 @@ func TestMainClusterConfig(t *testing.T) {
 			},
 			KIAMSupport: api.KIAMSupport{
 				Enabled:         false,
-				Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.8", RktPullDocker: false},
-				SessionDuration: "15m",
+				Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v3.2", RktPullDocker: false},
+				SessionDuration: "30m",
 				ServerAddresses: api.KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
 			},
 			Kube2IamSupport: api.Kube2IamSupport{
@@ -179,10 +163,6 @@ func TestMainClusterConfig(t *testing.T) {
 
 		if c.WaitSignal.MaxBatchSize() != 1 {
 			t.Errorf("waitSignal.maxBatchSize should be 1 but was %d: %v", c.WaitSignal.MaxBatchSize(), c.WaitSignal)
-		}
-
-		if len(c.NodePools) > 0 && c.NodePools[0].ClusterAutoscalerSupport.Enabled {
-			t.Errorf("ClusterAutoscalerSupport must be disabled by default on node pools")
 		}
 	}
 
@@ -461,11 +441,6 @@ availabilityZone: us-west-1c
 addons:
   rescheduler:
     enabled: true
-  clusterAutoscaler:
-    enabled: true
-    options:
-      v: 5
-      test: present
   metricsServer:
     enabled: true
 worker:
@@ -480,10 +455,6 @@ worker:
 						Rescheduler: api.Rescheduler{
 							Enabled: true,
 						},
-						ClusterAutoscaler: api.ClusterAutoscalerSupport{
-							Enabled: true,
-							Options: map[string]string{"v": "5", "test": "present"},
-						},
 						MetricsServer: api.MetricsServer{
 							Enabled: true,
 						},
@@ -496,36 +467,6 @@ worker:
 
 					if !reflect.DeepEqual(expected, actual) {
 						t.Errorf("addons didn't match : expected=%+v actual=%+v", expected, actual)
-					}
-				},
-			},
-			assertCluster: []ClusterTester{
-				hasDefaultCluster,
-			},
-		},
-		{
-			context: "WithAutoscalingByClusterAutoscaler",
-			configYaml: minimalValidConfigYaml + `
-addons:
-  clusterAutoscaler:
-    enabled: true
-worker:
-  nodePools:
-  - name: pool1
-    autoscaling:
-      clusterAutoscaler:
-        enabled: true
-`,
-			assertConfig: []ConfigTester{
-				hasDefaultEtcdSettings,
-				asgBasedNodePoolHasWaitSignalEnabled,
-				func(c *config.Config, t *testing.T) {
-					p := c.NodePools[0]
-
-					expected := true
-					actual := p.Autoscaling.ClusterAutoscaler.Enabled
-					if !reflect.DeepEqual(expected, actual) {
-						t.Errorf("autoscaling.clusterAutoscaler.enabled didn't match : expected=%v actual=%v", expected, actual)
 					}
 				},
 			},
@@ -648,6 +589,34 @@ kubeProxy:
 			// See https://github.com/kubernetes-incubator/kube-aws/issues/365
 			context:    "WithClusterNameContainsHyphens",
 			configYaml: kubeAwsSettings.withClusterName("my-cluster").minimumValidClusterYaml(),
+		},
+		{
+			context: "WithcustomApiServerSettings",
+			configYaml: minimalValidConfigYaml + `
+customApiServerSettings:
+  additionalDnsSans:
+  - my.host.com
+  additionalIPAddressSans:
+  - 0.0.0.0
+`,
+			assertConfig: []ConfigTester{
+				func(c *config.Config, t *testing.T) {
+					expectedDnsSans := []string{"my.host.com"}
+					actualDnsSans := c.CustomApiServerSettings.AdditionalDnsSANs
+					if !reflect.DeepEqual(expectedDnsSans, actualDnsSans) {
+						t.Errorf("additionalDnsSans didn't match : expected=%v actual=%v", expectedDnsSans, actualDnsSans)
+					}
+
+					expectedIPSans := []string{"0.0.0.0"}
+					actualIPSans := c.CustomApiServerSettings.AdditionalIPAddresses
+					if !reflect.DeepEqual(expectedIPSans, actualIPSans) {
+						t.Errorf("additionalIPAddressSans didn't match : expected=%v actual=%v", expectedIPSans, actualIPSans)
+					}
+				},
+			},
+			assertCluster: []ClusterTester{
+				hasDefaultCluster,
+			},
 		},
 		{
 			context: "WithCustomSettings",
@@ -1273,20 +1242,8 @@ etcd:
 			configYaml: minimalValidConfigYaml + `
 experimental:
   admission:
-    podSecurityPolicy:
-      enabled: true
-    denyEscalatingExec:
-      enabled: true
     alwaysPullImages:
       enabled: true
-    priority:
-      enabled: true
-    mutatingAdmissionWebhook:
-      enabled: true
-    validatingAdmissionWebhook:
-      enabled: true
-    persistentVolumeClaimResize:
-      enabled: false
   auditLog:
     enabled: true
     logPath: "/var/log/audit.log"
@@ -1303,8 +1260,6 @@ experimental:
     environment:
       CFNSTACK: '{ "Ref" : "AWS::StackId" }'
   awsNodeLabels:
-    enabled: true
-  tlsBootstrap:
     enabled: true
   ephemeralImageStorage:
     enabled: true
@@ -1352,26 +1307,18 @@ worker:
 				func(c *config.Config, t *testing.T) {
 					expected := api.Experimental{
 						Admission: api.Admission{
-							PodSecurityPolicy: api.PodSecurityPolicy{
-								Enabled: true,
-							},
 							AlwaysPullImages: api.AlwaysPullImages{
 								Enabled: true,
 							},
-							DenyEscalatingExec: api.DenyEscalatingExec{
+							EventRateLimit: api.EventRateLimit{
 								Enabled: true,
-							},
-							Priority: api.Priority{
-								Enabled: true,
-							},
-							MutatingAdmissionWebhook: api.MutatingAdmissionWebhook{
-								Enabled: true,
-							},
-							ValidatingAdmissionWebhook: api.ValidatingAdmissionWebhook{
-								Enabled: true,
-							},
-							PersistentVolumeClaimResize: api.PersistentVolumeClaimResize{
-								Enabled: false,
+								Limits: `- type: Namespace
+  qps: 250
+  burst: 500
+  cacheSize: 4096
+- type: User
+  qps: 50
+  burst: 250`,
 							},
 						},
 						AuditLog: api.AuditLog{
@@ -1397,13 +1344,6 @@ worker:
 						AwsNodeLabels: api.AwsNodeLabels{
 							Enabled: true,
 						},
-						ClusterAutoscalerSupport: api.ClusterAutoscalerSupport{
-							Enabled: true,
-							Options: map[string]string{},
-						},
-						TLSBootstrap: api.TLSBootstrap{
-							Enabled: true,
-						},
 						EphemeralImageStorage: api.EphemeralImageStorage{
 							Enabled:    true,
 							Disk:       "xvdb",
@@ -1411,8 +1351,8 @@ worker:
 						},
 						KIAMSupport: api.KIAMSupport{
 							Enabled:         false,
-							Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.8", RktPullDocker: false},
-							SessionDuration: "15m",
+							Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v3.2", RktPullDocker: false},
+							SessionDuration: "30m",
 							ServerAddresses: api.KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
 						},
 						Kube2IamSupport: api.Kube2IamSupport{
@@ -1460,39 +1400,13 @@ worker:
 
 				},
 			},
-			assertCluster: []ClusterTester{
-				hasDefaultCluster,
-				func(c *root.Cluster, t *testing.T) {
-					cp := c.ControlPlane()
-					controllerUserdataS3Part := cp.UserData["Controller"].Parts[api.USERDATA_S3].Asset.Content
-					if match, _ := regexp.MatchString(`--feature-gates=.*ExpandPersistentVolumes=false`, controllerUserdataS3Part); !match {
-						t.Error("missing controller feature gate: ExpandPersistentVolumes=false")
-					}
-
-					if !strings.Contains(controllerUserdataS3Part, `scheduling.k8s.io/v1alpha1=true`) {
-						t.Error("missing controller runtime config: scheduling.k8s.io/v1alpha1=true")
-					}
-
-					re, _ := regexp.Compile("--enable-admission-plugins=[a-zA-z,]*,Priority")
-					if len(re.FindString(controllerUserdataS3Part)) == 0 {
-						t.Error("missing controller --enable-admission-plugins config: Priority")
-					}
-
-				},
-			},
 		},
 		{
 			context: "WithExperimentalFeaturesForWorkerNodePool",
 			configYaml: minimalValidConfigYaml + `
-addons:
-  clusterAutoscaler:
-    enabled: true
 worker:
   nodePools:
   - name: pool1
-    admission:
-      podSecurityPolicy:
-        enabled: true
     auditLog:
       enabled: true
       maxage: 100
@@ -1503,10 +1417,6 @@ worker:
         CFNSTACK: '{ "Ref" : "AWS::StackId" }'
     awsNodeLabels:
       enabled: true
-    clusterAutoscalerSupport:
-      enabled: true
-    tlsBootstrap:
-      enabled: true # Must be ignored, value is synced with the one from control plane
     ephemeralImageStorage:
       enabled: true
     kube2IamSupport:
@@ -1548,13 +1458,6 @@ worker:
 						AwsNodeLabels: api.AwsNodeLabels{
 							Enabled: true,
 						},
-						ClusterAutoscalerSupport: api.ClusterAutoscalerSupport{
-							Enabled: true,
-							Options: map[string]string{},
-						},
-						TLSBootstrap: api.TLSBootstrap{
-							Enabled: false,
-						},
 						EphemeralImageStorage: api.EphemeralImageStorage{
 							Enabled:    true,
 							Disk:       "xvdb",
@@ -1584,8 +1487,7 @@ worker:
 					}
 
 					expectedNodeLabels := api.NodeLabels{
-						"kube-aws.coreos.com/cluster-autoscaler-supported": "true",
-						"kube-aws.coreos.com/role":                         "worker",
+						"kube-aws.coreos.com/role": "worker",
 					}
 					actualNodeLabels := c.NodePools[0].NodeLabels()
 					if !reflect.DeepEqual(expectedNodeLabels, actualNodeLabels) {
@@ -1613,8 +1515,8 @@ experimental:
       tag: v2.6
     sessionDuration: 30m	
     serverAddresses:
-      serverAddress: localhost
-      agentAddress: kiam-server
+      serverAddress: localhost:443
+      agentAddress: kiam-server:443
 worker:
   nodePools:
   - name: pool1
@@ -1625,7 +1527,7 @@ worker:
 						Enabled:         true,
 						Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.6", RktPullDocker: false},
 						SessionDuration: "30m",
-						ServerAddresses: api.KIAMServerAddresses{ServerAddress: "localhost", AgentAddress: "kiam-server"},
+						ServerAddresses: api.KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
 					}
 
 					actual := c.Experimental
@@ -1655,8 +1557,8 @@ worker:
 					expected := api.Experimental{
 						KIAMSupport: api.KIAMSupport{
 							Enabled:         true,
-							Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.8", RktPullDocker: false},
-							SessionDuration: "15m",
+							Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v3.2", RktPullDocker: false},
+							SessionDuration: "30m",
 							ServerAddresses: api.KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
 						},
 					}
@@ -3739,47 +3641,6 @@ apiEndpoints:
 			expectedErrorMessage: `invalid cluster: invalid apiEndpoint "default" at index 0: invalid loadBalancer: either apiAccessAllowedSourceCIDRs or securityGroupIds must be present. Try not to explicitly empty apiAccessAllowedSourceCIDRs or set one or more securityGroupIDs`,
 		},
 		{
-			context: "WithAutoscalingEnabledButClusterAutoscalerIsDefault",
-			configYaml: minimalValidConfigYaml + `
-worker:
-  nodePools:
-  - name: pool1
-    autoscaling:
-      clusterAutoscaler:
-        enabled: true
-`,
-			expectedErrorMessage: "Autoscaling with cluster-autoscaler can't be enabled for node pools because " +
-				"you didn't enabled the cluster-autoscaler addon. Enable it by turning on `addons.clusterAutoscaler.enabled`",
-		},
-		{
-			context: "WithAutoscalingEnabledButClusterAutoscalerIsNot",
-			configYaml: minimalValidConfigYaml + `
-addons:
-  clusterAutoscaler:
-    enabled: false
-worker:
-  nodePools:
-  - name: pool1
-    autoscaling:
-      clusterAutoscaler:
-        enabled: true
-`,
-			expectedErrorMessage: "Autoscaling with cluster-autoscaler can't be enabled for node pools because " +
-				"you didn't enabled the cluster-autoscaler addon. Enable it by turning on `addons.clusterAutoscaler.enabled`",
-		},
-		{
-			context: "WithClusterAutoscalerEnabledForControlPlane",
-			configYaml: minimalValidConfigYaml + `
-controller:
-  autoscaling:
-    clusterAutoscaler:
-      enabled: true
-`,
-			expectedErrorMessage: "cluster-autoscaler can't be enabled for a control plane because " +
-				"allowing so for a group of controller nodes spreading over 2 or more availability zones " +
-				"results in unreliability while scaling nodes out.",
-		},
-		{
 			// See https://github.com/kubernetes-incubator/kube-aws/issues/365
 			context:              "WithClusterNameContainsDots",
 			configYaml:           kubeAwsSettings.withClusterName("my.cluster").minimumValidClusterYaml(),
@@ -3824,30 +3685,6 @@ etcd:
     automated: true
 `,
 			expectedErrorMessage: "`etcd.disasterRecovery.automated` is set to true but `etcd.snapshot.automated` is not - automated disaster recovery requires snapshot to be also automated",
-		},
-		{
-			context: "WithEtcdAutomatedDisasterRecoveryDoesntSupportEtcd2",
-			configYaml: minimalValidConfigYaml + `
-etcd:
-  version: 2
-  snapshot:
-    automated: true
-  disasterRecovery:
-    automated: false
-`,
-			expectedErrorMessage: "`etcd.snapshot.automated` is set to true for enabling automated snapshot. However the feature is available only for etcd version 3",
-		},
-		{
-			context: "WithEtcdAutomatedSnapshotDoesntSupportEtcd2",
-			configYaml: minimalValidConfigYaml + `
-etcd:
-  version: 2
-  snapshot:
-    automated: false
-  disasterRecovery:
-    automated: true
-`,
-			expectedErrorMessage: "`etcd.disasterRecovery.automated` is set to true for enabling automated disaster recovery. However the feature is available only for etcd version 3",
 		},
 		{
 			context: "WithInvalidNodeDrainTimeout",
@@ -4488,18 +4325,6 @@ worker:
 			expectedErrorMessage: "unknown keys found in worker.nodePools[0].spotFleet: bar",
 		},
 		{
-			context: "WithUnknownKeyInWorkerNodePoolCA",
-			configYaml: minimalValidConfigYaml + `
-worker:
-  nodePools:
-  - name: pool1
-    autoscaling:
-      clusterAutoscaler:
-        baz: 1
-`,
-			expectedErrorMessage: "unknown keys found in worker.nodePools[0].autoscaling.clusterAutoscaler: baz",
-		},
-		{
 			context: "WithUnknownKeyInAddons",
 			configYaml: minimalValidConfigYaml + `
 addons:
@@ -4515,15 +4340,6 @@ addons:
     foo: yeah
 `,
 			expectedErrorMessage: "unknown keys found in addons.rescheduler: foo",
-		},
-		{
-			context: "WithUnknownKeyInClusterAutoscalerAddon",
-			configYaml: minimalValidConfigYaml + `
-addons:
-  clusterAutoscaler:
-    foo: yeah
-`,
-			expectedErrorMessage: "unknown keys found in addons.clusterAutoscaler: foo",
 		},
 		{
 			context: "WithTooLongControllerIAMRoleName",

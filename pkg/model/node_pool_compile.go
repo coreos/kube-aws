@@ -2,7 +2,9 @@ package model
 
 import (
 	"fmt"
+
 	"github.com/kubernetes-incubator/kube-aws/coreos/amiregistry"
+	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 	"github.com/pkg/errors"
 )
@@ -20,21 +22,12 @@ func nodePoolPreprocess(c api.WorkerNodePool, main *Config) (*api.WorkerNodePool
 	// Inherit parameters from the control plane stack
 	c.KubeClusterSettings = main.KubeClusterSettings
 	c.HostOS = main.HostOS
-	c.Experimental.TLSBootstrap = main.DeploymentSettings.Experimental.TLSBootstrap
 	c.Experimental.NodeDrainer = main.DeploymentSettings.Experimental.NodeDrainer
 	c.Experimental.GpuSupport = main.DeploymentSettings.Experimental.GpuSupport
-	c.Kubelet.RotateCerts = main.DeploymentSettings.Kubelet.RotateCerts
 	c.Kubelet.SystemReservedResources = main.DeploymentSettings.Kubelet.SystemReservedResources
 	c.Kubelet.KubeReservedResources = main.DeploymentSettings.Kubelet.KubeReservedResources
 
-	if c.Experimental.ClusterAutoscalerSupport.Enabled {
-		if !main.Addons.ClusterAutoscaler.Enabled {
-			return nil, errors.New("clusterAutoscalerSupport can't be enabled on node pools when cluster-autoscaler is not going to be deployed to the cluster")
-		}
-	}
-
 	// Default to public subnets defined in the main cluster
-	// CAUTION: cluster-autoscaler Won't work if there're 2 or more subnets spanning over different AZs
 	if len(c.Subnets) == 0 {
 		var defaults []api.Subnet
 		if c.Private {
@@ -97,6 +90,12 @@ func NodePoolCompile(spec api.WorkerNodePool, main *Config) (*NodePoolConfig, er
 
 	c.EtcdNodes = main.EtcdNodes
 	c.KubeResourcesAutosave = main.KubeResourcesAutosave
+	logger.Debugf("NodePoolCompile() Merging pluginconfig %+v into %+v", c.Plugins, main.PluginConfigs)
+	c.Plugins, err = main.PluginConfigs.Merge(c.Plugins)
+	if err != nil {
+		return c, fmt.Errorf("failed when merging node plugin values into main plugin configs: %v", err)
+	}
+	logger.Debugf("NodePoolCompile() merged plugin configs: %+v", c.Plugins)
 
 	var apiEndpoint APIEndpoint
 	if c.APIEndpointName != "" {
@@ -119,11 +118,6 @@ kube-aws can't save users from mistakes like that
 `, c.NodePoolName, apiEndpoint.DNSName)
 	}
 	c.APIEndpoint = apiEndpoint
-
-	if spec.Autoscaling.ClusterAutoscaler.Enabled && !main.Addons.ClusterAutoscaler.Enabled {
-		return nil, errors.New("Autoscaling with cluster-autoscaler can't be enabled for node pools because " +
-			"you didn't enabled the cluster-autoscaler addon. Enable it by turning on `addons.clusterAutoscaler.enabled`")
-	}
 
 	if err := c.Validate(); err != nil {
 		return nil, errors.Wrapf(err, "invalid node pool spec")

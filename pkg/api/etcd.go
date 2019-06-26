@@ -30,7 +30,7 @@ type Etcd struct {
 	UnknownKeys        `yaml:",inline"`
 }
 
-type EtcdVersion string
+var ETCD_VERSION string = "v99.99"
 
 type EtcdDisasterRecovery struct {
 	Automated bool `yaml:"automated,omitempty"`
@@ -41,21 +41,8 @@ type UserSuppliedArgs struct {
 	AutoCompactionRetention int `yaml:"autoCompactionRetention,omitempty"`
 }
 
-// Supported returns true when the disaster recovery feature provided by etcdadm can be enabled on the specified version of etcd
-func (r EtcdDisasterRecovery) SupportsEtcdVersion(etcdVersion EtcdVersion) bool {
-	return etcdVersion.Is3()
-}
-
-func (r EtcdDisasterRecovery) IsAutomatedForEtcdVersion(etcdVersion EtcdVersion) bool {
-	return etcdVersion.Is3() && r.Automated
-}
-
 type EtcdSnapshot struct {
 	Automated bool `yaml:"automated,omitempty"`
-}
-
-func (s EtcdSnapshot) IsAutomatedForEtcdVersion(etcdVersion EtcdVersion) bool {
-	return etcdVersion.Is3() && s.Automated
 }
 
 func NewDefaultEtcd() Etcd {
@@ -160,13 +147,6 @@ func (e Etcd) SecurityGroupRefs() []string {
 	return refs
 }
 
-func (e Etcd) SystemdUnitName() string {
-	if e.Version().Is3() {
-		return "etcd-member.service"
-	}
-	return "etcd2.service"
-}
-
 func ValidateQuotaBackendBytes(bytes int) error {
 	if bytes > MaxQuotaBackendBytes {
 		return fmt.Errorf("quotaBackendBytes: %v is higher than the maximum allowed value 8,589,934,592", bytes)
@@ -201,17 +181,9 @@ func (e Etcd) FormatOpts() string {
 }
 
 // Version returns the version of etcd (e.g. `3.2.1`) to be used for this etcd cluster
-func (e Etcd) Version() EtcdVersion {
+func (e Etcd) Version() string {
 	if e.Cluster.Version != "" {
 		return e.Cluster.Version
 	}
-	return "3.2.13"
-}
-
-func (v EtcdVersion) Is3() bool {
-	return strings.HasPrefix(string(v), "3")
-}
-
-func (v EtcdVersion) String() string {
-	return string(v)
+	return ETCD_VERSION
 }

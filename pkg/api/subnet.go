@@ -3,6 +3,8 @@ package api
 import (
 	"fmt"
 	"strings"
+
+	"github.com/kubernetes-incubator/kube-aws/logger"
 )
 
 type Subnet struct {
@@ -237,7 +239,10 @@ func (s *Subnet) ManageSubnet() bool {
 
 // Ref returns ID or ref to newly created resource
 func (s *Subnet) Ref() string {
-	return s.Identifier.Ref(s.LogicalName)
+	logger.Debugf("Ref called on subnet %s: %+v", s.Name, s)
+	out := s.Identifier.Ref(s.LogicalName)
+	logger.Debugf("Ref returned: %s", out)
+	return out
 }
 
 // RouteTableLogicalName represents the name of the route table to which this subnet is associated.

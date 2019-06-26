@@ -3,10 +3,11 @@ package api
 import (
 	"errors"
 	"fmt"
-	"github.com/Masterminds/semver"
-	"github.com/kubernetes-incubator/kube-aws/netutil"
 	"net"
 	"strings"
+
+	"github.com/Masterminds/semver"
+	"github.com/kubernetes-incubator/kube-aws/netutil"
 )
 
 func (s DeploymentSettings) ValidateNodePool(name string) error {
@@ -47,9 +48,6 @@ func (c DeploymentSettings) WithDefaultsFrom(main DeploymentSettings) Deployment
 	c.AWSCliImage.MergeIfEmpty(main.AWSCliImage)
 	c.PauseImage.MergeIfEmpty(main.PauseImage)
 	c.JournaldCloudWatchLogsImage.MergeIfEmpty(main.JournaldCloudWatchLogsImage)
-
-	// Inherit main TLS bootstrap config
-	c.Experimental.TLSBootstrap = main.Experimental.TLSBootstrap
 
 	if len(c.SSHAuthorizedKeys) == 0 {
 		c.SSHAuthorizedKeys = main.SSHAuthorizedKeys

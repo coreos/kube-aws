@@ -100,7 +100,7 @@
               {{end}}
             ],
             "SubnetId": {{$workerSubnet.Ref}},
-            "UserData": {{ $.UserDataWorker.Parts.instance.Template }}
+            "UserData": {{ $.UserData.Worker.Parts.instance.Template }}
           }
           {{end}}
           {{end}}
@@ -162,13 +162,6 @@
         },
         {{end}}
         "Tags": [
-          {{if .Autoscaling.ClusterAutoscaler.Enabled}}
-          {
-            "Key": "{{.Autoscaling.ClusterAutoscaler.AutoDiscoveryTagKey}}",
-            "PropagateAtLaunch": "false",
-            "Value": ""
-          },
-          {{end}}
           {{range $k, $v := .InstanceTags -}}
           {
             "Key": "{{$k}}",
@@ -308,6 +301,7 @@
           },
           "ImageId": "{{.AMI}}",
           "InstanceType": "{{.InstanceType}}",
+          "Monitoring": {"Enabled": "true"},
           {{if .KeyName}}"KeyName": "{{.KeyName}}",{{end}}
           "SecurityGroupIds": [
             {{range $sgIndex, $sgRef := $.SecurityGroupRefs}}
@@ -331,7 +325,7 @@
           "Placement": {
             "Tenancy": "{{.Tenancy}}"
           },
-          "UserData": {{ .UserDataWorker.Parts.instance.Template }}
+          "UserData": {{ .UserData.Worker.Parts.instance.Template }}
         }
       },
       "Type": "AWS::EC2::LaunchTemplate"
@@ -383,7 +377,7 @@
                   "Effect": "Allow",
                   "Resource": "*"
                 },
-                {{- if $.UserDataWorker.Parts.s3 }}
+                {{- if $.UserData.Worker.Parts.s3 }}
                 {
                   "Effect": "Allow",
                   "Action": [
@@ -450,28 +444,6 @@
                   "Action": "autoscaling:Describe*",
                   "Effect": "Allow",
                   "Resource": [ "*" ]
-                },
-                {{end}}
-                {{if .ClusterAutoscalerSupport.Enabled}}
-                {
-                  "Action": [
-                    "autoscaling:DescribeAutoScalingGroups",
-                    "autoscaling:DescribeAutoScalingInstances",
-                    "autoscaling:DescribeTags"
-                  ],
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {
-                  "Action": [
-                    "autoscaling:SetDesiredCapacity",
-                    "autoscaling:TerminateInstanceInAutoScalingGroup"
-                  ],
-                  "Condition": {
-                    "Null": { "autoscaling:ResourceTag/kubernetes.io/cluster/{{.ClusterName}}": "false" }
-                  },
-                  "Effect": "Allow",
-                  "Resource": "*"
                 },
                 {{end}}
                 {{if .SpotFleet.Enabled}}
