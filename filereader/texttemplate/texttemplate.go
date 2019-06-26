@@ -39,6 +39,9 @@ var funcs2 = template.FuncMap{
 	"execTemplate": func(name string, ctx interface{}) (string, error) {
 		panic("[bug] Stub 'execTemplate' was not replaced")
 	},
+	"insertTemplateFile": func(name string, ctx interface{}) (string, error) {
+		panic("[bug] Stub 'insertTemplateFile' was not replaced")
+	},
 	"fingerprint": func(data string) string {
 		return fingerprint.SHA256(data)
 	},
@@ -86,6 +89,9 @@ func Parse(name string, raw string, funcs template.FuncMap) (*template.Template,
 				b := bytes.Buffer{}
 				err := t.ExecuteTemplate(&b, name, ctx)
 				return b.String(), err
+			},
+			"insertTemplateFile": func(path string, ctx interface{}) (string, error) {
+				return GetString(path, ctx)
 			},
 		})
 	}
