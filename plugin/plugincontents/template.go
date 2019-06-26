@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"bytes"
+	"text/template"
+
 	"github.com/kubernetes-incubator/kube-aws/filereader/texttemplate"
 	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 	"github.com/kubernetes-incubator/kube-aws/provisioner"
-	"text/template"
 )
 
 type data struct {
