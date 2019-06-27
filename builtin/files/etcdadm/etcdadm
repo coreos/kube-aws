@@ -85,8 +85,8 @@ config_etcd_endpoints() {
   echo "${ETCD_ENDPOINTS}"
 }
 
-etcd_version=${ETCD_VERSION:-3.2.13}
-etcd_aci_url="https://github.com/coreos/etcd/releases/download/v$etcd_version/etcd-v$etcd_version-linux-amd64.aci"
+etcd_version=${ETCD_VERSION:-v3.2.13}
+etcd_aci_url="https://github.com/coreos/etcd/releases/download/$etcd_version/etcd-$etcd_version-linux-amd64.aci"
 
 member_count="${ETCDADM_MEMBER_COUNT:?missing required env}"
 
@@ -511,7 +511,7 @@ member_restore_from_local_snapshot() {
       --volume="$(member_host_snapshots_dir_path)":/"$(member_snapshots_dir_name)" \
       --volume="$(dirname "$restored_dir")":"$(dirname "$restored_dir")" \
       --volume=/var/lib/etcd \
-      quay.io/coreos/etcd:v$etcd_version \
+      quay.io/coreos/etcd:$etcd_version \
         etcdctl \
         --write-out simple \
         --endpoints "$(member_client_url)" snapshot restore \
@@ -807,7 +807,7 @@ raw_etcdctl() {
     --volume="$(member_host_snapshots_dir_path)":/"$(member_snapshots_dir_name)" \
     --volume="$(member_data_dir)":/var/lib/etcd \
     --volume "$(member_snapshots_dir_name)":"$(member_host_snapshots_dir_path)" \
-    quay.io/coreos/etcd:v$etcd_version \
+    quay.io/coreos/etcd:$etcd_version \
       ${*}
 }
 
