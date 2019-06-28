@@ -30,9 +30,9 @@ spec:
             - --skip-nodes-with-system-pods=false
             - --expander=least-waste
             {{- if index .Values "options" }}
-              {{- range $flag, $value := .Values.options }}
-              - --{{ $flag }}={{ $value }}
-              {{- end }}
+            {{- range $flag, $value := .Values.options }}
+            - --{{ $flag }}={{ $value }}
+            {{- end }}
             {{- end }}
           env:
             - name: AWS_REGION
