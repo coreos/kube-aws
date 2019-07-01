@@ -14,7 +14,7 @@ type APIEndpointLB struct {
 	APIAccessAllowedSourceCIDRs CIDRRanges `yaml:"apiAccessAllowedSourceCIDRs,omitempty"`
 	// Identifier specifies an existing load-balancer used for load-balancing controller nodes and serving this endpoint
 	Identifier Identifier `yaml:",inline"`
-	// Managed is set to true when want to create an ELB for this API endpoint. It is false by default i.e. considered to be false if nil
+	// Managed is set to true when we want to create an ELB for this API endpoint. It is false by default i.e. considered to be false if nil
 	Managed *bool `yaml:"managed,omitempty"`
 	// Subnets contains all the subnets assigned to this load-balancer. Specified only when this load balancer is not reused but managed one
 	SubnetReferences []SubnetReference `yaml:"subnets,omitempty"`
@@ -86,8 +86,12 @@ func (e APIEndpointLB) ManageSecurityGroup() bool {
 // Validate returns an error when there's any user error in the settings of the `loadBalancer` field
 func (e APIEndpointLB) Validate() error {
 	if e.Identifier.HasIdentifier() {
-		if e.PrivateSpecified != nil || !e.ClassicLoadBalancer() || len(e.SubnetReferences) > 0 || e.HostedZone.HasIdentifier() {
-			return errors.New("type, private, subnets, hostedZone must be omitted when id is specified to reuse an existing ELB")
+		if e.PrivateSpecified != nil || len(e.SubnetReferences) > 0 || e.HostedZone.HasIdentifier() {
+			return errors.New("private, subnets, hostedZone must be omitted when id is specified to reuse an existing ELB")
+		}
+
+		if !(e.ClassicLoadBalancer() || e.LoadBalancerV2()) {
+			return errors.New("LB must be an ELB or NLB")
 		}
 
 		return nil
@@ -140,6 +144,8 @@ func (e APIEndpointLB) Validate() error {
 	if e.NetworkLoadBalancer() {
 		if len(e.SecurityGroupIds) > 0 {
 			return errors.New("cannot specify security group IDs for a network load balancer")
+		} else if e.ManageELB() && len(e.APIAccessAllowedSourceCIDRs) == 0 {
+			return errors.New("By default, kube-aws will allow NLB access for the VPC cidr. But if kube-aws will be managing the NLB then apiAccessAllowedSourceCIDRs should be present to allow you to specify CIDRs for your own external access.")
 		}
 	}
 

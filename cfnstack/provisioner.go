@@ -188,7 +188,7 @@ func (c *Provisioner) updateStackWithTemplateURL(cfSvc UpdateService, templateUR
 func (c *Provisioner) UpdateStackAtURLAndWait(cfSvc CRUDService, templateURL string) (string, error) {
 	updateOutput, err := c.updateStackWithTemplateURL(cfSvc, templateURL)
 	if err != nil {
-		return "", fmt.Errorf("error updating cloudformation stack: %v", err)
+		return "", fmt.Errorf("error updating cloudformation stack: %s, %v", templateURL, err)
 	}
 	return c.waitUntilStackGetsUpdated(cfSvc, updateOutput)
 }

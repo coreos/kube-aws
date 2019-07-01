@@ -499,50 +499,7 @@
       }
     },
     {{ end -}}
-    {{ if .LoadBalancer.NetworkLoadBalancer }}
-    "{{.LoadBalancer.LogicalName}}TargetGroup": {
-      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
-      "Properties": {
-        "HealthCheckIntervalSeconds": "10",
-        "HealthyThresholdCount": "3",
-        "UnhealthyThresholdCount": "3",
-        "Port": "443",
-        "VpcId": {{$.VPCRef}},
-        "Protocol": "TCP"
-      }
-    },
-    "{{.LoadBalancer.LogicalName}}Listener": {
-      "Type": "AWS::ElasticLoadBalancingV2::Listener",
-      "Properties": {
-        "DefaultActions": [
-          {
-            "TargetGroupArn": {"Ref": "{{.LoadBalancer.LogicalName}}TargetGroup"},
-            "Type": "forward"
-          }
-        ],
-        "LoadBalancerArn": {"Ref": "{{.LoadBalancer.LogicalName}}"},
-        "Port": "443",
-        "Protocol": "TCP"
-      }
-    },
-    "{{.LoadBalancer.LogicalName}}" : {
-      "Type" : "AWS::ElasticLoadBalancingV2::LoadBalancer",
-      "Properties" : {
-        "Type": "network",
-        "Subnets" : [
-          {{range $index, $subnet := .LoadBalancer.Subnets}}
-          {{if gt $index 0}},{{end}}
-          {{$subnet.Ref}}
-          {{end}}
-        ],
-        {{if .LoadBalancer.Private}}
-        "Scheme": "internal"
-        {{else}}
-        "Scheme": "internet-facing"
-        {{end}}
-      }
-    },
-    {{ else }}
+    {{ if not .LoadBalancer.NetworkLoadBalancer -}}
     "{{.LoadBalancer.LogicalName}}" : {
       "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties" : {
@@ -584,8 +541,8 @@
         ]
       }
     },
-    {{ end }}
-    {{if .LoadBalancer.ManageSecurityGroup -}}
+    {{ end -}}
+    {{ if .LoadBalancer.ManageSecurityGroup -}}
     "{{.LoadBalancer.SecurityGroupLogicalName}}" : {
       "Properties": {
         "GroupDescription": {
@@ -612,9 +569,65 @@
       },
       "Type": "AWS::EC2::SecurityGroup"
     },
-    {{end -}}
-    {{end -}}
-    {{end -}}
+    {{ end -}}
+    {{ end -}}
+    {{ if .LoadBalancer.NetworkLoadBalancer -}}
+    "{{.LoadBalancer.TargetGroupLogicalName}}": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "HealthCheckIntervalSeconds": "10",
+        "HealthyThresholdCount": "3",
+        "UnhealthyThresholdCount": "3",
+        "Port": "443",
+        "VpcId": {{$.VPCRef}},
+        "Protocol": "TCP"
+      }
+    },
+    "{{.LoadBalancer.LogicalName}}Listener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {"Ref": "{{.LoadBalancer.TargetGroupLogicalName}}"},
+            "Type": "forward"
+          }
+        ],
+        {{ if .LoadBalancer.ManageELB }}
+        "LoadBalancerArn": {"Ref": "{{.LoadBalancer.LogicalName}}"},
+        {{ else }}
+        "LoadBalancerArn": {{.LoadBalancer.Ref}},
+        {{ end }}
+        "Port": "443",
+        "Protocol": "TCP"
+      }
+    },
+    {{ if .LoadBalancer.ManageELB }}
+    "{{.LoadBalancer.LogicalName}}": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "network",
+        "LoadBalancerAttributes": [
+          {
+            "Key": "load_balancing.cross_zone.enabled",
+            "Value": "true"
+          }
+        ],
+        "Subnets": [
+          {{range $index, $subnet := .LoadBalancer.Subnets}}
+          {{if gt $index 0}},{{end}}
+          {{$subnet.Ref}}
+          {{end}}
+        ],
+        {{if .LoadBalancer.Private}}
+        "Scheme": "internal"
+        {{else}}
+        "Scheme": "internet-facing"
+        {{end}}
+      }
+    },
+    {{ end }}
+    {{ end -}}
+    {{ end -}}
     "{{.Controller.LogicalName}}LC": {
       "Properties": {
         "BlockDeviceMappings": [

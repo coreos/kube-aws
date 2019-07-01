@@ -68,9 +68,12 @@ apiEndpoints:
   # Omit all the settings when you want kube-aws not to provision a load balancer for you
   loadBalancer:
     # Specifies an existing load-balancer used for load-balancing controller nodes and serving this endpoint
-    # Setting id requires all the other settings excluding `name` to be omitted because reusing an ELB implies that configuring other resources
+    # Setting id requires the fields subnets, HostZoneId & private be omitted because reusing an existing ELB implies that configuring other resources
     # like a Route 53 record set for the endpoint is now your responsibility!
-    # Also, don't forget to add controller.securityGroupIds to include a glue SG to allow your existing ELB to access controller nodes created by kube-aws
+    # Classic: If you're using a classic LB then don't forget to add controller.securityGroupIds to include a glue SG to allow your existing ELB to access controller nodes created by kube-aws
+    # Network: If you're using a network LB then a Listener will be created & the specified NLB attached to it. A TargetGroup will also be created and attached to the Controllers ASG.
+    #          Also, if using a type: network LB, then you'll need to specify the full ARN of the existing LB like so:
+    #          id: arn:aws:elasticloadbalancing:<region>:<account_id>:loadbalancer/net/cluster-apiserver-nlb/<lb_id>
     #id: existing-elb
 
     # All the subnets assigned to this load-balancer. Specified only when this load balancer is not reused but managed one

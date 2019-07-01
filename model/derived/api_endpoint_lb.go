@@ -2,8 +2,9 @@ package derived
 
 import (
 	"fmt"
-	"github.com/kubernetes-incubator/kube-aws/model"
 	"strings"
+
+	"github.com/kubernetes-incubator/kube-aws/model"
 )
 
 // APIEndpointLB is the load balancer serving the API endpoint
@@ -53,13 +54,8 @@ func (b APIEndpointLB) Ref() string {
 // TargetGroupRef returns a CloudFormation ref for the Target Group backing the API endpoint
 func (b APIEndpointLB) TargetGroupRef() string {
 	return b.Identifier.Ref(func() string {
-		return fmt.Sprintf("%sTargetGroup", b.LogicalName())
+		return fmt.Sprintf(b.TargetGroupLogicalName())
 	})
-}
-
-// SecurityGroupLogicalName returns a CloudFormation ref for the Security Group backing the API endpoint
-func (b APIEndpointLB) SecurityGroupLogicalName() string {
-	return fmt.Sprintf("APIEndpoint%sSG", strings.Title(b.Name))
 }
 
 // SecurityGroupRefs contains CloudFormation resource references for additional SGs associated to this LB
@@ -81,4 +77,14 @@ func (b APIEndpointLB) SecurityGroupRefs() []string {
 	)
 
 	return refs
+}
+
+// TargetGroupLogicalName returns a CloudFormation ref for the Target Group backing the API endpoint
+func (b APIEndpointLB) TargetGroupLogicalName() string {
+	return fmt.Sprintf("APIEndpoint%sTG", strings.Title(b.Name))
+}
+
+// SecurityGroupLogicalName returns a CloudFormation ref for the Security Group backing the API endpoint
+func (b APIEndpointLB) SecurityGroupLogicalName() string {
+	return fmt.Sprintf("APIEndpoint%sSG", strings.Title(b.Name))
 }

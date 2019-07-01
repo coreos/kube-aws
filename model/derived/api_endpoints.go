@@ -2,9 +2,10 @@ package derived
 
 import (
 	"fmt"
-	"github.com/kubernetes-incubator/kube-aws/model"
 	"sort"
 	"strings"
+
+	"github.com/kubernetes-incubator/kube-aws/model"
 )
 
 // APIEndpoints is a set of API endpoints associated to a Kubernetes cluster
@@ -99,7 +100,7 @@ func (e APIEndpoints) ELBClassicRefs() []string {
 	return refs
 }
 
-// ELBV2TargetGroupRefs returns the names of all the Load Balancers v2 to which controller nodes should be associated
+// ELBV2TargetGroupRefs returns the names of all the TargetGroups which should be attached to NLBs managed by kube-aws
 func (e APIEndpoints) ELBV2TargetGroupRefs() []string {
 	refs := []string{}
 	for _, endpoint := range e {
@@ -110,7 +111,7 @@ func (e APIEndpoints) ELBV2TargetGroupRefs() []string {
 	return refs
 }
 
-// ManageELBLogicalNames returns all the logical names of the cfn resources corresponding to ELBs managed by kube-aws for API endpoints
+// ManagedELBLogicalNames returns all the logical names of the cfn resources corresponding to ELBs managed by kube-aws for API endpoints
 func (e APIEndpoints) ManagedELBLogicalNames() []string {
 	logicalNames := []string{}
 	for _, endpoint := range e {

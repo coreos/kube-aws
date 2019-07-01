@@ -2144,7 +2144,7 @@ apiEndpoints:
 					elbOnly := c.APIEndpoints["elbOnly"]
 
 					if len(unversionedPublic.LoadBalancer.Subnets) != 0 {
-						t.Errorf("unversionedPublic: subnets shuold be empty but was not: actual=%+v", unversionedPublic.LoadBalancer.Subnets)
+						t.Errorf("unversionedPublic: subnets should be empty but was not: actual=%+v", unversionedPublic.LoadBalancer.Subnets)
 					}
 					if !unversionedPublic.LoadBalancer.Enabled() {
 						t.Errorf("unversionedPublic: it should be enabled as the lb to which controller nodes are added, but it was not: loadBalancer=%+v", unversionedPublic.LoadBalancer)
@@ -3974,7 +3974,7 @@ apiEndpoints:
     hostedZone:
       id: hostedzone-public
 `,
-			expectedErrorMessage: "invalid apiEndpoint \"unversionedPublic\" at index 0: invalid loadBalancer: type, private, subnets, hostedZone must be omitted when id is specified to reuse an existing ELB",
+			expectedErrorMessage: "invalid apiEndpoint \"unversionedPublic\" at index 0: invalid loadBalancer: private, subnets, hostedZone must be omitted when id is specified to reuse an existing ELB",
 		},
 		{
 			context: "WithMultiAPIEndpointsInvalidWorkerAPIEndpointName",

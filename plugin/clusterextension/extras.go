@@ -111,7 +111,7 @@ func (e ClusterExtension) NodePoolStack() (*stack, error) {
 
 			m, err := render.MapFromContents(p.Spec.CloudFormation.Stacks.NodePool.Resources.Append.Contents)
 			if err != nil {
-				return nil, fmt.Errorf("failed to load additioanl resources for worker node-pool stack: %v", err)
+				return nil, fmt.Errorf("failed to load additional resources for worker node-pool stack: %v", err)
 			}
 			for k, v := range m {
 				resources[k] = v

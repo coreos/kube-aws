@@ -141,6 +141,8 @@ apiEndpoints:
   loadBalancer:
     type: network
     recordSetManaged: false
+    apiAccessAllowedSourceCIDRs:
+      - 10.0.0.0/8
 `, `
 apiEndpoints:
 - name: public
@@ -149,15 +151,25 @@ apiEndpoints:
     type: network
     recordSetManaged: false
     securityGroupIds: []
+    apiAccessAllowedSourceCIDRs:
+      - 10.0.0.0/8
 `, `
 apiEndpoints:
-- name: public
+- name: existing-nlb
   dnsName: test.staging.core-os.net
   loadBalancer:
     type: network
-    recordSetManaged: false
-    securityGroupIds: []
-    apiAccessAllowedSourceCIDRs: []
+    id: apiserver-nlb/0000
+`, `
+apiEndpoints:
+- name: to-be-created-nlb
+  dnsName: test.staging.core-os.net
+  loadBalancer:
+    type: network
+    hostedZone:
+      id: hostedzone-xxxxxx
+    apiAccessAllowedSourceCIDRs:
+      - 10.0.0.0/8
 `,
 }
 
@@ -231,6 +243,13 @@ apiEndpoints:
     type: classic
     recordSetManaged: false
     securityGroupIds: []
+    apiAccessAllowedSourceCIDRs: []
+`, `
+# No apiAccessAllowedSourceCIDRs set for managed NLB
+apiEndpoints:
+- name: public
+  loadBalancer:
+    type: network
     apiAccessAllowedSourceCIDRs: []
 `,
 }
@@ -325,22 +344,10 @@ apiEndpoints:
   loadBalancer:
     type: network
     recordSetManaged: false
-    apiAccessAllowedSourceCIDRs: []
-`,
-			cidrs: []string{},
-		},
-		{
-			conf: `
-apiEndpoints:
-- name: endpoint-1
-  dnsName: test-1.staging.core-os.net
-  loadBalancer:
-    type: network
-    recordSetManaged: false
     apiAccessAllowedSourceCIDRs:
-      - 0.0.0.0/0
+      - 10.0.0.0/8
 `,
-			cidrs: []string{"0.0.0.0/0"},
+			cidrs: []string{"10.0.0.0/8"},
 		},
 		{
 			conf: `
