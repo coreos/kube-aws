@@ -69,27 +69,6 @@ coreos:
         [Install]
         WantedBy=multi-user.target
 
-    - name: handle-kubernetes-version-jump.service
-      enable: true
-      command: start
-      content: |
-        [Unit]
-        Description=Smooth upgrades where the version jumps more than 1 release
-        After=kubelet.service network-online.target
-        Before=install-kube-system.service
-        Wants=kubelet.service
-
-        [Service]
-        Type=simple
-        TimeoutStartSec=60m
-        Restart=on-failure
-        RestartSec=30
-        ExecStartPre=/usr/bin/systemctl is-active kubelet
-        ExecStart=/opt/bin/handle-kubernetes-version-jump
-
-        [Install]
-        WantedBy=multi-user.target
-
     - name: handle-cluster-cidr-changes.service
       enable: true
       command: start
@@ -1018,6 +997,9 @@ write_files:
         echo Waiting until kube-system created.
         sleep 3
       done
+
+      # Handle kubernetes version jumps by shutting down legacy controllers
+      /opt/bin/handle-kubernetes-version-jump
 
       # KUBE_SYSTEM NAMESPACE
       deploy "/srv/kubernetes/manifests/kube-system-ns.yaml"
@@ -6018,41 +6000,76 @@ write_files:
         return 0
       }
 
-      # MAIN
-      while ! kubectl get ns kube-system; do
-        echo "Waiting until apiserver/kube-system available..."
-        sleep 3
-      done
+      find_pod() {
+        local name=$1
+        local host=$2
+
+        kubectl -n kube-system get pod "${name}-${host}" --no-headers -o wide
+      }
+
+      wait_stopped() {
+        local controllers=$1
+        log ""
+        log "WAITING FOR ALL MATCHED CONTROLLERS TO STOP:-"
+        log "${controllers}"
+        log ""
+
+        local test=1
+        while [ "$test" -eq "1" ]; do
+          test=0
+          for cont in $controllers; do
+            for pod in kube-controller-manager kube-scheduler
+            do
+              if find_pod "${pod}" "${cont}"; then
+                log "found pod ${pod}-${cont}"
+                test=1
+              else
+                log "no pod ${pod}-${cont}"
+              fi
+            done
+          done
+
+          if [ "$test" -eq "1" ]; then
+            log "Pods found retrying in 5 seconds..."
+            sleep 5
+          fi
+        done
+      }
 
       if ! $(valid_version ${my_kubernetes_version}); then
         log "My kubernetes version ${my_kubernetes_version} is invalid - aborting!"
         exit 1
       fi
 
-      log "Checking for masters/controllers with kubernetes release jumps (>1) ..."
+      log ""
+      log "CHECKING CONTROLLER VERSIONS"
+      log ""
+      found=""
       for controller in $(get_masters); do
         controller_name=$(echo "${controller%%:*}")
         controller_version=$(echo "${controller##*:}")
         if [[ "${controller_name}" != "$myhostname" ]]; then
-          log "Checking controller ${controller_name}..."
           if ! $(valid_version ${controller_version}); then
             log "Controller ${controller_name} has an invalid version number ${controller_version}!"
             continue
           fi
 
           if $(version_jumps ${my_kubernetes_version} ${controller_version}); then
-            log "Detected a version jump between my version ${my_kubernetes_version} and theirs ${controller_version}"
-            log "Disabling kube-scheduler and kube-controller-manager on ${controller_name}"
+            log "Detected a version jump on ${controller_name}: my version is ${my_kubernetes_version} and theirs is ${controller_version}"
+            log "Disabling kube-scheduler and kube-controller-manager..."
+            if [[ -z "${found}" ]]; then
+              found="${controller_name}"
+            else
+              found="${found} ${controller_name}"
+            fi
             disable_controller ${controller_name} ${controller_version}
           else
-            log "No version jump between my version ${my_kubernetes_version} and theirs ${controller_version}"
+            log "No version jump on ${controller_name}: my version is ${my_kubernetes_version} and theirs is ${controller_version}"
           fi
         fi
       done
 
-      while true; do
-        sleep 999999
-      done
+      wait_stopped "${found}"
   
   - path: /opt/bin/handle-cluster-cidr-changes
     permissions: 0755
