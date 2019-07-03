@@ -69,6 +69,27 @@ coreos:
         [Install]
         WantedBy=multi-user.target
 
+    - name: handle-kubernetes-version-jump.service
+      enable: true
+      command: start
+      content: |
+        [Unit]
+        Description=Smooth upgrades where the version jumps more than 1 release
+        After=kubelet.service network-online.target
+        Before=install-kube-system.service
+        Wants=kubelet.service
+
+        [Service]
+        Type=simple
+        TimeoutStartSec=60m
+        Restart=on-failure
+        RestartSec=30
+        ExecStartPre=/usr/bin/systemctl is-active kubelet
+        ExecStart=/opt/bin/handle-kubernetes-version-jump
+
+        [Install]
+        WantedBy=multi-user.target
+
     - name: handle-cluster-cidr-changes.service
       enable: true
       command: start
@@ -5799,7 +5820,7 @@ write_files:
         local return_code=0
 
         while [ "$tries" -lt "$retries" ]; do
-          result_text=$(docker run --rm -i --net=host -v /tmp:/tmp:rw -v /etc/kubernetes:/etc/kubernetes:ro  -v /etc/resolv.conf:/etc/resolv.conf:ro $hyperkube_image /kubectl "$@")
+          result_text=$(docker run --rm -i --net=host -v /tmp:/tmp:rw -v /etc/kubernetes:/etc/kubernetes:ro  -v /etc/resolv.conf:/etc/resolv.conf:ro $hyperkube_image /kubectl --kubeconfig=/etc/kubernetes/kubeconfig/kube-controller-manager.yaml "$@")
           return_code=$?
           if [ "$return_code" -eq "0" ]; then
             echo "${result_text}"
@@ -5866,7 +5887,6 @@ write_files:
       }
 
       # MAIN
-
       log "Running watcher for requests to disable core services..."
       while true
       do
@@ -5888,6 +5908,150 @@ write_files:
         fi
 
         sleep 10
+      done
+
+  - path: /opt/bin/handle-kubernetes-version-jump
+    permissions: 0755
+    content: |
+      #!/bin/bash
+      # Smooth upgrades/roll-backs where the release of kubernetes jumps 2 or more
+      # e.g. from 1.11.0 to 1.13.0
+      # Stops the kube-scheduler and kube-controller manager on master nodes so that an upgraded node
+      # immediately takes over these functions (using the kube-aws-migration-disable-xxx configmap mechanism)
+      #
+      # A request to disable is a configmap matching the hostname and kubernetes version containing a list of core service to stop: -
+      # apiVersion: v1
+      # kind: ConfigMap
+      # metadata:
+      #   name: kube-aws-migration-disable-ip-10-29-26-83.us-west-2.compute.internal
+      #   namespace: kube-system
+      # data:
+      #   kubernetesVersion: v1.9.3
+      #   disable: "kube-apiserver kube-controller-manager kube-scheduler"
+
+      retries=5
+      hyperkube_image="{{.HyperkubeImage.RepoWithTag}}"
+      my_kubernetes_version="{{.HyperkubeImage.Tag}}"
+      myhostname=$(hostname -f)
+
+      kubectl() {
+        local tries=0
+        local result_text=""
+        local return_code=0
+
+        while [ "$tries" -lt "$retries" ]; do
+          result_text=$(docker run --rm -i --net=host -v /tmp:/tmp:rw -v /etc/kubernetes:/etc/kubernetes:ro  -v /etc/resolv.conf:/etc/resolv.conf:ro $hyperkube_image /kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml "$@")
+          return_code=$?
+          if [ "$return_code" -eq "0" ]; then
+            echo "${result_text}"
+            break
+          fi
+          sleep 10
+          tries=$((tries+1))
+        done
+        return $return_code
+      }
+
+      log() {
+        echo "$@" >&2
+      }
+
+      get_masters() {
+        kubectl get nodes -l kubernetes.io/role=master --no-headers -o custom-columns=NAME:metadata.name,VERSION:status.nodeInfo.kubeletVersion | awk '{printf "%s:%s\n", $1, $2}'
+      }
+
+      get_major() {
+        local major=$(echo $1 | awk -F. '{print $1}')
+        echo "${major#v}"
+      }
+
+      get_release() {
+        echo $1 | awk -F. '{print $2}'
+      }
+
+      valid_version() {
+        match=$(echo $1 | awk -e '(/^v[0-9]+\.[0-9]+\.[0-9]+/){print "match"}')
+        [[ "$match" == "match" ]]
+      }
+
+      version_jumps() {
+        # A major release change is a version jump
+        if [[ $(get_major $1) != $(get_major $2) ]]; then
+          return 0
+        fi
+
+        # A release change of more than 1 is a version jump
+        local release1=$(get_release $1)
+        local release2=$(get_release $2)
+        if [ "$release1" -gt "$release2" ]; then
+          if [ "$((release1-release2))" -gt "1" ]; then
+            return 0
+          fi
+        elif [ "$release2" -gt "$release1" ]; then
+          if [ "$((release2-release1))" -gt "1" ]; then
+            return 0
+          fi
+        fi
+
+        return 1
+      }
+
+      # stop a controller by writing a special kube-aws disable service configmap
+      disable_controller() {
+        local controller=$1
+        local version=$2
+
+        local request="$(cat <<EOT
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: kube-aws-migration-disable-${controller}
+        namespace: kube-system
+      data:
+        kubernetesVersion: ${version}
+        disable: "kube-controller-manager kube-scheduler"
+      EOT
+      )"
+
+        log "Creating disable service configmap kube-system/kube-aws-migration-disable-${controller}"
+        echo "${request}" | kubectl -n kube-system apply -f - || return 1
+        return 0
+      }
+
+      # MAIN
+      while ! kubectl get ns kube-system; do
+        echo "Waiting until apiserver/kube-system available..."
+        sleep 3
+      done
+
+      if ! $(valid_version ${my_kubernetes_version}); then
+        log "My kubernetes version ${my_kubernetes_version} is invalid - aborting!"
+        exit 1
+      fi
+
+      log "Checking for masters/controllers with kubernetes release jumps (>1) ..."
+      for controller in $(get_masters); do
+        controller_name=$(echo "${controller%%:*}")
+        controller_version=$(echo "${controller##*:}")
+        if [[ "${controller_name}" != "$myhostname" ]]; then
+          log "Checking controller ${controller_name}..."
+          if ! $(valid_version ${controller_version}); then
+            log "Controller ${controller_name} has an invalid version number ${controller_version}!"
+            continue
+          fi
+
+          if $(version_jumps ${my_kubernetes_version} ${controller_version}); then
+            log "Detected a version jump between my version ${my_kubernetes_version} and theirs ${controller_version}"
+            log "Disabling kube-scheduler and kube-controller-manager on ${controller_name}"
+            disable_controller ${controller_name} ${controller_version}
+          else
+            log "No version jump between my version ${my_kubernetes_version} and theirs ${controller_version}"
+          fi
+        fi
+      done
+
+      while true; do
+        sleep 999999
       done
   
   - path: /opt/bin/handle-cluster-cidr-changes
@@ -6225,7 +6389,7 @@ write_files:
       EOT
       )"
           
-        log "Creating disable service configmap kubw-system/kube-aws-migration-disable-${controller}"
+        log "Creating disable service configmap kube-system/kube-aws-migration-disable-${controller}"
         echo "${request}" | kubectl -n kube-system create -f - || return 1
         return 0
       }
