@@ -5917,12 +5917,16 @@ write_files:
       myhostname=$(hostname -f)
 
       kubectl() {
+          /usr/bin/docker run -i --rm -v /etc/kubernetes:/etc/kubernetes:ro --net=host ${hyperkube_image} /hyperkube kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml "$@"
+      }
+
+      kubectl_with_retries() {
         local tries=0
         local result_text=""
         local return_code=0
 
         while [ "$tries" -lt "$retries" ]; do
-          result_text=$(docker run --rm -i --net=host -v /tmp:/tmp:rw -v /etc/kubernetes:/etc/kubernetes:ro  -v /etc/resolv.conf:/etc/resolv.conf:ro $hyperkube_image /kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml "$@")
+          result_text=$(kubectl "$@")
           return_code=$?
           if [ "$return_code" -eq "0" ]; then
             echo "${result_text}"
@@ -5996,7 +6000,7 @@ write_files:
       )"
 
         log "Creating disable service configmap kube-system/kube-aws-migration-disable-${controller}"
-        echo "${request}" | kubectl -n kube-system apply -f - || return 1
+        echo "${request}" | kubectl_with_retries -n kube-system apply -f - || return 1
         return 0
       }
 
@@ -6004,7 +6008,7 @@ write_files:
         local name=$1
         local host=$2
 
-        kubectl -n kube-system get pod "${name}-${host}" --no-headers -o wide
+        kubectl -n kube-system get pod "${name}-${host}" --no-headers -o wide --ignore-not-found
       }
 
       wait_stopped() {
@@ -6020,11 +6024,12 @@ write_files:
           for cont in $controllers; do
             for pod in kube-controller-manager kube-scheduler
             do
-              if find_pod "${pod}" "${cont}"; then
-                log "found pod ${pod}-${cont}"
+              local found=$(find_pod "${pod}" "${cont}")
+              if [[ -n "${found}" ]]; then
+                log "found pod: ${found}"
                 test=1
               else
-                log "no pod ${pod}-${cont}"
+                log "no pod ${pod}-${cont} found - good"
               fi
             done
           done
