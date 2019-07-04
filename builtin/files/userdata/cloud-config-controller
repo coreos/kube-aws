@@ -5995,7 +5995,7 @@ write_files:
         namespace: kube-system
       data:
         kubernetesVersion: ${version}
-        disable: "kube-controller-manager kube-scheduler"
+        disable: "kube-controller-manager kube-scheduler kube-apiserver"
       EOT
       )"
 
@@ -6022,7 +6022,7 @@ write_files:
         while [ "$test" -eq "1" ]; do
           test=0
           for cont in $controllers; do
-            for pod in kube-controller-manager kube-scheduler
+            for pod in kube-controller-manager kube-scheduler kube-apiserver
             do
               local found=$(find_pod "${pod}" "${cont}")
               if [[ -n "${found}" ]]; then
