@@ -6011,6 +6011,17 @@ write_files:
         kubectl -n kube-system get pod "${name}-${host}" --no-headers -o wide --ignore-not-found
       }
 
+      node_running() {
+        local node=$1
+
+        ready=$(kubectl -n kube-system get node "${node}" --no-headers --ignore-not-found | awk '{print $2}')
+        if [[ "${ready}" == "Ready" ]]; then
+          return 0
+        fi
+
+        return 1
+      }
+
       wait_stopped() {
         local controllers=$1
         log ""
@@ -6021,21 +6032,15 @@ write_files:
         local test=1
         while [ "$test" -eq "1" ]; do
           test=0
+
           for cont in $controllers; do
-            for pod in kube-controller-manager kube-scheduler kube-apiserver
-            do
-              local found=$(find_pod "${pod}" "${cont}")
-              if [[ -n "${found}" ]]; then
-                log "found pod: ${found}"
-                test=1
-              else
-                log "no pod ${pod}-${cont} found - good"
-              fi
-            done
+            if node_running $cont; then
+              test=1
+            fi
           done
 
           if [ "$test" -eq "1" ]; then
-            log "Pods found retrying in 5 seconds..."
+            log "Controllers still active, waiting 5 seconds..."
             sleep 5
           fi
         done
