@@ -6016,6 +6016,7 @@ write_files:
 
         ready=$(kubectl -n kube-system get node "${node}" --no-headers --ignore-not-found | awk '{print $2}')
         if [[ "${ready}" == "Ready" ]]; then
+          echo "${node} is active"
           return 0
         fi
 
