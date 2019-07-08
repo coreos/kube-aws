@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/kubernetes-incubator/kube-aws/logger"
 )
 
 type RemoteFileLoader struct {
@@ -14,6 +16,7 @@ type RemoteFileLoader struct {
 
 func (loader *RemoteFileLoader) Load(f RemoteFileSpec) (*RemoteFile, error) {
 	loaded := NewRemoteFile(f)
+	logger.Debugf("RemoteFileLoader.Load(): loaded RemoteFile: %+v", loaded)
 
 	path := f.Source.Path
 
@@ -55,9 +58,14 @@ func (loader *RemoteFileLoader) Load(f RemoteFileSpec) (*RemoteFile, error) {
 
 		loaded.Content = NewBinaryContent(data)
 	} else {
-		loaded.Content = f.Content
+		if f.Template != "" {
+			loaded.Content = NewStringContent(f.Template)
+		} else {
+			loaded.Content = f.Content
+		}
 	}
 
+	logger.Debugf("RemoteFileLoader.String(): returning loaded remoteFile: %+v", loaded)
 	return loaded, nil
 }
 
