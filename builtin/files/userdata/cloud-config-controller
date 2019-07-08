@@ -4024,24 +4024,24 @@ write_files:
                 {{- if .KubeDns.DeployToControllers }}
                 nodeAffinity:
                   requiredDuringSchedulingIgnoredDuringExecution:
-                  nodeSelectorTerms:
-                  - matchExpressions:
-                      - key: node.kubernetes.io/role
-                      operator: In
-                      values:
-                      - "master"
+                    nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: node.kubernetes.io/role
+                        operator: In
+                        values:
+                        - "master"
                 {{- end }}
                 {{- if .KubeDns.AntiAffinityAvailabilityZone }}
                 affinity:
                   podAntiAffinity:
-                  preferredDuringSchedulingIgnoredDuringExecution:
+                    preferredDuringSchedulingIgnoredDuringExecution:
                       podAffinityTerm:
-                      labelSelector:
-                      - matchExpressions:
-                          - key: k8s-app
-                          operator: In
-                          values:
-                          - "kube-dns"
+                        labelSelector:
+                        - matchExpressions:
+                            - key: k8s-app
+                            operator: In
+                            values:
+                            - "kube-dns"
                       topologyKey: "failure-domain.beta.kubernetes.io/zone"
                 {{- end }}
               tolerations:
