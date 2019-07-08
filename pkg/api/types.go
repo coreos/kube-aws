@@ -211,12 +211,13 @@ type KubeDnsAutoscaler struct {
 }
 
 type KubeDns struct {
-	Provider                 string            `yaml:"provider"`
-	NodeLocalResolver        bool              `yaml:"nodeLocalResolver"`
-	NodeLocalResolverOptions []string          `yaml:"nodeLocalResolverOptions"`
-	DeployToControllers      bool              `yaml:"deployToControllers"`
-	TTL                      int               `yaml:"ttl"`
-	Autoscaler               KubeDnsAutoscaler `yaml:"autoscaler"`
+	Provider                     string            `yaml:"provider"`
+	NodeLocalResolver            bool              `yaml:"nodeLocalResolver"`
+	NodeLocalResolverOptions     []string          `yaml:"nodeLocalResolverOptions"`
+	DeployToControllers          bool              `yaml:"deployToControllers"`
+	AntiAffinityAvailabilityZone bool              `yaml:"antiAffinityAvailabilityZone"`
+	TTL                          int               `yaml:"ttl"`
+	Autoscaler                   KubeDnsAutoscaler `yaml:"autoscaler"`
 }
 
 func (c *KubeDns) MergeIfEmpty(other KubeDns) {
