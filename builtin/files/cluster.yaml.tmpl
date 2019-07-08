@@ -1341,6 +1341,9 @@ kubeDns:
   # When enabled, will deploy kube-dns to K8s controllers instead of workers.
   # deployToControllers: false
 
+  # When enabled, will attempt to deploy kube-dns to nodes in different AZs, useful when autoscaling or deploying to nodes.
+  # antiAffinityAvailabilityZone: false
+
   # DNS Autoscaler
   # Ref: https://github.com/kubernetes-incubator/cluster-proportional-autoscaler/
   autoscaler:

@@ -4023,8 +4023,9 @@ write_files:
             spec:
               priorityClassName: system-node-critical
               serviceAccountName: coredns
-              {{ if .KubeDns.DeployToControllers -}}
+              {{ if or .KubeDns.DeployToControllers .KubeDns.AntiAffinityAvailabilityZone -}}
               affinity:
+                {{- if .KubeDns.DeployToControllers }}
                 nodeAffinity:
                   requiredDuringSchedulingIgnoredDuringExecution:
                     nodeSelectorTerms:
@@ -4033,6 +4034,20 @@ write_files:
                         operator: In
                         values:
                         - "master"
+                {{- end }}
+                {{- if .KubeDns.AntiAffinityAvailabilityZone }}
+                affinity:
+                  podAntiAffinity:
+                    preferredDuringSchedulingIgnoredDuringExecution:
+                      podAffinityTerm:
+                        labelSelector:
+                        - matchExpressions:
+                           - key: k8s-app
+                             operator: In
+                             values:
+                             - "kube-dns"
+                        topologyKey: "failure-domain.beta.kubernetes.io/zone"
+                {{- end }}
               tolerations:
                - key: "CriticalAddonsOnly"
                  operator: "Exists"

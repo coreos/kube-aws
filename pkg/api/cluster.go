@@ -161,10 +161,11 @@ func NewDefaultCluster() *Cluster {
 				IPVSMode: ipvsMode,
 			},
 			KubeDns: KubeDns{
-				Provider:            "coredns",
-				NodeLocalResolver:   false,
-				DeployToControllers: false,
-				TTL:                 30,
+				Provider:                     "coredns",
+				NodeLocalResolver:            false,
+				DeployToControllers:          false,
+				AntiAffinityAvailabilityZone: false,
+				TTL:                          30,
 				Autoscaler: KubeDnsAutoscaler{
 					CoresPerReplica: 256,
 					NodesPerReplica: 16,
