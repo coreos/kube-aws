@@ -227,7 +227,7 @@ type SystemdUnits []SystemdUnit
 type SystemdUnit struct {
 	Name string `yaml:"name,omitempty"`
 	// Contents must be a valid go text template producing a valid systemd unit definition
-	Contents `yaml:"contents,omitempty"`
+	Contents `yaml:",inline"`
 }
 
 // Kubelet represents a set of customizations to kubelets running on the nodes

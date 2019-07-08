@@ -236,9 +236,8 @@ spec:
           systemd:
             units:
             - name: save-queue-name.service
-              contents:
-                inline: |
-                  [Unit]
+              content: |
+                [Unit]
           files:
           - path: /var/kube-aws/bar.txt
             permissions: 0644
@@ -259,9 +258,8 @@ spec:
           systemd:
             units:
             - name: save-queue-name.service
-              contents:
-                inline: |
-                  [Unit]
+              content: |
+                [Unit]
           files:
           - path: /var/kube-aws/bar.txt
             permissions: 0644
@@ -287,9 +285,8 @@ spec:
           systemd:
             units:
             - name: save-queue-name.service
-              contents:
-                inline: |
-                  [Unit]
+              content: |
+                [Unit]
           files:
           - path: /var/kube-aws/bar.txt
             permissions: 0644
