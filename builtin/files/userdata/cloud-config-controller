@@ -4036,17 +4036,16 @@ write_files:
                         - "master"
                 {{- end }}
                 {{- if .KubeDns.AntiAffinityAvailabilityZone }}
-                affinity:
-                  podAntiAffinity:
-                    preferredDuringSchedulingIgnoredDuringExecution:
-                      podAffinityTerm:
-                        labelSelector:
-                        - matchExpressions:
-                           - key: k8s-app
-                             operator: In
-                             values:
-                             - "kube-dns"
-                        topologyKey: "failure-domain.beta.kubernetes.io/zone"
+                podAntiAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                    podAffinityTerm:
+                      labelSelector:
+                      - matchExpressions:
+                          - key: k8s-app
+                            operator: In
+                            values:
+                            - "kube-dns"
+                      topologyKey: "failure-domain.beta.kubernetes.io/zone"
                 {{- end }}
               tolerations:
                - key: "CriticalAddonsOnly"
