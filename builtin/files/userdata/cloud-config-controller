@@ -4026,7 +4026,7 @@ write_files:
                   requiredDuringSchedulingIgnoredDuringExecution:
                     nodeSelectorTerms:
                     - matchExpressions:
-                        - key: node.kubernetes.io/role
+                      - key: kubernetes.io/role
                         operator: In
                         values:
                         - "master"
@@ -4045,12 +4045,12 @@ write_files:
                       topologyKey: "failure-domain.beta.kubernetes.io/zone"
                 {{- end }}
               tolerations:
-              - key: "CriticalAddonsOnly"
-                  operator: "Exists"
-              - key: "node.alpha.kubernetes.io/role"
-                operator: "Equal"
-                value: "master"
-                effect: "NoSchedule"
+               - key: "CriticalAddonsOnly"
+                 operator: "Exists"
+               - key: "node.alpha.kubernetes.io/role"
+                 operator: "Equal"
+                 value: "master"
+                 effect: "NoSchedule"
               {{ else -}}
               tolerations:
               - key: "CriticalAddonsOnly"
