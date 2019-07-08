@@ -204,7 +204,7 @@ func NewEtcdStack(conf *Config, opts api.StackTemplateOptions, extras clusterext
 			stack.ExtraCfnResources = extraStack.Resources
 			stack.ExtraCfnOutputs = extraStack.Outputs
 
-			extraEtcd, err := extras.Etcd()
+			extraEtcd, err := extras.Etcd(conf)
 			if err != nil {
 				return fmt.Errorf("failed to load etcd node extras from plugins: %v", err)
 			}

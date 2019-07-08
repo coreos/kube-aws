@@ -2,14 +2,16 @@ package provisioner
 
 import (
 	"fmt"
+	"strings"
+	"text/template"
+
 	"github.com/kubernetes-incubator/kube-aws/filereader/texttemplate"
 	"github.com/kubernetes-incubator/kube-aws/gzipcompressor"
 	"github.com/kubernetes-incubator/kube-aws/logger"
-	"strings"
-	"text/template"
 )
 
 func NewRemoteFile(spec RemoteFileSpec) *RemoteFile {
+	logger.Debugf("provisioner.NewRemoteFile() called with: \n%+v\n", spec)
 	var loaded RemoteFile
 	loaded.Path = spec.Path
 	loaded.Permissions = spec.Permissions
