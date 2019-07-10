@@ -1573,7 +1573,9 @@ kubeAwsPlugins:
   # See plugins/aws-iam-authenticator/plugin.yaml for more info
   awsIamAuthenticator:
     enabled: false
-    # see plugins/cluster-autoscaler/plugin.yaml for more info
+
+  # clusterAutoscaler provides kubernetes cluster-autoscaler functionality - https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler
+  # Replaces original built-in functionality with a plugin and upgrades to the latest version
   clusterAutoscaler:
     enabled: false
     replicas: 2
@@ -1604,3 +1606,15 @@ kubeAwsPlugins:
       # selectors for autodiscovery
       selector:
         prometheus: monitoring
+
+    # upgradeHelper - assists when rolling out new versions of kubernetes
+    # It actively disables old controllers and temporarily removes mutating/validating webhooks whilst
+    # the upgraded controller is starting up.
+    # NOTE: You will normally not need this plugin - so ONLY enable if you are experiencing issues testing migrating across versions.
+    # It will only kill controller that are a different release from currently spinning up version, e.g. :-
+    #   it will kill v1.13.2 controllers when rolling out v1.14.0
+    #   it will NOT kill v1.14.0 controllers when rolling out v1.14.3
+    upgradeHelper:
+      enabled: false
+      # disableWebhooks can be used to turn off the webhook feature if required
+      disableWebhooks: true
