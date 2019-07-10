@@ -1,0 +1,54 @@
+metadata:
+  name: upgrade-helper
+  version: 0.1.0
+spec:
+  cluster:
+    values:
+      disableWebhooks: true
+    machine:
+      roles:
+        controller:
+          files:
+          - path: /etc/systemd/system/install-kube-system.service.d/10-upgrade-helper-dependency.conf
+            permissions: 0644
+            content: |
+              [Unit]
+              Requires=kube-aws-upgrade-helper.service
+              After=kube-aws-upgrade-helper.service
+              Before=restore-webhooks.service
+              
+              [Service]
+              ExecStartPre=/usr/bin/bash -c "until /usr/bin/systemctl is-active kube-aws-upgrade-helper.service; do echo waiting until kube-aws-upgrade-helper.service starts; sleep 10; done"
+          - path: /opt/bin/upgrade-helper.sh
+            permissions: 0755
+            source:
+              path: assets/upgrade-helper.sh
+          - path: /opt/bin/restore-webhooks.sh
+            permissions: 0755
+            source:
+              path: assets/restore-webhooks.sh
+          systemd:
+            units:
+            - name: kube-aws-upgrade-helper.service
+              content: |
+                [Unit]
+                Requires=kubelet.service
+                After=kubelet.service
+                Before=install-kube-system.service
+
+                [Service]
+                Type=oneshot
+                StartLimitInterval=0
+                RemainAfterExit=true
+                ExecStart=/usr/bin/bash -c '/opt/bin/upgrade-helper.sh'
+            - name: restore-webhooks.service
+              content: |
+                [Unit]
+                Requires=install-kube-system.service
+                After=install-kube-system.service
+
+                [Service]
+                Type=oneshot
+                StartLimitInterval=0
+                RemainAfterExit=true
+                ExecStart=/usr/bin/bash -c '/opt/bin/restore-webhooks.sh'
