@@ -48,6 +48,7 @@ kubeAwsPlugins:
     oidc:
       issuer:
         url: "https://login.example.com/"
+    systemdTemplateValue: "elvis123"
 
 worker:
   nodePools:
@@ -237,7 +238,7 @@ spec:
             units:
             - name: save-queue-name.service
               content: |
-                [Unit]
+                [Unit] {{ .Values.systemdTemplateValue }}
           files:
           - path: /var/kube-aws/bar.txt
             permissions: 0644
@@ -259,7 +260,7 @@ spec:
             units:
             - name: save-queue-name.service
               content: |
-                [Unit]
+                [Unit] {{ .Values.systemdTemplateValue }}
           files:
           - path: /var/kube-aws/bar.txt
             permissions: 0644
@@ -286,7 +287,7 @@ spec:
             units:
             - name: save-queue-name.service
               content: |
-                [Unit]
+                [Unit] {{ .Values.systemdTemplateValue }}
           files:
           - path: /var/kube-aws/bar.txt
             permissions: 0644
@@ -295,7 +296,6 @@ spec:
             permissions: 0644
             source:
               path: assets/worker/baz.txt
-
 `,
 				},
 			},
@@ -445,20 +445,29 @@ spec:
 						}
 					}
 
-					// A kube-aws plugin can inject systemd units
+					// A kube-aws plugin can inject systemd units - which are evaluated as templates
 					controllerUserdataS3Part := cp.UserData["Controller"].Parts[api.USERDATA_S3].Asset.Content
 					if !strings.Contains(controllerUserdataS3Part, "save-queue-name.service") {
-						t.Errorf("Invalid controller userdata: %v", controllerUserdataS3Part)
+						t.Errorf("Invalid controller userdata: missing systemd unit save-queue-name.service: %v", controllerUserdataS3Part)
+					}
+					if !strings.Contains(controllerUserdataS3Part, "elvis123") {
+						t.Errorf("Invalid controller userdata: systemd unit not templated: %v", controllerUserdataS3Part)
 					}
 
 					etcdUserdataS3Part := etcd.UserData["Etcd"].Parts[api.USERDATA_S3].Asset.Content
 					if !strings.Contains(etcdUserdataS3Part, "save-queue-name.service") {
-						t.Errorf("Invalid etcd userdata: %v", etcdUserdataS3Part)
+						t.Errorf("Invalid etcd userdata: missing systemd unit save-queue-name.service: %v", etcdUserdataS3Part)
+					}
+					if !strings.Contains(etcdUserdataS3Part, "elvis123") {
+						t.Errorf("Invalid etcd userdata: systemd unit not templated: %v", etcdUserdataS3Part)
 					}
 
 					workerUserdataS3Part := np.UserData["Worker"].Parts[api.USERDATA_S3].Asset.Content
 					if !strings.Contains(workerUserdataS3Part, "save-queue-name.service") {
-						t.Errorf("Invalid worker userdata: %v", workerUserdataS3Part)
+						t.Errorf("Invalid worker userdata: missing systemd unit save-queue-name.service: %v", workerUserdataS3Part)
+					}
+					if !strings.Contains(workerUserdataS3Part, "elvis123") {
+						t.Errorf("Invalid worker userdata: systemd unit not templated: %v", workerUserdataS3Part)
 					}
 
 					// A kube-aws plugin can inject custom cfn stack resources
