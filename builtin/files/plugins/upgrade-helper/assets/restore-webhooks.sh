@@ -39,7 +39,7 @@ restore_webhooks() {
 
 if [[ "${disable_webhooks}" == "true" ]]; then
     echo "Restoring all validating and mutating webhooks..."
-    restore_webhooks validating /srv/kubernetes/validating_webhooks.yaml
-    restore_webhooks mutating /srv/kubernetes/mutating_webhooks.yaml
+    restore_webhooks validating ${webhooks_save_path}/validating_webhooks.yaml
+    restore_webhooks mutating ${webhooks_save_path}/mutating_webhooks.yaml
 fi
 exit 0
