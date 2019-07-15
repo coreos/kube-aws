@@ -19,9 +19,10 @@ hyperkube_image="{{ .Config.HyperkubeImage.RepoWithTag }}"
 my_kubernetes_version="{{ .Config.HyperkubeImage.Tag }}"
 myhostname=$(hostname -f)
 disable_webhooks="{{ if .Values.disableWebhooks }}true{{else}}false{{end}}"
+webhooks_save_path="/srv/kubernetes"
 
 kubectl() {
-    /usr/bin/docker run -i --rm -v /etc/kubernetes:/etc/kubernetes:ro --net=host ${hyperkube_image} /hyperkube kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml "$@"
+    /usr/bin/docker run -i --rm -v /etc/kubernetes:/etc/kubernetes:ro -v ${webhooks_save_path}:${webhooks_save_path}:rw --net=host ${hyperkube_image} /hyperkube kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml "$@"
 }
 
 kubectl_with_retries() {
@@ -173,8 +174,9 @@ done
 # Disable all mutating and validating webhooks because they can interfere with the stack migration)
 if [[ "${disable_webhooks}" == "true" ]]; then
   echo "Storing and removing all validating and mutating webhooks..."
-  save_webhooks validating /srv/kubernetes/validating_webhooks.yaml
-  save_webhooks mutating /srv/kubernetes/mutating_webhooks.yaml
+  mkdir -p ${webhooks_save_path}
+  save_webhooks validating ${webhooks_save_path}/validating_webhooks.yaml
+  save_webhooks mutating ${webhooks_save_path}/mutating_webhooks.yaml
 fi
 
 log ""

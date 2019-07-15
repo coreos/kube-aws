@@ -4,9 +4,10 @@
 retries=5
 hyperkube_image="{{ .Config.HyperkubeImage.RepoWithTag }}"
 disable_webhooks="{{ if .Values.disableWebhooks }}true{{else}}false{{end}}"
+webhooks_save_path="/srv/kubernetes"
 
 kubectl() {
-  /usr/bin/docker run -i --rm -v /etc/kubernetes:/etc/kubernetes:ro --net=host ${hyperkube_image} /hyperkube kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml "$@"
+  /usr/bin/docker run -i --rm -v /etc/kubernetes:/etc/kubernetes:ro -v ${webhooks_save_path}:${webhooks_save_path}:rw --net=host ${hyperkube_image} /hyperkube kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml "$@"
 }
 
 list_not_empty() {
@@ -38,7 +39,7 @@ restore_webhooks() {
 
 if [[ "${disable_webhooks}" == "true" ]]; then
     echo "Restoring all validating and mutating webhooks..."
-    restore_webhooks validating /srv/kubernetes/validating_webhooks.yaml
-    restore_webhooks mutating /srv/kubernetes/mutating_webhooks.yaml
+    restore_webhooks validating ${webhooks_save_path}/validating_webhooks.yaml
+    restore_webhooks mutating ${webhooks_save_path}/mutating_webhooks.yaml
 fi
 exit 0
