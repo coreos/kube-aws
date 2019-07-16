@@ -1618,3 +1618,7 @@ kubeAwsPlugins:
       enabled: false
       # disableWebhooks can be used to turn off the webhook feature if required
       disableWebhooks: true
+      # disableWorkerCommunicationChecks can be used to disable the check that all workers checking in with this master
+      # so that cfn-signal can be generated and upgrade process move forward
+      # (you don't want a single bad worker to cause an important upgrade to fail)
+      disableWorkerCommunicationChecks: true

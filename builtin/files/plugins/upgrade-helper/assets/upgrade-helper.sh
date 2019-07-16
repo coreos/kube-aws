@@ -18,7 +18,7 @@ retries=5
 hyperkube_image="{{ .Config.HyperkubeImage.RepoWithTag }}"
 my_kubernetes_version="{{ .Config.HyperkubeImage.Tag }}"
 myhostname=$(hostname -f)
-disable_webhooks="{{ if .Values.disableWebhooks }}true{{else}}false{{end}}"
+disable_webhooks="{{ .Values.disableWebhooks }}"
 webhooks_save_path="/srv/kubernetes"
 
 kubectl() {
