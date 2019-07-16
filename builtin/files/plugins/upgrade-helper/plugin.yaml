@@ -5,6 +5,7 @@ spec:
   cluster:
     values:
       disableWebhooks: true
+      disableWorkerCommunicationChecks: true
     machine:
       roles:
         controller:
