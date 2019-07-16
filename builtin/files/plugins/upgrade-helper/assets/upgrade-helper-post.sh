@@ -3,8 +3,9 @@
 
 retries=5
 hyperkube_image="{{ .Config.HyperkubeImage.RepoWithTag }}"
-disable_webhooks="{{ if .Values.disableWebhooks }}true{{else}}false{{end}}"
 webhooks_save_path="/srv/kubernetes"
+disable_webhooks="{{ .Values.disableWebhooks }}"
+disable_worker_communication_check="{{ .Values.disableWorkerCommunicationChecks }}"
 
 kubectl() {
   /usr/bin/docker run -i --rm -v /etc/kubernetes:/etc/kubernetes:ro -v ${webhooks_save_path}:${webhooks_save_path}:rw --net=host ${hyperkube_image} /hyperkube kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml "$@"
@@ -45,4 +46,13 @@ if [[ "${disable_webhooks}" == "true" ]]; then
     restore_webhooks validating ${webhooks_save_path}/validating_webhooks
     restore_webhooks mutating ${webhooks_save_path}/mutating_webhooks
 fi
+
+if [[ "${disable_worker_communication_check}" == "true" ]]; then
+    echo "Removing the worker communication check from cfn-signal service..."
+    cat >/opt/bin/check-worker-communication <<EOT
+#!/bin/bash
+exit 0
+EOT
+fi
+
 exit 0
