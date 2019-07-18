@@ -3,6 +3,7 @@ package request_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -21,15 +22,50 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/client/metadata"
-	"github.com/aws/aws-sdk-go/aws/corehandlers"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/defaults"
 	"github.com/aws/aws-sdk-go/aws/request"
-	v4 "github.com/aws/aws-sdk-go/aws/signer/v4"
 	"github.com/aws/aws-sdk-go/awstesting"
 	"github.com/aws/aws-sdk-go/awstesting/unit"
-	"github.com/aws/aws-sdk-go/private/protocol/jsonrpc"
 	"github.com/aws/aws-sdk-go/private/protocol/rest"
+)
+
+type tempNetworkError struct {
+	op     string
+	msg    string
+	isTemp bool
+}
+
+func (e *tempNetworkError) Temporary() bool { return e.isTemp }
+func (e *tempNetworkError) Error() string {
+	return fmt.Sprintf("%s: %s", e.op, e.msg)
+}
+
+var (
+	// net.OpError accept, are always temporary
+	errAcceptConnectionResetStub = &tempNetworkError{
+		isTemp: true, op: "accept", msg: "connection reset",
+	}
+
+	// net.OpError read for ECONNRESET is not temporary.
+	errReadConnectionResetStub = &tempNetworkError{
+		isTemp: false, op: "read", msg: "connection reset",
+	}
+
+	// net.OpError write for ECONNRESET may not be temporary, but is treaded as
+	// temporary by the SDK.
+	errWriteConnectionResetStub = &tempNetworkError{
+		isTemp: false, op: "write", msg: "connection reset",
+	}
+
+	// net.OpError write for broken pipe may not be temporary, but is treaded as
+	// temporary by the SDK.
+	errWriteBrokenPipeStub = &tempNetworkError{
+		isTemp: false, op: "write", msg: "broken pipe",
+	}
+
+	// Generic connection reset error
+	errConnectionResetStub = errors.New("connection reset")
 )
 
 type testData struct {
@@ -611,85 +647,6 @@ func TestWithGetResponseHeaders(t *testing.T) {
 	}
 }
 
-type connResetCloser struct {
-	Err error
-}
-
-func (rc *connResetCloser) Read(b []byte) (int, error) {
-	return 0, rc.Err
-}
-
-func (rc *connResetCloser) Close() error {
-	return nil
-}
-
-func TestSerializationErrConnectionReset_accept(t *testing.T) {
-	count := 0
-	handlers := request.Handlers{}
-	handlers.Send.PushBack(func(r *request.Request) {
-		count++
-		r.HTTPResponse = &http.Response{}
-		r.HTTPResponse.Body = &connResetCloser{
-			Err: errAcceptConnectionResetStub,
-		}
-	})
-
-	handlers.Sign.PushBackNamed(v4.SignRequestHandler)
-	handlers.Build.PushBackNamed(jsonrpc.BuildHandler)
-	handlers.Unmarshal.PushBackNamed(jsonrpc.UnmarshalHandler)
-	handlers.UnmarshalMeta.PushBackNamed(jsonrpc.UnmarshalMetaHandler)
-	handlers.UnmarshalError.PushBackNamed(jsonrpc.UnmarshalErrorHandler)
-	handlers.AfterRetry.PushBackNamed(corehandlers.AfterRetryHandler)
-
-	op := &request.Operation{
-		Name:       "op",
-		HTTPMethod: "POST",
-		HTTPPath:   "/",
-	}
-
-	meta := metadata.ClientInfo{
-		ServiceName:   "fooService",
-		SigningName:   "foo",
-		SigningRegion: "foo",
-		Endpoint:      "localhost",
-		APIVersion:    "2001-01-01",
-		JSONVersion:   "1.1",
-		TargetPrefix:  "Foo",
-	}
-	cfg := unit.Session.Config.Copy()
-	cfg.MaxRetries = aws.Int(5)
-
-	req := request.New(
-		*cfg,
-		meta,
-		handlers,
-		client.DefaultRetryer{NumMaxRetries: 5},
-		op,
-		&struct {
-		}{},
-		&struct {
-		}{},
-	)
-
-	osErr := errAcceptConnectionResetStub
-	req.ApplyOptions(request.WithResponseReadTimeout(time.Second))
-	err := req.Send()
-	if err == nil {
-		t.Error("Expected rror 'SerializationError', but received nil")
-	}
-	if aerr, ok := err.(awserr.Error); ok && aerr.Code() != "SerializationError" {
-		t.Errorf("Expected 'SerializationError', but received %q", aerr.Code())
-	} else if !ok {
-		t.Errorf("Expected 'awserr.Error', but received %v", reflect.TypeOf(err))
-	} else if aerr.OrigErr().Error() != osErr.Error() {
-		t.Errorf("Expected %q, but received %q", osErr.Error(), aerr.OrigErr().Error())
-	}
-
-	if count != 6 {
-		t.Errorf("Expected '6', but received %d", count)
-	}
-}
-
 type testRetryer struct {
 	shouldRetry bool
 }
@@ -1143,6 +1100,11 @@ func TestRequestNoConnection(t *testing.T) {
 	if err = r.Send(); err == nil {
 		t.Fatal("expect error, but got none")
 	}
+
+	t.Logf("Error, %v", err)
+	awsError := err.(awserr.Error)
+	origError := awsError.OrigErr()
+	t.Logf("Orig Error: %#v of type %T", origError, origError)
 
 	if e, a := 10, r.RetryCount; e != a {
 		t.Errorf("expect %v retry count, got %v", e, a)

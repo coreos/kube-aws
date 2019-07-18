@@ -7,8 +7,9 @@ language: go
 # Only the last two Go releases are supported by the Go team with security updates.
 # Any older versions are considered deprecated.
 go:
+  - "1.12.x"
   - "1.11.x"
-  - "1.10.x"
+
 
 # Only clone the most recent commit.
 git:
@@ -22,7 +23,7 @@ install:
 
 # Tests to run
 script:
-  - make build-linux
-  - make lint
-  - make vet
-  - make unit-test
+  - GO111MODULE=on make build-linux
+  - GO111MODULE=on make lint
+  - GO111MODULE=on make vet
+  - GO111MODULE=on make unit-test

@@ -4,27 +4,27 @@ ignored = ["github.com/kubernetes-incubator/kube-aws/hack*"]
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"
-  version = "2.10.0"
+  version = "2.20.0"
 
 [[constraint]]
   name = "github.com/aws/aws-sdk-go"
-  version = "1.7.8"
+  version = "1.20.21"
 
 [[constraint]]
   name = "github.com/coreos/coreos-cloudinit"
-  version = "1.12.0"
+  version = "1.14.0"
 
 [[constraint]]
   name = "github.com/spf13/cobra"
-  version = "v0.0.2"
+  version = "v0.0.5"
 
 [[constraint]]
   name = "github.com/stretchr/testify"
-  version = "v1.2.1"
+  version = "v1.3.0"
 
 [[constraint]]
   name = "github.com/go-yaml/yaml"
-  version = "v2.2.1"
+  version = "v2.2.2"
 
 [[constraint]]
   branch = "master"
@@ -35,13 +35,17 @@ ignored = ["github.com/kubernetes-incubator/kube-aws/hack*"]
   name = "github.com/mgutz/ansi"
 
 [[constraint]]
-  version = "v1.2.0"
+  version = "v1.5.0"
   name = "github.com/aws/amazon-vpc-cni-k8s"
 
 [[constraint]]
   name = "github.com/google/go-cmp"
-  version = "0.2.0"
+  version = "0.3.0"
 
 [[constraint]]
   name = "github.com/pkg/errors"
-  version = "0.8.0"
+  version = "0.8.1"
+
+[[constraint]]
+  name = "github.com/imdario/mergo"
+  version = "0.3.7"

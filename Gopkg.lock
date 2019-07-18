@@ -18,12 +18,12 @@
   version = "v1.4.2"
 
 [[projects]]
-  digest = "1:844a29d20675e6187639c578b6c690d198aac895ede377ebcb5545405d0ef80d"
+  digest = "1:2635aa12c62c6ed3014ace2bb30887106f9524ce8891d3e3100e41edadf249ce"
   name = "github.com/Masterminds/sprig"
   packages = ["."]
   pruneopts = ""
-  revision = "9f8fceff796fb9f4e992cd2bece016be0121ab74"
-  version = "2.19.0"
+  revision = "258b00ffa7318e8b109a141349980ffbd30a35db"
+  version = "v2.20.0"
 
 [[projects]]
   branch = "master"
@@ -34,19 +34,20 @@
   revision = "e206f873d14a916d3d26c40ab667bca123f365a3"
 
 [[projects]]
-  digest = "1:aeeeba5e51c2e8cb4fc1e1f2bf0fe25ed5e99bfeebf461c18c681cd60624eb16"
+  digest = "1:8d51139767134e395512a28cd70a7bbdd05b704a31e2eea89cbab2ccef3e9d6d"
   name = "github.com/aws/amazon-vpc-cni-k8s"
   packages = [
     "pkg/awsutils",
     "pkg/ec2metadata",
+    "pkg/ec2metadatawrapper",
     "pkg/ec2wrapper",
   ]
   pruneopts = ""
-  revision = "d9c888688181e023198c430dab367a54edcbf199"
-  version = "v1.4.1"
+  revision = "344beb1450a870e5590b94a71b947bb99c9ec6e7"
+  version = "v1.5.0"
 
 [[projects]]
-  digest = "1:6c17c5f788c5c7b293de1fad4fe59d3b84165d584d2f0f290e6540fecddb4bbb"
+  digest = "1:be4c84919fef0e39fb4f0167a6dae49440e635d93f2a583a6ac84dd4ce1a5c56"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -87,6 +88,7 @@
     "service/cloudformation",
     "service/cloudwatchlogs",
     "service/ec2",
+    "service/ec2/ec2iface",
     "service/elb",
     "service/elbv2",
     "service/kms",
@@ -95,8 +97,8 @@
     "service/sts",
   ]
   pruneopts = ""
-  revision = "a8ae6f5bdfb1f0d87da6aeb8611463a430dc820f"
-  version = "v1.19.27"
+  revision = "d56b50aa9d71793a9ebf86116b12789048a7f032"
+  version = "v1.20.21"
 
 [[projects]]
   digest = "1:0d3deb8a6da8ffba5635d6fb1d2144662200def6c9d82a35a6d05d6c2d4a48f9"
@@ -182,6 +184,14 @@
   revision = "33c29581e754bd354236e977dfe426e55331c45d"
 
 [[projects]]
+  branch = "master"
+  digest = "1:107b233e45174dbab5b1324201d092ea9448e58243ab9f039e4c0f332e121e3a"
+  name = "github.com/golang/glog"
+  packages = ["."]
+  pruneopts = ""
+  revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
+
+[[projects]]
   digest = "1:529d738b7976c3848cae5cf3a8036440166835e389c1f617af701eeb12a0518d"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
@@ -190,17 +200,18 @@
   version = "v1.3.1"
 
 [[projects]]
-  digest = "1:f9f45f75f332e03fc7e9fe9188ea4e1ce4d14779ef34fa1b023da67518e36327"
+  digest = "1:4c7b0fbaba9c61f310f3c5b34d7fbafad0b245a0cb94e2da7aed5c97600d84db"
   name = "github.com/google/go-cmp"
   packages = [
     "cmp",
     "cmp/internal/diff",
+    "cmp/internal/flags",
     "cmp/internal/function",
     "cmp/internal/value",
   ]
   pruneopts = ""
-  revision = "3af367b6b30c263d47e8895973edcca9a49cf029"
-  version = "v0.2.0"
+  revision = "6f77996f0c42f7b84e5a2b252227263f93432e9b"
+  version = "v0.3.0"
 
 [[projects]]
   digest = "1:ad92aa49f34cbc3546063c7eb2cabb55ee2278b72842eda80e2a20a8a06a8d73"
@@ -349,12 +360,12 @@
   version = "v1.3.0"
 
 [[projects]]
-  digest = "1:a1403cc8a94b8d7956ee5e9694badef0e7b051af289caad1cf668331e3ffa4f6"
+  digest = "1:0c63b3c7ad6d825a898f28cb854252a3b29d37700c68a117a977263f5ec94efe"
   name = "github.com/spf13/cobra"
   packages = ["."]
   pruneopts = ""
-  revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
-  version = "v0.0.3"
+  revision = "f2b07da1e2c38d5f12845a4f607e2e1018cbb1f5"
+  version = "v0.0.5"
 
 [[projects]]
   digest = "1:cbaf13cdbfef0e4734ed8a7504f57fe893d471d62a35b982bf6fb3f036449a66"
@@ -462,6 +473,7 @@
     "github.com/go-yaml/yaml",
     "github.com/gobuffalo/packr",
     "github.com/google/go-cmp/cmp",
+    "github.com/imdario/mergo",
     "github.com/mgutz/ansi",
     "github.com/pkg/errors",
     "github.com/spf13/cobra",

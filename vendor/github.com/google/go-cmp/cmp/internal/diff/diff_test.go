@@ -242,7 +242,7 @@ func TestDifference(t *testing.T) {
 	}}
 
 	for _, tt := range tests {
-		tRun(t, "", func(t *testing.T) {
+		t.Run("", func(t *testing.T) {
 			x := strings.Replace(tt.x, " ", "", -1)
 			y := strings.Replace(tt.y, " ", "", -1)
 			es := testStrings(t, x, y)
@@ -273,10 +273,10 @@ func TestDifferenceFuzz(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		tRun(t, fmt.Sprintf("P%d", i), func(t *testing.T) {
+		t.Run(fmt.Sprintf("P%d", i), func(t *testing.T) {
 			// Sweep from 1B to 1KiB.
 			for n := 1; n <= 1024; n <<= 1 {
-				tRun(t, fmt.Sprintf("N%d", n), func(t *testing.T) {
+				t.Run(fmt.Sprintf("N%d", n), func(t *testing.T) {
 					for j := 0; j < 10; j++ {
 						x, y := generateStrings(n, tt.px, tt.py, tt.pm, int64(j))
 						testStrings(t, x, y)
@@ -287,23 +287,20 @@ func TestDifferenceFuzz(t *testing.T) {
 	}
 }
 
-func benchmarkDifference(b *testing.B, n int) {
-	// TODO: Use testing.B.Run when we drop Go1.6 support.
-	x, y := generateStrings(n, 0.05, 0.05, 0.10, 0)
-	b.ReportAllocs()
-	b.SetBytes(int64(len(x) + len(y)))
-	for i := 0; i < b.N; i++ {
-		Difference(len(x), len(y), func(ix, iy int) Result {
-			return compareByte(x[ix], y[iy])
+func BenchmarkDifference(b *testing.B) {
+	for n := 1 << 10; n <= 1<<20; n <<= 2 {
+		b.Run(fmt.Sprintf("N%d", n), func(b *testing.B) {
+			x, y := generateStrings(n, 0.05, 0.05, 0.10, 0)
+			b.ReportAllocs()
+			b.SetBytes(int64(len(x) + len(y)))
+			for i := 0; i < b.N; i++ {
+				Difference(len(x), len(y), func(ix, iy int) Result {
+					return compareByte(x[ix], y[iy])
+				})
+			}
 		})
 	}
 }
-func BenchmarkDifference1K(b *testing.B)   { benchmarkDifference(b, 1<<10) }
-func BenchmarkDifference4K(b *testing.B)   { benchmarkDifference(b, 1<<12) }
-func BenchmarkDifference16K(b *testing.B)  { benchmarkDifference(b, 1<<14) }
-func BenchmarkDifference64K(b *testing.B)  { benchmarkDifference(b, 1<<16) }
-func BenchmarkDifference256K(b *testing.B) { benchmarkDifference(b, 1<<18) }
-func BenchmarkDifference1M(b *testing.B)   { benchmarkDifference(b, 1<<20) }
 
 func generateStrings(n int, px, py, pm float32, seed int64) (string, string) {
 	if px+py+pm > 1.0 {
@@ -390,9 +387,9 @@ func compareByte(x, y byte) (r Result) {
 }
 
 var (
-	equalResult     = Result{NDiff: 0}
-	similarResult   = Result{NDiff: 1}
-	differentResult = Result{NDiff: 2}
+	equalResult     = Result{NumDiff: 0}
+	similarResult   = Result{NumDiff: 1}
+	differentResult = Result{NumDiff: 2}
 )
 
 func TestResult(t *testing.T) {
@@ -401,39 +398,39 @@ func TestResult(t *testing.T) {
 		wantEqual   bool
 		wantSimilar bool
 	}{
-		// equalResult is equal since NDiff == 0, by definition of Equal method.
+		// equalResult is equal since NumDiff == 0, by definition of Equal method.
 		{equalResult, true, true},
 		// similarResult is similar since it is a binary result where only one
-		// element was compared (i.e., Either NSame==1 or NDiff==1).
+		// element was compared (i.e., Either NumSame==1 or NumDiff==1).
 		{similarResult, false, true},
 		// differentResult is different since there are enough differences that
 		// it isn't even considered similar.
 		{differentResult, false, false},
 
 		// Zero value is always equal.
-		{Result{NSame: 0, NDiff: 0}, true, true},
+		{Result{NumSame: 0, NumDiff: 0}, true, true},
 
-		// Binary comparisons (where NSame+NDiff == 1) are always similar.
-		{Result{NSame: 1, NDiff: 0}, true, true},
-		{Result{NSame: 0, NDiff: 1}, false, true},
+		// Binary comparisons (where NumSame+NumDiff == 1) are always similar.
+		{Result{NumSame: 1, NumDiff: 0}, true, true},
+		{Result{NumSame: 0, NumDiff: 1}, false, true},
 
 		// More complex ratios. The exact ratio for similarity may change,
 		// and may require updates to these test cases.
-		{Result{NSame: 1, NDiff: 1}, false, true},
-		{Result{NSame: 1, NDiff: 2}, false, true},
-		{Result{NSame: 1, NDiff: 3}, false, false},
-		{Result{NSame: 2, NDiff: 1}, false, true},
-		{Result{NSame: 2, NDiff: 2}, false, true},
-		{Result{NSame: 2, NDiff: 3}, false, true},
-		{Result{NSame: 3, NDiff: 1}, false, true},
-		{Result{NSame: 3, NDiff: 2}, false, true},
-		{Result{NSame: 3, NDiff: 3}, false, true},
-		{Result{NSame: 1000, NDiff: 0}, true, true},
-		{Result{NSame: 1000, NDiff: 1}, false, true},
-		{Result{NSame: 1000, NDiff: 2}, false, true},
-		{Result{NSame: 0, NDiff: 1000}, false, false},
-		{Result{NSame: 1, NDiff: 1000}, false, false},
-		{Result{NSame: 2, NDiff: 1000}, false, false},
+		{Result{NumSame: 1, NumDiff: 1}, false, true},
+		{Result{NumSame: 1, NumDiff: 2}, false, true},
+		{Result{NumSame: 1, NumDiff: 3}, false, false},
+		{Result{NumSame: 2, NumDiff: 1}, false, true},
+		{Result{NumSame: 2, NumDiff: 2}, false, true},
+		{Result{NumSame: 2, NumDiff: 3}, false, true},
+		{Result{NumSame: 3, NumDiff: 1}, false, true},
+		{Result{NumSame: 3, NumDiff: 2}, false, true},
+		{Result{NumSame: 3, NumDiff: 3}, false, true},
+		{Result{NumSame: 1000, NumDiff: 0}, true, true},
+		{Result{NumSame: 1000, NumDiff: 1}, false, true},
+		{Result{NumSame: 1000, NumDiff: 2}, false, true},
+		{Result{NumSame: 0, NumDiff: 1000}, false, false},
+		{Result{NumSame: 1, NumDiff: 1000}, false, false},
+		{Result{NumSame: 2, NumDiff: 1000}, false, false},
 	}
 
 	for _, tt := range tests {
@@ -443,19 +440,5 @@ func TestResult(t *testing.T) {
 		if got := tt.result.Similar(); got != tt.wantSimilar {
 			t.Errorf("%#v.Similar() = %v, want %v", tt.result, got, tt.wantSimilar)
 		}
-	}
-}
-
-// TODO: Delete this hack when we drop Go1.6 support.
-func tRun(t *testing.T, name string, f func(t *testing.T)) {
-	type runner interface {
-		Run(string, func(t *testing.T)) bool
-	}
-	var ti interface{} = t
-	if r, ok := ti.(runner); ok {
-		r.Run(name, f)
-	} else {
-		t.Logf("Test: %s", name)
-		f(t)
 	}
 }
