@@ -132,27 +132,23 @@ save_webhooks() {
   local type=$1
   local file=$2
 
-  echo "Storing and removing all ${type} webhooks to ${file}"
-  if [[ -s $file ]]; then
-    echo "$file already saved"
+  echo "Storing and removing all ${type} webhooks"
+  if [[ -s "${file}.index" ]]; then
+    echo "${file}.index already saved"
   else
-    kubectl get ${type}webhookconfigurations -o yaml --export >$file
-    if list_not_empty $file; then
-      echo "deleting $type webhooks..."
-      ensuredelete $file
+    local hooks=$(kubectl get ${type}webhookconfigurations -o custom-columns=NAME:.metadata.name --no-headers)
+    local count=$(echo "${hooks}" | wc -w | sed -e 's/ //g')
+    echo "Found ${count} ${type} webhooks..."
+    if [[ -n "${hooks}" ]]; then
+      echo -n "${hooks}" >${file}.index
+      for h in ${hooks}; do
+        echo "backing up ${type} webhook ${h}..."
+        kubectl get ${type}webhookconfiguration ${h} -o yaml --export >${file}.${type}.${h}.yaml
+        echo "deleting $type webhook ${h}..."
+        ensuredelete ${file}.${type}.${h}.yaml
+      done
     fi
   fi
-}
-
-list_not_empty() {
-  local file=$1
-  if ! [[ -s $file ]]; then
-    return 1
-  fi
-  if cat $file | grep -se 'items: \[\]'; then
-    return 1
-  fi
-  return 0
 }
 
 ensuredelete() {
@@ -175,8 +171,8 @@ done
 if [[ "${disable_webhooks}" == "true" ]]; then
   echo "Storing and removing all validating and mutating webhooks..."
   mkdir -p ${webhooks_save_path}
-  save_webhooks validating ${webhooks_save_path}/validating_webhooks.yaml
-  save_webhooks mutating ${webhooks_save_path}/mutating_webhooks.yaml
+  save_webhooks validating ${webhooks_save_path}/validating_webhooks
+  save_webhooks mutating ${webhooks_save_path}/mutating_webhooks
 fi
 
 log ""

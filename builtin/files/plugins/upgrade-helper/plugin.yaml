@@ -1,6 +1,6 @@
 metadata:
   name: upgrade-helper
-  version: 0.1.0
+  version: 0.1.1
 spec:
   cluster:
     values:
@@ -13,23 +13,23 @@ spec:
             permissions: 0644
             content: |
               [Unit]
-              Requires=kube-aws-upgrade-helper.service
-              After=kube-aws-upgrade-helper.service
-              Before=restore-webhooks.service
+              Requires=upgrade-helper-pre.service
+              After=upgrade-helper-pre.service
+              Before=upgrade-helper-post.service
               
               [Service]
-              ExecStartPre=/usr/bin/bash -c "until /usr/bin/systemctl is-active kube-aws-upgrade-helper.service; do echo waiting until kube-aws-upgrade-helper.service starts; sleep 10; done"
-          - path: /opt/bin/upgrade-helper.sh
+              ExecStartPre=/usr/bin/bash -c "until /usr/bin/systemctl is-active upgrade-helper-pre.service; do echo waiting until upgrade-helper-pre.service starts; sleep 10; done"
+          - path: /opt/bin/upgrade-helper-pre.sh
             permissions: 0755
             source:
-              path: assets/upgrade-helper.sh
-          - path: /opt/bin/restore-webhooks.sh
+              path: assets/upgrade-helper-pre.sh
+          - path: /opt/bin/upgrade-helper-post.sh
             permissions: 0755
             source:
-              path: assets/restore-webhooks.sh
+              path: assets/upgrade-helper-post.sh
           systemd:
             units:
-            - name: kube-aws-upgrade-helper.service
+            - name: upgrade-helper-pre.service
               content: |
                 [Unit]
                 Requires=kubelet.service
@@ -40,8 +40,8 @@ spec:
                 Type=oneshot
                 StartLimitInterval=0
                 RemainAfterExit=true
-                ExecStart=/usr/bin/bash -c '/opt/bin/upgrade-helper.sh'
-            - name: restore-webhooks.service
+                ExecStart=/usr/bin/bash -c '/opt/bin/upgrade-helper-pre.sh'
+            - name: upgrade-helper-post.service
               content: |
                 [Unit]
                 Requires=install-kube-system.service
@@ -51,4 +51,4 @@ spec:
                 Type=oneshot
                 StartLimitInterval=0
                 RemainAfterExit=true
-                ExecStart=/usr/bin/bash -c '/opt/bin/restore-webhooks.sh'
+                ExecStart=/usr/bin/bash -c '/opt/bin/upgrade-helper-post.sh'

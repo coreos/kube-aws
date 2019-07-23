@@ -10,17 +10,6 @@ kubectl() {
   /usr/bin/docker run -i --rm -v /etc/kubernetes:/etc/kubernetes:ro -v ${webhooks_save_path}:${webhooks_save_path}:rw --net=host ${hyperkube_image} /hyperkube kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml "$@"
 }
 
-list_not_empty() {
-  local file=$1
-  if ! [[ -s $file ]]; then
-    return 1
-  fi
-  if cat $file | grep -se 'items: \[\]'; then
-    return 1
-  fi
-  return 0
-}
-
 applyall() {
   kubectl apply --force -f $(echo "$@" | tr ' ' ',')
 }
@@ -29,9 +18,23 @@ restore_webhooks() {
   local type=$1
   local file=$2
 
-  if list_not_empty $file; then
-    echo "Restoring all ${type} webhooks from ${file}"
-    applyall $file
+  if [[ -s "${file}.index" ]]; then
+    echo "Restoring all ${type} webhooks from ${file}.index"
+    hooks=$(cat "${file}.index")
+    for h in ${hooks}; do
+      echo "restoring ${type} webhook ${h}..."
+      exists=$(kubectl get ${type}webhookconfiguration ${h} --no-headers --ignore-not-found)
+      if [[ -n "${exists}" ]]; then
+        echo "${h} found - not restoring!"
+      else
+        if [[ -s "${file}.${type}.${h}.yaml" ]]; then
+          echo "restoring from ${file}.${type}.${h}.yaml..."
+          applyall ${file}.${type}.${h}.yaml
+        else
+          echo "error! file ${file}.${type}.${h}.yaml not found or is empty"
+        fi
+      fi
+    done
   else
       echo "no webhooks to restore in $file"
   fi
@@ -39,7 +42,7 @@ restore_webhooks() {
 
 if [[ "${disable_webhooks}" == "true" ]]; then
     echo "Restoring all validating and mutating webhooks..."
-    restore_webhooks validating ${webhooks_save_path}/validating_webhooks.yaml
-    restore_webhooks mutating ${webhooks_save_path}/mutating_webhooks.yaml
+    restore_webhooks validating ${webhooks_save_path}/validating_webhooks
+    restore_webhooks mutating ${webhooks_save_path}/mutating_webhooks
 fi
 exit 0
