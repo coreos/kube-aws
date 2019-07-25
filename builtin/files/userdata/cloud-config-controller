@@ -5840,7 +5840,7 @@ write_files:
         local return_code=0
 
         while [ "$tries" -lt "$retries" ]; do
-          result_text=$(docker run --rm -i --net=host -v /tmp:/tmp:rw -v /etc/kubernetes:/etc/kubernetes:ro  -v /etc/resolv.conf:/etc/resolv.conf:ro $hyperkube_image /kubectl "$@")
+          result_text=$(docker run --rm -i --net=host -v /tmp:/tmp:rw -v /etc/kubernetes:/etc/kubernetes:ro  -v /etc/resolv.conf:/etc/resolv.conf:ro $hyperkube_image /kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml "$@")
           return_code=$?
           if [ "$return_code" -eq "0" ]; then
             echo "${result_text}"
