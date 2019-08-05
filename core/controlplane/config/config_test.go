@@ -1251,6 +1251,24 @@ kubeDns:
 				},
 			},
 		},
+		{
+			conf: `
+kubeDns:
+  provider: coredns
+  extraCoreDNSConfig: rewrite name substring demo.app.org app.default.svc.cluster.local
+`,
+			kubeDns: KubeDns{
+				Provider:            "coredns",
+				NodeLocalResolver:   false,
+				DeployToControllers: false,
+				Autoscaler: KubeDnsAutoscaler{
+					CoresPerReplica: 256,
+					NodesPerReplica: 16,
+					Min:             2,
+				},
+				ExtraCoreDNSConfig: "rewrite name substring demo.app.org app.default.svc.cluster.local",
+			},
+		},
 	}
 
 	for _, conf := range validConfigs {

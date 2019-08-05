@@ -209,6 +209,7 @@ func NewDefaultCluster() *Cluster {
 					NodesPerReplica: 16,
 					Min:             2,
 				},
+				ExtraCoreDNSConfig: "",
 			},
 			KubeSystemNamespaceLabels: make(map[string]string),
 			KubernetesDashboard: KubernetesDashboard{
@@ -875,6 +876,7 @@ type KubeDns struct {
 	NodeLocalResolverOptions []string          `yaml:"nodeLocalResolverOptions"`
 	DeployToControllers      bool              `yaml:"deployToControllers"`
 	Autoscaler               KubeDnsAutoscaler `yaml:"autoscaler"`
+	ExtraCoreDNSConfig       string            `yaml:"extraCoreDNSConfig"`
 }
 
 func (c *KubeDns) MergeIfEmpty(other KubeDns) {

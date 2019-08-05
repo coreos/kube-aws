@@ -1327,6 +1327,9 @@ kubeDns:
     coresPerReplica: 256
     nodesPerReplica: 16
     min: 2
+  # Allows to add extra configuration into CoreDNS config map
+  # extraCoreDNSConfig: |
+  #   rewrite name substring demo.app.org app.default.svc.cluster.local
 
 kubeProxy:
   # Use IPVS kube-proxy mode instead of [default] iptables one (requires Kubernetes 1.9.0+ to work reliably)
