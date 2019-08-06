@@ -4049,9 +4049,10 @@ write_files:
                 {{- if .KubeDns.AntiAffinityAvailabilityZone }}
                 podAntiAffinity:
                   preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
                     podAffinityTerm:
                       labelSelector:
-                      - matchExpressions:
+                        matchExpressions:
                         - key: k8s-app
                           operator: In
                           values:
