@@ -5756,10 +5756,8 @@ write_files:
                   - --key=/etc/kiam/tls/agent-key.pem
                   - --ca=/etc/kiam/tls/ca.pem
                   - --server-address={{.Experimental.KIAMSupport.ServerAddresses.AgentAddress}}
-                  - --whitelist-route-regexp=.*
                   - --prometheus-listen-addr=0.0.0.0:9620
                   - --prometheus-sync-interval=5s
-                  - --gateway-timeout-creation=1s
                 env:
                   - name: HOST_IP
                     valueFrom:
