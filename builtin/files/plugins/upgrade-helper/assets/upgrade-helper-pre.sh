@@ -104,12 +104,14 @@ node_running() {
   return 1
 }
 
-wait_stopped() {
+wait_stopped_or_timeout() {
   local controllers=$1
   log ""
   log "WAITING FOR ALL MATCHED CONTROLLERS TO STOP:-"
   log "${controllers}"
   log ""
+  local max_wait=300
+  local wait=0
 
   local test=1
   while [ "$test" -eq "1" ]; do
@@ -122,8 +124,15 @@ wait_stopped() {
     done
 
     if [ "$test" -eq "1" ]; then
+      if [[ "${wait}" -ge "${max_wait}" ]]; then
+        log "Wait for controllers timed out after ${wait} seconds."
+        break
+      fi
       log "Controllers still active, waiting 5 seconds..."
+      wait=$[$wait+5]
       sleep 5
+    else
+      log "All target controllers are now inactive."
     fi
   done
 }
@@ -207,6 +216,6 @@ if [[ -n "${found}" ]]; then
     log ""
     log "WAITING FOR FOUND CONTROLLERS TO STOP..."
     log ""
-    wait_stopped "${found}"
+    wait_stopped_or_timeout "${found}"
 fi
 exit 0
