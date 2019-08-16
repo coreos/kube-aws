@@ -212,6 +212,10 @@ type ServiceCatalogAPI interface {
 	DescribeServiceActionWithContext(aws.Context, *servicecatalog.DescribeServiceActionInput, ...request.Option) (*servicecatalog.DescribeServiceActionOutput, error)
 	DescribeServiceActionRequest(*servicecatalog.DescribeServiceActionInput) (*request.Request, *servicecatalog.DescribeServiceActionOutput)
 
+	DescribeServiceActionExecutionParameters(*servicecatalog.DescribeServiceActionExecutionParametersInput) (*servicecatalog.DescribeServiceActionExecutionParametersOutput, error)
+	DescribeServiceActionExecutionParametersWithContext(aws.Context, *servicecatalog.DescribeServiceActionExecutionParametersInput, ...request.Option) (*servicecatalog.DescribeServiceActionExecutionParametersOutput, error)
+	DescribeServiceActionExecutionParametersRequest(*servicecatalog.DescribeServiceActionExecutionParametersInput) (*request.Request, *servicecatalog.DescribeServiceActionExecutionParametersOutput)
+
 	DescribeTagOption(*servicecatalog.DescribeTagOptionInput) (*servicecatalog.DescribeTagOptionOutput, error)
 	DescribeTagOptionWithContext(aws.Context, *servicecatalog.DescribeTagOptionInput, ...request.Option) (*servicecatalog.DescribeTagOptionOutput, error)
 	DescribeTagOptionRequest(*servicecatalog.DescribeTagOptionInput) (*request.Request, *servicecatalog.DescribeTagOptionOutput)
@@ -356,6 +360,10 @@ type ServiceCatalogAPI interface {
 	ListServiceActionsForProvisioningArtifactPages(*servicecatalog.ListServiceActionsForProvisioningArtifactInput, func(*servicecatalog.ListServiceActionsForProvisioningArtifactOutput, bool) bool) error
 	ListServiceActionsForProvisioningArtifactPagesWithContext(aws.Context, *servicecatalog.ListServiceActionsForProvisioningArtifactInput, func(*servicecatalog.ListServiceActionsForProvisioningArtifactOutput, bool) bool, ...request.Option) error
 
+	ListStackInstancesForProvisionedProduct(*servicecatalog.ListStackInstancesForProvisionedProductInput) (*servicecatalog.ListStackInstancesForProvisionedProductOutput, error)
+	ListStackInstancesForProvisionedProductWithContext(aws.Context, *servicecatalog.ListStackInstancesForProvisionedProductInput, ...request.Option) (*servicecatalog.ListStackInstancesForProvisionedProductOutput, error)
+	ListStackInstancesForProvisionedProductRequest(*servicecatalog.ListStackInstancesForProvisionedProductInput) (*request.Request, *servicecatalog.ListStackInstancesForProvisionedProductOutput)
+
 	ListTagOptions(*servicecatalog.ListTagOptionsInput) (*servicecatalog.ListTagOptionsOutput, error)
 	ListTagOptionsWithContext(aws.Context, *servicecatalog.ListTagOptionsInput, ...request.Option) (*servicecatalog.ListTagOptionsOutput, error)
 	ListTagOptionsRequest(*servicecatalog.ListTagOptionsInput) (*request.Request, *servicecatalog.ListTagOptionsOutput)
@@ -415,6 +423,10 @@ type ServiceCatalogAPI interface {
 	UpdateProvisionedProduct(*servicecatalog.UpdateProvisionedProductInput) (*servicecatalog.UpdateProvisionedProductOutput, error)
 	UpdateProvisionedProductWithContext(aws.Context, *servicecatalog.UpdateProvisionedProductInput, ...request.Option) (*servicecatalog.UpdateProvisionedProductOutput, error)
 	UpdateProvisionedProductRequest(*servicecatalog.UpdateProvisionedProductInput) (*request.Request, *servicecatalog.UpdateProvisionedProductOutput)
+
+	UpdateProvisionedProductProperties(*servicecatalog.UpdateProvisionedProductPropertiesInput) (*servicecatalog.UpdateProvisionedProductPropertiesOutput, error)
+	UpdateProvisionedProductPropertiesWithContext(aws.Context, *servicecatalog.UpdateProvisionedProductPropertiesInput, ...request.Option) (*servicecatalog.UpdateProvisionedProductPropertiesOutput, error)
+	UpdateProvisionedProductPropertiesRequest(*servicecatalog.UpdateProvisionedProductPropertiesInput) (*request.Request, *servicecatalog.UpdateProvisionedProductPropertiesOutput)
 
 	UpdateProvisioningArtifact(*servicecatalog.UpdateProvisioningArtifactInput) (*servicecatalog.UpdateProvisioningArtifactOutput, error)
 	UpdateProvisioningArtifactWithContext(aws.Context, *servicecatalog.UpdateProvisioningArtifactInput, ...request.Option) (*servicecatalog.UpdateProvisioningArtifactOutput, error)

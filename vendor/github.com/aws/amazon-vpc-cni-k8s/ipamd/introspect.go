@@ -27,8 +27,11 @@ import (
 )
 
 const (
-	// introspectionAddress is listening on localhost 61679 for ipamd introspection
-	introspectionAddress = "127.0.0.1:61679"
+	// defaultIntrospectionAddress is listening on localhost 61679 for ipamd introspection
+	defaultIntrospectionBindAddress = "127.0.0.1:61679"
+
+	// Environment variable to define the bind address for the introspection endpoint
+	introspectionBindAddress = "INTROSPECTION_BIND_ADDRESS"
 
 	// Environment variable to disable the introspection endpoints
 	envDisableIntrospection = "DISABLE_INTROSPECTION"
@@ -44,7 +47,7 @@ type LoggingHandler struct {
 }
 
 func (lh LoggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Info("Handling http request: ", ", method: ", r.Method, ", from: ", r.RemoteAddr, ", URI: ", r.RequestURI)
+	log.Infof("Handling http request: %s, from: %s, URI: %s", r.Method, r.RemoteAddr, r.RequestURI)
 	lh.h.ServeHTTP(w, r)
 }
 
@@ -55,7 +58,6 @@ func (c *IPAMContext) ServeIntrospection() {
 		return
 	}
 
-	log.Info("Serving introspection endpoints on ", introspectionAddress)
 	server := c.setupIntrospectionServer()
 	for {
 		once := sync.Once{}
@@ -92,7 +94,6 @@ func (c *IPAMContext) setupIntrospectionServer() *http.Server {
 	defaultHandler := func(w http.ResponseWriter, r *http.Request) {
 		logErr(w.Write(availableCommandResponse))
 	}
-
 	serveMux := http.NewServeMux()
 	serveMux.HandleFunc("/", defaultHandler)
 	for key, fn := range serverFunctions {
@@ -103,8 +104,15 @@ func (c *IPAMContext) setupIntrospectionServer() *http.Server {
 	loggingServeMux := http.NewServeMux()
 	loggingServeMux.Handle("/", LoggingHandler{serveMux})
 
+	addr, ok := os.LookupEnv(introspectionBindAddress)
+	if !ok {
+		addr = defaultIntrospectionBindAddress
+	}
+
+	log.Info("Serving introspection endpoints on ", addr)
+
 	server := &http.Server{
-		Addr:         introspectionAddress,
+		Addr:         addr,
 		Handler:      loggingServeMux,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,

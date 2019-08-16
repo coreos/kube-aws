@@ -168,8 +168,9 @@ func (c *Comprehend) BatchDetectEntitiesRequest(input *BatchDetectEntitiesInput)
 //   * ErrCodeUnsupportedLanguageException "UnsupportedLanguageException"
 //   Amazon Comprehend can't process the language of the input text. For all custom
 //   entity recognition APIs (such as CreateEntityRecognizer), only English is
-//   accepted. For most other APIs, Amazon Comprehend accepts only English or
-//   Spanish text.
+//   accepted. For most other APIs, such as those for Custom Classification, Amazon
+//   Comprehend accepts text in all supported languages. For a list of supported
+//   languages, see supported-languages.
 //
 //   * ErrCodeBatchSizeLimitExceededException "BatchSizeLimitExceededException"
 //   The number of documents in the request exceeds the limit of 25. Try your
@@ -263,8 +264,9 @@ func (c *Comprehend) BatchDetectKeyPhrasesRequest(input *BatchDetectKeyPhrasesIn
 //   * ErrCodeUnsupportedLanguageException "UnsupportedLanguageException"
 //   Amazon Comprehend can't process the language of the input text. For all custom
 //   entity recognition APIs (such as CreateEntityRecognizer), only English is
-//   accepted. For most other APIs, Amazon Comprehend accepts only English or
-//   Spanish text.
+//   accepted. For most other APIs, such as those for Custom Classification, Amazon
+//   Comprehend accepts text in all supported languages. For a list of supported
+//   languages, see supported-languages.
 //
 //   * ErrCodeBatchSizeLimitExceededException "BatchSizeLimitExceededException"
 //   The number of documents in the request exceeds the limit of 25. Try your
@@ -359,8 +361,9 @@ func (c *Comprehend) BatchDetectSentimentRequest(input *BatchDetectSentimentInpu
 //   * ErrCodeUnsupportedLanguageException "UnsupportedLanguageException"
 //   Amazon Comprehend can't process the language of the input text. For all custom
 //   entity recognition APIs (such as CreateEntityRecognizer), only English is
-//   accepted. For most other APIs, Amazon Comprehend accepts only English or
-//   Spanish text.
+//   accepted. For most other APIs, such as those for Custom Classification, Amazon
+//   Comprehend accepts text in all supported languages. For a list of supported
+//   languages, see supported-languages.
 //
 //   * ErrCodeBatchSizeLimitExceededException "BatchSizeLimitExceededException"
 //   The number of documents in the request exceeds the limit of 25. Try your
@@ -456,8 +459,9 @@ func (c *Comprehend) BatchDetectSyntaxRequest(input *BatchDetectSyntaxInput) (re
 //   * ErrCodeUnsupportedLanguageException "UnsupportedLanguageException"
 //   Amazon Comprehend can't process the language of the input text. For all custom
 //   entity recognition APIs (such as CreateEntityRecognizer), only English is
-//   accepted. For most other APIs, Amazon Comprehend accepts only English or
-//   Spanish text.
+//   accepted. For most other APIs, such as those for Custom Classification, Amazon
+//   Comprehend accepts text in all supported languages. For a list of supported
+//   languages, see supported-languages.
 //
 //   * ErrCodeBatchSizeLimitExceededException "BatchSizeLimitExceededException"
 //   The number of documents in the request exceeds the limit of 25. Try your
@@ -568,8 +572,9 @@ func (c *Comprehend) CreateDocumentClassifierRequest(input *CreateDocumentClassi
 //   * ErrCodeUnsupportedLanguageException "UnsupportedLanguageException"
 //   Amazon Comprehend can't process the language of the input text. For all custom
 //   entity recognition APIs (such as CreateEntityRecognizer), only English is
-//   accepted. For most other APIs, Amazon Comprehend accepts only English or
-//   Spanish text.
+//   accepted. For most other APIs, such as those for Custom Classification, Amazon
+//   Comprehend accepts text in all supported languages. For a list of supported
+//   languages, see supported-languages.
 //
 //   * ErrCodeKmsKeyValidationException "KmsKeyValidationException"
 //   The KMS customer managed key (CMK) entered cannot be validated. Verify the
@@ -677,8 +682,9 @@ func (c *Comprehend) CreateEntityRecognizerRequest(input *CreateEntityRecognizer
 //   * ErrCodeUnsupportedLanguageException "UnsupportedLanguageException"
 //   Amazon Comprehend can't process the language of the input text. For all custom
 //   entity recognition APIs (such as CreateEntityRecognizer), only English is
-//   accepted. For most other APIs, Amazon Comprehend accepts only English or
-//   Spanish text.
+//   accepted. For most other APIs, such as those for Custom Classification, Amazon
+//   Comprehend accepts text in all supported languages. For a list of supported
+//   languages, see supported-languages.
 //
 //   * ErrCodeKmsKeyValidationException "KmsKeyValidationException"
 //   The KMS customer managed key (CMK) entered cannot be validated. Verify the
@@ -1785,8 +1791,9 @@ func (c *Comprehend) DetectEntitiesRequest(input *DetectEntitiesInput) (req *req
 //   * ErrCodeUnsupportedLanguageException "UnsupportedLanguageException"
 //   Amazon Comprehend can't process the language of the input text. For all custom
 //   entity recognition APIs (such as CreateEntityRecognizer), only English is
-//   accepted. For most other APIs, Amazon Comprehend accepts only English or
-//   Spanish text.
+//   accepted. For most other APIs, such as those for Custom Classification, Amazon
+//   Comprehend accepts text in all supported languages. For a list of supported
+//   languages, see supported-languages.
 //
 //   * ErrCodeInternalServerException "InternalServerException"
 //   An internal server error occurred. Retry your request.
@@ -1876,8 +1883,9 @@ func (c *Comprehend) DetectKeyPhrasesRequest(input *DetectKeyPhrasesInput) (req 
 //   * ErrCodeUnsupportedLanguageException "UnsupportedLanguageException"
 //   Amazon Comprehend can't process the language of the input text. For all custom
 //   entity recognition APIs (such as CreateEntityRecognizer), only English is
-//   accepted. For most other APIs, Amazon Comprehend accepts only English or
-//   Spanish text.
+//   accepted. For most other APIs, such as those for Custom Classification, Amazon
+//   Comprehend accepts text in all supported languages. For a list of supported
+//   languages, see supported-languages.
 //
 //   * ErrCodeInternalServerException "InternalServerException"
 //   An internal server error occurred. Retry your request.
@@ -1968,8 +1976,9 @@ func (c *Comprehend) DetectSentimentRequest(input *DetectSentimentInput) (req *r
 //   * ErrCodeUnsupportedLanguageException "UnsupportedLanguageException"
 //   Amazon Comprehend can't process the language of the input text. For all custom
 //   entity recognition APIs (such as CreateEntityRecognizer), only English is
-//   accepted. For most other APIs, Amazon Comprehend accepts only English or
-//   Spanish text.
+//   accepted. For most other APIs, such as those for Custom Classification, Amazon
+//   Comprehend accepts text in all supported languages. For a list of supported
+//   languages, see supported-languages.
 //
 //   * ErrCodeInternalServerException "InternalServerException"
 //   An internal server error occurred. Retry your request.
@@ -2060,8 +2069,9 @@ func (c *Comprehend) DetectSyntaxRequest(input *DetectSyntaxInput) (req *request
 //   * ErrCodeUnsupportedLanguageException "UnsupportedLanguageException"
 //   Amazon Comprehend can't process the language of the input text. For all custom
 //   entity recognition APIs (such as CreateEntityRecognizer), only English is
-//   accepted. For most other APIs, Amazon Comprehend accepts only English or
-//   Spanish text.
+//   accepted. For most other APIs, such as those for Custom Classification, Amazon
+//   Comprehend accepts text in all supported languages. For a list of supported
+//   languages, see supported-languages.
 //
 //   * ErrCodeInternalServerException "InternalServerException"
 //   An internal server error occurred. Retry your request.
@@ -2119,6 +2129,12 @@ func (c *Comprehend) ListDocumentClassificationJobsRequest(input *ListDocumentCl
 		Name:       opListDocumentClassificationJobs,
 		HTTPMethod: "POST",
 		HTTPPath:   "/",
+		Paginator: &request.Paginator{
+			InputTokens:     []string{"NextToken"},
+			OutputTokens:    []string{"NextToken"},
+			LimitToken:      "MaxResults",
+			TruncationToken: "",
+		},
 	}
 
 	if input == nil {
@@ -2149,8 +2165,7 @@ func (c *Comprehend) ListDocumentClassificationJobsRequest(input *ListDocumentCl
 //   The number of requests exceeds the limit. Resubmit your request later.
 //
 //   * ErrCodeInvalidFilterException "InvalidFilterException"
-//   The filter specified for the ListDocumentClassificationJobs operation is
-//   invalid. Specify a different filter.
+//   The filter specified for the operation is invalid. Specify a different filter.
 //
 //   * ErrCodeInternalServerException "InternalServerException"
 //   An internal server error occurred. Retry your request.
@@ -2175,6 +2190,56 @@ func (c *Comprehend) ListDocumentClassificationJobsWithContext(ctx aws.Context, 
 	req.SetContext(ctx)
 	req.ApplyOptions(opts...)
 	return out, req.Send()
+}
+
+// ListDocumentClassificationJobsPages iterates over the pages of a ListDocumentClassificationJobs operation,
+// calling the "fn" function with the response data for each page. To stop
+// iterating, return false from the fn function.
+//
+// See ListDocumentClassificationJobs method for more information on how to use this operation.
+//
+// Note: This operation can generate multiple requests to a service.
+//
+//    // Example iterating over at most 3 pages of a ListDocumentClassificationJobs operation.
+//    pageNum := 0
+//    err := client.ListDocumentClassificationJobsPages(params,
+//        func(page *comprehend.ListDocumentClassificationJobsOutput, lastPage bool) bool {
+//            pageNum++
+//            fmt.Println(page)
+//            return pageNum <= 3
+//        })
+//
+func (c *Comprehend) ListDocumentClassificationJobsPages(input *ListDocumentClassificationJobsInput, fn func(*ListDocumentClassificationJobsOutput, bool) bool) error {
+	return c.ListDocumentClassificationJobsPagesWithContext(aws.BackgroundContext(), input, fn)
+}
+
+// ListDocumentClassificationJobsPagesWithContext same as ListDocumentClassificationJobsPages except
+// it takes a Context and allows setting request options on the pages.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *Comprehend) ListDocumentClassificationJobsPagesWithContext(ctx aws.Context, input *ListDocumentClassificationJobsInput, fn func(*ListDocumentClassificationJobsOutput, bool) bool, opts ...request.Option) error {
+	p := request.Pagination{
+		NewRequest: func() (*request.Request, error) {
+			var inCpy *ListDocumentClassificationJobsInput
+			if input != nil {
+				tmp := *input
+				inCpy = &tmp
+			}
+			req, _ := c.ListDocumentClassificationJobsRequest(inCpy)
+			req.SetContext(ctx)
+			req.ApplyOptions(opts...)
+			return req, nil
+		},
+	}
+
+	cont := true
+	for p.Next() && cont {
+		cont = fn(p.Page().(*ListDocumentClassificationJobsOutput), !p.HasNextPage())
+	}
+	return p.Err()
 }
 
 const opListDocumentClassifiers = "ListDocumentClassifiers"
@@ -2208,6 +2273,12 @@ func (c *Comprehend) ListDocumentClassifiersRequest(input *ListDocumentClassifie
 		Name:       opListDocumentClassifiers,
 		HTTPMethod: "POST",
 		HTTPPath:   "/",
+		Paginator: &request.Paginator{
+			InputTokens:     []string{"NextToken"},
+			OutputTokens:    []string{"NextToken"},
+			LimitToken:      "MaxResults",
+			TruncationToken: "",
+		},
 	}
 
 	if input == nil {
@@ -2238,8 +2309,7 @@ func (c *Comprehend) ListDocumentClassifiersRequest(input *ListDocumentClassifie
 //   The number of requests exceeds the limit. Resubmit your request later.
 //
 //   * ErrCodeInvalidFilterException "InvalidFilterException"
-//   The filter specified for the ListDocumentClassificationJobs operation is
-//   invalid. Specify a different filter.
+//   The filter specified for the operation is invalid. Specify a different filter.
 //
 //   * ErrCodeInternalServerException "InternalServerException"
 //   An internal server error occurred. Retry your request.
@@ -2264,6 +2334,56 @@ func (c *Comprehend) ListDocumentClassifiersWithContext(ctx aws.Context, input *
 	req.SetContext(ctx)
 	req.ApplyOptions(opts...)
 	return out, req.Send()
+}
+
+// ListDocumentClassifiersPages iterates over the pages of a ListDocumentClassifiers operation,
+// calling the "fn" function with the response data for each page. To stop
+// iterating, return false from the fn function.
+//
+// See ListDocumentClassifiers method for more information on how to use this operation.
+//
+// Note: This operation can generate multiple requests to a service.
+//
+//    // Example iterating over at most 3 pages of a ListDocumentClassifiers operation.
+//    pageNum := 0
+//    err := client.ListDocumentClassifiersPages(params,
+//        func(page *comprehend.ListDocumentClassifiersOutput, lastPage bool) bool {
+//            pageNum++
+//            fmt.Println(page)
+//            return pageNum <= 3
+//        })
+//
+func (c *Comprehend) ListDocumentClassifiersPages(input *ListDocumentClassifiersInput, fn func(*ListDocumentClassifiersOutput, bool) bool) error {
+	return c.ListDocumentClassifiersPagesWithContext(aws.BackgroundContext(), input, fn)
+}
+
+// ListDocumentClassifiersPagesWithContext same as ListDocumentClassifiersPages except
+// it takes a Context and allows setting request options on the pages.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *Comprehend) ListDocumentClassifiersPagesWithContext(ctx aws.Context, input *ListDocumentClassifiersInput, fn func(*ListDocumentClassifiersOutput, bool) bool, opts ...request.Option) error {
+	p := request.Pagination{
+		NewRequest: func() (*request.Request, error) {
+			var inCpy *ListDocumentClassifiersInput
+			if input != nil {
+				tmp := *input
+				inCpy = &tmp
+			}
+			req, _ := c.ListDocumentClassifiersRequest(inCpy)
+			req.SetContext(ctx)
+			req.ApplyOptions(opts...)
+			return req, nil
+		},
+	}
+
+	cont := true
+	for p.Next() && cont {
+		cont = fn(p.Page().(*ListDocumentClassifiersOutput), !p.HasNextPage())
+	}
+	return p.Err()
 }
 
 const opListDominantLanguageDetectionJobs = "ListDominantLanguageDetectionJobs"
@@ -2333,8 +2453,7 @@ func (c *Comprehend) ListDominantLanguageDetectionJobsRequest(input *ListDominan
 //   The number of requests exceeds the limit. Resubmit your request later.
 //
 //   * ErrCodeInvalidFilterException "InvalidFilterException"
-//   The filter specified for the ListDocumentClassificationJobs operation is
-//   invalid. Specify a different filter.
+//   The filter specified for the operation is invalid. Specify a different filter.
 //
 //   * ErrCodeInternalServerException "InternalServerException"
 //   An internal server error occurred. Retry your request.
@@ -2372,7 +2491,7 @@ func (c *Comprehend) ListDominantLanguageDetectionJobsWithContext(ctx aws.Contex
 //    // Example iterating over at most 3 pages of a ListDominantLanguageDetectionJobs operation.
 //    pageNum := 0
 //    err := client.ListDominantLanguageDetectionJobsPages(params,
-//        func(page *ListDominantLanguageDetectionJobsOutput, lastPage bool) bool {
+//        func(page *comprehend.ListDominantLanguageDetectionJobsOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -2478,8 +2597,7 @@ func (c *Comprehend) ListEntitiesDetectionJobsRequest(input *ListEntitiesDetecti
 //   The number of requests exceeds the limit. Resubmit your request later.
 //
 //   * ErrCodeInvalidFilterException "InvalidFilterException"
-//   The filter specified for the ListDocumentClassificationJobs operation is
-//   invalid. Specify a different filter.
+//   The filter specified for the operation is invalid. Specify a different filter.
 //
 //   * ErrCodeInternalServerException "InternalServerException"
 //   An internal server error occurred. Retry your request.
@@ -2517,7 +2635,7 @@ func (c *Comprehend) ListEntitiesDetectionJobsWithContext(ctx aws.Context, input
 //    // Example iterating over at most 3 pages of a ListEntitiesDetectionJobs operation.
 //    pageNum := 0
 //    err := client.ListEntitiesDetectionJobsPages(params,
-//        func(page *ListEntitiesDetectionJobsOutput, lastPage bool) bool {
+//        func(page *comprehend.ListEntitiesDetectionJobsOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -2587,6 +2705,12 @@ func (c *Comprehend) ListEntityRecognizersRequest(input *ListEntityRecognizersIn
 		Name:       opListEntityRecognizers,
 		HTTPMethod: "POST",
 		HTTPPath:   "/",
+		Paginator: &request.Paginator{
+			InputTokens:     []string{"NextToken"},
+			OutputTokens:    []string{"NextToken"},
+			LimitToken:      "MaxResults",
+			TruncationToken: "",
+		},
 	}
 
 	if input == nil {
@@ -2624,8 +2748,7 @@ func (c *Comprehend) ListEntityRecognizersRequest(input *ListEntityRecognizersIn
 //   The number of requests exceeds the limit. Resubmit your request later.
 //
 //   * ErrCodeInvalidFilterException "InvalidFilterException"
-//   The filter specified for the ListDocumentClassificationJobs operation is
-//   invalid. Specify a different filter.
+//   The filter specified for the operation is invalid. Specify a different filter.
 //
 //   * ErrCodeInternalServerException "InternalServerException"
 //   An internal server error occurred. Retry your request.
@@ -2650,6 +2773,56 @@ func (c *Comprehend) ListEntityRecognizersWithContext(ctx aws.Context, input *Li
 	req.SetContext(ctx)
 	req.ApplyOptions(opts...)
 	return out, req.Send()
+}
+
+// ListEntityRecognizersPages iterates over the pages of a ListEntityRecognizers operation,
+// calling the "fn" function with the response data for each page. To stop
+// iterating, return false from the fn function.
+//
+// See ListEntityRecognizers method for more information on how to use this operation.
+//
+// Note: This operation can generate multiple requests to a service.
+//
+//    // Example iterating over at most 3 pages of a ListEntityRecognizers operation.
+//    pageNum := 0
+//    err := client.ListEntityRecognizersPages(params,
+//        func(page *comprehend.ListEntityRecognizersOutput, lastPage bool) bool {
+//            pageNum++
+//            fmt.Println(page)
+//            return pageNum <= 3
+//        })
+//
+func (c *Comprehend) ListEntityRecognizersPages(input *ListEntityRecognizersInput, fn func(*ListEntityRecognizersOutput, bool) bool) error {
+	return c.ListEntityRecognizersPagesWithContext(aws.BackgroundContext(), input, fn)
+}
+
+// ListEntityRecognizersPagesWithContext same as ListEntityRecognizersPages except
+// it takes a Context and allows setting request options on the pages.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *Comprehend) ListEntityRecognizersPagesWithContext(ctx aws.Context, input *ListEntityRecognizersInput, fn func(*ListEntityRecognizersOutput, bool) bool, opts ...request.Option) error {
+	p := request.Pagination{
+		NewRequest: func() (*request.Request, error) {
+			var inCpy *ListEntityRecognizersInput
+			if input != nil {
+				tmp := *input
+				inCpy = &tmp
+			}
+			req, _ := c.ListEntityRecognizersRequest(inCpy)
+			req.SetContext(ctx)
+			req.ApplyOptions(opts...)
+			return req, nil
+		},
+	}
+
+	cont := true
+	for p.Next() && cont {
+		cont = fn(p.Page().(*ListEntityRecognizersOutput), !p.HasNextPage())
+	}
+	return p.Err()
 }
 
 const opListKeyPhrasesDetectionJobs = "ListKeyPhrasesDetectionJobs"
@@ -2719,8 +2892,7 @@ func (c *Comprehend) ListKeyPhrasesDetectionJobsRequest(input *ListKeyPhrasesDet
 //   The number of requests exceeds the limit. Resubmit your request later.
 //
 //   * ErrCodeInvalidFilterException "InvalidFilterException"
-//   The filter specified for the ListDocumentClassificationJobs operation is
-//   invalid. Specify a different filter.
+//   The filter specified for the operation is invalid. Specify a different filter.
 //
 //   * ErrCodeInternalServerException "InternalServerException"
 //   An internal server error occurred. Retry your request.
@@ -2758,7 +2930,7 @@ func (c *Comprehend) ListKeyPhrasesDetectionJobsWithContext(ctx aws.Context, inp
 //    // Example iterating over at most 3 pages of a ListKeyPhrasesDetectionJobs operation.
 //    pageNum := 0
 //    err := client.ListKeyPhrasesDetectionJobsPages(params,
-//        func(page *ListKeyPhrasesDetectionJobsOutput, lastPage bool) bool {
+//        func(page *comprehend.ListKeyPhrasesDetectionJobsOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -2864,8 +3036,7 @@ func (c *Comprehend) ListSentimentDetectionJobsRequest(input *ListSentimentDetec
 //   The number of requests exceeds the limit. Resubmit your request later.
 //
 //   * ErrCodeInvalidFilterException "InvalidFilterException"
-//   The filter specified for the ListDocumentClassificationJobs operation is
-//   invalid. Specify a different filter.
+//   The filter specified for the operation is invalid. Specify a different filter.
 //
 //   * ErrCodeInternalServerException "InternalServerException"
 //   An internal server error occurred. Retry your request.
@@ -2903,7 +3074,7 @@ func (c *Comprehend) ListSentimentDetectionJobsWithContext(ctx aws.Context, inpu
 //    // Example iterating over at most 3 pages of a ListSentimentDetectionJobs operation.
 //    pageNum := 0
 //    err := client.ListSentimentDetectionJobsPages(params,
-//        func(page *ListSentimentDetectionJobsOutput, lastPage bool) bool {
+//        func(page *comprehend.ListSentimentDetectionJobsOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -3095,8 +3266,7 @@ func (c *Comprehend) ListTopicsDetectionJobsRequest(input *ListTopicsDetectionJo
 //   The number of requests exceeds the limit. Resubmit your request later.
 //
 //   * ErrCodeInvalidFilterException "InvalidFilterException"
-//   The filter specified for the ListDocumentClassificationJobs operation is
-//   invalid. Specify a different filter.
+//   The filter specified for the operation is invalid. Specify a different filter.
 //
 //   * ErrCodeInternalServerException "InternalServerException"
 //   An internal server error occurred. Retry your request.
@@ -3134,7 +3304,7 @@ func (c *Comprehend) ListTopicsDetectionJobsWithContext(ctx aws.Context, input *
 //    // Example iterating over at most 3 pages of a ListTopicsDetectionJobs operation.
 //    pageNum := 0
 //    err := client.ListTopicsDetectionJobsPages(params,
-//        func(page *ListTopicsDetectionJobsOutput, lastPage bool) bool {
+//        func(page *comprehend.ListTopicsDetectionJobsOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -4624,8 +4794,10 @@ func (s *BatchDetectDominantLanguageOutput) SetResultList(v []*BatchDetectDomina
 type BatchDetectEntitiesInput struct {
 	_ struct{} `type:"structure"`
 
-	// The language of the input documents. You can specify English ("en") or Spanish
-	// ("es"). All documents must be in the same language.
+	// The language of the input documents. You can specify any of the primary languages
+	// supported by Amazon Comprehend: German ("de"), English ("en"), Spanish ("es"),
+	// French ("fr"), Italian ("it"), or Portuguese ("pt"). All documents must be
+	// in the same language.
 	//
 	// LanguageCode is a required field
 	LanguageCode *string `type:"string" required:"true" enum:"LanguageCode"`
@@ -4755,8 +4927,10 @@ func (s *BatchDetectEntitiesOutput) SetResultList(v []*BatchDetectEntitiesItemRe
 type BatchDetectKeyPhrasesInput struct {
 	_ struct{} `type:"structure"`
 
-	// The language of the input documents. You can specify English ("en") or Spanish
-	// ("es"). All documents must be in the same language.
+	// The language of the input documents. You can specify any of the primary languages
+	// supported by Amazon Comprehend: German ("de"), English ("en"), Spanish ("es"),
+	// French ("fr"), Italian ("it"), or Portuguese ("pt"). All documents must be
+	// in the same language.
 	//
 	// LanguageCode is a required field
 	LanguageCode *string `type:"string" required:"true" enum:"LanguageCode"`
@@ -4886,8 +5060,10 @@ func (s *BatchDetectKeyPhrasesOutput) SetResultList(v []*BatchDetectKeyPhrasesIt
 type BatchDetectSentimentInput struct {
 	_ struct{} `type:"structure"`
 
-	// The language of the input documents. You can specify English ("en") or Spanish
-	// ("es"). All documents must be in the same language.
+	// The language of the input documents. You can specify any of the primary languages
+	// supported by Amazon Comprehend: German ("de"), English ("en"), Spanish ("es"),
+	// French ("fr"), Italian ("it"), or Portuguese ("pt"). All documents must be
+	// in the same language.
 	//
 	// LanguageCode is a required field
 	LanguageCode *string `type:"string" required:"true" enum:"LanguageCode"`
@@ -5027,8 +5203,10 @@ func (s *BatchDetectSentimentOutput) SetResultList(v []*BatchDetectSentimentItem
 type BatchDetectSyntaxInput struct {
 	_ struct{} `type:"structure"`
 
-	// The language of the input documents. You can specify English ("en") or Spanish
-	// ("es"). All documents must be in the same language.
+	// The language of the input documents. You can specify any of the primary languages
+	// supported by Amazon Comprehend: German ("de"), English ("en"), Spanish ("es"),
+	// French ("fr"), Italian ("it"), or Portuguese ("pt"). All documents must be
+	// in the same language.
 	//
 	// LanguageCode is a required field
 	LanguageCode *string `type:"string" required:"true" enum:"SyntaxLanguageCode"`
@@ -5336,8 +5514,10 @@ type CreateDocumentClassifierInput struct {
 	// InputDataConfig is a required field
 	InputDataConfig *DocumentClassifierInputDataConfig `type:"structure" required:"true"`
 
-	// The language of the input documents. You can specify English ("en") or Spanish
-	// ("es"). All documents must be in the same language.
+	// The language of the input documents. You can specify any of the primary languages
+	// supported by Amazon Comprehend: German ("de"), English ("en"), Spanish ("es"),
+	// French ("fr"), Italian ("it"), or Portuguese ("pt"). All documents must be
+	// in the same language.
 	//
 	// LanguageCode is a required field
 	LanguageCode *string `type:"string" required:"true" enum:"LanguageCode"`
@@ -5361,6 +5541,11 @@ type CreateDocumentClassifierInput struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for an optional private Virtual Private Cloud (VPC)
+	// containing the resources you are using for your custom classifier. For more
+	// information, see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -5407,6 +5592,11 @@ func (s *CreateDocumentClassifierInput) Validate() error {
 			if err := v.Validate(); err != nil {
 				invalidParams.AddNested(fmt.Sprintf("%s[%v]", "Tags", i), err.(request.ErrInvalidParams))
 			}
+		}
+	}
+	if s.VpcConfig != nil {
+		if err := s.VpcConfig.Validate(); err != nil {
+			invalidParams.AddNested("VpcConfig", err.(request.ErrInvalidParams))
 		}
 	}
 
@@ -5461,6 +5651,12 @@ func (s *CreateDocumentClassifierInput) SetTags(v []*Tag) *CreateDocumentClassif
 // SetVolumeKmsKeyId sets the VolumeKmsKeyId field's value.
 func (s *CreateDocumentClassifierInput) SetVolumeKmsKeyId(v string) *CreateDocumentClassifierInput {
 	s.VolumeKmsKeyId = &v
+	return s
+}
+
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *CreateDocumentClassifierInput) SetVpcConfig(v *VpcConfig) *CreateDocumentClassifierInput {
+	s.VpcConfig = v
 	return s
 }
 
@@ -5535,6 +5731,11 @@ type CreateEntityRecognizerInput struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for an optional private Virtual Private Cloud (VPC)
+	// containing the resources you are using for your custom entity recognizer.
+	// For more information, see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -5583,6 +5784,11 @@ func (s *CreateEntityRecognizerInput) Validate() error {
 			}
 		}
 	}
+	if s.VpcConfig != nil {
+		if err := s.VpcConfig.Validate(); err != nil {
+			invalidParams.AddNested("VpcConfig", err.(request.ErrInvalidParams))
+		}
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -5629,6 +5835,12 @@ func (s *CreateEntityRecognizerInput) SetTags(v []*Tag) *CreateEntityRecognizerI
 // SetVolumeKmsKeyId sets the VolumeKmsKeyId field's value.
 func (s *CreateEntityRecognizerInput) SetVolumeKmsKeyId(v string) *CreateEntityRecognizerInput {
 	s.VolumeKmsKeyId = &v
+	return s
+}
+
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *CreateEntityRecognizerInput) SetVpcConfig(v *VpcConfig) *CreateEntityRecognizerInput {
+	s.VpcConfig = v
 	return s
 }
 
@@ -6348,8 +6560,10 @@ func (s *DetectDominantLanguageOutput) SetLanguages(v []*DominantLanguage) *Dete
 type DetectEntitiesInput struct {
 	_ struct{} `type:"structure"`
 
-	// The language of the input documents. You can specify English ("en") or Spanish
-	// ("es"). All documents must be in the same language.
+	// The language of the input documents. You can specify any of the primary languages
+	// supported by Amazon Comprehend: German ("de"), English ("en"), Spanish ("es"),
+	// French ("fr"), Italian ("it"), or Portuguese ("pt"). All documents must be
+	// in the same language.
 	//
 	// LanguageCode is a required field
 	LanguageCode *string `type:"string" required:"true" enum:"LanguageCode"`
@@ -6431,8 +6645,10 @@ func (s *DetectEntitiesOutput) SetEntities(v []*Entity) *DetectEntitiesOutput {
 type DetectKeyPhrasesInput struct {
 	_ struct{} `type:"structure"`
 
-	// The language of the input documents. You can specify English ("en") or Spanish
-	// ("es"). All documents must be in the same language.
+	// The language of the input documents. You can specify any of the primary languages
+	// supported by Amazon Comprehend: German ("de"), English ("en"), Spanish ("es"),
+	// French ("fr"), Italian ("it"), or Portuguese ("pt"). All documents must be
+	// in the same language.
 	//
 	// LanguageCode is a required field
 	LanguageCode *string `type:"string" required:"true" enum:"LanguageCode"`
@@ -6514,8 +6730,10 @@ func (s *DetectKeyPhrasesOutput) SetKeyPhrases(v []*KeyPhrase) *DetectKeyPhrases
 type DetectSentimentInput struct {
 	_ struct{} `type:"structure"`
 
-	// The language of the input documents. You can specify English ("en") or Spanish
-	// ("es"). All documents must be in the same language.
+	// The language of the input documents. You can specify any of the primary languages
+	// supported by Amazon Comprehend: German ("de"), English ("en"), Spanish ("es"),
+	// French ("fr"), Italian ("it"), or Portuguese ("pt"). All documents must be
+	// in the same language.
 	//
 	// LanguageCode is a required field
 	LanguageCode *string `type:"string" required:"true" enum:"LanguageCode"`
@@ -6604,8 +6822,9 @@ func (s *DetectSentimentOutput) SetSentimentScore(v *SentimentScore) *DetectSent
 type DetectSyntaxInput struct {
 	_ struct{} `type:"structure"`
 
-	// The language code of the input documents. You can specify English ("en")
-	// or Spanish ("es").
+	// The language code of the input documents. You can specify any of the primary
+	// languages supported by Amazon Comprehend: German ("de"), English ("en"),
+	// Spanish ("es"), French ("fr"), Italian ("it"), or Portuguese ("pt").
 	//
 	// LanguageCode is a required field
 	LanguageCode *string `type:"string" required:"true" enum:"SyntaxLanguageCode"`
@@ -6802,6 +7021,11 @@ type DocumentClassificationJobProperties struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for a private Virtual Private Cloud (VPC) containing
+	// the resources you are using for your document classification job. For more
+	// information, see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -6877,6 +7101,12 @@ func (s *DocumentClassificationJobProperties) SetSubmitTime(v time.Time) *Docume
 // SetVolumeKmsKeyId sets the VolumeKmsKeyId field's value.
 func (s *DocumentClassificationJobProperties) SetVolumeKmsKeyId(v string) *DocumentClassificationJobProperties {
 	s.VolumeKmsKeyId = &v
+	return s
+}
+
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *DocumentClassificationJobProperties) SetVpcConfig(v *VpcConfig) *DocumentClassificationJobProperties {
+	s.VpcConfig = v
 	return s
 }
 
@@ -7086,6 +7316,11 @@ type DocumentClassifierProperties struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for a private Virtual Private Cloud (VPC) containing
+	// the resources you are using for your custom classifier. For more information,
+	// see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -7173,6 +7408,12 @@ func (s *DocumentClassifierProperties) SetTrainingStartTime(v time.Time) *Docume
 // SetVolumeKmsKeyId sets the VolumeKmsKeyId field's value.
 func (s *DocumentClassifierProperties) SetVolumeKmsKeyId(v string) *DocumentClassifierProperties {
 	s.VolumeKmsKeyId = &v
+	return s
+}
+
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *DocumentClassifierProperties) SetVpcConfig(v *VpcConfig) *DocumentClassifierProperties {
+	s.VpcConfig = v
 	return s
 }
 
@@ -7327,6 +7568,11 @@ type DominantLanguageDetectionJobProperties struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for a private Virtual Private Cloud (VPC) containing
+	// the resources you are using for your dominant language detection job. For
+	// more information, see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -7396,6 +7642,12 @@ func (s *DominantLanguageDetectionJobProperties) SetSubmitTime(v time.Time) *Dom
 // SetVolumeKmsKeyId sets the VolumeKmsKeyId field's value.
 func (s *DominantLanguageDetectionJobProperties) SetVolumeKmsKeyId(v string) *DominantLanguageDetectionJobProperties {
 	s.VolumeKmsKeyId = &v
+	return s
+}
+
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *DominantLanguageDetectionJobProperties) SetVpcConfig(v *VpcConfig) *DominantLanguageDetectionJobProperties {
+	s.VpcConfig = v
 	return s
 }
 
@@ -7519,6 +7771,11 @@ type EntitiesDetectionJobProperties struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for a private Virtual Private Cloud (VPC) containing
+	// the resources you are using for your entity detection job. For more information,
+	// see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -7600,6 +7857,12 @@ func (s *EntitiesDetectionJobProperties) SetSubmitTime(v time.Time) *EntitiesDet
 // SetVolumeKmsKeyId sets the VolumeKmsKeyId field's value.
 func (s *EntitiesDetectionJobProperties) SetVolumeKmsKeyId(v string) *EntitiesDetectionJobProperties {
 	s.VolumeKmsKeyId = &v
+	return s
+}
+
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *EntitiesDetectionJobProperties) SetVpcConfig(v *VpcConfig) *EntitiesDetectionJobProperties {
+	s.VpcConfig = v
 	return s
 }
 
@@ -7904,7 +8167,8 @@ type EntityRecognizerInputDataConfig struct {
 	// S3 location of the entity list for an entity recognizer.
 	EntityList *EntityRecognizerEntityList `type:"structure"`
 
-	// The entity types in the input data for an entity recognizer.
+	// The entity types in the input data for an entity recognizer. A maximum of
+	// 12 entity types can be used at one time to train an entity recognizer.
 	//
 	// EntityTypes is a required field
 	EntityTypes []*EntityTypesListItem `type:"list" required:"true"`
@@ -8043,6 +8307,14 @@ func (s *EntityRecognizerMetadata) SetNumberOfTrainedDocuments(v int64) *EntityR
 type EntityRecognizerMetadataEntityTypesListItem struct {
 	_ struct{} `type:"structure"`
 
+	// Detailed information about the accuracy of the entity recognizer for a specific
+	// item on the list of entity types.
+	EvaluationMetrics *EntityTypesEvaluationMetrics `type:"structure"`
+
+	// indicates the number of times the given entity name was seen in the training
+	// data.
+	NumberOfTrainMentions *int64 `type:"integer"`
+
 	// Type of entity from the list of entity types in the metadata of an entity
 	// recognizer.
 	Type *string `type:"string"`
@@ -8056,6 +8328,18 @@ func (s EntityRecognizerMetadataEntityTypesListItem) String() string {
 // GoString returns the string representation
 func (s EntityRecognizerMetadataEntityTypesListItem) GoString() string {
 	return s.String()
+}
+
+// SetEvaluationMetrics sets the EvaluationMetrics field's value.
+func (s *EntityRecognizerMetadataEntityTypesListItem) SetEvaluationMetrics(v *EntityTypesEvaluationMetrics) *EntityRecognizerMetadataEntityTypesListItem {
+	s.EvaluationMetrics = v
+	return s
+}
+
+// SetNumberOfTrainMentions sets the NumberOfTrainMentions field's value.
+func (s *EntityRecognizerMetadataEntityTypesListItem) SetNumberOfTrainMentions(v int64) *EntityRecognizerMetadataEntityTypesListItem {
+	s.NumberOfTrainMentions = &v
+	return s
 }
 
 // SetType sets the Type field's value.
@@ -8112,6 +8396,11 @@ type EntityRecognizerProperties struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for a private Virtual Private Cloud (VPC) containing
+	// the resources you are using for your custom entity recognizer. For more information,
+	// see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -8193,6 +8482,62 @@ func (s *EntityRecognizerProperties) SetTrainingStartTime(v time.Time) *EntityRe
 // SetVolumeKmsKeyId sets the VolumeKmsKeyId field's value.
 func (s *EntityRecognizerProperties) SetVolumeKmsKeyId(v string) *EntityRecognizerProperties {
 	s.VolumeKmsKeyId = &v
+	return s
+}
+
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *EntityRecognizerProperties) SetVpcConfig(v *VpcConfig) *EntityRecognizerProperties {
+	s.VpcConfig = v
+	return s
+}
+
+// Detailed information about the accuracy of an entity recognizer for a specific
+// entity type.
+type EntityTypesEvaluationMetrics struct {
+	_ struct{} `type:"structure"`
+
+	// A measure of how accurate the recognizer results are for for a specific entity
+	// type in the test data. It is derived from the Precision and Recall values.
+	// The F1Score is the harmonic average of the two scores. The highest score
+	// is 1, and the worst score is 0.
+	F1Score *float64 `type:"double"`
+
+	// A measure of the usefulness of the recognizer results for a specific entity
+	// type in the test data. High precision means that the recognizer returned
+	// substantially more relevant results than irrelevant ones.
+	Precision *float64 `type:"double"`
+
+	// A measure of how complete the recognizer results are for a specific entity
+	// type in the test data. High recall means that the recognizer returned most
+	// of the relevant results.
+	Recall *float64 `type:"double"`
+}
+
+// String returns the string representation
+func (s EntityTypesEvaluationMetrics) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s EntityTypesEvaluationMetrics) GoString() string {
+	return s.String()
+}
+
+// SetF1Score sets the F1Score field's value.
+func (s *EntityTypesEvaluationMetrics) SetF1Score(v float64) *EntityTypesEvaluationMetrics {
+	s.F1Score = &v
+	return s
+}
+
+// SetPrecision sets the Precision field's value.
+func (s *EntityTypesEvaluationMetrics) SetPrecision(v float64) *EntityTypesEvaluationMetrics {
+	s.Precision = &v
+	return s
+}
+
+// SetRecall sets the Recall field's value.
+func (s *EntityTypesEvaluationMetrics) SetRecall(v float64) *EntityTypesEvaluationMetrics {
+	s.Recall = &v
 	return s
 }
 
@@ -8473,6 +8818,11 @@ type KeyPhrasesDetectionJobProperties struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for a private Virtual Private Cloud (VPC) containing
+	// the resources you are using for your key phrases detection job. For more
+	// information, see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -8548,6 +8898,12 @@ func (s *KeyPhrasesDetectionJobProperties) SetSubmitTime(v time.Time) *KeyPhrase
 // SetVolumeKmsKeyId sets the VolumeKmsKeyId field's value.
 func (s *KeyPhrasesDetectionJobProperties) SetVolumeKmsKeyId(v string) *KeyPhrasesDetectionJobProperties {
 	s.VolumeKmsKeyId = &v
+	return s
+}
+
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *KeyPhrasesDetectionJobProperties) SetVpcConfig(v *VpcConfig) *KeyPhrasesDetectionJobProperties {
+	s.VpcConfig = v
 	return s
 }
 
@@ -9604,6 +9960,11 @@ type SentimentDetectionJobProperties struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for a private Virtual Private Cloud (VPC) containing
+	// the resources you are using for your sentiment detection job. For more information,
+	// see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -9679,6 +10040,12 @@ func (s *SentimentDetectionJobProperties) SetSubmitTime(v time.Time) *SentimentD
 // SetVolumeKmsKeyId sets the VolumeKmsKeyId field's value.
 func (s *SentimentDetectionJobProperties) SetVolumeKmsKeyId(v string) *SentimentDetectionJobProperties {
 	s.VolumeKmsKeyId = &v
+	return s
+}
+
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *SentimentDetectionJobProperties) SetVpcConfig(v *VpcConfig) *SentimentDetectionJobProperties {
+	s.VpcConfig = v
 	return s
 }
 
@@ -9779,6 +10146,11 @@ type StartDocumentClassificationJobInput struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for an optional private Virtual Private Cloud (VPC)
+	// containing the resources you are using for your document classification job.
+	// For more information, see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -9823,6 +10195,11 @@ func (s *StartDocumentClassificationJobInput) Validate() error {
 	if s.OutputDataConfig != nil {
 		if err := s.OutputDataConfig.Validate(); err != nil {
 			invalidParams.AddNested("OutputDataConfig", err.(request.ErrInvalidParams))
+		}
+	}
+	if s.VpcConfig != nil {
+		if err := s.VpcConfig.Validate(); err != nil {
+			invalidParams.AddNested("VpcConfig", err.(request.ErrInvalidParams))
 		}
 	}
 
@@ -9871,6 +10248,12 @@ func (s *StartDocumentClassificationJobInput) SetOutputDataConfig(v *OutputDataC
 // SetVolumeKmsKeyId sets the VolumeKmsKeyId field's value.
 func (s *StartDocumentClassificationJobInput) SetVolumeKmsKeyId(v string) *StartDocumentClassificationJobInput {
 	s.VolumeKmsKeyId = &v
+	return s
+}
+
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *StartDocumentClassificationJobInput) SetVpcConfig(v *VpcConfig) *StartDocumentClassificationJobInput {
+	s.VpcConfig = v
 	return s
 }
 
@@ -9957,6 +10340,11 @@ type StartDominantLanguageDetectionJobInput struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for an optional private Virtual Private Cloud (VPC)
+	// containing the resources you are using for your dominant language detection
+	// job. For more information, see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -10000,6 +10388,11 @@ func (s *StartDominantLanguageDetectionJobInput) Validate() error {
 			invalidParams.AddNested("OutputDataConfig", err.(request.ErrInvalidParams))
 		}
 	}
+	if s.VpcConfig != nil {
+		if err := s.VpcConfig.Validate(); err != nil {
+			invalidParams.AddNested("VpcConfig", err.(request.ErrInvalidParams))
+		}
+	}
 
 	if invalidParams.Len() > 0 {
 		return invalidParams
@@ -10040,6 +10433,12 @@ func (s *StartDominantLanguageDetectionJobInput) SetOutputDataConfig(v *OutputDa
 // SetVolumeKmsKeyId sets the VolumeKmsKeyId field's value.
 func (s *StartDominantLanguageDetectionJobInput) SetVolumeKmsKeyId(v string) *StartDominantLanguageDetectionJobInput {
 	s.VolumeKmsKeyId = &v
+	return s
+}
+
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *StartDominantLanguageDetectionJobInput) SetVpcConfig(v *VpcConfig) *StartDominantLanguageDetectionJobInput {
+	s.VpcConfig = v
 	return s
 }
 
@@ -10135,6 +10534,11 @@ type StartEntitiesDetectionJobInput struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for an optional private Virtual Private Cloud (VPC)
+	// containing the resources you are using for your entity detection job. For
+	// more information, see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -10179,6 +10583,11 @@ func (s *StartEntitiesDetectionJobInput) Validate() error {
 	if s.OutputDataConfig != nil {
 		if err := s.OutputDataConfig.Validate(); err != nil {
 			invalidParams.AddNested("OutputDataConfig", err.(request.ErrInvalidParams))
+		}
+	}
+	if s.VpcConfig != nil {
+		if err := s.VpcConfig.Validate(); err != nil {
+			invalidParams.AddNested("VpcConfig", err.(request.ErrInvalidParams))
 		}
 	}
 
@@ -10233,6 +10642,12 @@ func (s *StartEntitiesDetectionJobInput) SetOutputDataConfig(v *OutputDataConfig
 // SetVolumeKmsKeyId sets the VolumeKmsKeyId field's value.
 func (s *StartEntitiesDetectionJobInput) SetVolumeKmsKeyId(v string) *StartEntitiesDetectionJobInput {
 	s.VolumeKmsKeyId = &v
+	return s
+}
+
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *StartEntitiesDetectionJobInput) SetVpcConfig(v *VpcConfig) *StartEntitiesDetectionJobInput {
+	s.VpcConfig = v
 	return s
 }
 
@@ -10305,8 +10720,10 @@ type StartKeyPhrasesDetectionJobInput struct {
 	// The identifier of the job.
 	JobName *string `min:"1" type:"string"`
 
-	// The language of the input documents. You can specify English ("en") or Spanish
-	// ("es"). All documents must be in the same language.
+	// The language of the input documents. You can specify any of the primary languages
+	// supported by Amazon Comprehend: German ("de"), English ("en"), Spanish ("es"),
+	// French ("fr"), Italian ("it"), or Portuguese ("pt"). All documents must be
+	// in the same language.
 	//
 	// LanguageCode is a required field
 	LanguageCode *string `type:"string" required:"true" enum:"LanguageCode"`
@@ -10325,6 +10742,11 @@ type StartKeyPhrasesDetectionJobInput struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for an optional private Virtual Private Cloud (VPC)
+	// containing the resources you are using for your key phrases detection job.
+	// For more information, see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -10369,6 +10791,11 @@ func (s *StartKeyPhrasesDetectionJobInput) Validate() error {
 	if s.OutputDataConfig != nil {
 		if err := s.OutputDataConfig.Validate(); err != nil {
 			invalidParams.AddNested("OutputDataConfig", err.(request.ErrInvalidParams))
+		}
+	}
+	if s.VpcConfig != nil {
+		if err := s.VpcConfig.Validate(); err != nil {
+			invalidParams.AddNested("VpcConfig", err.(request.ErrInvalidParams))
 		}
 	}
 
@@ -10417,6 +10844,12 @@ func (s *StartKeyPhrasesDetectionJobInput) SetOutputDataConfig(v *OutputDataConf
 // SetVolumeKmsKeyId sets the VolumeKmsKeyId field's value.
 func (s *StartKeyPhrasesDetectionJobInput) SetVolumeKmsKeyId(v string) *StartKeyPhrasesDetectionJobInput {
 	s.VolumeKmsKeyId = &v
+	return s
+}
+
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *StartKeyPhrasesDetectionJobInput) SetVpcConfig(v *VpcConfig) *StartKeyPhrasesDetectionJobInput {
+	s.VpcConfig = v
 	return s
 }
 
@@ -10484,8 +10917,10 @@ type StartSentimentDetectionJobInput struct {
 	// The identifier of the job.
 	JobName *string `min:"1" type:"string"`
 
-	// The language of the input documents. You can specify English ("en") or Spanish
-	// ("es"). All documents must be in the same language.
+	// The language of the input documents. You can specify any of the primary languages
+	// supported by Amazon Comprehend: German ("de"), English ("en"), Spanish ("es"),
+	// French ("fr"), Italian ("it"), or Portuguese ("pt"). All documents must be
+	// in the same language.
 	//
 	// LanguageCode is a required field
 	LanguageCode *string `type:"string" required:"true" enum:"LanguageCode"`
@@ -10504,6 +10939,11 @@ type StartSentimentDetectionJobInput struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for an optional private Virtual Private Cloud (VPC)
+	// containing the resources you are using for your sentiment detection job.
+	// For more information, see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -10548,6 +10988,11 @@ func (s *StartSentimentDetectionJobInput) Validate() error {
 	if s.OutputDataConfig != nil {
 		if err := s.OutputDataConfig.Validate(); err != nil {
 			invalidParams.AddNested("OutputDataConfig", err.(request.ErrInvalidParams))
+		}
+	}
+	if s.VpcConfig != nil {
+		if err := s.VpcConfig.Validate(); err != nil {
+			invalidParams.AddNested("VpcConfig", err.(request.ErrInvalidParams))
 		}
 	}
 
@@ -10596,6 +11041,12 @@ func (s *StartSentimentDetectionJobInput) SetOutputDataConfig(v *OutputDataConfi
 // SetVolumeKmsKeyId sets the VolumeKmsKeyId field's value.
 func (s *StartSentimentDetectionJobInput) SetVolumeKmsKeyId(v string) *StartSentimentDetectionJobInput {
 	s.VolumeKmsKeyId = &v
+	return s
+}
+
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *StartSentimentDetectionJobInput) SetVpcConfig(v *VpcConfig) *StartSentimentDetectionJobInput {
+	s.VpcConfig = v
 	return s
 }
 
@@ -10682,6 +11133,11 @@ type StartTopicsDetectionJobInput struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for an optional private Virtual Private Cloud (VPC)
+	// containing the resources you are using for your topic detection job. For
+	// more information, see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -10726,6 +11182,11 @@ func (s *StartTopicsDetectionJobInput) Validate() error {
 	if s.OutputDataConfig != nil {
 		if err := s.OutputDataConfig.Validate(); err != nil {
 			invalidParams.AddNested("OutputDataConfig", err.(request.ErrInvalidParams))
+		}
+	}
+	if s.VpcConfig != nil {
+		if err := s.VpcConfig.Validate(); err != nil {
+			invalidParams.AddNested("VpcConfig", err.(request.ErrInvalidParams))
 		}
 	}
 
@@ -10774,6 +11235,12 @@ func (s *StartTopicsDetectionJobInput) SetOutputDataConfig(v *OutputDataConfig) 
 // SetVolumeKmsKeyId sets the VolumeKmsKeyId field's value.
 func (s *StartTopicsDetectionJobInput) SetVolumeKmsKeyId(v string) *StartTopicsDetectionJobInput {
 	s.VolumeKmsKeyId = &v
+	return s
+}
+
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *StartTopicsDetectionJobInput) SetVpcConfig(v *VpcConfig) *StartTopicsDetectionJobInput {
+	s.VpcConfig = v
 	return s
 }
 
@@ -11287,23 +11754,23 @@ func (s *SyntaxToken) SetTokenId(v int64) *SyntaxToken {
 }
 
 // A key-value pair that adds as a metadata to a resource used by Amazon Comprehend.
-// For example, a tag with the key-value pair ‘Department’:’Sales’ might be
-// added to a resource to indicate its use by a particular department.
+// For example, a tag with the key-value pair ‘Department’:’Sales’ might
+// be added to a resource to indicate its use by a particular department.
 type Tag struct {
 	_ struct{} `type:"structure"`
 
 	// The initial part of a key-value pair that forms a tag associated with a given
 	// resource. For instance, if you want to show which resources are used by which
-	// departments, you might use “Department” as the key portion of the pair, with
-	// multiple possible values such as “sales,” “legal,” and “administration.”
+	// departments, you might use “Department” as the key portion of the pair,
+	// with multiple possible values such as “sales,” “legal,” and “administration.”
 	//
 	// Key is a required field
 	Key *string `min:"1" type:"string" required:"true"`
 
 	// The second part of a key-value pair that forms a tag associated with a given
 	// resource. For instance, if you want to show which resources are used by which
-	// departments, you might use “Department” as the initial (key) portion of the
-	// pair, with a value of “sales” to indicate the sales department.
+	// departments, you might use “Department” as the initial (key) portion
+	// of the pair, with a value of “sales” to indicate the sales department.
 	Value *string `type:"string"`
 }
 
@@ -11541,6 +12008,11 @@ type TopicsDetectionJobProperties struct {
 	//
 	//    * Amazon Resource Name (ARN) of a KMS Key: "arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
 	VolumeKmsKeyId *string `type:"string"`
+
+	// Configuration parameters for a private Virtual Private Cloud (VPC) containing
+	// the resources you are using for your topic detection job. For more information,
+	// see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+	VpcConfig *VpcConfig `type:"structure"`
 }
 
 // String returns the string representation
@@ -11619,6 +12091,12 @@ func (s *TopicsDetectionJobProperties) SetVolumeKmsKeyId(v string) *TopicsDetect
 	return s
 }
 
+// SetVpcConfig sets the VpcConfig field's value.
+func (s *TopicsDetectionJobProperties) SetVpcConfig(v *VpcConfig) *TopicsDetectionJobProperties {
+	s.VpcConfig = v
+	return s
+}
+
 type UntagResourceInput struct {
 	_ struct{} `type:"structure"`
 
@@ -11687,6 +12165,76 @@ func (s UntagResourceOutput) String() string {
 // GoString returns the string representation
 func (s UntagResourceOutput) GoString() string {
 	return s.String()
+}
+
+// Configuration parameters for an optional private Virtual Private Cloud (VPC)
+// containing the resources you are using for the job. For For more information,
+// see Amazon VPC (https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html).
+type VpcConfig struct {
+	_ struct{} `type:"structure"`
+
+	// The ID number for a security group on an instance of your private VPC. Security
+	// groups on your VPC function serve as a virtual firewall to control inbound
+	// and outbound traffic and provides security for the resources that you’ll
+	// be accessing on the VPC. This ID number is preceded by "sg-", for instance:
+	// "sg-03b388029b0a285ea". For more information, see Security Groups for your
+	// VPC (https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html).
+	//
+	// SecurityGroupIds is a required field
+	SecurityGroupIds []*string `min:"1" type:"list" required:"true"`
+
+	// The ID for each subnet being used in your private VPC. This subnet is a subset
+	// of the a range of IPv4 addresses used by the VPC and is specific to a given
+	// availability zone in the VPC’s region. This ID number is preceded by "subnet-",
+	// for instance: "subnet-04ccf456919e69055". For more information, see VPCs
+	// and Subnets (https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html).
+	//
+	// Subnets is a required field
+	Subnets []*string `min:"1" type:"list" required:"true"`
+}
+
+// String returns the string representation
+func (s VpcConfig) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s VpcConfig) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *VpcConfig) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "VpcConfig"}
+	if s.SecurityGroupIds == nil {
+		invalidParams.Add(request.NewErrParamRequired("SecurityGroupIds"))
+	}
+	if s.SecurityGroupIds != nil && len(s.SecurityGroupIds) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("SecurityGroupIds", 1))
+	}
+	if s.Subnets == nil {
+		invalidParams.Add(request.NewErrParamRequired("Subnets"))
+	}
+	if s.Subnets != nil && len(s.Subnets) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("Subnets", 1))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetSecurityGroupIds sets the SecurityGroupIds field's value.
+func (s *VpcConfig) SetSecurityGroupIds(v []*string) *VpcConfig {
+	s.SecurityGroupIds = v
+	return s
+}
+
+// SetSubnets sets the Subnets field's value.
+func (s *VpcConfig) SetSubnets(v []*string) *VpcConfig {
+	s.Subnets = v
+	return s
 }
 
 const (

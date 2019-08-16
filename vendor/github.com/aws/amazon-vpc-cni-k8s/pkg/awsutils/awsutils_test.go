@@ -550,37 +550,6 @@ func TestAllocIPAddressOnErr(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestAllocAllIPAddress(t *testing.T) {
-	ctrl, _, mockEC2 := setup(t)
-	defer ctrl.Finish()
-
-	// the expected addresses for t2.nano
-	input := &ec2.AssignPrivateIpAddressesInput{
-		NetworkInterfaceId:             aws.String("eni-id"),
-		SecondaryPrivateIpAddressCount: aws.Int64(1),
-	}
-	mockEC2.EXPECT().AssignPrivateIpAddresses(input).Return(nil, nil)
-
-	ins := &EC2InstanceMetadataCache{ec2SVC: mockEC2, instanceType: "t2.nano"}
-
-	err := ins.AllocAllIPAddress("eni-id")
-
-	assert.NoError(t, err)
-
-	// the expected addresses for c5n.18xlarge
-	input = &ec2.AssignPrivateIpAddressesInput{
-		NetworkInterfaceId:             aws.String("eni-id"),
-		SecondaryPrivateIpAddressCount: aws.Int64(30),
-	}
-	mockEC2.EXPECT().AssignPrivateIpAddresses(input).Return(nil, nil)
-
-	ins = &EC2InstanceMetadataCache{ec2SVC: mockEC2, instanceType: "c5n.18xlarge"}
-
-	err = ins.AllocAllIPAddress("eni-id")
-
-	assert.NoError(t, err)
-}
-
 func TestAllocIPAddresses(t *testing.T) {
 	ctrl, _, mockEC2 := setup(t)
 	defer ctrl.Finish()
@@ -598,31 +567,21 @@ func TestAllocIPAddresses(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	// when required IP numbers(31) is higher than ENI's limit(30)
+	// when required IP numbers(50) is higher than ENI's limit(49)
 	input = &ec2.AssignPrivateIpAddressesInput{
 		NetworkInterfaceId:             aws.String("eni-id"),
-		SecondaryPrivateIpAddressCount: aws.Int64(30),
+		SecondaryPrivateIpAddressCount: aws.Int64(49),
 	}
 	mockEC2.EXPECT().AssignPrivateIpAddresses(input).Return(nil, nil)
 
 	ins = &EC2InstanceMetadataCache{ec2SVC: mockEC2, instanceType: "c5n.18xlarge"}
 
-	err = ins.AllocIPAddresses("eni-id", 30)
+	err = ins.AllocIPAddresses("eni-id", 50)
 
 	assert.NoError(t, err)
-}
 
-func TestAllocAllIPAddressOnErr(t *testing.T) {
-	ctrl, _, mockEC2 := setup(t)
-	defer ctrl.Finish()
+	// Adding 0 should do nothing
+	err = ins.AllocIPAddresses("eni-id", 0)
 
-	// 2 addresses
-	mockEC2.EXPECT().AssignPrivateIpAddresses(gomock.Any()).Return(nil, nil)
-	mockEC2.EXPECT().AssignPrivateIpAddresses(gomock.Any()).Return(nil, errors.New("Error on AssignPrivateIpAddresses"))
-
-	ins := &EC2InstanceMetadataCache{ec2SVC: mockEC2}
-
-	err := ins.AllocAllIPAddress("eni-id")
-
-	assert.Error(t, err)
+	assert.NoError(t, err)
 }

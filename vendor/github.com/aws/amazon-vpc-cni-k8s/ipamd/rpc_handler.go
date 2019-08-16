@@ -22,6 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
 	log "github.com/cihub/seelog"
@@ -31,11 +32,17 @@ import (
 )
 
 const (
-	port = "127.0.0.1:50051"
+	ipamdgRPCaddress = "127.0.0.1:50051"
 )
 
+// server controls RPC service responses.
 type server struct {
 	ipamContext *IPAMContext
+}
+
+// Check is for health checking.
+func (s *server) Check(ctx context.Context, req *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
+	return &healthpb.HealthCheckResponse{Status: healthpb.HealthCheckResponse_SERVING}, nil
 }
 
 // AddNetwork processes CNI add network request and return an IP address for container
@@ -73,14 +80,14 @@ func (s *server) DelNetwork(ctx context.Context, in *pb.DelNetworkRequest) (*pb.
 		in.IPv4Addr, in.K8S_POD_NAME, in.K8S_POD_NAMESPACE, in.K8S_POD_INFRA_CONTAINER_ID)
 	delIPCnt.With(prometheus.Labels{"reason": in.Reason}).Inc()
 
-	ip, deviceNumber, err := s.ipamContext.dataStore.UnAssignPodIPv4Address(&k8sapi.K8SPodInfo{
+	ip, deviceNumber, err := s.ipamContext.dataStore.UnassignPodIPv4Address(&k8sapi.K8SPodInfo{
 		Name:      in.K8S_POD_NAME,
 		Namespace: in.K8S_POD_NAMESPACE,
 		Container: in.K8S_POD_INFRA_CONTAINER_ID})
 
 	if err != nil && err == datastore.ErrUnknownPod {
 		// If L-IPAMD restarts, the pod's IP address are assigned by only pod's name and namespace due to kubelet's introspection.
-		ip, deviceNumber, err = s.ipamContext.dataStore.UnAssignPodIPv4Address(&k8sapi.K8SPodInfo{
+		ip, deviceNumber, err = s.ipamContext.dataStore.UnassignPodIPv4Address(&k8sapi.K8SPodInfo{
 			Name:      in.K8S_POD_NAME,
 			Namespace: in.K8S_POD_NAMESPACE})
 	}
@@ -91,13 +98,14 @@ func (s *server) DelNetwork(ctx context.Context, in *pb.DelNetworkRequest) (*pb.
 
 // RunRPCHandler handles request from gRPC
 func (c *IPAMContext) RunRPCHandler() error {
-	lis, err := net.Listen("tcp", port)
+	lis, err := net.Listen("tcp", ipamdgRPCaddress)
 	if err != nil {
 		log.Errorf("Failed to listen gRPC port: %v", err)
 		return errors.Wrap(err, "ipamd: failed to listen to gRPC port")
 	}
 	s := grpc.NewServer()
 	pb.RegisterCNIBackendServer(s, &server{ipamContext: c})
+	healthpb.RegisterHealthServer(s, &server{})
 	// Register reflection service on gRPC server.
 	reflection.Register(s)
 	if err := s.Serve(lis); err != nil {

@@ -103,6 +103,97 @@ func (c *RoboMaker) BatchDescribeSimulationJobWithContext(ctx aws.Context, input
 	return out, req.Send()
 }
 
+const opCancelDeploymentJob = "CancelDeploymentJob"
+
+// CancelDeploymentJobRequest generates a "aws/request.Request" representing the
+// client's request for the CancelDeploymentJob operation. The "output" return
+// value will be populated with the request's response once the request completes
+// successfully.
+//
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
+//
+// See CancelDeploymentJob for more information on using the CancelDeploymentJob
+// API call, and error handling.
+//
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
+//
+//    // Example sending a request using the CancelDeploymentJobRequest method.
+//    req, resp := client.CancelDeploymentJobRequest(params)
+//
+//    err := req.Send()
+//    if err == nil { // resp is now filled
+//        fmt.Println(resp)
+//    }
+//
+// See also, https://docs.aws.amazon.com/goto/WebAPI/robomaker-2018-06-29/CancelDeploymentJob
+func (c *RoboMaker) CancelDeploymentJobRequest(input *CancelDeploymentJobInput) (req *request.Request, output *CancelDeploymentJobOutput) {
+	op := &request.Operation{
+		Name:       opCancelDeploymentJob,
+		HTTPMethod: "POST",
+		HTTPPath:   "/cancelDeploymentJob",
+	}
+
+	if input == nil {
+		input = &CancelDeploymentJobInput{}
+	}
+
+	output = &CancelDeploymentJobOutput{}
+	req = c.newRequest(op, input, output)
+	req.Handlers.Unmarshal.Swap(restjson.UnmarshalHandler.Name, protocol.UnmarshalDiscardBodyHandler)
+	return
+}
+
+// CancelDeploymentJob API operation for AWS RoboMaker.
+//
+// Cancels the specified deployment job.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for AWS RoboMaker's
+// API operation CancelDeploymentJob for usage and error information.
+//
+// Returned Error Codes:
+//   * ErrCodeResourceNotFoundException "ResourceNotFoundException"
+//   The specified resource does not exist.
+//
+//   * ErrCodeInvalidParameterException "InvalidParameterException"
+//   A parameter specified in a request is not valid, is unsupported, or cannot
+//   be used. The returned message provides an explanation of the error value.
+//
+//   * ErrCodeInternalServerException "InternalServerException"
+//   AWS RoboMaker experienced a service issue. Try your call again.
+//
+//   * ErrCodeThrottlingException "ThrottlingException"
+//   AWS RoboMaker is temporarily unable to process the request. Try your call
+//   again.
+//
+// See also, https://docs.aws.amazon.com/goto/WebAPI/robomaker-2018-06-29/CancelDeploymentJob
+func (c *RoboMaker) CancelDeploymentJob(input *CancelDeploymentJobInput) (*CancelDeploymentJobOutput, error) {
+	req, out := c.CancelDeploymentJobRequest(input)
+	return out, req.Send()
+}
+
+// CancelDeploymentJobWithContext is the same as CancelDeploymentJob with the addition of
+// the ability to pass a context and additional request options.
+//
+// See CancelDeploymentJob for details on how to use this API operation.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *RoboMaker) CancelDeploymentJobWithContext(ctx aws.Context, input *CancelDeploymentJobInput, opts ...request.Option) (*CancelDeploymentJobOutput, error) {
+	req, out := c.CancelDeploymentJobRequest(input)
+	req.SetContext(ctx)
+	req.ApplyOptions(opts...)
+	return out, req.Send()
+}
+
 const opCancelSimulationJob = "CancelSimulationJob"
 
 // CancelSimulationJobRequest generates a "aws/request.Request" representing the
@@ -958,6 +1049,9 @@ func (c *RoboMaker) CreateSimulationJobRequest(input *CreateSimulationJobInput) 
 //   Do not reuse a client token with different requests, unless the requests
 //   are identical.
 //
+//   * ErrCodeServiceUnavailableException "ServiceUnavailableException"
+//   The request has failed due to a temporary failure of the server.
+//
 // See also, https://docs.aws.amazon.com/goto/WebAPI/robomaker-2018-06-29/CreateSimulationJob
 func (c *RoboMaker) CreateSimulationJob(input *CreateSimulationJobInput) (*CreateSimulationJobOutput, error) {
 	req, out := c.CreateSimulationJobRequest(input)
@@ -1466,8 +1560,7 @@ func (c *RoboMaker) DescribeDeploymentJobRequest(input *DescribeDeploymentJobInp
 
 // DescribeDeploymentJob API operation for AWS RoboMaker.
 //
-// Describes a deployment job. [Does it work regardless of deployment status,
-// e.g. Failed?]
+// Describes a deployment job.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -2071,7 +2164,7 @@ func (c *RoboMaker) ListDeploymentJobsWithContext(ctx aws.Context, input *ListDe
 //    // Example iterating over at most 3 pages of a ListDeploymentJobs operation.
 //    pageNum := 0
 //    err := client.ListDeploymentJobsPages(params,
-//        func(page *ListDeploymentJobsOutput, lastPage bool) bool {
+//        func(page *robomaker.ListDeploymentJobsOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -2218,7 +2311,7 @@ func (c *RoboMaker) ListFleetsWithContext(ctx aws.Context, input *ListFleetsInpu
 //    // Example iterating over at most 3 pages of a ListFleets operation.
 //    pageNum := 0
 //    err := client.ListFleetsPages(params,
-//        func(page *ListFleetsOutput, lastPage bool) bool {
+//        func(page *robomaker.ListFleetsOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -2362,7 +2455,7 @@ func (c *RoboMaker) ListRobotApplicationsWithContext(ctx aws.Context, input *Lis
 //    // Example iterating over at most 3 pages of a ListRobotApplications operation.
 //    pageNum := 0
 //    err := client.ListRobotApplicationsPages(params,
-//        func(page *ListRobotApplicationsOutput, lastPage bool) bool {
+//        func(page *robomaker.ListRobotApplicationsOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -2509,7 +2602,7 @@ func (c *RoboMaker) ListRobotsWithContext(ctx aws.Context, input *ListRobotsInpu
 //    // Example iterating over at most 3 pages of a ListRobots operation.
 //    pageNum := 0
 //    err := client.ListRobotsPages(params,
-//        func(page *ListRobotsOutput, lastPage bool) bool {
+//        func(page *robomaker.ListRobotsOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -2653,7 +2746,7 @@ func (c *RoboMaker) ListSimulationApplicationsWithContext(ctx aws.Context, input
 //    // Example iterating over at most 3 pages of a ListSimulationApplications operation.
 //    pageNum := 0
 //    err := client.ListSimulationApplicationsPages(params,
-//        func(page *ListSimulationApplicationsOutput, lastPage bool) bool {
+//        func(page *robomaker.ListSimulationApplicationsOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -2797,7 +2890,7 @@ func (c *RoboMaker) ListSimulationJobsWithContext(ctx aws.Context, input *ListSi
 //    // Example iterating over at most 3 pages of a ListSimulationJobs operation.
 //    pageNum := 0
 //    err := client.ListSimulationJobsPages(params,
-//        func(page *ListSimulationJobsOutput, lastPage bool) bool {
+//        func(page *robomaker.ListSimulationJobsOutput, lastPage bool) bool {
 //            pageNum++
 //            fmt.Println(page)
 //            return pageNum <= 3
@@ -3671,6 +3764,61 @@ func (s *BatchDescribeSimulationJobOutput) SetUnprocessedJobs(v []*string) *Batc
 	return s
 }
 
+type CancelDeploymentJobInput struct {
+	_ struct{} `type:"structure"`
+
+	// The deployment job ARN to cancel.
+	//
+	// Job is a required field
+	Job *string `locationName:"job" min:"1" type:"string" required:"true"`
+}
+
+// String returns the string representation
+func (s CancelDeploymentJobInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s CancelDeploymentJobInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *CancelDeploymentJobInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "CancelDeploymentJobInput"}
+	if s.Job == nil {
+		invalidParams.Add(request.NewErrParamRequired("Job"))
+	}
+	if s.Job != nil && len(*s.Job) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("Job", 1))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetJob sets the Job field's value.
+func (s *CancelDeploymentJobInput) SetJob(v string) *CancelDeploymentJobInput {
+	s.Job = &v
+	return s
+}
+
+type CancelDeploymentJobOutput struct {
+	_ struct{} `type:"structure"`
+}
+
+// String returns the string representation
+func (s CancelDeploymentJobOutput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s CancelDeploymentJobOutput) GoString() string {
+	return s.String()
+}
+
 type CancelSimulationJobInput struct {
 	_ struct{} `type:"structure"`
 
@@ -3848,42 +3996,62 @@ type CreateDeploymentJobOutput struct {
 
 	// The failure code of the simulation job if it failed:
 	//
-	// BadPermissionErrorAWS Greengrass requires a service-level role permission
-	// to access other services. The role must include the AWSGreengrassResourceAccessRolePolicy
-	// (https://console.aws.amazon.com/iam/home?#/policies/arn:aws:iam::aws:policy/service-role/AWSGreengrassResourceAccessRolePolicy$jsonEditor)
-	// managed policy.
+	// BadPermissionError
 	//
-	// ExtractingBundleFailureThe robot application could not be extracted from
-	// the bundle.
+	// AWS Greengrass requires a service-level role permission to access other services.
+	// The role must include the AWSGreengrassResourceAccessRolePolicy managed policy
+	// (https://console.aws.amazon.com/iam/home?#/policies/arn:aws:iam::aws:policy/service-role/AWSGreengrassResourceAccessRolePolicy$jsonEditor).
 	//
-	// FailureThresholdBreachedThe percentage of robots that could not be updated
-	// exceeded the percentage set for the deployment.
+	// ExtractingBundleFailure
 	//
-	// GreengrassDeploymentFailedThe robot application could not be deployed to
-	// the robot.
+	// The robot application could not be extracted from the bundle.
 	//
-	// GreengrassGroupVersionDoesNotExistThe AWS Greengrass group or version associated
-	// with a robot is missing.
+	// FailureThresholdBreached
 	//
-	// InternalServerErrorAn internal error has occurred. Retry your request, but
-	// if the problem persists, contact us with details.
+	// The percentage of robots that could not be updated exceeded the percentage
+	// set for the deployment.
 	//
-	// MissingRobotApplicationArchitectureThe robot application does not have a
-	// source that matches the architecture of the robot.
+	// GreengrassDeploymentFailed
 	//
-	// MissingRobotDeploymentResourceOne or more of the resources specified for
-	// the robot application are missing. For example, does the robot application
-	// have the correct launch package and launch file?
+	// The robot application could not be deployed to the robot.
 	//
-	// PostLaunchFileFailureThe post-launch script failed.
+	// GreengrassGroupVersionDoesNotExist
 	//
-	// PreLaunchFileFailureThe pre-launch script failed.
+	// The AWS Greengrass group or version associated with a robot is missing.
 	//
-	// ResourceNotFoundOne or more deployment resources are missing. For example,
-	// do robot application source bundles still exist?
+	// InternalServerError
 	//
-	// RobotDeploymentNoResponseThere is no response from the robot. It might not
-	// be powered on or connected to the internet.
+	// An internal error has occurred. Retry your request, but if the problem persists,
+	// contact us with details.
+	//
+	// MissingRobotApplicationArchitecture
+	//
+	// The robot application does not have a source that matches the architecture
+	// of the robot.
+	//
+	// MissingRobotDeploymentResource
+	//
+	// One or more of the resources specified for the robot application are missing.
+	// For example, does the robot application have the correct launch package and
+	// launch file?
+	//
+	// PostLaunchFileFailure
+	//
+	// The post-launch script failed.
+	//
+	// PreLaunchFileFailure
+	//
+	// The pre-launch script failed.
+	//
+	// ResourceNotFound
+	//
+	// One or more deployment resources are missing. For example, do robot application
+	// source bundles still exist?
+	//
+	// RobotDeploymentNoResponse
+	//
+	// There is no response from the robot. It might not be powered on or connected
+	// to the internet.
 	FailureCode *string `locationName:"failureCode" type:"string" enum:"DeploymentJobErrorCode"`
 
 	// The failure reason of the deployment job if it failed.
@@ -4902,9 +5070,13 @@ type CreateSimulationJobInput struct {
 
 	// The failure behavior the simulation job.
 	//
-	// ContinueRestart the simulation job in the same host instance.
+	// Continue
 	//
-	// FailStop the simulation job and terminate the instance.
+	// Restart the simulation job in the same host instance.
+	//
+	// Fail
+	//
+	// Stop the simulation job and terminate the instance.
 	FailureBehavior *string `locationName:"failureBehavior" type:"string" enum:"FailureBehavior"`
 
 	// The IAM role name that allows the simulation instance to call the AWS APIs
@@ -5078,44 +5250,72 @@ type CreateSimulationJobOutput struct {
 
 	// The failure code of the simulation job if it failed:
 	//
-	// InternalServiceErrorInternal service error.
+	// InternalServiceError
 	//
-	// RobotApplicationCrashRobot application exited abnormally.
+	// Internal service error.
 	//
-	// SimulationApplicationCrash Simulation application exited abnormally.
+	// RobotApplicationCrash
 	//
-	// BadPermissionsRobotApplicationRobot application bundle could not be downloaded.
+	// Robot application exited abnormally.
 	//
-	// BadPermissionsSimulationApplicationSimulation application bundle could not
-	// be downloaded.
+	// SimulationApplicationCrash
 	//
-	// BadPermissionsS3OutputUnable to publish outputs to customer-provided S3 bucket.
+	// Simulation application exited abnormally.
 	//
-	// BadPermissionsCloudwatchLogsUnable to publish logs to customer-provided CloudWatch
-	// Logs resource.
+	// BadPermissionsRobotApplication
 	//
-	// SubnetIpLimitExceededSubnet IP limit exceeded.
+	// Robot application bundle could not be downloaded.
 	//
-	// ENILimitExceededENI limit exceeded.
+	// BadPermissionsSimulationApplication
 	//
-	// BadPermissionsUserCredentialsUnable to use the Role provided.
+	// Simulation application bundle could not be downloaded.
 	//
-	// InvalidBundleRobotApplicationRobot bundle cannot be extracted (invalid format,
-	// bundling error, or other issue).
+	// BadPermissionsS3Output
 	//
-	// InvalidBundleSimulationApplicationSimulation bundle cannot be extracted (invalid
-	// format, bundling error, or other issue).
+	// Unable to publish outputs to customer-provided S3 bucket.
 	//
-	// RobotApplicationVersionMismatchedEtagEtag for RobotApplication does not match
-	// value during version creation.
+	// BadPermissionsCloudwatchLogs
 	//
-	// SimulationApplicationVersionMismatchedEtagEtag for SimulationApplication
-	// does not match value during version creation.
+	// Unable to publish logs to customer-provided CloudWatch Logs resource.
+	//
+	// SubnetIpLimitExceeded
+	//
+	// Subnet IP limit exceeded.
+	//
+	// ENILimitExceeded
+	//
+	// ENI limit exceeded.
+	//
+	// BadPermissionsUserCredentials
+	//
+	// Unable to use the Role provided.
+	//
+	// InvalidBundleRobotApplication
+	//
+	// Robot bundle cannot be extracted (invalid format, bundling error, or other
+	// issue).
+	//
+	// InvalidBundleSimulationApplication
+	//
+	// Simulation bundle cannot be extracted (invalid format, bundling error, or
+	// other issue).
+	//
+	// RobotApplicationVersionMismatchedEtag
+	//
+	// Etag for RobotApplication does not match value during version creation.
+	//
+	// SimulationApplicationVersionMismatchedEtag
+	//
+	// Etag for SimulationApplication does not match value during version creation.
 	FailureCode *string `locationName:"failureCode" type:"string" enum:"SimulationJobErrorCode"`
 
 	// The IAM role that allows the simulation job to call the AWS APIs that are
 	// specified in its associated policies on your behalf.
 	IamRole *string `locationName:"iamRole" min:"1" type:"string"`
+
+	// The time, in milliseconds since the epoch, when the simulation job was last
+	// started.
+	LastStartedAt *time.Time `locationName:"lastStartedAt" type:"timestamp"`
 
 	// The time, in milliseconds since the epoch, when the simulation job was last
 	// updated.
@@ -5183,6 +5383,12 @@ func (s *CreateSimulationJobOutput) SetFailureCode(v string) *CreateSimulationJo
 // SetIamRole sets the IamRole field's value.
 func (s *CreateSimulationJobOutput) SetIamRole(v string) *CreateSimulationJobOutput {
 	s.IamRole = &v
+	return s
+}
+
+// SetLastStartedAt sets the LastStartedAt field's value.
+func (s *CreateSimulationJobOutput) SetLastStartedAt(v time.Time) *CreateSimulationJobOutput {
+	s.LastStartedAt = &v
 	return s
 }
 
@@ -6654,39 +6860,63 @@ type DescribeSimulationJobOutput struct {
 
 	// The failure code of the simulation job if it failed:
 	//
-	// InternalServiceErrorInternal service error.
+	// InternalServiceError
 	//
-	// RobotApplicationCrashRobot application exited abnormally.
+	// Internal service error.
 	//
-	// SimulationApplicationCrash Simulation application exited abnormally.
+	// RobotApplicationCrash
 	//
-	// BadPermissionsRobotApplicationRobot application bundle could not be downloaded.
+	// Robot application exited abnormally.
 	//
-	// BadPermissionsSimulationApplicationSimulation application bundle could not
-	// be downloaded.
+	// SimulationApplicationCrash
 	//
-	// BadPermissionsS3OutputUnable to publish outputs to customer-provided S3 bucket.
+	// Simulation application exited abnormally.
 	//
-	// BadPermissionsCloudwatchLogsUnable to publish logs to customer-provided CloudWatch
-	// Logs resource.
+	// BadPermissionsRobotApplication
 	//
-	// SubnetIpLimitExceededSubnet IP limit exceeded.
+	// Robot application bundle could not be downloaded.
 	//
-	// ENILimitExceededENI limit exceeded.
+	// BadPermissionsSimulationApplication
 	//
-	// BadPermissionsUserCredentialsUnable to use the Role provided.
+	// Simulation application bundle could not be downloaded.
 	//
-	// InvalidBundleRobotApplicationRobot bundle cannot be extracted (invalid format,
-	// bundling error, or other issue).
+	// BadPermissionsS3Output
 	//
-	// InvalidBundleSimulationApplicationSimulation bundle cannot be extracted (invalid
-	// format, bundling error, or other issue).
+	// Unable to publish outputs to customer-provided S3 bucket.
 	//
-	// RobotApplicationVersionMismatchedEtagEtag for RobotApplication does not match
-	// value during version creation.
+	// BadPermissionsCloudwatchLogs
 	//
-	// SimulationApplicationVersionMismatchedEtagEtag for SimulationApplication
-	// does not match value during version creation.
+	// Unable to publish logs to customer-provided CloudWatch Logs resource.
+	//
+	// SubnetIpLimitExceeded
+	//
+	// Subnet IP limit exceeded.
+	//
+	// ENILimitExceeded
+	//
+	// ENI limit exceeded.
+	//
+	// BadPermissionsUserCredentials
+	//
+	// Unable to use the Role provided.
+	//
+	// InvalidBundleRobotApplication
+	//
+	// Robot bundle cannot be extracted (invalid format, bundling error, or other
+	// issue).
+	//
+	// InvalidBundleSimulationApplication
+	//
+	// Simulation bundle cannot be extracted (invalid format, bundling error, or
+	// other issue).
+	//
+	// RobotApplicationVersionMismatchedEtag
+	//
+	// Etag for RobotApplication does not match value during version creation.
+	//
+	// SimulationApplicationVersionMismatchedEtag
+	//
+	// Etag for SimulationApplication does not match value during version creation.
 	FailureCode *string `locationName:"failureCode" type:"string" enum:"SimulationJobErrorCode"`
 
 	// Details about why the simulation job failed. For more information about troubleshooting,
@@ -6696,6 +6926,10 @@ type DescribeSimulationJobOutput struct {
 	// The IAM role that allows the simulation instance to call the AWS APIs that
 	// are specified in its associated policies on your behalf.
 	IamRole *string `locationName:"iamRole" min:"1" type:"string"`
+
+	// The time, in milliseconds since the epoch, when the simulation job was last
+	// started.
+	LastStartedAt *time.Time `locationName:"lastStartedAt" type:"timestamp"`
 
 	// The time, in milliseconds since the epoch, when the simulation job was last
 	// updated.
@@ -6773,6 +7007,12 @@ func (s *DescribeSimulationJobOutput) SetFailureReason(v string) *DescribeSimula
 // SetIamRole sets the IamRole field's value.
 func (s *DescribeSimulationJobOutput) SetIamRole(v string) *DescribeSimulationJobOutput {
 	s.IamRole = &v
+	return s
+}
+
+// SetLastStartedAt sets the LastStartedAt field's value.
+func (s *DescribeSimulationJobOutput) SetLastStartedAt(v time.Time) *DescribeSimulationJobOutput {
+	s.LastStartedAt = &v
 	return s
 }
 
@@ -7873,17 +8113,29 @@ type ProgressDetail struct {
 
 	// The current progress status.
 	//
-	// ValidatingValidating the deployment.
+	// Validating
 	//
-	// Downloading/ExtractingDownloading and extracting the bundle on the robot.
+	// Validating the deployment.
 	//
-	// Executing pre-launch script(s)Executing pre-launch script(s) if provided.
+	// DownloadingExtracting
 	//
-	// LaunchingLaunching the robot application.
+	// Downloading and extracting the bundle on the robot.
 	//
-	// Executing post-launch script(s)Executing post-launch script(s) if provided.
+	// ExecutingPreLaunch
 	//
-	// FinishedDeployment is complete.
+	// Executing pre-launch script(s) if provided.
+	//
+	// Launching
+	//
+	// Launching the robot application.
+	//
+	// ExecutingPostLaunch
+	//
+	// Executing post-launch script(s) if provided.
+	//
+	// Finished
+	//
+	// Deployment is complete.
 	CurrentProgress *string `locationName:"currentProgress" type:"string" enum:"RobotDeploymentStep"`
 
 	// Estimated amount of time in seconds remaining in the step. This currently
@@ -8294,6 +8546,9 @@ type RobotApplicationSummary struct {
 	// The name of the robot application.
 	Name *string `locationName:"name" min:"1" type:"string"`
 
+	// Information about a robot software suite.
+	RobotSoftwareSuite *RobotSoftwareSuite `locationName:"robotSoftwareSuite" type:"structure"`
+
 	// The version of the robot application.
 	Version *string `locationName:"version" min:"1" type:"string"`
 }
@@ -8323,6 +8578,12 @@ func (s *RobotApplicationSummary) SetLastUpdatedAt(v time.Time) *RobotApplicatio
 // SetName sets the Name field's value.
 func (s *RobotApplicationSummary) SetName(v string) *RobotApplicationSummary {
 	s.Name = &v
+	return s
+}
+
+// SetRobotSoftwareSuite sets the RobotSoftwareSuite field's value.
+func (s *RobotApplicationSummary) SetRobotSoftwareSuite(v *RobotSoftwareSuite) *RobotApplicationSummary {
+	s.RobotSoftwareSuite = v
 	return s
 }
 
@@ -8530,6 +8791,12 @@ type SimulationApplicationSummary struct {
 	// The name of the simulation application.
 	Name *string `locationName:"name" min:"1" type:"string"`
 
+	// Information about a robot software suite.
+	RobotSoftwareSuite *RobotSoftwareSuite `locationName:"robotSoftwareSuite" type:"structure"`
+
+	// Information about a simulation software suite.
+	SimulationSoftwareSuite *SimulationSoftwareSuite `locationName:"simulationSoftwareSuite" type:"structure"`
+
 	// The version of the simulation application.
 	Version *string `locationName:"version" min:"1" type:"string"`
 }
@@ -8562,6 +8829,18 @@ func (s *SimulationApplicationSummary) SetName(v string) *SimulationApplicationS
 	return s
 }
 
+// SetRobotSoftwareSuite sets the RobotSoftwareSuite field's value.
+func (s *SimulationApplicationSummary) SetRobotSoftwareSuite(v *RobotSoftwareSuite) *SimulationApplicationSummary {
+	s.RobotSoftwareSuite = v
+	return s
+}
+
+// SetSimulationSoftwareSuite sets the SimulationSoftwareSuite field's value.
+func (s *SimulationApplicationSummary) SetSimulationSoftwareSuite(v *SimulationSoftwareSuite) *SimulationApplicationSummary {
+	s.SimulationSoftwareSuite = v
+	return s
+}
+
 // SetVersion sets the Version field's value.
 func (s *SimulationApplicationSummary) SetVersion(v string) *SimulationApplicationSummary {
 	s.Version = &v
@@ -8580,9 +8859,13 @@ type SimulationJob struct {
 
 	// The failure behavior the simulation job.
 	//
-	// ContinueRestart the simulation job in the same host instance.
+	// Continue
 	//
-	// FailStop the simulation job and terminate the instance.
+	// Restart the simulation job in the same host instance.
+	//
+	// Fail
+	//
+	// Stop the simulation job and terminate the instance.
 	FailureBehavior *string `locationName:"failureBehavior" type:"string" enum:"FailureBehavior"`
 
 	// The failure code of the simulation job if it failed.
@@ -8593,9 +8876,12 @@ type SimulationJob struct {
 
 	// The IAM role that allows the simulation instance to call the AWS APIs that
 	// are specified in its associated policies on your behalf. This is how credentials
-	// are passed in to your simulation job. See how to specify AWS security credentials
-	// for your application (https://docs.aws.amazon.com/toolkit-for-visual-studio/latest/user-guide/deployment-ecs-specify-credentials).
+	// are passed in to your simulation job.
 	IamRole *string `locationName:"iamRole" min:"1" type:"string"`
+
+	// The time, in milliseconds since the epoch, when the simulation job was last
+	// started.
+	LastStartedAt *time.Time `locationName:"lastStartedAt" type:"timestamp"`
 
 	// The time, in milliseconds since the epoch, when the simulation job was last
 	// updated.
@@ -8674,6 +8960,12 @@ func (s *SimulationJob) SetFailureReason(v string) *SimulationJob {
 // SetIamRole sets the IamRole field's value.
 func (s *SimulationJob) SetIamRole(v string) *SimulationJob {
 	s.IamRole = &v
+	return s
+}
+
+// SetLastStartedAt sets the LastStartedAt field's value.
+func (s *SimulationJob) SetLastStartedAt(v time.Time) *SimulationJob {
+	s.LastStartedAt = &v
 	return s
 }
 
@@ -9020,39 +9312,63 @@ type SyncDeploymentJobOutput struct {
 
 	// The failure code if the job fails:
 	//
-	// InternalServiceErrorInternal service error.
+	// InternalServiceError
 	//
-	// RobotApplicationCrashRobot application exited abnormally.
+	// Internal service error.
 	//
-	// SimulationApplicationCrash Simulation application exited abnormally.
+	// RobotApplicationCrash
 	//
-	// BadPermissionsRobotApplicationRobot application bundle could not be downloaded.
+	// Robot application exited abnormally.
 	//
-	// BadPermissionsSimulationApplicationSimulation application bundle could not
-	// be downloaded.
+	// SimulationApplicationCrash
 	//
-	// BadPermissionsS3OutputUnable to publish outputs to customer-provided S3 bucket.
+	// Simulation application exited abnormally.
 	//
-	// BadPermissionsCloudwatchLogsUnable to publish logs to customer-provided CloudWatch
-	// Logs resource.
+	// BadPermissionsRobotApplication
 	//
-	// SubnetIpLimitExceededSubnet IP limit exceeded.
+	// Robot application bundle could not be downloaded.
 	//
-	// ENILimitExceededENI limit exceeded.
+	// BadPermissionsSimulationApplication
 	//
-	// BadPermissionsUserCredentialsUnable to use the Role provided.
+	// Simulation application bundle could not be downloaded.
 	//
-	// InvalidBundleRobotApplicationRobot bundle cannot be extracted (invalid format,
-	// bundling error, or other issue).
+	// BadPermissionsS3Output
 	//
-	// InvalidBundleSimulationApplicationSimulation bundle cannot be extracted (invalid
-	// format, bundling error, or other issue).
+	// Unable to publish outputs to customer-provided S3 bucket.
 	//
-	// RobotApplicationVersionMismatchedEtagEtag for RobotApplication does not match
-	// value during version creation.
+	// BadPermissionsCloudwatchLogs
 	//
-	// SimulationApplicationVersionMismatchedEtagEtag for SimulationApplication
-	// does not match value during version creation.
+	// Unable to publish logs to customer-provided CloudWatch Logs resource.
+	//
+	// SubnetIpLimitExceeded
+	//
+	// Subnet IP limit exceeded.
+	//
+	// ENILimitExceeded
+	//
+	// ENI limit exceeded.
+	//
+	// BadPermissionsUserCredentials
+	//
+	// Unable to use the Role provided.
+	//
+	// InvalidBundleRobotApplication
+	//
+	// Robot bundle cannot be extracted (invalid format, bundling error, or other
+	// issue).
+	//
+	// InvalidBundleSimulationApplication
+	//
+	// Simulation bundle cannot be extracted (invalid format, bundling error, or
+	// other issue).
+	//
+	// RobotApplicationVersionMismatchedEtag
+	//
+	// Etag for RobotApplication does not match value during version creation.
+	//
+	// SimulationApplicationVersionMismatchedEtag
+	//
+	// Etag for SimulationApplication does not match value during version creation.
 	FailureCode *string `locationName:"failureCode" type:"string" enum:"DeploymentJobErrorCode"`
 
 	// The failure reason if the job fails.
@@ -9788,6 +10104,9 @@ const (
 	// DeploymentJobErrorCodeFailureThresholdBreached is a DeploymentJobErrorCode enum value
 	DeploymentJobErrorCodeFailureThresholdBreached = "FailureThresholdBreached"
 
+	// DeploymentJobErrorCodeRobotDeploymentAborted is a DeploymentJobErrorCode enum value
+	DeploymentJobErrorCodeRobotDeploymentAborted = "RobotDeploymentAborted"
+
 	// DeploymentJobErrorCodeRobotDeploymentNoResponse is a DeploymentJobErrorCode enum value
 	DeploymentJobErrorCodeRobotDeploymentNoResponse = "RobotDeploymentNoResponse"
 
@@ -9840,6 +10159,9 @@ const (
 
 	// DeploymentStatusSucceeded is a DeploymentStatus enum value
 	DeploymentStatusSucceeded = "Succeeded"
+
+	// DeploymentStatusCanceled is a DeploymentStatus enum value
+	DeploymentStatusCanceled = "Canceled"
 )
 
 const (
@@ -9883,6 +10205,9 @@ const (
 const (
 	// RobotSoftwareSuiteVersionTypeKinetic is a RobotSoftwareSuiteVersionType enum value
 	RobotSoftwareSuiteVersionTypeKinetic = "Kinetic"
+
+	// RobotSoftwareSuiteVersionTypeMelodic is a RobotSoftwareSuiteVersionType enum value
+	RobotSoftwareSuiteVersionTypeMelodic = "Melodic"
 )
 
 const (

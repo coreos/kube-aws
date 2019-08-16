@@ -80,6 +80,10 @@ type StorageGatewayAPI interface {
 	AddWorkingStorageWithContext(aws.Context, *storagegateway.AddWorkingStorageInput, ...request.Option) (*storagegateway.AddWorkingStorageOutput, error)
 	AddWorkingStorageRequest(*storagegateway.AddWorkingStorageInput) (*request.Request, *storagegateway.AddWorkingStorageOutput)
 
+	AssignTapePool(*storagegateway.AssignTapePoolInput) (*storagegateway.AssignTapePoolOutput, error)
+	AssignTapePoolWithContext(aws.Context, *storagegateway.AssignTapePoolInput, ...request.Option) (*storagegateway.AssignTapePoolOutput, error)
+	AssignTapePoolRequest(*storagegateway.AssignTapePoolInput) (*request.Request, *storagegateway.AssignTapePoolOutput)
+
 	AttachVolume(*storagegateway.AttachVolumeInput) (*storagegateway.AttachVolumeOutput, error)
 	AttachVolumeWithContext(aws.Context, *storagegateway.AttachVolumeInput, ...request.Option) (*storagegateway.AttachVolumeOutput, error)
 	AttachVolumeRequest(*storagegateway.AttachVolumeInput) (*request.Request, *storagegateway.AttachVolumeOutput)
@@ -362,6 +366,10 @@ type StorageGatewayAPI interface {
 	UpdateSMBFileShare(*storagegateway.UpdateSMBFileShareInput) (*storagegateway.UpdateSMBFileShareOutput, error)
 	UpdateSMBFileShareWithContext(aws.Context, *storagegateway.UpdateSMBFileShareInput, ...request.Option) (*storagegateway.UpdateSMBFileShareOutput, error)
 	UpdateSMBFileShareRequest(*storagegateway.UpdateSMBFileShareInput) (*request.Request, *storagegateway.UpdateSMBFileShareOutput)
+
+	UpdateSMBSecurityStrategy(*storagegateway.UpdateSMBSecurityStrategyInput) (*storagegateway.UpdateSMBSecurityStrategyOutput, error)
+	UpdateSMBSecurityStrategyWithContext(aws.Context, *storagegateway.UpdateSMBSecurityStrategyInput, ...request.Option) (*storagegateway.UpdateSMBSecurityStrategyOutput, error)
+	UpdateSMBSecurityStrategyRequest(*storagegateway.UpdateSMBSecurityStrategyInput) (*request.Request, *storagegateway.UpdateSMBSecurityStrategyOutput)
 
 	UpdateSnapshotSchedule(*storagegateway.UpdateSnapshotScheduleInput) (*storagegateway.UpdateSnapshotScheduleOutput, error)
 	UpdateSnapshotScheduleWithContext(aws.Context, *storagegateway.UpdateSnapshotScheduleInput, ...request.Option) (*storagegateway.UpdateSnapshotScheduleOutput, error)

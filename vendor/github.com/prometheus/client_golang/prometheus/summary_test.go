@@ -25,6 +25,78 @@ import (
 	dto "github.com/prometheus/client_model/go"
 )
 
+func TestSummaryWithDefaultObjectives(t *testing.T) {
+	reg := NewRegistry()
+	summaryWithDefaultObjectives := NewSummary(SummaryOpts{
+		Name: "default_objectives",
+		Help: "Test help.",
+	})
+	if err := reg.Register(summaryWithDefaultObjectives); err != nil {
+		t.Error(err)
+	}
+
+	m := &dto.Metric{}
+	if err := summaryWithDefaultObjectives.Write(m); err != nil {
+		t.Error(err)
+	}
+	if len(m.GetSummary().Quantile) != 0 {
+		t.Error("expected no objectives in summary")
+	}
+}
+
+func TestSummaryWithoutObjectives(t *testing.T) {
+	reg := NewRegistry()
+	summaryWithEmptyObjectives := NewSummary(SummaryOpts{
+		Name:       "empty_objectives",
+		Help:       "Test help.",
+		Objectives: map[float64]float64{},
+	})
+	if err := reg.Register(summaryWithEmptyObjectives); err != nil {
+		t.Error(err)
+	}
+	summaryWithEmptyObjectives.Observe(3)
+	summaryWithEmptyObjectives.Observe(0.14)
+
+	m := &dto.Metric{}
+	if err := summaryWithEmptyObjectives.Write(m); err != nil {
+		t.Error(err)
+	}
+	if got, want := m.GetSummary().GetSampleSum(), 3.14; got != want {
+		t.Errorf("got sample sum %f, want %f", got, want)
+	}
+	if got, want := m.GetSummary().GetSampleCount(), uint64(2); got != want {
+		t.Errorf("got sample sum %d, want %d", got, want)
+	}
+	if len(m.GetSummary().Quantile) != 0 {
+		t.Error("expected no objectives in summary")
+	}
+}
+
+func TestSummaryWithQuantileLabel(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Attempt to create Summary with 'quantile' label did not panic.")
+		}
+	}()
+	_ = NewSummary(SummaryOpts{
+		Name:        "test_summary",
+		Help:        "less",
+		ConstLabels: Labels{"quantile": "test"},
+	})
+}
+
+func TestSummaryVecWithQuantileLabel(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Attempt to create SummaryVec with 'quantile' label did not panic.")
+		}
+	}()
+	_ = NewSummaryVec(SummaryOpts{
+		Name: "test_summary",
+		Help: "less",
+	}, []string{"quantile"})
+}
+
 func benchmarkSummaryObserve(w int, b *testing.B) {
 	b.StopTimer()
 
@@ -125,6 +197,7 @@ func TestSummaryConcurrency(t *testing.T) {
 	}
 
 	rand.Seed(42)
+	objMap := map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001}
 
 	it := func(n uint32) bool {
 		mutations := int(n%1e4 + 1e4)
@@ -136,8 +209,9 @@ func TestSummaryConcurrency(t *testing.T) {
 		end.Add(concLevel)
 
 		sum := NewSummary(SummaryOpts{
-			Name: "test_summary",
-			Help: "helpless",
+			Name:       "test_summary",
+			Help:       "helpless",
+			Objectives: objMap,
 		})
 
 		allVars := make([]float64, total)
@@ -172,14 +246,14 @@ func TestSummaryConcurrency(t *testing.T) {
 			t.Errorf("got sample sum %f, want %f", got, want)
 		}
 
-		objectives := make([]float64, 0, len(DefObjectives))
-		for qu := range DefObjectives {
-			objectives = append(objectives, qu)
+		objSlice := make([]float64, 0, len(objMap))
+		for qu := range objMap {
+			objSlice = append(objSlice, qu)
 		}
-		sort.Float64s(objectives)
+		sort.Float64s(objSlice)
 
-		for i, wantQ := range objectives {
-			ε := DefObjectives[wantQ]
+		for i, wantQ := range objSlice {
+			ε := objMap[wantQ]
 			gotQ := *m.Summary.Quantile[i].Quantile
 			gotV := *m.Summary.Quantile[i].Value
 			min, max := getBounds(allVars, wantQ, ε)
@@ -204,13 +278,13 @@ func TestSummaryVecConcurrency(t *testing.T) {
 	}
 
 	rand.Seed(42)
+	objMap := map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001}
 
-	objectives := make([]float64, 0, len(DefObjectives))
-	for qu := range DefObjectives {
-
-		objectives = append(objectives, qu)
+	objSlice := make([]float64, 0, len(objMap))
+	for qu := range objMap {
+		objSlice = append(objSlice, qu)
 	}
-	sort.Float64s(objectives)
+	sort.Float64s(objSlice)
 
 	it := func(n uint32) bool {
 		mutations := int(n%1e4 + 1e4)
@@ -223,8 +297,9 @@ func TestSummaryVecConcurrency(t *testing.T) {
 
 		sum := NewSummaryVec(
 			SummaryOpts{
-				Name: "test_summary",
-				Help: "helpless",
+				Name:       "test_summary",
+				Help:       "helpless",
+				Objectives: objMap,
 			},
 			[]string{"label"},
 		)
@@ -260,15 +335,15 @@ func TestSummaryVecConcurrency(t *testing.T) {
 		for i := 0; i < vecLength; i++ {
 			m := &dto.Metric{}
 			s := sum.WithLabelValues(string('A' + i))
-			s.Write(m)
+			s.(Summary).Write(m)
 			if got, want := int(*m.Summary.SampleCount), len(allVars[i]); got != want {
 				t.Errorf("got sample count %d for label %c, want %d", got, 'A'+i, want)
 			}
 			if got, want := *m.Summary.SampleSum, sampleSums[i]; math.Abs((got-want)/want) > 0.001 {
 				t.Errorf("got sample sum %f for label %c, want %f", got, 'A'+i, want)
 			}
-			for j, wantQ := range objectives {
-				ε := DefObjectives[wantQ]
+			for j, wantQ := range objSlice {
+				ε := objMap[wantQ]
 				gotQ := *m.Summary.Quantile[j].Quantile
 				gotV := *m.Summary.Quantile[j].Value
 				min, max := getBounds(allVars[i], wantQ, ε)
@@ -305,7 +380,7 @@ func TestSummaryDecay(t *testing.T) {
 	m := &dto.Metric{}
 	i := 0
 	tick := time.NewTicker(time.Millisecond)
-	for _ = range tick.C {
+	for range tick.C {
 		i++
 		sum.Observe(float64(i))
 		if i%10 == 0 {
