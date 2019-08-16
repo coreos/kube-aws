@@ -97,6 +97,21 @@ func (c Config) VPCRef() (string, error) {
 	return c.VPC.RefOrError(c.VPCLogicalName)
 }
 
+func (c Config) VPCRefFromNetworkStack() (string, error) {
+	i := c.VPC
+	if i.IDFromStackOutput != "" {
+		return fmt.Sprintf(`{ "Fn::ImportValue" : %q }`, i.IDFromStackOutput), nil
+	} else if i.ID != "" {
+		return fmt.Sprintf(`"%s"`, i.ID), nil
+	} else {
+		logicalName, err := c.VPCLogicalName()
+		if err != nil {
+			return "", fmt.Errorf("failed to get id or ref: %v", err)
+		}
+		return fmt.Sprintf(`{ "Ref" : %q }`, logicalName), nil
+	}
+}
+
 func (c Config) InternetGatewayLogicalName() string {
 	return internetGatewayLogicalName
 }

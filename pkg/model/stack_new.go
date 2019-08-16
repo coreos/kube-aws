@@ -98,6 +98,7 @@ func NewControlPlaneStack(conf *Config, opts api.StackTemplateOptions, extras cl
 			conf.Controller.CustomFiles = append(conf.Controller.CustomFiles, extraController.Files...)
 			conf.Controller.IAMConfig.Policy.Statements = append(conf.Controller.IAMConfig.Policy.Statements, extraController.IAMPolicyStatements...)
 			conf.KubeAWSVersion = VERSION
+			conf.VPC = stack.tmplCtx.(ControllerTmplCtx).VPC
 			for k, v := range extraController.NodeLabels {
 				conf.Controller.NodeLabels[k] = v
 			}

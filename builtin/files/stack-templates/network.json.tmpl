@@ -35,7 +35,7 @@
             "Value": "{{$.ClusterName}}-sg-api-endpoint-{{$i}}"
           }
         ],
-        "VpcId": {{$.VPCRef}}
+        "VpcId": {{$.VPCRefFromNetworkStack}}
       },
       "Type": "AWS::EC2::SecurityGroup"
     },
@@ -61,7 +61,7 @@
             "Value": "{{$.ClusterName}}-sg-elb-api-server"
           }
         ],
-        "VpcId": {{$.VPCRef}}
+        "VpcId": {{$.VPCRefFromNetworkStack}}
       },
       "Type": "AWS::EC2::SecurityGroup"
     },
@@ -141,7 +141,7 @@
             "Value": "{{$.ClusterName}}-sg-controller"
           }
         ],
-        "VpcId": {{.VPCRef}}
+        "VpcId": {{$.VPCRefFromNetworkStack}}
       },
       "Type": "AWS::EC2::SecurityGroup"
     },
@@ -239,7 +239,7 @@
             "Value": "{{$.ClusterName}}-sg-worker"
           }
         ],
-        "VpcId": {{.VPCRef}}
+        "VpcId": {{$.VPCRefFromNetworkStack}}
       },
       "Type": "AWS::EC2::SecurityGroup"
     },
@@ -612,7 +612,7 @@
             "Value": "{{$.ClusterName}}-sg-etcd"
           }
         ],
-        "VpcId": {{.VPCRef}}
+        "VpcId": {{$.VPCRefFromNetworkStack}}
       },
       "Type": "AWS::EC2::SecurityGroup"
     },
@@ -671,7 +671,7 @@
             "Value": "{{$.ClusterName}}-sg-mount-target"
           }
         ],
-        "VpcId": {{.VPCRef}}
+        "VpcId": {{$.VPCRefFromNetworkStack}}
       },
       "Type": "AWS::EC2::SecurityGroup"
     }
@@ -717,7 +717,7 @@
             "Value": "{{$.ClusterName}}-{{$subnet.LogicalName}}"
           }
         ],
-        "VpcId": {{$.VPCRef}}
+        "VpcId": {{$.VPCRefFromNetworkStack}}
       },
       "Type": "AWS::EC2::Subnet"
     }
@@ -739,7 +739,7 @@
             "Value": "{{$.ClusterName}}-{{$subnet.RouteTableLogicalName}}"
           }
         ],
-        "VpcId": {{$.VPCRef}}
+        "VpcId": {{$.VPCRefFromNetworkStack}}
       },
       "Type": "AWS::EC2::RouteTable"
     }
@@ -850,7 +850,7 @@
     "VPCGatewayAttachment": {
       "Properties": {
         "InternetGatewayId": {{.InternetGatewayRef}},
-        "VpcId": {{.VPCRef}}
+        "VpcId": {{$.VPCRefFromNetworkStack}}
       },
       "Type": "AWS::EC2::VPCGatewayAttachment"
     }
