@@ -12,7 +12,7 @@ import (
 )
 
 // OpsWorksCM provides the API operation methods for making requests to
-// AWS OpsWorks for Chef Automate. See this package's package overview docs
+// AWS OpsWorks CM. See this package's package overview docs
 // for details on the service.
 //
 // OpsWorksCM methods are safe to use concurrently. It is not safe to

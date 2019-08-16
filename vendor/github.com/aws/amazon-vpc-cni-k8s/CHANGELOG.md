@@ -1,5 +1,46 @@
 # Changelog
 
+## v1.5.3
+
+* Bug fix - [Copy the binary and config after ipamd is ready](https://github.com/aws/amazon-vpc-cni-k8s/pull/576) (#576, @mogren)
+* Improvement - [Update Calico version to v3.8.1](https://github.com/aws/amazon-vpc-cni-k8s/pull/554) (#554, @lmm)
+* Improvement - [Add env var to override introspection bind address](https://github.com/aws/amazon-vpc-cni-k8s/pull/501) (#501, @jacksontj)
+* Improvement - [Remove unused env variable](https://github.com/aws/amazon-vpc-cni-k8s/pull/578) (#578, @mogren)
+* Improvement - [Exit early if MAC address doesn't match](https://github.com/aws/amazon-vpc-cni-k8s/pull/582) (#582, @mogren)
+
+## v1.5.2
+* Bug fix - [Fix formatting flag](https://github.com/aws/amazon-vpc-cni-k8s/pull/521) (#521, @uthark)
+* Bug fix - [Fix formatting issue](https://github.com/aws/amazon-vpc-cni-k8s/pull/524) (#524, @uthark)
+* Bug fix - [Detach ENI before deleting](https://github.com/aws/amazon-vpc-cni-k8s/pull/538) (#538, @uthark)
+* Improvement - [Adding healthz endpoint to IPamD](https://github.com/aws/amazon-vpc-cni-k8s/pull/548) (#548, @nithu0115)
+* Improvement - [Adding new m5 and r5 instances](https://github.com/aws/amazon-vpc-cni-k8s/pull/518) (#518, @mogren)
+* Improvement - [t3a.small only have 2 ENIs](https://github.com/aws/amazon-vpc-cni-k8s/pull/543) (#543, @mogren)
+* Improvement - [Updating AWS Go SDK version](https://github.com/aws/amazon-vpc-cni-k8s/pull/549) (#549, Nordlund, Eric)
+* Improvement - [Reduce the wait time when checking for pods without IPs](https://github.com/aws/amazon-vpc-cni-k8s/pull/552) (#552, @mogren)
+* Improvement - [Update start script to wait for ipamd health](https://github.com/aws/amazon-vpc-cni-k8s/pull/472) (#552, @mogren)
+* Improvement - [Hide health check output](https://github.com/aws/amazon-vpc-cni-k8s/pull/569) (#569, @mogren)
+* Improvement - [Support c5.12xlarge and c5.24xlarge](https://github.com/aws/amazon-vpc-cni-k8s/pull/510) (#510, @mogren)
+
+## v1.5.1
+
+* Bug fix - [Ignore namespace for custom eniconfig watch](https://github.com/aws/amazon-vpc-cni-k8s/pull/561) (#561, @mogren)
+
+## v1.5.0
+
+* Bug fix - [Fix spelling on annotation](https://github.com/aws/amazon-vpc-cni-k8s/pull/482) (#482, @forsberg)
+* Bug fix - [Avoid using force detach of ENIs](https://github.com/aws/amazon-vpc-cni-k8s/pull/458) (#458, @mogren)
+* Bug fix - [Flush logs before exiting](https://github.com/aws/amazon-vpc-cni-k8s/pull/451) (#451, @venkatesh-eb)
+* Improvement - [Add IPs to existing ENIs first](https://github.com/aws/amazon-vpc-cni-k8s/pull/487) (#487, @mogren)
+* Improvement - [Added error handling for GetENIipLimit](https://github.com/aws/amazon-vpc-cni-k8s/pull/484) (#484, @Zyqsempai)
+* Improvement - [Moved all GetEnv's calls to init step](https://github.com/aws/amazon-vpc-cni-k8s/pull/445) (#445, @Zyqsempai)
+* Improvement - [On start up, wait for pods with no IP](https://github.com/aws/amazon-vpc-cni-k8s/pull/480) (#480, @mogren)
+* Improvement - [Don't modify maxENI](https://github.com/aws/amazon-vpc-cni-k8s/pull/472) (#472, @nckturner)
+* Improvement - [Improve WARM_IP_TARGET handling](https://github.com/aws/amazon-vpc-cni-k8s/pull/461) (#461, @nckturner)
+* Improvement - [Update logging format to align messages](https://github.com/aws/amazon-vpc-cni-k8s/pull/473) (#473, @mogren)
+* Improvement - [Added -W (wait for xlock's) flag to iptables commands](https://github.com/aws/amazon-vpc-cni-k8s/pull/439) (#439, @Zyqsempai)
+* Improvement - [Remove error message from Prometheus labels](https://github.com/aws/amazon-vpc-cni-k8s/pull/467) (#467, @bboreham)
+* Improvement - [Update instance types](https://github.com/aws/amazon-vpc-cni-k8s/pull/459) (#459, @mogren)
+
 ## v1.4.1
 
 * Feature - [Add flag to disable metrics and introspection](https://github.com/aws/amazon-vpc-cni-k8s/pull/436) (#436, @mogren)
