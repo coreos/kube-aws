@@ -19,15 +19,16 @@ import (
 	"math"
 	"net/http"
 	"runtime"
-	"sort"
 	"strings"
-
-	dto "github.com/prometheus/client_model/go"
-	"github.com/prometheus/common/expfmt"
+	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/prometheus/common/expfmt"
+
+	dto "github.com/prometheus/client_model/go"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func ExampleGauge() {
@@ -89,37 +90,6 @@ func ExampleGaugeFunc() {
 	// GaugeFunc 'goroutines_count' registered.
 }
 
-func ExampleCounter() {
-	pushCounter := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "repository_pushes", // Note: No help string...
-	})
-	err := prometheus.Register(pushCounter) // ... so this will return an error.
-	if err != nil {
-		fmt.Println("Push counter couldn't be registered, no counting will happen:", err)
-		return
-	}
-
-	// Try it once more, this time with a help string.
-	pushCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "repository_pushes",
-		Help: "Number of pushes to external repository.",
-	})
-	err = prometheus.Register(pushCounter)
-	if err != nil {
-		fmt.Println("Push counter couldn't be registered AGAIN, no counting will happen:", err)
-		return
-	}
-
-	pushComplete := make(chan struct{})
-	// TODO: Start a goroutine that performs repository pushes and reports
-	// each completion via the channel.
-	for _ = range pushComplete {
-		pushCounter.Inc()
-	}
-	// Output:
-	// Push counter couldn't be registered, no counting will happen: descriptor Desc{fqName: "repository_pushes", help: "", constLabels: {}, variableLabels: []} is invalid: empty help string
-}
-
 func ExampleCounterVec() {
 	httpReqs := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -148,38 +118,6 @@ func ExampleCounterVec() {
 	httpReqs.Delete(prometheus.Labels{"method": "GET", "code": "200"})
 }
 
-func ExampleInstrumentHandler() {
-	// Handle the "/doc" endpoint with the standard http.FileServer handler.
-	// By wrapping the handler with InstrumentHandler, request count,
-	// request and response sizes, and request latency are automatically
-	// exported to Prometheus, partitioned by HTTP status code and method
-	// and by the handler name (here "fileserver").
-	http.Handle("/doc", prometheus.InstrumentHandler(
-		"fileserver", http.FileServer(http.Dir("/usr/share/doc")),
-	))
-	// The Prometheus handler still has to be registered to handle the
-	// "/metrics" endpoint. The handler returned by prometheus.Handler() is
-	// already instrumented - with "prometheus" as the handler name. In this
-	// example, we want the handler name to be "metrics", so we instrument
-	// the uninstrumented Prometheus handler ourselves.
-	http.Handle("/metrics", prometheus.InstrumentHandler(
-		"metrics", prometheus.UninstrumentedHandler(),
-	))
-}
-
-func ExampleLabelPairSorter() {
-	labelPairs := []*dto.LabelPair{
-		&dto.LabelPair{Name: proto.String("status"), Value: proto.String("404")},
-		&dto.LabelPair{Name: proto.String("method"), Value: proto.String("get")},
-	}
-
-	sort.Sort(prometheus.LabelPairSorter(labelPairs))
-
-	fmt.Println(labelPairs)
-	// Output:
-	// [name:"method" value:"get"  name:"status" value:"404" ]
-}
-
 func ExampleRegister() {
 	// Imagine you have a worker pool and want to count the tasks completed.
 	taskCounter := prometheus.NewCounter(prometheus.CounterOpts{
@@ -195,7 +133,7 @@ func ExampleRegister() {
 	}
 	// Don't forget to tell the HTTP server about the Prometheus handler.
 	// (In a real program, you still need to start the HTTP server...)
-	http.Handle("/metrics", prometheus.Handler())
+	http.Handle("/metrics", promhttp.Handler())
 
 	// Now you can start workers and give every one of them a pointer to
 	// taskCounter and let it increment it whenever it completes a task.
@@ -276,16 +214,11 @@ func ExampleRegister() {
 
 	// A different (and somewhat tricky) approach is to use
 	// ConstLabels. ConstLabels are pairs of label names and label values
-	// that never change. You might ask what those labels are good for (and
-	// rightfully so - if they never change, they could as well be part of
-	// the metric name). There are essentially two use-cases: The first is
-	// if labels are constant throughout the lifetime of a binary execution,
-	// but they vary over time or between different instances of a running
-	// binary. The second is what we have here: Each worker creates and
-	// registers an own Counter instance where the only difference is in the
-	// value of the ConstLabels. Those Counters can all be registered
-	// because the different ConstLabel values guarantee that each worker
-	// will increment a different Counter metric.
+	// that never change. Each worker creates and registers an own Counter
+	// instance where the only difference is in the value of the
+	// ConstLabels. Those Counters can all be registered because the
+	// different ConstLabel values guarantee that each worker will increment
+	// a different Counter metric.
 	counterOpts := prometheus.CounterOpts{
 		Subsystem:   "worker_pool",
 		Name:        "completed_tasks",
@@ -326,7 +259,7 @@ func ExampleRegister() {
 	// taskCounter unregistered.
 	// taskCounterVec not registered: a previously registered descriptor with the same fully-qualified name as Desc{fqName: "worker_pool_completed_tasks_total", help: "Total number of tasks completed.", constLabels: {}, variableLabels: [worker_id]} has different label names or a different help string
 	// taskCounterVec registered.
-	// Worker initialization failed: inconsistent label cardinality
+	// Worker initialization failed: inconsistent label cardinality: expected 1 label values but got 2 in []string{"42", "spurious arg"}
 	// notMyCounter is nil.
 	// taskCounterForWorker42 registered.
 	// taskCounterForWorker2001 registered.
@@ -334,8 +267,9 @@ func ExampleRegister() {
 
 func ExampleSummary() {
 	temps := prometheus.NewSummary(prometheus.SummaryOpts{
-		Name: "pond_temperature_celsius",
-		Help: "The temperature of the frog pond.", // Sorry, we can't measure how badly it smells.
+		Name:       "pond_temperature_celsius",
+		Help:       "The temperature of the frog pond.",
+		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
 	})
 
 	// Simulate some observations.
@@ -372,8 +306,9 @@ func ExampleSummary() {
 func ExampleSummaryVec() {
 	temps := prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Name: "pond_temperature_celsius",
-			Help: "The temperature of the frog pond.", // Sorry, we can't measure how badly it smells.
+			Name:       "pond_temperature_celsius",
+			Help:       "The temperature of the frog pond.",
+			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
 		},
 		[]string{"species"},
 	)
@@ -640,6 +575,7 @@ func ExampleAlreadyRegisteredError() {
 			panic(err)
 		}
 	}
+	reqCounter.Inc()
 }
 
 func ExampleGatherers() {
@@ -709,7 +645,7 @@ humidity_percent{location="inside"} 33.2
 # HELP temperature_kelvin Temperature in Kelvin.
 # Duplicate metric:
 temperature_kelvin{location="outside"} 265.3
- # Wrong labels:
+ # Missing location label (note that this is undesirable but valid):
 temperature_kelvin 4.5
 `
 
@@ -737,15 +673,47 @@ temperature_kelvin 4.5
 	// temperature_kelvin{location="outside"} 273.14
 	// temperature_kelvin{location="somewhere else"} 4.5
 	// ----------
-	// 2 error(s) occurred:
-	// * collected metric temperature_kelvin label:<name:"location" value:"outside" > gauge:<value:265.3 >  was collected before with the same name and label values
-	// * collected metric temperature_kelvin gauge:<value:4.5 >  has label dimensions inconsistent with previously collected metrics in the same metric family
+	// collected metric "temperature_kelvin" { label:<name:"location" value:"outside" > gauge:<value:265.3 > } was collected before with the same name and label values
 	// # HELP humidity_percent Humidity in %.
 	// # TYPE humidity_percent gauge
 	// humidity_percent{location="inside"} 33.2
 	// humidity_percent{location="outside"} 45.4
 	// # HELP temperature_kelvin Temperature in Kelvin.
 	// # TYPE temperature_kelvin gauge
+	// temperature_kelvin 4.5
 	// temperature_kelvin{location="inside"} 298.44
 	// temperature_kelvin{location="outside"} 273.14
+}
+
+func ExampleNewMetricWithTimestamp() {
+	desc := prometheus.NewDesc(
+		"temperature_kelvin",
+		"Current temperature in Kelvin.",
+		nil, nil,
+	)
+
+	// Create a constant gauge from values we got from an external
+	// temperature reporting system. Those values are reported with a slight
+	// delay, so we want to add the timestamp of the actual measurement.
+	temperatureReportedByExternalSystem := 298.15
+	timeReportedByExternalSystem := time.Date(2009, time.November, 10, 23, 0, 0, 12345678, time.UTC)
+	s := prometheus.NewMetricWithTimestamp(
+		timeReportedByExternalSystem,
+		prometheus.MustNewConstMetric(
+			desc, prometheus.GaugeValue, temperatureReportedByExternalSystem,
+		),
+	)
+
+	// Just for demonstration, let's check the state of the gauge by
+	// (ab)using its Write method (which is usually only used by Prometheus
+	// internally).
+	metric := &dto.Metric{}
+	s.Write(metric)
+	fmt.Println(proto.MarshalTextString(metric))
+
+	// Output:
+	// gauge: <
+	//   value: 298.15
+	// >
+	// timestamp_ms: 1257894000012
 }

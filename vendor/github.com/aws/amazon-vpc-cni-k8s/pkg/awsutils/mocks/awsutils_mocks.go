@@ -1,4 +1,4 @@
-// Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -48,18 +48,6 @@ func (m *MockAPIs) EXPECT() *MockAPIsMockRecorder {
 	return m.recorder
 }
 
-// AllocAllIPAddress mocks base method
-func (m *MockAPIs) AllocAllIPAddress(arg0 string) error {
-	ret := m.ctrl.Call(m, "AllocAllIPAddress", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AllocAllIPAddress indicates an expected call of AllocAllIPAddress
-func (mr *MockAPIsMockRecorder) AllocAllIPAddress(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllocAllIPAddress", reflect.TypeOf((*MockAPIs)(nil).AllocAllIPAddress), arg0)
-}
-
 // AllocENI mocks base method
 func (m *MockAPIs) AllocENI(arg0 bool, arg1 []*string, arg2 string) (string, error) {
 	ret := m.ctrl.Call(m, "AllocENI", arg0, arg1, arg2)
@@ -86,7 +74,7 @@ func (mr *MockAPIsMockRecorder) AllocIPAddress(arg0 interface{}) *gomock.Call {
 }
 
 // AllocIPAddresses mocks base method
-func (m *MockAPIs) AllocIPAddresses(arg0 string, arg1 int64) error {
+func (m *MockAPIs) AllocIPAddresses(arg0 string, arg1 int) error {
 	ret := m.ctrl.Call(m, "AllocIPAddresses", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -95,6 +83,18 @@ func (m *MockAPIs) AllocIPAddresses(arg0 string, arg1 int64) error {
 // AllocIPAddresses indicates an expected call of AllocIPAddresses
 func (mr *MockAPIsMockRecorder) AllocIPAddresses(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllocIPAddresses", reflect.TypeOf((*MockAPIs)(nil).AllocIPAddresses), arg0, arg1)
+}
+
+// DeallocIPAddresses mocks base method
+func (m *MockAPIs) DeallocIPAddresses(arg0 string, arg1 []string) error {
+	ret := m.ctrl.Call(m, "DeallocIPAddresses", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeallocIPAddresses indicates an expected call of DeallocIPAddresses
+func (mr *MockAPIsMockRecorder) DeallocIPAddresses(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeallocIPAddresses", reflect.TypeOf((*MockAPIs)(nil).DeallocIPAddresses), arg0, arg1)
 }
 
 // DescribeENI mocks base method
@@ -150,9 +150,9 @@ func (mr *MockAPIsMockRecorder) GetENILimit() *gomock.Call {
 }
 
 // GetENIipLimit mocks base method
-func (m *MockAPIs) GetENIipLimit() (int64, error) {
+func (m *MockAPIs) GetENIipLimit() (int, error) {
 	ret := m.ctrl.Call(m, "GetENIipLimit")
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

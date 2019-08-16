@@ -12,7 +12,7 @@
 # language governing permissions and limitations under the License.
 #
 
-.PHONY: build-linux clean docker docker-build lint unit-test vet download-portmap
+.PHONY: all build-linux clean docker docker-build lint unit-test vet download-portmap build-docker-test build-metrics docker-metrics metrics-unit-test docker-metrics-test docker-vet
 
 IMAGE   ?= amazon/amazon-k8s-cni
 VERSION ?= $(shell git describe --tags --always --dirty)
@@ -28,6 +28,12 @@ ifeq ($(ARCH),x86_64)
   ARCH = amd64
 endif
 
+# Default to build the Linux binary
+build-linux:
+	GOOS=linux GOARCH=$(ARCH) CGO_ENABLED=0 go build -o aws-k8s-agent -ldflags "$(LDFLAGS)"
+	GOOS=linux GOARCH=$(ARCH) CGO_ENABLED=0 go build -o aws-cni -ldflags "$(LDFLAGS)" ./plugins/routed-eni/
+	GOOS=linux GOARCH=$(ARCH) CGO_ENABLED=0 go build -o grpc_health_probe -ldflags "$(LDFLAGS)" ./client/health-check/
+
 # Download portmap plugin
 download-portmap:
 	mkdir -p tmp/downloads
@@ -37,26 +43,27 @@ download-portmap:
 	cp tmp/plugins/portmap .
 	rm -rf tmp
 
-# Default to build the Linux binary
-build-linux:
-	GOOS=linux GOARCH=$(ARCH) CGO_ENABLED=0 go build -o aws-k8s-agent -ldflags "$(LDFLAGS)"
-	GOOS=linux GOARCH=$(ARCH) CGO_ENABLED=0 go build -o aws-cni -ldflags "$(LDFLAGS)" ./plugins/routed-eni/
-
-docker-build:
-	docker run -v $(shell pwd):/usr/src/app/src/github.com/aws/amazon-vpc-cni-k8s \
-		--workdir=/usr/src/app/src/github.com/aws/amazon-vpc-cni-k8s \
-		--env GOPATH=/usr/src/app \
-		--env ARCH=$(ARCH) \
-		golang:1.10 make build-linux && make download-portmap
-
-
-# Build docker image
-docker: docker-build
-	@docker build -f scripts/dockerfiles/Dockerfile.release -t "$(IMAGE):$(VERSION)" .
+# Build CNI Docker image
+docker:
+	@docker build --build-arg arch="$(ARCH)" -f scripts/dockerfiles/Dockerfile.release -t "$(IMAGE):$(VERSION)" .
 	@echo "Built Docker image \"$(IMAGE):$(VERSION)\""
 
 # unit-test
 unit-test:
+	GOOS=linux CGO_ENABLED=1 go test -v -cover ./cni-metrics-helper/metrics/...
+	GOOS=linux CGO_ENABLED=1 go test -v -cover ./ipamd/...
+	GOOS=linux CGO_ENABLED=1 go test -v -cover ./pkg/awsutils/...
+	GOOS=linux CGO_ENABLED=1 go test -v -cover ./pkg/ec2metadatawrapper/...
+	GOOS=linux CGO_ENABLED=1 go test -v -cover ./pkg/ec2wrapper/...
+	GOOS=linux CGO_ENABLED=1 go test -v -cover ./pkg/eniconfig/...
+	GOOS=linux CGO_ENABLED=1 go test -v -cover ./pkg/k8sapi/...
+	GOOS=linux CGO_ENABLED=1 go test -v -cover ./pkg/networkutils/...
+	GOOS=linux CGO_ENABLED=1 go test -v -cover ./pkg/publisher/...
+	GOOS=linux CGO_ENABLED=1 go test -v -cover ./pkg/utils/...
+	GOOS=linux CGO_ENABLED=1 go test -v -cover ./plugins/routed-eni/...
+
+# unit-test-race
+unit-test-race:
 	GOOS=linux CGO_ENABLED=1 go test -v -cover -race -timeout 150s ./pkg/awsutils/...
 	GOOS=linux CGO_ENABLED=1 go test -v -cover -race -timeout 10s ./plugins/routed-eni/...
 	GOOS=linux CGO_ENABLED=1 go test -v -cover -race -timeout 10s ./pkg/k8sapi/...
@@ -65,11 +72,33 @@ unit-test:
 	GOOS=linux CGO_ENABLED=1 go test -v -cover -race -timeout 10s ./pkg/eniconfig/...
 	GOOS=linux CGO_ENABLED=1 go test -v -cover -race -timeout 10s ./ipamd/...
 
-docker-unit-test:
+build-docker-test:
+	@docker build -f scripts/dockerfiles/Dockerfile.test -t amazon-k8s-cni-test:latest .
+
+docker-unit-test: build-docker-test
+	docker run -e GO111MODULE=on \
+		amazon-k8s-cni-test:latest make unit-test
+
+# Build metrics
+build-metrics:
+	GOOS=linux GOARCH=$(ARCH) CGO_ENABLED=0 go build -o cni-metrics-helper/cni-metrics-helper cni-metrics-helper/cni-metrics-helper.go
+
+# Build metrics Docker image
+docker-metrics:
+	@docker build --build-arg arch="$(ARCH)" -f scripts/dockerfiles/Dockerfile.metrics -t "amazon/cni-metrics-helper:$(VERSION)" .
+	@echo "Built Docker image \"amazon/cni-metrics-helper:$(VERSION)\""
+
+metrics-unit-test:
+	GOOS=linux CGO_ENABLED=1 go test -v -cover -race -timeout 10s ./cni-metrics-helper/metrics/...
+
+docker-metrics-test:
 	docker run -v $(shell pwd):/usr/src/app/src/github.com/aws/amazon-vpc-cni-k8s \
 		--workdir=/usr/src/app/src/github.com/aws/amazon-vpc-cni-k8s \
 		--env GOPATH=/usr/src/app \
-		golang:1.10 make unit-test
+		golang:1.10 make metrics-unit-test
+
+# Build both CNI and metrics helper
+all: docker docker-metrics
 
 # golint
 # To install: go get -u golang.org/x/lint/golint
@@ -82,14 +111,16 @@ lint:
 	golint ipamd/*.go
 	golint ipamd/*/*.go
 
-#go tool vet
+# go vet
 vet:
-	go tool vet ./pkg/awsutils
-	go tool vet ./plugins/routed-eni
-	go tool vet ./pkg/k8sapi
-	go tool vet ./pkg/networkutils
+	GOOS=linux go vet
+
+docker-vet: build-docker-test
+	docker run -e GO111MODULE=on \
+		amazon-k8s-cni-test:latest make vet
 
 clean:
 	rm -f aws-k8s-agent
 	rm -f aws-cni
+	rm -f cni-metrics-helper/cni-metrics-helper
 	rm -f portmap

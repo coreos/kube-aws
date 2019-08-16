@@ -4,6 +4,7 @@ package k8sapi
 import (
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -31,6 +32,10 @@ type controller struct {
 	informer cache.Controller
 }
 
+const (
+	cniPodName = "aws-node"
+)
+
 // K8SAPIs defines interface to use kubelet introspection API
 type K8SAPIs interface {
 	K8SGetLocalPodIPs() ([]*K8SPodInfo, error)
@@ -57,6 +62,9 @@ type Controller struct {
 	workerPods     map[string]*K8SPodInfo
 	workerPodsLock sync.RWMutex
 
+	cniPods     map[string]string
+	cniPodsLock sync.RWMutex
+
 	controller *controller
 	kubeClient kubernetes.Interface
 	myNodeName string
@@ -67,6 +75,7 @@ type Controller struct {
 func NewController(clientset kubernetes.Interface) *Controller {
 	return &Controller{kubeClient: clientset,
 		myNodeName: os.Getenv("MY_NODE_NAME"),
+		cniPods:    make(map[string]string),
 		workerPods: make(map[string]*K8SPodInfo)}
 }
 
@@ -89,6 +98,23 @@ func CreateKubeClient() (clientset.Interface, error) {
 	log.Info("Communication with server successful")
 
 	return kubeClient, nil
+}
+
+// GetCNIPods return the list of CNI pod names
+func (d *Controller) GetCNIPods() []string {
+	var cniPods []string
+
+	log.Info("GetCNIPods start...")
+
+	d.cniPodsLock.Lock()
+	defer d.cniPodsLock.Unlock()
+
+	for k := range d.cniPods {
+		cniPods = append(cniPods, k)
+	}
+
+	log.Info("GetCNIPods discovered", cniPods)
+	return cniPods
 }
 
 // DiscoverK8SPods discovers Pods running in the cluster
@@ -194,10 +220,15 @@ func (d *Controller) handlePodUpdate(key string) error {
 	}
 
 	if !exists {
-		log.Infof(" Pods deleted on my node: %v", key)
+		log.Infof("Pods deleted on my node: %v", key)
 		d.workerPodsLock.Lock()
 		defer d.workerPodsLock.Unlock()
 		delete(d.workerPods, key)
+		if strings.HasPrefix(key, metav1.NamespaceSystem+"/"+cniPodName) {
+			d.cniPodsLock.Lock()
+			defer d.cniPodsLock.Unlock()
+			delete(d.cniPods, key)
+		}
 		return nil
 	}
 
@@ -222,7 +253,13 @@ func (d *Controller) handlePodUpdate(key string) error {
 			IP:        pod.Status.PodIP,
 		}
 
-		log.Infof(" Add/Update for Pod %s on my node, namespace = %s, IP = %s", podName, d.workerPods[key].Namespace, d.workerPods[key].IP)
+		log.Infof("Add/Update for Pod %s on my node, namespace = %s, IP = %s", podName, d.workerPods[key].Namespace, d.workerPods[key].IP)
+	} else if strings.HasPrefix(key, metav1.NamespaceSystem+"/"+cniPodName) {
+		d.cniPodsLock.Lock()
+		defer d.cniPodsLock.Unlock()
+
+		log.Infof("Add/Update for CNI pod %s", podName)
+		d.cniPods[podName] = podName
 	}
 	return nil
 }
@@ -254,15 +291,16 @@ func (c *controller) handleErr(err error, key interface{}) {
 }
 
 func (d *Controller) run(threadiness int, stopCh chan struct{}) {
-
 	// Let the workers stop when we are done
 	defer d.controller.queue.ShutDown()
 	log.Info("Starting Pod controller")
 
 	go d.controller.informer.Run(stopCh)
 
+	log.Info("Waiting for controller cache sync")
 	// Wait for all involved caches to be synced, before processing items from the queue is started
 	if !cache.WaitForCacheSync(stopCh, d.controller.informer.HasSynced) {
+		log.Error("Timed out waiting for caches to sync!")
 		runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
 		return
 	}
