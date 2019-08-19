@@ -57,7 +57,7 @@ spec:
       serviceAccountName: cluster-autoscaler
       tolerations:
         - effect: NoSchedule
-          key: node.alpha.kubernetes.io/role
+          key: node.kubernetes.io/role
           operator: Equal
           value: master
         - key: CriticalAddonsOnly

@@ -363,17 +363,10 @@
                 },
                 {{end}}
                 {
-                  "Action": "ec2:Describe*",
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {
-                  "Action": "ec2:AttachVolume",
-                  "Effect": "Allow",
-                  "Resource": "*"
-                },
-                {
-                  "Action": "ec2:DetachVolume",
+                  "Action": [ 
+                    "ec2:DescribeInstances",
+                    "ec2:DescribeRegions"
+                  ],
                   "Effect": "Allow",
                   "Resource": "*"
                 },

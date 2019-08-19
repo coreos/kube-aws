@@ -366,7 +366,6 @@ coreos:
         ExecStartPre=/bin/sed -e "s/COREOS_PRIVATE_IPV4/${COREOS_PRIVATE_IPV4}/g" -i /etc/kubernetes/config/kubelet.yaml
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/manifests /srv/kubernetes/manifests  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
         ExecStart=/bin/sh -c "exec /usr/lib/coreos/kubelet-wrapper \
-        --cloud-provider=aws \
         {{ if checkVersion ">= 1.14" .K8sVer -}}
         --bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \
         {{- end }}
@@ -385,7 +384,7 @@ coreos:
         --container-runtime={{.ContainerRuntime}} \
         --register-node=true \
         --node-labels=node.kubernetes.io/role="master",node-role.kubernetes.io/master=\"\",kubernetes.io/role=master,service-cidr={{ .ServiceCIDR | toLabel }}{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
-        --register-with-taints=node.alpha.kubernetes.io/role=master:NoSchedule \
+        --register-with-taints=node.kubernetes.io/role=master:NoSchedule \
         --config=/etc/kubernetes/config/kubelet.yaml \
         {{- if .Kubernetes.Networking.AmazonVPC.Enabled }}
         --node-ip=$$(curl http://169.254.169.254/latest/meta-data/local-ipv4) \
@@ -659,7 +658,7 @@ write_files:
 
 {{end}}
 {{if .Experimental.DisableSecurityGroupIngress}}
-  - path: /etc/kubernetes/additional-configs/cloud.config
+  - path: /etc/kubernetes/cloud-controller-manager/cloud.config
     owner: root:root
     permissions: 0644
     content: |
@@ -860,7 +859,7 @@ write_files:
       #!/bin/bash -e
       echo >&2 "Running kubectl in ${PWD}"
       vols="-v /srv/kubernetes:/srv/kubernetes:ro -v /etc/kubernetes:/etc/kubernetes:ro -v ${PWD}:/work:rw"
-      /usr/bin/docker run -i -t --rm -w /work $vols --net=host {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml $@
+      /usr/bin/docker run -i -t --rm -w /work $vols --net=host {{.HyperkubeImage.RepoWithTag}} /kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml $@
 
   - path: /opt/bin/install-kube-system
     permissions: 0700
@@ -878,7 +877,7 @@ write_files:
           # --request-timeout=1s is intended to instruct kubectl to give up discovering unresponsive apiservice(s) in certain periods
           # so that temporal freakiness/unresponsity of specific apiservice until apiserver/controller-manager fully starts doesn't
           # affect the whole controller bootstrap process.
-          /usr/bin/docker run -i --rm $vols --net=host {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml --request-timeout=1s "$@"
+          /usr/bin/docker run -i --rm $vols --net=host {{.HyperkubeImage.RepoWithTag}} /kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml --request-timeout=1s "$@"
       }
 
       helm() {
@@ -1005,6 +1004,9 @@ write_files:
       deploy "${mfdir}/kube-proxy-sa.yaml" \
         "${mfdir}/kube-proxy-cm.yaml" \
         "${mfdir}/kube-proxy-ds.yaml"
+
+      # CLOUD_CONTROLLER_MANAGER
+      deploy "${mfdir}/cloud-controller-manager.yaml"
 
       # TLS BOOTSTRAP
       deploy "${rbac}/cluster-role-bindings"/{nodes-can-create-csrs,automatically-sign-node-certificate-requests,automatically-sign-node-certificate-renewals}".yaml"
@@ -2685,7 +2687,7 @@ write_files:
                   - /bin/cp
                   - -f
                   - /hyperkube
-                  - /workdir/hyperkube
+                  - /workdir/kubectl
                   volumeMounts:
                   - mountPath: /workdir
                     name: workdir
@@ -2707,7 +2709,7 @@ write_files:
                     # Hyperkube binary is not statically linked, so we need to use
                     # the musl interpreter to be able to run it in this image
                     # See: https://github.com/kubernetes-incubator/kube-aws/pull/674#discussion_r118889687
-                    kubectl() { /lib/ld-musl-x86_64.so.1 /opt/bin/hyperkube kubectl "$@"; }
+                    kubectl() { /lib/ld-musl-x86_64.so.1 /opt/bin/kubectl "$@"; }
 
                     REGION=$(metadata dynamic/instance-identity/document | jq -r .region)
                     [ -n "${REGION}" ]
@@ -2777,7 +2779,7 @@ write_files:
                   - /bin/cp
                   - -f
                   - /hyperkube
-                  - /workdir/hyperkube
+                  - /workdir/kubectl
                   volumeMounts:
                   - mountPath: /workdir
                     name: workdir
@@ -2799,7 +2801,7 @@ write_files:
                     # Hyperkube binary is not statically linked, so we need to use
                     # the musl interpreter to be able to run it in this image
                     # See: https://github.com/kubernetes-incubator/kube-aws/pull/674#discussion_r118889687
-                    kubectl() { /lib/ld-musl-x86_64.so.1 /opt/bin/hyperkube kubectl "$@"; }
+                    kubectl() { /lib/ld-musl-x86_64.so.1 /opt/bin/kubectl "$@"; }
 
                     INSTANCE_ID=$(metadata meta-data/instance-id)
                     REGION=$(metadata dynamic/instance-identity/document | jq -r .region)
@@ -3329,7 +3331,7 @@ write_files:
                 image: {{.HyperkubeImage.RepoWithTag}}
                 command:
                 - /hyperkube
-                - proxy
+                - kube-proxy
                 - --config=/etc/kubernetes/kube-proxy/kube-proxy-config.yaml
                 securityContext:
                   privileged: true
@@ -3375,7 +3377,7 @@ write_files:
           image: {{.HyperkubeImage.RepoWithTag}}
           command:
           - /hyperkube
-          - apiserver
+          - kube-apiserver
           {{- if .ApiServerLeaseEndpointReconciler }}
           - --endpoint-reconciler-type=lease
           {{- else }}
@@ -3434,7 +3436,6 @@ write_files:
           {{- if .ControllerFeatureGates.Enabled }}
           - --feature-gates={{.ControllerFeatureGates.String}}
           {{- end }}
-          - --cloud-provider=aws
           {{ if .Addons.APIServerAggregator.Enabled -}}
           - --requestheader-client-ca-file=/etc/kubernetes/ssl/ca.pem
           - --requestheader-allowed-names=aggregator
@@ -3562,9 +3563,8 @@ write_files:
           image: {{.HyperkubeImage.RepoWithTag}}
           command:
           - /hyperkube
-          - controller-manager
+          - kube-controller-manager
           {{/* mandatory flags below */}}
-          - --cloud-provider=aws
           - --cluster-name={{.ClusterName}}
           - --kubeconfig=/etc/kubernetes/kubeconfig/kube-controller-manager.yaml
           - --authentication-kubeconfig=/etc/kubernetes/kubeconfig/kube-controller-manager.yaml
@@ -3579,14 +3579,10 @@ write_files:
           {{ if .Experimental.NodeMonitorGracePeriod }}
           - --node-monitor-grace-period={{ .Experimental.NodeMonitorGracePeriod }}
           {{end}}
-          {{ if .Experimental.DisableSecurityGroupIngress }}
-          - --cloud-config=/etc/kubernetes/additional-configs/cloud.config
-          {{ end }}
           {{ if not .Kubernetes.Networking.AmazonVPC.Enabled -}}
           - --allocate-node-cidrs=true
           - --cluster-cidr={{.PodCIDR}}
           {{ end -}}
-          - --configure-cloud-routes=false {{/* no need to auto configure cloud routes when using flannel or canal */}}
           - --service-cluster-ip-range={{.ServiceCIDR}} {{/* removes the service CIDR range from the cluster CIDR if it intersects */}}
           {{ if not .Addons.MetricsServer.Enabled -}}
           - --horizontal-pod-autoscaler-use-rest-clients=false
@@ -3612,11 +3608,6 @@ write_files:
             initialDelaySeconds: 15
             timeoutSeconds: 15
           volumeMounts:
-          {{if .Experimental.DisableSecurityGroupIngress}}
-          - mountPath: /etc/kubernetes/additional-configs
-            name: additional-configs
-            readOnly: true
-          {{end}}
           - mountPath: /etc/kubernetes/ssl
             name: ssl-certs-kubernetes
             readOnly: true
@@ -3628,11 +3619,6 @@ write_files:
             readOnly: true
         hostNetwork: true
         volumes:
-        {{if .Experimental.DisableSecurityGroupIngress}}
-        - hostPath:
-            path: /etc/kubernetes/additional-configs
-          name: additional-configs
-        {{end}}
         - hostPath:
             path: /etc/kubernetes/ssl
           name: ssl-certs-kubernetes
@@ -3660,7 +3646,7 @@ write_files:
           image: {{.HyperkubeImage.RepoWithTag}}
           command:
           - /hyperkube
-          - scheduler
+          - kube-scheduler
           - --kubeconfig=/etc/kubernetes/kubeconfig/kube-scheduler.yaml
           - --authentication-kubeconfig=/etc/kubernetes/kubeconfig/kube-controller-manager.yaml
           - --authorization-kubeconfig=/etc/kubernetes/kubeconfig/kube-controller-manager.yaml
@@ -3731,6 +3717,169 @@ write_files:
                   memory: 100Mi
   {{- end }}
 
+  - path: /srv/kubernetes/manifests/cloud-controller-manager.yaml
+    content: |
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRole
+      metadata:
+        name: cloud-controller-manager
+      rules:
+      - apiGroups:
+        - ""
+        resources:
+        - events
+        verbs:
+        - create
+        - patch
+        - update
+      - apiGroups:
+        - ""
+        resources:
+        - nodes
+        verbs:
+        - '*'
+      - apiGroups:
+        - ""
+        resources:
+        - nodes/status
+        verbs:
+        - patch
+      - apiGroups:
+        - ""
+        resources:
+        - services
+        - secrets
+        verbs:
+        - list
+        - patch
+        - update
+        - watch
+      - apiGroups:
+        - ""
+        resources:
+        - serviceaccounts
+        verbs:
+        - create
+        - list
+        - get
+      - apiGroups:
+        - ""
+        resources:
+        - persistentvolumes
+        verbs:
+        - get
+        - list
+        - update
+        - watch
+      - apiGroups:
+        - ""
+        resources:
+        - endpoints
+        verbs:
+        - create
+        - get
+        - list
+        - watch
+        - update
+      ---
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: cloud-controller-manager
+        namespace: kube-system
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: system:cloud-controller-manager
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: cloud-controller-manager
+      subjects:
+      - kind: ServiceAccount
+        name: cloud-controller-manager
+        namespace: kube-system
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: system:cloud-controller-manager-authentication
+        namespace: kube-system
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: Role
+        name: extension-apiserver-authentication-reader
+      subjects:
+      - kind: ServiceAccount
+        name: cloud-controller-manager
+        namespace: kube-system
+      ---
+      apiVersion: apps/v1
+      kind: DaemonSet
+      metadata:
+        labels:
+          k8s-app: cloud-controller-manager
+        name: cloud-controller-manager
+        namespace: kube-system
+      spec:
+        selector:
+          matchLabels:
+            k8s-app: cloud-controller-manager
+        template:
+          metadata:
+            labels:
+              k8s-app: cloud-controller-manager
+          spec:
+            hostNetwork: true
+            serviceAccountName: cloud-controller-manager
+            priorityClassName: system-cluster-critical
+            containers:
+            - name: cloud-controller-manager
+              image: {{.HyperkubeImage.RepoWithTag}}
+              command:
+              - /cloud-controller-manager
+              - --cloud-provider=aws
+              - --leader-elect=true
+              - --use-service-account-credentials
+              - --v=4
+              # these flags will vary for every cloud provider
+              - --cluster-name={{.ClusterName}}
+              - --allocate-node-cidrs=false
+              - --configure-cloud-routes=false
+              {{ if .Experimental.DisableSecurityGroupIngress -}}
+              - --cloud-config=/etc/kubernetes/cloud-controller-manager/cloud.config
+              {{- end }}
+              {{ if .Experimental.DisableSecurityGroupIngress -}}
+              volumeMounts:
+              - mountPath: /etc/kubernetes
+                name: etc-kubernetes
+                readOnly: true
+              {{- end }}
+            tolerations:
+            # this is required so CCM can bootstrap itself
+            - key: node.cloudprovider.kubernetes.io/uninitialized
+              value: "true"
+              effect: NoSchedule
+            # this is to have the daemonset runnable on master nodes
+            # the taint may vary depending on your cluster setup
+            - key: "node.kubernetes.io/role"
+              operator: "Equal"
+              value: "master"
+              effect: "NoSchedule"
+            - key: "CriticalAddonsOnly"
+              operator: "Exists"
+            # this is to restrict CCM to only run on master nodes
+            # the node selector may vary depending on your cluster setup
+            nodeSelector:
+              node.kubernetes.io/role: "master"
+            {{ if .Experimental.DisableSecurityGroupIngress -}}
+            volumes:
+            - hostPath:
+                path: /etc/kubernetes
+              name: etc-kubernetes
+            {{- end }}
   - path: /srv/kubernetes/manifests/kube-proxy-sa.yaml
     content: |
         apiVersion: v1
@@ -4059,7 +4208,7 @@ write_files:
               tolerations:
                - key: "CriticalAddonsOnly"
                  operator: "Exists"
-               - key: "node.alpha.kubernetes.io/role"
+               - key: "node.kubernetes.io/role"
                  operator: "Equal"
                  value: "master"
                  effect: "NoSchedule"
@@ -4158,7 +4307,7 @@ write_files:
               tolerations:
                - key: "CriticalAddonsOnly"
                  operator: "Exists"
-               - key: "node.alpha.kubernetes.io/role"
+               - key: "node.kubernetes.io/role"
                  operator: "Equal"
                  value: "master"
                  effect: "NoSchedule"
@@ -4518,7 +4667,7 @@ write_files:
                 emptyDir: {}
               serviceAccountName: kubernetes-dashboard
               tolerations:
-              - key: "node.alpha.kubernetes.io/role"
+              - key: "node.kubernetes.io/role"
                 operator: "Equal"
                 value: "master"
                 effect: "NoSchedule"
@@ -4575,7 +4724,7 @@ write_files:
               tolerations:
               # Additions to the default tiller deployment for allowing to schedule tiller onto controller nodes
               # so that helm can be used to install pods running only on controller nodes
-              - key: "node.alpha.kubernetes.io/role"
+              - key: "node.kubernetes.io/role"
                 operator: "Equal"
                 value: "master"
                 effect: "NoSchedule"
@@ -5756,7 +5905,6 @@ write_files:
                   - --key=/etc/kiam/tls/agent-key.pem
                   - --ca=/etc/kiam/tls/ca.pem
                   - --server-address={{.Experimental.KIAMSupport.ServerAddresses.AgentAddress}}
-                  - --whitelist-route-regexp=.*
                   - --prometheus-listen-addr=0.0.0.0:9620
                   - --prometheus-sync-interval=5s
                   - --gateway-timeout-creation=1s
@@ -6477,7 +6625,7 @@ write_files:
 
       vols="-v /srv/kubernetes:/srv/kubernetes:ro -v /etc/kubernetes:/etc/kubernetes:ro"
       kubectl() {
-        /usr/bin/docker run -i --rm $vols --net=host {{.HyperkubeImage.RepoWithTag}} /hyperkube kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml --request-timeout=1s "$@"
+        /usr/bin/docker run -i --rm $vols --net=host {{.HyperkubeImage.RepoWithTag}} /kubectl --kubeconfig=/etc/kubernetes/kubeconfig/admin.yaml --request-timeout=1s "$@"
       }
 
       queryserver() {

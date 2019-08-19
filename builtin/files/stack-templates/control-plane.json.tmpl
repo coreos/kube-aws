@@ -258,6 +258,16 @@
                   "Effect": "Allow",
                   "Resource": "*"
                 },
+                {
+                  "Action": "iam:CreateServiceLinkedRole",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
+                {
+                  "Action": "kms:DescribeKey",
+                  "Effect": "Allow",
+                  "Resource": "*"
+                },
                 {{if .CloudWatchLogging.Enabled}}
                 {
                   "Effect": "Allow",

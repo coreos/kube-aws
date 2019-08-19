@@ -356,7 +356,7 @@ coreos:
         {{- if .Taints }}
         --register-with-taints={{.Taints.String}} \
         {{- end }}
-        --cloud-provider=aws \
+        --cloud-provider=external \
         --cert-dir=/etc/kubernetes/ssl \
         --bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \
         {{- if .Kubelet.Kubeconfig }}
