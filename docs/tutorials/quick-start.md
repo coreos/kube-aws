@@ -67,7 +67,7 @@ Before we move onto deploying, let's run `validate` to check the work above usin
 
 # Step 3: Launch
 
-Now you've generated and validated the various assets needed to launch a new cluster, let's run the deploy! Run `up` using the S3 bucket name from the pre-requisites section. For example:
+Now you've generated and validated the various assets needed to launch a new cluster, let's run the deploy! Run `apply` using the S3 bucket name from the pre-requisites section. For example:
 
 ```bash
 ➜ kube-aws apply
