@@ -2772,6 +2772,8 @@ write_files:
                 effect: NoExecute
               - operator: Exists
                 key: CriticalAddonsOnly
+              - key: node.kubernetes.io/unschedulable
+                effect: NoSchedule
               initContainers:
                 - name: hyperkube
                   image: {{.HyperkubeImage.RepoWithTag}}
