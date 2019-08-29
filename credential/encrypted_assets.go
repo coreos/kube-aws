@@ -38,11 +38,6 @@ type RawAssetsOnMemory struct {
 	EtcdKey                   []byte
 	EtcdClientKey             []byte
 	EtcdTrustedCA             []byte
-	KIAMServerCert            []byte
-	KIAMServerKey             []byte
-	KIAMAgentCert             []byte
-	KIAMAgentKey              []byte
-	KIAMCACert                []byte
 	ServiceAccountKey         []byte
 
 	// Other assets.
@@ -74,11 +69,6 @@ type RawAssetsOnDisk struct {
 	EtcdKey                   PlaintextFile
 	EtcdClientKey             PlaintextFile
 	EtcdTrustedCA             PlaintextFile
-	KIAMServerCert            PlaintextFile
-	KIAMServerKey             PlaintextFile
-	KIAMAgentCert             PlaintextFile
-	KIAMAgentKey              PlaintextFile
-	KIAMCACert                PlaintextFile
 	ServiceAccountKey         PlaintextFile
 
 	// Other assets.
@@ -110,11 +100,6 @@ type EncryptedAssetsOnDisk struct {
 	EtcdKey                   EncryptedFile
 	EtcdClientKey             EncryptedFile
 	EtcdTrustedCA             EncryptedFile
-	KIAMServerCert            EncryptedFile
-	KIAMServerKey             EncryptedFile
-	KIAMAgentCert             EncryptedFile
-	KIAMAgentKey              EncryptedFile
-	KIAMCACert                EncryptedFile
 	ServiceAccountKey         EncryptedFile
 
 	// Other encrypted assets.
@@ -146,11 +131,6 @@ type CompactAssets struct {
 	EtcdClientKey             string
 	EtcdKey                   string
 	EtcdTrustedCA             string
-	KIAMServerCert            string
-	KIAMServerKey             string
-	KIAMAgentCert             string
-	KIAMAgentKey              string
-	KIAMCACert                string
 	ServiceAccountKey         string
 
 	// Encrypted -> gzip -> base64 encoded assets.
@@ -161,7 +141,7 @@ type CompactAssets struct {
 	EncryptionConfig string
 }
 
-func ReadRawAssets(dirname string, manageCertificates bool, caKeyRequiredOnController bool, kiamEnabled bool) (*RawAssetsOnDisk, error) {
+func ReadRawAssets(dirname string, manageCertificates bool, caKeyRequiredOnController bool) (*RawAssetsOnDisk, error) {
 	defaultTokensFile := ""
 	defaultServiceAccountKey := "<<<" + filepath.Join(dirname, "apiserver-key.pem")
 	defaultTLSBootstrapToken, err := RandomTokenString()
@@ -219,14 +199,6 @@ func ReadRawAssets(dirname string, manageCertificates bool, caKeyRequiredOnContr
 		if caKeyRequiredOnController {
 			files = append(files, entry{name: "worker-ca-key.pem", data: &r.WorkerCAKey, defaultValue: nil, expiryCheck: true})
 		}
-
-		if kiamEnabled {
-			files = append(files, entry{name: "kiam-server-key.pem", data: &r.KIAMServerKey, defaultValue: nil, expiryCheck: false})
-			files = append(files, entry{name: "kiam-server.pem", data: &r.KIAMServerCert, defaultValue: nil, expiryCheck: true})
-			files = append(files, entry{name: "kiam-agent-key.pem", data: &r.KIAMAgentKey, defaultValue: nil, expiryCheck: false})
-			files = append(files, entry{name: "kiam-agent.pem", data: &r.KIAMAgentCert, defaultValue: nil, expiryCheck: true})
-			files = append(files, entry{name: "kiam-ca.pem", data: &r.KIAMCACert, defaultValue: nil, expiryCheck: true})
-		}
 	}
 
 	for _, file := range files {
@@ -253,7 +225,7 @@ func ReadRawAssets(dirname string, manageCertificates bool, caKeyRequiredOnContr
 	return r, nil
 }
 
-func ReadOrEncryptAssets(dirname string, manageCertificates bool, caKeyRequiredOnController bool, kiamEnabled bool, store Store) (*EncryptedAssetsOnDisk, error) {
+func ReadOrEncryptAssets(dirname string, manageCertificates bool, caKeyRequiredOnController bool, store Store) (*EncryptedAssetsOnDisk, error) {
 	defaultTokensFile := ""
 	defaultServiceAccountKey := "<<<" + filepath.Join(dirname, "apiserver-key.pem")
 	defaultTLSBootstrapToken, err := RandomTokenString()
@@ -308,14 +280,6 @@ func ReadOrEncryptAssets(dirname string, manageCertificates bool, caKeyRequiredO
 		if caKeyRequiredOnController {
 			files = append(files, entry{name: "worker-ca-key.pem", data: &r.WorkerCAKey, defaultValue: nil, readEncrypted: true, expiryCheck: false})
 		}
-
-		if kiamEnabled {
-			files = append(files, entry{name: "kiam-server-key.pem", data: &r.KIAMServerKey, defaultValue: nil, readEncrypted: true, expiryCheck: false})
-			files = append(files, entry{name: "kiam-server.pem", data: &r.KIAMServerCert, defaultValue: nil, readEncrypted: false, expiryCheck: true})
-			files = append(files, entry{name: "kiam-agent-key.pem", data: &r.KIAMAgentKey, defaultValue: nil, readEncrypted: true, expiryCheck: false})
-			files = append(files, entry{name: "kiam-agent.pem", data: &r.KIAMAgentCert, defaultValue: nil, readEncrypted: false, expiryCheck: true})
-			files = append(files, entry{name: "kiam-ca.pem", data: &r.KIAMCACert, defaultValue: nil, readEncrypted: false, expiryCheck: true})
-		}
 	}
 
 	for _, file := range files {
@@ -353,7 +317,7 @@ func ReadOrEncryptAssets(dirname string, manageCertificates bool, caKeyRequiredO
 	return r, nil
 }
 
-func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool, kiamEnabled bool) error {
+func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool) error {
 	type asset struct {
 		name             string
 		data             []byte
@@ -394,16 +358,6 @@ func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool, kiamEn
 		assets = append(assets,
 			asset{"ca-key.pem", r.CAKey, true, ""},
 			asset{"worker-ca-key.pem", r.WorkerCAKey, true, "ca-key.pem"},
-		)
-	}
-
-	if kiamEnabled {
-		assets = append(assets,
-			asset{"kiam-server-key.pem", r.KIAMServerKey, true, ""},
-			asset{"kiam-server.pem", r.KIAMServerCert, true, ""},
-			asset{"kiam-agent-key.pem", r.KIAMAgentKey, true, ""},
-			asset{"kiam-agent.pem", r.KIAMAgentCert, true, ""},
-			asset{"kiam-ca.pem", r.KIAMCACert, true, "ca.pem"},
 		)
 	}
 
@@ -482,7 +436,7 @@ func (r *RawAssetsOnMemory) WriteToDir(dirname string, includeCAKey bool, kiamEn
 	return nil
 }
 
-func (r *EncryptedAssetsOnDisk) WriteToDir(dirname string, kiamEnabled bool) error {
+func (r *EncryptedAssetsOnDisk) WriteToDir(dirname string) error {
 	type asset struct {
 		name string
 		data EncryptedFile
@@ -510,19 +464,9 @@ func (r *EncryptedAssetsOnDisk) WriteToDir(dirname string, kiamEnabled bool) err
 		{"apiserver-aggregator-key.pem", r.APIServerAggregatorKey},
 		{"apiserver-aggregator.pem", r.APIServerAggregatorCert},
 		{"service-account-key.pem", r.ServiceAccountKey},
-
 		{"tokens.csv", r.AuthTokens},
 		{"kubelet-tls-bootstrap-token", r.TLSBootstrapToken},
 		{"encryption-config.yaml", r.EncryptionConfig},
-	}
-	if kiamEnabled {
-		assets = append(assets,
-			asset{"kiam-server-key.pem", r.KIAMServerKey},
-			asset{"kiam-server.pem", r.KIAMServerCert},
-			asset{"kiam-agent-key.pem", r.KIAMAgentKey},
-			asset{"kiam-agent.pem", r.KIAMAgentCert},
-			asset{"kiam-ca.pem", r.KIAMCACert},
-		)
 	}
 
 	for _, asset := range assets {
@@ -574,11 +518,6 @@ func (r *RawAssetsOnDisk) Compact() (*CompactAssets, error) {
 		EtcdTrustedCA:             compact(r.EtcdTrustedCA),
 		APIServerAggregatorCert:   compact(r.APIServerAggregatorCert),
 		APIServerAggregatorKey:    compact(r.APIServerAggregatorKey),
-		KIAMAgentCert:             compact(r.KIAMAgentCert),
-		KIAMAgentKey:              compact(r.KIAMAgentKey),
-		KIAMServerCert:            compact(r.KIAMServerCert),
-		KIAMServerKey:             compact(r.KIAMServerKey),
-		KIAMCACert:                compact(r.KIAMCACert),
 		ServiceAccountKey:         compact(r.ServiceAccountKey),
 
 		AuthTokens:        compact(r.AuthTokens),
@@ -631,11 +570,6 @@ func (r *EncryptedAssetsOnDisk) Compact() (*CompactAssets, error) {
 		EtcdTrustedCA:             compact(r.EtcdTrustedCA),
 		APIServerAggregatorCert:   compact(r.APIServerAggregatorCert),
 		APIServerAggregatorKey:    compact(r.APIServerAggregatorKey),
-		KIAMAgentKey:              compact(r.KIAMAgentKey),
-		KIAMAgentCert:             compact(r.KIAMAgentCert),
-		KIAMServerKey:             compact(r.KIAMServerKey),
-		KIAMServerCert:            compact(r.KIAMServerCert),
-		KIAMCACert:                compact(r.KIAMCACert),
 		ServiceAccountKey:         compact(r.ServiceAccountKey),
 
 		AuthTokens:        compact(r.AuthTokens),
@@ -679,14 +613,14 @@ func NewKMSConfig(kmsKeyARN string, encSvc KMSEncryptionService, session *sessio
 	}
 }
 
-func ReadOrCreateEncryptedAssets(tlsAssetsDir string, manageCertificates bool, caKeyRequiredOnController bool, kiamEnabled bool, kmsConfig KMSConfig) (*EncryptedAssetsOnDisk, error) {
+func ReadOrCreateEncryptedAssets(tlsAssetsDir string, manageCertificates bool, caKeyRequiredOnController bool, kmsConfig KMSConfig) (*EncryptedAssetsOnDisk, error) {
 	store := kmsConfig.Store()
 
-	return ReadOrEncryptAssets(tlsAssetsDir, manageCertificates, caKeyRequiredOnController, kiamEnabled, store)
+	return ReadOrEncryptAssets(tlsAssetsDir, manageCertificates, caKeyRequiredOnController, store)
 }
 
-func ReadOrCreateCompactAssets(assetsDir string, manageCertificates bool, caKeyRequiredOnController bool, kiamEnabled bool, kmsConfig KMSConfig) (*CompactAssets, error) {
-	encryptedAssets, err := ReadOrCreateEncryptedAssets(assetsDir, manageCertificates, caKeyRequiredOnController, kiamEnabled, kmsConfig)
+func ReadOrCreateCompactAssets(assetsDir string, manageCertificates bool, caKeyRequiredOnController bool, kmsConfig KMSConfig) (*CompactAssets, error) {
+	encryptedAssets, err := ReadOrCreateEncryptedAssets(assetsDir, manageCertificates, caKeyRequiredOnController, kmsConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read/create encrypted assets: %v", err)
 	}
@@ -699,8 +633,8 @@ func ReadOrCreateCompactAssets(assetsDir string, manageCertificates bool, caKeyR
 	return compactAssets, nil
 }
 
-func ReadOrCreateUnencryptedCompactAssets(assetsDir string, manageCertificates bool, caKeyRequiredOnController bool, kiamEnabled bool) (*CompactAssets, error) {
-	unencryptedAssets, err := ReadRawAssets(assetsDir, manageCertificates, caKeyRequiredOnController, kiamEnabled)
+func ReadOrCreateUnencryptedCompactAssets(assetsDir string, manageCertificates bool, caKeyRequiredOnController bool) (*CompactAssets, error) {
+	unencryptedAssets, err := ReadRawAssets(assetsDir, manageCertificates, caKeyRequiredOnController)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read/create encrypted assets: %v", err)
 	}

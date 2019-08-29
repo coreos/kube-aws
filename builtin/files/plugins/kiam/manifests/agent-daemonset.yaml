@@ -1,0 +1,103 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  namespace: kube-system
+  name: kiam-agent
+spec:
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 100%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9620"
+      labels:
+        app: kiam
+        role: agent
+    spec:
+      priorityClassName: system-node-critical
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+      - operator: Exists
+        effect: NoExecute
+      - operator: Exists
+        key: CriticalAddonsOnly
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node.kubernetes.io/role
+                operator: NotIn
+                values:
+                - master
+      volumes:
+        - name: ssl-certs
+          hostPath:
+            path: /usr/share/ca-certificates
+        - name: tls
+          secret:
+            secretName: kiam-agent-tls
+        - name: xtables
+          hostPath:
+            path: /run/xtables.lock
+      containers:
+        - name: kiam
+          securityContext:
+            capabilities:
+              add: ["NET_ADMIN"]
+          image: {{ .Values.image }}:{{ .Values.tag }}
+          command:
+            - {{ if checkVersion ">= 3.0" .Values.tag }}/kiam{{ else }}/agent{{ end }}
+          args:
+            {{if checkVersion ">= 3.0" .Values.tag -}}
+            - agent
+            - --whitelist-route-regexp=.*
+            - --gateway-timeout-creation=1s
+            {{ end -}}
+            - --iptables
+      {{- if .Config.Cluster.Kubernetes.Networking.AmazonVPC.Enabled }}
+            - --host-interface=!eni0
+      {{- else if eq .Config.Cluster.Kubernetes.Networking.SelfHosting.Type "canal" }}
+            - --host-interface=cali+
+      {{- else}}
+            - --host-interface=cni0
+      {{- end }}
+            - --json-log
+            - --port=8181
+            - --cert=/etc/kiam/tls/tls.crt
+            - --key=/etc/kiam/tls/tls.key
+            - --ca=/etc/kiam/tls/ca.crt
+            - --server-address={{ .Values.agent.address }}
+            - --prometheus-listen-addr=0.0.0.0:9620
+            - --prometheus-sync-interval=5s
+          env:
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          volumeMounts:
+            - mountPath: /etc/ssl/certs
+              name: ssl-certs
+            - mountPath: /etc/kiam/tls
+              name: tls
+            - mountPath: /var/run/xtables.lock
+              name: xtables
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 8181
+            initialDelaySeconds: 3
+            periodSeconds: 3
+          resources:
+            requests:
+              cpu: {{ .Values.agent.resources.requests.cpu }}
+              memory: {{ .Values.agent.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.agent.resources.limits.cpu }}
+              memory: {{ .Values.agent.resources.limits.memory }}

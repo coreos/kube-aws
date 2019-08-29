@@ -53,31 +53,27 @@ func init() {
 	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.ApiServerKeyPath, "apiserver-key-path", "", "path to pem-encoded apiserver RSA key")
 	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.EtcdClientKeyPath, "etcd-client-key-path", "", "path to pem-encoded etcd client RSA key")
 	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.EtcdKeyPath, "etcd-key-path", "", "path to pem-encoded etcd RSA key")
-	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.KiamAgentKeyPath, "kiam-agent-key-path", "", "path to pem-encoded kiam agent RSA key")
-	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.KiamServerKeyPath, "kiam-server-key-path", "", "path to pem-encoded kiam server RSA key")
 	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.KubeControllerManagerKeyPath, "kube-controller-manager-key-path", "", "path to pem-encoded kube controller manager RSA key")
 	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.KubeSchedulerKeyPath, "kube-scheduler-key-path", "", "path to pem-encoded kube scheduler RSA key")
 	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.ServiceAccountKeyPath, "service-account-key-path", "", "path to pem-encoded service account RSA key")
 	cmdRenderCredentials.Flags().StringVar(&renderCredentialsOpts.WorkerKeyPath, "worker-key-path", "", "path to pem-encoded worker RSA key")
-	cmdRenderCredentials.Flags().BoolVar(&renderCredentialsOpts.KIAM, "kiam", true, "generate TLS assets for kiam")
 	cmdRenderCredentials.Flags().BoolVar(&renderCredentialsOpts.AwsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
 
 }
 
 func runCmdRender(_ *cobra.Command, args []string) error {
-	logger.Warn("'kube-aws render' is deprecated. See 'kube-aws render --help' for usage")
 	if len(args) != 0 {
 		return fmt.Errorf("render takes no arguments\n")
+	}
+
+	if err := runCmdRenderStack(cmdRenderCredentials, args); err != nil {
+		return err
 	}
 
 	if _, err := os.Stat(renderCredentialsOpts.CaKeyPath); os.IsNotExist(err) {
 		renderCredentialsOpts.GenerateCA = true
 	}
 	if err := runCmdRenderCredentials(cmdRenderCredentials, args); err != nil {
-		return err
-	}
-
-	if err := runCmdRenderStack(cmdRenderCredentials, args); err != nil {
 		return err
 	}
 
@@ -103,5 +99,8 @@ Next steps:
 }
 
 func runCmdRenderCredentials(_ *cobra.Command, _ []string) error {
+	if _, err := os.Stat(renderCredentialsOpts.CaKeyPath); os.IsNotExist(err) {
+		renderCredentialsOpts.GenerateCA = true
+	}
 	return root.RenderCredentials(configPath, renderCredentialsOpts)
 }

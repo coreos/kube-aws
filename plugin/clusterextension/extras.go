@@ -57,14 +57,12 @@ func (e ClusterExtension) KeyPairSpecs() []api.KeyPairSpec {
 }
 
 func (e ClusterExtension) RootStack(config interface{}) (*stack, error) {
-	logger.Debugf("Generating Plugin extras for root cloudformation stack")
 	return e.stackExt("root", config, func(p *api.Plugin) api.Stack {
 		return p.Spec.Cluster.CloudFormation.Stacks.Root
 	})
 }
 
 func (e ClusterExtension) NetworkStack(config interface{}) (*stack, error) {
-	logger.Debugf("Generating Plugin extras for network cloudformation stack")
 	return e.stackExt("network", config, func(p *api.Plugin) api.Stack {
 		return p.Spec.Cluster.CloudFormation.Stacks.Network
 	})
@@ -126,7 +124,6 @@ func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *
 	tags := map[string]interface{}{}
 
 	err := e.foreachEnabledPlugins(func(p *api.Plugin, pc *api.PluginConfig) error {
-		logger.Debugf("extras.go stackExt() foreachEnabledPlugins extending stack %s: %+v into %+v", name, pc.Values, p.Spec.Cluster.Values)
 		values, err := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
 		if err != nil {
 			return err
@@ -139,6 +136,9 @@ func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *
 		if err != nil {
 			return fmt.Errorf("failed to load additional resources for %s stack: %v", name, err)
 		}
+		if l := len(m); l > 0 {
+			logger.Infof("plugin %s extended stack %s with %d resources", p.Name, name, l)
+		}
 		for k, v := range m {
 			resources[k] = v
 		}
@@ -147,6 +147,9 @@ func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *
 		if err != nil {
 			return fmt.Errorf("failed to load additional outputs for %s stack: %v", name, err)
 		}
+		if l := len(m); l > 0 {
+			logger.Infof("plugin %s extended stack %s with %d outputs", p.Name, name, l)
+		}
 		for k, v := range m {
 			outputs[k] = v
 		}
@@ -154,6 +157,9 @@ func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *
 		m, err = render.MapFromJsonContents(src(p).Tags.RemoteFileSpec)
 		if err != nil {
 			return fmt.Errorf("failed to load additional tags for %s stack: %v", name, err)
+		}
+		if l := len(m); l > 0 {
+			logger.Infof("plugin %s extended stack %s with %d tags", p.Name, name, l)
 		}
 		for k, v := range m {
 			tags[k] = v
@@ -311,6 +317,7 @@ func (e ClusterExtension) Worker(config interface{}) (*worker, error) {
 
 	for _, p := range e.plugins {
 		if enabled, pc := p.EnabledIn(e.Configs); enabled {
+			logger.Debugf("Adding worker extensions from plugin %s", p.Name)
 			values, err := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
 			if err != nil {
 				return nil, err
@@ -321,11 +328,23 @@ func (e ClusterExtension) Worker(config interface{}) (*worker, error) {
 			if err != nil {
 				return nil, fmt.Errorf("failed adding systemd units to worker: %v", err)
 			}
+			if l := len(extraUnits); l > 0 {
+				logger.Infof("plugin %s added %d extra worker systemd units", p.Name, l)
+			}
 			systemdUnits = append(systemdUnits, extraUnits...)
 
 			extraArchivedFiles, extraFiles, extraConfigSetFiles, err := renderMachineFilesAndConfigSets(render, p.Spec.Cluster.Roles.Worker.Files)
 			if err != nil {
 				return nil, fmt.Errorf("failed adding files to worker: %v", err)
+			}
+			if l := len(extraArchivedFiles); l > 0 {
+				logger.Infof("plugin %s added %d extra worker extra archive files", p.Name, l)
+			}
+			if l := len(extraFiles); l > 0 {
+				logger.Infof("plugin %s added %d extra worker extra files", p.Name, l)
+			}
+			if l := len(extraConfigSetFiles); l > 0 {
+				logger.Infof("plugin %s added %d extra worker extra config-set files", p.Name, l)
 			}
 			archivedFiles = append(archivedFiles, extraArchivedFiles...)
 			files = append(files, extraFiles...)
@@ -333,25 +352,39 @@ func (e ClusterExtension) Worker(config interface{}) (*worker, error) {
 				"files": extraConfigSetFiles,
 			}
 
+			if l := len(p.Spec.Cluster.Machine.Roles.Worker.IAM.Policy.Statements); l > 0 {
+				logger.Infof("plugin %s added %d extra worker iam policies", p.Name, l)
+			}
 			iamStatements = append(iamStatements, p.Spec.Cluster.Machine.Roles.Worker.IAM.Policy.Statements...)
 
+			if l := len(p.Spec.Cluster.Machine.Roles.Worker.Kubelet.NodeLabels); l > 0 {
+				logger.Infof("plugin %s added %d extra worker node labels", p.Name, l)
+			}
 			for k, v := range p.Spec.Cluster.Machine.Roles.Worker.Kubelet.NodeLabels {
 				nodeLabels[k] = v
 			}
 
+			if l := len(p.Spec.Cluster.Machine.Roles.Worker.Kubelet.FeatureGates); l > 0 {
+				logger.Infof("plugin %s added %d extra worker kubelet feature gates", p.Name, l)
+			}
 			for k, v := range p.Spec.Cluster.Machine.Roles.Worker.Kubelet.FeatureGates {
 				featureGates[k] = v
 			}
 
 			if p.Spec.Cluster.Machine.Roles.Worker.Kubelet.Kubeconfig != "" {
+				logger.Infof("plugin %s changed the worker kubeconfig", p.Name)
 				kubeconfig = p.Spec.Cluster.Machine.Roles.Worker.Kubelet.Kubeconfig
 			}
 
 			if len(p.Spec.Cluster.Machine.Roles.Controller.Kubelet.Mounts) > 0 {
+				logger.Infof("plugin %s added %d worker kubelet mounts", p.Name, len(p.Spec.Cluster.Machine.Roles.Controller.Kubelet.Mounts))
 				kubeletMounts = append(kubeletMounts, p.Spec.Cluster.Machine.Roles.Controller.Kubelet.Mounts...)
 			}
 
 			extraKubeletFlags, err := getFlags(render, p.Spec.Cluster.Kubernetes.Kubelet.Flags)
+			if l := len(extraKubeletFlags); l > 0 {
+				logger.Infof("plugin %s added %d extra worker kubelet command-line flags", p.Name, l)
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -374,14 +407,12 @@ func (e ClusterExtension) Worker(config interface{}) (*worker, error) {
 }
 
 func (e ClusterExtension) ControlPlaneStack(config interface{}) (*stack, error) {
-	logger.Debugf("Generating Plugin extras for control-plane cloudformation stack")
 	return e.stackExt("control-plane", config, func(p *api.Plugin) api.Stack {
 		return p.Spec.Cluster.CloudFormation.Stacks.ControlPlane
 	})
 }
 
 func (e ClusterExtension) EtcdStack(config interface{}) (*stack, error) {
-	logger.Debugf("Generating Plugin extras for etcd cloudformation stack")
 	return e.stackExt("etcd", config, func(p *api.Plugin) api.Stack {
 		return p.Spec.Cluster.CloudFormation.Stacks.Etcd
 	})
@@ -396,7 +427,7 @@ func renderKubernetesManifests(pluginName string, r *plugincontents.TemplateRend
 	for _, m := range mspecs {
 		rendered, ma, err := regularOrConfigSetFile(m.RemoteFileSpec, r)
 		if err != nil {
-			return files, manifests, configsetFiles, nil
+			return files, manifests, configsetFiles, fmt.Errorf("Failed to render plugin kubernetes manifest: %v", err)
 		}
 		var name string
 		if m.Name == "" {
@@ -508,6 +539,7 @@ func (e ClusterExtension) Controller(clusterConfig interface{}) (*controller, er
 	for _, p := range e.plugins {
 		//fmt.Fprintf(os.Stderr, "plugin=%+v configs=%+v", p, e.configs)
 		if enabled, pc := p.EnabledIn(e.Configs); enabled {
+			logger.Debugf("Adding controller extensions from plugin %s", p.Name)
 			values, err := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
 			if err != nil {
 				return nil, err
@@ -518,11 +550,17 @@ func (e ClusterExtension) Controller(clusterConfig interface{}) (*controller, er
 			if err != nil {
 				return nil, err
 			}
+			if l := len(extraApiServerFlags); l > 0 {
+				logger.Infof("plugin %s added %d extra controller api server command-line flags", p.Name, l)
+			}
 			apiServerFlags = append(apiServerFlags, extraApiServerFlags...)
 
 			extraControllerManagerFlags, err := getFlags(render, p.Spec.Cluster.Kubernetes.ControllerManager.Flags)
 			if err != nil {
 				return nil, err
+			}
+			if l := len(extraControllerManagerFlags); l > 0 {
+				logger.Infof("plugin %s added %d extra controller controller-manager command-line flags", p.Name, l)
 			}
 			controllerFlags = append(controllerFlags, extraControllerManagerFlags...)
 
@@ -530,23 +568,38 @@ func (e ClusterExtension) Controller(clusterConfig interface{}) (*controller, er
 			if err != nil {
 				return nil, err
 			}
+			if l := len(extraKubeSchedulerFlags); l > 0 {
+				logger.Infof("plugin %s added %d extra controller scheduler command-line flags", p.Name, l)
+			}
 			kubeSchedulerFlags = append(kubeSchedulerFlags, extraKubeSchedulerFlags...)
 
 			extraKubeletFlags, err := getFlags(render, p.Spec.Cluster.Kubernetes.Kubelet.Flags)
 			if err != nil {
 				return nil, err
 			}
+			if l := len(extraKubeSchedulerFlags); l > 0 {
+				logger.Infof("plugin %s added %d extra controller kubelet command-line flags", p.Name, l)
+			}
 			kubeletFlags = append(kubeletFlags, extraKubeletFlags...)
 
 			for key, value := range p.Spec.Cluster.Kubernetes.KubeProxy.Config {
 				kubeProxyConfig[key] = value
 			}
+			if l := len(p.Spec.Cluster.Kubernetes.KubeProxy.Config); l > 0 {
+				logger.Infof("plugin %s added %d extra controller kube-proxy configuration keys", p.Name, l)
+			}
 
 			apiServerVolumes = append(apiServerVolumes, p.Spec.Cluster.Kubernetes.APIServer.Volumes...)
+			if l := len(p.Spec.Cluster.Kubernetes.APIServer.Volumes); l > 0 {
+				logger.Infof("plugin %s added %d extra controller volumes", p.Name, l)
+			}
 
 			extraUnits, err := renderMachineSystemdUnits(render, p.Spec.Cluster.Machine.Roles.Controller.Systemd.Units)
 			if err != nil {
 				return nil, fmt.Errorf("failed adding systemd units to etcd: %v", err)
+			}
+			if l := len(extraUnits); l > 0 {
+				logger.Infof("plugin %s added %d extra controller systemd units", p.Name, l)
 			}
 			systemdUnits = append(systemdUnits, extraUnits...)
 
@@ -554,23 +607,41 @@ func (e ClusterExtension) Controller(clusterConfig interface{}) (*controller, er
 			if err != nil {
 				return nil, fmt.Errorf("failed adding files to controller: %v", err)
 			}
+			if l := len(extraArchivedFiles); l > 0 {
+				logger.Infof("plugin %s added %d extra controller extra archive files", p.Name, l)
+			}
+			if l := len(extraFiles); l > 0 {
+				logger.Infof("plugin %s added %d extra controller extra files", p.Name, l)
+			}
+			if l := len(extraConfigSetFiles); l > 0 {
+				logger.Infof("plugin %s added %d extra controller extra config-set files", p.Name, l)
+			}
 			archivedFiles = append(archivedFiles, extraArchivedFiles...)
 			files = append(files, extraFiles...)
 
+			if l := len(p.Spec.Cluster.Machine.Roles.Controller.IAM.Policy.Statements); l > 0 {
+				logger.Infof("plugin %s added %d extra controller iam policies", p.Name, l)
+			}
 			iamStatements = append(iamStatements, p.Spec.Cluster.Machine.Roles.Controller.IAM.Policy.Statements...)
 
+			if l := len(p.Spec.Cluster.Machine.Roles.Controller.Kubelet.NodeLabels); l > 0 {
+				logger.Infof("plugin %s added %d extra controller node labels", p.Name, l)
+			}
 			for k, v := range p.Spec.Cluster.Machine.Roles.Controller.Kubelet.NodeLabels {
 				nodeLabels[k] = v
 			}
 
 			if p.Spec.Cluster.Machine.Roles.Controller.Kubelet.Kubeconfig != "" {
+				logger.Infof("plugin %s changed the controller kubeconfig", p.Name)
 				kubeconfig = p.Spec.Cluster.Machine.Roles.Controller.Kubelet.Kubeconfig
 			}
 
 			if len(p.Spec.Cluster.Machine.Roles.Controller.Kubelet.Mounts) > 0 {
+				logger.Infof("plugin %s added %d controller kubelet mounts", p.Name, len(p.Spec.Cluster.Machine.Roles.Controller.Kubelet.Mounts))
 				kubeletMounts = append(kubeletMounts, p.Spec.Cluster.Machine.Roles.Controller.Kubelet.Mounts...)
 			}
 
+			logger.Debugf("Rendering Controller files and manifests...")
 			extraFiles, extraManifests, manifestConfigSetFiles, err := renderKubernetesManifests(p.Name, render, p.Spec.Cluster.Kubernetes.Manifests)
 			if err != nil {
 				return nil, fmt.Errorf("failed adding kubernetes manifests to controller: %v", err)
@@ -580,6 +651,9 @@ func (e ClusterExtension) Controller(clusterConfig interface{}) (*controller, er
 			// merge the manifest configsets into machine generated configsetfiles
 			for k, v := range manifestConfigSetFiles {
 				extraConfigSetFiles[k] = v
+			}
+			if l := len(extraManifests); l > 0 {
+				logger.Infof("plugin %s added %d extra kubernetes manifests", p.Name, l)
 			}
 			configsets[p.Name] = map[string]map[string]interface{}{
 				"files": extraConfigSetFiles,
@@ -618,6 +692,7 @@ func (e ClusterExtension) Etcd(clusterConfig interface{}) (*etcd, error) {
 
 	for _, p := range e.plugins {
 		if enabled, pc := p.EnabledIn(e.Configs); enabled {
+			logger.Debugf("Adding etcd extensions from plugin %s", p.Name)
 			values, err := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
 			if err != nil {
 				return nil, err
@@ -628,11 +703,17 @@ func (e ClusterExtension) Etcd(clusterConfig interface{}) (*etcd, error) {
 			if err != nil {
 				return nil, fmt.Errorf("failed adding systemd units to etcd: %v", err)
 			}
+			if l := len(extraUnits); l > 0 {
+				logger.Infof("plugin %s added %d extra etcd systemd units", p.Name, l)
+			}
 			systemdUnits = append(systemdUnits, extraUnits...)
 
 			extraFiles, err := simpleRenderMachineFiles(render, p.Spec.Cluster.Roles.Etcd.Files)
 			if err != nil {
 				return nil, fmt.Errorf("failed adding files to etcd: %v", err)
+			}
+			if l := len(extraFiles); l > 0 {
+				logger.Infof("plugin %s added %d extra etcd files", p.Name, l)
 			}
 			files = append(files, extraFiles...)
 

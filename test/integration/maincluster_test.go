@@ -121,12 +121,6 @@ func TestMainClusterConfig(t *testing.T) {
 				Disk:       "xvdb",
 				Filesystem: "xfs",
 			},
-			KIAMSupport: api.KIAMSupport{
-				Enabled:         false,
-				Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v3.2", RktPullDocker: false},
-				SessionDuration: "30m",
-				ServerAddresses: api.KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
-			},
 			Kube2IamSupport: api.Kube2IamSupport{
 				Enabled: false,
 			},
@@ -1263,8 +1257,6 @@ experimental:
     enabled: true
   ephemeralImageStorage:
     enabled: true
-  kiamSupport:
-    enabled: false
   kube2IamSupport:
     enabled: true
   gpuSupport:
@@ -1348,12 +1340,6 @@ worker:
 							Enabled:    true,
 							Disk:       "xvdb",
 							Filesystem: "xfs",
-						},
-						KIAMSupport: api.KIAMSupport{
-							Enabled:         false,
-							Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v3.2", RktPullDocker: false},
-							SessionDuration: "30m",
-							ServerAddresses: api.KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
 						},
 						Kube2IamSupport: api.Kube2IamSupport{
 							Enabled: true,
@@ -1500,71 +1486,6 @@ worker:
 					actualTaints := c.NodePools[0].Taints
 					if !reflect.DeepEqual(expectedTaints, actualTaints) {
 						t.Errorf("worker node taints didn't match: expected=%v, actual=%v", expectedTaints, actualTaints)
-					}
-				},
-			},
-		},
-		{
-			context: "WithExperimentalFeatureKiam",
-			configYaml: minimalValidConfigYaml + `
-experimental:
-  kiamSupport:
-    enabled: true
-    image:
-      repo: quay.io/uswitch/kiam
-      tag: v2.6
-    sessionDuration: 30m	
-    serverAddresses:
-      serverAddress: localhost:443
-      agentAddress: kiam-server:443
-worker:
-  nodePools:
-  - name: pool1
-`,
-			assertConfig: []ConfigTester{
-				func(c *config.Config, t *testing.T) {
-					expected := api.KIAMSupport{
-						Enabled:         true,
-						Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v2.6", RktPullDocker: false},
-						SessionDuration: "30m",
-						ServerAddresses: api.KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
-					}
-
-					actual := c.Experimental
-
-					if !reflect.DeepEqual(expected, actual.KIAMSupport) {
-						t.Errorf("experimental settings didn't match : expected=%+v actual=%+v", expected, actual)
-					}
-
-					p := c.NodePools[0]
-					if reflect.DeepEqual(expected, p.Experimental.KIAMSupport) {
-						t.Errorf("experimental settings shouldn't be inherited to a node pool but it did : toplevel=%v nodepool=%v", expected, p.Experimental)
-					}
-				},
-			},
-		},
-		{
-			context: "WithExperimentalFeatureKiamForWorkerNodePool",
-			configYaml: minimalValidConfigYaml + `
-worker:
-  nodePools:
-  - name: pool1
-    kiamSupport:
-      enabled: true
-`,
-			assertConfig: []ConfigTester{
-				func(c *config.Config, t *testing.T) {
-					expected := api.Experimental{
-						KIAMSupport: api.KIAMSupport{
-							Enabled:         true,
-							Image:           api.Image{Repo: "quay.io/uswitch/kiam", Tag: "v3.2", RktPullDocker: false},
-							SessionDuration: "30m",
-							ServerAddresses: api.KIAMServerAddresses{ServerAddress: "localhost:443", AgentAddress: "kiam-server:443"},
-						},
-					}
-					p := c.NodePools[0]
-					if reflect.DeepEqual(expected, p.Experimental) {
-						t.Errorf("experimental settings for node pool didn't match : expected=%v actual=%v", expected, p.Experimental)
 					}
 				},
 			},

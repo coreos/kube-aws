@@ -29,3 +29,11 @@ func (spec KeyPairSpec) KeyPath() string {
 func (spec KeyPairSpec) CertPath() string {
 	return filepath.Join("credentials", fmt.Sprintf("%s.pem", spec.Name))
 }
+
+func (spec KeyPairSpec) SignerCertPath() string {
+	return filepath.Join("credentials", fmt.Sprintf("%s.pem", spec.Signer))
+}
+
+func (spec KeyPairSpec) SignerKeyPath() string {
+	return filepath.Join("credentials", fmt.Sprintf("%s-key.pem", spec.Signer))
+}

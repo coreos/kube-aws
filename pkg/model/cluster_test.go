@@ -1415,20 +1415,6 @@ kubernetesVersion: v1.10.2
 	}
 }
 
-func TestKube2IamKiamClash(t *testing.T) {
-	config := `
-experimental:
-  kube2IamSupport:
-    enabled: true
-  kiamSupport:
-    enabled: true
-`
-	confBody := singleAzConfigYaml + config
-	_, err := ClusterFromBytes([]byte(confBody))
-	if err == nil || !strings.Contains(err.Error(), "not both") {
-		t.Errorf("expected config to cause error as kube2iam and kiam cannot be enabled together: %s\n%s", err, confBody)
-	}
-}
 func TestKMSArnValidateRegion(t *testing.T) {
 	config := `keyName: test-key-name
 s3URI: s3://mybucket/mydir

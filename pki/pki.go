@@ -2,15 +2,18 @@ package pki
 
 import (
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"errors"
 	"fmt"
-	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 	"math"
 	"math/big"
 	"net"
 	"time"
+
+	"github.com/kubernetes-incubator/kube-aws/logger"
+	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 )
 
 type PKI struct {
@@ -20,7 +23,8 @@ func NewPKI() *PKI {
 	return &PKI{}
 }
 
-func (pki *PKI) GenerateKeyPair(spec api.KeyPairSpec) (*KeyPair, error) {
+func (pki *PKI) GenerateKeyPair(spec api.KeyPairSpec, signer *KeyPair) (*KeyPair, error) {
+	logger.Debugf("GenerateKeyPair - spec: %+v", spec)
 	key, err := NewPrivateKey()
 	if err != nil {
 		return nil, err
@@ -62,6 +66,7 @@ func (pki *PKI) GenerateKeyPair(spec api.KeyPairSpec) (*KeyPair, error) {
 		ips[i] = net.ParseIP(ipStr)
 	}
 
+	logger.Debugf("Generating x509 certificate template")
 	tmpl := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
@@ -78,16 +83,23 @@ func (pki *PKI) GenerateKeyPair(spec api.KeyPairSpec) (*KeyPair, error) {
 		IsCA:                  isCA,
 	}
 
-	caCert := &tmpl
-	caKey := key
-
-	if spec.Signer != "" {
-		// TODO load signer key and cert
-		caKey = nil
-		caCert = nil
+	// handle self-signed/CA certificates or certs signed by a CA
+	var signerCert *x509.Certificate
+	var signerKey *rsa.PrivateKey
+	if signer == nil {
+		if spec.Signer != "" {
+			return nil, fmt.Errorf("The certificate spec includes a signer but singer KeyPair is missing")
+		}
+		logger.Debugf("This certificate is going to be self-signed!")
+		signerCert = &tmpl
+		signerKey = key
+	} else {
+		signerCert = signer.Cert
+		signerKey = signer.Key
 	}
 
-	certAsn1DERData, err := x509.CreateCertificate(rand.Reader, &tmpl, caCert, key.Public(), caKey)
+	logger.Debugf("Creating x509 certificate...")
+	certAsn1DERData, err := x509.CreateCertificate(rand.Reader, &tmpl, signerCert, key.Public(), signerKey)
 	if err != nil {
 		return nil, err
 	}
@@ -96,5 +108,6 @@ func (pki *PKI) GenerateKeyPair(spec api.KeyPairSpec) (*KeyPair, error) {
 		return nil, err
 	}
 
+	logger.Debugf("returning keypair..")
 	return &KeyPair{Key: key, Cert: cert}, nil
 }

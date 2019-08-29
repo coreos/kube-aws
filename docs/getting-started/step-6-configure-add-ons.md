@@ -53,8 +53,8 @@ To allow kube2iam or kiam deployed to worker and controller nodes to assume targ
   }
   ```
 
-  To add the policy to controller nodes, set `experimental.kube2IamSupport.enabled` or `experimental.kiamSupport.enabled` to `true` in your `cluster.yaml` (but not both).
-  For worker nodes, it is `worker.nodePools[].kube2IamSupport.enabled` or `worker.nodePools[].kiamSupport.enabled`.
+  To add the policy to controller nodes, set `experimental.kube2IamSupport.enabled` or `kubeAwsPlugins.kiam.enabled` to `true` in your `cluster.yaml` (but not both).
+  For worker nodes, it is `worker.nodePools[].kube2IamSupport.enabled`.
 
 2. Target IAM roles needs to change trust relationships to allow kube-aws worker/controller IAM role to assume the target roles.
 

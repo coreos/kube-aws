@@ -31,8 +31,6 @@ type GeneratorOptions struct {
 	GenerateCA bool
 	CaCertPath string
 	CommonName string
-	// KIAM is set to true when you want kube-aws to render TLS assets for uswitch/kiam
-	KIAM bool
 	// Paths for private certificate keys.
 	AdminKeyPath                 string
 	ApiServerAggregatorKeyPath   string
@@ -40,8 +38,6 @@ type GeneratorOptions struct {
 	CaKeyPath                    string
 	EtcdClientKeyPath            string
 	EtcdKeyPath                  string
-	KiamAgentKeyPath             string
-	KiamServerKeyPath            string
 	KubeControllerManagerKeyPath string
 	KubeSchedulerKeyPath         string
 	ServiceAccountKeyPath        string
@@ -87,13 +83,13 @@ func (c Generator) GenerateAssetsOnDisk(dir string, o GeneratorOptions) (*RawAss
 
 	logger.Info("--> Writing to the storage")
 	alsoWriteCAKey := o.GenerateCA || c.ManageCertificates
-	if err := assets.WriteToDir(dir, alsoWriteCAKey, o.KIAM); err != nil {
+	if err := assets.WriteToDir(dir, alsoWriteCAKey); err != nil {
 		return nil, fmt.Errorf("Error creating assets: %v", err)
 	}
 
 	{
 		logger.Info("--> Verifying the result")
-		verified, err := ReadRawAssets(dir, c.ManageCertificates, c.ManageCertificates, o.KIAM)
+		verified, err := ReadRawAssets(dir, c.ManageCertificates, c.ManageCertificates)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed verifying the result: %v", err)
@@ -132,8 +128,6 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 		generatorOptions.AdminKeyPath:                 nil,
 		generatorOptions.EtcdKeyPath:                  nil,
 		generatorOptions.EtcdClientKeyPath:            nil,
-		generatorOptions.KiamAgentKeyPath:             nil,
-		generatorOptions.KiamServerKeyPath:            nil,
 		generatorOptions.ServiceAccountKeyPath:        nil,
 		generatorOptions.ApiServerAggregatorKeyPath:   nil,
 	}
@@ -282,42 +276,6 @@ func (c Generator) GenerateAssetsOnMemory(caKey *rsa.PrivateKey, caCert *x509.Ce
 		AuthTokens:        []byte(authTokens),
 		TLSBootstrapToken: []byte(tlsBootstrapToken),
 		EncryptionConfig:  []byte(encryptionConfig),
-	}
-
-	if generatorOptions.KIAM {
-		// See https://github.com/uswitch/kiam/blob/master/docs/agent.json
-		agentConfig := pki.ClientCertConfig{
-			CommonName: "Kiam Agent",
-			Duration:   certDuration,
-		}
-		kiamAgentCert, err := pki.NewSignedClientCertificate(agentConfig, privateKeys[generatorOptions.KiamAgentKeyPath], caCert, caKey)
-		if err != nil {
-			return nil, err
-		}
-		// See https://github.com/uswitch/kiam/blob/master/docs/server.json
-		serverConfig := pki.ClientCertConfig{
-			CommonName: "Kiam Server",
-			DNSNames: append(
-				[]string{
-					"kiam-server",
-					"kiam-server:443",
-					"localhost",
-					"localhost:443",
-					"localhost:9610",
-				},
-			),
-			Duration: certDuration,
-		}
-		kiamServerCert, err := pki.NewSignedKIAMCertificate(serverConfig, privateKeys[generatorOptions.KiamServerKeyPath], caCert, caKey)
-		if err != nil {
-			return nil, err
-		}
-
-		r.KIAMCACert = pki.EncodeCertificatePEM(caCert)
-		r.KIAMAgentCert = pki.EncodeCertificatePEM(kiamAgentCert)
-		r.KIAMAgentKey = pki.EncodePrivateKeyPEM(privateKeys[generatorOptions.KiamAgentKeyPath])
-		r.KIAMServerCert = pki.EncodeCertificatePEM(kiamServerCert)
-		r.KIAMServerKey = pki.EncodePrivateKeyPEM(privateKeys[generatorOptions.KiamServerKeyPath])
 	}
 
 	return r, nil

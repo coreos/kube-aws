@@ -1,7 +1,5 @@
 package api
 
-import "fmt"
-
 type Worker struct {
 	APIEndpointName         string           `yaml:"apiEndpointName,omitempty"`
 	NodePools               []WorkerNodePool `yaml:"nodePools,omitempty"`
@@ -25,7 +23,6 @@ type Experimental struct {
 	AwsEnvironment              AwsEnvironment        `yaml:"awsEnvironment"`
 	AwsNodeLabels               AwsNodeLabels         `yaml:"awsNodeLabels"`
 	EphemeralImageStorage       EphemeralImageStorage `yaml:"ephemeralImageStorage"`
-	KIAMSupport                 KIAMSupport           `yaml:"kiamSupport,omitempty"`
 	Kube2IamSupport             Kube2IamSupport       `yaml:"kube2IamSupport,omitempty"`
 	GpuSupport                  GpuSupport            `yaml:"gpuSupport,omitempty"`
 	KubeletOpts                 string                `yaml:"kubeletOpts,omitempty"`
@@ -41,10 +38,6 @@ type Experimental struct {
 func (c Experimental) Validate(name string) error {
 	if err := c.NodeDrainer.Validate(); err != nil {
 		return err
-	}
-
-	if c.Kube2IamSupport.Enabled && c.KIAMSupport.Enabled {
-		return fmt.Errorf("at '%s', you can enable kube2IamSupport or kiamSupport, but not both", name)
 	}
 
 	return nil
@@ -113,20 +106,6 @@ type EphemeralImageStorage struct {
 	Enabled    bool   `yaml:"enabled"`
 	Disk       string `yaml:"disk"`
 	Filesystem string `yaml:"filesystem"`
-}
-
-type KIAMSupport struct {
-	Enabled         bool                `yaml:"enabled"`
-	Image           Image               `yaml:"image,omitempty"`
-	SessionDuration string              `yaml:"sessionDuration,omitempty"`
-	ServerAddresses KIAMServerAddresses `yaml:"serverAddresses,omitempty"`
-	ServerResources ComputeResources    `yaml:"serverResources,omitempty"`
-	AgentResources  ComputeResources    `yaml:"agentResources,omitempty"`
-}
-
-type KIAMServerAddresses struct {
-	ServerAddress string `yaml:"serverAddress,omitempty"`
-	AgentAddress  string `yaml:"agentAddress,omitempty"`
 }
 
 type Kube2IamSupport struct {

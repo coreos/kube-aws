@@ -240,7 +240,7 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #      # If you specify a name for the role, kube-aws will create it without a random id suffix (AWS default).
 #      # Given a role of `yourManagedRole`, this will create an IAM role named `${clusterName}-${region}-yourManagedRole`
 #      # to follow the recommendation in AWS documentation  http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
-#      # There are several cases you might need a stable name such as with .experimental.kube2IamSupport or .experimental.kiamSupport. See #297 for more information.
+#      # There are several cases you might need a stable name such as with .experimental.kube2IamSupport or kiam plugin. See #297 for more information.
 #      # ATTENTION: Consider limiting number of characters in clusterName and iam.role.name to avoid the resulting IAM
 #      # role name's length from exceeding the AWS limit: 64. See https://github.com/kubernetes-incubator/kube-aws/issues/347
 #      # It will have attached a customer Managed Policy that you can modify afterwards if you need more permissions for your cluster.
@@ -362,7 +362,7 @@ worker:
 #          # If you specify a name for the role, kube-aws will create it without a random id suffix (AWS default).
 #          # Given a role of `yourManagedRole`, this will create an IAM role named `${clusterName}-${region}-yourManagedRole`
 #          # to follow the recommendation in AWS documentation  http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
-#          # There are several cases you might need a stable name such as with .experimental.kube2IamSupport or .experimental.kiamSupport. See #297 for more information.
+#          # There are several cases you might need a stable name such as with .experimental.kube2IamSupport or kiam plugin. See #297 for more information.
 #          # ATTENTION: Consider limiting number of characters in clusterName and iam.role.name to avoid the resulting IAM
 #          # role name's length from exceeding the AWS limit: 64. See https://github.com/kubernetes-incubator/kube-aws/issues/347
 #          # It will have attached a customer Managed Policy that you can modify afterwards if you need more permissions for your cluster.
@@ -1444,38 +1444,6 @@ experimental:
   ephemeralImageStorage:
     enabled: false
 
-  # When enabled this will install the kiam daemon set using the repo from `kiamImage`
-  # It will also grant sts:assumeRole permission to the IAM role for controller nodes (only controller nodes where the kiam server is hosted need this, worker nodes do not)
-  # This will use SSL certificates generated during `kube-aws render credentials`, ensure this has been run with kube-aws v0.9.9+
-  # This is intended to be used in combination with .controller.iam.role.name. See #297 for more information.
-  kiamSupport:
-    enabled: false
-    # image:
-    #  repo: quay.io/uswitch/kiam
-    #  tag: v3.2
-    #  rktPullDocker: false
-    # sessionDuration: 30m
-    # serverAddresses:
-    #  serverAddress: localhost:443
-    #  agentAddress: kiam-server:443
-    # Optional resource change for kiam servers/agents can be done via using the resources block below and changing the values.
-    # Values below are the default if not set.
-    # serverResources:
-    #   requests:
-    #     cpu: 50m
-    #     memory: 10Mi
-    #   limits:
-    #     cpu: 200m
-    #     memory: 200Mi
-    # agentResources:
-    #   requests:
-    #     cpu: 10m
-    #     memory: 5Mi
-    #   limits:
-    #     cpu: 200m
-    #     memory: 100Mi
-
-
   # When enabled this will install the kube2iam daemon set using the repo from `kube2iamImage`
   # It will also grant sts:assumeRole permission to the IAM role for controller nodes.
   # This is intended to be used in combination with .controller.iam.role.name. See #297 for more information.
@@ -1607,18 +1575,45 @@ kubeAwsPlugins:
       selector:
         prometheus: monitoring
 
-    # upgradeHelper - assists when rolling out new versions of kubernetes
-    # It actively disables old controllers and temporarily removes mutating/validating webhooks whilst
-    # the upgraded controller is starting up.
-    # NOTE: You will normally not need this plugin - so ONLY enable if you are experiencing issues testing migrating across versions.
-    # It will only kill controller that are a different release from currently spinning up version, e.g. :-
-    #   it will kill v1.13.2 controllers when rolling out v1.14.0
-    #   it will NOT kill v1.14.0 controllers when rolling out v1.14.3
-    upgradeHelper:
-      enabled: false
-      # disableWebhooks can be used to turn off the webhook feature if required
-      disableWebhooks: true
-      # disableWorkerCommunicationChecks can be used to disable the check that all workers checking in with this master
-      # so that cfn-signal can be generated and upgrade process move forward
-      # (you don't want a single bad worker to cause an important upgrade to fail)
-      disableWorkerCommunicationChecks: true
+  # upgradeHelper - assists when rolling out new versions of kubernetes
+  # It actively disables old controllers and temporarily removes mutating/validating webhooks whilst
+  # the upgraded controller is starting up.
+  # NOTE: You will normally not need this plugin - so ONLY enable if you are experiencing issues testing migrating across versions.
+  # It will only kill controller that are a different release from currently spinning up version, e.g. :-
+  #   it will kill v1.13.2 controllers when rolling out v1.14.0
+  #   it will NOT kill v1.14.0 controllers when rolling out v1.14.3
+  upgradeHelper:
+    enabled: false
+    # disableWebhooks can be used to turn off the webhook feature if required
+    disableWebhooks: true
+    # disableWorkerCommunicationChecks can be used to disable the check that all workers checking in with this master
+    # so that cfn-signal can be generated and upgrade process move forward
+    # (you don't want a single bad worker to cause an important upgrade to fail)
+    disableWorkerCommunicationChecks: true
+
+  # kiam - deploys kiam server and agent components
+  # kiam provides individual pod access policies and tokens for restricting pod access to AWS resources
+  # It will grant sts:assumeRole permission to the IAM role for controller nodes (only controller nodes where the kiam server is hosted need this, worker nodes do not)
+  # This is intended to be used in combination with .controller.iam.role.name. See #297 for more information.
+  kiam:
+    enabled: false
+    # image: quay.io/uswitch/kiam
+    # tag: v3.2
+    # sessionDuration: 30m
+    # server:
+    #  address: localhost:443
+    #  resources:
+    #    requests:
+    #      cpu: 50m
+    #    limits:
+    #      cpu: 200m
+    #      memory: 200Mi
+    # agent:
+    #  address: kiam-server:443
+    #  resources:
+    #    requests:
+    #      cpu: 10m
+    #      memory: 5Mi
+    #    limits:
+    #      cpu: 200m
+    #      memory: 100Mi

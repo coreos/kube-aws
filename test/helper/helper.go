@@ -57,7 +57,7 @@ func withDummyCredentials(alsoWriteCAKey bool, fn func(dir string)) {
 	// config/temp, nodepool/config/temp, test/integration/temp
 	defer os.RemoveAll(dir)
 
-	for _, pairName := range []string{"ca", "apiserver", "kube-controller-manager", "kube-scheduler", "worker", "admin", "etcd", "etcd-client", "kiam-agent", "kiam-server", "apiserver-aggregator"} {
+	for _, pairName := range []string{"ca", "apiserver", "kube-controller-manager", "kube-scheduler", "worker", "admin", "etcd", "etcd-client", "apiserver-aggregator"} {
 		certFile := fmt.Sprintf("%s/%s.pem", dir, pairName)
 		if err := ioutil.WriteFile(certFile, []byte(dummyCert), 0644); err != nil {
 			panic(err)
@@ -81,7 +81,6 @@ func withDummyCredentials(alsoWriteCAKey bool, fn func(dir string)) {
 	symlinks := []symlink{
 		{"ca.pem", "worker-ca.pem"},
 		{"ca.pem", "etcd-trusted-ca.pem"},
-		{"ca.pem", "kiam-ca.pem"},
 	}
 
 	if alsoWriteCAKey {

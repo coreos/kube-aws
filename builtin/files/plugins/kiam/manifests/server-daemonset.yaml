@@ -1,0 +1,106 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  namespace: kube-system
+  name: kiam-server
+spec:
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 100%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9620"
+      labels:
+        app: kiam
+        role: server
+    spec:
+      priorityClassName: system-node-critical
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+      - operator: Exists
+        effect: NoExecute
+      - operator: Exists
+        key: CriticalAddonsOnly
+      serviceAccountName: kiam-server
+      nodeSelector:
+        node.kubernetes.io/role: "master"
+      volumes:
+        - name: ssl-certs
+          hostPath:
+            path: /usr/share/ca-certificates
+        - name: tls
+          secret:
+            secretName: kiam-server-tls
+      containers:
+        - name: kiam
+          image: {{ .Values.image }}:{{ .Values.tag }}
+          command:
+            - {{ if checkVersion ">= 3.0" .Values.tag }}/kiam{{ else }}/server{{ end }}
+          args:
+            {{ if checkVersion ">= 3.0" .Values.tag -}}
+            - server
+            {{ end -}}
+            - --json-log
+            - --bind=0.0.0.0:443
+            - --cert=/etc/kiam/tls/tls.crt
+            - --key=/etc/kiam/tls/tls.key
+            - --ca=/etc/kiam/tls/ca.crt
+            - --role-base-arn-autodetect
+            - --sync=1m
+            - --prometheus-listen-addr=0.0.0.0:9620
+            - --prometheus-sync-interval=5s
+            - --session-duration={{ .Values.sessionDuration }}
+          volumeMounts:
+            - mountPath: /etc/ssl/certs
+              name: ssl-certs
+            - mountPath: /etc/kiam/tls
+              name: tls
+          livenessProbe:
+            exec:
+              command:
+              {{ if checkVersion ">= 3.0" .Values.tag -}}
+              - /kiam
+              - health
+              - --gateway-timeout-creation=1s
+              {{ else -}}
+              - /health
+              - --server-address-refresh=2s
+              {{ end -}}
+              - --cert=/etc/kiam/tls/tls.crt
+              - --key=/etc/kiam/tls/tls.key
+              - --ca=/etc/kiam/tls/ca.crt
+              - --server-address={{ .Values.server.address }}
+              - --timeout=5s
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+              {{ if checkVersion ">= 3.0" .Values.tag -}}
+              - /kiam
+              - health
+              - --gateway-timeout-creation=1s
+              {{ else -}}
+              - /health
+              - --server-address-refresh=2s
+              {{ end -}}
+              - --cert=/etc/kiam/tls/tls.crt
+              - --key=/etc/kiam/tls/tls.key
+              - --ca=/etc/kiam/tls/ca.crt
+              - --server-address={{ .Values.server.address }}
+              - --timeout=5s
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 10
+          resources:
+            requests:
+              cpu: {{ .Values.server.resources.requests.cpu }}
+              memory: {{ .Values.server.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.server.resources.limits.cpu }}
+              memory: {{ .Values.server.resources.limits.memory }}

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"fmt"
+
 	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/kubernetes-incubator/kube-aws/test/helper"
 )
@@ -64,7 +65,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 
 		// See https://github.com/kubernetes-incubator/kube-aws/issues/107
 		t.Run("CachedToPreventUnnecessaryNodeReplacement", func(t *testing.T) {
-			created, err := ReadOrCreateCompactAssets(dir, true, true, true, kmsConfig)
+			created, err := ReadOrCreateCompactAssets(dir, true, true, kmsConfig)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact assets in %s : %v", dir, err)
@@ -74,7 +75,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 			// This depends on TestDummyEncryptService which ensures dummy encrypt service to produce different ciphertext for each encryption
 			// created == read means that encrypted assets were loaded from cached files named *.pem.enc, instead of re-encrypting raw assets named *.pem files
 			// TODO Use some kind of mocking framework for tests like this
-			read, err := ReadOrCreateCompactAssets(dir, true, true, true, kmsConfig)
+			read, err := ReadOrCreateCompactAssets(dir, true, true, kmsConfig)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact assets in %s : %v", dir, err)
@@ -90,7 +91,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 		})
 
 		t.Run("RemoveFilesToRegenerate", func(t *testing.T) {
-			original, err := ReadOrCreateCompactAssets(dir, true, true, true, kmsConfig)
+			original, err := ReadOrCreateCompactAssets(dir, true, true, kmsConfig)
 
 			if err != nil {
 				t.Errorf("failed to read the original encrypted assets : %v", err)
@@ -101,7 +102,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 				"admin-key.pem.enc", "worker-key.pem.enc", "apiserver-key.pem.enc",
 				"etcd-key.pem.enc", "etcd-client-key.pem.enc", "worker-ca-key.pem.enc",
 				"kube-controller-manager-key.pem.enc", "kube-scheduler-key.pem.enc",
-				"kiam-agent-key.pem.enc", "kiam-server-key.pem.enc", "apiserver-aggregator-key.pem.enc",
+				"apiserver-aggregator-key.pem.enc",
 			}
 
 			for _, filename := range files {
@@ -111,7 +112,7 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 				}
 			}
 
-			regenerated, err := ReadOrCreateCompactAssets(dir, true, true, true, kmsConfig)
+			regenerated, err := ReadOrCreateCompactAssets(dir, true, true, kmsConfig)
 
 			if err != nil {
 				t.Errorf("failed to read the regenerated encrypted assets : %v", err)
@@ -127,9 +128,6 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 				{"KubeSchedulerCert", original.KubeSchedulerCert, regenerated.KubeSchedulerCert},
 				{"EtcdClientCert", original.EtcdClientCert, regenerated.EtcdClientCert},
 				{"EtcdCert", original.EtcdCert, regenerated.EtcdCert},
-				{"KIAMAgentCert", original.KIAMAgentCert, regenerated.KIAMAgentCert},
-				{"KIAMServerCert", original.KIAMServerCert, regenerated.KIAMServerCert},
-				{"KIAMCACert", original.KIAMCACert, regenerated.KIAMCACert},
 				{"APIServerAggregatorCert", original.APIServerAggregatorCert, regenerated.APIServerAggregatorCert},
 			} {
 				if v[1] != v[2] {
@@ -146,8 +144,6 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 				{"KubeSchedulerKey", original.KubeSchedulerKey, regenerated.KubeSchedulerKey},
 				{"EtcdClientKey", original.EtcdClientKey, regenerated.EtcdClientKey},
 				{"EtcdKey", original.EtcdKey, regenerated.EtcdKey},
-				{"KIAMAgentKey", original.KIAMAgentKey, regenerated.KIAMAgentKey},
-				{"KIAMServerKey", original.KIAMServerKey, regenerated.KIAMServerKey},
 				{"APIServerAggregatorKey", original.APIServerAggregatorKey, regenerated.APIServerAggregatorKey},
 			} {
 				if v[1] == v[2] {
@@ -167,13 +163,13 @@ func TestReadOrCreateCompactAssets(t *testing.T) {
 func TestReadOrCreateUnEncryptedCompactAssets(t *testing.T) {
 	run := func(dir string, caKeyRequiredOnController bool, t *testing.T) {
 		t.Run("CachedToPreventUnnecessaryNodeReplacementOnUnencrypted", func(t *testing.T) {
-			created, err := ReadOrCreateUnencryptedCompactAssets(dir, true, caKeyRequiredOnController, true)
+			created, err := ReadOrCreateUnencryptedCompactAssets(dir, true, caKeyRequiredOnController)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact assets in %s : %v", dir, err)
 			}
 
-			read, err := ReadOrCreateUnencryptedCompactAssets(dir, true, caKeyRequiredOnController, true)
+			read, err := ReadOrCreateUnencryptedCompactAssets(dir, true, caKeyRequiredOnController)
 
 			if err != nil {
 				t.Errorf("failed to read or update compact assets in %s : %v", dir, err)

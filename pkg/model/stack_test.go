@@ -15,12 +15,13 @@ import (
 	"strings"
 	"testing"
 
+	"os"
+	"path/filepath"
+
 	"github.com/go-yaml/yaml"
 	"github.com/kubernetes-incubator/kube-aws/credential"
 	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 	"github.com/kubernetes-incubator/kube-aws/plugin/clusterextension"
-	"os"
-	"path/filepath"
 )
 
 /*
@@ -756,7 +757,6 @@ func clusterToStackForTesting(c *api.Cluster, opts api.StackTemplateOptions) (*S
 
 	genopts := credential.GeneratorOptions{
 		GenerateCA: true,
-		KIAM:       true,
 	}
 
 	if _, err := sess.GenerateAssetsOnDisk(compiled, opts.AssetsDir, genopts); err != nil {

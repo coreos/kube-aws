@@ -314,7 +314,7 @@
                   "Resource": [ "*" ]
                 },
                 {{end}}
-                {{if or .Experimental.Kube2IamSupport.Enabled .Experimental.KIAMSupport.Enabled }}
+                {{if or .Experimental.Kube2IamSupport.Enabled}}
                 {
                   "Action": "sts:AssumeRole",
                   "Effect":"Allow",
@@ -389,7 +389,7 @@
         }
       }
     },
-    {{if and .Experimental.KIAMSupport.Enabled .KubeResourcesAutosave.Enabled }}
+    {{if and .KubeResourcesAutosave.Enabled ((index .PluginConfigs "kiam").Enabled) }}
     "IAMManagedPolicyResourcesAutoSave" : {
       "Type" : "AWS::IAM::ManagedPolicy",
       "Properties" : {

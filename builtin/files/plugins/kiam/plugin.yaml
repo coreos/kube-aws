@@ -1,0 +1,102 @@
+metadata:
+  name: kiam
+  version: 0.1.0
+spec:
+  cluster:
+    values:
+      image: quay.io/uswitch/kiam
+      tag: v3.2
+      sessionDuration: 30m
+      server:
+        address: localhost:443
+        resources:
+          requests:
+            cpu: 50m
+            memory: 10Mi
+          limits:
+            cpu: 200m
+            memory: 200Mi
+      agent:
+        address: kiam-server:443
+        resources:
+          requests:
+            cpu: 10m
+            memory: 5Mi
+          limits:
+            cpu: 200m
+            memory: 100Mi
+
+    kubernetes:
+      manifests:
+      - source:
+          path: manifests/agent-tls-secret.yaml
+      - source:
+          path: manifests/server-tls-secret.yaml
+      - source:
+          path: manifests/server-daemonset.yaml
+      - source:
+          path: manifests/agent-daemonset.yaml
+      - source:
+          path: manifests/service.yaml
+      - source:
+          path: manifests/service-account.yaml
+      - source:
+          path: manifests/server-cluster-role.yaml
+      - source:
+          path: manifests/server-cluster-role-binding.yaml
+
+    pki:
+      keypairs:
+      - name: kiam-ca
+        commonName: kiam-ca
+        organization: kube-aws-kiam
+        duration: 43800h
+        usages:
+        - ca
+      - name: kiam-server
+        commonName: kiam-server
+        organization: kube-aws-kiam
+        dnsNames:
+        - kiam-server
+        - kiam-server:443
+        - localhost
+        - localhost:443
+        - localhost:9610
+        duration: 8760h
+        usages:
+        - server
+        - client
+        signer: kiam-ca
+      - name: kiam-agent
+        commonName: kiam-agent
+        organization: kube-aws-kiam
+        duration: 8760h
+        usages:
+        - client
+        signer: kiam-ca
+
+    cloudformation:
+      stacks:
+        controlPlane:
+          resources:
+            content: |
+              {
+                "IAMManagedPolicyKiam" : {
+                  "Type" : "AWS::IAM::ManagedPolicy",
+                  "Properties" : {
+                    "Description" : "Policy for managing Kiam on kube-aws controllers",
+                    "Path" : "/",
+                    "Roles":[ { "Ref" : "IAMRoleController" } ],
+                    "PolicyDocument" :   {
+                      "Version":"2012-10-17",
+                      "Statement": [
+                        {
+                          "Action": "sts:AssumeRole",
+                          "Effect":"Allow",
+                          "Resource":"*"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
