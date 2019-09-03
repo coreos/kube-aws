@@ -4288,9 +4288,8 @@ write_files:
               annotations:
                 scheduler.alpha.kubernetes.io/critical-pod: ''
               {{- if eq .KubeDns.Provider "coredns" }}
-                annotations:
-                  prometheus.io/port: "9153"
-                  prometheus.io/scrape: "true"
+                prometheus.io/port: "9153"
+                prometheus.io/scrape: "true"
               {{- end }}
             spec:
               priorityClassName: system-cluster-critical
