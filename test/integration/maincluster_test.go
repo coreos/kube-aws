@@ -1437,8 +1437,8 @@ worker:
     # Ignored, uses global setting
     nodeDrainer:
       enabled: true
-	  drainTimeout: 5
-	  unschedulableWhenCordoned: true
+      drainTimeout: 5
+      unschedulableWhenCordoned: true
     nodeLabels:
       kube-aws.coreos.com/role: worker
     taints:
