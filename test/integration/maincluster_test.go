@@ -147,7 +147,7 @@ func TestMainClusterConfig(t *testing.T) {
 			},
 			NodeDrainer: api.NodeDrainer{
 				Enabled:                   false,
-				unschedulableWhenCordoned: true,
+				UnschedulableWhenCordoned: true,
 				DrainTimeout:              5,
 			},
 		}
