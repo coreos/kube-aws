@@ -1492,6 +1492,10 @@ experimental:
     iamRole:
       # Empty, inactive by default. Set it to valid ARN "arn: arn:aws:iam::0123456789012:role/roleName" to activate.
       arn: ""
+      
+    # Prevents the nodeDrainer from scheduling on nodes that have been cordoned.
+    # This happens if a nodes take more than the alloted time to drain
+    unschedulableWhenCordoned: true
 
   # Configure OpenID Connect token authenticator plugin in Kubernetes API server.
   # For using Dex as a custom OIDC provider, please check "contrib/dex/README.md".

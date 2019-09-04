@@ -2770,6 +2770,10 @@ write_files:
                 effect: NoExecute
               - operator: Exists
                 key: CriticalAddonsOnly
+              {{ if .nodeDrainer.unschedulableWhenCordoned }}
+              - key: node.kubernetes.io/unschedulable
+                effect: NoSchedule
+            {{ end }}
               initContainers:
                 - name: hyperkube
                   image: {{.HyperkubeImage.RepoWithTag}}
