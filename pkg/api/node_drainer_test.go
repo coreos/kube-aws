@@ -36,50 +36,57 @@ func TestDrainTimeoutInSeconds(t *testing.T) {
 
 func TestValidate(t *testing.T) {
 	testCases := []struct {
-		enabled      bool
-		drainTimeout int
-		isValid      bool
+		enabled                   bool
+		drainTimeout              int
+		isValid                   bool
+		unschedulableWhenCordoned bool
 	}{
 		// Invalid, drainTimeout is < 1
 		{
-			enabled:      true,
-			drainTimeout: 0,
-			isValid:      false,
+			enabled:                   true,
+			drainTimeout:              0,
+			unschedulableWhenCordoned: true,
+			isValid:                   false,
 		},
 
 		// Invalid, drainTimeout > 60
 		{
-			enabled:      true,
-			drainTimeout: 61,
-			isValid:      false,
+			enabled:                   true,
+			drainTimeout:              61,
+			unschedulableWhenCordoned: true,
+			isValid:                   false,
 		},
 
 		// Valid, disabled
 		{
-			enabled:      false,
-			drainTimeout: 0,
-			isValid:      true,
+			enabled:                   false,
+			drainTimeout:              0,
+			unschedulableWhenCordoned: true,
+			isValid:                   true,
 		},
 
 		// Valid, timeout within boundaries
 		{
-			enabled:      true,
-			drainTimeout: 1,
-			isValid:      true,
+			enabled:                   true,
+			drainTimeout:              1,
+			unschedulableWhenCordoned: true,
+			isValid:                   true,
 		},
 
 		// Valid, timeout within boundaries
 		{
-			enabled:      true,
-			drainTimeout: 60,
-			isValid:      true,
+			enabled:                   true,
+			drainTimeout:              60,
+			unschedulableWhenCordoned: true,
+			isValid:                   true,
 		},
 	}
 
 	for _, testCase := range testCases {
 		drainer := NodeDrainer{
-			Enabled:      testCase.enabled,
-			DrainTimeout: testCase.drainTimeout,
+			Enabled:                   testCase.enabled,
+			DrainTimeout:              testCase.drainTimeout,
+			UnschedulableWhenCordoned: testCase.unschedulableWhenCordoned,
 		}
 
 		err := drainer.Validate()
