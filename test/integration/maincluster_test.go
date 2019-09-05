@@ -1294,6 +1294,7 @@ experimental:
   nodeDrainer:
     enabled: true
     drainTimeout: 3
+    unschedulableWhenCordoned: true
 cloudWatchLogging:
   enabled: true
 amazonSsmAgent:
@@ -1383,8 +1384,9 @@ worker:
 							GroupsClaim:   "groups",
 						},
 						NodeDrainer: api.NodeDrainer{
-							Enabled:      true,
-							DrainTimeout: 3,
+							Enabled:                   true,
+							DrainTimeout:              3,
+							UnschedulableWhenCordoned: true,
 						},
 					}
 
@@ -1479,8 +1481,9 @@ worker:
 							SecurityGroupIds: []string{"sg-12345678"},
 						},
 						NodeDrainer: api.NodeDrainer{
-							Enabled:      false,
-							DrainTimeout: 0,
+							Enabled:                   false,
+							DrainTimeout:              0,
+							UnschedulableWhenCordoned: true,
 						},
 					}
 					p := c.NodePools[0]
@@ -3695,6 +3698,7 @@ experimental:
   nodeDrainer:
     enabled: true
     drainTimeout: 100
+    unschedulableWhenCordoned: true
 `,
 			expectedErrorMessage: "Drain timeout must be an integer between 1 and 60, but was 100",
 		},
