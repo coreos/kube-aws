@@ -942,7 +942,7 @@ func TestNodeDrainerConfig(t *testing.T) {
 			nodeDrainer: api.NodeDrainer{
 				Enabled:                   false,
 				DrainTimeout:              5,
-				UnschedulableWhenCordoned: true,
+				UnschedulableWhenCordoned: false,
 				IAMRole:                   api.IAMRole{},
 			},
 		},
