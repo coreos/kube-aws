@@ -951,6 +951,7 @@ func TestNodeDrainerConfig(t *testing.T) {
 experimental:
   nodeDrainer:
     enabled: true
+    unschedulableWhenCordoned: true
     iamRole:
       arn: arn:aws:iam::0123456789012:role/asg-list-role
 `,
