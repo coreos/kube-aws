@@ -2772,7 +2772,7 @@ write_files:
                 effect: NoExecute
               - operator: Exists
                 key: CriticalAddonsOnly
-            {{ if .nodeDrainer.unschedulableWhenCordoned }}
+            {{ if .Experimental.NodeDrainer.UnschedulableWhenCordoned }}
               - key: node.kubernetes.io/unschedulable
                 effect: NoSchedule
             {{ end }}

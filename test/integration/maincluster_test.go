@@ -147,7 +147,7 @@ func TestMainClusterConfig(t *testing.T) {
 			},
 			NodeDrainer: api.NodeDrainer{
 				Enabled:                   false,
-				UnschedulableWhenCordoned: true,
+				UnschedulableWhenCordoned: false,
 				DrainTimeout:              5,
 			},
 		}
@@ -1294,7 +1294,6 @@ experimental:
   nodeDrainer:
     enabled: true
     drainTimeout: 3
-    unschedulableWhenCordoned: true
 cloudWatchLogging:
   enabled: true
 amazonSsmAgent:
@@ -1384,9 +1383,8 @@ worker:
 							GroupsClaim:   "groups",
 						},
 						NodeDrainer: api.NodeDrainer{
-							Enabled:                   true,
-							DrainTimeout:              3,
-							UnschedulableWhenCordoned: true,
+							Enabled:      true,
+							DrainTimeout: 3,
 						},
 					}
 
@@ -1483,7 +1481,7 @@ worker:
 						NodeDrainer: api.NodeDrainer{
 							Enabled:                   false,
 							DrainTimeout:              0,
-							UnschedulableWhenCordoned: true,
+							UnschedulableWhenCordoned: false,
 						},
 					}
 					p := c.NodePools[0]
@@ -3698,7 +3696,6 @@ experimental:
   nodeDrainer:
     enabled: true
     drainTimeout: 100
-    unschedulableWhenCordoned: true
 `,
 			expectedErrorMessage: "Drain timeout must be an integer between 1 and 60, but was 100",
 		},

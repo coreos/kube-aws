@@ -8,7 +8,7 @@ import (
 type NodeDrainer struct {
 	Enabled                   bool    `yaml:"enabled"`
 	DrainTimeout              int     `yaml:"drainTimeout"`
-	UnschedulableWhenCordoned bool    `yaml:"unschedulableWhenCordoned"`
+	UnschedulableWhenCordoned bool    `yaml:"unschedulableWhenCordoned,omitempty"`
 	IAMRole                   IAMRole `yaml:"iamRole,omitempty"`
 }
 
