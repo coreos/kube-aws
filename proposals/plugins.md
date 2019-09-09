@@ -101,7 +101,7 @@ output the additional CloudFormation template snippet needed along with name/ref
 The policies and policy document for the workers would be primarily managed by a core plugin that deals
 with the worker permissions. It would take the output of `initialise` and render the final CloudFormation required.
 
-The kube2iam add-on requires Kubernetes YAML or a Helm Chart to be installed which is covered by the Dex
+The kube2iam add-on plugin Kubernetes YAML or a Helm Chart to be installed which is covered by the Dex
 example above plus changes to the worker IAM permissions.
 
 ### Bastion Host

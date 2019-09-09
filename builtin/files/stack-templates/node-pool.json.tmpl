@@ -402,13 +402,6 @@
                   "Resource": "arn:{{.Region.Partition}}:s3:::{{ .KubeResourcesAutosave.S3Path }}/*"
                 },
                 {{end}}
-                {{if .Kube2IamSupport.Enabled }}
-                {
-                  "Action": "sts:AssumeRole",
-                  "Effect":"Allow",
-                  "Resource":"*"
-                },
-                {{end}}
                 {{if .AssetsEncryptionEnabled }}
                 {
                   "Action" : "kms:Decrypt",

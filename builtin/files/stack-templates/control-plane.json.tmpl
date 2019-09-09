@@ -314,13 +314,6 @@
                   "Resource": [ "*" ]
                 },
                 {{end}}
-                {{if .Experimental.Kube2IamSupport.Enabled }}
-                {
-                  "Action": "sts:AssumeRole",
-                  "Effect":"Allow",
-                  "Resource":"*"
-                },
-                {{end}}
                 {{if .AssetsEncryptionEnabled}}
                 {
                   "Action" : "kms:Decrypt",

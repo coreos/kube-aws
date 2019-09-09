@@ -240,7 +240,7 @@ kmsKeyArn: "{{.KMSKeyARN}}"
 #      # If you specify a name for the role, kube-aws will create it without a random id suffix (AWS default).
 #      # Given a role of `yourManagedRole`, this will create an IAM role named `${clusterName}-${region}-yourManagedRole`
 #      # to follow the recommendation in AWS documentation  http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
-#      # There are several cases you might need a stable name such as with .experimental.kube2IamSupport or kiam plugin. See #297 for more information.
+#      # There are several cases you might need a stable name such as with kube2iam or kiam plugins. See #297 for more information.
 #      # ATTENTION: Consider limiting number of characters in clusterName and iam.role.name to avoid the resulting IAM
 #      # role name's length from exceeding the AWS limit: 64. See https://github.com/kubernetes-incubator/kube-aws/issues/347
 #      # It will have attached a customer Managed Policy that you can modify afterwards if you need more permissions for your cluster.
@@ -574,11 +574,6 @@ worker:
 #
 #      # This option has not yet been tested with rkt as container runtime
 #      ephemeralImageStorage:
-#        enabled: true
-#
-#      # When enabled this will grant sts:assumeRole permission to the IAM roles for worker nodes in this pool.
-#      # This is intended to be used in combination with nodePools[].iam.role.name. See #297 for more information.
-#      kube2IamSupport:
 #        enabled: true
 #
 #      # Propagate custom CLI options to kubelet
@@ -1085,12 +1080,6 @@ worker:
 #  tag: 1.1.2
 #  rktPullDocker: false
 
-# kube2iam image repository to use.
-#kube2iamImage:
-#  repo: jtblin/kube2iam
-#  tag: 0.9.0
-#  rktPullDocker: false
-
 # kube DNS image repository to use.
 #kubeDnsImage:
 #  repo: k8s.gcr.io/k8s-dns-kube-dns-amd64
@@ -1444,12 +1433,6 @@ experimental:
   ephemeralImageStorage:
     enabled: false
 
-  # When enabled this will install the kube2iam daemon set using the repo from `kube2iamImage`
-  # It will also grant sts:assumeRole permission to the IAM role for controller nodes.
-  # This is intended to be used in combination with .controller.iam.role.name. See #297 for more information.
-  kube2IamSupport:
-    enabled: false
-
   # When enabled, `kubectl drain` is run when the instance is being replaced by the auto scaling group, or when
   # the instance receives a termination notice (in case of spot instances)
   nodeDrainer:
@@ -1591,7 +1574,13 @@ kubeAwsPlugins:
     # (you don't want a single bad worker to cause an important upgrade to fail)
     disableWorkerCommunicationChecks: true
 
-  # kiam - deploys kiam server and agent components
+  # kube2iam - allows mapping of pods to AWS STS roles
+  # Note: kiam is newer and offers more security than kube2iam so we would recommend kiam over kube2iam
+  kube2iam:
+    enabled: false
+    # image: jtblin/kube2iam:0.10.8
+
+  # kiam - allows mapping of pods to AWS STS roles via kiam server and agent components
   # kiam provides individual pod access policies and tokens for restricting pod access to AWS resources
   # It will grant sts:assumeRole permission to the IAM role for controller nodes (only controller nodes where the kiam server is hosted need this, worker nodes do not)
   # This is intended to be used in combination with .controller.iam.role.name. See #297 for more information.

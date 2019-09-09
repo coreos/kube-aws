@@ -79,9 +79,6 @@ func NewDefaultCluster() *Cluster {
 			Disk:       "xvdb",
 			Filesystem: "xfs",
 		},
-		Kube2IamSupport: Kube2IamSupport{
-			Enabled: false,
-		},
 		GpuSupport: GpuSupport{
 			Enabled:      false,
 			Version:      "",
@@ -224,7 +221,6 @@ func NewDefaultCluster() *Cluster {
 			AWSCliImage:                        Image{Repo: "quay.io/coreos/awscli", Tag: "master", RktPullDocker: false},
 			ClusterProportionalAutoscalerImage: Image{Repo: "k8s.gcr.io/cluster-proportional-autoscaler-amd64", Tag: "1.5.0", RktPullDocker: false},
 			CoreDnsImage:                       Image{Repo: "coredns/coredns", Tag: "1.5.0", RktPullDocker: false},
-			Kube2IAMImage:                      Image{Repo: "jtblin/kube2iam", Tag: "0.9.0", RktPullDocker: false},
 			KubeDnsImage:                       Image{Repo: "k8s.gcr.io/k8s-dns-kube-dns-amd64", Tag: "1.15.2", RktPullDocker: false},
 			KubeDnsMasqImage:                   Image{Repo: "k8s.gcr.io/k8s-dns-dnsmasq-nanny-amd64", Tag: "1.15.2", RktPullDocker: false},
 			KubeReschedulerImage:               Image{Repo: "k8s.gcr.io/rescheduler-amd64", Tag: "v0.3.2", RktPullDocker: false},
@@ -481,7 +477,6 @@ type DeploymentSettings struct {
 	AWSCliImage                        Image      `yaml:"awsCliImage,omitempty"`
 	ClusterProportionalAutoscalerImage Image      `yaml:"clusterProportionalAutoscalerImage,omitempty"`
 	CoreDnsImage                       Image      `yaml:"coreDnsImage,omitempty"`
-	Kube2IAMImage                      Image      `yaml:"kube2iamImage,omitempty"`
 	KubeDnsImage                       Image      `yaml:"kubeDnsImage,omitempty"`
 	KubeDnsMasqImage                   Image      `yaml:"kubeDnsMasqImage,omitempty"`
 	KubeReschedulerImage               Image      `yaml:"kubeReschedulerImage,omitempty"`

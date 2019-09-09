@@ -121,9 +121,6 @@ func TestMainClusterConfig(t *testing.T) {
 				Disk:       "xvdb",
 				Filesystem: "xfs",
 			},
-			Kube2IamSupport: api.Kube2IamSupport{
-				Enabled: false,
-			},
 			GpuSupport: api.GpuSupport{
 				Enabled:      false,
 				Version:      "",
@@ -1257,8 +1254,6 @@ experimental:
     enabled: true
   ephemeralImageStorage:
     enabled: true
-  kube2IamSupport:
-    enabled: true
   gpuSupport:
     enabled: true
     version: "375.66"
@@ -1341,9 +1336,6 @@ worker:
 							Disk:       "xvdb",
 							Filesystem: "xfs",
 						},
-						Kube2IamSupport: api.Kube2IamSupport{
-							Enabled: true,
-						},
 						GpuSupport: api.GpuSupport{
 							Enabled:      true,
 							Version:      "375.66",
@@ -1405,8 +1397,6 @@ worker:
       enabled: true
     ephemeralImageStorage:
       enabled: true
-    kube2IamSupport:
-      enabled: true
     loadBalancer:
       enabled: true
       names:
@@ -1449,9 +1439,6 @@ worker:
 							Disk:       "xvdb",
 							Filesystem: "xfs",
 						},
-						Kube2IamSupport: api.Kube2IamSupport{
-							Enabled: true,
-						},
 						LoadBalancer: api.LoadBalancer{
 							Enabled:          true,
 							Names:            []string{"manuallymanagedlb"},
@@ -1486,51 +1473,6 @@ worker:
 					actualTaints := c.NodePools[0].Taints
 					if !reflect.DeepEqual(expectedTaints, actualTaints) {
 						t.Errorf("worker node taints didn't match: expected=%v, actual=%v", expectedTaints, actualTaints)
-					}
-				},
-			},
-		},
-		{
-			context: "WithKube2IamSupport",
-			configYaml: minimalValidConfigYaml + `
-controller:
-  iam:
-    role:
-      name: myrole1
-experimental:
-  kube2IamSupport:
-    enabled: true
-worker:
-  nodePools:
-  - name: pool1
-    iam:
-      role:
-        name: myrole2
-    kube2IamSupport:
-      enabled: true
-`,
-			assertConfig: []ConfigTester{
-				hasDefaultEtcdSettings,
-				asgBasedNodePoolHasWaitSignalEnabled,
-				func(c *config.Config, t *testing.T) {
-					expectedControllerRoleName := "myrole1"
-					expectedWorkerRoleName := "myrole2"
-
-					if expectedControllerRoleName != c.Controller.IAMConfig.Role.Name {
-						t.Errorf("controller's iam.role.name didn't match : expected=%v actual=%v", expectedControllerRoleName, c.Controller.IAMConfig.Role.Name)
-					}
-
-					if !c.Experimental.Kube2IamSupport.Enabled {
-						t.Errorf("controller's experimental.kube2IamSupport should be enabled but was not: %+v", c.Experimental)
-					}
-
-					p := c.NodePools[0]
-					if expectedWorkerRoleName != p.IAMConfig.Role.Name {
-						t.Errorf("worker node pool's iam.role.name didn't match : expected=%v actual=%v", expectedWorkerRoleName, p.IAMConfig.Role.Name)
-					}
-
-					if !p.Kube2IamSupport.Enabled {
-						t.Errorf("worker node pool's kube2IamSupport should be enabled but was not: %+v", p.Experimental)
 					}
 				},
 			},

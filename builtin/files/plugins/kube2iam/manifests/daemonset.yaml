@@ -1,0 +1,63 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: kube2iam
+  namespace: kube-system
+  labels:
+    app: kube2iam
+  annotations:
+    scheduler.alpha.kubernetes.io/critical-pod: ''
+spec:
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 100%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: kube2iam
+    spec:
+      priorityClassName: system-cluster-critical
+      serviceAccountName: kube2iam
+      hostNetwork: true
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+      - operator: Exists
+        effect: NoExecute
+      - operator: Exists
+        key: CriticalAddonsOnly
+      containers:
+        - image: {{ .Values.image }}
+          name: kube2iam
+          args:
+            - "--app-port=8282"
+            - "--auto-discover-base-arn"
+            - "--auto-discover-default-role"
+            - "--iptables=true"
+            - "--host-ip=$(HOST_IP)"
+      {{- if .Config.Kubernetes.Networking.AmazonVPC.Enabled }}
+            - "--host-interface=!eni0"
+      {{- else if eq .Config.Kubernetes.Networking.SelfHosting.Type "canal" }}
+            - "--host-interface=cali+"
+      {{- else }}
+            - "--host-interface=cni0"
+      {{- end }}
+          env:
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          ports:
+            - containerPort: 8282
+              hostPort: 8282
+              name: http
+          resources:
+            limits:
+              cpu: 10m
+              memory: 32Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+          securityContext:
+            privileged: true

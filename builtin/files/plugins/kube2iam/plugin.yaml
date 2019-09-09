@@ -1,0 +1,63 @@
+metadata:
+  name: kube2iam
+  version: 0.1.0
+spec:
+  cluster:
+    values:
+      image: jtblin/kube2iam:0.10.8
+
+    kubernetes:
+      manifests:
+      - source:
+          path: manifests/daemonset.yaml
+      - source:
+          path: manifests/rbac.yaml
+
+    cloudformation:
+      stacks:
+        controlPlane:
+          resources:
+            content: |
+              {
+                "IAMManagedPolicyControllerKube2IAM" : {
+                  "Type" : "AWS::IAM::ManagedPolicy",
+                  "Properties" : {
+                    "Description" : "Policy for managing Kube2IAM on kube-aws controllers",
+                    "Path" : "/",
+                    "Roles":[ { "Ref" : "IAMRoleController" } ],
+                    "PolicyDocument" :   {
+                      "Version":"2012-10-17",
+                      "Statement": [
+                        {
+                          "Action": "sts:AssumeRole",
+                          "Effect":"Allow",
+                          "Resource":"*"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+        nodePool:
+          resources:
+            content: |
+              {
+                "IAMManagedPolicyWorkerKube2IAM" : {
+                  "Type" : "AWS::IAM::ManagedPolicy",
+                  "Properties" : {
+                    "Description" : "Policy for managing Kube2IAM on kube-aws nodepools",
+                    "Path" : "/",
+                    "Roles":[ { "Ref" : "IAMRoleWorker" } ],
+                    "PolicyDocument" :   {
+                      "Version":"2012-10-17",
+                      "Statement": [
+                        {
+                          "Action": "sts:AssumeRole",
+                          "Effect":"Allow",
+                          "Resource":"*"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
