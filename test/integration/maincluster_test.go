@@ -146,8 +146,9 @@ func TestMainClusterConfig(t *testing.T) {
 				GroupsClaim:   "groups",
 			},
 			NodeDrainer: api.NodeDrainer{
-				Enabled:      false,
-				DrainTimeout: 5,
+				Enabled:                   false,
+				UnschedulableWhenCordoned: false,
+				DrainTimeout:              5,
 			},
 		}
 
@@ -1436,7 +1437,8 @@ worker:
     # Ignored, uses global setting
     nodeDrainer:
       enabled: true
-      drainTimeout: 5
+	  drainTimeout: 5
+      unschedulableWhenCordoned: true
     nodeLabels:
       kube-aws.coreos.com/role: worker
     taints:
@@ -1477,8 +1479,9 @@ worker:
 							SecurityGroupIds: []string{"sg-12345678"},
 						},
 						NodeDrainer: api.NodeDrainer{
-							Enabled:      false,
-							DrainTimeout: 0,
+							Enabled:                   false,
+							DrainTimeout:              0,
+							UnschedulableWhenCordoned: false,
 						},
 					}
 					p := c.NodePools[0]
