@@ -6,9 +6,10 @@ import (
 )
 
 type NodeDrainer struct {
-	Enabled      bool    `yaml:"enabled"`
-	DrainTimeout int     `yaml:"drainTimeout"`
-	IAMRole      IAMRole `yaml:"iamRole,omitempty"`
+	Enabled                   bool    `yaml:"enabled"`
+	DrainTimeout              int     `yaml:"drainTimeout"`
+	UnschedulableWhenCordoned bool    `yaml:"unschedulableWhenCordoned,omitempty"`
+	IAMRole                   IAMRole `yaml:"iamRole,omitempty"`
 }
 
 func (nd *NodeDrainer) DrainTimeoutInSeconds() int {

@@ -940,9 +940,10 @@ func TestNodeDrainerConfig(t *testing.T) {
 			conf: `
 `,
 			nodeDrainer: api.NodeDrainer{
-				Enabled:      false,
-				DrainTimeout: 5,
-				IAMRole:      api.IAMRole{},
+				Enabled:                   false,
+				DrainTimeout:              5,
+				UnschedulableWhenCordoned: false,
+				IAMRole:                   api.IAMRole{},
 			},
 		},
 		{
@@ -950,13 +951,16 @@ func TestNodeDrainerConfig(t *testing.T) {
 experimental:
   nodeDrainer:
     enabled: true
+    unschedulableWhenCordoned: true
     iamRole:
       arn: arn:aws:iam::0123456789012:role/asg-list-role
 `,
 			nodeDrainer: api.NodeDrainer{
-				Enabled:      true,
-				DrainTimeout: 5,
-				IAMRole:      api.IAMRole{ARN: api.ARN{Arn: "arn:aws:iam::0123456789012:role/asg-list-role"}},
+				Enabled:                   true,
+				DrainTimeout:              5,
+				UnschedulableWhenCordoned: true,
+				IAMRole:                   api.IAMRole{ARN: api.ARN{Arn: "arn:aws:iam::0123456789012:role/asg-list-role"}},
+
 			},
 		},
 		{
@@ -964,11 +968,13 @@ experimental:
 experimental:
   nodeDrainer:
     enabled: true
+    unschedulableWhenCordoned: true
     drainTimeout: 3
 `,
 			nodeDrainer: api.NodeDrainer{
-				Enabled:      true,
-				DrainTimeout: 3,
+				Enabled:                   true,
+				DrainTimeout:              3,
+				UnschedulableWhenCordoned: true,
 			},
 		},
 	}
