@@ -314,7 +314,7 @@
                   "Resource": [ "*" ]
                 },
                 {{end}}
-                {{if or .Experimental.Kube2IamSupport.Enabled}}
+                {{if .Experimental.Kube2IamSupport.Enabled }}
                 {
                   "Action": "sts:AssumeRole",
                   "Effect":"Allow",
