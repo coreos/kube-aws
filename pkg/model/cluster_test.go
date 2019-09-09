@@ -968,7 +968,7 @@ experimental:
   nodeDrainer:
     enabled: true
     drainTimeout: 3
-     unschedulableWhenCordoned: true
+    unschedulableWhenCordoned: true
 `,
 			nodeDrainer: api.NodeDrainer{
 				Enabled:                   true,
