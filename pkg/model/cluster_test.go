@@ -960,7 +960,6 @@ experimental:
 				DrainTimeout:              5,
 				UnschedulableWhenCordoned: true,
 				IAMRole:                   api.IAMRole{ARN: api.ARN{Arn: "arn:aws:iam::0123456789012:role/asg-list-role"}},
-
 			},
 		},
 		{
