@@ -1326,6 +1326,15 @@ kubernetesDashboard:
 kubeDns:
   # Define which DNS provider to use (kube-dns or coredns), default coredns.
   provider: coredns
+  
+  # Defines resources for the CoreDNS Deployment. Ignored if using kubedns.
+  # coreDnsResources:
+  #   requests:
+  #     cpu: "100m"
+  #     memory: "70Mi"
+  #   limits:
+  #     cpu: "200m"
+  #     memory: "170Mi"
 
   # When enabled, will enable a DNS-masq DaemonSet to make PODs to resolve DNS names via locally running dnsmasq
   # It is disabled by default.
@@ -1350,7 +1359,7 @@ kubeDns:
     coresPerReplica: 256
     nodesPerReplica: 16
     min: 2
-
+    
 kubeProxy:
   # Use IPVS kube-proxy mode instead of [default] iptables one (requires Kubernetes 1.9.0+ to work reliably)
   # This is intended to address performance issues of iptables mode for clusters with big number of nodes and services
