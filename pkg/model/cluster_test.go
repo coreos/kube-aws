@@ -1129,7 +1129,7 @@ func TestKubeDns(t *testing.T) {
 					NodesPerReplica: 16,
 					Min:             2,
 				},
-				CoreDNSResources: api.ComputeResources{
+				DnsDeploymentResources: api.ComputeResources{
 					Requests: api.ResourceQuota{
 						Memory: "70Mi",
 						Cpu:    "100m",
@@ -1158,7 +1158,7 @@ kubeDns:
 					NodesPerReplica: 16,
 					Min:             2,
 				},
-				CoreDNSResources: api.ComputeResources{
+				DnsDeploymentResources: api.ComputeResources{
 					Requests: api.ResourceQuota{
 						Memory: "70Mi",
 						Cpu:    "100m",
@@ -1187,7 +1187,7 @@ kubeDns:
 					NodesPerReplica: 16,
 					Min:             2,
 				},
-				CoreDNSResources: api.ComputeResources{
+				DnsDeploymentResources: api.ComputeResources{
 					Requests: api.ResourceQuota{
 						Memory: "70Mi",
 						Cpu:    "100m",
@@ -1216,7 +1216,7 @@ kubeDns:
 					NodesPerReplica: 16,
 					Min:             2,
 				},
-				CoreDNSResources: api.ComputeResources{
+				DnsDeploymentResources: api.ComputeResources{
 					Requests: api.ResourceQuota{
 						Memory: "70Mi",
 						Cpu:    "100m",
@@ -1249,7 +1249,7 @@ kubeDns:
 					NodesPerReplica: 10,
 					Min:             15,
 				},
-				CoreDNSResources: api.ComputeResources{
+				DnsDeploymentResources: api.ComputeResources{
 					Requests: api.ResourceQuota{
 						Memory: "70Mi",
 						Cpu:    "100m",
@@ -1277,7 +1277,7 @@ kubeDns:
 					NodesPerReplica: 16,
 					Min:             2,
 				},
-				CoreDNSResources: api.ComputeResources{
+				DnsDeploymentResources: api.ComputeResources{
 					Requests: api.ResourceQuota{
 						Memory: "70Mi",
 						Cpu:    "100m",
@@ -1293,7 +1293,7 @@ kubeDns:
 			conf: `
 kubeDns:
   provider: coredns
-  coreDnsResources:
+  dnsDeploymentResources:
     requests:
       cpu: "250m"
       memory: "250Mi"
@@ -1311,7 +1311,7 @@ kubeDns:
 					NodesPerReplica: 16,
 					Min:             2,
 				},
-				CoreDNSResources: api.ComputeResources{
+				DnsDeploymentResources: api.ComputeResources{
 					Requests: api.ResourceQuota{
 						Memory: "250Mi",
 						Cpu:    "250m",
@@ -1340,7 +1340,7 @@ kubeDns:
 					NodesPerReplica: 16,
 					Min:             2,
 				},
-				CoreDNSResources: api.ComputeResources{
+				DnsDeploymentResources: api.ComputeResources{
 					Requests: api.ResourceQuota{
 						Memory: "70Mi",
 						Cpu:    "100m",
