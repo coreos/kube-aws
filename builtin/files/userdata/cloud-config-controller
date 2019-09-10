@@ -4078,7 +4078,7 @@ write_files:
                     memory: {{ .KubeDns.CoreDNSResources.Limits.Memory }}
                   requests:
                     cpu: {{ .KubeDns.CoreDNSResources.Requests.Cpu }}
-                    memory: {{ .KubeDns.CoreDNSResources.Requests.Cpu }}
+                    memory: {{ .KubeDns.CoreDNSResources.Requests.Memory }}
                 args: [ "-conf", "/etc/coredns/Corefile" ]
                 volumeMounts:
                 - name: config-volume

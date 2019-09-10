@@ -1158,6 +1158,16 @@ kubeDns:
 					NodesPerReplica: 16,
 					Min:             2,
 				},
+				CoreDNSResources: api.ComputeResources{
+					Requests: api.ResourceQuota{
+						Memory: "70Mi",
+						Cpu:    "100m",
+					},
+					Limits: api.ResourceQuota{
+						Memory: "170Mi",
+						Cpu:    "200m",
+					},
+				},
 			},
 		},
 		{
@@ -1176,6 +1186,16 @@ kubeDns:
 					CoresPerReplica: 256,
 					NodesPerReplica: 16,
 					Min:             2,
+				},
+				CoreDNSResources: api.ComputeResources{
+					Requests: api.ResourceQuota{
+						Memory: "70Mi",
+						Cpu:    "100m",
+					},
+					Limits: api.ResourceQuota{
+						Memory: "170Mi",
+						Cpu:    "200m",
+					},
 				},
 			},
 		},
