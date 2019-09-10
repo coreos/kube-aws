@@ -4074,10 +4074,11 @@ write_files:
                 imagePullPolicy: IfNotPresent
                 resources:
                   limits:
-                    memory: 170Mi
+                    cpu: {{ .KubeDns.CoreDNSResources.Limits.Cpu }}
+                    memory: {{ .KubeDns.CoreDNSResources.Limits.Memory }}
                   requests:
-                    cpu: 100m
-                    memory: 70Mi
+                    cpu: {{ .KubeDns.CoreDNSResources.Requests.Cpu }}
+                    memory: {{ .KubeDns.CoreDNSResources.Requests.Cpu }}
                 args: [ "-conf", "/etc/coredns/Corefile" ]
                 volumeMounts:
                 - name: config-volume
