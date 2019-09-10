@@ -171,7 +171,7 @@ func NewDefaultCluster() *Cluster {
 					NodesPerReplica: 16,
 					Min:             2,
 				},
-				CoreDNSResources: ComputeResources{
+				DnsDeploymentResources: ComputeResources{
 					Requests: ResourceQuota{
 						Memory: "70Mi",
 						Cpu:    "100m",
