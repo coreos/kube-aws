@@ -2845,8 +2845,8 @@ write_files:
                         asg complete-lifecycle-action --lifecycle-action-result CONTINUE --instance-id "${INSTANCE_ID}" --lifecycle-hook-name "${HOOK_NAME}" --auto-scaling-group-name "${ASG_NAME}"
                       fi
 
-                      # Expect instance will be shut down in 5 minutes
-                      sleep 300
+                      # Expect instance will be shut down in defined drain timeout
+                      sleep {{.Experimental.NodeDrainer.DrainTimeoutInSeconds}}
                     done
                   volumeMounts:
                   - mountPath: /opt/bin
