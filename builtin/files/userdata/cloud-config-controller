@@ -1107,12 +1107,6 @@ write_files:
         "${mfdir}/kube-node-drainer-asg-status-updater-de.yaml"
 
       {{ end -}}
-      {{if .Experimental.Kube2IamSupport.Enabled -}}
-      # KUBE2IAM
-      deploy "${mfdir}/kube2iam-rbac.yaml" \
-        "${mfdir}/kube2iam-ds.yaml"
-
-      {{ end -}}
       {{ if .Experimental.GpuSupport.Enabled -}}
       # NVIDIA GPU SUPPORT
       deploy "${mfdir}/nvidia-driver-installer.yaml"
