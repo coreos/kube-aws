@@ -54,10 +54,9 @@ spec:
               name: http
           resources:
             limits:
-              cpu: 10m
-              memory: 32Mi
+              memory: 128Mi
             requests:
-              cpu: 10m
-              memory: 32Mi
+              cpu: 100m
+              memory: 64Mi
           securityContext:
             privileged: true
