@@ -36,7 +36,7 @@ spec:
             {{- end }}
           env:
             - name: AWS_REGION
-              value: {{ .Values.region }}
+              value: {{ .Config.Cluster.Region }}
           livenessProbe:
             httpGet:
               path: /health-check
