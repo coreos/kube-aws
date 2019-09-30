@@ -151,6 +151,7 @@ coreos:
       content: |
         [Unit]
         Description=Replaces the default bashrc with more informative prompt
+        Before=sshd.service
 
         [Service]
         Type=oneshot
@@ -168,6 +169,7 @@ coreos:
       content: |
         [Unit]
         Description=Add additional information to system motd
+        Before=sshd.service
 
         [Service]
         Type=oneshot
