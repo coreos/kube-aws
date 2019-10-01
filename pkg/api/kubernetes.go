@@ -7,12 +7,18 @@ type Kubernetes struct {
 	ControllerManager ControllerManager        `yaml:"controllerManager,omitempty"`
 	KubeScheduler     KubeScheduler            `yaml:"kubeScheduler,omitempty"`
 	KubeProxy         KubeProxy                `yaml:"kubeProxy,omitempty"`
+	KubeApiServer     KubeApiServer            `yaml:"apiServer,omitempty"`
 	Kubelet           Kubelet                  `yaml:"kubelet,omitempty"`
 	APIServer         KubernetesAPIServer      `yaml:"apiserver,omitempty"`
 
 	// Manifests is a list of manifests to be installed to the cluster.
 	// Note that the list is sorted by their names by kube-aws so that it won't result in unnecessarily node replacements.
 	Manifests KubernetesManifests `yaml:"manifests,omitempty"`
+}
+
+type KubeApiServer struct {
+	ComputeResources ComputeResources `yaml:"resources,omitempty"`
+	TargetRamMb      string           `yaml:"targetRamMb,omitempty"`
 }
 
 type ControllerManager struct {

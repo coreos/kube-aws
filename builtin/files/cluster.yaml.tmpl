@@ -1168,13 +1168,25 @@ kubernetes:
     enabled: false
 
 #  controllerManager:
+#   resources:
+#     requests:
+#       cpu: 100m
+#       memory: 100Mi
+#     limits:
+#       cpu: 250m
+#       memory: 512Mi
+
+#  apiServer:
+#    # Memory limit for apiserver in MB (used to configure sizes of etcd caches, etc.)
+#    targetRamMb: 320Mi
+#    # Resource limits for the apiserver.
 #    resources:
 #      requests:
-#        cpu: 100m
-#        memory: 100M
+#        cpu: 256m
+#        memory: 256Mi
 #      limits:
-#        cpu: 250m
-#        memory: 512M
+#        cpu: 1024m
+#        memory: 2048Mi
 
 # Kubernetes Self-hosted networking daemonsets
 # Choose either 'canal' (calico+flannel) or 'flannel'
