@@ -3398,9 +3398,9 @@ write_files:
           - --enable-bootstrap-token-auth=true
           - --token-auth-file=/etc/kubernetes/auth/tokens.csv
           - --storage-backend=etcd3
-          {{- if .Kubernetes.KubeApiServer.TargetRamMb -}}
+          {{ if .Kubernetes.KubeApiServer.TargetRamMb -}}
           - --target-ram-mb={{.Kubernetes.KubeApiServer.TargetRamMb}}
-          {{- end}}
+          {{ end -}}
           - --kubelet-preferred-address-types=InternalIP,Hostname,ExternalIP
           {{if .Experimental.AuditLog.Enabled}}
           - --audit-log-maxage={{.Experimental.AuditLog.MaxAge}}
@@ -3452,27 +3452,27 @@ write_files:
           {{range $f := .APIServerFlags}}
           - --{{$f.Name}}={{$f.Value}}
           {{ end -}}
-          {{- if .Kubernetes.KubeApiServer.ComputeResources -}}
+          {{ if .Kubernetes.KubeApiServer.ComputeResources -}}
           resources:
-            {{- if .Kubernetes.KubeApiServer.ComputeResources.Requests -}}
+            {{ if .Kubernetes.KubeApiServer.ComputeResources.Requests -}}
             requests:
-              {{- if .Kubernetes.KubeApiServer.ComputeResources.Requests.Cpu -}}
+              {{ if .Kubernetes.KubeApiServer.ComputeResources.Requests.Cpu -}}
               cpu: {{.Kubernetes.KubeApiServer.ComputeResources.Requests.Cpu }}
-              {{- end }}
-              {{- if .Kubernetes.KubeApiServer.ComputeResources.Requests.Memory -}}
+              {{ end -}}
+              {{ if .Kubernetes.KubeApiServer.ComputeResources.Requests.Memory -}}
               memory: {{.Kubernetes.KubeApiServer.ComputeResources.Requests.Memory }}
-              {{- end }}
-            {{- end }}
-            {{- if .Kubernetes.KubeApiServer.ComputeResources.Limits -}}
+              {{ end -}}
+            {{ end -}}
+            {{ if .Kubernetes.KubeApiServer.ComputeResources.Limits -}}
             limits:
-              {{- if .Kubernetes.KubeApiServer.ComputeResources.Limits.Cpu -}}
+              {{ if .Kubernetes.KubeApiServer.ComputeResources.Limits.Cpu -}}
               cpu: {{.Kubernetes.KubeApiServer.ComputeResources.Limits.Cpu }}
-              {{- end }}
+              {{ end -}}
               {{- if .Kubernetes.KubeApiServer.ComputeResources.Limits.Memory -}}
               memory: {{.Kubernetes.KubeApiServer.ComputeResources.Limits.Memory }}
-              {{- end }}
-            {{- end }}
-          {{- end }}
+              {{ end -}}
+            {{ end -}}
+          {{ end -}}
           livenessProbe:
             tcpSocket:
               port: 443
