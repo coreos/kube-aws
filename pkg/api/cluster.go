@@ -20,11 +20,11 @@ var KUBERNETES_VERSION = "v99.99"
 
 const (
 	// Experimental SelfHosting feature default images.
-	kubeNetworkingSelfHostingDefaultCalicoNodeImageTag = "v3.6.1"
-	kubeNetworkingSelfHostingDefaultCalicoCniImageTag  = "v3.6.1"
+	kubeNetworkingSelfHostingDefaultCalicoNodeImageTag = "v3.6.3"
+	kubeNetworkingSelfHostingDefaultCalicoCniImageTag  = "v3.6.3"
 	kubeNetworkingSelfHostingDefaultFlannelImageTag    = "v0.11.0"
 	kubeNetworkingSelfHostingDefaultFlannelCniImageTag = "v0.3.0"
-	kubeNetworkingSelfHostingDefaultTyphaImageTag      = "v3.6.1"
+	kubeNetworkingSelfHostingDefaultTyphaImageTag      = "v3.6.3"
 )
 
 func NewDefaultCluster() *Cluster {
