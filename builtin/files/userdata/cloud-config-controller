@@ -3461,7 +3461,7 @@ write_files:
               {{ if .Kubernetes.KubeApiServer.ComputeResources.Requests.Memory -}}
               memory: {{.Kubernetes.KubeApiServer.ComputeResources.Requests.Memory }}
               {{ end -}}
-            {{ end -}}
+            {{ end }}
             {{ if .Kubernetes.KubeApiServer.ComputeResources.Limits -}}
             limits:
               {{ if .Kubernetes.KubeApiServer.ComputeResources.Limits.Cpu -}}
@@ -3470,8 +3470,8 @@ write_files:
               {{- if .Kubernetes.KubeApiServer.ComputeResources.Limits.Memory -}}
               memory: {{.Kubernetes.KubeApiServer.ComputeResources.Limits.Memory }}
               {{ end -}}
-            {{ end -}}
-          {{ end -}}
+            {{ end }}
+          {{ end }}
           livenessProbe:
             tcpSocket:
               port: 443
