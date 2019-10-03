@@ -1,0 +1,116 @@
+metadata:
+  name: dashboard
+  version: 0.1.0
+spec:
+  cluster:
+    values:
+      serviceName: dashboard # the name of the dashboard to use on service and pods etc..
+      namespace: kube-system # the namespace for dashboard resources
+      clusterAdminPrivilages: true # run the dashboard with cluster-admin privileges - disable this to secure the dashboard with authentication.
+      allowSkipLogin: true # give the users a skip login button to access the dashboard
+      dashboardImage: kubernetesui/dashboard:v2.0.0-beta4
+      metricsScraperImage: kubernetesui/metrics-scraper:v1.0.1
+      replicas: 1 # the number of dashboard replicas required
+      # use a cluster-proportional-autoscaler deployment to scale dashboard replicas based on cluster size (cores/nodes)
+      autoscaler:
+        enabled: true
+        image: k8s.gcr.io/cluster-proportional-autoscaler-amd64:1.7.1
+        params:
+          coresPerReplica: 800
+          nodesPerReplica: 50
+          min: 1
+      resources:
+        limits:
+          cpu: ""
+          memory: 1024Mi
+        requests:
+          cpu: 500m
+          memory: 256Mi
+      tls:
+        enabled: true
+        certificates:
+          # plugin will use 'supplied' certs if specified but will fall-back to generated path based certs if not.
+          supplied:
+            caPEM: ""
+            certPEM: ""
+            keyPEM: ""
+          # change 'path' to pick up user supplied certs stored in a different location
+          # defaults to kube-aws generated certificates
+          path:
+            caName: dashboard-ca
+            caPath: credentials/dashboard-ca.pem
+            certPath: credentials/dashboard.pem
+            keyPath: credentials/dashboard-key.pem
+      ingress:
+        enabled: true
+        class: ""
+        # set the ingress hostname to a valid domain that gets routed to your ingress controller
+        # by default generate a host based on the servicename and clusters apiendpoint dns name.
+        hostname: kubernetes-dashboard.ingress.{{ .Config.AdminAPIEndpoint.DNSName }}
+        # set 'supressIngressSecret' to true if you are using something like jetstack cert-manager for auto provisioning ingress certificates
+        # ingress certificates
+        supressIngresSecret: false
+        certificates:
+          # plugin will use 'supplied' certs if specified but will fall-back to generated path based certs if not.
+          supplied:
+            caPEM: ""
+            certPEM: ""
+            keyPEM: ""
+          # change 'path' to pick up user supplied certs stored in a different location
+          # defaults to kube-aws generated certificates
+          path:
+            caPath: credentials/ingress-ca.pem
+            certPath: credentials/dashboard-ingress.pem
+            keyPath: credentials/dashboard-ingress-key.pem
+
+    pki:
+      keypairs:
+        # dashboard-ca and dashboard define the certs that the pod will serve and use
+        - name: dashboard-ca
+          commonName: kubernetes-dashboard-ca
+          organization: kube-aws-{{ .Config.ClusterName }}
+          duration: 43800h
+          usages:
+            - ca
+        - name: dashboard
+          commonName: kubernetes-dashboard
+          organization: kube-aws-{{ .Config.ClusterName }}
+          dnsNames:
+            - kubernetes-dashboard
+            - kubernetes-dashboard.cluster.local
+            - kubernetes-dashboard.svc.cluster.local
+          duration: 8760h
+          usages:
+            - server
+            - client
+          signer: dashboard-ca
+        # ingress-ca and dashboard-ingress define certs used only for the dashboard ingress
+        - name: ingress-ca
+          commonName: ingress-ca
+          organization: kube-aws-{{ .Config.ClusterName }}
+          duration: 43800h
+          usages:
+            - ca
+        - name: dashboard-ingress
+          commonName: kubernetes-dashboard-ingress
+          organization: kube-aws-{{ .Config.ClusterName }}
+          dnsNames:
+            - "{{ .Values.ingress.hostname }}"
+          duration: 8760h
+          usages:
+            - server
+            - client
+          signer: ingress-ca
+
+    kubernetes:
+      manifests:
+        - source:
+            path: manifests/rbac.yaml
+        - source:
+            path: manifests/deployment.yaml
+        - source:
+            path: manifests/secrets.yaml
+        - source:
+            path: manifests/metrics-scraper.yaml
+        - source:
+            path: manifests/autoscaler.yaml

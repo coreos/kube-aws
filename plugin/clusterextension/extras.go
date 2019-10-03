@@ -42,10 +42,59 @@ type stack struct {
 	Tags      map[string]interface{}
 }
 
-func (e ClusterExtension) KeyPairSpecs() []api.KeyPairSpec {
+// KeyPairSpecs loads keypairs from enabled plugins with templating allowed in the dnsnames fields.
+func (e ClusterExtension) KeyPairSpecs(renderContext interface{}) []api.KeyPairSpec {
 	keypairs := []api.KeyPairSpec{}
 	err := e.foreachEnabledPlugins(func(p *api.Plugin, pc *api.PluginConfig) error {
+		values, err := pluginutil.MergeValues(p.Spec.Cluster.Values, pc.Values)
+		if err != nil {
+			return err
+		}
+		values, err = plugincontents.RenderTemplatesInValues(p.Metadata.Name, values, renderContext)
+		if err != nil {
+			return err
+		}
+
 		for _, spec := range p.Spec.Cluster.PKI.KeyPairs {
+			var isTemplate bool
+			var templatedDNSNames []string
+
+			if isTemplate, err = plugincontents.LooksLikeATemplate(spec.CommonName); err != nil {
+				return fmt.Errorf("failed to check common name '%s' for a template: %v", spec.CommonName, err)
+			}
+			if isTemplate {
+				var tmpCN string
+				if tmpCN, err = plugincontents.RenderStringFromTemplateWithValues(spec.CommonName, values, renderContext); err != nil {
+					return fmt.Errorf("failed to render common name template '%s': %v", spec.CommonName, err)
+				}
+				spec.CommonName = tmpCN
+			}
+
+			if isTemplate, err = plugincontents.LooksLikeATemplate(spec.Organization); err != nil {
+				return fmt.Errorf("failed to check organization '%s' for a template: %v", spec.Organization, err)
+			}
+			if isTemplate {
+				var tmpO string
+				if tmpO, err = plugincontents.RenderStringFromTemplateWithValues(spec.Organization, values, renderContext); err != nil {
+					return fmt.Errorf("failed to render organization template '%s': %v", spec.Organization, err)
+				}
+				spec.Organization = tmpO
+			}
+
+			for _, dnsName := range spec.DNSNames {
+				if isTemplate, err = plugincontents.LooksLikeATemplate(dnsName); err != nil {
+					return fmt.Errorf("failed to check dnsname '%s' for a template: %v", dnsName, err)
+				}
+				if isTemplate {
+					var renderedDNSName string
+					if renderedDNSName, err = plugincontents.RenderStringFromTemplateWithValues(dnsName, values, renderContext); err != nil {
+						return fmt.Errorf("failed to render dnsname template '%s': %v", dnsName, err)
+					}
+					dnsName = renderedDNSName
+				}
+				templatedDNSNames = append(templatedDNSNames, dnsName)
+			}
+			spec.DNSNames = templatedDNSNames
 			keypairs = append(keypairs, spec)
 		}
 		return nil
@@ -56,14 +105,14 @@ func (e ClusterExtension) KeyPairSpecs() []api.KeyPairSpec {
 	return keypairs
 }
 
-func (e ClusterExtension) RootStack(config interface{}) (*stack, error) {
-	return e.stackExt("root", config, func(p *api.Plugin) api.Stack {
+func (e ClusterExtension) RootStack(renderContext, valuesContext interface{}) (*stack, error) {
+	return e.stackExt("root", renderContext, valuesContext, func(p *api.Plugin) api.Stack {
 		return p.Spec.Cluster.CloudFormation.Stacks.Root
 	})
 }
 
-func (e ClusterExtension) NetworkStack(config interface{}) (*stack, error) {
-	return e.stackExt("network", config, func(p *api.Plugin) api.Stack {
+func (e ClusterExtension) NetworkStack(renderContext, valuesContext interface{}) (*stack, error) {
+	return e.stackExt("network", renderContext, valuesContext, func(p *api.Plugin) api.Stack {
 		return p.Spec.Cluster.CloudFormation.Stacks.Network
 	})
 }
@@ -118,7 +167,7 @@ func (e ClusterExtension) foreachEnabledPlugins(do func(p *api.Plugin, pc *api.P
 	return nil
 }
 
-func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *api.Plugin) api.Stack) (*stack, error) {
+func (e ClusterExtension) stackExt(name string, renderContext, valuesContext interface{}, src func(p *api.Plugin) api.Stack) (*stack, error) {
 	resources := map[string]interface{}{}
 	outputs := map[string]interface{}{}
 	tags := map[string]interface{}{}
@@ -128,9 +177,13 @@ func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *
 		if err != nil {
 			return err
 		}
+		values, err = plugincontents.RenderTemplatesInValues(p.Metadata.Name, values, valuesContext)
+		if err != nil {
+			return err
+		}
 		logger.Debugf("extras.go stackExt() resultant values: %+v", values)
 
-		render := plugincontents.NewTemplateRenderer(p, values, config)
+		render := plugincontents.NewTemplateRenderer(p, values, renderContext)
 
 		m, err := render.MapFromJsonContents(src(p).Resources.RemoteFileSpec)
 		if err != nil {
@@ -184,9 +237,9 @@ func (e ClusterExtension) stackExt(name string, config interface{}, src func(p *
 	}, nil
 }
 
-func (e ClusterExtension) NodePoolStack(config interface{}) (*stack, error) {
+func (e ClusterExtension) NodePoolStack(renderContext, valuesContext interface{}) (*stack, error) {
 	logger.Debugf("Generating Plugin extras for nodepool cloudformation stack")
-	return e.stackExt("node-pool", config, func(p *api.Plugin) api.Stack {
+	return e.stackExt("node-pool", renderContext, valuesContext, func(p *api.Plugin) api.Stack {
 		return p.Spec.Cluster.CloudFormation.Stacks.NodePool
 	})
 }
@@ -290,6 +343,9 @@ func regularOrConfigSetFile(f provisioner.RemoteFileSpec, render *plugincontents
 	tokens := tmpl.TextToCfnExprTokens(goRendered)
 
 	logger.Debugf("Number of tokens produced: %d", len(tokens))
+	if len(tokens) == 0 {
+		return &goRendered, nil, nil
+	}
 	if len(tokens) == 1 {
 		var out string
 		if err := json.Unmarshal([]byte(tokens[0]), &out); err != nil {
@@ -302,7 +358,7 @@ func regularOrConfigSetFile(f provisioner.RemoteFileSpec, render *plugincontents
 	return nil, map[string]interface{}{"Fn::Join": []interface{}{"", tokens}}, nil
 }
 
-func (e ClusterExtension) Worker(config interface{}) (*worker, error) {
+func (e ClusterExtension) Worker(renderContext interface{}) (*worker, error) {
 	logger.Debugf("ClusterExtension.Worker(): Generating Plugin Worker user-data extras")
 	files := []api.CustomFile{}
 	systemdUnits := []api.CustomSystemdUnit{}
@@ -322,7 +378,11 @@ func (e ClusterExtension) Worker(config interface{}) (*worker, error) {
 			if err != nil {
 				return nil, err
 			}
-			render := plugincontents.NewTemplateRenderer(p, values, config)
+			values, err = plugincontents.RenderTemplatesInValues(p.Metadata.Name, values, renderContext)
+			if err != nil {
+				return nil, err
+			}
+			render := plugincontents.NewTemplateRenderer(p, values, renderContext)
 
 			extraUnits, err := renderMachineSystemdUnits(render, p.Spec.Cluster.Machine.Roles.Worker.Systemd.Units)
 			if err != nil {
@@ -406,14 +466,14 @@ func (e ClusterExtension) Worker(config interface{}) (*worker, error) {
 	}, nil
 }
 
-func (e ClusterExtension) ControlPlaneStack(config interface{}) (*stack, error) {
-	return e.stackExt("control-plane", config, func(p *api.Plugin) api.Stack {
+func (e ClusterExtension) ControlPlaneStack(renderContext, valuesContext interface{}) (*stack, error) {
+	return e.stackExt("control-plane", renderContext, valuesContext, func(p *api.Plugin) api.Stack {
 		return p.Spec.Cluster.CloudFormation.Stacks.ControlPlane
 	})
 }
 
-func (e ClusterExtension) EtcdStack(config interface{}) (*stack, error) {
-	return e.stackExt("etcd", config, func(p *api.Plugin) api.Stack {
+func (e ClusterExtension) EtcdStack(renderContext, valuesContext interface{}) (*stack, error) {
+	return e.stackExt("etcd", renderContext, valuesContext, func(p *api.Plugin) api.Stack {
 		return p.Spec.Cluster.CloudFormation.Stacks.Etcd
 	})
 }
@@ -516,7 +576,7 @@ func getFlags(render *plugincontents.TemplateRenderer, flags api.CommandLineFlag
 	return extraFlags, nil
 }
 
-func (e ClusterExtension) Controller(clusterConfig interface{}) (*controller, error) {
+func (e ClusterExtension) Controller(renderContext interface{}) (*controller, error) {
 	logger.Debugf("ClusterExtension.Controller(): Generating Plugin Controller user-data extras")
 	apiServerFlags := api.CommandLineFlags{}
 	apiServerVolumes := api.APIServerVolumes{}
@@ -544,7 +604,11 @@ func (e ClusterExtension) Controller(clusterConfig interface{}) (*controller, er
 			if err != nil {
 				return nil, err
 			}
-			render := plugincontents.NewTemplateRenderer(p, values, clusterConfig)
+			values, err = plugincontents.RenderTemplatesInValues(p.Metadata.Name, values, renderContext)
+			if err != nil {
+				return nil, err
+			}
+			render := plugincontents.NewTemplateRenderer(p, values, renderContext)
 
 			extraApiServerFlags, err := getFlags(render, p.Spec.Cluster.Kubernetes.APIServer.Flags)
 			if err != nil {
@@ -684,7 +748,7 @@ func (e ClusterExtension) Controller(clusterConfig interface{}) (*controller, er
 	}, nil
 }
 
-func (e ClusterExtension) Etcd(clusterConfig interface{}) (*etcd, error) {
+func (e ClusterExtension) Etcd(renderContext interface{}) (*etcd, error) {
 	logger.Debugf("ClusterExtension.Etcd(): Generating Plugin Etcd user-data extras")
 	systemdUnits := []api.CustomSystemdUnit{}
 	files := []api.CustomFile{}
@@ -697,7 +761,11 @@ func (e ClusterExtension) Etcd(clusterConfig interface{}) (*etcd, error) {
 			if err != nil {
 				return nil, err
 			}
-			render := plugincontents.NewTemplateRenderer(p, values, clusterConfig)
+			values, err = plugincontents.RenderTemplatesInValues(p.Metadata.Name, values, renderContext)
+			if err != nil {
+				return nil, err
+			}
+			render := plugincontents.NewTemplateRenderer(p, values, renderContext)
 
 			extraUnits, err := renderMachineSystemdUnits(render, p.Spec.Cluster.Machine.Roles.Etcd.Systemd.Units)
 			if err != nil {

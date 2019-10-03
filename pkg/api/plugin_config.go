@@ -23,6 +23,20 @@ func (pcs PluginConfigs) Merge(m PluginConfigs) (PluginConfigs, error) {
 	return merged, nil
 }
 
+func (pcs PluginConfigs) PluginIsEnabled(name string) bool {
+	var pc PluginConfig
+	var ok bool
+	if pc, ok = pcs[name]; !ok {
+		return false
+	}
+	return pc.Enabled
+}
+
+func (pcs PluginConfigs) PluginExists(name string) bool {
+	_, ok := pcs[name]
+	return ok
+}
+
 type PluginConfig struct {
 	Enabled bool `yaml:"enabled,omitempty"`
 	Values  `yaml:",inline"`

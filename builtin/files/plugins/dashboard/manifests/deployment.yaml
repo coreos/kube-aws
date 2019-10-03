@@ -1,0 +1,147 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.replicas }}
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: kubernetes-dashboard
+  template:
+    metadata:
+      labels:
+        k8s-app: kubernetes-dashboard
+    spec:
+      priorityClassName: system-cluster-critical
+      containers:
+      - name: kubernetes-dashboard
+        image: {{ .Values.dashboardImage }}
+        ports:
+        {{ if .Values.tls.enabled }}
+        - containerPort: 8443
+        {{ else }}
+        - containerPort: 9090
+        {{ end }}
+          protocol: TCP
+        args:
+          - --namespace={{ .Values.namespace }}
+          {{ if not .Values.tls.enabled -}}
+          - --enable-insecure-login
+          - --insecure-port=9090
+          {{ else -}}
+          - --tls-cert-file=tls.crt
+          - --tls-key-file=tls.key
+          {{- end }}
+          {{ if .Values.allowSkipLogin -}}
+          - --enable-skip-login
+          {{- end }}
+        resources:
+          requests:
+            cpu: {{ .Values.resources.requests.cpu }}
+            memory: {{ .Values.resources.requests.memory }}
+          {{ if or .Values.resources.limits.cpu .Values.resources.limits.memory -}}
+          limits:
+            {{ if .Values.resources.limits.cpu -}}
+            cpu: {{ .Values.resources.limits.cpu }}
+            {{- end }}
+            {{ if .Values.resources.limits.memory -}}
+            memory: {{ .Values.resources.limits.memory }}
+            {{- end }}
+          {{- end }}
+        volumeMounts:
+        - name: kubernetes-dashboard-certs
+          mountPath: /certs
+        - mountPath: /tmp
+          name: tmp-volume
+        livenessProbe:
+          httpGet:
+            {{ if .Values.tls.enabled -}}
+            scheme: HTTPS
+            {{ else -}}
+            scheme: HTTP
+            {{- end }}
+            path: /
+            {{ if .Values.tls.enabled -}}
+            port: 8443
+            {{ else -}}
+            port: 9090
+            {{- end }}
+          initialDelaySeconds: 30
+          timeoutSeconds: 30
+      volumes:
+      - name: kubernetes-dashboard-certs
+        secret:
+          secretName: kubernetes-dashboard-certs
+      - name: tmp-volume
+        emptyDir: {}
+      serviceAccountName: kubernetes-dashboard
+      tolerations:
+      - key: "node.kubernetes.io/role"
+        operator: "Equal"
+        value: "master"
+        effect: "NoSchedule"
+      - key: "CriticalAddonsOnly"
+        operator: "Exists"
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: kuberetes-dashboard
+  name: kubernetes-dashboard
+  namespace: "{{ .Values.namespace }}"
+spec:
+  ports:
+    {{ if .Values.tls.enabled -}}
+    - port: 443
+      targetPort: 8443
+    {{ else -}}
+    - port: 9090
+      targetPort: 9090
+    {{- end }}
+  selector:
+    k8s-app: kubernetes-dashboard
+
+{{ if .Values.ingress.enabled -}}
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: kubernetes-dashboard
+  namespace: {{ .Values.namespace }}
+  {{ if or .Values.ingress.class .Values.tls.enabled -}}
+  annotations:
+    {{ if .Values.tls.enabled -}}
+    ingress.kubernetes.io/ssl-redirect: "true"
+    ingress.kubernetes.io/protocol: https
+    {{- end }}
+    {{ if .Values.ingress.class -}}
+    kubernetes.io/ingress.class: {{ .Values.ingress.class }}
+    {{- end }}
+  {{- end }}
+spec:
+  rules:
+    - host: {{ .Values.ingress.hostname }}
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: kubernetes-dashboard
+            {{ if .Values.tls.enabled -}}
+            servicePort: 8443
+            {{ else -}}
+            servicePort: 9090
+            {{- end }}
+  {{ if and .Values.tls.enabled -}}
+  tls:
+  - hosts:
+    - {{ .Values.ingress.hostname }}
+    secretName: kubernetes-dashboard-ingress-certs
+  {{- end }}
+{{- end }}

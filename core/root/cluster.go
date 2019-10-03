@@ -245,7 +245,7 @@ func (cl *Cluster) ensureNestedStacksLoaded() error {
 	cl.networkStack = net
 	cl.nodePoolStacks = nodePools
 
-	extra, err := cl.extras.RootStack(cfg)
+	extra, err := cl.extras.RootStack(cfg, cfg)
 	if err != nil {
 		return fmt.Errorf("failed to load root stack extras from plugins: %v", err)
 	}
@@ -265,7 +265,7 @@ func (cl *Cluster) GenerateAssetsOnDisk(dir string, opts credential.GeneratorOpt
 	kmsConfig := credential.NewKMSConfig(cl.Cfg.KMSKeyARN, nil, cl.session)
 	enc := kmsConfig.Encryptor()
 	p := credential.NewProtectedPKI(enc)
-	specs := cl.extras.KeyPairSpecs()
+	specs := cl.extras.KeyPairSpecs(cl.Cfg)
 	if err := p.EnsureKeyPairsCreated(specs); err != nil {
 		return nil, err
 	}

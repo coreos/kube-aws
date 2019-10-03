@@ -1,0 +1,115 @@
+{{ if .Values.autoscaler.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard-autoscaler
+    kubernetes.io/cluster-service: "true"
+  name: kubernetes-dashboard-autoscaler
+  namespace: {{.Values.namespace}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: kubernetes-dashboard-autoscaler
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      creationTimestamp: null
+      labels:
+        k8s-app: kubernetes-dashboard-autoscaler
+    spec:
+      containers:
+        - command:
+            - /cluster-proportional-autoscaler
+            - --namespace={{ .Values.namespace }}
+            - --configmap=kubernetes-dashboard-autoscaler
+            - --target=Deployment/kubernetes-dashboard
+            - --default-params={"linear":{"coresPerReplica":{{ .Values.autoscaler.params.coresPerReplica }},"nodesPerReplica":{{ .Values.autoscaler.params.nodesPerReplica }},"min":{{ .Values.autoscaler.params.min }}}}
+            - --v=2
+            - --logtostderr
+          image: {{ .Values.autoscaler.image }}
+          imagePullPolicy: IfNotPresent
+          name: autoscaler
+          resources:
+            requests:
+              cpu: 20m
+              memory: 10Mi
+      priorityClassName: system-cluster-critical
+      restartPolicy: Always
+      serviceAccountName: kubernetes-dashboard-autoscaler
+      tolerations:
+      - key: "node.kubernetes.io/role"
+        operator: "Equal"
+        value: "master"
+        effect: "NoSchedule"
+      - key: "CriticalAddonsOnly"
+        operator: "Exists"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard-autoscaler
+  namespace: {{.Values.namespace}}
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubernetes-dashboard-autoscaler
+  namespace: {{.Values.namespace}}
+rules:
+  - apiGroups: [""]
+    resources: ["replicationcontrollers/scale"]
+    verbs: ["get", "update"]
+  - apiGroups: ["extensions", "apps"]
+    resources: ["deployments/scale", "replicasets/scale"]
+    verbs: ["get", "update"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "create"]
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubernetes-dashboard-autoscaler-nodewatcher
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["list", "watch"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubernetes-dashboard-autoscaler
+  namespace: {{.Values.namespace}}
+subjects:
+  - kind: ServiceAccount
+    name: kubernetes-dashboard-autoscaler
+    namespace: {{.Values.namespace}}
+roleRef:
+  kind: Role
+  name: kubernetes-dashboard-autoscaler
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubernetes-dashboard-autoscaler
+  namespace: {{.Values.namespace}}
+subjects:
+  - kind: ServiceAccount
+    name: kubernetes-dashboard-autoscaler
+    namespace: {{.Values.namespace}}
+roleRef:
+  kind: ClusterRole
+  name: kubernetes-dashboard-autoscaler-nodewatcher
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

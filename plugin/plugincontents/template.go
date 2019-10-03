@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"bytes"
+	"regexp"
 	"text/template"
 
 	"github.com/kubernetes-incubator/kube-aws/filereader/texttemplate"
@@ -26,11 +27,13 @@ func RenderStringFromTemplateWithValues(expr string, values interface{}, config 
 		Config: config,
 	}
 	if err != nil {
+		logger.Error("Bad template: ", expr)
 		return "", fmt.Errorf("failed to parse template: %v", err)
 	}
 
 	var buff bytes.Buffer
 	if err := t.Execute(&buff, data); err != nil {
+		logger.Error("Bad template: ", expr)
 		return "", fmt.Errorf("failed to execute template: %v", err)
 	}
 	return buff.String(), nil
@@ -84,4 +87,16 @@ func (r *TemplateRenderer) MapFromJsonContents(contents provisioner.RemoteFileSp
 	}
 
 	return m, nil
+}
+
+func LooksLikeATemplate(text string) (bool, error) {
+	var matchOpenTag, matchCloseTag bool
+	var err error
+	if matchOpenTag, err = regexp.MatchString("{{", text); err != nil {
+		return false, err
+	}
+	if matchCloseTag, err = regexp.MatchString("}}", text); err != nil {
+		return false, err
+	}
+	return (matchOpenTag && matchCloseTag), nil
 }

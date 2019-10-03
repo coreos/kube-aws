@@ -54,7 +54,7 @@ func TextToCfnExprTokens(src string) []json.RawMessage {
 
 Loop:
 	for i < len(src) {
-		if src[i] == '{' {
+		if src[i] == '{' && i+6 < len(src) {
 			for _, start := range starts {
 				peek := src[i : i+len(start)]
 				//fmt.Println(peek)

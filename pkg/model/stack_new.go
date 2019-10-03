@@ -71,7 +71,7 @@ func NewControlPlaneStack(conf *Config, opts api.StackTemplateOptions, extras cl
 			return retval, nil
 		},
 		func(stack *Stack) error {
-			extraStack, err := extras.ControlPlaneStack(stack)
+			extraStack, err := extras.ControlPlaneStack(stack, conf)
 			if err != nil {
 				return fmt.Errorf("failed to load control-plane stack extras from plugins: %v", err)
 			}
@@ -139,7 +139,7 @@ func NewNetworkStack(conf *Config, nodePools []*Stack, opts api.StackTemplateOpt
 			}, nil
 		},
 		func(stack *Stack) error {
-			extraStack, err := extras.NetworkStack(stack)
+			extraStack, err := extras.NetworkStack(stack, conf)
 			if err != nil {
 				return fmt.Errorf("failed to load network stack extras from plugins: %v", err)
 			}
@@ -198,7 +198,7 @@ func NewEtcdStack(conf *Config, opts api.StackTemplateOptions, extras clusterext
 				EtcdNodes:         nodes,
 			}, nil
 		}, func(stack *Stack) error {
-			extraStack, err := extras.EtcdStack(stack)
+			extraStack, err := extras.EtcdStack(stack, conf)
 			if err != nil {
 				return fmt.Errorf("failed to load etcd stack extras from plugins: %v", err)
 			}
@@ -238,7 +238,7 @@ func NewWorkerStack(conf *Config, npconf *NodePoolConfig, opts api.StackTemplate
 		func(stack *Stack) error {
 			stack.NodePoolConfig = npconf
 
-			extraStack, err := extras.NodePoolStack(stack)
+			extraStack, err := extras.NodePoolStack(stack, conf)
 			if err != nil {
 				return fmt.Errorf("failed to load node pool stack extras from plugins: %v", err)
 			}
