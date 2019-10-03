@@ -18,7 +18,7 @@ type Kubernetes struct {
 
 type KubeApiServer struct {
 	ComputeResources ComputeResources `yaml:"resources,omitempty"`
-	TargetRamMb      string           `yaml:"targetRamMb,omitempty"`
+	TargetRamMb      int              `yaml:"targetRamMb,omitempty"`
 }
 
 type ControllerManager struct {
