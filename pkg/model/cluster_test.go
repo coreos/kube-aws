@@ -1352,6 +1352,36 @@ kubeDns:
 				},
 			},
 		},
+		{
+			conf: `
+kubeDns:
+  provider: coredns
+  extraCoreDNSConfig: rewrite name substring demo.app.org app.default.svc.cluster.local
+`,
+			kubeDns: api.KubeDns{
+				Provider:                     "coredns",
+				NodeLocalResolver:            false,
+				DeployToControllers:          false,
+				AntiAffinityAvailabilityZone: false,
+				TTL:                          30,
+				Autoscaler: api.KubeDnsAutoscaler{
+					CoresPerReplica: 256,
+					NodesPerReplica: 16,
+					Min:             2,
+				},
+				DnsDeploymentResources: api.ComputeResources{
+					Requests: api.ResourceQuota{
+						Memory: "70Mi",
+						Cpu:    "100m",
+					},
+					Limits: api.ResourceQuota{
+						Memory: "170Mi",
+						Cpu:    "200m",
+					},
+				},
+				ExtraCoreDNSConfig: "rewrite name substring demo.app.org app.default.svc.cluster.local",
+			},
+		},
 	}
 
 	for _, conf := range validConfigs {

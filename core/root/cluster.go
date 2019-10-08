@@ -843,7 +843,7 @@ func (cl *Cluster) ValidateStack(opts ...OperationTargets) (string, error) {
 func streamJournaldLogs(c *Cluster, q chan struct{}) error {
 	logger.Infof("Streaming filtered Journald logs for log group '%s'...\nNOTE: Due to high initial entropy, '.service' failures may occur during the early stages of booting.\n", c.controlPlaneStack.ClusterName)
 	cwlSvc := cloudwatchlogs.New(c.session)
-	s := time.Now().Unix() * 1E3
+	s := time.Now().Unix() * 1e3
 	t := s
 	in := cloudwatchlogs.FilterLogEventsInput{
 		LogGroupName:  &c.controlPlaneStack.ClusterName,
@@ -867,7 +867,7 @@ func streamJournaldLogs(c *Cluster, q chan struct{}) error {
 						ms[*event.Message] = *event.Timestamp
 						res := api.SystemdMessageResponse{}
 						json.Unmarshal([]byte(*event.Message), &res)
-						s := int(((*event.Timestamp) - t) / 1E3)
+						s := int(((*event.Timestamp) - t) / 1e3)
 						d := fmt.Sprintf("+%.2d:%.2d:%.2d", s/3600, (s/60)%60, s%60)
 						logger.Infof("%s\t%s: \"%s\"\n", d, res.Hostname, res.Message)
 					}

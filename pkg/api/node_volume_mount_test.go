@@ -54,7 +54,7 @@ func TestVolumeMountValidate(t *testing.T) {
 		t.Errorf("validate should return a 'iops' error for using an invalid 'iops' value (%d)", c6.Iops)
 	}
 
-	c7 := NodeVolumeMount{"io1", 1E9, 100, "/dev/xvdf", "xfs", "/ebs", false}
+	c7 := NodeVolumeMount{"io1", 1e9, 100, "/dev/xvdf", "xfs", "/ebs", false}
 	if c7.Validate() == nil {
 		t.Errorf("validate should return a 'size' error for using an invalid 'size' value (%d)", c7.Iops)
 	}
