@@ -3850,6 +3850,9 @@ write_files:
                     except cluster.local
                     health_check 5s
                 }
+                {{- if and (eq .KubeDns.Provider "coredns") .KubeDns.ExtraCoreDNSConfig }}
+                {{ .KubeDns.ExtraCoreDNSConfig }}
+                {{- end }}
                 prometheus :9153
                 cache {{ .KubeDns.TTL }}
                 loop
