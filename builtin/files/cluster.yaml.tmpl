@@ -1140,12 +1140,6 @@ worker:
 #  tag: 1.8.1
 #  rktPullDocker: false
 
-# Kube Dashboard image repository to use.
-#kubernetesDashboardImage:
-#  repo: k8s.gcr.io/kubernetes-dashboard-amd64
-#  tag: v1.10.1
-#  rktPullDocker: false
-
 # Pause image repository to use.This works only if you are deploying your cluster in "cn-north-1" region.
 #pauseImage:
 #  repo: k8s.gcr.io/pause-amd64
@@ -1197,7 +1191,7 @@ kubernetes:
     selfHosting:
       type: canal      # either "canal" or "flannel"
       typha: false     # enable for type 'canal' for 50+ node clusters
-#      typhaResources:  # control k8s resources assigned to Typha pods 
+#      typhaResources:  # control k8s resources assigned to Typha pods
 #        requests:
 #          cpu: "100m"
 #          memory: "100Mi"
@@ -1274,34 +1268,6 @@ kubernetes:
 kubeSystemNamespaceLabels:
   name: kube-system
 
-# Accessing Dashboard:
-# By default, the kubernetes dashboard has admin privileges and doesn't require authentication.
-# Set 'adminPrivileges: false' to restrict access using a token or kubeconfig file.
-# An example of how to generate a token is provided in the documentation: https://kubernetes-incubator.github.io/kube-aws/advanced-topics/kubernetes-dashboard.html
-
-# Access the dashboard  using 'kubectl proxy:
-# insecureLogin: false ==> "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/"
-# insecureLogin: true ==>  "http://localhost:8001/api/v1/namespaces/kube-system/services/http:kubernetes-dashboard:/proxy/"
-# enabled: true
-# Expose the dashboard
-# Please check the documentation: https://kubernetes-incubator.github.io/kube-aws/advanced-topics/kubernetes-dashboard.html
-
-kubernetesDashboard:
-  adminPrivileges: true
-  insecureLogin: false
-  allowSkipLogin: false
-  replicas: 1
-  enabled: true
-# # Optional resource change for Dashboard can be done via using the resources block below and changing the values.
-# # Values below are the default already if not set.
-# resources:
-#   requests:
-#     cpu: 100m
-#     memory: 100Mi
-#   limits:
-#     cpu: 100m
-#     memory: 100Mi
-
 # When enabled, all nodes will forward journald logs to AWS CloudWatch.
 # It is disabled by default.
 #cloudWatchLogging:
@@ -1322,12 +1288,11 @@ kubernetesDashboard:
 #  downloadUrl: https://github.com/DailyHotel/amazon-ssm-agent/releases/download/v2.0.805.1/ssm.linux-amd64.tar.gz
 #  sha1sum: a6fff8f9839d5905934e7e3df3123b54020a1f5e
 
-
 # KubeDNS
 kubeDns:
   # Define which DNS provider to use (kube-dns or coredns), default coredns.
   provider: coredns
-  
+
   # Defines resources for the CoreDNS Deployment. Ignored if using kubedns.
   # dnsDeploymentResources:
   #   requests:
@@ -1360,6 +1325,7 @@ kubeDns:
     coresPerReplica: 256
     nodesPerReplica: 16
     min: 2
+
   # Allows to add extra configuration into CoreDNS config map
   # extraCoreDNSConfig: |
   #   rewrite name substring demo.app.org app.default.svc.cluster.local
@@ -1630,3 +1596,64 @@ kubeAwsPlugins:
     #    limits:
     #      cpu: 200m
     #      memory: 100Mi
+
+  # dashboard - deploys the kubernetes dashboard to the cluster
+  dashboard:
+    enabled: true
+    # namespace: kube-system # the namespace for dashboard resources
+    # clusterAdminPrivilages: true # run the dashboard with cluster-admin privileges - disable this to secure the dashboard with authentication.
+    # allowSkipLogin: true # give the users a skip login button to access the dashboard
+    # dashboardImage: kubernetesui/dashboard:v2.0.0-beta4
+    # metricsScraperImage: kubernetesui/metrics-scraper:v1.0.1
+    # replicas: 1 # the number of dashboard replicas required
+    # use a cluster-proportional-autoscaler deployment to scale dashboard replicas based on cluster size (cores/nodes)
+    # autoscaler:
+    #  enabled: true
+    #  image: k8s.gcr.io/cluster-proportional-autoscaler-amd64:1.7.1
+    #  params:
+    #    coresPerReplica: 800
+    #    nodesPerReplica: 50
+    #    min: 1
+    # resources:
+    #   limits:
+    #     cpu: ""
+    #    memory: 1024Mi
+    #  requests:
+    #    cpu: 500m
+    #    memory: 256Mi
+    # tls:
+    #  enabled: true
+    #  certificates:
+    #    # plugin will use 'supplied' certs if specified but will fall-back to generated path based certs if not.
+    #    supplied:
+    #      caPEM: ""
+    #      certPEM: ""
+    #      keyPEM: ""
+    #    # change 'path' to pick up user supplied certs stored in a different location
+    #    # defaults to kube-aws generated certificates
+    #    path:
+    #      caName: dashboard-ca
+    #      caPath: credentials/dashboard-ca.pem
+    #      certPath: credentials/dashboard.pem
+    #      keyPath: credentials/dashboard-key.pem
+    # ingress:
+    #  enabled: true
+    #  class: ""
+    #  # set the ingress hostname to a valid domain that gets routed to your ingress controller
+    #  # by default generate a host based on the servicename and clusters apiendpoint dns name.
+    #  hostname: kubernetes-dashboard.ingress.{{ .Config.AdminAPIEndpoint.DNSName }}
+    #  # set 'supressIngressSecret' to true if you are using something like jetstack cert-manager for auto provisioning ingress certificates
+    #  # ingress certificates
+    #  supressIngresSecret: false
+    #  certificates:
+    #    # plugin will use 'supplied' certs if specified but will fall-back to generated path based certs if not.
+    #    supplied:
+    #      caPEM: ""
+    #      certPEM: ""
+    #      keyPEM: ""
+    #    # change 'path' to pick up user supplied certs stored in a different location
+    #    # defaults to kube-aws generated certificates
+    #    path:
+    #      caPath: credentials/ingress-ca.pem
+    #      certPath: credentials/dashboard-ingress.pem
+    #      keyPath: credentials/dashboard-ingress-key.pem

@@ -4,7 +4,6 @@ metadata:
 spec:
   cluster:
     values:
-      serviceName: dashboard # the name of the dashboard to use on service and pods etc..
       namespace: kube-system # the namespace for dashboard resources
       clusterAdminPrivilages: true # run the dashboard with cluster-admin privileges - disable this to secure the dashboard with authentication.
       allowSkipLogin: true # give the users a skip login button to access the dashboard
