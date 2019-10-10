@@ -2,6 +2,8 @@ package model
 
 import (
 	"fmt"
+	"regexp"
+
 	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 )
 
@@ -44,4 +46,9 @@ func (c EtcdCluster) DNSNames() []string {
 		}
 	}
 	return []string{dnsName}
+}
+
+func (c EtcdCluster) LogicalName() string {
+	d := regexp.MustCompile(`\.`)
+	return fmt.Sprintf("Etcd%s", d.ReplaceAllString(c.EtcdCluster.MajorMinorVersion(), `dot`))
 }

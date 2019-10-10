@@ -37,7 +37,7 @@ func (i EtcdNode) Name() string {
 	if i.config.Name != "" {
 		return i.config.Name
 	}
-	return fmt.Sprintf("etcd%d", i.index)
+	return i.LogicalName()
 }
 
 func (i EtcdNode) region() api.Region {
@@ -128,7 +128,7 @@ func (i EtcdNode) DependencyRef() (string, error) {
 }
 
 func (i EtcdNode) EBSLogicalName() string {
-	return fmt.Sprintf("Etcd%dEBS", i.index)
+	return fmt.Sprintf("%sEBS", i.LogicalName())
 }
 
 func (i EtcdNode) EBSRef() string {
@@ -147,7 +147,7 @@ func (i EtcdNode) EIPLogicalName() (string, error) {
 	if !i.EIPManaged() {
 		return "", fmt.Errorf("[bug] EIPLogicalName invoked when EIP is not managed. Etcd node name: %s", i.Name())
 	}
-	return fmt.Sprintf("Etcd%dEIP", i.index), nil
+	return fmt.Sprintf("%sEIP", i.LogicalName()), nil
 }
 
 func (i EtcdNode) EIPManaged() bool {
@@ -167,7 +167,7 @@ func (i EtcdNode) NetworkInterfaceIDRef() string {
 }
 
 func (i EtcdNode) NetworkInterfaceLogicalName() string {
-	return fmt.Sprintf("Etcd%dENI", i.index)
+	return fmt.Sprintf("%sENI", i.LogicalName())
 }
 
 func (i EtcdNode) NetworkInterfaceManaged() bool {
@@ -189,7 +189,15 @@ func (i EtcdNode) LaunchConfigurationLogicalName() string {
 }
 
 func (i EtcdNode) LogicalName() string {
-	return fmt.Sprintf("Etcd%d", i.index)
+	return fmt.Sprintf("%si%d", i.cluster.LogicalName(), i.index)
+}
+
+func (i EtcdNode) LogicalNameForIndex(index int64) string {
+	return fmt.Sprintf("%si%d", i.cluster.LogicalName(), index)
+}
+
+func (i EtcdNode) MajorMinorVersion() string {
+	return i.cluster.MajorMinorVersion()
 }
 
 func (i EtcdNode) RecordSetManaged() bool {
@@ -197,5 +205,5 @@ func (i EtcdNode) RecordSetManaged() bool {
 }
 
 func (i EtcdNode) RecordSetLogicalName() string {
-	return fmt.Sprintf("Etcd%dInternalRecordSet", i.index)
+	return fmt.Sprintf("%sInternalRecordSet", i.LogicalName())
 }

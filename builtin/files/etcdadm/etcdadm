@@ -85,7 +85,7 @@ config_etcd_endpoints() {
   echo "${ETCD_ENDPOINTS}"
 }
 
-etcd_version=${ETCD_VERSION:-v3.2.13}
+etcd_version=${ETCD_VERSION:-v3.3.17}
 etcd_aci_url="https://github.com/coreos/etcd/releases/download/$etcd_version/etcd-$etcd_version-linux-amd64.aci"
 
 member_count="${ETCDADM_MEMBER_COUNT:?missing required env}"
@@ -783,7 +783,7 @@ member_data_dir() {
 }
 
 member_etcdctl() {
-  raw_etcdctl etcdctl --endpoints "$(member_client_url)" ${*}
+  raw_etcdctl etcdctl --endpoints $(member_client_url) $@
 }
 
 raw_etcdctl() {
@@ -801,14 +801,8 @@ raw_etcdctl() {
     docker_opts+=(--volume=${credentials}:${credentials})
   fi
 
-  _run_as_root docker run ${docker_opts[*]} \
-    --env ETCDCTL_API=3 \
-    --network=host \
-    --volume="$(member_host_snapshots_dir_path)":/"$(member_snapshots_dir_name)" \
-    --volume="$(member_data_dir)":/var/lib/etcd \
-    --volume "$(member_snapshots_dir_name)":"$(member_host_snapshots_dir_path)" \
-    quay.io/coreos/etcd:$etcd_version \
-      ${*}
+  local command=$(echo "docker run ${docker_opts[@]} --env ETCDCTL_API=3 --network=host --volume=$(member_host_snapshots_dir_path):/$(member_snapshots_dir_name)  --volume=$(member_data_dir):/var/lib/etcd --volume=$(member_snapshots_dir_name):$(member_host_snapshots_dir_path) quay.io/coreos/etcd:$etcd_version $@ 2>&1" | tr '\n' ' ')
+  bash -c "${command}" 2>&1
 }
 
 member_is_healthy() {
@@ -874,23 +868,173 @@ export_kubernetes_registry() {
   local file_name=$1
   echo "Exporting kubernetes objects to $(member_host_snapshots_dir_path)/$file_name"
   if cluster_is_healthy; then
-    (member_etcdctl get '/registry' --prefix --write-out="json") | jq -r '.kvs[] | "\(.key):\(.value)"' >"$(member_host_snapshots_dir_path)/$file_name"
+    export_key_values $file_name
+    process_export_files $file_name
   else
     _panic 'cluster is not healthy, can not export keys from an unhealthy cluster'
   fi
+  echo "FINISHED exporting kubernetes object registry, ready to import"
+}
+
+export_key_values() {
+    local file_name=$1
+
+    echo "exporting objects from original etcds under path /registry..."
+    # we have to export twice (unfortunately)
+    # 'json' output mangles the lease ids
+    # 'fields' mangles the values
+    # we will process both of these files in order to properly extract key/value/lease information
+    member_etcdctl get '/registry' --prefix --write-out="fields" >"$(member_host_snapshots_dir_path)/${file_name}.fields"
+    member_etcdctl get '/registry' --prefix --write-out="json" | jq -r '.kvs[] | "\(.key)|\(.value)"' >"$(member_host_snapshots_dir_path)/${file_name}.kv"
+    echo "FINISHED exporting objects!"
+}
+
+# In order to improve performance, we process the exported data so that we can import it in batches of lease ttl
+# Each etcdctl docker container and so eats time so we want to process imports in as big batches as possible.
+process_export_files() {
+    local file=$1
+
+    create_lease_lookup "${file}.fields"
+    create_import_files "${file}.kv" "${file}.fields"
+}
+
+# create_lease_lookup, takes a fields type export from etcdctl and creates a crude lookup structure using the last 3 chars the key as cache buckets
+# the reasoning behind this is to prevent the creation of the sorted key/value files from having to grep through a single large file for every key/value.
+# NOTE: it was impossible to use the lease as extracted from the etcdctl json output because it mangles the lease number by using floats and rounding
+# fields output does not exhibit this issue.
+create_lease_lookup() {
+    local file=$1
+    local cachepath="${file}_lease_cache"
+    local key lease scratch
+    local cache1 cache2 cache3
+
+# "Key" : "/registry/services/specs/kube-system/tiller-deploy"
+# "CreateRevision" : 381
+# "ModRevision" : 381
+# "Version" : 1
+# "Value" : "k8s\x00\n\r\n\x02v1\x12\aService\x12\xf4\x04\n\x82\x04\n\rtiller-deploy\x12\x00\x1a\vkube-system\"\x00*$0fca6c7b-ffd2-11e9-a0f8-02a978d289c02\x008\x00B\b\b\xb0\xf8\x85\xee\x05\x10\x00Z\v\n\x03app\x12\x04helmZ\x0e\n\x04name\x12\x06tillerb\x8c\x03\n0kubectl.kubernetes.io/last-applied-configuration\x12\xd7\x02{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"annotations\":{},\"creationTimestamp\":null,\"labels\":{\"app\":\"helm\",\"name\":\"tiller\"},\"name\":\"tiller-deploy\",\"namespace\":\"kube-system\"},\"spec\":{\"ports\":[{\"name\":\"tiller\",\"port\":44134,\"targetPort\":\"tiller\"}],\"selector\":{\"app\":\"helm\",\"name\":\"tiller\"},\"type\":\"ClusterIP\"},\"status\":{\"loadBalancer\":{}}}\nz\x00\x12i\n!\n\x06tiller\x12\x03TCP\x18\xe6\xd8\x02\"\f\b\x01\x10\x00\x1a\x06tiller(\x00\x12\v\n\x03app\x12\x04helm\x12\x0e\n\x04name\x12\x06tiller\x1a\f192.168.5.55\"\tClusterIP:\x04NoneB\x00R\x00Z\x00`\x00h\x00\x1a\x02\n\x00\x1a\x00\"\x00"
+# "Lease" : 0
+    echo "writing lease assignment to lease cache ${cachepath}..."
+    while read -u 10 key
+    do
+      if [[ "$key" =~ ^\"Key\"\ : ]]; then
+        key=${key#\"Key\" : \"}
+        key=${key%\"}
+        read -u 10 scratch # CreateRevision
+        read -u 10 scratch # ModRevision
+        read -u 10 scratch # Version
+        read -u 10 scratch # Value
+        read -u 10 lease
+        lease=${lease#\"Lease\" : }
+        lease=$(printf "%0x" ${lease}) # we want the hex encoding of the lease id
+
+        # use last 3 characters of key as crude cache buckets
+        cache1=${key: -1:1}
+        cache2=${key: -2:1}
+        cache3=${key: -3:1}
+        if [[ "${lease}" != "0" ]]; then
+          mkdir -p "$(member_host_snapshots_dir_path)/${cachepath}/${cache1}/${cache2}/${cache3}"
+          echo "${key}|${lease}" >>"$(member_host_snapshots_dir_path)/${cachepath}/${cache1}/${cache2}/${cache3}/leases"
+        fi
+      fi
+    done 10<"$(member_host_snapshots_dir_path)/${file}"
+    echo "FINISHED populating the lease cache!"
+}
+
+create_import_files() {
+    local kvfile=$1
+    local leasefile=$2
+    local cachepath="${leasefile}_lease_cache"
+    local ttlfile="${leasefile}.ttls"
+    local sortedfile="${kvfile}.sorted"
+    local key value ttl leased destfile
+
+    echo "writing import files..."
+    while read -u 10 l
+    do
+      key=$(echo "${l%%|*}" | base64 -d)
+      value="${l##*|}"
+
+      # use last 3 characters of key as cache buckets
+      cache1=${key: -1:1}
+      cache2=${key: -2:1}
+      cache3=${key: -3:1}
+
+      destfile="$(member_host_snapshots_dir_path)/${sortedfile}.nolease"
+      if [ -d "$(member_host_snapshots_dir_path)/${cachepath}/${cache1}/${cache2}/${cache3}" ]; then
+        if leased=$(grep "^${key}|" "$(member_host_snapshots_dir_path)/${cachepath}/${cache1}/${cache2}/${cache3}/leases"); then
+          leased="${leased##*|}"
+          if ! ttl=$(grep "^${leased} " "$(member_host_snapshots_dir_path)/${ttlfile}" | awk '{print $2}'); then
+            ttl=$(lookup_lease_ttl "${leased}" "$(member_host_snapshots_dir_path)/${ttlfile}")
+          fi
+          destfile="$(member_host_snapshots_dir_path)/${sortedfile}.leased.${ttl}"
+        fi
+      fi
+      echo "${key}" >>"${destfile}"
+      echo "${value}" >>"${destfile}"
+    done 10<"$(member_host_snapshots_dir_path)/${kvfile}"
+    echo "FINISHED writing import files!"
+}
+
+lookup_lease_ttl() {
+  local lease=$1
+  local cachepath=$2
+  local ttl
+
+  result="$(member_etcdctl lease timetolive ${lease} | grep -v "already expired" 2>&1)"
+  if [[ -n "${result}" ]]; then
+    ttl=${result##*remaining(}
+    ttl=${ttl%%s)}
+  else
+    ttl="0"
+  fi
+  echo "${ttl}"
+  echo "${lease} ${ttl}" >>${cachepath}
 }
 
 import_kubernetes_registry() {
-  local file_name=$1
-  echo "Importing kubernetes objects to $(member_host_snapshots_dir_path)/$file_name"
-  if [[ ! -f "$(member_host_snapshots_dir_path)/$file_name" ]]; then
-    _panic "Can't import objects, file not found: $(member_host_snapshots_dir_path)/$file_name"
-  fi
+  local kvfile=$1
+  local standard="${1}.kv.sorted.nolease"
+  local leased="${1}.kv.sorted.leased."
+
   if cluster_is_healthy; then
-    raw_etcdctl /bin/sh -c 'while read -u 10 l; do k=$(echo "${l%%:*}" | base64 -d); v=${l##*:}; echo "saving $k"; echo -e "$v" | base64 -d | etcdctl --endpoints='$(member_client_url)' put "$k"; done 10<'$(member_snapshots_dir_name)/$file_name
+    echo "Importing standard kubernetes objects from $(member_host_snapshots_dir_path)/${standard}"
+    if [[ ! -f "$(member_host_snapshots_dir_path)/${standard}" ]]; then
+      _panic "Can't import objects, file not found: $(member_host_snapshots_dir_path)/${standard}"
+    fi
+    echo "importing keys from ${standard} ..."
+    import_keyfile "${standard}" ""
+
+    for file in $(member_host_snapshots_dir_path)/${leased}*
+    do
+      if [[ "$file" != "$(member_host_snapshots_dir_path)/${leased}*" ]]; then
+        local shortfile=$(basename $file)
+        local ttl=${shortfile##*.}
+        echo "importing leased keys from ${shortfile} ..."
+        import_keyfile "${shortfile}" "${ttl}"
+      fi
+    done
   else
     _panic 'cluster is not healthy, can not import keys to an unhealthy cluster'
   fi
+  echo "FINISHED importing kubernetes registry, migration complete!"
+}
+
+import_keyfile() {
+  local file_name=$1
+  local ttl=$2
+
+  if [[ -n "${ttl}" ]]; then
+    id=$(member_etcdctl lease grant ${ttl} | awk '{print $2}')
+    command="while read -u 10 k; do read -u 10 v; echo \"saving \$k with lease=${id} ttl=${ttl}\"; echo \"\$v\" | base64 -d | etcdctl --endpoints='$(member_client_url)' put \$k --lease=${id}; done 10<$(member_snapshots_dir_name)/$file_name"
+    echo "command is $command"
+    raw_etcdctl /bin/sh -c "'${command}'" 2>&1
+  else
+    command="while read -u 10 k; do read -u 10 v; echo \"saving \$k\"; echo \"\$v\" | base64 -d | etcdctl --endpoints='$(member_client_url)' put \$k; done 10<$(member_snapshots_dir_name)/$file_name"
+    echo "command is $command"
+    raw_etcdctl /bin/sh -c "'${command}'" 2>&1
+  fi
+  echo "FINISHED importing ${file_name}!"
 }
 
 etcdadm_main() {

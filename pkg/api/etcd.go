@@ -30,7 +30,7 @@ type Etcd struct {
 	UnknownKeys        `yaml:",inline"`
 }
 
-var ETCD_VERSION string = "v99.99"
+var ETCD_VERSION string = ""
 
 type EtcdDisasterRecovery struct {
 	Automated bool `yaml:"automated,omitempty"`
@@ -47,6 +47,9 @@ type EtcdSnapshot struct {
 
 func NewDefaultEtcd() Etcd {
 	return Etcd{
+		Cluster: EtcdCluster{
+			Version: ETCD_VERSION,
+		},
 		EC2Instance: EC2Instance{
 			Count:        1,
 			InstanceType: "t2.medium",
@@ -184,6 +187,9 @@ func (e Etcd) FormatOpts() string {
 func (e Etcd) Version() string {
 	if e.Cluster.Version != "" {
 		return e.Cluster.Version
+	}
+	if ETCD_VERSION == "" {
+		panic("The default version of Etcd has not been properly set by the build process, please fix or use another version")
 	}
 	return ETCD_VERSION
 }

@@ -339,6 +339,11 @@
             "Value": "{{ $.Etcd.Version }}"
           },
           {
+            "Key": "kube-aws:etcd_upgrade_group",
+            "PropagateAtLaunch": "true",
+            "Value": "{{ $etcdInstance.MajorMinorVersion }}"
+          },
+          {
             "Key": "Name",
             "PropagateAtLaunch": "true",
             "Value": "{{$.ClusterName}}-{{$.StackName}}-kube-aws-etcd-{{$etcdIndex}}"
@@ -515,7 +520,7 @@
         }
       },
       "DependsOn": [
-        {{if $.StackExists}}{{if $etcdIndex}}"{{$.Etcd.LogicalName}}{{sub $etcdIndex 1}}",{{end}}{{end}}
+        {{if $.StackExists}}{{if not $.EtcdMigrationEnabled }}{{if $etcdIndex}}"{{$etcdInstance.LogicalNameForIndex (sub $etcdIndex 1)}}",{{end}}{{end}}{{end}}
         {{if $etcdInstance.EIPManaged}}
         "{{$etcdInstance.EIPLogicalName}}",
         {{end}}
@@ -588,22 +593,6 @@
     {{end}}
   },
   "Outputs": {
-    {{range $index, $etcdInstance := $.EtcdNodes}}
-    {{if $etcdInstance.EIPManaged}}
-    "{{$etcdInstance.EIPLogicalName}}": {
-      "Description": "The EIP for etcd node {{$index}}",
-      "Value": {{$etcdInstance.EIPRef}},
-      "Export": { "Name" : {"Fn::Sub": "${AWS::StackName}-{{$etcdInstance.EIPLogicalName}}" }}
-    },
-    {{end}}
-    {{if $etcdInstance.NetworkInterfaceManaged}}
-    "{{$etcdInstance.NetworkInterfacePrivateIPLogicalName}}": {
-      "Description": "The private IP for etcd node {{$index}}",
-      "Value": {{$etcdInstance.NetworkInterfacePrivateIPRef}},
-      "Export": { "Name" : {"Fn::Sub": "${AWS::StackName}-{{$etcdInstance.NetworkInterfacePrivateIPLogicalName}}" }}
-    },
-    {{end}}
-    {{end}}
     "StackName": {
       "Description": "The name of this stack which is used by node pool stacks to import outputs from this stack",
       "Value": { "Ref": "AWS::StackName" }

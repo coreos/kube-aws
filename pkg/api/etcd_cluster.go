@@ -1,6 +1,9 @@
 package api
 
-import "fmt"
+import (
+	"fmt"
+	"regexp"
+)
 
 type EtcdCluster struct {
 	InternalDomainName     string     `yaml:"internalDomainName,omitempty"`
@@ -53,4 +56,17 @@ func (c EtcdCluster) NodeShouldHaveSecondaryENI() bool {
 // NodeShouldHaveEIP returns true if all the etcd nodes should have EIPs for their identities
 func (c EtcdCluster) NodeShouldHaveEIP() bool {
 	return c.GetMemberIdentityProvider() == MemberIdentityProviderEIP
+}
+
+func (c EtcdCluster) MajorMinorVersion() string {
+	r := regexp.MustCompile(`v?[0-9]+\.[0-9]+`)
+	if c.Version != "" {
+		return r.FindString(c.Version)
+	}
+	return r.FindString(ETCD_VERSION)
+}
+
+func (c EtcdCluster) LogicalName() string {
+	d := regexp.MustCompile(`\.`)
+	return fmt.Sprintf("Etcd%s", d.ReplaceAllString(c.MajorMinorVersion(), `dot`))
 }

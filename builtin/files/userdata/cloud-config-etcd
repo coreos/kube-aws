@@ -1,6 +1,7 @@
 {{ define "instance-script" -}}
 {{- $S3URI := self.Parts.s3.Asset.S3URL -}}
 echo '{{.EtcdIndexEnvVarName}}={{extra.etcdIndex}}' >> {{.EtcdNodeEnvFileName}}
+echo 'CLUSTER_LOGICAL_NAME={{.Etcd.Cluster.LogicalName }}' >> {{.EtcdNodeEnvFileName}}
  . /etc/environment
 export COREOS_PRIVATE_IPV4 COREOS_PRIVATE_IPV6 COREOS_PUBLIC_IPV4 COREOS_PUBLIC_IPV6
 REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')
@@ -223,21 +224,22 @@ coreos:
         EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=/var/run/coreos/etcdadm-environment-migration
         ExecStartPre=/opt/bin/etcdadm cluster-is-healthy
-        ExecStartPre=/bin/bash -c "\
+        ExecStart=/bin/bash -c "\
           if /opt/bin/etcdadm member-is-leader; then \
-              /opt/bin/etcdadm migration-export-kube-state existing-state-file.json && \
-              mv /var/run/coreos/etcdadm/snapshots/existing-state-file.json /var/run/coreos/etcdadm/snapshots/exported-state-file.json; \
+            /opt/bin/etcdadm migration-export-kube-state migration && \
+            touch /var/run/coreos/etcdadm/snapshots/export-complete && \
+            /bin/sleep 3600; \
           else \
-             touch /var/run/coreos/etcdadm/snapshots/exported-state-file.json; \
+            touch /var/run/coreos/etcdadm/snapshots/export-complete && \
+            /bin/sleep 3600; \
           fi"
-        ExecStart=/bin/sleep 3600
-        TimeoutStartSec=900
+        TimeoutStartSec=infinity
     - name: import-existing-etcd-state.path
       enable: true
       command:  start
       content: |
         [Path]
-        PathExists=/var/run/coreos/etcdadm/snapshots/exported-state-file.json
+        PathExists=/var/run/coreos/etcdadm/snapshots/export-complete
 
         [Install]
         WantedBy=default.target
@@ -258,10 +260,9 @@ coreos:
         EnvironmentFile=/var/run/coreos/etcdadm-environment
         ExecStartPre=/usr/bin/systemctl is-active export-existing-etcd-state.service
         ExecStartPre=/opt/bin/etcdadm cluster-is-healthy
-        ExecStartPre=/bin/bash -c 'if [[ -s "/var/run/coreos/etcdadm/snapshots/exported-state-file.json" ]]; then \
-          /opt/bin/etcdadm migration-import-kube-state exported-state-file.json; fi'
-        ExecStart=/bin/sleep 3600
-        TimeoutStartSec=900
+        ExecStart=/bin/bash -c 'if [[ -s "/var/run/coreos/etcdadm/snapshots/migration.kv" ]]; then \
+          /opt/bin/etcdadm migration-import-kube-state migration && rm -f /var/run/coreos/etcdadm/snapshots/export-complete; fi; /bin/sleep 3600'
+        TimeoutStartSec=infinity
     {{ end -}}
     - name: etcdadm-reconfigure.service
       enable: true
@@ -575,7 +576,7 @@ write_files:
     content: |
       #!/bin/bash -vxe
 
-      cfn-init -v -c "etcd-server" --region {{.Region}} --resource {{.Etcd.LogicalName}}${{.EtcdIndexEnvVarName}} --stack "${{.StackNameEnvVarName}}"
+      cfn-init -v -c "etcd-server" --region {{.Region}} --resource ${CLUSTER_LOGICAL_NAME}i${{.EtcdIndexEnvVarName}} --stack "${{.StackNameEnvVarName}}"
 
   - path: /opt/bin/attach-etcd-volume
     owner: root:root
@@ -851,6 +852,7 @@ write_files:
            --uuid-file-save=/var/run/coreos/$1.uuid \
            --set-env={{.StackNameEnvVarName}}=${{.StackNameEnvVarName}} \
            --set-env={{.EtcdIndexEnvVarName}}=${{.EtcdIndexEnvVarName}} \
+           --set-env=CLUSTER_LOGICAL_NAME=$CLUSTER_LOGICAL_NAME \
            --net=host \
            --trust-keys-from-https \
            {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/opt/bin/$1 -- $2
@@ -920,12 +922,13 @@ write_files:
         --uuid-file-save=/var/run/coreos/cfn-signal.uuid \
         --set-env={{.StackNameEnvVarName}}=${{.StackNameEnvVarName}} \
         --set-env={{.EtcdIndexEnvVarName}}=${{.EtcdIndexEnvVarName}} \
+        --set-env=CLUSTER_LOGICAL_NAME=$CLUSTER_LOGICAL_NAME \
         --net=host \
         --trust-keys-from-https \
         {{.AWSCliImage.Options}}{{.AWSCliImage.RktRepo}} --exec=/bin/bash -- \
           -vxec \
           '
-           cfn-signal -e 0 --region {{.Region}} --resource {{.Etcd.LogicalName}}${{.EtcdIndexEnvVarName}} --stack "${{.StackNameEnvVarName}}"
+           cfn-signal -e 0 --region {{.Region}} --resource ${CLUSTER_LOGICAL_NAME}i${{.EtcdIndexEnvVarName}} --stack "${{.StackNameEnvVarName}}"
           '
 
       rkt rm --uuid-file=/var/run/coreos/cfn-signal.uuid || :
