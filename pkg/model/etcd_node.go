@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+
 	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 )
 
@@ -57,13 +58,6 @@ func (i EtcdNode) privateDNSNameRef() string {
 	return fmt.Sprintf(`"%s"`, i.customPrivateDNSName())
 }
 
-func (i EtcdNode) importedPrivateDNSNameRef() string {
-	if i.cluster.EC2InternalDomainUsed() {
-		return i.defaultPrivateDNSNameRefFromIPRef(fmt.Sprintf(`{ "Fn::ImportValue": {"Fn::Sub" : "${EtcdStackName}-%s"} }`, i.NetworkInterfacePrivateIPLogicalName()))
-	}
-	return fmt.Sprintf(`"%s"`, i.customPrivateDNSName())
-}
-
 func (i EtcdNode) defaultPrivateDNSNameRefFromIPRef(ipRef string) string {
 	hostnameRef := fmt.Sprintf(`
 	        { "Fn::Join" : [ "-",
@@ -88,15 +82,6 @@ func (i EtcdNode) defaultPublicDNSNameRef() (string, error) {
 	return i.defaultPublicDNSNameRefFromIPRef(eipRef), nil
 }
 
-func (i EtcdNode) importedDefaultPublicDNSNameRef() (string, error) {
-	eipLogicalName, err := i.EIPLogicalName()
-	if err != nil {
-		return "", fmt.Errorf("failed to determine an ec2 default public dns name: %v", err)
-	}
-	eipRef := fmt.Sprintf(`{ "Fn::ImportValue": {"Fn::Sub" : "${EtcdStackName}-%s"} }`, eipLogicalName)
-	return i.defaultPublicDNSNameRefFromIPRef(eipRef), nil
-}
-
 func (i EtcdNode) defaultPublicDNSNameRefFromIPRef(ipRef string) string {
 	return fmt.Sprintf(`{ "Fn::Join" : [ ".", [
                 { "Fn::Join" : [ "-", [
@@ -114,11 +99,11 @@ func (i EtcdNode) AdvertisedFQDNRef() (string, error) {
 	return i.defaultPublicDNSNameRef()
 }
 
-func (i EtcdNode) ImportedAdvertisedFQDNRef() (string, error) {
+func (i EtcdNode) AdvertisedFQDN() (string, error) {
 	if i.cluster.NodeShouldHaveSecondaryENI() {
-		return i.importedPrivateDNSNameRef(), nil
+		return i.privateDNSNameRef(), nil
 	}
-	return i.importedDefaultPublicDNSNameRef()
+	return i.defaultPublicDNSNameRef()
 }
 
 func (i EtcdNode) SubnetRef() string {

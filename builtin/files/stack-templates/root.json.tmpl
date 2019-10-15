@@ -37,10 +37,13 @@
         "Parameters": {
           "EtcdStackName": {"Fn::GetAtt" : [ "{{$.Etcd.Name}}" , "Outputs.StackName" ]},
           "NetworkStackName": {"Fn::GetAtt" : [ "{{$.Network.Name}}" , "Outputs.StackName" ]}
-          {{if .CloudWatchLogging.Enabled}}
+          {{range $index, $etcdInstance := $.EtcdNodes -}}
           ,
+          "{{$etcdInstance.LogicalName}}FQDN": {"Fn::GetAtt" : [ "{{$.Etcd.Name}}" , "Outputs.{{$etcdInstance.LogicalName}}FQDN" ]}
+          {{- end}}
+          {{if .CloudWatchLogging.Enabled}},
           "CloudWatchLogGroupARN": { "Fn::GetAtt": [ "CloudWatchLogGroup", "Arn" ] }
-          {{ end }}
+          {{- end }}
         },
         "Tags" : [
           {

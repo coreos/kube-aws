@@ -40,6 +40,10 @@ func (p TemplateParams) KubeDnsMasq() api.KubeDns {
 	return p.cluster.controlPlaneStack.Config.KubeDns
 }
 
+func (p TemplateParams) EtcdNodes() []model.EtcdNode {
+	return p.cluster.Cfg.EtcdNodes
+}
+
 func newTemplateParams(c *Cluster) TemplateParams {
 	return TemplateParams{
 		cluster: *c,
