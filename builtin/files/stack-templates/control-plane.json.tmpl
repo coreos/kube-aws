@@ -10,12 +10,18 @@
       "Type": "String",
       "Description": "The name of an etcd stack used to import values into this stack"
     }
-    {{if .CloudWatchLogging.Enabled}},
+    {{range $index, $etcdInstance := $.EtcdNodes }},
+    "{{$etcdInstance.LogicalName}}FQDN": {
+      "Type": "String",
+      "Description": "The FQDN for etcd node {{$index}}"
+    }
+    {{- end}}
+    {{if .CloudWatchLogging.Enabled }},
     "CloudWatchLogGroupARN": {
       "Type": "String",
       "Description": "CloudWatch LogGroup to send journald logs to"
     }
-    {{end}}
+    {{- end}}
   },
   "Resources": {
     "{{.Controller.LogicalName}}": {
@@ -156,7 +162,7 @@
                   "ETCD_ENDPOINTS='",
                   {{range $index, $etcdInstance := $.EtcdNodes}}
                   {{if $index}}",", {{end}} "https://",
-                  {{$etcdInstance.ImportedAdvertisedFQDNRef}}, ":2379",
+                  { "Ref" : "{{$etcdInstance.LogicalName}}FQDN" }, ":2379",
                   {{end}}
                   "'\n"
                 ]]}

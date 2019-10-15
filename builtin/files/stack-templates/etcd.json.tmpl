@@ -586,7 +586,6 @@
     ,
     {{quote $n}}: {{toJSON $r}}
     {{end}}
-    
   },
   "Outputs": {
     {{range $index, $etcdInstance := $.EtcdNodes}}
@@ -609,9 +608,15 @@
       "Description": "The name of this stack which is used by node pool stacks to import outputs from this stack",
       "Value": { "Ref": "AWS::StackName" }
     }
-    {{range $n, $r := .ExtraCfnOutputs}}
+    {{range $index, $etcdInstance := $.EtcdNodes }},
+    "{{$etcdInstance.LogicalName}}FQDN": {
+      "Description": "The FQDN for etcd node {{$index}}",
+      "Value": {{$etcdInstance.AdvertisedFQDN}}
+    }
+    {{- end}}
+    {{range $n, $r := .ExtraCfnOutputs -}}
     ,
     {{quote $n}}: {{toJSON $r}}
-    {{end}}
+    {{- end}}
   }
 }
