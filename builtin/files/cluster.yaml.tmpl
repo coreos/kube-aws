@@ -1600,20 +1600,23 @@ kubeAwsPlugins:
   # dashboard - deploys the kubernetes dashboard to the cluster
   dashboard:
     enabled: true
-    # namespace: kube-system # the namespace for dashboard resources
-    # clusterAdminPrivilages: true # run the dashboard with cluster-admin privileges - disable this to secure the dashboard with authentication.
-    # allowSkipLogin: true # give the users a skip login button to access the dashboard
+    # namespace - the namespace to deploy dashboard into
+    # namespace: kube-system
+    # clusterAdminPrivilages - # run the dashboard with cluster-admin privileges - disable this to secure the dashboard with authentication.
+    # clusterAdminPrivilages: true
+    # allowSkipLogin - give the users a skip login button to access the dashboard
+    # allowSkipLogin: true
     # dashboardImage: kubernetesui/dashboard:v2.0.0-beta4
     # metricsScraperImage: kubernetesui/metrics-scraper:v1.0.1
     # replicas: 1 # the number of dashboard replicas required
     # use a cluster-proportional-autoscaler deployment to scale dashboard replicas based on cluster size (cores/nodes)
     # autoscaler:
-    #  enabled: true
-    #  image: k8s.gcr.io/cluster-proportional-autoscaler-amd64:1.7.1
-    #  params:
-    #    coresPerReplica: 800
-    #    nodesPerReplica: 50
-    #    min: 1
+    #   enabled: true
+    #   image: k8s.gcr.io/cluster-proportional-autoscaler-amd64:1.7.1
+    #   params:
+    #     coresPerReplica: 800
+    #     nodesPerReplica: 50
+    #     min: 1
     # resources:
     #   limits:
     #     cpu: ""
