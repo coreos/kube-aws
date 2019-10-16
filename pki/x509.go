@@ -88,7 +88,7 @@ func NewSignedServerCertificate(cfg ServerCertConfig, key *rsa.PrivateKey, caCer
 		NotBefore:    caCert.NotBefore,
 		NotAfter:     time.Now().Add(cfg.Duration).UTC(),
 		KeyUsage:     x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 	}
 	certDERBytes, err := x509.CreateCertificate(rand.Reader, &certTmpl, caCert, key.Public(), caKey)
 	if err != nil {
