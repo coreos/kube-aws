@@ -124,6 +124,10 @@ metadata:
     {{ if .Values.ingress.class -}}
     kubernetes.io/ingress.class: {{ .Values.ingress.class }}
     {{- end }}
+    {{ if .Values.ingress.annotations -}}
+    {{ range $key, $value := .Values.ingress.annotations -}}
+    {{ $key }}: "{{ $value }}"
+    {{- end }}
   {{- end }}
 spec:
   rules:
