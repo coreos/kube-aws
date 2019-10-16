@@ -1622,44 +1622,44 @@ kubeAwsPlugins:
     #    cpu: 500m
     #    memory: 256Mi
     # tls:
-    #  enabled: true
-    #  certificates:
-    #    # plugin will use 'supplied' certs if specified but will fall-back to generated path based certs if not.
-    #    supplied:
-    #      caPEM: ""
-    #      certPEM: ""
-    #      keyPEM: ""
-    #    # change 'path' to pick up user supplied certs stored in a different location
-    #    # defaults to kube-aws generated certificates
-    #    path:
-    #      caName: dashboard-ca
-    #      caPath: credentials/dashboard-ca.pem
-    #      certPath: credentials/dashboard.pem
-    #      keyPath: credentials/dashboard-key.pem
+    #   enabled: true
+    #   certificates:
+    #     # plugin will use 'supplied' certs if specified but will fall-back to generated path based certs if not.
+    #     supplied:
+    #       caPEM: ""
+    #       certPEM: ""
+    #       keyPEM: ""
+    #     # change 'path' to pick up user supplied certs stored in a different location
+    #     # defaults to kube-aws generated certificates
+    #     path:
+    #       caName: dashboard-ca
+    #       caPath: credentials/dashboard-ca.pem
+    #       certPath: credentials/dashboard.pem
+    #       keyPath: credentials/dashboard-key.pem
     # ingress:
-    #  enabled: true
-    #  # class - set an ingress class annotation if your cluster supports multiple ingress controllers
-    #  class: ""
-    #  # annotations - add your own custom annotations to the ingress object to enable features specific to your ingress controller.
-    #  # e.g. annotations:
-    #  #        annotation1: value
-    #  #        annotation2: value
-    #  annotations: {}
-    #  # set the ingress hostname to a valid domain that gets routed to your ingress controller
-    #  # by default generate a host based on the servicename and clusters apiendpoint dns name.
-    #  hostname: kubernetes-dashboard.ingress.{{ .Config.AdminAPIEndpoint.DNSName }}
-    #  # set 'supressIngressSecret' to true if you are using something like jetstack cert-manager for auto provisioning ingress certificates
-    #  # ingress certificates
-    #  supressIngresSecret: false
-    #  certificates:
-    #    # plugin will use 'supplied' certs if specified but will fall-back to generated path based certs if not.
-    #    supplied:
-    #      caPEM: ""
-    #      certPEM: ""
-    #      keyPEM: ""
-    #    # change 'path' to pick up user supplied certs stored in a different location
-    #    # defaults to kube-aws generated certificates
-    #    path:
-    #      caPath: credentials/ingress-ca.pem
-    #      certPath: credentials/dashboard-ingress.pem
-    #      keyPath: credentials/dashboard-ingress-key.pem
+    #   enabled: true
+    #   # class - set an ingress class annotation if your cluster supports multiple ingress controllers
+    #   class: ""
+    #   # annotations - add your own custom annotations to the ingress object to enable features specific to your ingress controller.
+    #   # e.g. annotations:
+    #   #        annotation1: value
+    #   #        annotation2: value
+    #   annotations: {}
+    #   # set the ingress hostname to a valid domain that gets routed to your ingress controller
+    #   # by default generate a host based on the servicename and clusters apiendpoint dns name.
+    #   hostname: kubernetes-dashboard.ingress.{{ .Config.AdminAPIEndpoint.DNSName }}
+    #   # set 'supressIngressSecret' to true if you are using something like jetstack cert-manager for auto provisioning ingress certificates
+    #   # ingress certificates
+    #   supressIngresSecret: false
+    #   certificates:
+    #     # plugin will use 'supplied' certs if specified but will fall-back to generated path based certs if not.
+    #     supplied:
+    #       caPEM: ""
+    #       certPEM: ""
+    #       keyPEM: ""
+    #     # change 'path' to pick up user supplied certs stored in a different location
+    #     # defaults to kube-aws generated certificates
+    #     path:
+    #       caPath: credentials/ingress-ca.pem
+    #       certPath: credentials/dashboard-ingress.pem
+    #       keyPath: credentials/dashboard-ingress-key.pem
