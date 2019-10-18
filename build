@@ -7,7 +7,7 @@ BRANCH=$(git branch | grep \* | cut -d ' ' -f2 | sed -e 's/[^a-zA-Z0-9+=._:/-]*/
 OUTPUT_PATH=${OUTPUT_PATH:-"bin/kube-aws"}
 VERSION=""
 ETCD_VERSION="v3.2.26"
-KUBERNETES_VERSION="v1.15.4"
+KUBERNETES_VERSION="v1.15.5"
 
 if [ -z "$TAG" ]; then
         [[ -n "$BRANCH" ]] && VERSION="${BRANCH}/"
