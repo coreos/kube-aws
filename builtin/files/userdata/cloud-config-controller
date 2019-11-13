@@ -2084,6 +2084,19 @@ write_files:
           kind: NetworkPolicy
           plural: networkpolicies
           singular: networkpolicy
+      ---
+      apiVersion: apiextensions.k8s.io/v1beta1
+      kind: CustomResourceDefinition
+      metadata:
+        name: networksets.crd.projectcalico.org
+      spec:
+        scope: Namespaced
+        group: crd.projectcalico.org
+        version: v1
+        names:
+          kind: NetworkSet
+          plural: networksets
+          singular: networkset
 
   - path: /srv/kubernetes/rbac/network-daemonsets.yaml
     content: |
@@ -2173,6 +2186,7 @@ write_files:
             - globalnetworkpolicies
             - globalnetworksets
             - networkpolicies
+            - networksets
             - clusterinformations
             - hostendpoints
           verbs:
