@@ -97,6 +97,8 @@ apiEndpoints:
 keyName: "%s"
 kmsKeyArn: "%s"
 region: "%s"
+etcd:
+  version: v3.3.17
 `,
 		s.clusterName,
 		s.s3URI,
@@ -113,6 +115,8 @@ keyName: "%s"
 s3URI: "%s"
 kmsKeyArn: "%s"
 region: "%s"
+etcd:
+  version: v3.3.17
 `,
 		s.clusterName,
 		s.keyName,

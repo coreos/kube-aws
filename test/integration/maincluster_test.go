@@ -49,6 +49,9 @@ func TestMainClusterConfig(t *testing.T) {
 		subnet1.Name = "Subnet0"
 		expected := api.EtcdSettings{
 			Etcd: api.Etcd{
+				Cluster: api.EtcdCluster{
+					Version: "v3.3.17",
+				},
 				EC2Instance: api.EC2Instance{
 					Count:        1,
 					InstanceType: "t2.medium",
@@ -774,6 +777,7 @@ etcd:
 						Etcd: api.Etcd{
 							Cluster: api.EtcdCluster{
 								MemberIdentityProvider: "eip",
+								Version:                "v3.3.17",
 							},
 							EC2Instance: api.EC2Instance{
 								Count:        1,
@@ -846,6 +850,7 @@ etcd:
 							},
 							Cluster: api.EtcdCluster{
 								MemberIdentityProvider: "eni",
+								Version:                "v3.3.17",
 							},
 							Subnets: api.Subnets{
 								subnet1,
@@ -888,6 +893,7 @@ etcd:
 							Cluster: api.EtcdCluster{
 								MemberIdentityProvider: "eni",
 								InternalDomainName:     "internal.example.com",
+								Version:                "v3.3.17",
 							},
 							EC2Instance: api.EC2Instance{
 								Count:        1,
@@ -950,6 +956,7 @@ etcd:
 							Cluster: api.EtcdCluster{
 								MemberIdentityProvider: "eni",
 								InternalDomainName:     "internal.example.com",
+								Version:                "v3.3.17",
 							},
 							EC2Instance: api.EC2Instance{
 								Count:        1,
@@ -1023,6 +1030,7 @@ etcd:
 							Cluster: api.EtcdCluster{
 								MemberIdentityProvider: "eni",
 								InternalDomainName:     "internal.example.com",
+								Version:                "v3.3.17",
 							},
 							EC2Instance: api.EC2Instance{
 								Count:        1,
@@ -1099,6 +1107,7 @@ etcd:
 								ManageRecordSets:       &manageRecordSets,
 								MemberIdentityProvider: "eni",
 								InternalDomainName:     "internal.example.com",
+								Version:                "v3.3.17",
 							},
 							EC2Instance: api.EC2Instance{
 								Count:        1,
@@ -1175,6 +1184,7 @@ etcd:
 								HostedZone:             api.Identifier{ID: "hostedzone-abcdefg"},
 								MemberIdentityProvider: "eni",
 								InternalDomainName:     "internal.example.com",
+								Version:                "v3.3.17",
 							},
 							EC2Instance: api.EC2Instance{
 								Count:        1,
@@ -2989,6 +2999,9 @@ subnets:
 					}
 					expected := api.EtcdSettings{
 						Etcd: api.Etcd{
+							Cluster: api.EtcdCluster{
+								Version: "v3.3.17",
+							},
 							EC2Instance: api.EC2Instance{
 								Count:        1,
 								InstanceType: "t2.medium",
