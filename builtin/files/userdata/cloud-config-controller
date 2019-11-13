@@ -1520,7 +1520,7 @@ write_files:
                     value: "kubernetes"
                   # Enable felix logging.
                   - name: FELIX_LOGSEVERITYSYS
-                    value: "info"
+                    value: "Warning"
                   # Don't enable BGP.
                   - name: CALICO_NETWORKING_BACKEND
                     value: "none"
@@ -1742,7 +1742,7 @@ write_files:
                     value: "kubernetes"
                   # Enable felix logging.
                   - name: FELIX_LOGSEVERITYSYS
-                    value: "info"
+                    value: "Warning"
                   # Don't enable BGP.
                   - name: CALICO_NETWORKING_BACKEND
                     value: "none"
