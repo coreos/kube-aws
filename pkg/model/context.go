@@ -69,15 +69,15 @@ func (s *Context) InspectEtcdExistingState(c *Config) (api.EtcdExistingState, er
 			return state, fmt.Errorf("failed to check existing etcd major minor version: %v", err)
 		}
 		if state.EtcdMigrationEnabled {
-			logger.Warn("Performing a Major Etcd Version Upgrade: -")
-			logger.Warn("To do this we will spin up new etcd servers and then export the existing kubernetes state to them.")
-			logger.Warn("There will be cluster disruption until all of your existing controllers have rolled.")
-			logger.Warn("If the cloudformation update fails (at any point) then we will roll back to the original etcd servers.")
-			logger.Warn("You MAY lose/rollback changes that are made to the cluster AFTER the etcd export has been performed!")
-			logger.Warn("This operation is best scheduled for a quiet time or in an outage window.")
 			if state.EtcdMigrationExistingEndpoints, err = s.lookupExistingEtcdEndpoints(c); err != nil {
 				return state, fmt.Errorf("failed to lookup existing etcd endpoints: %v", err)
 			}
+			logger.Warn("Performing a Major Etcd Version Upgrade: -")
+			logger.Warn("To do this we will spin up new etcd servers and then export the existing kubernetes state to them.")
+			logger.Warn("There will be cluster apiserver disruption until all of your existing controllers have rolled.")
+			logger.Warn("If the cloudformation update fails (at any point) then we will roll back to the original etcd servers.")
+			logger.Warn("You MAY lose/rollback changes that are made to the cluster AFTER the etcd export has been performed!")
+			logger.Warn("This operation is best scheduled for a quiet time or in an outage window.")
 		}
 	}
 	return state, nil
