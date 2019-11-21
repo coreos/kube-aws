@@ -204,6 +204,9 @@ func (c WorkerNodePool) MaxCount() int {
 
 func (c WorkerNodePool) RollingUpdateMinInstancesInService() int {
 	if c.AutoScalingGroup.RollingUpdateMinInstancesInService == nil {
+		if c.NodePoolRollingStrategy == "AvailabilityZone" {
+			return 0
+		}
 		if c.MaxCount() > 0 {
 			return c.MaxCount() - 1
 		}

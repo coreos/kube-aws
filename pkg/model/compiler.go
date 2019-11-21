@@ -124,10 +124,10 @@ func Compile(cfgRef *api.Cluster, opts api.ClusterOptions) (*Config, error) {
 		}
 
 		if np.NodePoolRollingStrategy != "Parallel" && np.NodePoolRollingStrategy != "Sequential" && np.NodePoolRollingStrategy != "AvailabilityZone" {
-			if c.Worker.NodePoolRollingStrategy != "" && (c.Worker.NodePoolRollingStrategy == "Sequential" || c.Worker.NodePoolRollingStrategy == "Parallel" || c.Worker.NodePoolRollingStrategy == "AvailabilityZone") {
+			if c.Worker.NodePoolRollingStrategy == "Sequential" || c.Worker.NodePoolRollingStrategy == "Parallel" || c.Worker.NodePoolRollingStrategy == "AvailabilityZone" {
 				np.NodePoolRollingStrategy = c.Worker.NodePoolRollingStrategy
 			} else {
-				np.NodePoolRollingStrategy = "Parallel"
+				np.NodePoolRollingStrategy = "AvailabilityZone"
 			}
 		}
 

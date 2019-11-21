@@ -314,10 +314,13 @@ worker:
 #  # - 'Sequential' - roll each nodepool one-at-a-time in the order that they are listed in this file.
 #  # - 'Parallel' - roll each nodepool at the same time.
 #  # - 'AvailabilityZone' - roll the nodepools an AWS AvailabilityZone at-a-time.
-#  #     (multiple pools in the same availability zone are rolled in 'Parrallel')
-#  #     (only nodepools containing subnets within a single AWS AvailabilityZone can be rolled out using this strategy)
-#  # The default behaviour is to roll using 'Parallel'
-#  nodePoolRollingStrategy: Parallel
+#  #     (multiple pools in the same availability zone are rolled in 'Parrallel', availability zones are rolled sequentially)
+#  # The default behaviour is to roll using 'AvailabilityZone'
+#  nodePoolRollingStrategy: AvailabilityZone
+
+# NOTE: Please do not mix subnets from different AvailabilityZones in the SAME nodepool, instead create a separate nodepool
+# for each availability zone.  You can have as many nodePools as you like.
+# If you do mix them then you will have to choose either the 'Parallel' or 'Sequential' rolling strategy instead.
 
   nodePools:
     - # Name of this node pool. Must be unique among all the node pools in this cluster
@@ -333,7 +336,7 @@ worker:
 #      # - A pool rolling out using the 'AvailabilityZone' strategy will only wait on other pools using the same strategy.
 #      # - When mixing 'Sequential` with other strategies define the `Sequential` nodepools first so that they don't wait unnecessarily for pools from the
 #      #   other strategies
-#      nodePoolRollingStrategy: Parallel
+#      nodePoolRollingStrategy: AvailabilityZone
 #
 #      # Existing "glue" security groups attached to worker nodes which are typically used to allow
 #      # access from worker nodes to services running on an existing infrastructure
@@ -465,18 +468,22 @@ worker:
 #      spotPrice: "0.05"
 #
 #      # When enabled, autoscaling groups managing worker nodes wait for nodes to be up and running.
-#      # This is enabled by default.
+#      # This is enabled by default.  The maxBatchSize is set to the whole autoscaling group if 'AvailabilityZone'
+#      # nodePoolRollingStrategy is selected by default, or '1' for other rolling strategies (you can select your own below)
 #      waitSignal:
 #        enabled: true
-#        # Max number of nodes concurrently updated
-#        maxBatchSize: 1
+#        # Max number of nodes concurrently updated (1 by default)
+#        # Consider setting the maxBatchSize = autoScalingGroup.maxSize to take a whole AZ out at-a-time -
+#        # whilst this may cause disruption for your customer applications they do need to be prepared to survive the
+#        # the loss of an AZ and practicing this can help them prepare and scale properly for such an event.
+#        # maxBatchSize: 1
 #
 #      # Auto Scaling Group definition for workers. If only `workerCount` is specified, min and max will be the set to that value and `rollingUpdateMinInstancesInService` will be one less.
 #      # NOTE: Starting kube-aws 0.13, this creates a LaunchTemplate instead of a LaunchConfiguration. This makes new autoscaling options possible
 #      autoScalingGroup:
 #        minSize: 1
 #        maxSize: 3
-#        rollingUpdateMinInstancesInService: 2
+#        rollingUpdateMinInstancesInService: 0
 #
 #        # Configure mixedInstances for autoscalinggroups
 #        # See https://aws.amazon.com/blogs/aws/new-ec2-auto-scaling-groups-with-multiple-instance-types-purchase-options/

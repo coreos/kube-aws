@@ -367,15 +367,25 @@
       },
       {{end}}
       "UpdatePolicy" : {
+        "AutoScalingScheduledAction" : {
+          "IgnoreUnmodifiedGroupSizeProperties" : true
+        },
         "AutoScalingRollingUpdate" : {
           "MinInstancesInService" : "0",
           "MaxBatchSize" : "1",
           {{if $.WaitSignal.Enabled}}
           "WaitOnResourceSignals" : "true",
-          "PauseTime": "{{$.Controller.CreateTimeout}}"
+          "PauseTime": "{{$.Controller.CreateTimeout}}",
           {{else}}
-          "PauseTime": "PT2M"
+          "PauseTime": "PT2M",
           {{end}}
+          "SuspendProcesses":[
+            "HealthCheck",
+            "ReplaceUnhealthy",
+            "AZRebalance",
+            "AlarmNotification",
+            "ScheduledActions"
+          ]
         }
       },
       "Metadata" : {

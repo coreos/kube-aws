@@ -155,8 +155,8 @@ func TestMainClusterConfig(t *testing.T) {
 			t.Errorf("waitSignal should be enabled but was not: %v", c.WaitSignal)
 		}
 
-		if c.WaitSignal.MaxBatchSize() != 1 {
-			t.Errorf("waitSignal.maxBatchSize should be 1 but was %d: %v", c.WaitSignal.MaxBatchSize(), c.WaitSignal)
+		if c.WaitSignal.MaxBatchSize(1) != 1 {
+			t.Errorf("waitSignal.maxBatchSize should be 1 but was %d: %v", c.WaitSignal.MaxBatchSize(1), c.WaitSignal)
 		}
 	}
 
@@ -232,8 +232,8 @@ func TestMainClusterConfig(t *testing.T) {
 	hasDefaultNodePoolRollingStrategy := func(c *config.Config, t *testing.T) {
 		s := c.NodePools[0].NodePoolRollingStrategy
 
-		if s != "Parallel" {
-			t.Errorf("Default nodePool rolling strategy should be 'Parallel' but is not: %v", s)
+		if s != "AvailabilityZone" {
+			t.Errorf("Default nodePool rolling strategy should be 'AvailabilityZone' but is not: %v", s)
 		}
 	}
 
@@ -1616,14 +1616,14 @@ worker:
 					if !c.NodePools[0].WaitSignal.Enabled() {
 						t.Errorf("waitSignal should be enabled for node pool at index %d but was not", 0)
 					}
-					if c.NodePools[0].WaitSignal.MaxBatchSize() != 1 {
-						t.Errorf("waitSignal.maxBatchSize should be 1 for node pool at index %d but was %d", 0, c.NodePools[0].WaitSignal.MaxBatchSize())
+					if c.NodePools[0].WaitSignal.MaxBatchSize(1) != 1 {
+						t.Errorf("waitSignal.maxBatchSize should be 1 for node pool at index %d but was %d", 0, c.NodePools[0].WaitSignal.MaxBatchSize(1))
 					}
 					if !c.NodePools[1].WaitSignal.Enabled() {
 						t.Errorf("waitSignal should be enabled for node pool at index %d but was not", 1)
 					}
-					if c.NodePools[1].WaitSignal.MaxBatchSize() != 2 {
-						t.Errorf("waitSignal.maxBatchSize should be 2 for node pool at index %d but was %d", 1, c.NodePools[1].WaitSignal.MaxBatchSize())
+					if c.NodePools[1].WaitSignal.MaxBatchSize(1) != 2 {
+						t.Errorf("waitSignal.maxBatchSize should be 2 for node pool at index %d but was %d", 1, c.NodePools[1].WaitSignal.MaxBatchSize(1))
 					}
 				},
 			},
@@ -2009,6 +2009,8 @@ worker:
   - name: pool1
     subnets:
     - name: public1
+  - name: pool2
+    subnets:
     - name: public2
 `,
 			assertConfig: []ConfigTester{
@@ -2044,7 +2046,6 @@ worker:
 					}
 					importedPublicSubnets := api.Subnets{
 						api.NewPublicSubnetFromFn("us-west-1a", `{"Fn::ImportValue":{"Fn::Sub":"${NetworkStackName}-Public1"}}`),
-						api.NewPublicSubnetFromFn("us-west-1b", `{"Fn::ImportValue":{"Fn::Sub":"${NetworkStackName}-Public2"}}`),
 					}
 
 					p := c.NodePools[0]
@@ -2198,6 +2199,8 @@ worker:
   - name: pool1
     subnets:
     - name: public1
+  - name: pool2
+    subnets:
     - name: public2
 `,
 			assertConfig: []ConfigTester{
@@ -2229,7 +2232,6 @@ worker:
 
 					importedPublicSubnets := api.Subnets{
 						api.NewPublicSubnetFromFn("us-west-1a", `{"Fn::ImportValue":{"Fn::Sub":"${NetworkStackName}-Public1"}}`),
-						api.NewPublicSubnetFromFn("us-west-1b", `{"Fn::ImportValue":{"Fn::Sub":"${NetworkStackName}-Public2"}}`),
 					}
 					p := c.NodePools[0]
 					if !reflect.DeepEqual(p.Subnets, importedPublicSubnets) {
@@ -2299,7 +2301,6 @@ worker:
   - name: pool1
     subnets:
     - name: public1
-    - name: public2
 `,
 			assertConfig: []ConfigTester{
 				hasDefaultExperimentalFeatures,
@@ -2334,7 +2335,6 @@ worker:
 					}
 					importedPublicSubnets := api.Subnets{
 						api.NewPublicSubnetFromFn("us-west-1a", `{"Fn::ImportValue":{"Fn::Sub":"${NetworkStackName}-Public1"}}`),
-						api.NewPublicSubnetFromFn("us-west-1b", `{"Fn::ImportValue":{"Fn::Sub":"${NetworkStackName}-Public2"}}`),
 					}
 
 					if !reflect.DeepEqual(c.AllSubnets(), subnets) {
@@ -2398,6 +2398,8 @@ worker:
   - name: pool1
     subnets:
     - name: public1
+  - name: pool2
+    subnets:
     - name: public2
 `,
 			assertConfig: []ConfigTester{
@@ -2422,9 +2424,12 @@ worker:
 						public1,
 						public2,
 					}
-					publicSubnets := api.Subnets{
+					controllerPublicSubnets := api.Subnets{
 						public1,
 						public2,
+					}
+					nodepoolPublicSubnets := api.Subnets{
+						public1,
 					}
 					privateSubnets := api.Subnets{
 						private1,
@@ -2435,13 +2440,13 @@ worker:
 						t.Errorf("Managed subnets didn't match: expected=%v actual=%v", subnets, c.AllSubnets())
 					}
 					p := c.NodePools[0]
-					if !reflect.DeepEqual(p.Subnets, publicSubnets) {
-						t.Errorf("Worker subnets didn't match: expected=%v actual=%v", publicSubnets, p.Subnets)
+					if !reflect.DeepEqual(p.Subnets, nodepoolPublicSubnets) {
+						t.Errorf("Worker subnets didn't match: expected=%v actual=%v", nodepoolPublicSubnets, p.Subnets)
 					}
-					if !reflect.DeepEqual(c.Controller.Subnets, publicSubnets) {
+					if !reflect.DeepEqual(c.Controller.Subnets, controllerPublicSubnets) {
 						t.Errorf("Controller subnets didn't match: expected=%v actual=%v", privateSubnets, c.Controller.Subnets)
 					}
-					if !reflect.DeepEqual(c.Controller.LoadBalancer.Subnets, publicSubnets) {
+					if !reflect.DeepEqual(c.Controller.LoadBalancer.Subnets, controllerPublicSubnets) {
 						t.Errorf("Controller loadbalancer subnets didn't match: expected=%v actual=%v", privateSubnets, c.Controller.LoadBalancer.Subnets)
 					}
 					if !reflect.DeepEqual(c.Etcd.Subnets, privateSubnets) {
@@ -2487,6 +2492,8 @@ worker:
   - name: pool1
     subnets:
     - name: private1
+  - name: pool2
+    subnets:
     - name: private2
 apiEndpoints:
 - name: public
@@ -2522,6 +2529,8 @@ worker:
   - name: pool1
     subnets:
     - name: public1
+  - name: pool2
+    subnets:
     - name: public2
 `,
 			assertConfig: []ConfigTester{
@@ -2564,6 +2573,8 @@ worker:
   - name: pool1
     subnets:
     - name: public1
+  - name: pool2
+    subnets:
     - name: public2
 `,
 			assertConfig: []ConfigTester{
@@ -2598,7 +2609,6 @@ worker:
 					}
 					importedPublicSubnets := api.Subnets{
 						api.NewPublicSubnetFromFn("us-west-1a", `{"Fn::ImportValue":{"Fn::Sub":"${NetworkStackName}-Public1"}}`),
-						api.NewPublicSubnetFromFn("us-west-1b", `{"Fn::ImportValue":{"Fn::Sub":"${NetworkStackName}-Public2"}}`),
 					}
 
 					if diff := cmp.Diff(c.AllSubnets(), subnets); diff != "" {
@@ -2665,6 +2675,8 @@ worker:
   - name: pool1
     subnets:
     - name: public1
+  - name: pool2
+    subnets:
     - name: public2
 `,
 			assertConfig: []ConfigTester{
@@ -2700,7 +2712,6 @@ worker:
 					}
 					importedPublicSubnets := api.Subnets{
 						api.NewPublicSubnetFromFn("us-west-1a", `{"Fn::ImportValue":{"Fn::Sub":"${NetworkStackName}-Public1"}}`),
-						api.NewPublicSubnetFromFn("us-west-1b", `{"Fn::ImportValue":{"Fn::Sub":"${NetworkStackName}-Public2"}}`),
 					}
 
 					if diff := cmp.Diff(c.AllSubnets(), subnets); diff != "" {
@@ -2750,6 +2761,8 @@ worker:
   - name: pool1
     subnets:
     - name: public1
+  - name: pool2
+    subnets:
     - name: public2
 `,
 			assertConfig: []ConfigTester{},

@@ -175,23 +175,6 @@ func NewDefaultCluster() *Cluster {
 				ExtraCoreDNSConfig: "",
 			},
 			KubeSystemNamespaceLabels: make(map[string]string),
-			KubernetesDashboard: KubernetesDashboard{
-				AdminPrivileges: true,
-				InsecureLogin:   false,
-				AllowSkipLogin:  false,
-				Enabled:         true,
-				Replicas:        1,
-				ComputeResources: ComputeResources{
-					Requests: ResourceQuota{
-						Cpu:    "0.5",
-						Memory: "500Mi",
-					},
-					Limits: ResourceQuota{
-						Cpu:    "4",
-						Memory: "5000Mi",
-					},
-				},
-			},
 			Kubernetes: Kubernetes{
 				Authentication: KubernetesAuthentication{
 					AWSIAM: AWSIAM{
@@ -241,7 +224,6 @@ func NewDefaultCluster() *Cluster {
 			TillerImage:                        Image{Repo: "gcr.io/kubernetes-helm/tiller", Tag: "v2.13.1", RktPullDocker: false},
 			MetricsServerImage:                 Image{Repo: "k8s.gcr.io/metrics-server-amd64", Tag: "v0.3.2", RktPullDocker: false},
 			AddonResizerImage:                  Image{Repo: "k8s.gcr.io/addon-resizer", Tag: "2.1", RktPullDocker: false},
-			KubernetesDashboardImage:           Image{Repo: "k8s.gcr.io/kubernetes-dashboard-amd64", Tag: "v1.10.1", RktPullDocker: false},
 			PauseImage:                         Image{Repo: "k8s.gcr.io/pause-amd64", Tag: "3.1", RktPullDocker: false},
 			JournaldCloudWatchLogsImage:        Image{Repo: "jollinshead/journald-cloudwatch-logs", Tag: "0.1", RktPullDocker: true},
 		},
@@ -482,7 +464,6 @@ type DeploymentSettings struct {
 	KubeProxy                 `yaml:"kubeProxy,omitempty"`
 	KubeDns                   `yaml:"kubeDns,omitempty"`
 	KubeSystemNamespaceLabels map[string]string `yaml:"kubeSystemNamespaceLabels,omitempty"`
-	KubernetesDashboard       `yaml:"kubernetesDashboard,omitempty"`
 	// Images repository
 	HyperkubeImage                     Image      `yaml:"hyperkubeImage,omitempty"`
 	AWSCliImage                        Image      `yaml:"awsCliImage,omitempty"`
@@ -497,7 +478,6 @@ type DeploymentSettings struct {
 	TillerImage                        Image      `yaml:"tillerImage,omitempty"`
 	MetricsServerImage                 Image      `yaml:"metricsServerImage,omitempty"`
 	AddonResizerImage                  Image      `yaml:"addonResizerImage,omitempty"`
-	KubernetesDashboardImage           Image      `yaml:"kubernetesDashboardImage,omitempty"`
 	PauseImage                         Image      `yaml:"pauseImage,omitempty"`
 	JournaldCloudWatchLogsImage        Image      `yaml:"journaldCloudWatchLogsImage,omitempty"`
 	Kubernetes                         Kubernetes `yaml:"kubernetes,omitempty"`
@@ -548,15 +528,6 @@ type Cluster struct {
 	KubeResourcesAutosave       `yaml:"kubeResourcesAutosave,omitempty"`
 }
 
-type KubernetesDashboard struct {
-	AdminPrivileges  bool             `yaml:"adminPrivileges"`
-	InsecureLogin    bool             `yaml:"insecureLogin"`
-	AllowSkipLogin   bool             `yaml:"allowSkipLogin"`
-	Enabled          bool             `yaml:"enabled"`
-	Replicas         int              `yaml:"replicas,omitempty"`
-	ComputeResources ComputeResources `yaml:"resources,omitempty"`
-}
-
 type WaitSignal struct {
 	// WaitSignal is enabled by default. If you'd like to explicitly disable it, set this to `false`.
 	// Keeping this `nil` results in the WaitSignal to be enabled.
@@ -571,11 +542,12 @@ func (s WaitSignal) Enabled() bool {
 	return true
 }
 
-func (s WaitSignal) MaxBatchSize() int {
+// MaxBatchSize return the MaxBatchOverride if set otherwise return the default
+func (s WaitSignal) MaxBatchSize(def int) int {
 	if s.MaxBatchSizeOverride != nil {
 		return *s.MaxBatchSizeOverride
 	}
-	return 1
+	return def
 }
 
 var supportedReleaseChannels = map[string]bool{

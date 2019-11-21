@@ -96,15 +96,25 @@
       },
       {{end}}
       "UpdatePolicy" : {
+        "AutoScalingScheduledAction" : {
+          "IgnoreUnmodifiedGroupSizeProperties" : true
+        },
         "AutoScalingRollingUpdate" : {
           "MinInstancesInService" : "{{.Controller.ControllerRollingUpdateMinInstancesInService}}",
           "MaxBatchSize" : "1",
           {{if .WaitSignal.Enabled}}
           "WaitOnResourceSignals" : "true",
-          "PauseTime": "{{.Controller.CreateTimeout}}"
+          "PauseTime": "{{.Controller.CreateTimeout}}",
           {{else}}
-          "PauseTime": "PT2M"
+          "PauseTime": "PT2M",
           {{end}}
+          "SuspendProcesses":[
+            "HealthCheck",
+            "ReplaceUnhealthy",
+            "AZRebalance",
+            "AlarmNotification",
+            "ScheduledActions"
+          ]
         }
       },
       "Metadata" : {
@@ -482,18 +492,6 @@
       "Type": "AWS::IAM::Role"
     },
     {{end}}
-    {{if .Experimental.NodeDrainer.Enabled }}
-    "{{.Controller.LogicalName}}NodeDrainerLH" : {
-      "Properties" : {
-        "AutoScalingGroupName" : {
-          "Ref": "{{.Controller.LogicalName}}"
-        },
-        "DefaultResult" : "CONTINUE",
-        "HeartbeatTimeout" : "{{.Experimental.NodeDrainer.DrainTimeoutInSeconds}}",
-        "LifecycleTransition" : "autoscaling:EC2_INSTANCE_TERMINATING"
-      },
-      "Type" : "AWS::AutoScaling::LifecycleHook"
-    },
     {{end}}
     {{range $i, $apiEndpoint := $.APIEndpoints -}}
     {{if .LoadBalancer.ManageELB -}}
