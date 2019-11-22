@@ -25,6 +25,7 @@ var (
 
 func init() {
 	RootCmd.AddCommand(cmdDestroy)
+	cmdDestroy.Flags().StringVar(&destroyOpts.Profile, "profile", "", "The AWS profile to use from credentials file")
 	cmdDestroy.Flags().BoolVar(&destroyOpts.AwsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
 	cmdDestroy.Flags().BoolVar(&destroyOpts.Force, "force", false, "Don't ask for confirmation")
 }

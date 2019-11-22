@@ -16,14 +16,20 @@ var (
 		RunE:         runCmdStatus,
 		SilenceUsage: true,
 	}
+
+	statusOpts = struct {
+		profile string
+	}{}
 )
 
 func init() {
 	RootCmd.AddCommand(cmdStatus)
+	cmdStatus.Flags().StringVar(&statusOpts.profile, "profile", "", "The AWS profile to use from credentials file")
 }
 
 func runCmdStatus(_ *cobra.Command, _ []string) error {
-	describer, err := root.ClusterDescriberFromFile(configPath)
+	opts := root.NewOptions(false, false, statusOpts.profile)
+	describer, err := root.ClusterDescriberFromFile(configPath, opts)
 	if err != nil {
 		return fmt.Errorf("failed to read cluster config: %v", err)
 	}

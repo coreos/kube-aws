@@ -12,11 +12,17 @@ type options struct {
 	NetworkStackTemplateTmplFile      string
 	EtcdStackTemplateTmplFile         string
 	NodePoolStackTemplateTmplFile     string
+	AWSProfile                        string
 	SkipWait                          bool
 	PrettyPrint                       bool
 }
 
-func NewOptions(prettyPrint bool, skipWait bool) options {
+func NewOptions(prettyPrint bool, skipWait bool, awsProfile ...string) options {
+	var profile string
+	if len(awsProfile) > 0 {
+		profile = awsProfile[0]
+	}
+
 	return options{
 		AssetsDir:                         defaults.AssetsDir,
 		ControllerTmplFile:                defaults.ControllerTmplFile,
@@ -27,6 +33,7 @@ func NewOptions(prettyPrint bool, skipWait bool) options {
 		EtcdStackTemplateTmplFile:         defaults.EtcdStackTemplateTmplFile,
 		NodePoolStackTemplateTmplFile:     defaults.NodePoolStackTemplateTmplFile,
 		RootStackTemplateTmplFile:         defaults.RootStackTemplateTmplFile,
+		AWSProfile:                        profile,
 		SkipWait:                          skipWait,
 		PrettyPrint:                       prettyPrint,
 	}
