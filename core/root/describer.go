@@ -2,6 +2,7 @@ package root
 
 import (
 	"fmt"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -29,13 +30,13 @@ type clusterDescriberImpl struct {
 	stackName   string
 }
 
-func ClusterDescriberFromFile(configPath string) (ClusterDescriber, error) {
+func ClusterDescriberFromFile(configPath string, opts options) (ClusterDescriber, error) {
 	config, err := config.ConfigFromFile(configPath)
 	if err != nil {
 		return nil, err
 	}
 
-	session, err := awsconn.NewSessionFromRegion(config.Region, false)
+	session, err := awsconn.NewSessionFromRegion(config.Region, false, opts.AWSProfile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to establish aws session: %v", err)
 	}

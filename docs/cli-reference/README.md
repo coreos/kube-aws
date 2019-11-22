@@ -80,6 +80,7 @@ Validate cluster assets prior to deployment.
 | Flag | Description | Default |
 | -- | -- | -- |
 | `aws-debug` | Log debug information coming from the AWS SDK library | `false` |
+| `profile` | Use AWS profile from credentials file | `empty` |
 
 ### `validate` example
 
@@ -98,6 +99,7 @@ Deploy or Update an existing Kubernetes cluster that was created by kube-aws.
 | `export` | Do not create cluster, instead export the CloudFormation stack file | `false` |
 | `pretty-print` | Pretty print the resulting CloudFormation | `false` |
 | `skip-wait` | Do not wait for the cluster components be ready before the CLI exits | `false` |
+| `profile` | Use AWS profile from credentials file | `empty` |
 
 ### `apply` example
 
@@ -112,6 +114,7 @@ Destroy an existing Kubernetes cluster that was created by kube-aws.
 | Flag | Description | Default |
 | -- | -- | -- |
 | `aws-debug` | Log debug information coming from the AWS SDK library | `false` |
+| `profile` | Use AWS profile from credentials file | `empty` |
 
 ### `destroy` example
 

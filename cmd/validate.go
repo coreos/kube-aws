@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/kubernetes-incubator/kube-aws/core/root"
 	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/spf13/cobra"
@@ -18,6 +19,7 @@ var (
 
 	validateOpts = struct {
 		awsDebug, skipWait bool
+		profile            string
 		targets            []string
 	}{}
 )
@@ -30,6 +32,7 @@ func init() {
 		false,
 		"Log debug information from aws-sdk-go library",
 	)
+	cmdValidate.Flags().StringVar(&validateOpts.profile, "profile", "", "The AWS profile to use from credentials file")
 	cmdValidate.Flags().StringSliceVar(
 		&validateOpts.targets,
 		"targets",
@@ -38,7 +41,7 @@ func init() {
 }
 
 func runCmdValidate(_ *cobra.Command, _ []string) error {
-	opts := root.NewOptions(validateOpts.awsDebug, validateOpts.skipWait)
+	opts := root.NewOptions(validateOpts.awsDebug, validateOpts.skipWait, validateOpts.profile)
 
 	cluster, err := root.LoadClusterFromFile(configPath, opts, validateOpts.awsDebug)
 	if err != nil {

@@ -22,18 +22,20 @@ var (
 	}
 
 	calculatorOpts = struct {
+		profile  string
 		awsDebug bool
 	}{}
 )
 
 func init() {
 	RootCmd.AddCommand(cmdCalculator)
+	cmdCalculator.Flags().StringVar(&calculatorOpts.profile, "profile", "", "The AWS profile to use from credentials file")
 	cmdCalculator.Flags().BoolVar(&calculatorOpts.awsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
 }
 
 func runCmdCalculator(_ *cobra.Command, _ []string) error {
 
-	opts := root.NewOptions(false, false)
+	opts := root.NewOptions(false, false, calculatorOpts.profile)
 
 	cluster, err := root.LoadClusterFromFile(configPath, opts, calculatorOpts.awsDebug)
 	if err != nil {

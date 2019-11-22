@@ -24,6 +24,7 @@ var (
 	updateOpts = struct {
 		awsDebug, prettyPrint, skipWait bool
 		force                           bool
+		profile                         string
 		targets                         []string
 	}{}
 )
@@ -34,6 +35,7 @@ func init() {
 	cmdUpdate.Flags().BoolVar(&updateOpts.prettyPrint, "pretty-print", false, "Pretty print the resulting CloudFormation")
 	cmdUpdate.Flags().BoolVar(&updateOpts.skipWait, "skip-wait", false, "Don't wait the resources finish")
 	cmdUpdate.Flags().BoolVar(&updateOpts.force, "force", false, "Don't ask for confirmation")
+	cmdUpdate.Flags().StringVar(&updateOpts.profile, "profile", "", "The AWS profile to use from credentials file")
 	cmdUpdate.Flags().StringSliceVar(&updateOpts.targets, "targets", root.AllOperationTargetsAsStringSlice(), "Update nothing but specified sub-stacks.  Specify `all` or any combination of `etcd`, `control-plane`, and node pool names. Defaults to `all`")
 }
 
@@ -46,7 +48,7 @@ func runCmdUpdate(_ *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	opts := root.NewOptions(updateOpts.prettyPrint, updateOpts.skipWait)
+	opts := root.NewOptions(updateOpts.prettyPrint, updateOpts.skipWait, updateOpts.profile)
 
 	cluster, err := root.LoadClusterFromFile(configPath, opts, updateOpts.awsDebug)
 	if err != nil {
