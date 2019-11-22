@@ -19,6 +19,7 @@ var (
 
 	upOpts = struct {
 		awsDebug, export, prettyPrint, skipWait bool
+		profile                                 string
 	}{}
 )
 
@@ -28,13 +29,14 @@ func init() {
 	cmdUp.Flags().BoolVar(&upOpts.prettyPrint, "pretty-print", false, "Pretty print the resulting CloudFormation")
 	cmdUp.Flags().BoolVar(&upOpts.awsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
 	cmdUp.Flags().BoolVar(&upOpts.skipWait, "skip-wait", false, "Don't wait for the cluster components be ready")
+	cmdUp.Flags().StringVar(&upOpts.profile, "profile", "", "The AWS profile to use from credentials file")
 }
 
 func runCmdUp(_ *cobra.Command, _ []string) error {
 	logger.Warnf("WARNING! kube-aws 'up' command is deprecated and will be removed in future versions")
 	logger.Warnf("Please use 'apply' to create your cluster")
 
-	opts := root.NewOptions(upOpts.prettyPrint, upOpts.skipWait)
+	opts := root.NewOptions(upOpts.prettyPrint, upOpts.skipWait, upOpts.profile)
 
 	cluster, err := root.LoadClusterFromFile(configPath, opts, upOpts.awsDebug)
 	if err != nil {

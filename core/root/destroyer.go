@@ -9,6 +9,7 @@ import (
 )
 
 type DestroyOptions struct {
+	Profile  string
 	AwsDebug bool
 	Force    bool
 }
@@ -27,7 +28,7 @@ func ClusterDestroyerFromFile(configPath string, opts DestroyOptions) (ClusterDe
 		return nil, err
 	}
 
-	session, err := awsconn.NewSessionFromRegion(cfg.Region, opts.AwsDebug)
+	session, err := awsconn.NewSessionFromRegion(cfg.Region, opts.AwsDebug, opts.Profile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to establish aws session: %v", err)
 	}

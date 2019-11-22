@@ -146,7 +146,7 @@ func CompileClusterFromFile(configPath string, opts options, awsDebug bool) (*Cl
 }
 
 func CompileClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (*Cluster, error) {
-	session, err := awsconn.NewSessionFromRegion(cfg.Region, awsDebug)
+	session, err := awsconn.NewSessionFromRegion(cfg.Region, awsDebug, opts.AWSProfile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to establish aws session: %v", err)
 	}

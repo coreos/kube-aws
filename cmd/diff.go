@@ -3,10 +3,11 @@ package cmd
 import (
 	"fmt"
 
+	"strings"
+
 	"github.com/kubernetes-incubator/kube-aws/core/root"
 	"github.com/kubernetes-incubator/kube-aws/logger"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 var (
@@ -21,6 +22,7 @@ var (
 	diffOpts = struct {
 		awsDebug, prettyPrint, skipWait, export bool
 		context                                 int
+		profile                                 string
 		targets                                 []string
 	}{}
 )
@@ -37,12 +39,13 @@ func (e *ExitError) Error() string {
 func init() {
 	RootCmd.AddCommand(cmdDiff)
 	cmdDiff.Flags().BoolVar(&diffOpts.awsDebug, "aws-debug", false, "Log debug information from aws-sdk-go library")
+	cmdDiff.Flags().StringVar(&diffOpts.profile, "profile", "", "The AWS profile to use from credentials file")
 	cmdDiff.Flags().StringSliceVar(&diffOpts.targets, "targets", root.AllOperationTargetsAsStringSlice(), "Diff nothing but specified sub-stacks.  Specify `all` or any combination of `etcd`, `control-plane`, and node pool names. Defaults to `all`")
 	cmdDiff.Flags().IntVarP(&diffOpts.context, "context", "C", -1, "output NUM lines of context around changes")
 }
 
 func runCmdDiff(c *cobra.Command, _ []string) error {
-	opts := root.NewOptions(diffOpts.prettyPrint, diffOpts.skipWait)
+	opts := root.NewOptions(diffOpts.prettyPrint, diffOpts.skipWait, diffOpts.profile)
 
 	cluster, err := root.LoadClusterFromFile(configPath, opts, diffOpts.awsDebug)
 	if err != nil {
