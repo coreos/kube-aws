@@ -142,7 +142,7 @@ func ClusterFromFile(configPath string, opts options, awsDebug bool) (*clusterIm
 }
 
 func ClusterFromConfig(cfg *config.Config, opts options, awsDebug bool) (*clusterImpl, error) {
-	session, err := awsconn.NewSessionFromRegion(cfg.Region, awsDebug)
+	session, err := awsconn.NewSessionFromRegion(cfg.Region, awsDebug, opts.AWSProfile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to establish aws session: %v", err)
 	}
