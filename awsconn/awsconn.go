@@ -2,20 +2,26 @@ package awsconn
 
 import (
 	"fmt"
+
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/kubernetes-incubator/kube-aws/pkg/api"
 )
 
 // NewSessionFromRegion creates an AWS session from AWS region and a debug flag
-func NewSessionFromRegion(region api.Region, debug bool) (*session.Session, error) {
+func NewSessionFromRegion(region api.Region, debug bool, awsProfile string) (*session.Session, error) {
 	awsConfig := aws.NewConfig().
 		WithRegion(region.String()).
 		WithCredentialsChainVerboseErrors(true)
 
 	if debug {
 		awsConfig = awsConfig.WithLogLevel(aws.LogDebug)
+	}
+
+	if awsProfile != "" {
+		awsConfig = awsConfig.WithCredentials(credentials.NewSharedCredentials("", awsProfile))
 	}
 
 	session, err := newSession(awsConfig)
