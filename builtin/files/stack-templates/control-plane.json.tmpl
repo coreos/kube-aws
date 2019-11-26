@@ -492,7 +492,6 @@
       "Type": "AWS::IAM::Role"
     },
     {{end}}
-    {{end}}
     {{range $i, $apiEndpoint := $.APIEndpoints -}}
     {{if .LoadBalancer.ManageELB -}}
     {{if .LoadBalancer.ManageELBRecordSet -}}
