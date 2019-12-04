@@ -530,7 +530,7 @@
         }
       },
       "DependsOn": [
-        {{if $.StackExists}}{{if not $.EtcdMigrationEnabled }}{{if $etcdIndex}}"{{$etcdInstance.LogicalNameForIndex (sub $etcdIndex 1)}}",{{end}}{{end}}{{end}}
+        {{if $.Stack.StackExists}}{{if not $.EtcdMigrationEnabled }}{{if $etcdIndex}}"{{$etcdInstance.LogicalNameForIndex (sub $etcdIndex 1)}}",{{end}}{{end}}{{end}}
         {{if $etcdInstance.EIPManaged}}
         "{{$etcdInstance.EIPLogicalName}}",
         {{end}}

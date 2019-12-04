@@ -49,8 +49,10 @@ func (s *Context) stackProvisioner(c *Stack) *cfnstack.Provisioner {
 	)
 }
 
-func (s *Context) InspectEtcdExistingState(c *Config) (api.EtcdExistingState, error) {
+func (s *Context) InspectEtcdExistingState(c *Config) (bool, api.EtcdExistingState, error) {
 	var err error
+	var exists bool
+
 	if s.ProvidedCFInterrogator == nil {
 		s.ProvidedCFInterrogator = cloudformation.New(s.Session)
 	}
@@ -59,18 +61,18 @@ func (s *Context) InspectEtcdExistingState(c *Config) (api.EtcdExistingState, er
 	}
 
 	state := api.EtcdExistingState{}
-	state.StackExists, err = cfnstack.NestedStackExists(s.ProvidedCFInterrogator, c.ClusterName, naming.FromStackToCfnResource(c.Etcd.LogicalName()))
+	exists, err = cfnstack.NestedStackExists(s.ProvidedCFInterrogator, c.ClusterName, naming.FromStackToCfnResource(c.Etcd.LogicalName()))
 	if err != nil {
-		return state, fmt.Errorf("failed to check for existence of etcd cloud-formation stack: %v", err)
+		return exists, state, fmt.Errorf("failed to check for existence of etcd cloud-formation stack: %v", err)
 	}
 	// when the Etcd stack exists we need to check for the MajorMinor version of Etcd running and trigger a migration if different to ours.
-	if state.StackExists {
+	if exists {
 		if state.EtcdMigrationEnabled, err = s.isAMajorEtcdUpgrade(c); err != nil {
-			return state, fmt.Errorf("failed to check existing etcd major minor version: %v", err)
+			return exists, state, fmt.Errorf("failed to check existing etcd major minor version: %v", err)
 		}
 		if state.EtcdMigrationEnabled {
 			if state.EtcdMigrationExistingEndpoints, err = s.lookupExistingEtcdEndpoints(c); err != nil {
-				return state, fmt.Errorf("failed to lookup existing etcd endpoints: %v", err)
+				return exists, state, fmt.Errorf("failed to lookup existing etcd endpoints: %v", err)
 			}
 			logger.Warn("Performing a Major Etcd Version Upgrade: -")
 			logger.Warn("To do this we will spin up new etcd servers and then export the existing kubernetes state to them.")
@@ -80,7 +82,23 @@ func (s *Context) InspectEtcdExistingState(c *Config) (api.EtcdExistingState, er
 			logger.Warn("This operation is best scheduled for a quiet time or in an outage window.")
 		}
 	}
-	return state, nil
+	return exists, state, nil
+}
+
+// Check for the existence of a worker nodepool stack by looking it up in cloudformation.
+func (s *Context) InspectWorkerExistingState(npconf *NodePoolConfig) (bool, error) {
+	var err error
+	var exists bool
+
+	if s.ProvidedCFInterrogator == nil {
+		s.ProvidedCFInterrogator = cloudformation.New(s.Session)
+	}
+
+	exists, err = cfnstack.NestedStackExists(s.ProvidedCFInterrogator, npconf.ClusterName, npconf.NestedStackName())
+	if err != nil {
+		return exists, fmt.Errorf("failed to check worker cloud-formation stack %s: %v", npconf.NestedStackName(), err)
+	}
+	return exists, nil
 }
 
 // isAMajorEtcdUpgrade looks for etcd instances using tag kube-aws:etcd_upgrade_group and the config clusters major-minor version.

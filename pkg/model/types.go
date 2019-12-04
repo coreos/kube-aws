@@ -19,6 +19,7 @@ type Stack struct {
 	StackName   string
 	S3URI       string
 	ClusterName string
+	StackExists bool
 	Region      api.Region
 
 	Config         *Config
