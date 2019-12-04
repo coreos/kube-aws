@@ -159,10 +159,11 @@ func NewEtcdStack(conf *Config, opts api.StackTemplateOptions, extras clusterext
 		assetsConfig,
 		func(stack *Stack) (interface{}, error) {
 			// create the context that will be used to build the assets (combination of config + existing state)
-			existingState, err := s.InspectEtcdExistingState(conf)
+			exists, existingState, err := s.InspectEtcdExistingState(conf)
 			if err != nil {
 				return nil, fmt.Errorf("Could not inspect existing etcd state: %v", err)
 			}
+			stack.StackExists = exists
 
 			// Import all the managed subnets from the network stack
 			subnets, err := stack.Config.Subnets.ImportFromNetworkStackRetainingNames()
@@ -222,7 +223,7 @@ func NewEtcdStack(conf *Config, opts api.StackTemplateOptions, extras clusterext
 	)
 }
 
-func NewWorkerStack(conf *Config, npconf *NodePoolConfig, opts api.StackTemplateOptions, extras clusterextension.ClusterExtension, assetsConfig *credential.CompactAssets) (*Stack, error) {
+func NewWorkerStack(conf *Config, npconf *NodePoolConfig, opts api.StackTemplateOptions, extras clusterextension.ClusterExtension, assetsConfig *credential.CompactAssets, s *Context) (*Stack, error) {
 	logger.Debugf("Generating new Worker stack %s...", npconf.NodePoolName)
 	return newStack(
 		npconf.StackName(),
@@ -230,6 +231,13 @@ func NewWorkerStack(conf *Config, npconf *NodePoolConfig, opts api.StackTemplate
 		opts,
 		assetsConfig,
 		func(stack *Stack) (interface{}, error) {
+			// create the context that will be used to build the assets (combination of config + existing state)
+			exists, err := s.InspectWorkerExistingState(npconf)
+			if err != nil {
+				return nil, fmt.Errorf("Could not inspect existing nodepool state: %v", err)
+			}
+			stack.StackExists = exists
+
 			return WorkerTmplCtx{
 				Stack:          stack,
 				NodePoolConfig: npconf,

@@ -228,7 +228,7 @@ func (cl *Cluster) ensureNestedStacksLoaded() error {
 		}
 		npExtras := extras
 		npExtras.Configs = npCfg.Plugins
-		np, err := model.NewWorkerStack(cfg, npCfg, npOpts, npExtras, assetsConfig)
+		np, err := model.NewWorkerStack(cfg, npCfg, npOpts, npExtras, assetsConfig, cl.context())
 		if err != nil {
 			return fmt.Errorf("failed to load node pool #%d: %v", i, err)
 		}

@@ -177,6 +177,10 @@ func (p nodePool) NeedToExportIAMroles() bool {
 	return p.nodePool.NodePoolConfig.IAMConfig.InstanceProfile.Arn == ""
 }
 
+func (p nodePool) StackExists() bool {
+	return p.nodePool.StackExists
+}
+
 func (p TemplateParams) ControlPlane() controlPlane {
 	return controlPlane{
 		controlPlane: p.cluster.controlPlaneStack,
