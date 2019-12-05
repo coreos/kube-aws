@@ -1,0 +1,23 @@
+{{- if .Values.prometheusOperatorPodMonitor }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  labels:
+    app: kube2iam 
+    {{- range $key, $value := .Values.prometheusMetrics.labels }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  name: kube2iam-metrics
+  namespace: {{ .Values.prometheusMetrics.namespace }}
+spec:
+  podMetricsEndpoints:
+  - interval: {{ .Values.prometheusMetrics.interval }}
+    path: /metrics
+    targetPort: 8181
+  namespaceSelector:
+    matchNames:
+    - kube-system
+  selector:
+    matchLabels:
+      name: kube2iam
+{{- end }}

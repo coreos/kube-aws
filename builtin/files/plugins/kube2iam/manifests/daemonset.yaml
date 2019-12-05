@@ -32,6 +32,7 @@ spec:
           name: kube2iam
           args:
             - "--app-port=8282"
+            - "--metrics-port=8181"
             - "--auto-discover-base-arn"
             - "--auto-discover-default-role"
             - "--iptables=true"
@@ -52,6 +53,9 @@ spec:
             - containerPort: 8282
               hostPort: 8282
               name: http
+            - containerPort: 8181
+              hostPort: 8181
+              name: metrics
           resources:
             limits:
               memory: 128Mi

@@ -1,11 +1,16 @@
 metadata:
   name: kube2iam
-  version: 0.1.0
+  version: 0.1.1
 spec:
   cluster:
     values:
       image: jtblin/kube2iam:0.10.8
-
+      prometheusMetrics:
+        enabled: false
+        interval: "15s"
+        namespace: kube-system
+        labels:
+          prometheus: monitoring
     kubernetes:
       manifests:
       - source:

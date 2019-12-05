@@ -471,6 +471,36 @@
       "Type": "AWS::EC2::SecurityGroupIngress"
     },
     {{ end }}
+    {{if ((index .PluginConfigs "kube2iam").Enabled) }}
+    "SecurityGroupWorkerIngressFromWorkerToWorkerKube2iam": {
+      "Properties": {
+        "FromPort": 8181,
+        "GroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 8181
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    "SecurityGroupWorkerIngressFromWorkerToControllerKube2iam": {
+      "Properties": {
+        "FromPort": 8181,
+        "GroupId": {
+          "Ref": "SecurityGroupController"
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Ref": "SecurityGroupWorker"
+        },
+        "ToPort": 8181
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress"
+    },
+    {{ end }}
     {{if .Addons.Prometheus.SecurityGroupsEnabled}}
     "SecurityGroupWorkerIngressFromWorkerToWorkerCadvisor": {
       "Properties": {
