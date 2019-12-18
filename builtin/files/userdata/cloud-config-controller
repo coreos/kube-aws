@@ -5807,7 +5807,7 @@ write_files:
       EOT
       )"
 
-        log "Creating disable service configmap kubw-system/kube-aws-migration-disable-${controller}"
+        log "Creating disable service configmap kube-system/kube-aws-migration-disable-${controller}"
         echo "${request}" | kubectl -n kube-system create -f - || return 1
         return 0
       }
