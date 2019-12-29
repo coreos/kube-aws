@@ -1362,6 +1362,9 @@ write_files:
         # (when using the Kubernetes datastore).  Use one replica for every 100-200 nodes.  In
         # production, we recommend running at least 3 replicas to reduce the impact of rolling upgrade.
         replicas: 3
+        selector:
+          matchLabels:
+            k8s-app: calico-typha
         revisionHistoryLimit: 2
         template:
           metadata:
@@ -2338,6 +2341,10 @@ write_files:
           tier: node
           app: flannel
       spec:
+        selector:
+          matchLabels:
+            tier: node
+            app: flannel
         updateStrategy:
           rollingUpdate:
             maxUnavailable: 100%
@@ -2451,6 +2458,9 @@ write_files:
           k8s-app: kube-resources-autosave-policy
       spec:
         replicas: 1
+        selector:
+          matchLabels:
+            k8s-app: kube-resources-autosave-policy
         template:
           metadata:
             {{if (index .PluginConfigs "kiam").Enabled -}}
@@ -2634,211 +2644,217 @@ write_files:
 {{if .Experimental.NodeDrainer.Enabled}}
   - path: /srv/kubernetes/manifests/kube-node-drainer-asg-status-updater-de.yaml
     content: |
-        kind: Deployment
-        apiVersion: apps/v1
-        metadata:
-          name: kube-node-drainer-asg-status-updater
-          namespace: kube-system
-          labels:
+      kind: Deployment
+      apiVersion: apps/v1
+      metadata:
+        name: kube-node-drainer-asg-status-updater
+        namespace: kube-system
+        labels:
+          k8s-app: kube-node-drainer-asg-status-updater
+      spec:
+        replicas: 1
+        selector:
+          matchLabels:
             k8s-app: kube-node-drainer-asg-status-updater
-        spec:
-          replicas: 1
-          template:
-            metadata:
-              labels:
-                k8s-app: kube-node-drainer-asg-status-updater
-              annotations:
-                scheduler.alpha.kubernetes.io/critical-pod: ''
-                {{if ne .Experimental.NodeDrainer.IAMRole.ARN.Arn "" -}}
-                iam.amazonaws.com/role: {{ .Experimental.NodeDrainer.IAMRole.ARN.Arn }}
-                {{ end }}
-            spec:
-              priorityClassName: system-node-critical
-              initContainers:
-                - name: hyperkube
-                  image: {{.HyperkubeImage.RepoWithTag}}
-                  command:
-                  - /bin/cp
-                  - -f
-                  - /hyperkube
-                  - /workdir/kubectl
-                  volumeMounts:
-                  - mountPath: /workdir
-                    name: workdir
-              containers:
-                - name: kube-node-drainer-asg-status-updater
-                  image: {{.AWSCliImage.RepoWithTag}}
-                  env:
-                  - name: NODE_NAME
-                    valueFrom:
-                      fieldRef:
-                        fieldPath: spec.nodeName
-                  command:
-                  - /bin/sh
-                  - -xec
-                  - |
-                    metadata() { curl -s -S -f http://169.254.169.254/2016-09-02/"$1"; }
-                    asg()      { aws --region="${REGION}" autoscaling "$@"; }
+        template:
+          metadata:
+            labels:
+              k8s-app: kube-node-drainer-asg-status-updater
+            annotations:
+              scheduler.alpha.kubernetes.io/critical-pod: ''
+              {{if ne .Experimental.NodeDrainer.IAMRole.ARN.Arn "" -}}
+              iam.amazonaws.com/role: {{ .Experimental.NodeDrainer.IAMRole.ARN.Arn }}
+              {{ end }}
+          spec:
+            priorityClassName: system-node-critical
+            initContainers:
+              - name: hyperkube
+                image: {{.HyperkubeImage.RepoWithTag}}
+                command:
+                - /bin/cp
+                - -f
+                - /hyperkube
+                - /workdir/kubectl
+                volumeMounts:
+                - mountPath: /workdir
+                  name: workdir
+            containers:
+              - name: kube-node-drainer-asg-status-updater
+                image: {{.AWSCliImage.RepoWithTag}}
+                env:
+                - name: NODE_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: spec.nodeName
+                command:
+                - /bin/sh
+                - -xec
+                - |
+                  metadata() { curl -s -S -f http://169.254.169.254/2016-09-02/"$1"; }
+                  asg()      { aws --region="${REGION}" autoscaling "$@"; }
 
-                    # Hyperkube binary is not statically linked, so we need to use
-                    # the musl interpreter to be able to run it in this image
-                    # See: https://github.com/kubernetes-incubator/kube-aws/pull/674#discussion_r118889687
-                    kubectl() { /lib/ld-musl-x86_64.so.1 /opt/bin/kubectl "$@"; }
+                  # Hyperkube binary is not statically linked, so we need to use
+                  # the musl interpreter to be able to run it in this image
+                  # See: https://github.com/kubernetes-incubator/kube-aws/pull/674#discussion_r118889687
+                  kubectl() { /lib/ld-musl-x86_64.so.1 /opt/bin/kubectl "$@"; }
 
-                    REGION=$(metadata dynamic/instance-identity/document | jq -r .region)
-                    [ -n "${REGION}" ]
+                  REGION=$(metadata dynamic/instance-identity/document | jq -r .region)
+                  [ -n "${REGION}" ]
 
-                    # Not customizable, for now
-                    POLL_INTERVAL=10
+                  # Not customizable, for now
+                  POLL_INTERVAL=10
 
-                    # Keeps a comma-separated list of instances that need to be drained. Sets '-'
-                    # to force the ConfigMap to be updated in the first iteration.
-                    instances_to_drain='-'
+                  # Keeps a comma-separated list of instances that need to be drained. Sets '-'
+                  # to force the ConfigMap to be updated in the first iteration.
+                  instances_to_drain='-'
 
-                    # Instance termination detection loop
-                    while sleep ${POLL_INTERVAL}; do
+                  # Instance termination detection loop
+                  while sleep ${POLL_INTERVAL}; do
 
-                      # Fetch the list of instances being terminated by their respective ASGs
-                      updated_instances_to_drain=$(asg describe-auto-scaling-groups | jq -r '[.AutoScalingGroups[] | select((.Tags[].Key | contains("kube-aws:")) and (.Tags[].Key | contains("kubernetes.io/cluster/{{.ClusterName}}"))) | .Instances[] | select(.LifecycleState == "Terminating:Wait") | .InstanceId] | sort | join(",")')
+                    # Fetch the list of instances being terminated by their respective ASGs
+                    updated_instances_to_drain=$(asg describe-auto-scaling-groups | jq -r '[.AutoScalingGroups[] | select((.Tags[].Key | contains("kube-aws:")) and (.Tags[].Key | contains("kubernetes.io/cluster/{{.ClusterName}}"))) | .Instances[] | select(.LifecycleState == "Terminating:Wait") | .InstanceId] | sort | join(",")')
 
-                      # Have things changed since last iteration?
-                      if [ "${updated_instances_to_drain}" == "${instances_to_drain}" ]; then
-                        continue
-                      fi
-                      instances_to_drain="${updated_instances_to_drain}"
+                    # Have things changed since last iteration?
+                    if [ "${updated_instances_to_drain}" == "${instances_to_drain}" ]; then
+                      continue
+                    fi
+                    instances_to_drain="${updated_instances_to_drain}"
 
-                      # Update ConfigMap to reflect current ASG state
-                      echo "{\"apiVersion\": \"v1\", \"kind\": \"ConfigMap\", \"metadata\": {\"name\": \"kube-node-drainer-status\"}, \"data\": {\"asg\": \"${instances_to_drain}\"}}" | kubectl -n kube-system apply -f -
-                    done
-                  volumeMounts:
-                  - mountPath: /opt/bin
-                    name: workdir
-              volumes:
-                - name: workdir
-                  emptyDir: {}
+                    # Update ConfigMap to reflect current ASG state
+                    echo "{\"apiVersion\": \"v1\", \"kind\": \"ConfigMap\", \"metadata\": {\"name\": \"kube-node-drainer-status\"}, \"data\": {\"asg\": \"${instances_to_drain}\"}}" | kubectl -n kube-system apply -f -
+                  done
+                volumeMounts:
+                - mountPath: /opt/bin
+                  name: workdir
+            volumes:
+              - name: workdir
+                emptyDir: {}
 
   - path: /srv/kubernetes/manifests/kube-node-drainer-ds.yaml
     content: |
-        kind: DaemonSet
-        apiVersion: apps/v1
-        metadata:
-          name: kube-node-drainer-ds
-          namespace: kube-system
-          labels:
+      kind: DaemonSet
+      apiVersion: apps/v1
+      metadata:
+        name: kube-node-drainer-ds
+        namespace: kube-system
+        labels:
+          k8s-app: kube-node-drainer-ds
+      spec:
+        updateStrategy:
+          rollingUpdate:
+            maxUnavailable: 100%
+          type: RollingUpdate
+        selector:
+          matchLabels:
             k8s-app: kube-node-drainer-ds
-        spec:
-          updateStrategy:
-            rollingUpdate:
-              maxUnavailable: 100%
-            type: RollingUpdate
-          template:
-            metadata:
-              labels:
-                k8s-app: kube-node-drainer-ds
-              annotations:
-                scheduler.alpha.kubernetes.io/critical-pod: ''
-            spec:
-              priorityClassName: system-node-critical
-              tolerations:
-              - operator: Exists
-                effect: NoSchedule
-              - operator: Exists
-                effect: NoExecute
-              - operator: Exists
-                key: CriticalAddonsOnly
-              initContainers:
-                - name: hyperkube
-                  image: {{.HyperkubeImage.RepoWithTag}}
-                  command:
-                  - /bin/cp
-                  - -f
-                  - /hyperkube
-                  - /workdir/kubectl
-                  volumeMounts:
-                  - mountPath: /workdir
-                    name: workdir
-              containers:
-                - name: kube-node-drainer
-                  image: {{.AWSCliImage.RepoWithTag}}
-                  env:
-                  - name: NODE_NAME
-                    valueFrom:
-                      fieldRef:
-                        fieldPath: spec.nodeName
-                  command:
-                  - /bin/sh
-                  - -xec
-                  - |
-                    metadata() { curl -s -S -f http://169.254.169.254/2016-09-02/"$1"; }
-                    asg()      { aws --region="${REGION}" autoscaling "$@"; }
+        template:
+          metadata:
+            labels:
+              k8s-app: kube-node-drainer-ds
+            annotations:
+              scheduler.alpha.kubernetes.io/critical-pod: ''
+          spec:
+            priorityClassName: system-node-critical
+            tolerations:
+            - operator: Exists
+              effect: NoSchedule
+            - operator: Exists
+              effect: NoExecute
+            - operator: Exists
+              key: CriticalAddonsOnly
+            initContainers:
+              - name: hyperkube
+                image: {{.HyperkubeImage.RepoWithTag}}
+                command:
+                - /bin/cp
+                - -f
+                - /hyperkube
+                - /workdir/kubectl
+                volumeMounts:
+                - mountPath: /workdir
+                  name: workdir
+            containers:
+              - name: kube-node-drainer
+                image: {{.AWSCliImage.RepoWithTag}}
+                env:
+                - name: NODE_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: spec.nodeName
+                command:
+                - /bin/sh
+                - -xec
+                - |
+                  metadata() { curl -s -S -f http://169.254.169.254/2016-09-02/"$1"; }
+                  asg()      { aws --region="${REGION}" autoscaling "$@"; }
 
-                    # Hyperkube binary is not statically linked, so we need to use
-                    # the musl interpreter to be able to run it in this image
-                    # See: https://github.com/kubernetes-incubator/kube-aws/pull/674#discussion_r118889687
-                    kubectl() { /lib/ld-musl-x86_64.so.1 /opt/bin/kubectl "$@"; }
+                  # Hyperkube binary is not statically linked, so we need to use
+                  # the musl interpreter to be able to run it in this image
+                  # See: https://github.com/kubernetes-incubator/kube-aws/pull/674#discussion_r118889687
+                  kubectl() { /lib/ld-musl-x86_64.so.1 /opt/bin/kubectl "$@"; }
 
-                    INSTANCE_ID=$(metadata meta-data/instance-id)
-                    REGION=$(metadata dynamic/instance-identity/document | jq -r .region)
-                    [ -n "${REGION}" ]
+                  INSTANCE_ID=$(metadata meta-data/instance-id)
+                  REGION=$(metadata dynamic/instance-identity/document | jq -r .region)
+                  [ -n "${REGION}" ]
 
-                    # Not customizable, for now
-                    POLL_INTERVAL=10
+                  # Not customizable, for now
+                  POLL_INTERVAL=10
 
-                    # Used to identify the source which requested the instance termination
-                    termination_source=''
+                  # Used to identify the source which requested the instance termination
+                  termination_source=''
 
-                    # Instance termination detection loop
-                    while sleep ${POLL_INTERVAL}; do
+                  # Instance termination detection loop
+                  while sleep ${POLL_INTERVAL}; do
 
-                      # Spot instance termination check
-                      http_status=$(curl -o /dev/null -w '%{http_code}' -sL http://169.254.169.254/latest/meta-data/spot/termination-time)
-                      if [ "${http_status}" -eq 200 ]; then
-                        termination_source=spot
-                        break
-                      fi
+                    # Spot instance termination check
+                    http_status=$(curl -o /dev/null -w '%{http_code}' -sL http://169.254.169.254/latest/meta-data/spot/termination-time)
+                    if [ "${http_status}" -eq 200 ]; then
+                      termination_source=spot
+                      break
+                    fi
 
-                      # Termination ConfigMap check
-                      if [ -e /etc/kube-node-drainer/asg ] && grep -q "${INSTANCE_ID}" /etc/kube-node-drainer/asg; then
-                        termination_source=asg
-                        break
-                      fi
-                    done
+                    # Termination ConfigMap check
+                    if [ -e /etc/kube-node-drainer/asg ] && grep -q "${INSTANCE_ID}" /etc/kube-node-drainer/asg; then
+                      termination_source=asg
+                      break
+                    fi
+                  done
 
-                    # Node draining loop
-                    while true; do
-                      echo Node is terminating, draining it...
+                  # Node draining loop
+                  while true; do
+                    echo Node is terminating, draining it...
 
-                      if ! kubectl drain --ignore-daemonsets=true --delete-local-data=true --force=true --timeout=60s "${NODE_NAME}"; then
-                        echo Not all pods on this host can be evicted, will try again
-                        continue
-                      fi
-                      echo All evictable pods are gone
+                    if ! kubectl drain --ignore-daemonsets=true --delete-local-data=true --force=true --timeout=60s "${NODE_NAME}"; then
+                      echo Not all pods on this host can be evicted, will try again
+                      continue
+                    fi
+                    echo All evictable pods are gone
 
-                      if [ "${termination_source}" == asg ]; then
-                        echo Notifying AutoScalingGroup that instance ${INSTANCE_ID} can be shutdown
-                        ASG_NAME=$(asg describe-auto-scaling-instances --instance-ids "${INSTANCE_ID}" | jq -r '.AutoScalingInstances[].AutoScalingGroupName')
-                        HOOK_NAME=$(asg describe-lifecycle-hooks --auto-scaling-group-name "${ASG_NAME}" | jq -r '.LifecycleHooks[].LifecycleHookName' | grep -i nodedrainer)
-                        asg complete-lifecycle-action --lifecycle-action-result CONTINUE --instance-id "${INSTANCE_ID}" --lifecycle-hook-name "${HOOK_NAME}" --auto-scaling-group-name "${ASG_NAME}"
-                      fi
+                    if [ "${termination_source}" == asg ]; then
+                      echo Notifying AutoScalingGroup that instance ${INSTANCE_ID} can be shutdown
+                      ASG_NAME=$(asg describe-auto-scaling-instances --instance-ids "${INSTANCE_ID}" | jq -r '.AutoScalingInstances[].AutoScalingGroupName')
+                      HOOK_NAME=$(asg describe-lifecycle-hooks --auto-scaling-group-name "${ASG_NAME}" | jq -r '.LifecycleHooks[].LifecycleHookName' | grep -i nodedrainer)
+                      asg complete-lifecycle-action --lifecycle-action-result CONTINUE --instance-id "${INSTANCE_ID}" --lifecycle-hook-name "${HOOK_NAME}" --auto-scaling-group-name "${ASG_NAME}"
+                    fi
 
-                      # Expect instance will be shut down in defined drain timeout
-                      sleep {{.Experimental.NodeDrainer.DrainTimeoutInSeconds}}
-                    done
-                  volumeMounts:
-                  - mountPath: /opt/bin
-                    name: workdir
-                  - mountPath: /etc/kube-node-drainer
+                    # Expect instance will be shut down in defined drain timeout
+                    sleep {{.Experimental.NodeDrainer.DrainTimeoutInSeconds}}
+                  done
+                volumeMounts:
+                - mountPath: /opt/bin
+                  name: workdir
+                - mountPath: /etc/kube-node-drainer
+                  name: kube-node-drainer-status
+                  readOnly: true
+            volumes:
+            - name: workdir
+              emptyDir: {}
+            - name: kube-node-drainer-status
+              projected:
+                sources:
+                - configMap:
                     name: kube-node-drainer-status
-                    readOnly: true
-              volumes:
-              - name: workdir
-                emptyDir: {}
-              - name: kube-node-drainer-status
-                projected:
-                  sources:
-                  - configMap:
-                      name: kube-node-drainer-status
-                      optional: true
+                    optional: true
 {{end}}
 
   # TODO: remove the following binding once the TLS Bootstrapping feature is enabled by default, see:
@@ -2849,114 +2865,114 @@ write_files:
   # needed when TLS bootstrapping is disabled
   - path: /srv/kubernetes/rbac/cluster-role-bindings/node.yaml
     content: |
-        kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1
-        metadata:
-          name: kube-aws:node
-        subjects:
-          - kind: User
-            name: kube-worker
-        roleRef:
-          kind: ClusterRole
-          name: system:node
-          apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+        name: kube-aws:node
+      subjects:
+        - kind: User
+          name: kube-worker
+      roleRef:
+        kind: ClusterRole
+        name: system:node
+        apiGroup: rbac.authorization.k8s.io
 
   # We need to give nodes a few extra permissions so that both the node
   # draining and node labeling with AWS metadata work as expected
   - path: /srv/kubernetes/rbac/cluster-roles/node-extensions.yaml
     content: |
-        kind: ClusterRole
-        apiVersion: rbac.authorization.k8s.io/v1
-        metadata:
-            name: kube-aws:node-extensions
-        rules:
-          - apiGroups: ["extensions"]
-            resources:
-            - daemonsets
-            verbs:
-            - get
-          # Can be removed if node authorizer is enabled
-          - apiGroups: [""]
-            resources:
-            - nodes
-            verbs:
-            - patch
-            - update
-          - apiGroups: ["extensions"]
-            resources:
-            - replicasets
-            verbs:
-            - get
-          - apiGroups: ["batch"]
-            resources:
-            - jobs
-            verbs:
-            - get
-          - apiGroups: [""]
-            resources:
-            - replicationcontrollers
-            verbs:
-            - get
-          - apiGroups: [""]
-            resources:
-            - pods/eviction
-            verbs:
-            - create
-          - nonResourceURLs: ["*"]
-            verbs: ["*"]
+      kind: ClusterRole
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+          name: kube-aws:node-extensions
+      rules:
+        - apiGroups: ["extensions"]
+          resources:
+          - daemonsets
+          verbs:
+          - get
+        # Can be removed if node authorizer is enabled
+        - apiGroups: [""]
+          resources:
+          - nodes
+          verbs:
+          - patch
+          - update
+        - apiGroups: ["extensions"]
+          resources:
+          - replicasets
+          verbs:
+          - get
+        - apiGroups: ["batch"]
+          resources:
+          - jobs
+          verbs:
+          - get
+        - apiGroups: [""]
+          resources:
+          - replicationcontrollers
+          verbs:
+          - get
+        - apiGroups: [""]
+          resources:
+          - pods/eviction
+          verbs:
+          - create
+        - nonResourceURLs: ["*"]
+          verbs: ["*"]
 
   # Grants super-user permissions to the kube-admin user
   - path: /srv/kubernetes/rbac/cluster-role-bindings/kube-admin.yaml
     content: |
-        kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1
-        metadata:
-          name: kube-aws:admin
-        subjects:
-          - kind: User
-            name: kube-admin
-        roleRef:
-          kind: ClusterRole
-          name: cluster-admin
-          apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+        name: kube-aws:admin
+      subjects:
+        - kind: User
+          name: kube-admin
+      roleRef:
+        kind: ClusterRole
+        name: cluster-admin
+        apiGroup: rbac.authorization.k8s.io
 
   # Also allows `kube-worker` user to perform actions needed by the
   # `kube-proxy` component.
   - path: /srv/kubernetes/rbac/cluster-role-bindings/node-proxier.yaml
     content: |
-        kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1
-        metadata:
-          name: kube-aws:node-proxier
-        subjects:
-          - kind: User
-            name: kube-worker
-          - kind: ServiceAccount
-            name: kube-proxy
-            namespace: kube-system
-          # Not needed after migrating to DaemonSet-based kube-proxy
-          - kind: Group
-            name: system:nodes
-        roleRef:
-          kind: ClusterRole
-          name: system:node-proxier
-          apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+        name: kube-aws:node-proxier
+      subjects:
+        - kind: User
+          name: kube-worker
+        - kind: ServiceAccount
+          name: kube-proxy
+          namespace: kube-system
+        # Not needed after migrating to DaemonSet-based kube-proxy
+        - kind: Group
+          name: system:nodes
+      roleRef:
+        kind: ClusterRole
+        name: system:node-proxier
+        apiGroup: rbac.authorization.k8s.io
 
   # Allows add-ons running with the default service account in kube-sytem to have super-user access
   - path: /srv/kubernetes/rbac/cluster-role-bindings/system-worker.yaml
     content: |
-        kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1
-        metadata:
-          name: kube-aws:system-worker
-        subjects:
-          - kind: ServiceAccount
-            namespace: kube-system
-            name: default
-        roleRef:
-          kind: ClusterRole
-          name: cluster-admin
-          apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+        name: kube-aws:system-worker
+      subjects:
+        - kind: ServiceAccount
+          namespace: kube-system
+          name: default
+      roleRef:
+        kind: ClusterRole
+        name: cluster-admin
+        apiGroup: rbac.authorization.k8s.io
 
   # TODO: remove the following binding once the TLS Bootstrapping feature is enabled by default, see:
   # https://github.com/kubernetes-incubator/kube-aws/pull/618#discussion_r115162048
@@ -2966,19 +2982,19 @@ write_files:
   # extra kube-aws features (like node draining) work as expected
   - path: /srv/kubernetes/rbac/cluster-role-bindings/node-extensions.yaml
     content: |
-        kind: ClusterRoleBinding
-        apiVersion: rbac.authorization.k8s.io/v1
-        metadata:
-          name: kube-aws:node-extensions
-        subjects:
-          - kind: User
-            name: kube-worker
-          - kind: Group
-            name: system:nodes
-        roleRef:
-          kind: ClusterRole
-          name: kube-aws:node-extensions
-          apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+        name: kube-aws:node-extensions
+      subjects:
+        - kind: User
+          name: kube-worker
+        - kind: Group
+          name: system:nodes
+      roleRef:
+        kind: ClusterRole
+        name: kube-aws:node-extensions
+        apiGroup: rbac.authorization.k8s.io
 
   # RBAC Rules to Allow Kubelet authentication to be enabled but accept unauthenticated GET calls to the /metrics endpoint
   - path: /srv/kubernetes/rbac/cluster-roles/node-access.yaml
@@ -3043,87 +3059,87 @@ write_files:
   # metrics-server
   - path: /srv/kubernetes/rbac/cluster-role-bindings/metrics-server.yaml
     content: |
-        apiVersion: rbac.authorization.k8s.io/v1beta1
-        kind: ClusterRoleBinding
-        metadata:
-          name: metrics-server:system:auth-delegator
-        roleRef:
-          apiGroup: rbac.authorization.k8s.io
-          kind: ClusterRole
-          name: system:auth-delegator
-        subjects:
-        - kind: ServiceAccount
-          name: metrics-server
-          namespace: kube-system
-        ---
-        apiVersion: rbac.authorization.k8s.io/v1
-        kind: ClusterRoleBinding
-        metadata:
-          name: system:metrics-server
-        roleRef:
-          apiGroup: rbac.authorization.k8s.io
-          kind: ClusterRole
-          name: system:metrics-server
-        subjects:
-        - kind: ServiceAccount
-          name: metrics-server
-          namespace: kube-system
+      apiVersion: rbac.authorization.k8s.io/v1beta1
+      kind: ClusterRoleBinding
+      metadata:
+        name: metrics-server:system:auth-delegator
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: system:auth-delegator
+      subjects:
+      - kind: ServiceAccount
+        name: metrics-server
+        namespace: kube-system
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: system:metrics-server
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: system:metrics-server
+      subjects:
+      - kind: ServiceAccount
+        name: metrics-server
+        namespace: kube-system
 
   - path: /srv/kubernetes/rbac/role-bindings/metrics-server.yaml
     content: |
-        apiVersion: rbac.authorization.k8s.io/v1beta1
-        kind: RoleBinding
-        metadata:
-          name: metrics-server-auth-reader
-          namespace: kube-system
-        roleRef:
-          apiGroup: rbac.authorization.k8s.io
-          kind: Role
-          name: extension-apiserver-authentication-reader
-        subjects:
-        - kind: ServiceAccount
-          name: metrics-server
-          namespace: kube-system
+      apiVersion: rbac.authorization.k8s.io/v1beta1
+      kind: RoleBinding
+      metadata:
+        name: metrics-server-auth-reader
+        namespace: kube-system
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: Role
+        name: extension-apiserver-authentication-reader
+      subjects:
+      - kind: ServiceAccount
+        name: metrics-server
+        namespace: kube-system
 
   - path: /srv/kubernetes/rbac/cluster-roles/metrics-server.yaml
     content: |
-        apiVersion: rbac.authorization.k8s.io/v1
-        kind: ClusterRole
-        metadata:
-          name: system:metrics-server
-        rules:
-        - apiGroups:
-          - ""
-          resources:
-          - pods
-          - nodes
-          - nodes/stats
-          - namespaces
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - "extensions"
-          resources:
-          - deployments
-          verbs:
-          - get
-          - list
-          - watch
-        ---
-        kind: ClusterRole
-        apiVersion: rbac.authorization.k8s.io/v1
-        metadata:
-          name: system:aggregated-metrics-reader
-          labels:
-            rbac.authorization.k8s.io/aggregate-to-view: "true"
-            rbac.authorization.k8s.io/aggregate-to-edit: "true"
-            rbac.authorization.k8s.io/aggregate-to-admin: "true"
-        rules:
-        - apiGroups: ["metrics.k8s.io"]
-          resources: ["pods"]
-          verbs: ["get", "list", "watch"]
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRole
+      metadata:
+        name: system:metrics-server
+      rules:
+      - apiGroups:
+        - ""
+        resources:
+        - pods
+        - nodes
+        - nodes/stats
+        - namespaces
+        verbs:
+        - get
+        - list
+        - watch
+      - apiGroups:
+        - "extensions"
+        resources:
+        - deployments
+        verbs:
+        - get
+        - list
+        - watch
+      ---
+      kind: ClusterRole
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+        name: system:aggregated-metrics-reader
+        labels:
+          rbac.authorization.k8s.io/aggregate-to-view: "true"
+          rbac.authorization.k8s.io/aggregate-to-edit: "true"
+          rbac.authorization.k8s.io/aggregate-to-admin: "true"
+      rules:
+      - apiGroups: ["metrics.k8s.io"]
+        resources: ["pods"]
+        verbs: ["get", "list", "watch"]
 
   - path: /srv/kubernetes/rbac/cluster-role-bindings/nodes-can-create-csrs.yaml
     content: |
@@ -3208,68 +3224,71 @@ write_files:
 
   - path: /srv/kubernetes/manifests/kube-proxy-ds.yaml
     content: |
-        apiVersion: apps/v1
-        kind: DaemonSet
-        metadata:
-          name: kube-proxy
-          namespace: kube-system
-          labels:
-            k8s-app: kube-proxy
-        spec:
-          updateStrategy:
-            rollingUpdate:
-              maxUnavailable: 100%
-            type: RollingUpdate
-          template:
-            metadata:
-              labels:
-                k8s-app: kube-proxy
-              annotations:
-                scheduler.alpha.kubernetes.io/critical-pod: ''
-            spec:
-              priorityClassName: system-node-critical
-              serviceAccountName: kube-proxy
-              tolerations:
-              - operator: Exists
-                effect: NoSchedule
-              - operator: Exists
-                effect: NoExecute
-              - operator: Exists
-                key: CriticalAddonsOnly
-              hostNetwork: true
-              containers:
-              - name: kube-proxy
-                image: {{.HyperkubeImage.RepoWithTag}}
-                command:
-                - /hyperkube
-                - kube-proxy
-                - --config=/etc/kubernetes/kube-proxy/kube-proxy-config.yaml
-                securityContext:
-                  privileged: true
-                volumeMounts:
-                {{if .KubeProxy.IPVSMode.Enabled -}}
-                - mountPath: /lib/modules
-                  name: lib-modules
-                  readOnly: true
-                {{end -}}
-                - mountPath: /etc/kubernetes/kubeconfig
-                  name: kubeconfig
-                  readOnly: true
-                - mountPath: /etc/kubernetes/kube-proxy
-                  name: kube-proxy-config
-                  readOnly: true
-              volumes:
+      apiVersion: apps/v1
+      kind: DaemonSet
+      metadata:
+        name: kube-proxy
+        namespace: kube-system
+        labels:
+          k8s-app: kube-proxy
+      spec:
+        updateStrategy:
+          rollingUpdate:
+            maxUnavailable: 100%
+          type: RollingUpdate
+      selector:
+        matchLabels:
+          k8s-app: kube-proxy
+        template:
+          metadata:
+            labels:
+              k8s-app: kube-proxy
+            annotations:
+              scheduler.alpha.kubernetes.io/critical-pod: ''
+          spec:
+            priorityClassName: system-node-critical
+            serviceAccountName: kube-proxy
+            tolerations:
+            - operator: Exists
+              effect: NoSchedule
+            - operator: Exists
+              effect: NoExecute
+            - operator: Exists
+              key: CriticalAddonsOnly
+            hostNetwork: true
+            containers:
+            - name: kube-proxy
+              image: {{.HyperkubeImage.RepoWithTag}}
+              command:
+              - /hyperkube
+              - kube-proxy
+              - --config=/etc/kubernetes/kube-proxy/kube-proxy-config.yaml
+              securityContext:
+                privileged: true
+              volumeMounts:
               {{if .KubeProxy.IPVSMode.Enabled -}}
-              - name: lib-modules
-                hostPath:
-                  path: /lib/modules
+              - mountPath: /lib/modules
+                name: lib-modules
+                readOnly: true
               {{end -}}
-              - name: kubeconfig
-                hostPath:
-                  path: /etc/kubernetes/kubeconfig
-              - name: kube-proxy-config
-                configMap:
-                  name: kube-proxy-config
+              - mountPath: /etc/kubernetes/kubeconfig
+                name: kubeconfig
+                readOnly: true
+              - mountPath: /etc/kubernetes/kube-proxy
+                name: kube-proxy-config
+                readOnly: true
+            volumes:
+            {{if .KubeProxy.IPVSMode.Enabled -}}
+            - name: lib-modules
+              hostPath:
+                path: /lib/modules
+            {{end -}}
+            - name: kubeconfig
+              hostPath:
+                path: /etc/kubernetes/kubeconfig
+            - name: kube-proxy-config
+              configMap:
+                name: kube-proxy-config
 
   - path: /etc/kubernetes/manifests/kube-apiserver.yaml
     content: |
@@ -3631,6 +3650,9 @@ write_files:
           kubernetes.io/name: "Rescheduler"
       spec:
         # `replicas` should always be the default of 1, rescheduler crashes otherwise
+        selector:
+          matchLabels:
+            k8s-app: kube-rescheduler
         template:
           metadata:
             labels:
@@ -3817,588 +3839,594 @@ write_files:
             {{- end }}
   - path: /srv/kubernetes/manifests/kube-proxy-sa.yaml
     content: |
-        apiVersion: v1
-        kind: ServiceAccount
-        metadata:
-          name: kube-proxy
-          namespace: kube-system
-          labels:
-            kubernetes.io/cluster-service: "true"
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: kube-proxy
+        namespace: kube-system
+        labels:
+          kubernetes.io/cluster-service: "true"
 
 {{- if eq .KubeDns.Provider "coredns" }}
   - path: /srv/kubernetes/manifests/coredns-sa.yaml
     content: |
-        apiVersion: v1
-        kind: ServiceAccount
-        metadata:
-          name: coredns
-          namespace: kube-system
-          labels:
-            kubernetes.io/cluster-service: "true"
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: coredns
+        namespace: kube-system
+        labels:
+          kubernetes.io/cluster-service: "true"
 
   - path: /srv/kubernetes/manifests/coredns-cr.yaml
     content: |
-        apiVersion: rbac.authorization.k8s.io/v1
-        kind: ClusterRole
-        metadata:
-          labels:
-            kubernetes.io/bootstrapping: rbac-defaults
-            addonmanager.kubernetes.io/mode: EnsureExists
-          name: system:coredns
-        rules:
-        - apiGroups:
-          - ""
-          resources:
-          - endpoints
-          - services
-          - pods
-          - namespaces
-          verbs:
-          - list
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - nodes
-          verbs:
-          - get
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRole
+      metadata:
+        labels:
+          kubernetes.io/bootstrapping: rbac-defaults
+          addonmanager.kubernetes.io/mode: EnsureExists
+        name: system:coredns
+      rules:
+      - apiGroups:
+        - ""
+        resources:
+        - endpoints
+        - services
+        - pods
+        - namespaces
+        verbs:
+        - list
+        - watch
+      - apiGroups:
+        - ""
+        resources:
+        - nodes
+        verbs:
+        - get
 
   - path: /srv/kubernetes/manifests/coredns-crb.yaml
     content: |
-        apiVersion: rbac.authorization.k8s.io/v1
-        kind: ClusterRoleBinding
-        metadata:
-          annotations:
-            rbac.authorization.kubernetes.io/autoupdate: "true"
-          labels:
-            kubernetes.io/bootstrapping: rbac-defaults
-            addonmanager.kubernetes.io/mode: EnsureExists
-          name: system:coredns
-        roleRef:
-          apiGroup: rbac.authorization.k8s.io
-          kind: ClusterRole
-          name: system:coredns
-        subjects:
-        - kind: ServiceAccount
-          name: coredns
-          namespace: kube-system
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        annotations:
+          rbac.authorization.kubernetes.io/autoupdate: "true"
+        labels:
+          kubernetes.io/bootstrapping: rbac-defaults
+          addonmanager.kubernetes.io/mode: EnsureExists
+        name: system:coredns
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: system:coredns
+      subjects:
+      - kind: ServiceAccount
+        name: coredns
+        namespace: kube-system
 
   - path: /srv/kubernetes/manifests/coredns-cm.yaml
     content: |
-        apiVersion: v1
-        kind: ConfigMap
-        metadata:
-          name: coredns
-          namespace: kube-system
-        data:
-          Corefile: |
-            .:53 {
-                errors
-                health
-                kubernetes cluster.local in-addr.arpa ip6.arpa {
-                    pods insecure
-                    upstream
-                    fallthrough in-addr.arpa ip6.arpa
-                    ttl {{ .KubeDns.TTL }}
-                }
-                forward . /etc/resolv.conf {
-                    except cluster.local
-                    health_check 5s
-                }
-                {{- if and (eq .KubeDns.Provider "coredns") .KubeDns.ExtraCoreDNSConfig }}
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: coredns
+        namespace: kube-system
+      data:
+        Corefile: |
+          .:53 {
+              errors
+              health
+              kubernetes cluster.local in-addr.arpa ip6.arpa {
+                  pods insecure
+                  upstream
+                  fallthrough in-addr.arpa ip6.arpa
+                  ttl {{ .KubeDns.TTL }}
+              }
+              forward . /etc/resolv.conf {
+                  except cluster.local
+                  health_check 5s
+              }
+              {{- if and (eq .KubeDns.Provider "coredns") .KubeDns.ExtraCoreDNSConfig }}
 {{ .KubeDns.ExtraCoreDNSConfig | indent 16 }}
-                {{- end }}
-                prometheus :9153
-                cache {{ .KubeDns.TTL }}
-                loop
-                reload
-                loadbalance
-            }
+              {{- end }}
+              prometheus :9153
+              cache {{ .KubeDns.TTL }}
+              loop
+              reload
+              loadbalance
+          }
 {{- else }}
   - path: /srv/kubernetes/manifests/kube-dns-sa.yaml
     content: |
-        apiVersion: v1
-        kind: ServiceAccount
-        metadata:
-          name: kube-dns
-          namespace: kube-system
-          labels:
-            kubernetes.io/cluster-service: "true"
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: kube-dns
+        namespace: kube-system
+        labels:
+          kubernetes.io/cluster-service: "true"
 
   - path: /srv/kubernetes/manifests/kube-dns-cm.yaml
     content: |
-        apiVersion: v1
-        kind: ConfigMap
-        metadata:
-          name: kube-dns
-          namespace: kube-system
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: kube-dns
+        namespace: kube-system
 {{- end }}
 
   - path: /srv/kubernetes/manifests/kube-dns-autoscaler-de.yaml
     content: |
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: kube-dns-autoscaler
-          namespace: kube-system
-          labels:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kube-dns-autoscaler
+        namespace: kube-system
+        labels:
+          k8s-app: kube-dns-autoscaler
+          kubernetes.io/cluster-service: "true"
+      spec:
+        selector:
+          matchLabels:
             k8s-app: kube-dns-autoscaler
-            kubernetes.io/cluster-service: "true"
-        spec:
-          template:
-            metadata:
-              labels:
-                k8s-app: kube-dns-autoscaler
-              annotations:
-                scheduler.alpha.kubernetes.io/critical-pod: ''
-            spec:
-              priorityClassName: system-cluster-critical
-              tolerations:
-              - key: "CriticalAddonsOnly"
-                operator: "Exists"
-              containers:
-              - name: autoscaler
-                image: {{ .ClusterProportionalAutoscalerImage.RepoWithTag }}
-                resources:
-                    requests:
-                        cpu: "20m"
-                        memory: "10Mi"
-                command:
-                  - /cluster-proportional-autoscaler
-                  - --namespace=kube-system
-                  - --configmap=kube-dns-autoscaler
-                  {{- if eq .KubeDns.Provider "coredns" }}
-                  - --target=Deployment/coredns
-                  {{- else }}
-                  - --target=Deployment/kube-dns
-                  {{- end }}
-                  - --default-params={"linear":{"coresPerReplica":{{ .KubeDns.Autoscaler.CoresPerReplica }},"nodesPerReplica":{{ .KubeDns.Autoscaler.NodesPerReplica }},"min":{{ .KubeDns.Autoscaler.Min}}}}
-                  - --v=2
-                  - --logtostderr
+        template:
+          metadata:
+            labels:
+              k8s-app: kube-dns-autoscaler
+            annotations:
+              scheduler.alpha.kubernetes.io/critical-pod: ''
+          spec:
+            priorityClassName: system-cluster-critical
+            tolerations:
+            - key: "CriticalAddonsOnly"
+              operator: "Exists"
+            containers:
+            - name: autoscaler
+              image: {{ .ClusterProportionalAutoscalerImage.RepoWithTag }}
+              resources:
+                  requests:
+                      cpu: "20m"
+                      memory: "10Mi"
+              command:
+                - /cluster-proportional-autoscaler
+                - --namespace=kube-system
+                - --configmap=kube-dns-autoscaler
+                {{- if eq .KubeDns.Provider "coredns" }}
+                - --target=Deployment/coredns
+                {{- else }}
+                - --target=Deployment/kube-dns
+                {{- end }}
+                - --default-params={"linear":{"coresPerReplica":{{ .KubeDns.Autoscaler.CoresPerReplica }},"nodesPerReplica":{{ .KubeDns.Autoscaler.NodesPerReplica }},"min":{{ .KubeDns.Autoscaler.Min}}}}
+                - --v=2
+                - --logtostderr
 
 {{ if .KubeDns.NodeLocalResolver }}
   - path: /srv/kubernetes/manifests/dnsmasq-node-ds.yaml
     content: |
-        apiVersion: apps/v1
-        kind: DaemonSet
-        metadata:
-          name: dnsmasq-node
-          namespace: kube-system
-          labels:
+      apiVersion: apps/v1
+      kind: DaemonSet
+      metadata:
+        name: dnsmasq-node
+        namespace: kube-system
+        labels:
+          k8s-app: dnsmasq-node
+      spec:
+        updateStrategy:
+          rollingUpdate:
+            maxUnavailable: 100%
+          type: RollingUpdate
+        selector:
+          matchLabels:
             k8s-app: dnsmasq-node
-        spec:
-          updateStrategy:
-            rollingUpdate:
-              maxUnavailable: 100%
-            type: RollingUpdate
-          template:
-            metadata:
-              labels:
-                k8s-app: dnsmasq-node
-              annotations:
-                scheduler.alpha.kubernetes.io/critical-pod: ''
-            spec:
-              priorityClassName: system-node-critical
-              tolerations:
-              - operator: Exists
-                effect: NoSchedule
-              - operator: Exists
-                effect: NoExecute
-              - operator: Exists
-                key: CriticalAddonsOnly
-              volumes:
-              - name: kube-dns-config
-                configMap:
-                  name: kube-dns
-                  optional: true
-              containers:
-              - name: dnsmasq
-                image: {{ .KubeDnsMasqImage.RepoWithTag }}
-                livenessProbe:
-                  httpGet:
-                    path: /healthcheck/dnsmasq
-                    port: 10054
-                    scheme: HTTP
-                  initialDelaySeconds: 60
-                  timeoutSeconds: 5
-                  successThreshold: 1
-                  failureThreshold: 5
-                args:
-                - -v=2
-                - -logtostderr
-                - -configDir=/etc/k8s/dns/dnsmasq-nanny
-                - -restartDnsmasq=true
-                - --
-                - -k
-                - --min-port=1024
-                - --cache-size=1000
-                - --server=//{{.DNSServiceIP}}
-                - --server=/cluster.local/{{.DNSServiceIP}}
-                - --server=/in-addr.arpa/{{.DNSServiceIP}}
-                - --server=/ip6.arpa/{{.DNSServiceIP}}
-                - --log-facility=-
-                {{- if ne (len .KubeDns.NodeLocalResolverOptions) 0 }}
-                  {{- range .KubeDns.NodeLocalResolverOptions }}
-                - {{.}}
-                  {{- end }}
+        template:
+          metadata:
+            labels:
+              k8s-app: dnsmasq-node
+            annotations:
+              scheduler.alpha.kubernetes.io/critical-pod: ''
+          spec:
+            priorityClassName: system-node-critical
+            tolerations:
+            - operator: Exists
+              effect: NoSchedule
+            - operator: Exists
+              effect: NoExecute
+            - operator: Exists
+              key: CriticalAddonsOnly
+            volumes:
+            - name: kube-dns-config
+              configMap:
+                name: kube-dns
+                optional: true
+            containers:
+            - name: dnsmasq
+              image: {{ .KubeDnsMasqImage.RepoWithTag }}
+              livenessProbe:
+                httpGet:
+                  path: /healthcheck/dnsmasq
+                  port: 10054
+                  scheme: HTTP
+                initialDelaySeconds: 60
+                timeoutSeconds: 5
+                successThreshold: 1
+                failureThreshold: 5
+              args:
+              - -v=2
+              - -logtostderr
+              - -configDir=/etc/k8s/dns/dnsmasq-nanny
+              - -restartDnsmasq=true
+              - --
+              - -k
+              - --min-port=1024
+              - --cache-size=1000
+              - --server=//{{.DNSServiceIP}}
+              - --server=/cluster.local/{{.DNSServiceIP}}
+              - --server=/in-addr.arpa/{{.DNSServiceIP}}
+              - --server=/ip6.arpa/{{.DNSServiceIP}}
+              - --log-facility=-
+              {{- if ne (len .KubeDns.NodeLocalResolverOptions) 0 }}
+                {{- range .KubeDns.NodeLocalResolverOptions }}
+              - {{.}}
                 {{- end }}
-                ports:
-                - containerPort: 53
-                  name: dns
-                  protocol: UDP
-                - containerPort: 53
-                  name: dns-tcp
-                  protocol: TCP
-                # see: https://github.com/kubernetes/kubernetes/issues/29055 for details
-                resources:
-                  requests:
-                    cpu: 150m
-                    memory: 20Mi
-                volumeMounts:
-                - name: kube-dns-config
-                  mountPath: /etc/k8s/dns/dnsmasq-nanny
-              - name: sidecar
-                image: {{ .DnsMasqMetricsImage.RepoWithTag }}
-                livenessProbe:
-                  httpGet:
-                    path: /metrics
-                    port: 10054
-                    scheme: HTTP
-                  initialDelaySeconds: 60
-                  timeoutSeconds: 5
-                  successThreshold: 1
-                  failureThreshold: 5
-                args:
-                - --v=2
-                - --logtostderr
-                - --probe=dnsmasq,127.0.0.1:53,ec2.amazonaws.com,5,A
-                ports:
-                - containerPort: 10054
-                  name: metrics
-                  protocol: TCP
-                resources:
-                  requests:
-                    memory: 20Mi
-              hostNetwork: true
-              dnsPolicy: Default
-              automountServiceAccountToken: false
+              {{- end }}
+              ports:
+              - containerPort: 53
+                name: dns
+                protocol: UDP
+              - containerPort: 53
+                name: dns-tcp
+                protocol: TCP
+              # see: https://github.com/kubernetes/kubernetes/issues/29055 for details
+              resources:
+                requests:
+                  cpu: 150m
+                  memory: 20Mi
+              volumeMounts:
+              - name: kube-dns-config
+                mountPath: /etc/k8s/dns/dnsmasq-nanny
+            - name: sidecar
+              image: {{ .DnsMasqMetricsImage.RepoWithTag }}
+              livenessProbe:
+                httpGet:
+                  path: /metrics
+                  port: 10054
+                  scheme: HTTP
+                initialDelaySeconds: 60
+                timeoutSeconds: 5
+                successThreshold: 1
+                failureThreshold: 5
+              args:
+              - --v=2
+              - --logtostderr
+              - --probe=dnsmasq,127.0.0.1:53,ec2.amazonaws.com,5,A
+              ports:
+              - containerPort: 10054
+                name: metrics
+                protocol: TCP
+              resources:
+                requests:
+                  memory: 20Mi
+            hostNetwork: true
+            dnsPolicy: Default
+            automountServiceAccountToken: false
 {{ end }}
 
 {{- if eq .KubeDns.Provider "coredns" }}
   - path: /srv/kubernetes/manifests/coredns-de.yaml
     content: |
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: coredns
-          namespace: kube-system
-          labels:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: coredns
+        namespace: kube-system
+        labels:
+          k8s-app: kube-dns
+          kubernetes.io/cluster-service: "true"
+          addonmanager.kubernetes.io/mode: Reconcile
+          kubernetes.io/name: "CoreDNS"
+      spec:
+        # replicas: not specified here:
+        # 1. In order to make Addon Manager do not reconcile this replicas parameter.
+        # 2. Default is 1.
+        # 3. Will be tuned in real time if DNS horizontal auto-scaling is turned on.
+        strategy:
+          type: RollingUpdate
+          rollingUpdate:
+            maxUnavailable: 1
+        selector:
+          matchLabels:
             k8s-app: kube-dns
-            kubernetes.io/cluster-service: "true"
-            addonmanager.kubernetes.io/mode: Reconcile
-            kubernetes.io/name: "CoreDNS"
-        spec:
-          # replicas: not specified here:
-          # 1. In order to make Addon Manager do not reconcile this replicas parameter.
-          # 2. Default is 1.
-          # 3. Will be tuned in real time if DNS horizontal auto-scaling is turned on.
-          strategy:
-            type: RollingUpdate
-            rollingUpdate:
-              maxUnavailable: 1
-          selector:
-            matchLabels:
+        template:
+          metadata:
+            labels:
               k8s-app: kube-dns
-          template:
-            metadata:
-              labels:
-                k8s-app: kube-dns
-              annotations:
-                prometheus.io/port: "9153"
-                prometheus.io/scrape: "true"
-                seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
-            spec:
-              priorityClassName: system-node-critical
-              serviceAccountName: coredns
-              {{ if or .KubeDns.DeployToControllers .KubeDns.AntiAffinityAvailabilityZone -}}
-              affinity:
-                {{- if .KubeDns.DeployToControllers }}
-                nodeAffinity:
-                  requiredDuringSchedulingIgnoredDuringExecution:
-                    nodeSelectorTerms:
-                    - matchExpressions:
-                      - key: node.kubernetes.io/role
+            annotations:
+              prometheus.io/port: "9153"
+              prometheus.io/scrape: "true"
+              seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
+          spec:
+            priorityClassName: system-node-critical
+            serviceAccountName: coredns
+            {{ if or .KubeDns.DeployToControllers .KubeDns.AntiAffinityAvailabilityZone -}}
+            affinity:
+              {{- if .KubeDns.DeployToControllers }}
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                  - matchExpressions:
+                    - key: node.kubernetes.io/role
+                      operator: In
+                      values:
+                      - "master"
+              {{- end }}
+              {{- if .KubeDns.AntiAffinityAvailabilityZone }}
+              podAntiAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                - podAffinityTerm:
+                    labelSelector:
+                      matchExpressions:
+                      - key: k8s-app
                         operator: In
                         values:
-                        - "master"
-                {{- end }}
-                {{- if .KubeDns.AntiAffinityAvailabilityZone }}
-                podAntiAffinity:
-                  preferredDuringSchedulingIgnoredDuringExecution:
-                  - podAffinityTerm:
-                      labelSelector:
-                        matchExpressions:
-                        - key: k8s-app
-                          operator: In
-                          values:
-                          - "kube-dns"
-                      topologyKey: "failure-domain.beta.kubernetes.io/zone"
-                    weight: 1
-                {{- end }}
-              tolerations:
-               - key: "CriticalAddonsOnly"
-                 operator: "Exists"
-               - key: "node.kubernetes.io/role"
-                 operator: "Equal"
-                 value: "master"
-                 effect: "NoSchedule"
-              {{ else -}}
-              tolerations:
+                        - "kube-dns"
+                    topologyKey: "failure-domain.beta.kubernetes.io/zone"
+                  weight: 1
+              {{- end }}
+            tolerations:
               - key: "CriticalAddonsOnly"
                 operator: "Exists"
-              {{ end -}}
-              containers:
-              - name: coredns
-                image: {{ .CoreDnsImage.RepoWithTag }}
-                imagePullPolicy: IfNotPresent
-                resources:
-                  limits:
-                    cpu: {{ .KubeDns.DnsDeploymentResources.Limits.Cpu }}
-                    memory: {{ .KubeDns.DnsDeploymentResources.Limits.Memory }}
-                  requests:
-                    cpu: {{ .KubeDns.DnsDeploymentResources.Requests.Cpu }}
-                    memory: {{ .KubeDns.DnsDeploymentResources.Requests.Memory }}
-                args: [ "-conf", "/etc/coredns/Corefile" ]
-                volumeMounts:
-                - name: config-volume
-                  mountPath: /etc/coredns
-                ports:
-                - containerPort: 53
-                  name: dns
-                  protocol: UDP
-                - containerPort: 53
-                  name: dns-tcp
-                  protocol: TCP
-                - containerPort: 9153
-                  name: metrics
-                  protocol: TCP
-                livenessProbe:
-                  httpGet:
-                    path: /health
-                    port: 8080
-                    scheme: HTTP
-                  initialDelaySeconds: 60
-                  timeoutSeconds: 5
-                  successThreshold: 1
-                  failureThreshold: 5
-              dnsPolicy: Default
-              volumes:
-                - name: config-volume
-                  configMap:
-                    name: coredns
-                    items:
-                    - key: Corefile
-                      path: Corefile
+              - key: "node.kubernetes.io/role"
+                operator: "Equal"
+                value: "master"
+                effect: "NoSchedule"
+            {{ else -}}
+            tolerations:
+            - key: "CriticalAddonsOnly"
+              operator: "Exists"
+            {{ end -}}
+            containers:
+            - name: coredns
+              image: {{ .CoreDnsImage.RepoWithTag }}
+              imagePullPolicy: IfNotPresent
+              resources:
+                limits:
+                  cpu: {{ .KubeDns.DnsDeploymentResources.Limits.Cpu }}
+                  memory: {{ .KubeDns.DnsDeploymentResources.Limits.Memory }}
+                requests:
+                  cpu: {{ .KubeDns.DnsDeploymentResources.Requests.Cpu }}
+                  memory: {{ .KubeDns.DnsDeploymentResources.Requests.Memory }}
+              args: [ "-conf", "/etc/coredns/Corefile" ]
+              volumeMounts:
+              - name: config-volume
+                mountPath: /etc/coredns
+              ports:
+              - containerPort: 53
+                name: dns
+                protocol: UDP
+              - containerPort: 53
+                name: dns-tcp
+                protocol: TCP
+              - containerPort: 9153
+                name: metrics
+                protocol: TCP
+              livenessProbe:
+                httpGet:
+                  path: /health
+                  port: 8080
+                  scheme: HTTP
+                initialDelaySeconds: 60
+                timeoutSeconds: 5
+                successThreshold: 1
+                failureThreshold: 5
+            dnsPolicy: Default
+            volumes:
+              - name: config-volume
+                configMap:
+                  name: coredns
+                  items:
+                  - key: Corefile
+                    path: Corefile
 {{- else }}
   - path: /srv/kubernetes/manifests/kube-dns-de.yaml
     content: |
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: kube-dns
-          namespace: kube-system
-          labels:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kube-dns
+        namespace: kube-system
+        labels:
+          k8s-app: kube-dns
+          kubernetes.io/cluster-service: "true"
+      spec:
+        # replicas: not specified here:
+        # 1. In order to make Addon Manager do not reconcile this replicas parameter.
+        # 2. Default is 1.
+        # 3. Will be tuned in real time if DNS horizontal auto-scaling is turned on.
+        strategy:
+          rollingUpdate:
+            maxSurge: 10%
+            maxUnavailable: 0
+        selector:
+          matchLabels:
             k8s-app: kube-dns
-            kubernetes.io/cluster-service: "true"
-        spec:
-          # replicas: not specified here:
-          # 1. In order to make Addon Manager do not reconcile this replicas parameter.
-          # 2. Default is 1.
-          # 3. Will be tuned in real time if DNS horizontal auto-scaling is turned on.
-          strategy:
-            rollingUpdate:
-              maxSurge: 10%
-              maxUnavailable: 0
-          selector:
-            matchLabels:
+        template:
+          metadata:
+            labels:
               k8s-app: kube-dns
-          template:
-            metadata:
-              labels:
-                k8s-app: kube-dns
-              annotations:
-                scheduler.alpha.kubernetes.io/critical-pod: ''
-            spec:
-              priorityClassName: system-cluster-critical
-              volumes:
-              - name: kube-dns-config
-                configMap:
-                  name: kube-dns
-                  optional: true
-              {{ if .KubeDns.DeployToControllers -}}
-              affinity:
-                nodeAffinity:
-                  requiredDuringSchedulingIgnoredDuringExecution:
-                    nodeSelectorTerms:
-                    - matchExpressions:
-                      - key: node.kubernetes.io/role
-                        operator: In
-                        values:
-                        - "master"
-              tolerations:
-               - key: "CriticalAddonsOnly"
-                 operator: "Exists"
-               - key: "node.kubernetes.io/role"
-                 operator: "Equal"
-                 value: "master"
-                 effect: "NoSchedule"
-              {{ else -}}
-              tolerations:
+            annotations:
+              scheduler.alpha.kubernetes.io/critical-pod: ''
+          spec:
+            priorityClassName: system-cluster-critical
+            volumes:
+            - name: kube-dns-config
+              configMap:
+                name: kube-dns
+                optional: true
+            {{ if .KubeDns.DeployToControllers -}}
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                  - matchExpressions:
+                    - key: node.kubernetes.io/role
+                      operator: In
+                      values:
+                      - "master"
+            tolerations:
               - key: "CriticalAddonsOnly"
                 operator: "Exists"
-              {{ end -}}
-              containers:
-              - name: kubedns
-                image: {{ .KubeDnsImage.RepoWithTag }}
-                resources:
-                  limits:
-                    cpu: {{ .KubeDns.DnsDeploymentResources.Limits.Cpu }}
-                    memory: {{ .KubeDns.DnsDeploymentResources.Limits.Memory }}
-                  requests:
-                    cpu: {{ .KubeDns.DnsDeploymentResources.Requests.Cpu }}
-                    memory: {{ .KubeDns.DnsDeploymentResources.Requests.Memory }}
-                livenessProbe:
-                  httpGet:
-                    path: /healthcheck/kubedns
-                    port: 10054
-                    scheme: HTTP
-                  initialDelaySeconds: 60
-                  timeoutSeconds: 5
-                  successThreshold: 1
-                  failureThreshold: 5
-                readinessProbe:
-                  httpGet:
-                    path: /readiness
-                    port: 8081
-                    scheme: HTTP
-                  initialDelaySeconds: 3
-                  timeoutSeconds: 5
-                args:
-                - --domain=cluster.local.
-                - --dns-port=10053
-                - --config-dir=/kube-dns-config
-                # This should be set to v=2 only after the new image (cut from 1.5) has
-                # been released, otherwise we will flood the logs.
-                - --v=2
-                env:
-                - name: PROMETHEUS_PORT
-                  value: "10055"
-                ports:
-                - containerPort: 10053
-                  name: dns-local
-                  protocol: UDP
-                - containerPort: 10053
-                  name: dns-tcp-local
-                  protocol: TCP
-                - containerPort: 10055
-                  name: metrics
-                  protocol: TCP
-                volumeMounts:
-                - name: kube-dns-config
-                  mountPath: /kube-dns-config
-              - name: dnsmasq
-                image: {{ .KubeDnsMasqImage.RepoWithTag }}
-                livenessProbe:
-                  httpGet:
-                    path: /healthcheck/dnsmasq
-                    port: 10054
-                    scheme: HTTP
-                  initialDelaySeconds: 60
-                  timeoutSeconds: 5
-                  successThreshold: 1
-                  failureThreshold: 5
-                args:
-                - -v=2
-                - -logtostderr
-                - -configDir=/etc/k8s/dns/dnsmasq-nanny
-                - -restartDnsmasq=true
-                - --
-                - -k
-                - --cache-size=1000
-                - --log-facility=-
-                - --server=/cluster.local/127.0.0.1#10053
-                - --server=/in-addr.arpa/127.0.0.1#10053
-                - --server=/ip6.arpa/127.0.0.1#10053
-                ports:
-                - containerPort: 53
-                  name: dns
-                  protocol: UDP
-                - containerPort: 53
-                  name: dns-tcp
-                  protocol: TCP
-                # see: https://github.com/kubernetes/kubernetes/issues/29055 for details
-                resources:
-                  requests:
-                    cpu: 150m
-                    memory: 20Mi
-                volumeMounts:
-                - name: kube-dns-config
-                  mountPath: /etc/k8s/dns/dnsmasq-nanny
-              - name: sidecar
-                image: {{ .DnsMasqMetricsImage.RepoWithTag }}
-                livenessProbe:
-                  httpGet:
-                    path: /metrics
-                    port: 10054
-                    scheme: HTTP
-                  initialDelaySeconds: 60
-                  timeoutSeconds: 5
-                  successThreshold: 1
-                  failureThreshold: 5
-                args:
-                - --v=2
-                - --logtostderr
-                - --probe=kubedns,127.0.0.1:10053,kubernetes.default.svc.cluster.local,5,A
-                - --probe=dnsmasq,127.0.0.1:53,kubernetes.default.svc.cluster.local,5,A
-                ports:
-                - containerPort: 10054
-                  name: metrics
-                  protocol: TCP
-                resources:
-                  requests:
-                    memory: 20Mi
-                    cpu: 10m
-              dnsPolicy: Default
-              serviceAccountName: kube-dns
+              - key: "node.kubernetes.io/role"
+                operator: "Equal"
+                value: "master"
+                effect: "NoSchedule"
+            {{ else -}}
+            tolerations:
+            - key: "CriticalAddonsOnly"
+              operator: "Exists"
+            {{ end -}}
+            containers:
+            - name: kubedns
+              image: {{ .KubeDnsImage.RepoWithTag }}
+              resources:
+                limits:
+                  cpu: {{ .KubeDns.DnsDeploymentResources.Limits.Cpu }}
+                  memory: {{ .KubeDns.DnsDeploymentResources.Limits.Memory }}
+                requests:
+                  cpu: {{ .KubeDns.DnsDeploymentResources.Requests.Cpu }}
+                  memory: {{ .KubeDns.DnsDeploymentResources.Requests.Memory }}
+              livenessProbe:
+                httpGet:
+                  path: /healthcheck/kubedns
+                  port: 10054
+                  scheme: HTTP
+                initialDelaySeconds: 60
+                timeoutSeconds: 5
+                successThreshold: 1
+                failureThreshold: 5
+              readinessProbe:
+                httpGet:
+                  path: /readiness
+                  port: 8081
+                  scheme: HTTP
+                initialDelaySeconds: 3
+                timeoutSeconds: 5
+              args:
+              - --domain=cluster.local.
+              - --dns-port=10053
+              - --config-dir=/kube-dns-config
+              # This should be set to v=2 only after the new image (cut from 1.5) has
+              # been released, otherwise we will flood the logs.
+              - --v=2
+              env:
+              - name: PROMETHEUS_PORT
+                value: "10055"
+              ports:
+              - containerPort: 10053
+                name: dns-local
+                protocol: UDP
+              - containerPort: 10053
+                name: dns-tcp-local
+                protocol: TCP
+              - containerPort: 10055
+                name: metrics
+                protocol: TCP
+              volumeMounts:
+              - name: kube-dns-config
+                mountPath: /kube-dns-config
+            - name: dnsmasq
+              image: {{ .KubeDnsMasqImage.RepoWithTag }}
+              livenessProbe:
+                httpGet:
+                  path: /healthcheck/dnsmasq
+                  port: 10054
+                  scheme: HTTP
+                initialDelaySeconds: 60
+                timeoutSeconds: 5
+                successThreshold: 1
+                failureThreshold: 5
+              args:
+              - -v=2
+              - -logtostderr
+              - -configDir=/etc/k8s/dns/dnsmasq-nanny
+              - -restartDnsmasq=true
+              - --
+              - -k
+              - --cache-size=1000
+              - --log-facility=-
+              - --server=/cluster.local/127.0.0.1#10053
+              - --server=/in-addr.arpa/127.0.0.1#10053
+              - --server=/ip6.arpa/127.0.0.1#10053
+              ports:
+              - containerPort: 53
+                name: dns
+                protocol: UDP
+              - containerPort: 53
+                name: dns-tcp
+                protocol: TCP
+              # see: https://github.com/kubernetes/kubernetes/issues/29055 for details
+              resources:
+                requests:
+                  cpu: 150m
+                  memory: 20Mi
+              volumeMounts:
+              - name: kube-dns-config
+                mountPath: /etc/k8s/dns/dnsmasq-nanny
+            - name: sidecar
+              image: {{ .DnsMasqMetricsImage.RepoWithTag }}
+              livenessProbe:
+                httpGet:
+                  path: /metrics
+                  port: 10054
+                  scheme: HTTP
+                initialDelaySeconds: 60
+                timeoutSeconds: 5
+                successThreshold: 1
+                failureThreshold: 5
+              args:
+              - --v=2
+              - --logtostderr
+              - --probe=kubedns,127.0.0.1:10053,kubernetes.default.svc.cluster.local,5,A
+              - --probe=dnsmasq,127.0.0.1:53,kubernetes.default.svc.cluster.local,5,A
+              ports:
+              - containerPort: 10054
+                name: metrics
+                protocol: TCP
+              resources:
+                requests:
+                  memory: 20Mi
+                  cpu: 10m
+            dnsPolicy: Default
+            serviceAccountName: kube-dns
 {{- end }}
 
   - path: /srv/kubernetes/manifests/kube-dns-svc.yaml
     content: |
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: kube-dns
-          namespace: kube-system
-          labels:
-            k8s-app: kube-dns
-            kubernetes.io/cluster-service: "true"
-            addonmanager.kubernetes.io/mode: Reconcile
-            {{- if eq .KubeDns.Provider "coredns" }}
-            kubernetes.io/name: "CoreDNS"
-            {{- else }}
-            kubernetes.io/name: "KubeDNS"
-            {{- end }}
-        spec:
-          selector:
-            k8s-app: kube-dns
-          clusterIP: {{.DNSServiceIP}}
-          ports:
-          - name: dns
-            port: 53
-            protocol: UDP
-          - name: dns-tcp
-            port: 53
-            protocol: TCP
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: kube-dns
+        namespace: kube-system
+        labels:
+          k8s-app: kube-dns
+          kubernetes.io/cluster-service: "true"
+          addonmanager.kubernetes.io/mode: Reconcile
+          {{- if eq .KubeDns.Provider "coredns" }}
+          kubernetes.io/name: "CoreDNS"
+          {{- else }}
+          kubernetes.io/name: "KubeDNS"
+          {{- end }}
+      spec:
+        selector:
+          k8s-app: kube-dns
+        clusterIP: {{.DNSServiceIP}}
+        ports:
+        - name: dns
+          port: 53
+          protocol: UDP
+        - name: dns-tcp
+          port: 53
+          protocol: TCP
 
   - path: /srv/kubernetes/manifests/kube-dns-pdb.yaml
     content: |
@@ -4424,190 +4452,194 @@ write_files:
 
   - path: /srv/kubernetes/manifests/metrics-server-de.yaml
     content: |
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: metrics-server
-          namespace: kube-system
-          labels:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: metrics-server
+        namespace: kube-system
+        labels:
+          k8s-app: metrics-server
+        annotations:
+          scheduler.alpha.kubernetes.io/critical-pod: ''
+      spec:
+        selector:
+          matchLabels:
             k8s-app: metrics-server
-          annotations:
-            scheduler.alpha.kubernetes.io/critical-pod: ''
-        spec:
-          selector:
-            matchLabels:
+        template:
+          metadata:
+            name: metrics-server
+            labels:
               k8s-app: metrics-server
-          template:
-            metadata:
-              name: metrics-server
-              labels:
-                k8s-app: metrics-server
-            spec:
-              priorityClassName: system-cluster-critical
-              serviceAccountName: metrics-server
-              containers:
-              - name: metrics-server
-                image: {{ .MetricsServerImage.RepoWithTag }}
-                imagePullPolicy: Always
-                command:
-                - /metrics-server
-                - --logtostderr
-                - --v=2
-                - --kubelet-insecure-tls
-                - --requestheader-client-ca-file=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-                - --requestheader-username-headers=X-Remote-User
-                - --requestheader-group-headers=X-Remote-Group
-                - --requestheader-extra-headers-prefix=X-Remote-Extra
-                resources:
-                  limits:
-                    cpu: 500m
-                    memory: 512Mi
-                  requests:
-                    cpu: 80m
-                    memory: 200Mi
-                volumeMounts:
-                - name: tmp-dir
-                  mountPath: /tmp
-              volumes:
+          spec:
+            priorityClassName: system-cluster-critical
+            serviceAccountName: metrics-server
+            containers:
+            - name: metrics-server
+              image: {{ .MetricsServerImage.RepoWithTag }}
+              imagePullPolicy: Always
+              command:
+              - /metrics-server
+              - --logtostderr
+              - --v=2
+              - --kubelet-insecure-tls
+              - --requestheader-client-ca-file=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              - --requestheader-username-headers=X-Remote-User
+              - --requestheader-group-headers=X-Remote-Group
+              - --requestheader-extra-headers-prefix=X-Remote-Extra
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+                requests:
+                  cpu: 80m
+                  memory: 200Mi
+              volumeMounts:
               - name: tmp-dir
-                emptyDir: {}
+                mountPath: /tmp
+            volumes:
+            - name: tmp-dir
+              emptyDir: {}
 
   - path: /srv/kubernetes/manifests/metrics-server-apisvc.yaml
     content: |
-        apiVersion: apiregistration.k8s.io/v1beta1
-        kind: APIService
-        metadata:
-          name: v1beta1.metrics.k8s.io
-        spec:
-          service:
-            name: metrics-server
-            namespace: kube-system
-          group: metrics.k8s.io
-          version: v1beta1
-          insecureSkipTLSVerify: true
-          groupPriorityMinimum: 100
-          versionPriority: 100
+      apiVersion: apiregistration.k8s.io/v1beta1
+      kind: APIService
+      metadata:
+        name: v1beta1.metrics.k8s.io
+      spec:
+        service:
+          name: metrics-server
+          namespace: kube-system
+        group: metrics.k8s.io
+        version: v1beta1
+        insecureSkipTLSVerify: true
+        groupPriorityMinimum: 100
+        versionPriority: 100
 
   - path: /srv/kubernetes/manifests/metrics-server-svc.yaml
     content: |
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: metrics-server
-          namespace: kube-system
-          labels:
-            kubernetes.io/name: "Metrics-server"
-            kubernetes.io/cluster-service: "true"
-        spec:
-          selector:
-            k8s-app: metrics-server
-          ports:
-          - port: 443
-            protocol: TCP
-            targetPort: 443
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: metrics-server
+        namespace: kube-system
+        labels:
+          kubernetes.io/name: "Metrics-server"
+          kubernetes.io/cluster-service: "true"
+      spec:
+        selector:
+          k8s-app: metrics-server
+        ports:
+        - port: 443
+          protocol: TCP
+          targetPort: 443
 
   - path: /srv/kubernetes/manifests/tiller.yaml
     content: |
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          creationTimestamp: null
-          labels:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: helm
+          name: tiller
+        name: tiller-deploy
+        namespace: kube-system
+      spec:
+        selector:
+          matchLabels:
             app: helm
             name: tiller
-          name: tiller-deploy
-          namespace: kube-system
-        spec:
-          strategy: {}
-          template:
-            metadata:
-              creationTimestamp: null
-              labels:
-                app: helm
+        strategy: {}
+        template:
+          metadata:
+            creationTimestamp: null
+            labels:
+              app: helm
+              name: tiller
+            # Addition to the default tiller deployment for prioritizing tiller over other non-critical pods with rescheduler
+            annotations:
+              scheduler.alpha.kubernetes.io/critical-pod: ''
+          spec:
+            serviceAccountName: tiller
+            priorityClassName: system-cluster-critical
+            tolerations:
+            # Additions to the default tiller deployment for allowing to schedule tiller onto controller nodes
+            # so that helm can be used to install pods running only on controller nodes
+            - key: "node.kubernetes.io/role"
+              operator: "Equal"
+              value: "master"
+              effect: "NoSchedule"
+            - key: "CriticalAddonsOnly"
+              operator: "Exists"
+            containers:
+            - env:
+              - name: TILLER_NAMESPACE
+                value: kube-system
+              image: {{.TillerImage.RepoWithTag}}
+              imagePullPolicy: IfNotPresent
+              livenessProbe:
+                httpGet:
+                  path: /liveness
+                  port: 44135
+                initialDelaySeconds: 1
+                timeoutSeconds: 1
+              name: tiller
+              ports:
+              - containerPort: 44134
                 name: tiller
-              # Addition to the default tiller deployment for prioritizing tiller over other non-critical pods with rescheduler
-              annotations:
-                scheduler.alpha.kubernetes.io/critical-pod: ''
-            spec:
-              serviceAccountName: tiller
-              priorityClassName: system-cluster-critical
-              tolerations:
-              # Additions to the default tiller deployment for allowing to schedule tiller onto controller nodes
-              # so that helm can be used to install pods running only on controller nodes
-              - key: "node.kubernetes.io/role"
-                operator: "Equal"
-                value: "master"
-                effect: "NoSchedule"
-              - key: "CriticalAddonsOnly"
-                operator: "Exists"
-              containers:
-              - env:
-                - name: TILLER_NAMESPACE
-                  value: kube-system
-                image: {{.TillerImage.RepoWithTag}}
-                imagePullPolicy: IfNotPresent
-                livenessProbe:
-                  httpGet:
-                    path: /liveness
-                    port: 44135
-                  initialDelaySeconds: 1
-                  timeoutSeconds: 1
-                name: tiller
-                ports:
-                - containerPort: 44134
-                  name: tiller
-                readinessProbe:
-                  httpGet:
-                    path: /readiness
-                    port: 44135
-                  initialDelaySeconds: 1
-                  timeoutSeconds: 1
-                resources: {}
-              nodeSelector:
-                beta.kubernetes.io/os: linux
-        status: {}
-        ---
-        apiVersion: v1
-        kind: Service
-        metadata:
-          creationTimestamp: null
-          labels:
-            app: helm
-            name: tiller
-          name: tiller-deploy
-          namespace: kube-system
-        spec:
-          ports:
-          - name: tiller
-            port: 44134
-            targetPort: tiller
-          selector:
-            app: helm
-            name: tiller
-          type: ClusterIP
-        status:
-          loadBalancer: {}
+              readinessProbe:
+                httpGet:
+                  path: /readiness
+                  port: 44135
+                initialDelaySeconds: 1
+                timeoutSeconds: 1
+              resources: {}
+            nodeSelector:
+              beta.kubernetes.io/os: linux
+      status: {}
+      ---
+      apiVersion: v1
+      kind: Service
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: helm
+          name: tiller
+        name: tiller-deploy
+        namespace: kube-system
+      spec:
+        ports:
+        - name: tiller
+          port: 44134
+          targetPort: tiller
+        selector:
+          app: helm
+          name: tiller
+        type: ClusterIP
+      status:
+        loadBalancer: {}
 
   - path: /srv/kubernetes/manifests/tiller-rbac.yaml
     content: |
-        apiVersion: v1
-        kind: ServiceAccount
-        metadata:
-          name: tiller
-          namespace: kube-system
-        ---
-        apiVersion: rbac.authorization.k8s.io/v1
-        kind: ClusterRoleBinding
-        metadata:
-          name: tiller
-        subjects:
-        - kind: ServiceAccount
-          name: tiller
-          namespace: kube-system
-        roleRef:
-          kind: ClusterRole
-          name: cluster-admin
-          apiGroup: rbac.authorization.k8s.io
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: tiller
+        namespace: kube-system
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: tiller
+      subjects:
+      - kind: ServiceAccount
+        name: tiller
+        namespace: kube-system
+      roleRef:
+        kind: ClusterRole
+        name: cluster-admin
+        apiGroup: rbac.authorization.k8s.io
 
   - path: {{.KubernetesManifestPlugin.ManifestListFile.Path}}
     encoding: gzip+base64
@@ -4655,65 +4687,65 @@ write_files:
 {{- if checkVersion ">= 1.14" .K8sVer }}
   - path: /etc/kubernetes/kubeconfig/worker-bootstrap.yaml
     content: |
-        apiVersion: v1
-        kind: Config
-        clusters:
-        - name: local
-          cluster:
-            certificate-authority: /etc/kubernetes/ssl/ca.pem
-            server: https://127.0.0.1
-        users:
-        - name: tls-bootstrap
-          user:
-            token: $KUBELET_BOOTSTRAP_TOKEN
-        contexts:
-        - context:
-            cluster: local
-            user: tls-bootstrap
-          name: tls-bootstrap-context
-        current-context: tls-bootstrap-context
+      apiVersion: v1
+      kind: Config
+      clusters:
+      - name: local
+        cluster:
+          certificate-authority: /etc/kubernetes/ssl/ca.pem
+          server: https://127.0.0.1
+      users:
+      - name: tls-bootstrap
+        user:
+          token: $KUBELET_BOOTSTRAP_TOKEN
+      contexts:
+      - context:
+          cluster: local
+          user: tls-bootstrap
+        name: tls-bootstrap-context
+      current-context: tls-bootstrap-context
 
   - path: /etc/kubernetes/kubeconfig/kubelet.yaml
     content: |
-        apiVersion: v1
-        kind: Config
-        clusters:
-        - name: local
-          cluster:
-            certificate-authority: /etc/kubernetes/ssl/ca.pem
-            server: https://127.0.0.1
-        users:
-        - name: kubelet
-          user:
-            client-certificate: /etc/kubernetes/ssl/kubelet-client-current.pem
-            client-key: /etc/kubernetes/ssl/kubelet.key
-        contexts:
-        - context:
-            cluster: local
-            user: kubelet
-          name: kubelet-context
-        current-context: kubelet-context
+      apiVersion: v1
+      kind: Config
+      clusters:
+      - name: local
+        cluster:
+          certificate-authority: /etc/kubernetes/ssl/ca.pem
+          server: https://127.0.0.1
+      users:
+      - name: kubelet
+        user:
+          client-certificate: /etc/kubernetes/ssl/kubelet-client-current.pem
+          client-key: /etc/kubernetes/ssl/kubelet.key
+      contexts:
+      - context:
+          cluster: local
+          user: kubelet
+        name: kubelet-context
+      current-context: kubelet-context
 {{- else }}
   - path: /etc/kubernetes/kubeconfig/kubelet.yaml
     content: |
-        apiVersion: v1
-        kind: Config
-        clusters:
-        - name: local
-          cluster:
-            certificate-authority: /etc/kubernetes/ssl/ca.pem
-            server: https://127.0.0.1
-        users:
-        - name: kubelet
-          user:
-            client-certificate: /etc/kubernetes/ssl/worker.pem
-            client-key: /etc/kubernetes/ssl/worker-key.pem
-        contexts:
-        - context:
-            cluster: local
-            user: kubelet
-          name: kubelet-context
-        current-context: kubelet-context
+      apiVersion: v1
+      kind: Config
+      clusters:
+      - name: local
+        cluster:
+          certificate-authority: /etc/kubernetes/ssl/ca.pem
+          server: https://127.0.0.1
+      users:
+      - name: kubelet
+        user:
+          client-certificate: /etc/kubernetes/ssl/worker.pem
+          client-key: /etc/kubernetes/ssl/worker-key.pem
+      contexts:
+      - context:
+          cluster: local
+          user: kubelet
+        name: kubelet-context
+      current-context: kubelet-context
 {{- end }}
 
   - path: /etc/kubernetes/ssl/worker.pem
@@ -4792,86 +4824,87 @@ write_files:
   # File needed on every node (used by the kube-proxy DaemonSet), including controllers
   - path: /etc/kubernetes/kubeconfig/kube-proxy.yaml
     content: |
-        apiVersion: v1
-        kind: Config
-        clusters:
-        - name: local
-          cluster:
-            certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-            server: https://127.0.0.1
-        users:
-        - name: kube-proxy
-          user:
-            tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-        contexts:
-        - context:
-            cluster: local
-            user: kube-proxy
-          name: kube-proxy-context
-        current-context: kube-proxy-context
+      apiVersion: v1
+      kind: Config
+      clusters:
+      - name: local
+        cluster:
+          certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          server: https://127.0.0.1
+      users:
+      - name: kube-proxy
+        user:
+          tokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      contexts:
+      - context:
+          cluster: local
+          user: kube-proxy
+        name: kube-proxy-context
+      current-context: kube-proxy-context
 
   - path: /etc/kubernetes/kubeconfig/kube-controller-manager.yaml
     content: |
-        apiVersion: v1
-        kind: Config
-        clusters:
-        - name: local
-          cluster:
-            certificate-authority: /etc/kubernetes/ssl/ca.pem
-            server: https://127.0.0.1
-        users:
-        - name: kube-controller-manager
-          user:
-            client-certificate: /etc/kubernetes/ssl/kube-controller-manager.pem
-            client-key: /etc/kubernetes/ssl/kube-controller-manager-key.pem
-        contexts:
-        - context:
-            cluster: local
-            user: kube-controller-manager
-          name: kube-controller-manager-context
-        current-context: kube-controller-manager-context
+      apiVersion: v1
+      kind: Config
+      clusters:
+      - name: local
+        cluster:
+          certificate-authority: /etc/kubernetes/ssl/ca.pem
+          server: https://127.0.0.1
+      users:
+      - name: kube-controller-manager
+        user:
+          client-certificate: /etc/kubernetes/ssl/kube-controller-manager.pem
+          client-key: /etc/kubernetes/ssl/kube-controller-manager-key.pem
+      contexts:
+      - context:
+          cluster: local
+          user: kube-controller-manager
+        name: kube-controller-manager-context
+      current-context: kube-controller-manager-context
 
   - path: /etc/kubernetes/kubeconfig/kube-scheduler.yaml
     content: |
-        apiVersion: v1
-        kind: Config
-        clusters:
-        - name: local
-          cluster:
-            certificate-authority: /etc/kubernetes/ssl/ca.pem
-            server: https://127.0.0.1
-        users:
-        - name: kube-scheduler
-          user:
-            client-certificate: /etc/kubernetes/ssl/kube-scheduler.pem
-            client-key: /etc/kubernetes/ssl/kube-scheduler-key.pem
-        contexts:
-        - context:
-            cluster: local
-            user: kube-scheduler
-          name: kube-scheduler-context
-        current-context: kube-scheduler-context
+      apiVersion: v1
+      kind: Config
+      clusters:
+      - name: local
+        cluster:
+          certificate-authority: /etc/kubernetes/ssl/ca.pem
+          server: https://127.0.0.1
+      users:
+      - name: kube-scheduler
+        user:
+          client-certificate: /etc/kubernetes/ssl/kube-scheduler.pem
+          client-key: /etc/kubernetes/ssl/kube-scheduler-key.pem
+      contexts:
+      - context:
+          cluster: local
+          user: kube-scheduler
+        name: kube-scheduler-context
+      current-context: kube-scheduler-context
 
   - path: /etc/kubernetes/kubeconfig/admin.yaml
     content: |
-        apiVersion: v1
-        kind: Config
-        clusters:
-        - name: local
-          cluster:
-            certificate-authority: /etc/kubernetes/ssl/ca.pem
-            server: https://127.0.0.1
-        users:
-        - name: admin
-          user:
-            client-certificate: /etc/kubernetes/ssl/admin.pem
-            client-key: /etc/kubernetes/ssl/admin-key.pem
-        contexts:
-        - context:
-            cluster: local
-            user: admin
-          name: admin-context
-        current-context: admin-context
+      apiVersion: v1
+      kind: Config
+      clusters:
+      - name: local
+        cluster:
+          certificate-authority: /etc/kubernetes/ssl/ca.pem
+          server: https://127.0.0.1
+      users:
+      - name: admin
+        user:
+          client-certificate: /etc/kubernetes/ssl/admin.pem
+          client-key: /etc/kubernetes/ssl/admin-key.pem
+      contexts:
+      - context:
+          cluster: local
+          user: admin
+        name: admin-context
+      current-context: admin-context
+
 # AdvancedAuditing is enabled by default since K8S v1.8.
 # With AdvancedAuditing, you have to provide a audit policy file.
 # Otherwise no audit logs are recorded at all.
@@ -5203,6 +5236,9 @@ write_files:
           rollingUpdate:
             maxUnavailable: 100%
           type: RollingUpdate
+        selector:
+          matchLabels:
+            name: nvidia-driver-installer
         template:
           metadata:
             labels:
@@ -5267,6 +5303,9 @@ write_files:
           rollingUpdate:
             maxUnavailable: 100%
           type: RollingUpdate
+        selector:
+          matchLabels:
+            k8s-app: nvidia-gpu-device-plugin
         template:
           metadata:
             labels:

@@ -12,6 +12,9 @@ spec:
     rollingUpdate:
       maxUnavailable: 100%
     type: RollingUpdate
+  selector:
+    matchLabels:
+      name: kube2iam
   template:
     metadata:
       labels:

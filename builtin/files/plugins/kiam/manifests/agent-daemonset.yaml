@@ -8,6 +8,10 @@ spec:
     rollingUpdate:
       maxUnavailable: 100%
     type: RollingUpdate
+  selector:
+    matchLabels:
+      app: kiam
+      role: agent
   template:
     metadata:
       annotations:

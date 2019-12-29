@@ -8,6 +8,9 @@ metadata:
   namespace: kube-system
 spec:
   replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: cluster-autoscaler
   template:
     metadata:
       labels:
