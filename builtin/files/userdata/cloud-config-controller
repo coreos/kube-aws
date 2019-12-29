@@ -3236,9 +3236,9 @@ write_files:
           rollingUpdate:
             maxUnavailable: 100%
           type: RollingUpdate
-      selector:
-        matchLabels:
-          k8s-app: kube-proxy
+        selector:
+          matchLabels:
+            k8s-app: kube-proxy
         template:
           metadata:
             labels:
