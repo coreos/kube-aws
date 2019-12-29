@@ -254,4 +254,8 @@ func (m ContainerVolumeMount) ToRktRunArgs() []string {
 	return args
 }
 
+func (m ContainerVolumeMount) MountDockerRW() string {
+	return fmt.Sprintf("-v %s:%s:rw", m, m)
+}
+
 type Values map[string]interface{}

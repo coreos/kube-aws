@@ -16,7 +16,7 @@ spec:
     - host: dex.example.com
       http:
         paths:
-        - path: /
-          backend:
-            serviceName: dex
-            servicePort: 5556
+          - path: /
+            backend:
+              serviceName: dex
+              servicePort: 5556

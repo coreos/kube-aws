@@ -333,30 +333,6 @@ coreos:
         EnvironmentFile=/etc/environment
         EnvironmentFile=-/etc/etcd-environment
         EnvironmentFile=-/etc/default/kubelet
-        Environment=KUBELET_IMAGE_TAG={{.K8sVer}}
-        Environment=KUBELET_IMAGE_URL={{ .HyperkubeImage.RktRepoWithoutTag }}
-        Environment="RKT_RUN_ARGS={{.HyperkubeImage.Options}}\
-        --volume dns,kind=host,source=/etc/resolv.conf \
-        --mount volume=dns,target=/etc/resolv.conf \
-        --volume var-lib-cni,kind=host,source=/var/lib/cni \
-        --mount volume=var-lib-cni,target=/var/lib/cni \
-        --volume var-run-calico,kind=host,source=/var/run/calico \
-        --mount volume=var-run-calico,target=/var/run/calico \
-        --volume var-lib-calico,kind=host,source=/var/lib/calico \
-        --mount volume=var-lib-calico,target=/var/lib/calico \
-        --volume var-log,kind=host,source=/var/log \
-        {{ if gt (len .Kubelet.Mounts) 0 -}}
-        {{ range $i, $m := .Kubelet.Mounts -}}
-        {{ range $j, $a := $m.ToRktRunArgs -}}
-        {{ $a }} \
-        {{ end -}}
-        {{ end -}}
-        {{ end -}}
-        --mount volume=var-log,target=/var/log \
-        --volume cni-bin,kind=host,source=/opt/cni/bin \
-        --mount volume=cni-bin,target=/opt/cni/bin \
-        --volume etc-kubernetes,kind=host,source=/etc/kubernetes \
-        --mount volume=etc-kubernetes,target=/etc/kubernetes"
         ExecStartPre=/usr/bin/systemctl is-active cfn-etcd-environment.service
         ExecStartPre=/usr/bin/mkdir -p /var/lib/cni
         ExecStartPre=/usr/bin/mkdir -p /var/log/containers
@@ -365,9 +341,27 @@ coreos:
         ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/cni/net.d
         ExecStartPre=/usr/bin/mkdir -p /var/run/calico
         ExecStartPre=/usr/bin/mkdir -p /var/lib/calico
+        ExecStartPre=/usr/bin/mkdir -p /var/lib/kubelet
+        ExecStartPre=/bin/bash -c "if ! grep -q "/var/lib/kubelet" /proc/mounts; then mount --bind /var/lib/kubelet /var/lib/kubelet && mount --make-shared /var/lib/kubelet; fi"
         ExecStartPre=/bin/sed -e "s/COREOS_PRIVATE_IPV4/${COREOS_PRIVATE_IPV4}/g" -i /etc/kubernetes/config/kubelet.yaml
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/manifests /srv/kubernetes/manifests  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
-        ExecStart=/bin/sh -c "exec /usr/lib/coreos/kubelet-wrapper \
+        ExecStartPre=-/bin/docker rm -f kubelet
+        ExecStart=/bin/sh -c "docker run --name kubelet --privileged --net=host --pid=host \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -v /etc/resolv.conf:/etc/resolv.conf:ro \
+        -v /var/lib/cni:/var/lib/cni:rw \
+        -v /var/run/calico:/var/run/calico:rw \
+        -v /var/lib/calico:/var/lib/calico:rw \
+        -v /var/log:/var/log:rw \
+        -v /opt/cni/bin:/opt/cni/bin:rw \
+        -v /etc/kubernetes:/etc/kubernetes:rw \
+        -v /var/lib/kubelet:/var/lib/kubelet:shared \
+        {{- if gt (len .Kubelet.Mounts) 0 }}
+          {{- range .Kubelet.Mounts }}
+        {{ .MountDockerRW }} \
+          {{- end }}
+        {{- end }}
+        {{ .HyperkubeImage.RepoWithTag }} /kubelet \
         {{ if checkVersion ">= 1.14" .K8sVer -}}
         --bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \
         {{- end }}
@@ -380,12 +374,11 @@ coreos:
         --require-kubeconfig \
         {{end -}}
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
-        {{/* Work-around until https://github.com/kubernetes/kubernetes/issues/43967 is fixed via https://github.com/kubernetes/kubernetes/pull/43995 */ -}}
         --cni-bin-dir=/opt/cni/bin \
         --network-plugin={{.K8sNetworkPlugin}} \
         --container-runtime={{.ContainerRuntime}} \
         --register-node=true \
-        --node-labels=node.kubernetes.io/role="master",node-role.kubernetes.io/master=\"\",kubernetes.io/role=master,service-cidr={{ .ServiceCIDR | toLabel }}{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
+        --node-labels=node.kubernetes.io/role="master",service-cidr={{ .ServiceCIDR | toLabel }}{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
         --register-with-taints=node.kubernetes.io/role=master:NoSchedule \
         --config=/etc/kubernetes/config/kubelet.yaml \
         {{- if .Kubernetes.Networking.AmazonVPC.Enabled }}
@@ -395,8 +388,8 @@ coreos:
         {{- range $f := .Kubelet.Flags}}
         --{{$f.Name}}={{$f.Value}} \
         {{- end }}
-        $KUBELET_OPTS \
-        "
+        $KUBELET_OPTS"
+        ExecStop=/usr/bin/docker rm -f kubelet
         Restart=always
         RestartSec=10
 
@@ -1451,7 +1444,7 @@ write_files:
       # as the Calico CNI plugins and network config on
       # each master and worker node in a Kubernetes cluster.
       kind: DaemonSet
-      apiVersion: extensions/v1beta1
+      apiVersion: apps/v1
       metadata:
         name: canal-master
         namespace: kube-system
@@ -1673,7 +1666,7 @@ write_files:
       # as the Calico CNI plugins and network config on
       # each master and worker node in a Kubernetes cluster.
       kind: DaemonSet
-      apiVersion: extensions/v1beta1
+      apiVersion: apps/v1
       metadata:
         name: canal-node
         namespace: kube-system
@@ -2336,7 +2329,7 @@ write_files:
             }
           }
       ---
-      apiVersion: extensions/v1beta1
+      apiVersion: apps/v1
       kind: DaemonSet
       metadata:
         name: flannel
@@ -2449,7 +2442,7 @@ write_files:
   - path: /srv/kubernetes/manifests/kube-resources-autosave-de.yaml
     content: |
       ---
-      apiVersion: extensions/v1beta1
+      apiVersion: apps/v1
       kind: Deployment
       metadata:
         name: kube-resources-autosave
@@ -2642,7 +2635,7 @@ write_files:
   - path: /srv/kubernetes/manifests/kube-node-drainer-asg-status-updater-de.yaml
     content: |
         kind: Deployment
-        apiVersion: extensions/v1beta1
+        apiVersion: apps/v1
         metadata:
           name: kube-node-drainer-asg-status-updater
           namespace: kube-system
@@ -2727,7 +2720,7 @@ write_files:
   - path: /srv/kubernetes/manifests/kube-node-drainer-ds.yaml
     content: |
         kind: DaemonSet
-        apiVersion: extensions/v1beta1
+        apiVersion: apps/v1
         metadata:
           name: kube-node-drainer-ds
           namespace: kube-system
@@ -3215,7 +3208,7 @@ write_files:
 
   - path: /srv/kubernetes/manifests/kube-proxy-ds.yaml
     content: |
-        apiVersion: extensions/v1beta1
+        apiVersion: apps/v1
         kind: DaemonSet
         metadata:
           name: kube-proxy
@@ -3353,7 +3346,7 @@ write_files:
           - --tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
           - --client-ca-file=/etc/kubernetes/ssl/ca.pem
           - --service-account-key-file=/etc/kubernetes/ssl/service-account-key.pem
-          - --runtime-config=extensions/v1beta1/networkpolicies=true,extensions/v1beta1/podsecuritypolicy=true{{if .Experimental.Admission.Initializers.Enabled}},admissionregistration.k8s.io/v1alpha1{{end}}
+          - --runtime-config=networking.k8s.io/v1/networkpolicies=true,policy/v1beta1/podsecuritypolicy=true{{if .Experimental.Admission.Initializers.Enabled}},admissionregistration.k8s.io/v1alpha1{{end}}
           {{- if .ControllerFeatureGates.Enabled }}
           - --feature-gates={{.ControllerFeatureGates.String}}
           {{- end }}
@@ -3627,7 +3620,7 @@ write_files:
   {{- if .Addons.Rescheduler.Enabled }}
   - path: /srv/kubernetes/manifests/kube-rescheduler-de.yaml
     content: |
-      apiVersion: extensions/v1beta1
+      apiVersion: apps/v1
       kind: Deployment
       metadata:
         name: kube-rescheduler
@@ -3943,7 +3936,7 @@ write_files:
 
   - path: /srv/kubernetes/manifests/kube-dns-autoscaler-de.yaml
     content: |
-        apiVersion: extensions/v1beta1
+        apiVersion: apps/v1
         kind: Deployment
         metadata:
           name: kube-dns-autoscaler
@@ -3986,7 +3979,7 @@ write_files:
 {{ if .KubeDns.NodeLocalResolver }}
   - path: /srv/kubernetes/manifests/dnsmasq-node-ds.yaml
     content: |
-        apiVersion: extensions/v1beta1
+        apiVersion: apps/v1
         kind: DaemonSet
         metadata:
           name: dnsmasq-node
@@ -4094,7 +4087,7 @@ write_files:
 {{- if eq .KubeDns.Provider "coredns" }}
   - path: /srv/kubernetes/manifests/coredns-de.yaml
     content: |
-        apiVersion: extensions/v1beta1
+        apiVersion: apps/v1
         kind: Deployment
         metadata:
           name: coredns
@@ -4209,7 +4202,7 @@ write_files:
 {{- else }}
   - path: /srv/kubernetes/manifests/kube-dns-de.yaml
     content: |
-        apiVersion: extensions/v1beta1
+        apiVersion: apps/v1
         kind: Deployment
         metadata:
           name: kube-dns
@@ -4431,7 +4424,7 @@ write_files:
 
   - path: /srv/kubernetes/manifests/metrics-server-de.yaml
     content: |
-        apiVersion: extensions/v1beta1
+        apiVersion: apps/v1
         kind: Deployment
         metadata:
           name: metrics-server
@@ -4515,7 +4508,7 @@ write_files:
 
   - path: /srv/kubernetes/manifests/tiller.yaml
     content: |
-        apiVersion: extensions/v1beta1
+        apiVersion: apps/v1
         kind: Deployment
         metadata:
           creationTimestamp: null
@@ -5095,7 +5088,7 @@ write_files:
         namespace: kube-system
       ---
       kind: DaemonSet
-      apiVersion: extensions/v1beta1
+      apiVersion: apps/v1
       metadata:
         name: aws-node
         namespace: kube-system
@@ -5196,7 +5189,7 @@ write_files:
 {{if .Experimental.GpuSupport.Enabled }}
   - path: /srv/kubernetes/manifests/nvidia-driver-installer.yaml
     content: |
-      apiVersion: extensions/v1beta1
+      apiVersion: apps/v1
       kind: DaemonSet
       metadata:
         name: nvidia-driver-installer
@@ -5261,7 +5254,7 @@ write_files:
               name: pause
       ---
 
-      apiVersion: extensions/v1beta1
+      apiVersion: apps/v1
       kind: DaemonSet
       metadata:
         name: nvidia-gpu-device-plugin
