@@ -345,13 +345,13 @@ coreos:
         --volume var-lib-calico,kind=host,source=/var/lib/calico \
         --mount volume=var-lib-calico,target=/var/lib/calico \
         --volume var-log,kind=host,source=/var/log \
-        {{ if gt (len .Kubelet.Mounts) 0 -}}
+        {{- if gt (len .Kubelet.Mounts) 0 }}
         {{ range $i, $m := .Kubelet.Mounts -}}
         {{ range $j, $a := $m.ToRktRunArgs -}}
         {{ $a }} \
-        {{ end -}}
-        {{ end -}}
-        {{ end -}}
+        {{- end }}
+        {{- end }}
+        {{- end }}
         --mount volume=var-log,target=/var/log \
         --volume cni-bin,kind=host,source=/opt/cni/bin \
         --mount volume=cni-bin,target=/opt/cni/bin \
@@ -368,17 +368,17 @@ coreos:
         ExecStartPre=/bin/sed -e "s/COREOS_PRIVATE_IPV4/${COREOS_PRIVATE_IPV4}/g" -i /etc/kubernetes/config/kubelet.yaml
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/manifests /srv/kubernetes/manifests  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
         ExecStart=/bin/sh -c "exec /usr/lib/coreos/kubelet-wrapper \
-        {{ if checkVersion ">= 1.14" .K8sVer -}}
+        {{- if checkVersion ">= 1.14" .K8sVer }}
         --bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \
         {{- end }}
         {{ if .Kubelet.Kubeconfig -}}
         --kubeconfig={{ .Kubelet.Kubeconfig }} \
-        {{ else -}}
+        {{- else }}
         --kubeconfig=/etc/kubernetes/kubeconfig/kubelet.yaml \
-        {{ end -}}
-        {{if checkVersion "<1.10" .K8sVer -}}
+        {{- end }}
+        {{- if checkVersion "<1.10" .K8sVer }}
         --require-kubeconfig \
-        {{end -}}
+        {{- end }}
         --cni-conf-dir=/etc/kubernetes/cni/net.d \
         {{/* Work-around until https://github.com/kubernetes/kubernetes/issues/43967 is fixed via https://github.com/kubernetes/kubernetes/pull/43995 */ -}}
         --cni-bin-dir=/opt/cni/bin \
