@@ -362,7 +362,7 @@ coreos:
           {{- end }}
         {{- end }}
         {{ .HyperkubeImage.RepoWithTag }} /kubelet \
-        {{ if checkVersion ">= 1.14" .K8sVer -}}
+        {{- if checkVersion ">= 1.14" .K8sVer }}
         --bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \
         {{- end }}
         {{ if .Kubelet.Kubeconfig -}}
