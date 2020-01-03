@@ -3430,7 +3430,7 @@ write_files:
                     fallthrough in-addr.arpa ip6.arpa
                 }
                 {{- if and (eq .KubeDns.Provider "coredns") .KubeDns.ExtraCoreDNSConfig }}
-                {{ .KubeDns.ExtraCoreDNSConfig }}
+{{ .KubeDns.ExtraCoreDNSConfig | indent 16 }}
                 {{- end }}
                 prometheus :9153
                 proxy . /etc/resolv.conf
