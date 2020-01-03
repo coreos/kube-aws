@@ -329,6 +329,7 @@ coreos:
         After=decrypt-assets.service
 
         [Service]
+
         # EnvironmentFile=/etc/environment allows the reading of COREOS_PRIVATE_IPV4
         EnvironmentFile=/etc/environment
         EnvironmentFile=-/etc/etcd-environment
@@ -342,6 +343,7 @@ coreos:
         ExecStartPre=/usr/bin/mkdir -p /var/run/calico
         ExecStartPre=/usr/bin/mkdir -p /var/lib/calico
         ExecStartPre=/usr/bin/mkdir -p /var/lib/kubelet
+        ExecStartPre=/usr/bin/mkdir -p /var/lib/docker
         ExecStartPre=/bin/bash -c "if ! grep -q "/var/lib/kubelet" /proc/mounts; then mount --bind /var/lib/kubelet /var/lib/kubelet && mount --make-shared /var/lib/kubelet; fi"
         ExecStartPre=/bin/sed -e "s/COREOS_PRIVATE_IPV4/${COREOS_PRIVATE_IPV4}/g" -i /etc/kubernetes/config/kubelet.yaml
         ExecStartPre=/bin/sh -ec "find /etc/kubernetes/manifests /srv/kubernetes/manifests  -maxdepth 1 -type f | xargs --no-run-if-empty sed -i 's|#ETCD_ENDPOINTS#|${ETCD_ENDPOINTS}|'"
@@ -356,6 +358,7 @@ coreos:
         -v /opt/cni/bin:/opt/cni/bin:rw \
         -v /etc/kubernetes:/etc/kubernetes:rw \
         -v /var/lib/kubelet:/var/lib/kubelet:shared \
+        -v /var/lib/docker:/var/lib/docker:rshared \
         {{- if gt (len .Kubelet.Mounts) 0 }}
           {{- range .Kubelet.Mounts }}
         {{ .MountDockerRW }} \
@@ -587,6 +590,8 @@ write_files:
     content: |
       kind: KubeletConfiguration
       apiVersion: kubelet.config.k8s.io/v1beta1
+      kubeletCgroups: /systemd/system.slice
+      SystemCgroups: /systemd/system.slice
       evictionHard:
         memory.available:  "200Mi"
       staticPodPath: /etc/kubernetes/manifests
