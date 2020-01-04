@@ -484,7 +484,7 @@ coreos:
         [Service]
         Type=oneshot
         EnvironmentFile={{.StackNameEnvFileName}}
-        ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl  --insecure -s -m 20 -f  > /dev/null ; then break ; fi;  done"
+        ExecStartPre=/usr/bin/bash -c "while sleep 1; do if /usr/bin/curl  --insecure -s -m 20 -f https://127.0.0.1:10250/healthz >/dev/null ; then break ; fi;  done"
         ExecStart=/opt/bin/cfn-signal
 {{end}}
 
