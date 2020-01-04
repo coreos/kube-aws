@@ -328,6 +328,9 @@ coreos:
         ExecStartPre=/bin/sed -e "s/COREOS_PRIVATE_IPV4/${COREOS_PRIVATE_IPV4}/g" -i /etc/kubernetes/config/kubelet.yaml
         ExecStartPre=-/bin/docker rm -f kubelet
         ExecStart=/bin/sh -c "docker run --name kubelet --privileged --net=host --pid=host \
+        -v /:/rootfs:ro \
+        -v /sys:/sys:ro \
+        -v /dev:/dev \
         -v /var/run/docker.sock:/var/run/docker.sock \
         -v /etc/resolv.conf:/etc/resolv.conf:ro \
         -v /var/lib/cni:/var/lib/cni:rw \
@@ -618,8 +621,6 @@ write_files:
     content: |
       kind: KubeletConfiguration
       apiVersion: kubelet.config.k8s.io/v1beta1
-      kubeletCgroups: /systemd/system.slice
-      SystemCgroups: /systemd/system.slice
       evictionHard:
         memory.available:  "200Mi"
       staticPodPath: /etc/kubernetes/manifests
