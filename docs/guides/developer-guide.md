@@ -8,18 +8,13 @@ Participation in the Kubernetes community is governed by the [Kubernetes Code of
 
 # Build
 
-Clone the [kube-aws repository](https://github.com/kubernetes-incubator/kube-aws) to the appropriate path under the GOPATH.
-
-```bash
-$ export GOPATH=$HOME/go
-$ git clone git@github.com:kubernetes-incubator/kube-aws.git $GOPATH/src/github.com/kubernetes-incubator/kube-aws
-```
+Clone the [kube-aws repository](https://github.com/kubernetes-incubator/kube-aws).
 
 Run `make build` to compile kube-aws locally.
 
 This depends on having:
 
-* golang &gt;= 1.8
+* golang &gt;= 1.13
 
 The compiled binary will be available at `bin/kube-aws`.
 

@@ -6,9 +6,6 @@ if ! which tparse 1>/dev/null; then
   echo not found. installing...
   go get -u github.com/mfridman/tparse
   echo 'Installed `packr`.'
-  printf 'Ensuring that the installed command is available via PATH...'
-  export PATH=$PATH:$GOPATH/bin
-  echo 'done. PATH is now '"$PATH"
 else
   echo found. Skipped installation.
 fi

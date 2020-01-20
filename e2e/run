@@ -1,6 +1,6 @@
 #!/bin/bash
 
-KUBE_AWS_CMD=${KUBE_AWS_CMD:-$GOPATH/src/github.com/kubernetes-incubator/kube-aws/bin/kube-aws}
+KUBE_AWS_CMD=${KUBE_AWS_CMD:-./bin/kube-aws}
 E2E_DIR=$(cd $(dirname $0); pwd)
 WORK_DIR=${E2E_DIR}/assets/${KUBE_AWS_CLUSTER_NAME}
 TESTINFRA_DIR=${E2E_DIR}/testinfra
