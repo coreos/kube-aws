@@ -1655,7 +1655,7 @@ kubeAwsPlugins:
     #   annotations: {}
     #   # set the ingress hostname to a valid domain that gets routed to your ingress controller
     #   # by default generate a host based on the servicename and clusters apiendpoint dns name.
-    #   hostname: kubernetes-dashboard.ingress.{{ .Config.AdminAPIEndpoint.DNSName }}
+    #   hostname: kubernetes-dashboard.ingress.{{ .ExternalDNSName }}
     #   # set 'supressIngressSecret' to true if you are using something like jetstack cert-manager for auto provisioning ingress certificates
     #   # ingress certificates
     #   supressIngresSecret: false
