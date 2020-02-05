@@ -388,6 +388,11 @@ coreos:
         --node-labels=node.kubernetes.io/role="master",node-role.kubernetes.io/master=\"\",kubernetes.io/role=master,service-cidr={{ .ServiceCIDR | toLabel }}{{if .NodeLabels.Enabled}},{{.NodeLabels.String}}{{end}} \
         --register-with-taints=node.kubernetes.io/role=master:NoSchedule \
         --config=/etc/kubernetes/config/kubelet.yaml \
+        {{- if .Experimental.CloudControllerManager.Enabled }}
+        --cloud-provider=external \
+        {{- else }}
+        --cloud-provider=aws \
+        {{- end }}
         {{- if .Kubernetes.Networking.AmazonVPC.Enabled }}
         --node-ip=$$(curl http://169.254.169.254/latest/meta-data/local-ipv4) \
         --max-pods=$$(/opt/bin/aws-k8s-cni-max-pods) \
@@ -1007,9 +1012,19 @@ write_files:
         "${mfdir}/kube-proxy-cm.yaml" \
         "${mfdir}/kube-proxy-ds.yaml"
 
+      {{- if .Experimental.CloudControllerManager.Enabled }}
       # CLOUD_CONTROLLER_MANAGER
       deploy "${mfdir}/cloud-controller-manager.yaml"
 
+      {{- end }}
+      {{- if .Experimental.ContainerStorageInterface.Enabled }}
+      # CSI
+      deploy "${mfdir}/csi-controller.yaml"
+      deploy "${mfdir}/csi-node.yaml"
+      deploy "${mfdir}/csi-rbac.yaml"
+      deploy "${mfdir}/csi-driver.yaml"
+
+      {{- end }}
       # TLS BOOTSTRAP
       deploy "${rbac}/cluster-role-bindings"/{nodes-can-create-csrs,automatically-sign-node-certificate-requests,automatically-sign-node-certificate-renewals}".yaml"
 
@@ -3508,6 +3523,9 @@ write_files:
           - kube-controller-manager
           {{/* mandatory flags below */}}
           - --cluster-name={{.ClusterName}}
+          {{- if not .Experimental.CloudControllerManager.Enabled }}
+          - --cloud-provider=aws
+          {{- end }}
           - --kubeconfig=/etc/kubernetes/kubeconfig/kube-controller-manager.yaml
           - --authentication-kubeconfig=/etc/kubernetes/kubeconfig/kube-controller-manager.yaml
           - --authorization-kubeconfig=/etc/kubernetes/kubeconfig/kube-controller-manager.yaml
@@ -3659,6 +3677,7 @@ write_files:
                   memory: 100Mi
   {{- end }}
 
+  {{- if .Experimental.CloudControllerManager.Enabled }}
   - path: /srv/kubernetes/manifests/cloud-controller-manager.yaml
     content: |
       ---
@@ -3790,10 +3809,10 @@ write_files:
               - --cluster-name={{.ClusterName}}
               - --allocate-node-cidrs=false
               - --configure-cloud-routes=false
-              {{ if .Experimental.DisableSecurityGroupIngress -}}
+              {{- if .Experimental.DisableSecurityGroupIngress }}
               - --cloud-config=/etc/kubernetes/cloud-controller-manager/cloud.config
               {{- end }}
-              {{ if .Experimental.DisableSecurityGroupIngress -}}
+              {{- if .Experimental.DisableSecurityGroupIngress }}
               volumeMounts:
               - mountPath: /etc/kubernetes
                 name: etc-kubernetes
@@ -3822,6 +3841,345 @@ write_files:
                 path: /etc/kubernetes
               name: etc-kubernetes
             {{- end }}
+  {{- end }}
+
+  {{- if .Experimental.ContainerStorageInterface.Enabled }}
+  - path: /srv/kubernetes/manifests/csi-controller.yaml
+    content: |
+      ---
+      # Controller Service
+      kind: Deployment
+      apiVersion: apps/v1
+      metadata:
+        name: ebs-csi-controller
+        namespace: kube-system
+      spec:
+        replicas: 2
+        selector:
+          matchLabels:
+            app: ebs-csi-controller
+        template:
+          metadata:
+            labels:
+              app: ebs-csi-controller
+          spec:
+            nodeSelector:
+              beta.kubernetes.io/os: linux
+              node.kubernetes.io/role: master
+            serviceAccount: ebs-csi-controller-sa
+            priorityClassName: system-cluster-critical
+            tolerations:
+              - key: "node.kubernetes.io/role"
+                operator: "Equal"
+                value: "master"
+                effect: "NoSchedule"
+              - key: "CriticalAddonsOnly"
+                operator: "Exists"
+            containers:
+              - name: ebs-plugin
+                image: {{ .Experimental.ContainerStorageInterface.AmazonEBSDriver.RepoWithTag }}
+                args :
+                # - {all,controller,node} # specify the driver mode
+                  - --endpoint=$(CSI_ENDPOINT)
+                  - --logtostderr
+                  - --v=9
+                env:
+                  - name: CSI_ENDPOINT
+                    value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
+                  - name: AWS_ACCESS_KEY_ID
+                    valueFrom:
+                      secretKeyRef:
+                        name: aws-secret
+                        key: key_id
+                        optional: true
+                  - name: AWS_SECRET_ACCESS_KEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: aws-secret
+                        key: access_key
+                        optional: true
+                # overwrite the AWS region instead of looking it up dynamically via the AWS EC2 metadata svc
+                # - name: AWS_REGION
+                #   value: us-east-1
+                volumeMounts:
+                  - name: socket-dir
+                    mountPath: /var/lib/csi/sockets/pluginproxy/
+                ports:
+                  - name: healthz
+                    containerPort: 9808
+                    protocol: TCP
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: healthz
+                  initialDelaySeconds: 10
+                  timeoutSeconds: 3
+                  periodSeconds: 10
+                  failureThreshold: 5
+              - name: csi-provisioner
+                image: {{ .Experimental.ContainerStorageInterface.CSIProvisioner.RepoWithTag }}
+                args:
+                  - --csi-address=$(ADDRESS)
+                  - --v=9
+                  - --feature-gates=Topology=true
+                  - --enable-leader-election
+                  - --leader-election-type=leases
+                env:
+                  - name: ADDRESS
+                    value: /var/lib/csi/sockets/pluginproxy/csi.sock
+                volumeMounts:
+                  - name: socket-dir
+                    mountPath: /var/lib/csi/sockets/pluginproxy/
+              - name: csi-attacher
+                image: {{ .Experimental.ContainerStorageInterface.CSIAttacher.RepoWithTag }}
+                args:
+                  - --csi-address=$(ADDRESS)
+                  - --v=9
+                env:
+                  - name: ADDRESS
+                    value: /var/lib/csi/sockets/pluginproxy/csi.sock
+                volumeMounts:
+                  - name: socket-dir
+                    mountPath: /var/lib/csi/sockets/pluginproxy/
+              - name: liveness-probe
+                image: {{ .Experimental.ContainerStorageInterface.CSILivenessProbe.RepoWithTag }}
+                args:
+                  - --csi-address=/csi/csi.sock
+                volumeMounts:
+                  - name: socket-dir
+                    mountPath: /csi
+            volumes:
+              - name: socket-dir
+                emptyDir: {}
+  - path: /srv/kubernetes/manifests/csi-node.yaml
+    content: |
+      ---
+      # Node Service
+      kind: DaemonSet
+      apiVersion: apps/v1
+      metadata:
+        name: ebs-csi-node
+        namespace: kube-system
+      spec:
+        selector:
+          matchLabels:
+            app: ebs-csi-node
+        template:
+          metadata:
+            labels:
+              app: ebs-csi-node
+          spec:
+            nodeSelector:
+              beta.kubernetes.io/os: linux
+            hostNetwork: true
+            priorityClassName: system-node-critical
+            tolerations:
+              - operator: Exists
+            containers:
+              - name: ebs-plugin
+                securityContext:
+                  privileged: true
+                image: {{ .Experimental.ContainerStorageInterface.AmazonEBSDriver.RepoWithTag }}
+                args:
+                  - --endpoint=$(CSI_ENDPOINT)
+                  - --logtostderr
+                  - --v=9
+                env:
+                  - name: CSI_ENDPOINT
+                    value: unix:/csi/csi.sock
+                volumeMounts:
+                  - name: kubelet-dir
+                    mountPath: /var/lib/kubelet
+                    mountPropagation: "Bidirectional"
+                  - name: plugin-dir
+                    mountPath: /csi
+                  - name: device-dir
+                    mountPath: /dev
+                ports:
+                  - name: healthz
+                    containerPort: 9808
+                    protocol: TCP
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: healthz
+                  initialDelaySeconds: 10
+                  timeoutSeconds: 3
+                  periodSeconds: 10
+                  failureThreshold: 5
+              - name: node-driver-registrar
+                image: {{ .Experimental.ContainerStorageInterface.CSINodeDriverRegistrar.RepoWithTag }}
+                args:
+                  - --csi-address=$(ADDRESS)
+                  - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
+                  - --v=5
+                lifecycle:
+                  preStop:
+                    exec:
+                      command: ["/bin/sh", "-c", "rm -rf /registration/ebs.csi.aws.com-reg.sock /csi/csi.sock"]
+                env:
+                  - name: ADDRESS
+                    value: /csi/csi.sock
+                  - name: DRIVER_REG_SOCK_PATH
+                    value: /var/lib/kubelet/plugins/ebs.csi.aws.com/csi.sock
+                volumeMounts:
+                  - name: plugin-dir
+                    mountPath: /csi
+                  - name: registration-dir
+                    mountPath: /registration
+              - name: liveness-probe
+                image: {{ .Experimental.ContainerStorageInterface.CSILivenessProbe.RepoWithTag }}
+                args:
+                  - --csi-address=/csi/csi.sock
+                volumeMounts:
+                  - name: plugin-dir
+                    mountPath: /csi
+            volumes:
+              - name: kubelet-dir
+                hostPath:
+                  path: /var/lib/kubelet
+                  type: Directory
+              - name: plugin-dir
+                hostPath:
+                  path: /var/lib/kubelet/plugins/ebs.csi.aws.com/
+                  type: DirectoryOrCreate
+              - name: registration-dir
+                hostPath:
+                  path: /var/lib/kubelet/plugins_registry/
+                  type: Directory
+              - name: device-dir
+                hostPath:
+                  path: /dev
+                  type: Directory
+  - path: /srv/kubernetes/manifests/csi-rbac.yaml
+    content: |
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: ebs-csi-controller-sa
+        namespace: kube-system
+        #Enable if EKS IAM for SA is used
+        #annotations:
+        #  eks.amazonaws.com/role-arn: arn:aws:iam::586565787010:role/ebs-csi-role
+      ---
+      kind: ClusterRole
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+        name: ebs-external-provisioner-role
+      rules:
+        - apiGroups: [""]
+          resources: ["persistentvolumes"]
+          verbs: ["get", "list", "watch", "create", "delete"]
+        - apiGroups: [""]
+          resources: ["persistentvolumeclaims"]
+          verbs: ["get", "list", "watch", "update"]
+        - apiGroups: ["storage.k8s.io"]
+          resources: ["storageclasses"]
+          verbs: ["get", "list", "watch"]
+        - apiGroups: [""]
+          resources: ["events"]
+          verbs: ["list", "watch", "create", "update", "patch"]
+        - apiGroups: ["snapshot.storage.k8s.io"]
+          resources: ["volumesnapshots"]
+          verbs: ["get", "list"]
+        - apiGroups: ["snapshot.storage.k8s.io"]
+          resources: ["volumesnapshotcontents"]
+          verbs: ["get", "list"]
+        - apiGroups: ["storage.k8s.io"]
+          resources: ["csinodes"]
+          verbs: ["get", "list", "watch"]
+        - apiGroups: [""]
+          resources: ["nodes"]
+          verbs: ["get", "list", "watch"]
+        - apiGroups: ["coordination.k8s.io"]
+          resources: ["leases"]
+          verbs: ["get", "watch", "list", "delete", "update", "create"]
+      ---
+      kind: ClusterRoleBinding
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+        name: ebs-csi-provisioner-binding
+      subjects:
+        - kind: ServiceAccount
+          name: ebs-csi-controller-sa
+          namespace: kube-system
+      roleRef:
+        kind: ClusterRole
+        name: ebs-external-provisioner-role
+        apiGroup: rbac.authorization.k8s.io
+      ---
+      kind: ClusterRole
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+        name: ebs-external-attacher-role
+      rules:
+        - apiGroups: [""]
+          resources: ["persistentvolumes"]
+          verbs: ["get", "list", "watch", "update"]
+        - apiGroups: [""]
+          resources: ["nodes"]
+          verbs: ["get", "list", "watch"]
+        - apiGroups: ["csi.storage.k8s.io"]
+          resources: ["csinodeinfos"]
+          verbs: ["get", "list", "watch"]
+        - apiGroups: ["storage.k8s.io"]
+          resources: ["volumeattachments"]
+          verbs: ["get", "list", "watch", "update"]
+      ---
+      kind: ClusterRoleBinding
+      apiVersion: rbac.authorization.k8s.io/v1
+      metadata:
+        name: ebs-csi-attacher-binding
+      subjects:
+        - kind: ServiceAccount
+          name: ebs-csi-controller-sa
+          namespace: kube-system
+      roleRef:
+        kind: ClusterRole
+        name: ebs-external-attacher-role
+        apiGroup: rbac.authorization.k8s.io
+      # Fix for nodes being able to access volumeattachment objects
+      # see https://github.com/rancher/k3s/issues/732
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRole
+      metadata:
+        name: system:nodes:volumeattachments
+      rules:
+      - apiGroups:
+        - storage.k8s.io
+        resources:
+        - volumeattachments
+        verbs:
+        - list
+        - get
+        - create
+        - watch
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: system:nodes:volumeattachments
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: system:nodes:volumeattachments
+      subjects:
+      - apiGroup: rbac.authorization.k8s.io
+        kind: Group
+        name: system:nodes
+  - path: /srv/kubernetes/manifests/csi-driver.yaml
+    content: |
+      ---
+      apiVersion: storage.k8s.io/v1beta1
+      kind: CSIDriver
+      metadata:
+        name: ebs.csi.aws.com
+      spec:
+        attachRequired: true
+        podInfoOnMount: false
+  {{- end }}
+
   - path: /srv/kubernetes/manifests/kube-proxy-sa.yaml
     content: |
         apiVersion: v1

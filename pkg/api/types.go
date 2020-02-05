@@ -17,21 +17,36 @@ type Kubelet struct {
 }
 
 type Experimental struct {
-	Admission                   Admission             `yaml:"admission"`
-	AuditLog                    AuditLog              `yaml:"auditLog"`
-	Authentication              Authentication        `yaml:"authentication"`
-	AwsEnvironment              AwsEnvironment        `yaml:"awsEnvironment"`
-	AwsNodeLabels               AwsNodeLabels         `yaml:"awsNodeLabels"`
-	EphemeralImageStorage       EphemeralImageStorage `yaml:"ephemeralImageStorage"`
-	GpuSupport                  GpuSupport            `yaml:"gpuSupport,omitempty"`
-	KubeletOpts                 string                `yaml:"kubeletOpts,omitempty"`
-	LoadBalancer                LoadBalancer          `yaml:"loadBalancer"`
-	TargetGroup                 TargetGroup           `yaml:"targetGroup"`
-	NodeDrainer                 NodeDrainer           `yaml:"nodeDrainer"`
-	Oidc                        Oidc                  `yaml:"oidc"`
-	DisableSecurityGroupIngress bool                  `yaml:"disableSecurityGroupIngress"`
-	NodeMonitorGracePeriod      string                `yaml:"nodeMonitorGracePeriod"`
+	Admission                   Admission                 `yaml:"admission"`
+	AuditLog                    AuditLog                  `yaml:"auditLog"`
+	Authentication              Authentication            `yaml:"authentication"`
+	AwsEnvironment              AwsEnvironment            `yaml:"awsEnvironment"`
+	AwsNodeLabels               AwsNodeLabels             `yaml:"awsNodeLabels"`
+	EphemeralImageStorage       EphemeralImageStorage     `yaml:"ephemeralImageStorage"`
+	GpuSupport                  GpuSupport                `yaml:"gpuSupport,omitempty"`
+	KubeletOpts                 string                    `yaml:"kubeletOpts,omitempty"`
+	LoadBalancer                LoadBalancer              `yaml:"loadBalancer"`
+	TargetGroup                 TargetGroup               `yaml:"targetGroup"`
+	NodeDrainer                 NodeDrainer               `yaml:"nodeDrainer"`
+	Oidc                        Oidc                      `yaml:"oidc"`
+	DisableSecurityGroupIngress bool                      `yaml:"disableSecurityGroupIngress"`
+	NodeMonitorGracePeriod      string                    `yaml:"nodeMonitorGracePeriod"`
+	CloudControllerManager      CloudControllerManager    `yaml:"cloudControllerManager"`
+	ContainerStorageInterface   ContainerStorageInterface `yaml:"containerStorageInterface"`
 	UnknownKeys                 `yaml:",inline"`
+}
+
+type CloudControllerManager struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type ContainerStorageInterface struct {
+	Enabled                bool  `yaml:"enabled"`
+	CSIProvisioner         Image `yaml:"csiProvisioner"`
+	CSIAttacher            Image `yaml:"csiAttacher"`
+	CSILivenessProbe       Image `yaml:"csiLivenessProbe"`
+	CSINodeDriverRegistrar Image `yaml:"csiNodeDriverRegistrar"`
+	AmazonEBSDriver        Image `yaml:"amazonEBSDriver"`
 }
 
 func (c Experimental) Validate(name string) error {

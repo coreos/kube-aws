@@ -283,7 +283,7 @@ coreos:
           content: |
             [Service]
             Environment="DOCKER_OPTS=--log-opt max-size=50m --log-opt max-file=3"
-    
+
     - name: flanneld.service
       enable: false
     {{ if .AssetsEncryptionEnabled -}}
@@ -304,14 +304,14 @@ coreos:
       runtime: true
       content: |
         [Unit]
-        Wants=rpc-statd.service        
+        Wants=rpc-statd.service
         Wants=decrypt-assets.service
         After=decrypt-assets.service
         {{- if .Gpu.Nvidia.IsEnabledOn .InstanceType }}
         Requires=nvidia-start.service
         After=nvidia-start.service
         {{- end }}
-        
+
         [Service]
         EnvironmentFile=/etc/environment
         EnvironmentFile=-/etc/default/kubelet
@@ -358,7 +358,11 @@ coreos:
         {{- if .Taints }}
         --register-with-taints={{.Taints.String}} \
         {{- end }}
+        {{- if .Experimental.CloudControllerManager.Enabled }}
         --cloud-provider=external \
+        {{- else }}
+        --cloud-provider=aws \
+        {{- end }}
         --cert-dir=/etc/kubernetes/ssl \
         --bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \
         {{- if .Kubelet.Kubeconfig }}
@@ -620,7 +624,7 @@ write_files:
         memory.available:  "200Mi"
       staticPodPath: /etc/kubernetes/manifests
       clusterDomain: cluster.local
-      clusterDNS: 
+      clusterDNS:
       - {{ if .KubeDns.NodeLocalResolver }}COREOS_PRIVATE_IPV4{{ else }}{{.DNSServiceIP}}{{end}}
       serverTLSBootstrap: false
       rotateCertificates: true
@@ -646,7 +650,7 @@ write_files:
       {{- end }}
       {{- if .FeatureGates.Enabled }}
       featureGates:
-{{.FeatureGates.Yaml | indent 8}} 
+{{.FeatureGates.Yaml | indent 8}}
       {{- end }}
 
   {{ if .CustomFiles -}}
