@@ -76,6 +76,13 @@ func (c NodePoolConfig) FeatureGates() api.FeatureGates {
 	if c.Experimental.GpuSupport.Enabled {
 		gates["DevicePlugins"] = "true"
 	}
+	if c.Experimental.ContainerStorageInterface.Enabled {
+		gates["CSINodeInfo"] = "true"
+		gates["CSIDriverRegistry"] = "true"
+		gates["CSIBlockVolume"] = "true"
+		gates["CSIMigration"] = "true"
+		gates["CSIMigrationAWS"] = "true"
+	}
 	return gates
 }
 

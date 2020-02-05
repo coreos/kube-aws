@@ -139,6 +139,32 @@ func TestMainClusterConfig(t *testing.T) {
 				UsernameClaim: "email",
 				GroupsClaim:   "groups",
 			},
+			CloudControllerManager: api.CloudControllerManager{
+				Enabled: false,
+			},
+			ContainerStorageInterface: api.ContainerStorageInterface{
+				Enabled: false,
+				CSIProvisioner: api.Image{
+					Repo: "quay.io/k8scsi/csi-provisioner",
+					Tag:  api.CSIDefaultProvisionerImageTag,
+				},
+				CSIAttacher: api.Image{
+					Repo: "quay.io/k8scsi/csi-attacher",
+					Tag:  api.CSIDefaultAttacherImageTag,
+				},
+				CSILivenessProbe: api.Image{
+					Repo: "quay.io/k8scsi/livenessprobe",
+					Tag:  api.CSIDefaultLivenessProbeImageTag,
+				},
+				CSINodeDriverRegistrar: api.Image{
+					Repo: "quay.io/k8scsi/csi-node-driver-registrar",
+					Tag:  api.CSIDefaultNodeDriverRegistrarTag,
+				},
+				AmazonEBSDriver: api.Image{
+					Repo: "amazon/aws-ebs-csi-driver",
+					Tag:  api.CSIDefaultAmazonEBSDriverImageTag,
+				},
+			},
 			NodeDrainer: api.NodeDrainer{
 				Enabled:      false,
 				DrainTimeout: 5,
@@ -1368,6 +1394,32 @@ worker:
 							ClientId:      "kubernetes",
 							UsernameClaim: "email",
 							GroupsClaim:   "groups",
+						},
+						CloudControllerManager: api.CloudControllerManager{
+							Enabled: false,
+						},
+						ContainerStorageInterface: api.ContainerStorageInterface{
+							Enabled: false,
+							CSIProvisioner: api.Image{
+								Repo: "quay.io/k8scsi/csi-provisioner",
+								Tag:  api.CSIDefaultProvisionerImageTag,
+							},
+							CSIAttacher: api.Image{
+								Repo: "quay.io/k8scsi/csi-attacher",
+								Tag:  api.CSIDefaultAttacherImageTag,
+							},
+							CSILivenessProbe: api.Image{
+								Repo: "quay.io/k8scsi/livenessprobe",
+								Tag:  api.CSIDefaultLivenessProbeImageTag,
+							},
+							CSINodeDriverRegistrar: api.Image{
+								Repo: "quay.io/k8scsi/csi-node-driver-registrar",
+								Tag:  api.CSIDefaultNodeDriverRegistrarTag,
+							},
+							AmazonEBSDriver: api.Image{
+								Repo: "amazon/aws-ebs-csi-driver",
+								Tag:  api.CSIDefaultAmazonEBSDriverImageTag,
+							},
 						},
 						NodeDrainer: api.NodeDrainer{
 							Enabled:      true,

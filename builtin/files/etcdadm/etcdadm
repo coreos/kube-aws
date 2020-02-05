@@ -1026,11 +1026,11 @@ import_keyfile() {
 
   if [[ -n "${ttl}" ]]; then
     id=$(member_etcdctl lease grant ${ttl} | awk '{print $2}')
-    command="while read -u 10 k; do read -u 10 v; echo \"saving \$k with lease=${id} ttl=${ttl}\"; echo \"\$v\" | base64 -d | etcdctl --endpoints='$(member_client_url)' put \$k --lease=${id}; done 10<$(member_snapshots_dir_name)/$file_name"
+    command="cat $(member_snapshots_dir_name)/$file_name | while read k; do read v; echo \"saving \$k with lease=${id} ttl=${ttl}\" >&2; echo \"\$v\" | base64 -d | etcdctl --endpoints='$(member_client_url)' put \$k --lease=${id}; done"
     echo "command is $command"
     raw_etcdctl /bin/sh -c "'${command}'" 2>&1
   else
-    command="while read -u 10 k; do read -u 10 v; echo \"saving \$k\"; echo \"\$v\" | base64 -d | etcdctl --endpoints='$(member_client_url)' put \$k; done 10<$(member_snapshots_dir_name)/$file_name"
+    command="cat $(member_snapshots_dir_name)/$file_name | while read k; do read v; echo \"saving \$k\" >&2; echo \"\$v\" | base64 -d | etcdctl --endpoints='$(member_client_url)' put \$k; done"
     echo "command is $command"
     raw_etcdctl /bin/sh -c "'${command}'" 2>&1
   fi

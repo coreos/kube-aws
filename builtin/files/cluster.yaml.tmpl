@@ -1449,6 +1449,37 @@ experimental:
     usernameClaim: "email"
     groupsClaim: "groups"
 
+  # Enable cloudControllerManager to move AWS cloud-provider code out of the kube-controller-manager and into a separate cloud-controller-manager
+  # WARNING: enabling the cloud-controller-manager removes legacy PVC/Storage code - you will need to enable the alpha
+  # ContainerStorageInterface experimental feature to priovide EBS volume integtation and you risk losing any existing volumes.
+  cloudControllerManager:
+    enabled: false
+
+  # Enable experimental Container Storage Interface (CSI)
+  # This subsystem is designed to replace legacy in-tree storage code with a standard interface (CSI) and external compliant drivers
+  # WARNING: this is for testing purposes only - their is no guarantee that your existing in-tree provisioned volumes will continue to
+  # work once CSI has been enabled (and they didn't work during my testing, although new volumes appeared to work)
+  containerStorageInterface:
+    enabled: false
+    # debug - toggle debug logging levels
+    # debug: false
+    # Change default CSI and EBS Driver images: -
+    # csiProvisioner:
+    #   repo: quay.io/k8scsi/csi-provisioner
+    #   tag: v1.3.1
+    # csiAttacher:
+    #   repo: quay.io/k8scsi/csi-attacher
+    #   tag: v1.2.1
+    # csiLivenessProbe:
+    #   repo: quay.io/k8scsi/livenessprobe
+    #   tag: v1.1.0
+    # csiNodeDriverRegistrar:
+    #   repo: quay.io/k8scsi/csi-node-driver-registrar
+    #   tag: v1.2.0
+    # amazonEBSDriver:
+    #   repo: amazon/aws-ebs-csi-driver
+    #   tag: v0.4.0
+
   # When set to true this configures the k8s aws provider so that it doesn't modify every node's security group
   # to include an additional ingress rule per an ELB created for a k8s service whose type is "LoadBalancer".
   # It requires that the user has setup a rule that allows inbound traffic on kubelet ports

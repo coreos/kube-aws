@@ -339,7 +339,7 @@ coreos:
         -v /var/log:/var/log:rw \
         -v /opt/cni/bin:/opt/cni/bin:rw \
         -v /etc/kubernetes:/etc/kubernetes:rw \
-        -v /var/lib/kubelet:/var/lib/kubelet:shared \
+        -v /var/lib/kubelet:/var/lib/kubelet:rshared \
         -v /var/lib/docker:/var/lib/docker:rshared \
         {{ if eq .ContainerRuntime "rkt" -}}
         -v /opt/bin/host-rkt:/opt/bin/host-rkt:rw \
@@ -363,7 +363,11 @@ coreos:
         {{- if .Taints }}
         --register-with-taints={{.Taints.String}} \
         {{- end }}
+        {{- if .Experimental.CloudControllerManager.Enabled }}
         --cloud-provider=external \
+        {{- else }}
+        --cloud-provider=aws \
+        {{- end }}
         --cert-dir=/etc/kubernetes/ssl \
         --bootstrap-kubeconfig=/etc/kubernetes/kubeconfig/worker-bootstrap.yaml \
         {{- if .Kubelet.Kubeconfig }}

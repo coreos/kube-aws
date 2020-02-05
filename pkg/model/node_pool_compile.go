@@ -24,6 +24,8 @@ func nodePoolPreprocess(c api.WorkerNodePool, main *Config) (*api.WorkerNodePool
 	c.HostOS = main.HostOS
 	c.Experimental.NodeDrainer = main.DeploymentSettings.Experimental.NodeDrainer
 	c.Experimental.GpuSupport = main.DeploymentSettings.Experimental.GpuSupport
+	c.Experimental.CloudControllerManager = main.DeploymentSettings.Experimental.CloudControllerManager
+	c.Experimental.ContainerStorageInterface = main.DeploymentSettings.Experimental.ContainerStorageInterface
 	c.Kubelet.SystemReservedResources = main.DeploymentSettings.Kubelet.SystemReservedResources
 	c.Kubelet.KubeReservedResources = main.DeploymentSettings.Kubelet.KubeReservedResources
 

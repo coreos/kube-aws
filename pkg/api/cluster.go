@@ -25,6 +25,13 @@ const (
 	kubeNetworkingSelfHostingDefaultFlannelImageTag    = "v0.11.0"
 	kubeNetworkingSelfHostingDefaultFlannelCniImageTag = "v0.3.0"
 	kubeNetworkingSelfHostingDefaultTyphaImageTag      = "v3.11.1"
+
+	// Experimental CSI support default image tags...
+	CSIDefaultProvisionerImageTag     = "v1.3.1"
+	CSIDefaultAttacherImageTag        = "v1.2.1"
+	CSIDefaultLivenessProbeImageTag   = "v1.1.0"
+	CSIDefaultNodeDriverRegistrarTag  = "v1.2.0"
+	CSIDefaultAmazonEBSDriverImageTag = "v0.4.0"
 )
 
 func NewDefaultCluster() *Cluster {
@@ -104,6 +111,33 @@ func NewDefaultCluster() *Cluster {
 			GroupsClaim:   "groups",
 		},
 		SkipIOPerformanceEtcdVolumeCheck: false,
+		CloudControllerManager: CloudControllerManager{
+			Enabled: false,
+		},
+		ContainerStorageInterface: ContainerStorageInterface{
+			Enabled: false,
+			Debug:   false,
+			CSIProvisioner: Image{
+				Repo: "quay.io/k8scsi/csi-provisioner",
+				Tag:  CSIDefaultProvisionerImageTag,
+			},
+			CSIAttacher: Image{
+				Repo: "quay.io/k8scsi/csi-attacher",
+				Tag:  CSIDefaultAttacherImageTag,
+			},
+			CSILivenessProbe: Image{
+				Repo: "quay.io/k8scsi/livenessprobe",
+				Tag:  CSIDefaultLivenessProbeImageTag,
+			},
+			CSINodeDriverRegistrar: Image{
+				Repo: "quay.io/k8scsi/csi-node-driver-registrar",
+				Tag:  CSIDefaultNodeDriverRegistrarTag,
+			},
+			AmazonEBSDriver: Image{
+				Repo: "amazon/aws-ebs-csi-driver",
+				Tag:  CSIDefaultAmazonEBSDriverImageTag,
+			},
+		},
 	}
 
 	ipvsMode := IPVSMode{
@@ -849,6 +883,17 @@ func (c *Cluster) AvailabilityZones() []string {
 
 func (c *Cluster) ControllerFeatureGates() FeatureGates {
 	gates := c.Controller.NodeSettings.FeatureGates
+	if gates == nil {
+		gates = FeatureGates{}
+	}
+	if c.Experimental.ContainerStorageInterface.Enabled {
+		gates["CSINodeInfo"] = "true"
+		gates["CSIDriverRegistry"] = "true"
+		gates["CSIBlockVolume"] = "true"
+		gates["VolumeSnapshotDataSource"] = "true"
+		gates["CSIMigration"] = "true"
+		gates["CSIMigrationAWS"] = "true"
+	}
 	return gates
 }
 
