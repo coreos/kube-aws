@@ -3542,6 +3542,7 @@ write_files:
           {{ if not .Kubernetes.Networking.AmazonVPC.Enabled -}}
           - --allocate-node-cidrs=true
           - --cluster-cidr={{.PodCIDR}}
+          - --configure-cloud-routes=false
           {{ end -}}
           - --service-cluster-ip-range={{.ServiceCIDR}} {{/* removes the service CIDR range from the cluster CIDR if it intersects */}}
           {{ if not .Addons.MetricsServer.Enabled -}}
