@@ -145,6 +145,13 @@ apiEndpoints:
     recordSetManaged: false
     securityGroupIds: []
     apiAccessAllowedSourceCIDRs: []
+`, `
+apiEndpoints:
+- name: public
+  dnsName: test.staging.core-os.net
+  loadBalancer:
+    id: lb-123456
+    recordSetManaged: false
 `,
 }
 
@@ -216,7 +223,7 @@ apiEndpoints:
   dnsName: test.staging.core-os.net
   loadBalancer:
     type: classic
-    recordSetManaged: false
+    recordSetManaged: true
     securityGroupIds: []
     apiAccessAllowedSourceCIDRs: []
 `,
