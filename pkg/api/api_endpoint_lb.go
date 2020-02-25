@@ -152,7 +152,7 @@ func (e APIEndpointLB) managedELBImplied() bool {
 		e.explicitlyPublic() ||
 		e.HostedZone.HasIdentifier() ||
 		len(e.SecurityGroupIds) > 0 ||
-		e.RecordSetManaged != nil
+		(e.RecordSetManaged != nil && *e.RecordSetManaged)
 }
 
 func (e APIEndpointLB) explicitlyPrivate() bool {
