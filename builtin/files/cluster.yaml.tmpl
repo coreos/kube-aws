@@ -1360,10 +1360,10 @@ kubeProxy:
 # It is enabled by default.
 #cloudFormationStreaming: true
 
-# When enabled, a security group rule is included on the generated SG to allow ICMP from all traffic (0.0.0.0/0).
-# This is applied to all nodes (worker & control plane) in the cluster
-#openICMP:
-# enabled: true
+# When enabled, a security group rule is included on the generated kube-aws SG to allow ICMP Ping from all traffic (0.0.0.0/0).
+# This is applied to all nodes (worker & control plane) in the cluster.
+openICMP:
+ enabled: true
 
 # Addon features
 addons:
