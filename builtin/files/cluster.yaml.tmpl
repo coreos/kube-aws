@@ -1360,6 +1360,11 @@ kubeProxy:
 # It is enabled by default.
 #cloudFormationStreaming: true
 
+# When enabled, a security group rule is included on the generated SG to allow ICMP from all traffic (0.0.0.0/0).
+# This is applied to all nodes (worker & control plane) in the cluster
+#openICMP:
+# enabled: true
+
 # Addon features
 addons:
   # When enabled, Kubernetes rescheduler is deployed to the cluster controller(s)

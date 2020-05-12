@@ -91,12 +91,14 @@
           }
         ],
         "SecurityGroupIngress": [
+          {{ if .openICMP.Enabled -}}
           {
             "CidrIp": "0.0.0.0/0",
             "FromPort": -1,
             "IpProtocol": "icmp",
             "ToPort": -1
           },
+          {{end -}}
           {{ range $_, $r := $.SSHAccessAllowedSourceCIDRs -}}
           {
             "CidrIp": "{{$r}}",

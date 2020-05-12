@@ -219,12 +219,14 @@
             "ToPort": 22
           },
           {{end -}}
+          {{ if .openICMP.Enabled -}}
           {
             "CidrIp": "0.0.0.0/0",
             "FromPort": -1,
             "IpProtocol": "icmp",
             "ToPort": -1
-          }
+          },
+          {{end -}}
         ],
         "Tags": [
           {
