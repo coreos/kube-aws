@@ -8,7 +8,7 @@ Initialize the base configuration for a cluster ready for customization prior to
 
 | Flag | Description | Default |
 | -- | -- | -- |
-| `ami-id` | The AMI ID of CoreOS Container Linux to deploy | The latest AMI for the Container Linux release channel specified in `cluster.yaml` |
+| `ami-id` | The AMI ID of Flatcar Container Linux to deploy | The latest AMI for the Container Linux release channel specified in `cluster.yaml` |
 | `availability-zone` | The AWS availability-zone to deploy to. Note, this can be changed to multi AZ in `cluster.yaml` | none |
 | `cluster-name` | The name of this cluster. This will be the name of the cloudformation stack | none |
 | `external-dns-name` | The hostname that will route to the api server | none |

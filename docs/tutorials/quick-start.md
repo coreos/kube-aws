@@ -1,6 +1,6 @@
 # Quick Start
 
-Get started with kube-aws and deploy a fully-functional Kubernetes cluster running on CoreOS Container Linux using AWS CloudFormation.
+Get started with kube-aws and deploy a fully-functional Kubernetes cluster running on Flatcar Container Linux using AWS CloudFormation.
 
 After completing this guide, you will be able to deploy applications to Kubernetes on AWS and interact with the Kubernetes API using the `kubectl` CLI tool.
 

@@ -44,7 +44,7 @@ some of your system pods will break (especially `kube-dns`). Deleting the said s
 
 There is no solution for hosting an etcd cluster in a way that is easily updateable in this fashion- so updates are automatically masked for the etcd instances. This means that, after the cluster is created, nothing about the etcd ec2 instances is allowed to be updated.
 
-Fortunately, CoreOS update engine will take care of keeping the members of the etcd cluster up-to-date, but you as the operator will not be able to modify them after creation via the update mechanism.
+Fortunately, Flatcar update engine will take care of keeping the members of the etcd cluster up-to-date, but you as the operator will not be able to modify them after creation via the update mechanism.
 
 In the (near) future, etcd will be hosted on Kubernetes and this problem will no longer be relevant. Rather than concocting overly complex band-aid, we've decided to "punt" on this issue of the time being.
 

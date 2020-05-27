@@ -6,7 +6,7 @@ This is the second step of [running Kubernetes on AWS](README.md). Before we lau
 
 ### EC2 key pair
 
-The keypair that will authenticate SSH access to your EC2 instances. The public half of this key pair will be configured on each CoreOS node.
+The keypair that will authenticate SSH access to your EC2 instances. The public half of this key pair will be configured on each Flatcar node.
 
 After creating a key pair, you will use the name you gave the keys to configure the cluster. Key pairs are only available to EC2 instances in the same region. More info in the [EC2 Keypair docs](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
 
@@ -207,7 +207,7 @@ Each component certificate is only valid for 90 days, while the CA is valid for 
 If deploying a production Kubernetes cluster, consider establishing PKI independently of this tool first. [Read more below.][tls-note]
 
 **Did everything render correctly?**
-If you are familiar with CoreOS and the AWS platform, you may want to include some additional customizations or optional features. Read on below to explore more.
+If you are familiar with Flatcar and the AWS platform, you may want to include some additional customizations or optional features. Read on below to explore more.
 
 [Yes, ready to launch the cluster][getting-started-step-3]
 
@@ -236,7 +236,7 @@ You can now customize your cluster by editing asset files. Any changes to these 
   * `cloud-config-worker`
   * `cloud-config-controller`
 
-  This directory contains the [cloud-init](https://github.com/coreos/coreos-cloudinit) cloud-config userdata files. The CoreOS operating system supports automated provisioning via cloud-config files, which describe the various files, scripts and systemd actions necessary to produce a working cluster machine. These files are templated with your cluster configuration parameters and embedded into the CloudFormation stack template.
+  This directory contains the [cloud-init](https://github.com/coreos/coreos-cloudinit) cloud-config userdata files. The Flatcar operating system supports automated provisioning via cloud-config files, which describe the various files, scripts and systemd actions necessary to produce a working cluster machine. These files are templated with your cluster configuration parameters and embedded into the CloudFormation stack template.
 
   Some common customizations are:
 
@@ -244,7 +244,7 @@ You can now customize your cluster by editing asset files. Any changes to these 
   - [allow pods to mount RDB][rdb] or [iSCSI volumes][iscsi]
   - [allowing access to insecure container registries][insecure-registry]
   - [use host DNS configuration instead of a public DNS server][host-dns]
-  - [changing your CoreOS auto-update settings][update]
+  - [changing your Flatcar auto-update settings][update]
   <br/><br/>
 
 * **stack-template.json**
@@ -270,7 +270,7 @@ You can now customize your cluster by editing asset files. Any changes to these 
 
 ### Kubernetes Container Runtime
 
-The kube-aws tool now optionally supports using rkt as the kubernetes container runtime. To configure rkt as the container runtime you must run with a CoreOS version >= `v1151.0.0` and configure the runtime flag.
+The kube-aws tool now optionally supports using rkt as the kubernetes container runtime. To configure rkt as the container runtime you must run with a Flatcar version >= `v1151.0.0` and configure the runtime flag.
 
 Edit the `cluster.yaml` file:
 
