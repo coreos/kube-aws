@@ -1,6 +1,6 @@
 module github.com/kubernetes-incubator/kube-aws
 
-go 1.11
+go 1.14
 
 require (
 	github.com/Masterminds/goutils v1.1.0 // indirect
